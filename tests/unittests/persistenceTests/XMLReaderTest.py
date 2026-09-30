@@ -1208,17 +1208,6 @@ class XMLReaderVersion23Test(XMLReaderTestCase):
         )
         self.assertEqual("\nDescription\n", tasks[0].description())
 
-    @test.stale("inline attachment data is unsupported since #378")
-    def testAttachmentData(self):
-        tasks = self.writeAndReadTasks(
-            '<tasks>\n<task status="0">\n'
-            '<attachment type="mail" status="0">\n'
-            '<data extension="eml">%s</data>\n'
-            "</attachment>\n</task>\n</tasks>\n"
-            % base64.encodebytes(b"Data").decode("ascii")
-        )
-        self.assertEqual("Data", tasks[0].attachments()[0].data())
-
     def test_a_file_with_a_guid_still_loads(self):
         tasks = self.writeAndReadTasks(
             '<tasks><task id="1"/><guid>GUID</guid></tasks>'
@@ -1241,16 +1230,20 @@ class XMLReaderVersion24Test(XMLReaderTestCase):
         )
         self.assertEqual("Description", tasks[0].description())
 
-    @test.stale("inline attachment data is unsupported since #378")
-    def testAttachmentData(self):
+    def test_inline_attachment_data_is_not_read(self):
+        # Since #378: the attachment stays, its data is lost
         tasks = self.writeAndReadTasks(
             '<tasks>\n<task status="0">\n'
-            '<attachment type="mail" status="0">\n'
+            '<attachment type="mail" subject="Quote" status="0">\n'
             '<data extension="eml">\n%s\n</data>\n'
             "</attachment>\n</task>\n</tasks>\n"
             % base64.encodebytes(b"Data").decode("ascii")
         )
-        self.assertEqual("Data", tasks[0].attachments()[0].data())
+        mail = tasks[0].attachments()[0]
+        self.assertEqual(
+            ("Quote", "(embedded eml - data not migrated)"),
+            (mail.subject(), mail.location()),
+        )
 
     def test_a_file_with_legacy_syncml_nodes_still_loads(self):
         """Release 0.72.9 (and earlier?) had a bug where tags in the
@@ -2237,4 +2230,58 @@ class XMLReaderVersion38Test(XMLReaderTestCase):
                 tasks[0].plannedDurationMode(),
                 tasks[0].efforts()[0].entryMode(),
             ),
+        )
+
+    def test_mail_attachment_fields(self):
+        mail = self.writeAndReadTasks("""
+        <tasks>
+            <task id="t1">
+                <attachment id="a1" type="mail" location="mid:1@example.com"
+                    subject="Quote" fromName="Alice"
+                    fromAddress="alice@example.com"
+                    sentDateTime="2026-09-29 14:05:00"/>
+            </task>
+        </tasks>""")[0].attachments()[0]
+        self.assertEqual(
+            (
+                "mid:1@example.com",
+                "Quote",
+                "Alice",
+                "alice@example.com",
+                date.DateTime(2026, 9, 29, 14, 5, 0),
+            ),
+            (
+                mail.location(),
+                mail.subject(),
+                mail.from_name(),
+                mail.from_address(),
+                mail.sent_datetime(),
+            ),
+        )
+
+    def test_a_mail_whose_file_is_gone_still_loads(self):
+        # Before tskversion 38, a dropped mail's location was a
+        # temporary file, deleted at exit
+        mail = self.writeAndReadTasks("""
+        <tasks>
+            <task id="t1">
+                <attachment id="a1" type="mail" location="/gone/1.eml"
+                    subject="Quote">
+                    <description>Mail text</description>
+                    <note id="n1" subject="Call back"/>
+                </attachment>
+            </task>
+        </tasks>""")[0].attachments()[0]
+        self.assertEqual(
+            ("/gone/1.eml", "Quote", "Mail text", ["Call back"]),
+            (
+                mail.location(),
+                mail.subject(),
+                mail.description(),
+                [each.subject() for each in mail.notes()],
+            ),
+        )
+        self.assertEqual(
+            ("", "", date.DateTime()),
+            (mail.from_name(), mail.from_address(), mail.sent_datetime()),
         )

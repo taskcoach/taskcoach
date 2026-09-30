@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from taskcoachlib import gui, config, persistence, operating_system
-from taskcoachlib.domain import attachment
+from taskcoachlib.domain import attachment, date
 
 
 class DummyEvent(object):
@@ -85,3 +85,58 @@ class AttachmentEditorTest(test.wxTestCase):
         self.assertEqual(
             1, len(self.attachment.notes())
         )  # pylint: disable=E1101
+
+
+class MailAttachmentEditorTest(test.wxTestCase):
+    """A mail's fields show the mail as it is: only the description
+    can change (docs/ATTACHMENTS.md)."""
+
+    def setUp(self):
+        super().setUp()
+        self.settings = config.Settings(load=False)
+        self.taskFile = persistence.TaskFile()
+        self.mail = attachment.MailAttachment(
+            "mid:1@example.com",
+            subject="Quote",
+            from_name="Alice",
+            from_address="alice@example.com",
+            sent_datetime=date.DateTime(2026, 9, 29, 14, 5, 0),
+        )
+        self.attachments = attachment.AttachmentList([self.mail])
+        self.editor = gui.dialog.editor.AttachmentEditor(
+            self.frame,
+            self.attachments,
+            self.settings,
+            self.attachments,
+            self.taskFile,
+        )
+        # pylint: disable=W0212
+        self.page = self.editor._interior[0]
+
+    def tearDown(self):
+        super().tearDown()
+        self.taskFile.close()
+        self.taskFile.stop()
+
+    def test_the_mail_fields_are_read_only(self):
+        entries = (
+            self.page._subjectEntry,
+            self.page._locationEntry,
+            self.page._from_name_entry,
+            self.page._from_address_entry,
+        )
+        self.assertEqual(
+            ["Quote", "mid:1@example.com", "Alice", "alice@example.com"],
+            [entry.GetValue() for entry in entries],
+        )
+        self.assertEqual(
+            [False] * 4, [entry.IsEditable() for entry in entries]
+        )
+
+    def test_the_description_can_change(self):
+        entries = self.page.entries()
+        for name in ("firstEntry", "subject"):
+            self.assertIs(self.page._descriptionEntry, entries[name])
+        self.page._descriptionEntry.SetValue("Call Alice back")
+        self.page._descriptionSync.onAttributeEdited(DummyEvent())
+        self.assertEqual("Call Alice back", self.mail.description())

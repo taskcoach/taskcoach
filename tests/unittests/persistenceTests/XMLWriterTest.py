@@ -607,6 +607,30 @@ class XMLWriterTest(test.TestCase):
             "<note" % att.creationDateTime()
         )
 
+    def test_mail_attachment_fields(self):
+        self.task.addAttachments(
+            attachment.MailAttachment(
+                "mid:1@example.com",
+                id="foo",
+                subject="Quote",
+                from_name="Alice",
+                from_address="alice@example.com",
+                sent_datetime=date.DateTime(2026, 9, 29, 14, 5, 0),
+            )
+        )
+        self.expect_in_xml_without_dates(
+            '<attachment fromAddress="alice@example.com" fromName="Alice" '
+            'id="foo" location="mid:1@example.com" '
+            'sentDateTime="2026-09-29 14:05:00" subject="Quote" type="mail"'
+        )
+
+    def test_empty_mail_fields_are_not_written(self):
+        self.task.addAttachments(
+            attachment.MailAttachment("mid:1@example.com", id="foo")
+        )
+        for name in ("fromName", "fromAddress", "sentDateTime"):
+            self.expect_not_in_xml(name)
+
     def testNoteWithOneAttachment(self):
         note_attachment = attachment.FileAttachment("whatever.txt", id="foo")
         self.note.addAttachments(note_attachment)

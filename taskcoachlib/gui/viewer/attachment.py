@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os, wx
-from taskcoachlib import command, widgets
+from taskcoachlib import render, widgets
 from taskcoachlib.domain import attachment
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, dialog
@@ -91,6 +91,12 @@ class AttachmentViewer(
                 result.append((None, lines))
         return result
 
+    @staticmethod
+    def render_sent_datetime(item, human_readable=True):
+        return render.dateTime(
+            item.sent_datetime(), human_readable=human_readable
+        )
+
     def _add_attachments(self, attachments, item, **item_dialog_kwargs):
         # Don't try to add attachments to attachments.
         super()._add_attachments(attachments, None, **item_dialog_kwargs)
@@ -150,6 +156,63 @@ class AttachmentViewer(
                 ),
                 width=self.getColumnWidth("subject"),
                 renderCallback=lambda item: item.subject(),
+                resizeCallback=self.onResizeColumn,
+            ),
+            widgets.Column(
+                "location",
+                _("Location"),
+                attachment.Attachment.locationChangedEventType(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self,
+                    value="location",
+                    menu_text=_("&Location"),
+                    help_text=_("Sort by location"),
+                ),
+                width=self.getColumnWidth("location"),
+                renderCallback=lambda item: item.location(),
+                resizeCallback=self.onResizeColumn,
+            ),
+            # A mail's fields (docs/ATTACHMENTS.md)
+            widgets.Column(
+                "fromName",
+                _("From"),
+                attachment.MailAttachment.mail_changed_event_type(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self,
+                    value="fromName",
+                    menu_text=_("&From"),
+                    help_text=_("Sort by sender"),
+                ),
+                width=self.getColumnWidth("fromName"),
+                renderCallback=lambda item: item.from_name(),
+                resizeCallback=self.onResizeColumn,
+            ),
+            widgets.Column(
+                "fromAddress",
+                _("From address"),
+                attachment.MailAttachment.mail_changed_event_type(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self,
+                    value="fromAddress",
+                    menu_text=_("From &address"),
+                    help_text=_("Sort by sender address"),
+                ),
+                width=self.getColumnWidth("fromAddress"),
+                renderCallback=lambda item: item.from_address(),
+                resizeCallback=self.onResizeColumn,
+            ),
+            widgets.Column(
+                "sentDateTime",
+                _("Sent"),
+                attachment.MailAttachment.mail_changed_event_type(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self,
+                    value="sentDateTime",
+                    menu_text=_("&Sent"),
+                    help_text=_("Sort by sent date"),
+                ),
+                width=self.getColumnWidth("sentDateTime"),
+                renderCallback=self.render_sent_datetime,
                 resizeCallback=self.onResizeColumn,
             ),
             widgets.Column(
@@ -238,6 +301,30 @@ class AttachmentViewer(
                 viewer=self, settings=self.settings
             ),
             uicommand.Separator(),
+            uicommand.ViewColumn(
+                menu_text=_("&Location"),
+                help_text=_("Show/hide location column"),
+                setting="location",
+                viewer=self,
+            ),
+            uicommand.ViewColumn(
+                menu_text=_("&From"),
+                help_text=_("Show/hide sender column"),
+                setting="fromName",
+                viewer=self,
+            ),
+            uicommand.ViewColumn(
+                menu_text=_("From &address"),
+                help_text=_("Show/hide sender address column"),
+                setting="fromAddress",
+                viewer=self,
+            ),
+            uicommand.ViewColumn(
+                menu_text=_("&Sent"),
+                help_text=_("Show/hide sent date column"),
+                setting="sentDateTime",
+                viewer=self,
+            ),
             uicommand.ViewColumn(
                 menu_text=_("&Description"),
                 help_text=_("Show/hide description column"),

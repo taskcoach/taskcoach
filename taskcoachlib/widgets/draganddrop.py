@@ -18,8 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx
-import urllib.request, urllib.parse, urllib.error
-from taskcoachlib import patterns
+from taskcoachlib import mailer, patterns
 from taskcoachlib.mailer import thunderbird, outlook
 from taskcoachlib.i18n import _
 
@@ -94,13 +93,11 @@ class DropTarget(wx.DropTarget):
         self.__thunderbirdMailDataObject = wx.CustomDataObject(
             "text/x-moz-message"
         )
-        self.__urilistDataObject = wx.CustomDataObject("text/uri-list")
         self.__outlookDataObject = wx.CustomDataObject("Object Descriptor")
         # Starting with Snow Leopard, mail.app supports the message: protocol
         self.__macMailObject = wx.CustomDataObject("public.url")
         for dataObject in (
             self.__thunderbirdMailDataObject,
-            self.__urilistDataObject,
             self.__macMailObject,
             self.__outlookDataObject,
             self.__urlDataObject,
@@ -127,29 +124,6 @@ class DropTarget(wx.DropTarget):
 
         if formatId == "text/x-moz-message":
             self.onThunderbirdDrop(x, y)
-        elif formatId == "text/uri-list" and formatType == wx.DF_FILENAME:
-            # GetData() returns memoryview in wxPython 4, convert to string
-            data = self.__urilistDataObject.GetData()
-            if isinstance(data, memoryview):
-                data = bytes(data).decode("utf-8", errors="replace")
-            elif isinstance(data, bytes):
-                data = data.decode("utf-8", errors="replace")
-            urls = data.strip().split("\n")
-            for url in urls:
-                url = url.strip()
-                if url.startswith("#"):
-                    continue
-                if self.__tmp_mail_file_url(url) and self.__onDropMailCallback:
-                    filename = urllib.parse.unquote(url[len("file://") :])
-                    self.__onDropMailCallback(x, y, filename)
-                elif url.startswith("file://") and self.__onDropFileCallback:
-                    # file:// URLs should be treated as files, not links
-                    filename = urllib.request.url2pathname(
-                        urllib.parse.unquote(url[7:])
-                    )
-                    self.__onDropFileCallback(x, y, [filename])
-                elif self.__onDropURLCallback:
-                    self.__onDropURLCallback(x, y, url)
         elif formatId == "Object Descriptor":
             self.onOutlookDrop(x, y)
         elif formatId == "public.url":
@@ -188,22 +162,18 @@ class DropTarget(wx.DropTarget):
         return formatType, formatId
 
     @staticmethod
-    def __tmp_mail_file_url(url):
-        """Return whether the url is a dropped mail message."""
-        return url.startswith("file:") and (
-            "/.cache/evolution/tmp/drag-n-drop" in url
-            or "/.claws-mail/tmp/" in url
+    def __is_dropped_mail(filename):
+        """Whether the file is a mail Evolution or Claws Mail dropped."""
+        return (
+            "/.cache/evolution/tmp/drag-n-drop" in filename
+            or "/.claws-mail/tmp/" in filename
         )
 
     def onThunderbirdDrop(self, x, y):
         if self.__onDropMailCallback:
-            data = self.__thunderbirdMailDataObject.GetData()
-            # We expect the data to be encoded with 'unicode_internal',
-            # but on Fedora it can also be 'utf-16', be prepared:
-            try:
-                data = data.decode("unicode_internal")
-            except UnicodeDecodeError:
-                data = data.decode("utf-16")
+            # The mail's URI in UTF-16, Mozilla's text encoding
+            data = bytes(self.__thunderbirdMailDataObject.GetData())
+            data = data.decode("utf-16").strip("\x00\r\n ")
 
             try:
                 email = thunderbird.getMail(data)
@@ -213,11 +183,6 @@ class DropTarget(wx.DropTarget):
                 wx.MessageBox(e.args[0], _("Error"), wx.OK | wx.ICON_ERROR)
             else:
                 self.__onDropMailCallback(x, y, email)
-
-    def onClawsDrop(self, x, y):
-        if self.__onDropMailCallback:
-            for filename in self.__fileDataObject.GetFilenames():
-                self.__onDropMailCallback(x, y, filename)
 
     def onOutlookDrop(self, x, y):
         if self.__onDropMailCallback:
@@ -232,8 +197,15 @@ class DropTarget(wx.DropTarget):
             self.__onDropURLCallback(x, y, url)
 
     def onFileDrop(self, x, y):
-        if self.__onDropFileCallback:
-            filenames = self.__fileDataObject.GetFilenames()
+        # On GTK a dropped uri-list (a file manager's, Evolution's) comes
+        # here, as file names; web links in it are refused by wx
+        filenames = []
+        for filename in self.__fileDataObject.GetFilenames():
+            if self.__is_dropped_mail(filename) and self.__onDropMailCallback:
+                self.__onDropMailCallback(x, y, mailer.read_mail(filename))
+            else:
+                filenames.append(filename)
+        if filenames and self.__onDropFileCallback:
             self.__onDropFileCallback(x, y, filenames)
 
 

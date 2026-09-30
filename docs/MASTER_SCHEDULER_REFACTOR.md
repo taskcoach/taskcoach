@@ -323,30 +323,14 @@ In the app:
   one walk of the file, `TaskFile.owner_chains()`, now gives every
   owned item's owners: `[Task] Garden -> [Attachment] plan -> [Note]
   Tools`.
-- P31. Dropping an e-mail onto a task is broken end to end. Found
-  2026-09-29; the same on master.
-  - From Thunderbird on Linux and Windows the drop fails: it decodes
-    with `unicode_internal`, gone from Python 3 (`draganddrop.py`).
-  - Reading the dropped mail fails for most mails
-    (`mailer.readMail()`): an encoded subject (accents) raises
-    `TypeError`, a body with a transfer encoding, as almost every mail
-    has, `AttributeError`. Only plain ASCII mails get through.
-  - The other mail programs leave a temporary `.eml` file: Task
-    Coach's own, deleted at exit (Thunderbird on macOS, Outlook), or
-    the mail program's (Evolution, Claws Mail).
-  - While that file exists no save works, File > Save or autosave:
-    the writer embeds it with `data.encode("base64")`, Python 2 only
-    (`AttributeError` on bytes).
-  - Once it is gone, opening the task file drops the attachment and
-    its notes without a word (`MailAttachment` reads the mail when
-    created, the reader skips it on `IOError`), and the next save
-    removes them from the file. The file keeps the mail's subject and
-    text as the attachment's subject and description.
-  - Help ("E-mail integration") says mails are copied next to the task
-    file as `.eml` files: true up to file version 22
-    (`<name>_attachments`); later versions embedded them, and since
-    #378 (February 2026) embedded data is not read.
-  - Writing only the location stops the failing saves, not the loss.
+- P31. ~~Dropping an e-mail onto a task was broken end to end~~:
+  fixed 2026-09-30, **ruled by designer**; the same on master. The
+  drop from Thunderbird failed (a Python 2 codec, bytes read as text),
+  reading most mails failed, no save worked while the dropped mail's
+  temporary copy existed (Python 2 embedding), and once it was gone
+  the attachment and its notes vanished on the next open. A dropped
+  mail now keeps its subject, sender, sent date and a `mid:` link,
+  not the mail ([ATTACHMENTS.md](ATTACHMENTS.md#e-mail-attachments)).
 - P32. A "save changes?" question that took no clicks, **reported by
   designer 2026-09-29** on the master release: switching from one file
   to another, perhaps right after a change that was not saved yet, a
@@ -359,6 +343,13 @@ In the app:
   before the current file closes (`IOController.open()`); autosave saves
   at the next idle moment; a due reminder opens its window as the file
   loads. Kept open until it is reproduced or reported again.
+- P33. ~~Dropping a file from a file manager, or a mail from
+  Evolution or Claws Mail, raised an AttributeError on Linux and
+  attached nothing~~: fixed 2026-09-30; the same on master. With
+  wxPython 4 on GTK a dropped uri-list reaches the file names object,
+  never the uri-list object the drop read. Every file drop now takes
+  one path, which hands those two programs' mail files to the mail
+  drop (`DropTarget.onFileDrop()`).
 
 ## Views on the Effective Styles
 

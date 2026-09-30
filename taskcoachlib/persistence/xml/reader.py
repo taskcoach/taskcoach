@@ -18,7 +18,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from .. import sessiontempfile  # pylint: disable=F0401
 from taskcoachlib import meta, patterns
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.domain import (
@@ -38,8 +37,6 @@ import ast
 import io
 import operator
 import os
-import re
-import stat
 import types
 import wx
 from lxml import etree as ET
@@ -664,14 +661,8 @@ class XMLReader(object):
                 )
                 description = self.__parse_description(node)
                 kwargs = dict(subject=description, description=description)
-            try:
-                # pylint: disable=W0142
-                attachments.append(
-                    attachment.AttachmentFactory(*args, **kwargs)
-                )
-            except IOError:
-                # Mail attachment, file doesn't exist. Ignore this.
-                pass
+            # pylint: disable=W0142
+            attachments.append(attachment.AttachmentFactory(*args, **kwargs))
         return attachments
 
     def __parse_effort_nodes(self, node):
@@ -709,13 +700,10 @@ class XMLReader(object):
 
     def __parse_attachments(self, node):
         """Parse the attachments from the node."""
-        attachments = []
-        for child_node in self.__children_to_load(node, "attachment"):
-            try:
-                attachments.append(self.__parse_attachment(child_node))
-            except IOError:
-                pass
-        return attachments
+        return [
+            self.__parse_attachment(child_node)
+            for child_node in self.__children_to_load(node, "attachment")
+        ]
 
     def __parse_attachment(self, node):
         """Parse the attachment from the node."""
@@ -757,6 +745,14 @@ class XMLReader(object):
                     prefix="FILE",
                 )
                 location = f"(embedded {ext} - data not migrated)"
+        if node.attrib["type"] == "mail":
+            kwargs.update(
+                from_name=self.__value(node, "fromName"),
+                from_address=self.__value(node, "fromAddress"),
+                sent_datetime=self.__value(
+                    node, "sentDateTime", date.parseDateTime
+                ),
+            )
 
         return self.__save_modification_datetime(
             attachment.AttachmentFactory(

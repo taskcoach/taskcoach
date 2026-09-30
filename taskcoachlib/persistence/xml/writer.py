@@ -22,8 +22,6 @@ from xml.etree import ElementTree as ET
 from taskcoachlib import meta
 from taskcoachlib.domain import category, date, note, task
 from .defaults import NOT_SET, UNKNOWN, is_default
-import os
-import sys
 
 
 def flatten(elem):
@@ -351,15 +349,11 @@ class XMLWriter(object):
     def attachment_node(self, parent_node, attachment):
         node = self.base_node(parent_node, attachment, "attachment")
         node.attrib["type"] = attachment.type_
-        data = attachment.data()
-        if data is None:
-            node.attrib["location"] = attachment.location()
-        else:
-            ET.SubElement(
-                node,
-                "data",
-                dict(extension=os.path.splitext(attachment.location())[-1]),
-            ).text = data.encode("base64")
+        node.attrib["location"] = attachment.location()
+        if attachment.type_ == "mail":
+            self.__attribute(node, "fromName", attachment.from_name())
+            self.__attribute(node, "fromAddress", attachment.from_address())
+            self.__attribute(node, "sentDateTime", attachment.sent_datetime())
         for eachNote in sortedById(attachment.notes()):
             self.note_node(node, eachNote)
         return node

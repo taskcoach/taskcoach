@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import urllib.parse
-from taskcoachlib import patterns, mailer
-from taskcoachlib.domain import base
+from taskcoachlib import patterns
+from taskcoachlib.domain import base, date
 from taskcoachlib.domain.base.attribute import Attribute
 from taskcoachlib.tools import openfile
 from taskcoachlib.domain.note.noteowner import NoteOwner
@@ -64,6 +64,12 @@ def getRelativePath(path, basePath=os.getcwd()):
     return os.path.join(*path1).replace("\\", "/")  # pylint: disable=W0142
 
 
+def _text_sort_key(field, sortCaseSensitive=False, **kwargs):
+    if sortCaseSensitive:
+        return field
+    return lambda item: field(item).lower()
+
+
 @total_ordering
 class Attachment(base.Object, NoteOwner):
     """Abstract base class for attachments.
@@ -84,9 +90,6 @@ class Attachment(base.Object, NoteOwner):
         self.__location = Attribute(location, self, self._on_location_changed)
         # Note: Effective appearance is computed by the master loop
 
-    def data(self):
-        return None
-
     def set_parent(self, parent):
         # FIXME: We shouldn't assume that pasted items are composite
         # in PasteCommand.
@@ -104,6 +107,53 @@ class Attachment(base.Object, NoteOwner):
     @classmethod
     def locationChangedEventType(class_):
         return "attachment.location"
+
+    @staticmethod
+    def locationSortFunction(**kwargs):
+        return _text_sort_key(lambda item: item.location(), **kwargs)
+
+    @classmethod
+    def locationSortEventTypes(cls):
+        return (cls.locationChangedEventType(),)
+
+    # A mail's own fields: other attachments have none
+
+    def from_name(self):
+        return ""
+
+    def from_address(self):
+        return ""
+
+    def sent_datetime(self):
+        return date.DateTime()
+
+    @classmethod
+    def mail_changed_event_type(cls):
+        return "%s.mail" % cls
+
+    @staticmethod
+    def fromNameSortFunction(**kwargs):
+        return _text_sort_key(lambda item: item.from_name(), **kwargs)
+
+    @classmethod
+    def fromNameSortEventTypes(cls):
+        return (cls.mail_changed_event_type(),)
+
+    @staticmethod
+    def fromAddressSortFunction(**kwargs):
+        return _text_sort_key(lambda item: item.from_address(), **kwargs)
+
+    @classmethod
+    def fromAddressSortEventTypes(cls):
+        return (cls.mail_changed_event_type(),)
+
+    @staticmethod
+    def sentDateTimeSortFunction(**kwargs):  # pylint: disable=W0613
+        return lambda item: item.sent_datetime()
+
+    @classmethod
+    def sentDateTimeSortEventTypes(cls):
+        return (cls.mail_changed_event_type(),)
 
     def open(self, workingDir=None):
         raise NotImplementedError
@@ -184,28 +234,77 @@ class URIAttachment(Attachment):
 
 
 class MailAttachment(Attachment):
+    """A mail kept in the user's mail program: its subject, sender and
+    sent date, and a mid: link to it by its Message-ID, not the mail
+    itself (docs/ATTACHMENTS.md)."""
+
     type_ = "mail"
 
-    def __init__(self, location, *args, **kwargs):
-        self._readMail = kwargs.pop("readMail", mailer.readMail)
-        subject, content = self._readMail(location)
-
-        kwargs.setdefault("subject", subject)
-        kwargs.setdefault("description", content)
-
+    def __init__(
+        self,
+        location,
+        *args,
+        from_name="",
+        from_address="",
+        sent_datetime=None,
+        **kwargs
+    ):
         super().__init__(location, *args, **kwargs)
+        self.__from_name = Attribute(from_name, self, self._on_mail_changed)
+        self.__from_address = Attribute(
+            from_address, self, self._on_mail_changed
+        )
+        self.__sent_datetime = Attribute(
+            date.DateTime() if sent_datetime is None else sent_datetime,
+            self,
+            self._on_mail_changed,
+        )
 
     def open(self, workingDir=None):
-        return mailer.openMail(self.location())
+        # The mail program registered for mid: links shows the mail
+        return openfile.openFile(self.location())
 
-    def read(self):
-        return self._readMail(self.location())
+    def from_name(self):
+        return self.__from_name.get()
 
-    def data(self):
-        try:
-            return open(self.location(), "rb").read()
-        except IOError:
-            return None
+    def from_address(self):
+        return self.__from_address.get()
+
+    def sent_datetime(self):
+        return self.__sent_datetime.get()
+
+    def _on_mail_changed(self, event):
+        event.addSource(self, type=self.mail_changed_event_type())
+
+    def __getstate__(self):
+        state = super().__getstate__()
+        state.update(self.__mail_state())
+        return state
+
+    @patterns.eventSource
+    def __setstate__(self, state, event=None):
+        super().__setstate__(state, event=event)
+        self.__from_name.set(state["from_name"], event=event)
+        self.__from_address.set(state["from_address"], event=event)
+        self.__sent_datetime.set(state["sent_datetime"], event=event)
+
+    def __getcopystate__(self):
+        state = super().__getcopystate__()
+        state.update(self.__mail_state())
+        return state
+
+    def __mail_state(self):
+        return dict(
+            from_name=self.from_name(),
+            from_address=self.from_address(),
+            sent_datetime=self.sent_datetime(),
+        )
+
+    @classmethod
+    def modificationEventTypes(cls):
+        return super().modificationEventTypes() + [
+            cls.mail_changed_event_type()
+        ]
 
 
 def AttachmentFactory(location, type_=None, *args, **kwargs):

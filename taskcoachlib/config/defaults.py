@@ -28,6 +28,20 @@ MAIN_TOOLBAR_ICON_SIZE_MEDIUM = 22
 MAIN_TOOLBAR_ICON_SIZE_LARGE = 32
 MAIN_TOOLBAR_ICON_SIZE_DEFAULT = MAIN_TOOLBAR_ICON_SIZE_MEDIUM
 
+# Every attachment column but the ID (docs/ATTACHMENTS.md)
+_ATTACHMENT_COLUMNS = str(
+    [
+        "location",
+        "fromName",
+        "fromAddress",
+        "sentDateTime",
+        "description",
+        "notes",
+        "creationDateTime",
+        "modificationDateTime",
+    ]
+)
+
 defaults = {
     "balloontips": {
         "customizabletoolbars": "True",
@@ -443,7 +457,7 @@ defaults = {
         "searchfilterincludesubitems": "False",
         "searchdescription": "False",
         "regularexpression": "False",
-        "columns": "[]",
+        "columns": _ATTACHMENT_COLUMNS,
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
@@ -458,7 +472,7 @@ defaults = {
         "searchfilterincludesubitems": "False",
         "searchdescription": "False",
         "regularexpression": "False",
-        "columns": "[]",
+        "columns": _ATTACHMENT_COLUMNS,
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
@@ -473,7 +487,7 @@ defaults = {
         "searchfilterincludesubitems": "False",
         "searchdescription": "False",
         "regularexpression": "False",
-        "columns": "[]",
+        "columns": _ATTACHMENT_COLUMNS,
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
@@ -488,7 +502,7 @@ defaults = {
         "searchfilterincludesubitems": "False",
         "searchdescription": "False",
         "regularexpression": "False",
-        "columns": "[]",
+        "columns": _ATTACHMENT_COLUMNS,
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",

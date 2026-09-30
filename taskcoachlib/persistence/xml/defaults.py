@@ -74,6 +74,10 @@ DEFAULTS = {
     # Efforts
     "stop": (None, "", "None"),  # None: still running
     "entryMode": ("standard", ""),
+    # Mail attachments
+    "fromName": ("",),
+    "fromAddress": ("",),
+    "sentDateTime": (NOT_SET, "", "None"),
 }
 
 

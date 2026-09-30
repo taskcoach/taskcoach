@@ -16,42 +16,59 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os, stat, codecs
-from taskcoachlib import persistence
+import datetime
+import os
+
+from taskcoachlib import mailer
+
+# Outlook's MAPI property for the mail's Message-ID
+_MESSAGE_ID = "http://schemas.microsoft.com/mapi/proptag/0x1035001F"
 
 
 if os.name == "nt":
+    from pywintypes import com_error  # pylint: disable=F0401
     from win32com.client import GetActiveObject  # pylint: disable=F0401
 
     def getCurrentSelection():
+        """The fields of the mails selected in Outlook, one attachment
+        each (mailer.mail_fields())."""
         selection = (
             GetActiveObject("Outlook.Application").ActiveExplorer().Selection
         )
-        filenames = []
-        for n in range(1, selection.Count + 1):
-            filename = persistence.get_temp_file(suffix=".eml")
-            saveItem(selection.Item(n), filename)
-            filenames.append(filename)
-        return filenames
+        return [
+            _fields(selection.Item(n)) for n in range(1, selection.Count + 1)
+        ]
 
-    def saveItem(item, filename):
-        body = item.Body
-        encoding = "iso-8859-1"
-        try:
-            codecs.encode(body, encoding)
-        except UnicodeEncodeError:
-            encoding = "utf-8"
-        mailFile = codecs.open(filename, "wb", encoding)
-        try:
-            mailFile.write(emailHeaders(item, encoding) + body)
-        finally:
-            mailFile.close()
-            os.chmod(filename, stat.S_IREAD)
+    def _fields(item):
+        # Not every selected item is a mail (a meeting request, a
+        # contact): what it lacks stays empty
+        sent = getattr(item, "SentOn", None)
+        return mailer.mail_fields(
+            subject=getattr(item, "Subject", ""),
+            from_name=getattr(item, "SenderName", ""),
+            from_address=_sender_address(item),
+            # Outlook's local time, whatever time zone pywin32 marks
+            sent=(
+                None
+                if sent is None
+                else datetime.datetime(*sent.timetuple()[:6])
+            ),
+            message_id=_message_id(item),
+        )
 
-    def emailHeaders(item, encoding, lineSep="\r\n"):
-        headers = []
-        headers.append("subject: %s" % item.Subject)
-        headers.append("X-Outlook-ID: %s" % item.EntryID)
-        headers.append("Content-Transfer-Encoding: %s" % encoding)
-        headers.append(lineSep)
-        return lineSep.join(headers)
+    def _sender_address(item):
+        if getattr(item, "SenderEmailType", "") == "EX":
+            # An Exchange sender's address is an X.500 path
+            try:
+                user = item.Sender.GetExchangeUser()
+            except com_error:
+                return ""
+            return user.PrimarySmtpAddress if user else ""
+        return getattr(item, "SenderEmailAddress", "")
+
+    def _message_id(item):
+        try:
+            return item.PropertyAccessor.GetProperty(_MESSAGE_ID)
+        except com_error:
+            # Not sent through the Internet: no Message-ID
+            return ""

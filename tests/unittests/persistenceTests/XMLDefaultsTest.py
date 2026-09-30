@@ -102,6 +102,12 @@ class DefaultsTest(test.TestCase):
         self.fields["attachment"] = appearance(
             attachment.FileAttachment("plan.txt")
         )
+        new_mail = attachment.MailAttachment("mid:1@example.com")
+        self.fields["mail"] = dict(
+            fromName=new_mail.from_name(),
+            fromAddress=new_mail.from_address(),
+            sentDateTime=new_mail.sent_datetime(),
+        )
         new_effort = effort.Effort(new_task)
         self.fields["effort"] = dict(
             stop=new_effort.getStop(),

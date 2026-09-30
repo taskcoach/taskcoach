@@ -63,10 +63,10 @@ as the default.
 
 | Kind | Fields | Default |
 |---|---|---|
-| A date not set | `plannedstartdate`, `duedate`, `actualstartdate`, `completiondate`, `reminder`, a recurrence's `stop_datetime` | the latest date ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#dates-not-set-is-the-latest-date)); `""` and `"None"` read as it |
+| A date not set | `plannedstartdate`, `duedate`, `actualstartdate`, `completiondate`, `reminder`, a recurrence's `stop_datetime`, a mail attachment's `sentDateTime` | the latest date ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#dates-not-set-is-the-latest-date)); `""` and `"None"` read as it |
 | None | `fgColor`, `bgColor`, `font`; `shouldMarkCompletedWhenAllChildrenCompleted` (the preference decides); an effort's `stop` (still running) | none |
 | Zero | `ordering`, `percentageComplete`, `priority`, `hourlyFee`, `fixedFee`, `stylePriority`, a recurrence's `count` and `max` (no maximum) | 0; `budget` and `plannedDuration` 0:00:00 |
-| Empty | `subject`, `description`, `icon`, a recurrence's `unit`; `expandedContexts`, `prerequisites`, `categories`, `weekdays` | empty |
+| Empty | `subject`, `description`, `icon`, a recurrence's `unit`, a mail attachment's `fromName` and `fromAddress` ([ATTACHMENTS.md](ATTACHMENTS.md#e-mail-attachments)); `expandedContexts`, `prerequisites`, `categories`, `weekdays` | empty |
 | False | `filtered`, `exclusiveSubcategories`, `sameWeekday`, `recurBasedOnCompletion` | False |
 | Named | `plannedDurationMode`, an effort's `entryMode`, a recurrence's `amount` | `implicit`, `standard` (`""` reads as either), 1 |
 | Another field | `reminderBeforeSnooze` (written while snoozed), `modificationDateTime` (written when known) | the reminder, the creation date |

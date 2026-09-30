@@ -458,17 +458,18 @@ _emailSection = sequence(
     h3(a_name(_("E-mail integration"), "email")),
     h4(a_name(_("About e-mail integration"), "aboutemail")),
     p(_("""%(name)s integrates with several mail user
-agents, through drag and drop. This has some limitations; e-mails are
-copied in a directory next to the %(name)s file, as .eml files and are
-later opened using whatever program is associated with this file type
-on your system. On the other hand, this allows you to open these
-e-mail attachments on a system which is different from the one you
-created it first.""") % meta.metaDict),
+agents, through drag and drop. A dropped e-mail becomes an e-mail
+attachment that holds its subject, sender and sent date, and a link to
+it by its Message-ID; the e-mail itself stays in your mail program.
+Opening the attachment opens the link with the mail program your
+system uses for mid: links, if any. From Apple Mail, a dropped e-mail
+becomes a link that Apple Mail opens.""") % meta.metaDict),
     p(
         _("""Mail user agents supported include:"""),
         ul(
             li(_("Mozilla Thunderbird")),
             li(_("Microsoft Outlook")),
+            li(_("Evolution")),
             li(_("Claws Mail")),
             li(_("Apple Mail")),
         ),
@@ -489,9 +490,8 @@ e-mails from Thunderbird. This does not apply to Outlook.""")),
     ),
     h4(a_name(_("Creating a task from an e-mail"), "emailcreate")),
     p(_("""Dropping an e-mail on an empty part of the task tree or task list
-creates a new task. Its subject is the subject of the mail, its
-description is its content. Additionally, the mail is automatically
-attached to the newly created task.""")),
+creates a new task. Its subject is the subject of the mail, and the
+mail is attached to it.""")),
 )
 
 

@@ -16,12 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import persistence, operating_system
+from taskcoachlib import mailer, persistence, operating_system
 from taskcoachlib.thirdparty.ntlm import IMAPNtlmAuthHandler
 from taskcoachlib.widgets.password import GetPassword
 from taskcoachlib.i18n import _
+import io
 import os
-import stat
 import re
 import imaplib
 import configparser
@@ -261,7 +261,7 @@ class ThunderbirdMailboxReader(object):
         """Buffer-like read() method"""
 
         if self.done:
-            return ""
+            return b""
 
         lines = []
 
@@ -272,29 +272,13 @@ class ThunderbirdMailboxReader(object):
 
         for line in self.fp:
             if not starting:
-                if line.startswith("From "):
+                if line.startswith(b"From "):
                     break
             lines.append(line)
             starting = False
 
         self.done = True
-        return "".join(lines)
-
-    def __iter__(self):
-        class Iterator(object):
-            def __init__(self, fp):
-                self.fp = fp
-
-            def __iter__(self):
-                return self
-
-            def __next__(self):
-                line = self.fp.readline()
-                if line.strip() == ".":
-                    raise StopIteration
-                return line
-
-        return Iterator(self.fp)
+        return b"".join(lines)
 
     def saveToFile(self, fp):
         fp.write(self.read())
@@ -470,13 +454,15 @@ class ThunderbirdLocalMailboxReader(object):
         # Now we can open the temporary mbox file...
         mb = mailbox.mbox(filename)
         # And the message we look for should be the first one:
-        return mb.get_string(0)
+        return mb.get_bytes(0)
 
     def saveToFile(self, fp):
         fp.write(self._getMail())
 
 
 def getMail(id_):
+    """The fields of the dragged mail's attachment
+    (mailer.mail_fields())."""
     if id_.startswith("mailbox-message://"):
         reader = ThunderbirdMailboxReader(id_)
     elif id_.startswith("imap"):
@@ -486,10 +472,6 @@ def getMail(id_):
     else:
         raise TypeError("Not supported: %s" % id_)
 
-    filename = persistence.get_temp_file(suffix=".eml")
-    reader.saveToFile(open(filename, "wb"))
-
-    if os.name == "nt":
-        os.chmod(filename, stat.S_IREAD)
-
-    return filename
+    mail = io.BytesIO()
+    reader.saveToFile(mail)
+    return mailer.parse_mail(mail.getvalue())

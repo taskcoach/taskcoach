@@ -84,6 +84,12 @@ ALLOWED = {
     ("tests/unittests/ConfigTest.py", "R2", "read_file"): (
         "configparser method"
     ),
+    ("taskcoachlib/persistence/xml/defaults.py", "R6", "fromName"): (
+        "task file attribute"
+    ),
+    ("taskcoachlib/persistence/xml/defaults.py", "R6", "fromAddress"): (
+        "task file attribute"
+    ),
 }
 
 MIXED = re.compile(r"^_{0,2}[a-z][a-z0-9]*[A-Z]\w*$")

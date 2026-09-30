@@ -757,10 +757,8 @@ class ChangingAttachmentsTestsMixin(object):
         self.assertTrue(self.taskFile.need_save())
 
     def addMailAttachment(self):
-        self.mailAttachment = attachment.MailAttachment(
-            self.filename,  # pylint: disable=W0201
-            readMail=lambda location: ("", ""),
-        )
+        # pylint: disable=W0201
+        self.mailAttachment = attachment.MailAttachment("mid:1@example.com")
         self.addAttachment(self.mailAttachment)
 
     def testNeedSave_AfterMailAttachmentLocationChanged(self):

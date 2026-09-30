@@ -511,9 +511,54 @@ class AttachmentSubjectPage(SubjectPage):
         self.add_subject_entry()
         self.add_type_entry()
         self.add_location_entry()
+        if len(self.items) == 1 and self.__has_mail():
+            self.add_mail_entries()
         self.add_description_entry()
         self.add_creation_date_time_entry()
         self.add_modification_date_time_entry()
+
+    def __has_mail(self):
+        # A mail's fields show the mail as it is: the user's are its
+        # description and the other pages (docs/ATTACHMENTS.md)
+        return any(item.type_ == "mail" for item in self.items)
+
+    def __add_read_only_entry(self, label, text):
+        # Selectable, to copy an address or a link
+        entry = wx.TextCtrl(self, value=text, style=wx.TE_READONLY)
+        self.addEntry(label, entry, flags=[None, wx.ALL | wx.EXPAND])
+        return entry
+
+    def add_subject_entry(self):
+        if self.__has_mail():
+            # pylint: disable=W0201
+            self._subjectEntry = self.__add_read_only_entry(
+                _("Subject"),
+                self.items[0].subject() if len(self.items) == 1 else "",
+            )
+        else:
+            super().add_subject_entry()
+
+    def add_mail_entries(self):
+        mail = self.items[0]
+        # pylint: disable=W0201
+        self._from_name_entry = self.__add_read_only_entry(
+            _("From"), mail.from_name()
+        )
+        self._from_address_entry = self.__add_read_only_entry(
+            _("From address"), mail.from_address()
+        )
+        self.addEntry(
+            _("Sent"),
+            render.dateTime(mail.sent_datetime(), human_readable=True),
+        )
+
+    def entries(self):
+        entries = super().entries()
+        if self.__has_mail():
+            # The only field the user can change takes the focus
+            return {name: self._descriptionEntry for name in entries}
+        entries["location"] = self._locationEntry
+        return entries
 
     def add_type_entry(self):
         """Add a read-only type field with icon."""
@@ -562,6 +607,13 @@ class AttachmentSubjectPage(SubjectPage):
         self.addEntry(_("Type"), panel, flags=[None, wx.ALIGN_CENTER_VERTICAL])
 
     def add_location_entry(self):
+        if self.__has_mail():
+            # pylint: disable=W0201
+            self._locationEntry = self.__add_read_only_entry(
+                _("Location"),
+                self.items[0].location() if len(self.items) == 1 else "",
+            )
+            return
         panel = wx.Panel(self)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
         # pylint: disable=W0201

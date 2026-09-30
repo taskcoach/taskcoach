@@ -792,12 +792,10 @@ class AttachmentDropTargetMixin(object):
         self._add_attachments(attachments, item, **kwargs)
 
     def onDropMail(self, item, mail, **kwargs):
-        """This method is called by the widget when a mail message is dropped
-        on an item."""
-        att = attachment.MailAttachment(mail)
-        subject, content = att.read()
+        """Called by the widget when a mail is dropped on an item, with
+        the mail's fields (mailer.mail_fields())."""
         self._add_attachments(
-            [att], item, subject=subject, description=content, **kwargs
+            [attachment.MailAttachment(**mail)], item, **kwargs
         )
 
 

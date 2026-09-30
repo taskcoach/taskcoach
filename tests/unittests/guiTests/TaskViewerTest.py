@@ -21,6 +21,7 @@ from taskcoachlib import (
     config,
     persistence,
     command,
+    mailer,
     patterns,
     render,
     operating_system,
@@ -96,8 +97,6 @@ class TaskViewerTestCase(test.wxTestCase):
         for name in os.listdir("."):
             if os.path.isdir(name) and name.endswith("_attachments"):
                 os.rmdir(name)  # pragma: no cover
-        if os.path.isfile("test.mail"):
-            os.remove("test.mail")
 
         if self.parentFrame:
             self.parentFrame.Close()
@@ -699,18 +698,18 @@ class CommonTestsMixin(object):
         )
 
     def testOnDropMail(self):
-        with open("test.mail", "wb") as mail:
-            mail.write(b"Subject: foo\r\n\r\nBody\r\n")
-        self.addCleanup(
-            lambda: os.path.exists("test.mail") and os.remove("test.mail")
-        )
         aTask = task.Task()
         self.taskList.append(aTask)
-        self.viewer.onDropMail(aTask, "test.mail")
+        self.viewer.onDropMail(
+            aTask,
+            mailer.parse_mail(
+                b"Subject: foo\r\nMessage-ID: <1@example.com>\r\n\r\nBody\r\n"
+            ),
+        )
         self.assertEqual(
-            ["test.mail"],
+            [("mid:1@example.com", "foo", "")],
             [
-                a.location()
+                (a.location(), a.subject(), a.description())
                 for a in self.viewer.presentation()[0].attachments()
             ],
         )
