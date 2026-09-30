@@ -3,7 +3,7 @@
 Plan to replace the full scan `MasterScheduler` runs every second.
 [SCHEDULERS.md](SCHEDULERS.md) describes the scheduler as it is.
 
-**Status:** items 1 to 33 done or decided, 2026-09-28
+**Status:** every item done or decided but 34, 42 and 43, 2026-09-30
 ([Cost After](#cost-after)); what is left: [To Do](#to-do).
 
 ## To Do
@@ -323,12 +323,26 @@ In the app:
   one walk of the file, `TaskFile.owner_chains()`, now gives every
   owned item's owners: `[Task] Garden -> [Attachment] plan -> [Note]
   Tools`.
-- P31. Saving fails when a task holds a mail attachment whose mail
-  file exists: the writer embeds the file as data with
-  `data.encode("base64")`, Python 2 only (`AttributeError` on bytes).
-  Found 2026-09-29; the same on master. The reader no longer reads
-  embedded data (it keeps a placeholder location), so the writer
-  should write the location as for other attachments.
+- P31. Dropping an e-mail onto a task is broken end to end. Found
+  2026-09-29; the same on master.
+  - From Thunderbird on Linux and Windows the drop fails: it decodes
+    with `unicode_internal`, gone from Python 3 (`draganddrop.py`).
+  - The other mail programs leave a temporary `.eml` file: Task
+    Coach's own, deleted at exit (Thunderbird on macOS, Outlook), or
+    the mail program's (Evolution, Claws Mail).
+  - While that file exists no save works, File > Save or autosave:
+    the writer embeds it with `data.encode("base64")`, Python 2 only
+    (`AttributeError` on bytes).
+  - Once it is gone, opening the task file drops the attachment and
+    its notes without a word (`MailAttachment` reads the mail when
+    created, the reader skips it on `IOError`), and the next save
+    removes them from the file. The file keeps the mail's subject and
+    text as the attachment's subject and description.
+  - Help ("E-mail integration") says mails are copied next to the task
+    file as `.eml` files: true up to file version 22
+    (`<name>_attachments`); later versions embedded them, and since
+    #378 (February 2026) embedded data is not read.
+  - Writing only the location stops the failing saves, not the loss.
 - P32. A "save changes?" question that took no clicks, **reported by
   designer 2026-09-29** on the master release: switching from one file
   to another, perhaps right after a change that was not saved yet, a
