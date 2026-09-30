@@ -1,5 +1,10 @@
 # Icon Plural/Singular Mapping
 
+**Deprecated, ruled by designer** (restated 2026-09-29): the transform
+and this document go
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do),
+to do 58).
+
 > See also: [TASK_STATUS.md](TASK_STATUS.md#pluralsingular-transformation) for how tasks apply this mapping.
 
 ## Overview

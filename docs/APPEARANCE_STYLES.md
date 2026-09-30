@@ -87,7 +87,7 @@ draw the effective styles through:
 | Method | Returns |
 |--------|---------|
 | `shown_fg_color()`, `shown_bg_color()`, `shown_font()` | The effective value, None for the system theme (the widget's own) |
-| `shown_icon_id()` | The effective icon with the plural/singular transform ([ICON_PLURALIZE.md](ICON_PLURALIZE.md)) |
+| `shown_icon_id()` | The effective icon with the plural/singular transform, deprecated and to be removed ([ICON_PLURALIZE.md](ICON_PLURALIZE.md)) |
 
 Efforts return their task's. The views refresh on the four effective
 events (`effective_style_event_types()`); each setter sends one event
@@ -302,4 +302,4 @@ an `"appearance"` page).
 - [TASK_STATUS.md](TASK_STATUS.md) - Task status system and status-based icon defaults
 - [SCHEDULERS.md](SCHEDULERS.md) - GlobalTimer architecture (drives the master loop)
 - [ICON_LIBRARY.md](ICON_LIBRARY.md) - Icon sources, structure, and adding new icons
-- [ICON_PLURALIZE.md](ICON_PLURALIZE.md) - Plural/singular icon mapping (may be removed)
+- [ICON_PLURALIZE.md](ICON_PLURALIZE.md) - Plural/singular icon mapping (deprecated, to be removed)

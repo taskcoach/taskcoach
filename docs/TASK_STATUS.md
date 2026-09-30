@@ -188,10 +188,12 @@ def derivedFgColorSource(self):
 - **computeEffective()** in `appearance.py` computes effective from derived + override
 - UI resolves: `color = resolve_color(actual if actual else default)`
 
-**Plural/singular icon logic (done 2026-09-28):** `shown_icon_id()` in
-`object.py` calls `plural_or_singular_icon()` with
-`native=self.effectiveIconSource() != "[Override]"`, so only a user
-override is kept singular.
+**Plural/singular icon logic:** deprecated, ruled by designer; to be
+removed (to do 58 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
+Until then `shown_icon_id()` in `object.py` calls
+`plural_or_singular_icon()` with
+`native=self.effectiveIconSource() != "[Override]"`.
 
 ---
 
@@ -555,7 +557,7 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | Note effectiveXxx(explain) | note.py | ✓ Done |
    | Attachment effectiveXxx(explain) | attachment.py | ✓ Done |
    | Tracking icon in derived/effective | appearance.py | ✓ Done (highest-priority derived, skips override) |
-   | Plural/singular icon transform | object.py | ✓ Done (kept, applied by `shown_icon_id()`) |
+   | Plural/singular icon transform | object.py | Deprecated, to be removed (to do 58) |
    | Selected icon variant (open/closed folder) | object.py | ✓ Removed |
    | Every view, widget, export and the tray | gui, widgets, persistence | ✓ Done (`shown_*()`, To Do 35) |
 
@@ -632,6 +634,8 @@ result is transformed based on whether the task has children.
 
 ### Plural/Singular Transformation
 
+> Deprecated, to be removed (to do 58 in
+> [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
 > Full mapping tables and all callers: [ICON_PLURALIZE.md](ICON_PLURALIZE.md)
 
 After determining the icon from the priority sequence above, `plural_or_singular_icon()` is applied.

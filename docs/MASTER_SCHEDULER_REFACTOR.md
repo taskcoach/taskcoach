@@ -139,6 +139,13 @@ go at the end. Details live in the sections and documents linked.
     2026-09-29**: the stopgap rebuild does not solve it and points to
     a structural problem; to design with 45
     ([Stale Entries](#stale-entries)).
+58. Plural icons are deprecated, **ruled by designer** (restated
+    2026-09-29; no earlier record found in the docs): remove the
+    plural/singular transform, so every view shows the effective icon
+    as is; a task with subtasks shows its status icon, a category or
+    note its own. To go: `plural_or_singular_icon()`, the mapping
+    tables, [ICON_PLURALIZE.md](ICON_PLURALIZE.md). To do 35 kept the
+    transform against this ruling.
 
 ## Deferred or Will Not Do
 
