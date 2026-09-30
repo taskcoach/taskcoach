@@ -294,7 +294,7 @@ In the app:
   only the task's side~~: fixed 2026-09-29; the same on master. The
   file stores the category's side, so the categories were lost on
   save; they were not undoable either. Both now go through one
-  command, both sides, like a single check.
+  command, like a single check.
 - P29. ~~Notes lost their categories on save~~: fixed 2026-09-29;
   the same on master. A pasted task's notes, a note pasted in the task
   editor and a note owned by an attachment kept them on their own side
@@ -309,6 +309,10 @@ In the app:
   takes its members with it (`leave_file()`, `enter_file()`): why the
   list had stayed stored after to do 17 (commit 8b9d012a7). The file
   format is unchanged. Cleanup: to do 59.
+- P30. The "Cannot Delete - Category In Use" dialog shows a note owned
+  by an attachment without its owner (`[Note] Tools`, not the task and
+  attachment): `_find_note_owner()` searches only the notes of tasks
+  and categories. Found 2026-09-29; the same on master. Display only.
 
 ## Views on the Effective Styles
 
