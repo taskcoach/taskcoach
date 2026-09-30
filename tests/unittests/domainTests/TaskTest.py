@@ -3380,7 +3380,7 @@ class TaskSuggestedDateTimeBaseSetupAndTests(object):
     def testSuggestedCompletionDateTime(self):
         for timeValue, expectedDateTime in list(self.times.items()):
             self.settings.set(
-                "view", "defaultcompletiondatetime", "preset_" + timeValue
+                "view", "defaultcompletiondatetime", "propose_" + timeValue
             )
             self.assertEqual(
                 expectedDateTime,

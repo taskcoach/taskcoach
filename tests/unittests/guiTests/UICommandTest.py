@@ -368,21 +368,6 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
             date.DateTime() == list(self.taskFile.tasks())[0].dueDateTime()
         )
 
-    def testNewTaskWithPresetCompletionDateTime(self):
-        self.settings.set(
-            "view",
-            "defaultcompletiondatetime",
-            "preset_tomorrow_endofworkingday",
-        )
-        taskNew = gui.uicommand.TaskNew(
-            taskList=self.taskFile.tasks(), settings=self.settings
-        )
-        taskNew.do_command(None, show=False)
-        self.assertFalse(
-            date.DateTime()
-            == list(self.taskFile.tasks())[0].completionDateTime()
-        )
-
     def testNewTaskWithPresetReminderDateTime(self):
         self.settings.set(
             "view",

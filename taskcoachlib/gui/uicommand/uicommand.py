@@ -1888,10 +1888,6 @@ class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
             kwargs["actualStartDateTime"] = (
                 task.Task.suggestedActualStartDateTime()
             )
-        if self.__shouldPresetCompletionDateTime():
-            kwargs["completionDateTime"] = (
-                task.Task.suggestedCompletionDateTime()
-            )
         if self.__shouldPresetReminderDateTime():
             kwargs["reminder"] = task.Task.suggestedReminderDateTime()
         newTaskCommand = command.NewTaskCommand(
@@ -1941,14 +1937,6 @@ class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
             "actualStartDateTime" not in self.taskKeywords
             and self.settings.get(
                 "view", "defaultactualstartdatetime"
-            ).startswith("preset")
-        )
-
-    def __shouldPresetCompletionDateTime(self):
-        return (
-            "completionDateTime" not in self.taskKeywords
-            and self.settings.get(
-                "view", "defaultcompletiondatetime"
             ).startswith("preset")
         )
 

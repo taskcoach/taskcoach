@@ -43,11 +43,11 @@ Default date/time values for new tasks, configured in Preferences.
    `editor.py` (propose) and ensure domain invariants are always enforced.
 
 2. ~~**Preset completion date bypasses `_on_completion_date_time_changed`.**~~
-   Not an issue (2026-09-29): Preferences has offered only Propose for
-   the completion date since release 1.3 (2011-07-26, "More options for
-   default task date and times"), so no new task is created completed.
-   Only a hand-edited settings file reaches the preset path, which
-   `TaskNew` checks for all five dates alike. See
+   Removed 2026-09-29: Preferences has offered only Propose for the
+   completion date since release 1.3 (2011-07-26, "More options for
+   default task date and times"), so the code no longer applies a
+   completion preset (**ruled by designer**: only what the interface
+   offers is supported). See
    [Constructor Bypass Problem](#constructor-bypass-problem).
 
 3. ~~**Fix propose mode for DateTimeComboCtrl**~~ — **Done.** `suggestedValue`
@@ -151,29 +151,14 @@ For most date fields this is harmless — the callbacks for planned start,
 due date, and actual start just send change events and mark dirty,
 which happen separately during task creation.
 
-But for **completion date** and **reminder**, the callbacks contain
-important business logic that is bypassed.
+For the **reminder**, the callback's event is bypassed (below).
 
 ### Completion Date Preset
 
-When `completionDateTime` is passed to the Task constructor:
-
-| Expected Side Effect | Actually Fires? | Why |
-|---------------------|----------------|-----|
-| Recurrence triggered (`self.recur()`) | No | Callback not fired |
-| Reminder cleared (`self.set_reminder(None)`) | No | Callback not fired |
-| Percentage set to 100 | Yes | Handled separately in `__init__` lines 87-94 |
-| Children completed | No | Callback not fired |
-| Effort tracking stopped | No | Callback not fired |
-| Parent completion cascade | No | Callback not fired |
-
-The task is born in an **inconsistent state**: marked completed (percentage
-100) but without any of the normal completion side effects.
-
-Note: Preferences allows only propose mode for the completion date, by
-design since release 1.3 (2011), so this path is not reached from the
-user interface.
-But nothing prevents setting `"preset_..."` manually in `TaskCoach.ini`.
+None: a completion date is only proposed. Were it preset through the
+constructor, a new task would be completed without the completion's
+side effects (recurrence, children, parent, tracking); since
+Preferences has never offered it, the code does not apply one.
 
 ### Reminder Preset
 

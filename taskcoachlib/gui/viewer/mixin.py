@@ -661,12 +661,6 @@ class AttachmentDropTargetMixin(object):
                 item_dialog_kwargs["actualStartDateTime"] = (
                     task.Task.suggestedActualStartDateTime()
                 )
-            if self.settings.get(
-                "view", "defaultcompletiondatetime"
-            ).startswith("preset"):
-                item_dialog_kwargs["completionDateTime"] = (
-                    task.Task.suggestedCompletionDateTime()
-                )
             if self.settings.get("view", "defaultreminderdatetime").startswith(
                 "preset"
             ):

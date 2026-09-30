@@ -282,10 +282,6 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
             kwargs["actualStartDateTime"] = (
                 task.Task.suggestedActualStartDateTime()
             )
-        if self.__should_preset_completion_date_time():
-            kwargs["completionDateTime"] = (
-                task.Task.suggestedCompletionDateTime()
-            )
         if self.__should_preset_reminder_date_time():
             kwargs["reminder"] = task.Task.suggestedReminderDateTime()
         # pylint: disable=W0142
@@ -306,11 +302,6 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
     def __should_preset_actual_start_date_time(self):
         return self.settings.get(
             "view", "defaultactualstartdatetime"
-        ).startswith("preset")
-
-    def __should_preset_completion_date_time(self):
-        return self.settings.get(
-            "view", "defaultcompletiondatetime"
         ).startswith("preset")
 
     def __should_preset_reminder_date_time(self):
