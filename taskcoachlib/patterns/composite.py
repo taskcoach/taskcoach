@@ -34,13 +34,6 @@ class Composite(object):
     def _children_restored(self, added, removed, event=None):
         pass  # An observable composite tells its observers
 
-    def __getstate__(self):
-        return dict(children=self.__children.get()[:], parent=self.parent())
-
-    def __setstate__(self, state):
-        self.__parent.set(state["parent"])
-        self.__children.get()[:] = state["children"]
-
     def __getcopystate__(self):
         """Return the information needed to create a copy as a dict."""
         try:
@@ -114,18 +107,6 @@ class Composite(object):
 
 
 class ObservableComposite(Composite):
-    @observer.eventSource
-    def __setstate__(self, state, event=None):  # pylint: disable=W0221
-        oldChildren = set(self.children())
-        super().__setstate__(state)
-        newChildren = set(self.children())
-        childrenRemoved = oldChildren - newChildren
-        # pylint: disable=W0142
-        if childrenRemoved:
-            self.removeChildEvent(event, *childrenRemoved)
-        childrenAdded = newChildren - oldChildren
-        if childrenAdded:
-            self.addChildEvent(event, *childrenAdded)
 
     @observer.eventSource
     def _children_restored(self, added, removed, event=None):

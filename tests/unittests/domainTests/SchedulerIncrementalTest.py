@@ -25,6 +25,7 @@ from taskcoachlib import config, patterns, persistence
 from taskcoachlib.domain import attachment, base, category, date, effort
 from taskcoachlib.domain import note, task
 from taskcoachlib.gui import scheduler
+from taskcoachlib.patterns.snapshot import Snapshot, Step
 
 COLOURS = [wx.Colour(200, 0, 0), wx.Colour(0, 150, 0), wx.Colour(0, 0, 200)]
 ICONS = ["nuvola_actions_edit", "nuvola_apps_korganizer", "nuvola_apps_clock"]
@@ -346,14 +347,14 @@ class IncrementalPassTest(test.wxTestCase):
         self.removed.append(deleted)
         return "delete %s" % deleted.subject()
 
-    def restore_state(self):
+    def undo(self):
         item = self.random.choice(self.live(task.Task, category.Category))
-        state = item.__getstate__()
+        before = Snapshot()
         item.setForegroundColor(self.random.choice(COLOURS))
         if isinstance(item, task.Task):
             item.set_due_date_time(self.now - date.ONE_HOUR)
-        item.__setstate__(state)
-        return "restore %s" % item.subject()
+        Step("change", before, Snapshot()).undo()
+        return "undo %s" % item.subject()
 
     def clock(self):
         self.now += self.random.choice(
@@ -386,7 +387,7 @@ class IncrementalPassTest(test.wxTestCase):
         owned,
         subnote,
         delete_or_undelete,
-        restore_state,
+        undo,
         clock,
         paste,
     )

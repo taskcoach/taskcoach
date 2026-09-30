@@ -109,26 +109,6 @@ class Category(
             class_.stylePriorityChangedEventType(),
         ]
 
-    def __getstate__(self):
-        state = super().__getstate__()
-        state.update(
-            dict(
-                filtered=self.__filtered,
-                stylePriority=self.stylePriority(),
-            ),
-            exclusiveSubcategories=self.hasExclusiveSubcategories(),
-        )
-        return state
-
-    @patterns.eventSource
-    def __setstate__(self, state, event=None):
-        super().__setstate__(state, event=event)
-        self.setFiltered(state["filtered"], event=event)
-        self.makeSubcategoriesExclusive(
-            state["exclusiveSubcategories"], event=event
-        )
-        self.setStylePriority(state.get("stylePriority", 0), event=event)
-
     def __getcopystate__(self):
         state = super().__getcopystate__()
         state.update(
@@ -173,14 +153,14 @@ class Category(
 
     def leave_file(self, event=None):
         """Deleted or cut: the members lose it, and it remembers them
-        to rejoin if it comes back (undo, paste)."""
+        to rejoin if it comes back (paste)."""
         self.__rejoining = list(self.__members)
         for each in self.__rejoining:
             each.removeCategory(self, event=event)
 
     def enter_file(self, event=None):
-        """Added (paste, undo of a delete): the members it remembers,
-        a copy's too, rejoin it."""
+        """Added (paste): the members it remembers, a copy's too,
+        rejoin it. Undo puts the members' categories back itself."""
         rejoining, self.__rejoining = self.__rejoining, []
         for each in rejoining:
             each.addCategory(self, event=event)

@@ -31,22 +31,12 @@ class EditAttachmentLocationCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newLocation = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldLocations = [item.location() for item in self.items]
 
     @patterns.eventSource
     def do_command(self, event=None):
         super().do_command()
         for item in self.items:
             item.setLocation(self.__newLocation)
-
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command()
-        for item, oldLocation in zip(self.items, self.__oldLocations):
-            item.setLocation(oldLocation)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class AddAttachmentCommand(base.BaseCommand):
@@ -71,25 +61,8 @@ class AddAttachmentCommand(base.BaseCommand):
                 *self.__attachments, **kwargs
             )  # pylint: disable=W0142
 
-    @patterns.eventSource
-    def removeAttachments(self, event=None):
-        kwargs = dict(event=event)
-        for owner in self.owners:
-            owner.removeAttachments(
-                *self.__attachments, **kwargs
-            )  # pylint: disable=W0142
-
     def do_command(self):
         super().do_command()
-        self.addAttachments()
-
-    def undo_command(self):
-        super().undo_command()
-        self.removeAttachments()
-
-    def redo_command(self):
-        super().redo_command()
-        base.Clipboard().spend_move(self.__attachments)
         self.addAttachments()
 
 
@@ -102,14 +75,6 @@ class RemoveAttachmentCommand(base.BaseCommand):
         super().__init__(*args, **kwargs)
 
     @patterns.eventSource
-    def addAttachments(self, event=None):
-        kwargs = dict(event=event)
-        for item in self.items:
-            item.addAttachments(
-                *self._attachments, **kwargs
-            )  # pylint: disable=W0142
-
-    @patterns.eventSource
     def removeAttachments(self, event=None):
         kwargs = dict(event=event)
         for item in self.items:
@@ -119,14 +84,6 @@ class RemoveAttachmentCommand(base.BaseCommand):
 
     def do_command(self):
         super().do_command()
-        self.removeAttachments()
-
-    def undo_command(self):
-        super().undo_command()
-        self.addAttachments()
-
-    def redo_command(self):
-        super().redo_command()
         self.removeAttachments()
 
 

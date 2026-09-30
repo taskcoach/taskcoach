@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import urllib.parse
-from taskcoachlib import patterns
 from taskcoachlib.domain import base, date
 from taskcoachlib.domain.base.attribute import Attribute
 from taskcoachlib.tools import openfile
@@ -170,22 +169,6 @@ class Attachment(base.Object, NoteOwner):
         except AttributeError:
             return False
 
-    def __getstate__(self):
-        try:
-            state = super().__getstate__()
-        except AttributeError:
-            state = dict()
-        state.update(dict(location=self.location()))
-        return state
-
-    @patterns.eventSource
-    def __setstate__(self, state, event=None):
-        try:
-            super().__setstate__(state, event=event)
-        except AttributeError:
-            pass
-        self.setLocation(state["location"], event=event)
-
     def __getcopystate__(self):
         # Don't include id and creationDateTime - copies should get new ones
         state = super().__getcopystate__()
@@ -275,18 +258,6 @@ class MailAttachment(Attachment):
 
     def _on_mail_changed(self, event):
         event.addSource(self, type=self.mail_changed_event_type())
-
-    def __getstate__(self):
-        state = super().__getstate__()
-        state.update(self.__mail_state())
-        return state
-
-    @patterns.eventSource
-    def __setstate__(self, state, event=None):
-        super().__setstate__(state, event=event)
-        self.__from_name.set(state["from_name"], event=event)
-        self.__from_address.set(state["from_address"], event=event)
-        self.__sent_datetime.set(state["sent_datetime"], event=event)
 
     def __getcopystate__(self):
         state = super().__getcopystate__()

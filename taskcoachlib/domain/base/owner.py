@@ -17,9 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.domain.date import Timestamp
 from taskcoachlib.patterns.field import ListField
-from .object import fresh_state
 
 
 def DomainObjectOwnerMetaclass(name, bases, ns):
@@ -28,7 +26,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
     string. For each type, the following methods will be added to the
     class (here assuming a type of 'Foo'):
 
-      - __init__, __getstate__, __setstate__, __getcopystate__, __setcopystate__
+      - __init__, __getcopystate__, __setcopystate__
       - addFoo, removeFoo, addFoos, removeFoos
       - setFoos, foos
       - foosChangedEventType
@@ -67,9 +65,8 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         # Each owned object's own link, as a subtask's parent: changing
         # it sets the object's date (docs/ATTRIBUTE_PATTERN.md,
         # Modification Date)
-        now = Timestamp.now()
         for owned_object in owned_objects:
-            owned_object.set_modification_datetime(now, event=event)
+            owned_object.modified_now(event=event)
 
     def changed_event_type(class_):
         return "%s.%ss" % (class_, klass.__ownedType__.lower())
@@ -222,25 +219,6 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         removed_event(instance, event, *owned_objects)
 
     setattr(klass, "remove%ss" % klass.__ownedType__, remove_objects)
-
-    def getstate(instance):
-        state = fresh_state(super(klass, instance), instance)
-        state[klass.__ownedType__.lower() + "s"] = owned_list(instance)[:]
-        return state
-
-    klass.__getstate__ = getstate
-
-    @patterns.eventSource
-    def setstate(instance, state, event=None):
-        try:
-            super(klass, instance).__setstate__(state, event=event)
-        except AttributeError:
-            pass
-        set_objects(
-            instance, state[klass.__ownedType__.lower() + "s"], event=event
-        )
-
-    klass.__setstate__ = setstate
 
     def getcopystate(instance):
         try:

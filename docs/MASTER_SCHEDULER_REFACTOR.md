@@ -77,9 +77,9 @@ go at the end. Details live in the sections and documents linked.
     [PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)
 32. ~~The unused file GUID: removed.~~
 33. ~~Version: 2.0.3.0; file version 38 (to do 60).~~
-34. The undo log as object versions keyed by the modification date:
-    step 1 done, steps 2 to 5 open
-    ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
+34. ~~One undo log: done, snapshots of the stored data compared
+    before and after each user action; the per-command undo code
+    removed.~~ [UNDO_REDO.md](UNDO_REDO.md#architecture-snapshot-and-diff)
 35. ~~The views on the effective styles, the legacy styles removed~~
     ([Views on the Effective Styles](#views-on-the-effective-styles)).
 36. ~~Pages drawn over the editor's tabs~~
@@ -992,8 +992,8 @@ Checked 2026-09-28, across the repository:
 
 - Every task, category, note, attachment and effort gets an ID when
   created (`base.new_id()`, a random UUID), keeps it for life and saves
-  it. Only reading a file and undo (each object's own state) set an
-  existing ID.
+  it. Only reading a file sets an existing ID; undo puts back the
+  same objects.
 - Copies get new IDs (`__getcopystate__()` leaves the ID and the
   creation date out): copy and paste, paste as subitem, the subtasks,
   notes, attachments and efforts copied with them, a task saved as a

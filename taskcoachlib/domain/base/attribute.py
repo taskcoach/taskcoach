@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.domain.date import Timestamp
 from taskcoachlib.patterns.field import Field
 from weakref import WeakSet
 import weakref
@@ -68,7 +67,7 @@ class Attribute(Field):
     def __change(self, owner, value, dates, event=None):
         self.__value = value
         if dates:
-            owner.set_modification_datetime(Timestamp.now(), event=event)
+            owner.modified_now(event=event)
         self.__set_event(owner, event)
         return True
 
@@ -173,7 +172,7 @@ class SetAttribute(Field):
 
     def __set_date(self, owner, event):
         if self.__dates:
-            owner.set_modification_datetime(Timestamp.now(), event=event)
+            owner.modified_now(event=event)
 
     def __nullEvent(self, *args, **kwargs):
         pass

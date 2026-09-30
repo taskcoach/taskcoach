@@ -26,13 +26,10 @@ class NewEffortCommand(base.BaseCommand):
     singular_name = _('New effort of "%s"')
 
     def __init__(self, *args, **kwargs):
-        self.__tasks = []
         super().__init__(*args, **kwargs)
-        self.__tasks = self.items
         self.items = self.efforts = [
             effort.Effort(task) for task in self.items
         ]
-        self.__oldActualStartDateTimes = {}
 
     def name_subject(self, effort):  # pylint: disable=W0621
         return effort.task().subject()
@@ -40,29 +37,7 @@ class NewEffortCommand(base.BaseCommand):
     def do_command(self):
         super().do_command()
         for effort in self.efforts:  # pylint: disable=W0621
-            task = effort.task()
-            if (
-                task not in self.__oldActualStartDateTimes
-                and effort.getStart() < task.actualStartDateTime()
-            ):
-                self.__oldActualStartDateTimes[task] = (
-                    task.actualStartDateTime()
-                )
-                task.set_actual_start_date_time(effort.getStart())
-            task.addEffort(effort)
-
-    def undo_command(self):
-        super().undo_command()
-        for effort in self.efforts:  # pylint: disable=W0621
-            task = effort.task()
-            task.removeEffort(effort)
-            if task in self.__oldActualStartDateTimes:
-                task.set_actual_start_date_time(
-                    self.__oldActualStartDateTimes[task]
-                )
-                del self.__oldActualStartDateTimes[task]
-
-    redo_command = do_command
+            effort.task().addEffort(effort)
 
 
 class AddEffortCommand(base.BaseCommand):
@@ -79,11 +54,8 @@ class AddEffortCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__efforts = kwargs.pop("efforts", [])
         self.__tasks = []
-        self.__old_task_refs = []
         super().__init__(*args, **kwargs)
         self.__tasks = self.items
-        # Store original task references for undo support
-        self.__old_task_refs = [eff.task() for eff in self.__efforts]
         self.items = self.__efforts
 
     def name_subject(self, anEffort):
@@ -98,21 +70,6 @@ class AddEffortCommand(base.BaseCommand):
             eff.set_task(target_task)
             target_task.addEffort(eff)
 
-    def undo_command(self):
-        super().undo_command()
-        if not self.__tasks:
-            return
-        target_task = self.__tasks[0]
-        for eff, old_task in zip(self.__efforts, self.__old_task_refs):
-            target_task.removeEffort(eff)
-            eff.set_task(old_task)
-            if old_task:
-                old_task.addEffort(eff)
-
-    def redo_command(self):
-        base.Clipboard().spend_move(self.__efforts)
-        self.do_command()
-
 
 class DeleteEffortCommand(base.DeleteCommand):
     plural_name = _("Delete efforts")
@@ -125,22 +82,12 @@ class EditTaskCommand(base.BaseCommand):
 
     def __init__(self, *args, **kwargs):
         self.__task = kwargs.pop("newValue")
-        self.__oldTasks = []
         super().__init__(*args, **kwargs)
-        self.__oldTasks = [item.task() for item in self.items]
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.set_task(self.__task)
-
-    def undo_command(self):
-        super().undo_command()
-        for item, oldTask in zip(self.items, self.__oldTasks):
-            item.set_task(oldTask)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditEffortStartDateTimeCommand(base.BaseCommand):
@@ -150,8 +97,6 @@ class EditEffortStartDateTimeCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__datetime = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldDateTimes = [item.getStart() for item in self.items]
-        self.__oldActualStartDateTimes = {}
 
     def canDo(self):
         return super().canDo()
@@ -160,27 +105,8 @@ class EditEffortStartDateTimeCommand(base.BaseCommand):
         for item in self.items:
             item.setStart(self.__datetime)
             task = item.task()
-            if (
-                task not in self.__oldActualStartDateTimes
-                and self.__datetime < task.actualStartDateTime()
-            ):
-                self.__oldActualStartDateTimes[task] = (
-                    task.actualStartDateTime()
-                )
+            if self.__datetime < task.actualStartDateTime():
                 task.set_actual_start_date_time(self.__datetime)
-
-    def undo_command(self):
-        for item, oldDateTime in zip(self.items, self.__oldDateTimes):
-            item.setStart(oldDateTime)
-            task = item.task()
-            if task in self.__oldActualStartDateTimes:
-                task.set_actual_start_date_time(
-                    self.__oldActualStartDateTimes[task]
-                )
-                del self.__oldActualStartDateTimes[task]
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditEffortStopDateTimeCommand(base.BaseCommand):
@@ -190,7 +116,6 @@ class EditEffortStopDateTimeCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__datetime = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldDateTimes = [item.getStop() for item in self.items]
 
     def canDo(self):
         return super().canDo()
@@ -198,13 +123,6 @@ class EditEffortStopDateTimeCommand(base.BaseCommand):
     def do_command(self):
         for item in self.items:
             item.setStop(self.__datetime)
-
-    def undo_command(self):
-        for item, oldDateTime in zip(self.items, self.__oldDateTimes):
-            item.setStop(oldDateTime)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditEffortDurationCommand(base.BaseCommand):
@@ -214,20 +132,11 @@ class EditEffortDurationCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newDuration = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldDurations = [item.timeSpent() for item in self.items]
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.setDuration(self.__newDuration)
-
-    def undo_command(self):
-        super().undo_command()
-        for item, oldDuration in zip(self.items, self.__oldDurations):
-            item.setDuration(oldDuration)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditEffortEntryModeCommand(base.BaseCommand):
@@ -237,17 +146,8 @@ class EditEffortEntryModeCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newMode = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldModes = [item.entryMode() for item in self.items]
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.setEntryMode(self.__newMode)
-
-    def undo_command(self):
-        super().undo_command()
-        for item, oldMode in zip(self.items, self.__oldModes):
-            item.setEntryMode(oldMode)
-
-    def redo_command(self):
-        self.do_command()

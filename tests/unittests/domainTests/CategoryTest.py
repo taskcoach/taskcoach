@@ -32,56 +32,6 @@ class CategoryTest(test.TestCase):
             subject="child"
         )
 
-    # State:
-
-    def testGetState_Subject(self):
-        self.assertEqual("category", self.category.__getstate__()["subject"])
-
-    def testGetState_Description(self):
-        self.assertEqual("", self.category.__getstate__()["description"])
-
-    def testGetState_ForegroundColor(self):
-        self.assertEqual(None, self.category.__getstate__()["fgColor"])
-
-    def testGetState_BackgroundColor(self):
-        self.assertEqual(None, self.category.__getstate__()["bgColor"])
-
-    def testGetState_ExclusiveSubcategories(self):
-        self.assertEqual(
-            False, self.category.__getstate__()["exclusiveSubcategories"]
-        )
-
-    def testSetState_ExclusiveSubcategories(self):
-        state = self.category.__getstate__()
-        self.category.makeSubcategoriesExclusive()
-        self.category.__setstate__(state)
-        self.assertFalse(self.category.hasExclusiveSubcategories())
-
-    def testSetState_OneNotification(self):
-        newState = dict(
-            subject="New subject",
-            description="New description",
-            fgColor=wx.WHITE,
-            bgColor=wx.RED,
-            font=wx.SWISS_FONT,
-            parent=None,
-            children=[self.subCategory],
-            id=self.category.id(),
-            members=[self.categorizable],
-            notes=[],
-            attachments=[],
-            filtered=True,
-            exclusiveSubcategories=True,
-            icon="icon",
-            creationDateTime=date.Now(),
-            modificationDateTime=date.Now(),
-            ordering=42,
-        )
-        for eventType in self.category.modificationEventTypes():
-            self.registerObserver(eventType)
-        self.category.__setstate__(newState)
-        self.assertEqual(1, len(self.events))
-
     # Subject:
 
     def testCreateWithSubject(self):
@@ -258,12 +208,6 @@ class CategoryTest(test.TestCase):
             self.category.creationDateTime(),
             self.category.modificationDateTime(),
         )
-
-    def test_style_priority_is_restored_from_state(self):
-        state = self.category.__getstate__()
-        self.category.setStylePriority(3)
-        self.category.__setstate__(state)
-        self.assertEqual(0, self.category.stylePriority())
 
     # Copy:
 

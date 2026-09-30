@@ -37,20 +37,10 @@ def _bulk_modification(command):
         patterns.Event("command.justBulkModified", command).send()
 
 
-class SaveTaskStateMixin(base.SaveStateMixin, base.CompositeMixin):
-    pass
-
-
 class EffortCommand(base.BaseCommand):  # pylint: disable=W0223
     def stopTracking(self):
-        self.stoppedEfforts = []  # pylint: disable=W0201
         for taskToStop in self.tasksToStopTracking():
-            self.stoppedEfforts.extend(taskToStop.activeEfforts())
             taskToStop.stopTracking()
-
-    def startTracking(self):
-        for stoppedEffort in self.stoppedEfforts:
-            stoppedEffort.setStop(date.DateTime.max)
 
     def tasksToStopTracking(self):
         return self.list
@@ -59,29 +49,9 @@ class EffortCommand(base.BaseCommand):  # pylint: disable=W0223
         super().do_command()
         self.stopTracking()
 
-    def undo_command(self):
-        super().undo_command()
-        self.startTracking()
-
-    def redo_command(self):
-        super().redo_command()
-        self.stopTracking()
-
 
 class DragAndDropTaskCommand(base.OrderingDragAndDropCommand):
     plural_name = _("Drag and drop tasks")
-
-    def getItemsToSave(self):
-        toSave = super().getItemsToSave()
-        if self._isPrereqOrDepDrop():
-            toSave.extend(self.getSiblings())
-        return list(
-            set(toSave)
-        )  # Because parent may have added siblings as well
-
-    def _isPrereqOrDepDrop(self):
-        """Check if this is a prerequisite or dependency column drop."""
-        return self.dropColumnName in ("prerequisites", "dependencies")
 
     def _isPrereqDrop(self):
         """Check if dropping on prerequisites column."""
@@ -105,28 +75,6 @@ class DragAndDropTaskCommand(base.OrderingDragAndDropCommand):
             # Drop on other columns: make child (change parent)
             super().do_command()
 
-    def undo_command(self):
-        if self._isPrereqDrop():
-            self._itemToDropOn.remove_prerequisites(self.items)
-            self._itemToDropOn.removeTaskAsDependencyOf(self.items)
-        elif self._isDepDrop():
-            for item in self.items:
-                item.remove_prerequisites([self._itemToDropOn])
-                item.removeTaskAsDependencyOf([self._itemToDropOn])
-        else:
-            super().undo_command()
-
-    def redo_command(self):
-        if self._isPrereqDrop():
-            self._itemToDropOn.add_prerequisites(self.items)
-            self._itemToDropOn.addTaskAsDependencyOf(self.items)
-        elif self._isDepDrop():
-            for item in self.items:
-                item.add_prerequisites([self._itemToDropOn])
-                item.addTaskAsDependencyOf([self._itemToDropOn])
-        else:
-            super().redo_command()
-
 
 class DeleteTaskCommand(base.DeleteCommand, EffortCommand):
     plural_name = _("Delete tasks")
@@ -140,37 +88,16 @@ class DeleteTaskCommand(base.DeleteCommand, EffortCommand):
         self.stopTracking()
         self.__removePrerequisites()
 
-    def undo_command(self):
-        super().undo_command()
-        self.startTracking()
-        self.__restorePrerequisites()
-
-    def redo_command(self):
-        super().redo_command()
-        self.stopTracking()
-        self.__removePrerequisites()
-
     def __removePrerequisites(self):
-        self.__relationsToRestore = dict()  # pylint: disable=W0201
         for eachTask in self.items:
             prerequisites, dependencies = (
                 eachTask.prerequisites(),
                 eachTask.dependencies(),
             )
-            self.__relationsToRestore[eachTask] = prerequisites, dependencies
             eachTask.removeTaskAsDependencyOf(prerequisites)
             eachTask.removeTaskAsPrerequisiteOf(dependencies)
             eachTask.set_prerequisites([])
             eachTask.set_dependencies([])
-
-    def __restorePrerequisites(self):
-        for eachTask, (prerequisites, dependencies) in list(
-            self.__relationsToRestore.items()
-        ):
-            eachTask.addTaskAsDependencyOf(prerequisites)
-            eachTask.addTaskAsPrerequisiteOf(dependencies)
-            eachTask.set_prerequisites(prerequisites)
-            eachTask.set_dependencies(dependencies)
 
 
 class NewTaskCommand(base.NewItemCommand):
@@ -186,16 +113,6 @@ class NewTaskCommand(base.NewItemCommand):
         super().do_command(event=event)
         self.addDependenciesAndPrerequisites()
 
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command(event=event)
-        self.removeDependenciesAndPrerequisites()
-
-    @patterns.eventSource
-    def redo_command(self, event=None):
-        super().redo_command(event=event)
-        self.addDependenciesAndPrerequisites()
-
     def addDependenciesAndPrerequisites(self):
         for eachTask in self.items:
             for prerequisite in eachTask.prerequisites():
@@ -203,15 +120,8 @@ class NewTaskCommand(base.NewItemCommand):
             for dependency in eachTask.dependencies():
                 dependency.add_prerequisites([eachTask])
 
-    def removeDependenciesAndPrerequisites(self):
-        for eachTask in self.items:
-            for prerequisite in eachTask.prerequisites():
-                prerequisite.remove_dependencies([eachTask])
-            for dependency in eachTask.dependencies():
-                dependency.remove_prerequisites([eachTask])
 
-
-class NewSubTaskCommand(base.NewSubItemCommand, SaveTaskStateMixin):
+class NewSubTaskCommand(base.NewSubItemCommand):
     plural_name = _("New subtasks")
     singular_name = _('New subtask of "%s"')
     # pylint: disable=E1101
@@ -234,25 +144,9 @@ class NewSubTaskCommand(base.NewSubItemCommand, SaveTaskStateMixin):
             )
             for parent in self.items
         ]
-        self.saveStates(self.getTasksToSave())
-
-    def getTasksToSave(self):
-        # FIXME: can be simplified to: return self.getAncestors(self.items) ?
-        parents = [item.parent() for item in self.items if item.parent()]
-        return parents + self.getAncestors(parents)
-
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command(event=event)
-        self.undoStates(event=event)
-
-    @patterns.eventSource
-    def redo_command(self, event=None):
-        super().redo_command(event=event)
-        self.redoStates(event=event)
 
 
-class MarkCompletedCommand(base.SaveStateMixin, EffortCommand):
+class MarkCompletedCommand(EffortCommand):
     plural_name = _("Mark tasks completed")
     singular_name = _('Mark "%s" completed')
 
@@ -263,10 +157,6 @@ class MarkCompletedCommand(base.SaveStateMixin, EffortCommand):
             for item in self.items
             if item.completionDateTime() > date.Now()
         ]
-        itemsToSave = set(
-            [relative for item in self.items for relative in item.family()]
-        )
-        self.saveStates(itemsToSave)
 
     def do_command(self):
         with _bulk_modification(self):
@@ -276,21 +166,11 @@ class MarkCompletedCommand(base.SaveStateMixin, EffortCommand):
                     task.Task.suggestedCompletionDateTime()
                 )
 
-    def undo_command(self):
-        with _bulk_modification(self):
-            self.undoStates()
-            super().undo_command()
-
-    def redo_command(self):
-        with _bulk_modification(self):
-            self.redoStates()
-            super().redo_command()
-
     def tasksToStopTracking(self):
         return self.items
 
 
-class MarkActiveCommand(base.SaveStateMixin, base.BaseCommand):
+class MarkActiveCommand(base.BaseCommand):
     plural_name = _("Mark task active")
     singular_name = _('Mark "%s" active')
 
@@ -302,10 +182,6 @@ class MarkActiveCommand(base.SaveStateMixin, base.BaseCommand):
             if item.actualStartDateTime() > date.Now()
             or item.completionDateTime() != date.DateTime()
         ]
-        itemsToSave = set(
-            [relative for item in self.items for relative in item.family()]
-        )
-        self.saveStates(itemsToSave)
 
     def do_command(self):
         with _bulk_modification(self):
@@ -316,18 +192,8 @@ class MarkActiveCommand(base.SaveStateMixin, base.BaseCommand):
                 )
                 item.set_completion_date_time(date.DateTime())
 
-    def undo_command(self):
-        with _bulk_modification(self):
-            self.undoStates()
-            super().undo_command()
 
-    def redo_command(self):
-        with _bulk_modification(self):
-            self.redoStates()
-            super().redo_command()
-
-
-class MarkInactiveCommand(base.SaveStateMixin, base.BaseCommand):
+class MarkInactiveCommand(base.BaseCommand):
     plural_name = _("Mark task inactive")
     singular_name = _('Mark "%s" inactive')
 
@@ -339,10 +205,6 @@ class MarkInactiveCommand(base.SaveStateMixin, base.BaseCommand):
             if item.actualStartDateTime() != date.DateTime()
             or item.completionDateTime() != date.DateTime()
         ]
-        itemsToSave = set(
-            [relative for item in self.items for relative in item.family()]
-        )
-        self.saveStates(itemsToSave)
 
     def do_command(self):
         with _bulk_modification(self):
@@ -350,16 +212,6 @@ class MarkInactiveCommand(base.SaveStateMixin, base.BaseCommand):
             for item in self.items:
                 item.set_actual_start_date_time(date.DateTime())
                 item.set_completion_date_time(date.DateTime())
-
-    def undo_command(self):
-        with _bulk_modification(self):
-            self.undoStates()
-            super().undo_command()
-
-    def redo_command(self):
-        with _bulk_modification(self):
-            self.redoStates()
-            super().redo_command()
 
 
 class StartEffortCommand(EffortCommand):
@@ -370,42 +222,14 @@ class StartEffortCommand(EffortCommand):
         super().__init__(*args, **kwargs)
         start = date.DateTime.now()
         self.efforts = [effort.Effort(item, start) for item in self.items]
-        self.actualStartDateTimes = [
-            (
-                item.actualStartDateTime()
-                if start < item.actualStartDateTime()
-                else None
-            )
-            for item in self.items
-        ]
 
     def do_command(self):
         super().do_command()
         self.addEfforts()
 
-    def undo_command(self):
-        self.removeEfforts()
-        super().undo_command()
-
-    def redo_command(self):
-        super().redo_command()
-        self.addEfforts()
-
     def addEfforts(self):
-        for item, newEffort, currentActualStartDateTime in zip(
-            self.items, self.efforts, self.actualStartDateTimes
-        ):
-            item.addEffort(newEffort)
-            if currentActualStartDateTime:
-                item.set_actual_start_date_time(newEffort.getStart())
-
-    def removeEfforts(self):
-        for item, newEffort, previousActualStartDateTime in zip(
-            self.items, self.efforts, self.actualStartDateTimes
-        ):
-            item.removeEffort(newEffort)
-            if previousActualStartDateTime:
-                item.set_actual_start_date_time(previousActualStartDateTime)
+        for item, new_effort in zip(self.items, self.efforts):
+            item.addEffort(new_effort)
 
 
 class StopEffortCommand(EffortCommand):
@@ -433,7 +257,6 @@ class ExtremePriorityCommand(base.BaseCommand):  # pylint: disable=W0223
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.oldPriorities = [item.priority() for item in self.items]
         self.oldExtremePriority = self.getOldExtremePriority()
 
     def getOldExtremePriority(self):
@@ -444,20 +267,8 @@ class ExtremePriorityCommand(base.BaseCommand):  # pylint: disable=W0223
         for item in self.items:
             item.setPriority(newExtremePriority)
 
-    def restorePriorities(self):
-        for item, oldPriority in zip(self.items, self.oldPriorities):
-            item.setPriority(oldPriority)
-
     def do_command(self):
         super().do_command()
-        self.setNewExtremePriority()
-
-    def undo_command(self):
-        self.restorePriorities()
-        super().undo_command()
-
-    def redo_command(self):
-        super().redo_command()
         self.setNewExtremePriority()
 
 
@@ -492,14 +303,6 @@ class ChangePriorityCommand(base.BaseCommand):  # pylint: disable=W0223
         super().do_command()
         self.changePriorities(self.delta)
 
-    def undo_command(self):
-        self.changePriorities(-self.delta)
-        super().undo_command()
-
-    def redo_command(self):
-        super().redo_command()
-        self.changePriorities(self.delta)
-
 
 class IncPriorityCommand(ChangePriorityCommand):
     plural_name = _("Increase priority")
@@ -520,20 +323,11 @@ class EditPriorityCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newPriority = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldPriorities = [item.priority() for item in self.items]
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.setPriority(self.__newPriority)
-
-    def undo_command(self):
-        super().undo_command()
-        for item, oldPriority in zip(self.items, self.__oldPriorities):
-            item.setPriority(oldPriority)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class AddTaskNoteCommand(noteCommands.AddNoteCommand):
@@ -544,16 +338,6 @@ class EditDateTimeCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self._newDateTime = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldDateTimes = [self.getDateTime(item) for item in self.items]
-        familyMembers = set()
-        for item in self.items:
-            for familyMember in item.family():
-                if familyMember not in self.items:
-                    familyMembers.add(familyMember)
-        self.__oldFamilyMemberDateTimes = [
-            (familyMember, self.getDateTime(familyMember))
-            for familyMember in familyMembers
-        ]
 
     @staticmethod
     def getDateTime(item):
@@ -568,16 +352,6 @@ class EditDateTimeCommand(base.BaseCommand):
         for item in self.items:
             self.setDateTime(item, self._newDateTime)
 
-    def undo_command(self):
-        super().undo_command()
-        for item, oldDateTime in zip(self.items, self.__oldDateTimes):
-            self.setDateTime(item, oldDateTime)
-        for familyMember, oldDateTime in self.__oldFamilyMemberDateTimes:
-            self.setDateTime(familyMember, oldDateTime)
-
-    def redo_command(self):
-        self.do_command()
-
 
 class EditPeriodDateTimeCommand(EditDateTimeCommand):
     """Base for date/time commands that also may have to adjust the other
@@ -589,19 +363,13 @@ class EditPeriodDateTimeCommand(EditDateTimeCommand):
         super().__init__(*args, **kwargs)
 
     def do_command(self):
-        self.__adjustOtherDateTime(direction=1)
+        self.__adjust_other_date_time()
         super().do_command()
 
-    def undo_command(self):
-        super().undo_command()
-        self.__adjustOtherDateTime(direction=-1)
-
-    def __adjustOtherDateTime(self, direction):
+    def __adjust_other_date_time(self):
         for item in self.items:
             if self.__shouldAdjustItem(item):
-                delta = direction * (
-                    self._newDateTime - self.getDateTime(item)
-                )
+                delta = self._newDateTime - self.getDateTime(item)
                 newOtherDateTime = self.getOtherDateTime(item) + delta
                 self.setOtherDateTime(item, newOtherDateTime)
 
@@ -732,46 +500,25 @@ class EditRecurrenceCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newRecurrence = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldRecurrences = [item.recurrence() for item in self.items]
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.set_recurrence(self.__newRecurrence)
 
-    def undo_command(self):
-        super().undo_command()
-        for item, oldRecurrence in zip(self.items, self.__oldRecurrences):
-            item.set_recurrence(oldRecurrence)
 
-    def redo_command(self):
-        self.do_command()
-
-
-class EditPercentageCompleteCommand(base.SaveStateMixin, EffortCommand):
+class EditPercentageCompleteCommand(EffortCommand):
     plurar_name = "Change percentages complete"
     singular_name = _('Change percentage complete of "%s"')
 
     def __init__(self, *args, **kwargs):
         self.__newPercentage = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        itemsToSave = set(
-            [relative for item in self.items for relative in item.family()]
-        )
-        self.saveStates(itemsToSave)
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.setPercentageComplete(self.__newPercentage)
-
-    def undo_command(self):
-        self.undoStates()
-        super().undo_command()
-
-    def redo_command(self):
-        self.redoStates()
-        super().redo_command()
 
     def tasksToStopTracking(self):
         return self.items if self.__newPercentage == 100 else []
@@ -784,10 +531,6 @@ class EditShouldMarkCompletedCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newShouldMarkCompleted = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldShouldMarkCompleted = [
-            item.shouldMarkCompletedWhenAllChildrenCompleted()
-            for item in self.items
-        ]
 
     def do_command(self):
         super().do_command()
@@ -795,18 +538,6 @@ class EditShouldMarkCompletedCommand(base.BaseCommand):
             item.set_should_mark_completed_when_all_children_completed(
                 self.__newShouldMarkCompleted
             )
-
-    def undo_command(self):
-        super().undo_command()
-        for item, oldShouldMarkCompleted in zip(
-            self.items, self.__oldShouldMarkCompleted
-        ):
-            item.set_should_mark_completed_when_all_children_completed(
-                oldShouldMarkCompleted
-            )
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditBudgetCommand(base.BaseCommand):
@@ -816,20 +547,11 @@ class EditBudgetCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newBudget = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldBudgets = [item.budget() for item in self.items]
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.set_budget(self.__newBudget)
-
-    def undo_command(self):
-        super().undo_command()
-        for item, oldBudget in zip(self.items, self.__oldBudgets):
-            item.set_budget(oldBudget)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditHourlyFeeCommand(base.BaseCommand):
@@ -839,20 +561,11 @@ class EditHourlyFeeCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newHourlyFee = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldHourlyFees = [item.hourlyFee() for item in self.items]
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.set_hourly_fee(self.__newHourlyFee)
-
-    def undo_command(self):
-        super().undo_command()
-        for item, oldHourlyFee in zip(self.items, self.__oldHourlyFees):
-            item.set_hourly_fee(oldHourlyFee)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditFixedFeeCommand(base.BaseCommand):
@@ -862,20 +575,11 @@ class EditFixedFeeCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newFixedFee = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldFixedFees = [item.fixedFee() for item in self.items]
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.set_fixed_fee(self.__newFixedFee)
-
-    def undo_command(self):
-        super().undo_command()
-        for item, oldFixedFee in zip(self.items, self.__oldFixedFees):
-            item.set_fixed_fee(oldFixedFee)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditPlannedDurationCommand(base.BaseCommand):
@@ -885,24 +589,11 @@ class EditPlannedDurationCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newPlannedDuration = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldPlannedDurations = [
-            item.plannedDuration() for item in self.items
-        ]
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.setPlannedDuration(self.__newPlannedDuration)
-
-    def undo_command(self):
-        super().undo_command()
-        for item, old_planned_duration in zip(
-            self.items, self.__oldPlannedDurations
-        ):
-            item.setPlannedDuration(old_planned_duration)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditPlannedDurationModeCommand(base.BaseCommand):
@@ -912,20 +603,11 @@ class EditPlannedDurationModeCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newMode = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldModes = [item.plannedDurationMode() for item in self.items]
 
     def do_command(self):
         super().do_command()
         for item in self.items:
             item.setPlannedDurationMode(self.__newMode)
-
-    def undo_command(self):
-        super().undo_command()
-        for item, oldMode in zip(self.items, self.__oldModes):
-            item.setPlannedDurationMode(oldMode)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class TogglePrerequisiteCommand(base.BaseCommand):
@@ -946,14 +628,3 @@ class TogglePrerequisiteCommand(base.BaseCommand):
             item.addTaskAsDependencyOf(self.__checkedPrerequisites)
             item.remove_prerequisites(self.__uncheckedPrerequisites)
             item.removeTaskAsDependencyOf(self.__uncheckedPrerequisites)
-
-    def undo_command(self):
-        super().undo_command()
-        for item in self.items:
-            item.remove_prerequisites(self.__checkedPrerequisites)
-            item.removeTaskAsDependencyOf(self.__checkedPrerequisites)
-            item.add_prerequisites(self.__uncheckedPrerequisites)
-            item.addTaskAsDependencyOf(self.__uncheckedPrerequisites)
-
-    def redo_command(self):
-        self.do_command()

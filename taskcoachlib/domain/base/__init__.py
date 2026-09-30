@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from .object import (
     Object,
     CompositeObject,
-    ModificationDateRecorder,
     new_id,
 )
 from taskcoachlib.patterns.snapshot import restoring, is_restoring

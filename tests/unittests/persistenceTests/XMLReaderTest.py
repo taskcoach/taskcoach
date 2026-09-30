@@ -29,6 +29,7 @@ import sys
 import test
 from taskcoachlib import persistence, config, operating_system
 from taskcoachlib.domain import category, date, note, task
+from taskcoachlib.patterns.field import fields
 
 
 class XMLTemplateReaderTestCase(test.TestCase):
@@ -1419,7 +1420,9 @@ class XMLReaderVersion29Test(XMLReaderTestCase):
             '<tasks><task icon="icon" selectedIcon="open_icon"/></tasks>'
         )
         self.assertEqual("icon", tasks[0].icon_id())
-        self.assertNotIn("selectedIcon", tasks[0].__getstate__())
+        self.assertFalse(
+            [name for name in fields(tasks[0]) if "selected" in name.lower()]
+        )
 
     def testNoteIcon(self):
         notes = self.writeAndReadNotes('<tasks><note icon="icon"/></tasks>')

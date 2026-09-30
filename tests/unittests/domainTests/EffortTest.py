@@ -178,13 +178,6 @@ class EffortTest(test.TestCase, asserts.Mixin):
             now() - effortPeriod.getStart(), effortPeriod.timeSpent(now=now)
         )
 
-    def testState(self):
-        state = self.effort.__getstate__()
-        theTask = task.Task()
-        newEffort = effort.Effort(theTask)
-        newEffort.__setstate__(state)
-        self.assertEqualEfforts(newEffort, self.effort)
-
     def testCopy(self):
         copyEffort = self.effort.copy()
         self.assertEqualEfforts(copyEffort, self.effort)

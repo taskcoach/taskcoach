@@ -134,18 +134,6 @@ class MailAttachmentTest(test.TestCase):
     def test_copy(self):
         self.assertEqual(self.fields(self.mail), self.fields(self.mail.copy()))
 
-    def test_state(self):
-        other = attachment.MailAttachment("mid:2@example.com")
-        other.__setstate__(self.mail.__getstate__())
-        self.assertEqual(self.fields(self.mail), self.fields(other))
-
-    def test_state_change_notifies(self):
-        self.registerObserver(self.mail.mail_changed_event_type())
-        state = self.mail.__getstate__()
-        state["from_name"] = "Bob"
-        self.mail.__setstate__(state)
-        self.assertIn(self.mail, self.events[0].sources())
-
     def test_open_hands_the_link_to_the_system(self):
         with mock.patch.object(openfile, "openFile") as open_file:
             self.mail.open()

@@ -20,7 +20,7 @@ File > Merge: a union of two task files, item by item
 """
 
 from taskcoachlib.domain import date
-from taskcoachlib.domain.base import ModificationDateRecorder, restoring
+from taskcoachlib.domain.base import restoring
 
 
 def merge_into(task_file, other):
@@ -35,7 +35,7 @@ def merge_into(task_file, other):
     links.update(_links(other))
     # Each item is exactly its winning copy, dates included: the merge
     # edits nothing (docs/PERSISTENCE_XML.md, Merging)
-    with ModificationDateRecorder() as recorder, restoring():
+    with restoring():
         for mine, theirs in (
             (task_file.categories(), other.categories()),
             (task_file.tasks(), other.tasks()),
@@ -46,8 +46,6 @@ def merge_into(task_file, other):
         items = {item.id(): item for item in _walk(_roots(task_file))}
         _link_categories(items, links)
         _link_prerequisites(task_file.tasks(), items, links)
-    for item, date_time in recorder.dates_before.values():
-        item.set_modification_datetime(date_time)
 
 
 def _theirs_wins(mine, theirs, their_file_is_newer):

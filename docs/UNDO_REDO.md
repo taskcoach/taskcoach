@@ -2,22 +2,17 @@
 
 ## Table of Contents
 
-1. [TODO: One Undo Log](#todo-one-undo-log)
-2. [Current Implementation](#current-implementation)
-3. [Modification Dates](#modification-dates)
-4. [Command Pattern](#command-pattern)
-5. [Interaction with Attribute Pattern](#interaction-with-attribute-pattern)
-6. [References](#references)
+1. [Design Intent](#design-intent)
+2. [Architecture: Snapshot and Diff](#architecture-snapshot-and-diff)
+3. [Actions](#actions)
+4. [Persistence](#persistence)
+5. [Modification Dates](#modification-dates)
+6. [Commands](#commands)
+7. [Testing](#testing)
+8. [History](#history)
+9. [References](#references)
 
-## TODO: One Undo Log
-
-**Ruling, 2026-09-27:** the undo log is a simple sequence of changes,
-each with the value before it changed. For a field of an item with a
-modification date, the entry holds the field's value before and the
-item's modification date before. Every kind of change works the same
-way. One user action is one entry.
-
-### Design Intent
+## Design Intent
 
 **Ruled by designer 2026-09-30** (points 1 to 3; 4 proposed, view
 state ruled 2026-09-28): one universal undo, no code per command nor
@@ -37,144 +32,136 @@ per case, standard behaviour.
    automatic imports), view state (expanded rows, a category's filter)
    and the clipboard.
 
-### Architecture: Snapshot and Diff
+**The clipboard** (proposed 2026-09-30, built with the go-ahead): a cut
+pastes its items themselves while the file does not hold them, copies
+otherwise (`Clipboard.items_to_paste()`), so undoing a paste leaves the
+cut items to paste again.
+
+## Architecture: Snapshot and Diff
 
 The designer's approach (2026-09-28, 2026-09-30): the file's content
 in memory, compared before and after each action.
 
-- **Snapshot:** every saved value of every item in the file, read by
-  one generic loop over the items' fields, and which items the file
+- **Fields:** every stored value of an item is a field
+  (`patterns/field.py`): `Attribute` and `SetAttribute` for values and
+  sets ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md)), `ListField` for
+  an ordered list of items (a parent's subitems, an owner's notes and
+  attachments, a task's efforts), `LinkField` for a link (a subitem's
+  parent, an effort's task). Each copies its value (`snapshot()`) and
+  puts one back (`restore()`), telling the views without dating the
+  item. A computed (volatile) Attribute is not stored.
+- **Registries:** every item, and every list of the file's items (its
+  tasks, categories, notes), registers when created, held weakly
+  (`patterns/snapshot.py`).
+- **Snapshot:** every live item's fields, and which items each list
   holds. About 27 ms for a 2,000-task file, a comparison 2 ms
   (measured 2026-09-30).
-- **Step:** a snapshot when the action starts and one when it ends;
-  the difference is the step: the items changed, with their values
-  before and after, and the items added to or removed from the file.
-- **Undo** writes the values before back into the same objects, as
-  loading a file does: no edit rule runs (their effects are in the
-  step), the views are told. **Redo** writes the values after.
-- **Nothing is recorded while undoing or redoing:** a view reacting to
-  it starts no action.
+- **Step:** the difference between the snapshots before and after an
+  action: each field changed, with its values before and after, and
+  the items added to or removed from each list. Items the action
+  created are left out: undo takes them out of the lists.
+- **Undo** writes the values before back into the same objects,
+  inside `restoring()`: no edit rule runs (completion, recurrence,
+  percentage, the actual start, a parent's completion, the exclusive
+  subcategories' filter; their effects are in the step), no command
+  does anything, no item is dated, and the views are told in one
+  batch. **Redo** writes the values after.
 
-What the model needs: every saved value is a field of the attribute
-pattern ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md)), so the snapshot
-reads and writes them all the same way. Missing on 2026-09-30:
+## Actions
 
-- a task's reminder before snooze, a plain value;
-- the links and lists: a subitem's parent and the parent's subitems,
-  an owner's notes and attachments, a task's efforts and an effort's
-  task, a task's dependencies;
-- one switch that turns the edit rules off while values are put back
-  (completion, recurrence, percentage, parent completion), used by
-  merging too (instead of `Task.merging()`).
+`CommandHistory().action(label)` (`patterns/command.py`) makes a user
+action one step named label; `Command.do()` opens one. What is not a
+command opens one itself: snoozing (`ReminderController`), stopping
+tracking from the tray, File > Merge, the CSV and Todo.txt imports.
 
-Findings on today's copy code (`__getstate__`, `__setstate__`),
-checked 2026-09-30, which the snapshot replaces: it restores through
-the edit setters, so the rules run again (redo of completing a parent
-moved its recurring subtask's due date 2 days); it sets the
-modification date to now; it misses the reminder before snooze; it
-shares live lists with the item.
+- **Nested actions join** the outer one.
+- **One gesture is one step:** the step stays open until the
+  application is next idle, when the events the action posted, and
+  theirs, have run: what they change joins it, as undo managers group
+  changes by event (Cocoa's `groupsByEvent`). An
+  editor's follow-up adjustment (an effort's stop following its start,
+  [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md)) undoes with
+  the edit that caused it. Without an event loop (tests, startup) the
+  step closes at once; every read of the log closes it first.
+- **A failed action is rolled back**, and its error raised again.
+- **An action that changes nothing is no step** (a copy).
 
-### Path
-
-1. The model: the fields above, and the edit rules' switch.
-2. The snapshot log beside today's undo, in check mode: after each
-   undo, an item that differs from the snapshot is logged.
-3. Undo and redo from the log; the commands lose their undo code; the
-   actions outside commands (snooze, tray, merge, imports) become
-   steps.
-
-### Persistence
+## Persistence
 
 - The log is not saved. Undo and redo change stored data, so they
   mark the file unsaved like any change, and closing the file clears
   the log (`IOController`).
 - Undo or redo back to the saved state clears the unsaved mark (ruling,
-  2026-09-28): the file remembers the last command done when it was
-  saved or loaded, and moves that along over commands that change
-  nothing (a copy); a command enters the log once done, as undo and
-  redo notify after running. A change made outside a command (expanding a task,
-  a merge, snoozing) makes that state unreachable until the next save
-  (`TaskFile.on_command_history_changed()`).
-- Changes outside a user action (the scheduler, a Todo.txt import,
-  snoozing in the reminder window) are not undoable and record into
-  no entry. An undo that restores an item overwrites such a change
-  made to it after the action.
+  2026-09-28): the file remembers the last step when it was saved or
+  loaded (`TaskFile.mark_clean()`). A change made outside an action
+  (the scheduler, an automatic import) makes that state unreachable
+  until the next save (`TaskFile.mark_dirty()`).
+- A change outside an action is not undoable. An undo writes back only
+  what its step changed, over such a change to the same field.
 - Merging files keeps the newest copy of each item by modification
-  date ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)), so undo
-  must leave the dates exactly as before the change.
-
-## Current Implementation
-
-`CommandHistory` (`patterns/command.py`) keeps two lists, done and
-undone commands, and is cleared when the file closes. About 78 command
-classes (`command/`) each implement `do_command()`,
-`undo_command()` and `redo_command()`, in three ways:
-
-- **Field values kept by the command** (edit subject, description,
-  dates, priority, fees, style priority): undo sets the old values
-  back.
-- **Saved item copies** (`SaveStateMixin`, `__getstate__` and
-  `__setstate__`: mark completed, active or inactive, percentage
-  complete, new subtask, paste, drag and drop): undo restores the
-  whole copy, modification date included.
-- **Adding and removing items** (new, delete, cut): undo removes or
-  re-adds them.
-
-A change that spreads to another item is undone only if the command
-saved a copy of that item.
+  date ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)): undo leaves
+  the dates exactly as before the change.
 
 ## Modification Dates
 
-Undo puts back every modification date the change set, including
-those of items it changed in turn; redo puts back the dates from the
-change ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+The modification date is a field like the others, so a step holds the
+dates the action set, those of the items it changed in turn included
+(a parent completed by its last subtask): undo puts back the dates
+before, redo the dates after
+([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+Nothing is dated while values are put back (`Object.modified_now()`),
+merging included.
 
-Until the log above exists, this is the date part of it:
-`ModificationDateRecorder` (`domain/base/object.py`) records each
-item's date before its first change while a command runs;
-`BaseCommand.do()` keeps the dates before and after the change, and
-`undo()` and `redo()` set them back (`command/base.py`). Field values
-are still undone per command, as listed above.
+## Commands
 
-## Command Pattern
-
-Commands wrap **all** field changes, including derived value adjustments.
-For example, when the user changes a start date:
-
-1. `EditEffortStartDateTimeCommand` fires, writing the new start to the domain.
-2. The sync calc (`__sync_effort_state`) detects that duration must be
-   recalculated and fires `EditEffortDurationCommand` to adjust duration.
-
-Both commands land on the undo stack. Undoing the start change does **not**
-automatically undo the derived duration adjustment — each command is
-independent on the stack. Path step 4 above fixes this.
-
-## Interaction with Attribute Pattern
-
-The Attribute pattern (see [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md))
-manages value storage, change detection, and change notification. Commands
-call the domain setter (e.g., `effort.setDuration()`), which delegates to
-`Attribute.set()`. The Attribute fires its callback only on actual change,
-which sends Publisher events. AttributeSync in the editor subscribes to
-these notifications and updates the UI.
-
-The flow:
+A command only does (`do_command()`); the step is its undo and redo.
+The flow of an edit:
 
 ```
-User edit → AttributeSync → Command.do() → domain setter → Attribute.set()
-  → callback (on change) → Publisher event → AttributeSync.on_attribute_changed → UI update
+User edit → AttributeSync → Command.do() → action → domain setter
+  → Attribute.set() → callback → Publisher event → UI update
 ```
+
+Until 2026-09-30, about 78 command classes had their own undo and redo:
+values kept by the command, whole-item copies (`SaveStateMixin`,
+`__getstate__`, `__setstate__`), items added and removed. A change that
+spread to another item was undone only if the command kept a copy of
+it. All of it is removed.
+
+## Testing
+
+- `tests/unittests/domainTests/UndoTest.py`: for each kind of change,
+  the file written after undo is the file written before, dates
+  included; redo gives the file after; no field differs in memory.
+- `tests/unittests/patternsTests/CommandTest.py`: the log (steps,
+  joining, rollback, grouping by event).
+- The command tests check each command's undo and redo.
+
+## History
+
+- **2026-09-27, ruling:** the undo log is a sequence of changes, each
+  with the value before; one user action is one entry.
+- **2026-09-28, option C:** object versions keyed by the modification
+  date. The research (2026-09-30) found whole objects cannot be put
+  back through their edit setters: the rules ran again (redo of
+  completing a parent moved its recurring subtask's due date 2 days),
+  the date was set to now, the reminder before snooze was missed, live
+  lists were shared, and links stored on the other side did not come
+  back.
+- **2026-09-30:** the designer's snapshot and diff, at the grain of
+  the fields; built the same day.
 
 ## References
 
-- [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md) — Attribute storage, change
-  detection, and change notification pattern; modification date ruling
+- [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md): stored fields, change
+  notification, the modification date ruling
 - [PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging): merging by
   modification date
-- [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) — Duration sync calc
-  logic for tasks and efforts
+- [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md): the editors'
+  duration sync
+- `taskcoachlib/patterns/field.py`: `Field`, `ListField`, `LinkField`
+- `taskcoachlib/patterns/snapshot.py`: `Snapshot`, `Step`,
+  `restoring()`
 - `taskcoachlib/patterns/command.py`: `Command`, `CommandHistory`
-- `taskcoachlib/command/base.py` — Base command classes
-- `taskcoachlib/command/effortCommands.py` — Effort-specific commands
-- `taskcoachlib/command/taskCommands.py` — Task-specific commands
-- `taskcoachlib/gui/dialog/attributesync.py` — AttributeSync (Layer 2 wiring)
+- `taskcoachlib/command/`: the commands
+- `taskcoachlib/gui/dialog/attributesync.py`: AttributeSync

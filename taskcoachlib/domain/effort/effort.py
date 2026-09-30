@@ -66,7 +66,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         self._task.set(task)
         task.addEffort(self)
         # A link, not an Attribute: its change sets the date here
-        self.set_modification_datetime(date.Timestamp.now(), event=event)
+        self.modified_now(event=event)
         event.addSource(self, task, type=self.taskChangedEventType())
 
     # FIXME: should we create a common superclass for Effort and Task?
@@ -115,28 +115,6 @@ class Effort(baseeffort.BaseEffort, base.Object):
 
     def __hash__(self):
         return hash(self.id())
-
-    def __getstate__(self):
-        state = super().__getstate__()
-        state.update(
-            dict(
-                task=self.task(),
-                start=self._start.get(),
-                stop=self._stop.get(),
-                entryMode=self.__entryMode.get(),
-                duration=self.__duration.get(),
-            )
-        )
-        return state
-
-    @patterns.eventSource
-    def __setstate__(self, state, event=None):
-        super().__setstate__(state, event=event)
-        self.set_task(state["task"])
-        self.setStart(state["start"], event=event)
-        self.setStop(state["stop"], event=event)
-        self.setEntryMode(state.get("entryMode", "standard"), event=event)
-        self.setDuration(state.get("duration"), event=event)
 
     def __getcopystate__(self):
         state = super().__getcopystate__()

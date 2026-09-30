@@ -170,66 +170,6 @@ class Task(
         # (overdue, due soon, time to start) are computed by the master
         # loop (docs/MASTER_SCHEDULER_REFACTOR.md).
 
-    @patterns.eventSource
-    def __setstate__(self, state, event=None):
-        super().__setstate__(state, event=event)
-        self.set_planned_start_date_time(
-            state["plannedStartDateTime"], event=event
-        )
-        self.set_actual_start_date_time(
-            state["actualStartDateTime"], event=event
-        )
-        self.set_due_date_time(state["dueDateTime"], event=event)
-        self.set_completion_date_time(state["completionDateTime"], event=event)
-        self.setPercentageComplete(state["percentageComplete"], event=event)
-        self.set_recurrence(state["recurrence"], event=event)
-        self.set_reminder(state["reminder"], event=event)
-        self.setEfforts(state["efforts"])
-        self.set_budget(state["budget"], event=event)
-        self.setPlannedDuration(
-            state.get("plannedDuration", date.TimeDelta()), event=event
-        )
-        self.setPlannedDurationMode(
-            state.get("plannedDurationMode", "implicit"), event=event
-        )
-        self.setPriority(state["priority"], event=event)
-        self.set_hourly_fee(state["hourlyFee"], event=event)
-        self.set_fixed_fee(state["fixedFee"], event=event)
-        self.set_prerequisites(state["prerequisites"], event=event)
-        self.set_dependencies(state["dependencies"], event=event)
-        self.set_should_mark_completed_when_all_children_completed(
-            state["shouldMarkCompletedWhenAllChildrenCompleted"], event=event
-        )
-
-    def __getstate__(self):
-        state = super().__getstate__()
-        state.update(
-            dict(
-                dueDateTime=self.__dueDateTime.get(),
-                plannedStartDateTime=self.__plannedStartDateTime.get(),
-                actualStartDateTime=self.__actualStartDateTime.get(),
-                completionDateTime=self.__completionDateTime.get(),
-                percentageComplete=self.__percentageComplete.get(),
-                children=self.children(),
-                parent=self.parent(),
-                efforts=self._efforts[:],
-                budget=self.__budget.get(),
-                plannedDuration=self.__plannedDuration.get(),
-                plannedDurationMode=self.__plannedDurationMode.get(),
-                priority=self.__priority.get(),
-                hourlyFee=self.hourlyFee(),
-                fixedFee=self.__fixedFee.get(),
-                recurrence=self.__recurrence.get().copy(),
-                reminder=self.__reminder.get(),
-                prerequisites=self.__prerequisites.get(),
-                dependencies=self.__dependencies.get(),
-                shouldMarkCompletedWhenAllChildrenCompleted=(
-                    self.shouldMarkCompletedWhenAllChildrenCompleted()
-                ),
-            )
-        )
-        return state
-
     def __getcopystate__(self):
         state = super().__getcopystate__()
         state.update(

@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain.date import Timestamp
-from taskcoachlib.patterns.snapshot import register_item
+from taskcoachlib.patterns.snapshot import is_restoring, register_item
 from . import attribute
 from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE, shown
 import functools
@@ -33,45 +33,6 @@ def new_id():
     system's cryptographic source, no machine data
     (docs/PERSISTENCE_XML.md, IDs)."""
     return str(uuid.uuid4())
-
-
-def fresh_state(parent, instance):
-    """The state the next __getstate__ in the MRO (parent, a super()
-    object) returns, as a dict the caller may update.
-
-    Python 3.11 added object.__getstate__, which returns the instance's
-    live __dict__ (None when empty): updating that would write shadow
-    attributes onto the instance."""
-    # Python < 3.11 has no object.__getstate__
-    getstate = getattr(parent, "__getstate__", None)
-    state = getstate() if getstate else None
-    if state is None or state is instance.__dict__:
-        return dict()
-    return state
-
-
-class ModificationDateRecorder:
-    """While active, records the modification date each item had
-    before its first change, so a command's undo can put it back
-    (docs/ATTRIBUTE_PATTERN.md, Modification Date)."""
-
-    _active = []
-
-    def __init__(self):
-        # By identity: two copies of an item (same id) are two entries
-        self.dates_before = {}  # id(item): (item, date)
-
-    def __enter__(self):
-        ModificationDateRecorder._active.append(self)
-        return self
-
-    def __exit__(self, *exc_info):
-        ModificationDateRecorder._active.remove(self)
-
-    @classmethod
-    def record(cls, item, date_time):
-        for recorder in cls._active:
-            recorder.dates_before.setdefault(id(item), (item, date_time))
 
 
 @functools.total_ordering
@@ -204,48 +165,6 @@ class Object:
     def __hash__(self):
         return hash(self.id())
 
-    def __getstate__(self):
-        # The bases' state (Composite: parent and children; NoteOwner:
-        # notes) is needed by their __setstate__
-        state = fresh_state(super(), self)
-        state.update(
-            dict(
-                id=self.__id,
-                creationDateTime=self.__creationDateTime,
-                modificationDateTime=self.__modificationDateTime.get(),
-                subject=self.__subject.get(),
-                description=self.__description.get(),
-                fgColor=self.__fgColor.get(),
-                bgColor=self.__bgColor.get(),
-                font=self.__font.get(),
-                icon=self.__icon_id.get(),
-                ordering=self.__ordering.get(),
-            )
-        )
-        return state
-
-    @patterns.eventSource
-    def __setstate__(self, state, event=None):
-        # object does not define __setstate__; only invoke super if
-        # another base does
-        if hasattr(super(), "__setstate__"):
-            super().__setstate__(state, event=event)
-        self.__id = state["id"]
-        self.setSubject(state["subject"], event=event)
-        self.setDescription(state["description"], event=event)
-        self.setForegroundColor(state["fgColor"], event=event)
-        self.setBackgroundColor(state["bgColor"], event=event)
-        self.setFont(state["font"], event=event)
-        self.set_icon_id(state["icon"], event=event)
-        self.setOrdering(state["ordering"], event=event)
-        self.__creationDateTime = state["creationDateTime"]
-        # After the setters above, which set it. A subclass's setters
-        # run after this and set it again: undo and redo put back the
-        # right date last (BaseCommand.__set_dates)
-        self.set_modification_datetime(
-            state["modificationDateTime"], event=event
-        )
-
     def __getcopystate__(self):
         """Return a dictionary that can be passed to __init__ when creating
         a copy of the object.
@@ -300,10 +219,14 @@ class Object:
     def set_modification_datetime(self, date_time, event=None):
         """Set by the stored fields' Attributes when they change, and
         restored from the file when loading."""
-        previous = self.__modificationDateTime.get()
-        if date_time != previous:
-            ModificationDateRecorder.record(self, previous)
-            self.__modificationDateTime.set(date_time, event=event)
+        self.__modificationDateTime.set(date_time, event=event)
+
+    def modified_now(self, event=None):
+        """A stored field changed: the item is dated now, except while
+        values are put back (undo, redo, merging), which edits
+        nothing."""
+        if not is_restoring():
+            self.set_modification_datetime(Timestamp.now(), event=event)
 
     def _on_modification_datetime_changed(self, event):
         event.addSource(
@@ -724,7 +647,7 @@ class CompositeObject(Object, patterns.ObservableComposite):
         changed = parent is not self.parent()
         super().set_parent(parent)
         if changed:
-            self.set_modification_datetime(Timestamp.now())
+            self.modified_now()
 
     def __getcopystate__(self):
         state = super().__getcopystate__()

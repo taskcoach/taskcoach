@@ -35,7 +35,7 @@ UI Pattern:
 
 Volatile Fields (not persisted):
   - Derived and effective values are Attribute fields in object.py
-  - NOT in __getstate__, so after file load they are all None/""
+  - Not stored, so after file load they are all None/""
   - The master loop populates them at its first tick after a file opens
 
 Field types: 'fgColor', 'bgColor', 'font', 'icon'

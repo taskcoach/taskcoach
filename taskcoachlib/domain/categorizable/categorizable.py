@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import patterns
 from taskcoachlib.domain import base
 
 
@@ -36,16 +35,6 @@ class CategorizableCompositeObject(base.CompositeObject):
         # The one place that keeps the categories' member index
         for category in self.__categories.get():
             category.member_joined(self)
-
-    def __getstate__(self):
-        state = super().__getstate__()
-        state.update(dict(categories=self.categories()))
-        return state
-
-    @patterns.eventSource
-    def __setstate__(self, state, event=None):
-        super().__setstate__(state, event=event)
-        self.setCategories(state["categories"], event=event)
 
     def __getcopystate__(self):
         state = super().__getcopystate__()

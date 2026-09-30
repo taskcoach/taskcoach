@@ -540,8 +540,8 @@ class OpenAllAttachmentsTest(test.TestCase):
             def open(self, attachmentBase):  # pylint: disable=W0613
                 self.openCalled = True
 
-            def set_modification_datetime(self, date_time, event=None):
-                pass  # Adding it sets its date, as an attachment's
+            def modified_now(self, event=None):
+                pass  # Adding it dates it, as an attachment's
 
         dummyAttachment1 = DummyAttachment()
         dummyAttachment2 = DummyAttachment()

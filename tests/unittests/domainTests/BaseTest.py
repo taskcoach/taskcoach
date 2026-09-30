@@ -38,8 +38,8 @@ class AttributeOwner:
     def on_change(self, event):
         self.changes += 1
 
-    def set_modification_datetime(self, date_time, event=None):
-        self.modification_datetime = date_time
+    def modified_now(self, event=None):
+        self.modification_datetime = date.Now()
 
 
 class AttributeTest(test.TestCase):
@@ -262,57 +262,6 @@ class ObjectTest(test.TestCase):
     def testDescriptionChangedNotificationIsDifferentForSubclass(self):
         self.subclassObject.setDescription("New")
         self.assertFalse(self.eventsReceived)
-
-    # State tests:
-
-    def testGetState(self):
-        self.assertEqual(
-            dict(
-                subject="",
-                description="",
-                id=self.object.id(),
-                fgColor=None,
-                bgColor=None,
-                font=None,
-                icon="",
-                creationDateTime=self.object.creationDateTime(),
-                modificationDateTime=self.object.modificationDateTime(),
-                ordering=self.object.ordering(),
-            ),
-            self.object.__getstate__(),
-        )
-
-    def testSetState(self):
-        newState = dict(
-            subject="New",
-            description="New",
-            id=None,
-            fgColor=wx.GREEN,
-            bgColor=wx.RED,
-            font=wx.SWISS_FONT,
-            icon="icon",
-            creationDateTime=date.DateTime(2012, 12, 12, 12, 0, 0),
-            modificationDateTime=date.DateTime(2012, 12, 12, 12, 1, 0),
-            ordering=42,
-        )
-        self.object.__setstate__(newState)
-        self.assertEqual(newState, self.object.__getstate__())
-
-    def testSetState_SendsOneNotification(self):
-        newState = dict(
-            subject="New",
-            description="New",
-            id=None,
-            fgColor=wx.GREEN,
-            bgColor=wx.RED,
-            font=wx.SWISS_FONT,
-            icon="icon",
-            creationDateTime=date.DateTime(2013, 1, 1, 0, 0, 0),
-            modificationDateTime=date.DateTime(2013, 1, 1, 1, 0, 0),
-            ordering=42,
-        )
-        self.object.__setstate__(newState)
-        self.assertEqual(1, len(self.eventsReceived))
 
     # Copy tests:
 

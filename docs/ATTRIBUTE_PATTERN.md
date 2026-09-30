@@ -13,7 +13,7 @@ The domain model's change-detection and event-notification pattern.
 - [Value Normalization](#value-normalization)
   - [Dates: Not Set Is the Latest Date](#dates-not-set-is-the-latest-date)
 - [Setter / Callback Pattern](#setter--callback-pattern)
-- [Event Batching During Load](#event-batching-during-load)
+- [Event Batching](#event-batching)
 - [Volatile vs Persisted Attributes](#volatile-vs-persisted-attributes)
 - [Modification Date](#modification-date)
 - [Three-Layer Relationship](#three-layer-relationship)
@@ -91,8 +91,8 @@ disk is a separate concern, triggered by an explicit save command.
   - Changed → stores value, sets the owner's modification date (unless
     the field is `volatile`), calls `set_event(owner, event)`, returns
     `True`
-- `set_event` fires inside the `@patterns.eventSource` decorator, so events
-  batch correctly during `__setstate__`
+- `set_event` fires inside the `@patterns.eventSource` decorator, so
+  the events of one call that sets several fields go out as one batch
 - Owner stored as `weakref` — no circular reference issues
 
 **See:** `taskcoachlib/domain/base/attribute.py` for implementation.
@@ -217,56 +217,39 @@ the Attribute equality check prevents infinite loops. The second `.set()`
 fires the callback again; the callback reads current state, finds nothing
 to do, returns.
 
-**Persistence:** `__getstate__` calls `.get()` to extract values.
-`__setstate__` calls the setter. `__getcopystate__` same as `__getstate__`.
-Each `__getstate__` extends its base's state, which the base's
-`__setstate__` reads (`Composite`: parent and children; the owner
-mixins: notes, attachments). `fresh_state()` in `domain/base/object.py`
-starts a new dict where the base is `object`: its `__getstate__`
-(Python 3.11+) returns the live `__dict__`.
+**Persistence and undo:** the file's writer and reader use the getters
+and setters. The undo log reads and writes every stored field the same
+way, whatever its item (`Field.snapshot()`, `Field.restore()`;
+[UNDO_REDO.md](UNDO_REDO.md#architecture-snapshot-and-diff)).
+`__getcopystate__` gives a copy's values.
 
 ---
 
-## Event Batching During Load
+## Event Batching
 
-When a domain object is loaded from a file, all of its fields are restored
-at once. Without batching, each field restoration would fire its own change
-notification — dozens of individual events for a single load operation.
-Event batching collects all these notifications into one batch that fires
-once at the end of the load.
+When one call changes several fields, each change would otherwise send
+its own notification. A method decorated with `@patterns.eventSource`
+creates one shared `event`, passes it to every setter (`event=event`)
+and sends it once at the end. Undo and redo do the same for all the
+fields of a step (`Step`, `patterns/snapshot.py`).
 
-This works through three parts:
+Setters accept `event=None`: called alone, the Attribute creates and
+sends its own event. A setter that does not take `event`, or a caller
+that does not pass it, sends its notification outside the batch.
 
-1. **`__setstate__` is decorated with `@patterns.eventSource`**, which
-   creates a shared `event` object and batches all notifications raised
-   during the method.
-
-2. **Setters accept `event=None`** so they can receive the shared
-   event from `__setstate__`. This parameter is optional — when called
-   from normal code (not during load), `event` defaults to `None` and
-   the Attribute creates its own event.
-
-3. **`__setstate__` passes `event=event` to every setter call**, connecting
-   each field restoration to the shared batch.
-
-If a setter does not accept `event`, or `__setstate__` does not pass it,
-that field's notification falls outside the batch and fires individually.
-All setters must follow this convention.
-
-**See:** `taskcoachlib/domain/base/object.py` — `Object.__setstate__()` and
-setters (e.g. `setSubject`) for the reference implementation.
-`taskcoachlib/patterns/observer.py` — `@eventSource` decorator.
+**See:** `taskcoachlib/patterns/observer.py`, `@eventSource`.
 
 ---
 
 ## Volatile vs Persisted Attributes
 
-Not all Attributes are persisted. Both use the same `Attribute` class — the
-only difference is whether `__getstate__` includes the field.
+Not all Attributes are persisted. Both use the same `Attribute` class;
+the only difference is whether the field is stored (`Field.stored`).
 
-**Persisted** — included in `__getstate__` / `__setstate__`, loaded from XML.
+**Persisted:** written to the file and read back, in the undo log's
+snapshots.
 
-**Volatile** — NOT in `__getstate__`, recomputed at runtime. Start as `None`,
+**Volatile:** not stored, recomputed at runtime. Start as `None`,
 populated by external computation (e.g. fields derived from other fields,
 or recomputed by periodic polling).
 
@@ -302,8 +285,10 @@ files keeps the newest copy of each item
 exact.
 
 How: every stored field is an Attribute or a SetAttribute, and these
-set their owner's modification date when their value changes;
-Attributes of computed values are marked volatile and do not.
+set their owner's modification date when their value changes
+(`Object.modified_now()`), except while values are put back (undo,
+redo, merging); Attributes of computed values are marked volatile and
+do not.
 
 **Ruling, 2026-09-28: a link belongs to the item that points.** A
 subitem's parent, an owned note's or attachment's owner, an effort's
@@ -371,7 +356,7 @@ and sets the modification date, then is tested:
 | 9 | Task prerequisites (dependencies are their reverse) | Plain sets, pypubsub | Done: prerequisites a SetAttribute, dependencies derived (no date); Publisher |
 | 10 | Links: subtasks and parent, owned notes and attachments, efforts | Plain lists, Publisher | Done: the pointing item's date (ruling above); merging takes owned items item by item |
 | 11 | View state: a category's filter state, the expanded state | Plain values | Decided: no date, still saved (ruling above) |
-| 12 | Commands no longer set the date | Commands set it on parents and owners | Done; the undo log plan: [UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log) |
+| 12 | Commands no longer set the date | Commands set it on parents and owners | Done; the undo log: [UNDO_REDO.md](UNDO_REDO.md#modification-dates) |
 
 ---
 

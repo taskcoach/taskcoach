@@ -35,10 +35,6 @@ class Clipboard(metaclass=patterns.Singleton):
         currentSource = self._source
         return currentContents, currentSource
 
-    def state(self):
-        """What put() needs to restore the clipboard as it is."""
-        return self._contents, self._source, self._cut
-
     def items_to_paste(self):
         """The items a paste inserts: cut items themselves while the
         file does not hold them, a move that keeps their IDs; copies,
@@ -47,9 +43,6 @@ class Clipboard(metaclass=patterns.Singleton):
         if self._cut and not any(is_held(item) for item in self._contents):
             return list(self._contents)
         return [item.copy() for item in self._contents]
-
-    def spend_move(self, items):
-        pass  # Gone with the commands' own undo
 
     def peek(self):
         return self._contents
