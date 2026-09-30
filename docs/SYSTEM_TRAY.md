@@ -351,7 +351,7 @@ Synthesis of current upstream guidance (KDE, freedesktop):
 | Concern | Best practice | Task Coach status |
 |---------|---------------|-------------------|
 | Tray presence | StatusNotifierItem over D-Bus | Have it (libayatana) |
-| Going hidden | App owns hide/show itself (self-tracked); prefer **close-to-background** over intercepting the minimize button (the latter is now an anti-pattern, flagged for GNOME) | The self-tracked tray Show/Hide toggle is exactly this |
+| Going hidden | App owns hide/show itself (self-tracked), from the tray; the window's buttons keep their meaning: Close closes, Minimize minimizes. Neither intercepting Minimize to hide nor turning Close into minimize or hide is recommended (see below) | The self-tracked tray Show/Hide toggle is exactly this |
 | "Running in background" declaration | `org.freedesktop.portal.Background` (XDG portal; KDE/GNOME/Cinnamon/Deepin). Future-proof, but *indication only* - it does **not** restore the window | Optional future add-on; does not solve restore |
 | Restore / raise | Use the `xdg-activation-v1` token the SNI host passes on tray `Activate` | Limited: libayatana is menu-centric and does not forward the token, so `Raise()` is best-effort. Full compliance needs raw-SNI or Qt/KStatusNotifierItem, not GTK3+libayatana |
 
@@ -367,7 +367,23 @@ Best-practice references:
 [KDE - On Window Activation (Broulik, 2025)](https://blog.broulik.de/2025/08/on-window-activation/),
 [Betterbird - System tray on Linux/Wayland (2026)](https://blog.betterbird.eu/2026/01/system-tray-support-on-linux-and-windows-and-wayland),
 [Liferea - use the Background portal](https://github.com/lwindolf/liferea/issues/1418),
-[Spotube - minimize-to-tray anti-pattern](https://github.com/KRTirtho/spotube/issues/1330).
+[Spotube - close-to-tray leaves the app unreachable on GNOME](https://github.com/KRTirtho/spotube/issues/1330).
+
+The window's own buttons (checked 2026-09-30):
+
+- Windows: minimizing to the notification area "is no longer recommended"
+  (Windows 7 on); where offered, opt in only, and "Use the Minimize
+  button on the application's title bar, not the Close button"
+  ([Notification Area](https://learn.microsoft.com/en-us/windows/win32/uxguide/winenv-notification)).
+- macOS: closing a single-window app's window quits it (after saving);
+  a multi-window app keeps running with its menu bar, never minimized.
+- GNOME: Close closes the window, Ctrl+Q quits; an app that keeps
+  running without windows goes through the Background portal, which
+  lists it in the system menu with a button to stop it.
+- KDE leaves it to each app; its usability discussions proposed a
+  separate "to tray" button rather than overloading Close.
+- Chat apps that close to the tray by default (Discord, Slack) draw
+  steady reports of users thinking the app quit.
 
 #### Coverage matrix: where "minimize to tray, keep taskbar entry" can work
 
