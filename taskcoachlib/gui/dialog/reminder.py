@@ -69,15 +69,25 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         self.taskList = taskList
         self.effortList = effortList
         self.settings = settings
+        # Self-heal: whatever changes the task, the file or its
+        # reminder, the window checks it is still due
+        # (docs/UNDO_REDO.md, Windows)
         self.registerObserver(
-            self.onTaskRemoved,
+            self.on_reminder_may_be_gone,
             eventType=self.taskList.removeItemEventType(),
             eventSource=self.taskList,
         )
+        for event_type in (
+            task.completionDateTimeChangedEventType(),
+            task.reminderChangedEventType(),
+        ):
+            self.registerObserver(
+                self.on_reminder_may_be_gone,
+                eventType=event_type,
+                eventSource=task,
+            )
         self.registerObserver(
-            self.on_task_completion_changed,
-            eventType=task.completionDateTimeChangedEventType(),
-            eventSource=task,
+            self.on_reminder_may_be_gone, eventType="commandhistory.changed"
         )
         self.registerObserver(
             self.on_tracking_changed,
@@ -254,15 +264,26 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         self.Close()
         command.MarkCompletedCommand(self.taskList, [self.task]).do()
 
-    def onTaskRemoved(self, event):
-        if self.task in list(event.values()):
-            self.Close()
+    def on_reminder_may_be_gone(self, event):  # pylint: disable=W0613
+        patterns.later.soon(self, self.__close_unless_due)
 
-    def on_task_completion_changed(self, event):  # pylint: disable=W0613
-        if self.task.completed():
-            self.Close()
-        else:
-            self.markCompleted.Enable()
+    def is_due(self):
+        """Whether the reminder that opened the window still stands: its
+        task in the file, not completed, its reminder not moved past
+        now (snoozed, changed or cleared)."""
+        return (
+            any(each is self.task for each in self.taskList)
+            and not self.task.completed()
+            and self.task.reminder() <= date.Now()
+        )
+
+    def __close_unless_due(self):
+        """Close quietly, changing nothing: no snooze."""
+        if self.is_due():
+            return
+        self.ignoreSnoozeOption = True
+        self._isFrozen = False  # A freeze guards the user's clicks only
+        self.Close()
 
     def on_close(self, event):
         # Block closing during freeze period to prevent accidental dismissal
@@ -271,7 +292,7 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             return
 
         # Stop listening, to prevent callbacks on the destroyed dialog
-        self.removeObserver(self.on_task_completion_changed)
+        self.removeObserver(self.on_reminder_may_be_gone)
         self.removeObserver(self.on_tracking_changed)
 
         event.Skip()

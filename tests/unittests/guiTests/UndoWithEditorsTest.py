@@ -74,7 +74,8 @@ class UndoWithEditorsTest(UndoTest.UndoTest, test.wxTestCase):
 
     def tearDown(self):
         for each in self.editors:
-            each.Destroy()
+            if each:  # Not closed by itself (docs/UNDO_REDO.md, Windows)
+                each.Destroy()
         self.settle()
         super().tearDown()
 

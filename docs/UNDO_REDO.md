@@ -5,12 +5,13 @@
 1. [Design Intent](#design-intent)
 2. [Architecture: Snapshot and Diff](#architecture-snapshot-and-diff)
 3. [Actions](#actions)
-4. [Persistence](#persistence)
-5. [Modification Dates](#modification-dates)
-6. [Commands](#commands)
-7. [Testing](#testing)
-8. [History](#history)
-9. [References](#references)
+4. [Windows](#windows)
+5. [Persistence](#persistence)
+6. [Modification Dates](#modification-dates)
+7. [Commands](#commands)
+8. [Testing](#testing)
+9. [History](#history)
+10. [References](#references)
 
 ## Design Intent
 
@@ -98,6 +99,23 @@ tracking from the tray, File > Merge, the CSV and Todo.txt imports.
   0.5).
 - **An action that changes nothing is no step** (a copy).
 
+## Windows
+
+**Asked by designer 2026-09-30:** a window about something that is
+gone closes by itself (self-heal), changing nothing, and does not come
+back on redo.
+
+- **An editor** closes once the file no longer holds an item it edits
+  (`TaskFile.holds()`: in its lists, an effort of one of its tasks, a
+  note or attachment one of them owns): deleted, its creation undone,
+  its owner gone. It checks after every action, undo or redo, and when
+  an item leaves its list; a filter hiding the item is no reason.
+- **A reminder window** closes once its reminder no longer stands
+  (`ReminderDialog.is_due()`): its task left the file or was completed,
+  or its reminder was moved past now (snoozed, changed, cleared), by an
+  action, undo or redo. It closes without snoozing. A reminder due again
+  after an undo is shown again by the scheduler, as any due reminder.
+
 ## Persistence
 
 - The log is not saved. Undo and redo change stored data, so they
@@ -145,12 +163,14 @@ it. All of it is removed.
 - `tests/unittests/domainTests/UndoTest.py`: for each kind of change,
   the file written after undo is the file written before, dates
   included; redo gives the file after; no field differs in memory.
-- `WhatUndoTellsTest` (in `UndoTest.py`): undo and redo tell what the
-  change told (tracking, a moved subtask's parents, linked subjects,
-  styles).
 - `tests/unittests/guiTests/UndoWithEditorsTest.py`: the same cases
   with an editor open on each item; what an editor shows of a change,
   its undo or its redo, it writes nothing back.
+- `WhatUndoTellsTest` (in `UndoTest.py`): undo and redo tell what the
+  change told (tracking, a moved subtask's parents, linked subjects,
+  styles).
+- `tests/unittests/guiTests/WindowSelfHealTest.py`: editors and
+  reminder windows closing, changing nothing.
 - `tests/unittests/patternsTests/CommandTest.py`: the log (steps,
   joining, rollback, grouping by event).
 - The command tests check each command's undo and redo.

@@ -16,6 +16,11 @@ they open (about 140 ms each: 19 s for 134); that is accepted.
 Reminders matter, and windows opened later, one by one, would pop up
 while the user is already clicking elsewhere.
 
+A reminder window closes by itself, snoozing nothing, once its reminder
+no longer stands: its task deleted or completed, its reminder snoozed,
+changed or cleared, elsewhere or by undo or redo
+([UNDO_REDO.md](UNDO_REDO.md#windows)).
+
 ## Reminder Sound
 
 ### Settings

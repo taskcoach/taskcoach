@@ -375,9 +375,15 @@ In the app:
   widgets; it now sends the event through the deferred service, owned
   by its checkbox
   ([DATETIME_CONTROLS.md](DATETIME_CONTROLS.md#datetimecomboctrl-event-ownership)).
-- P37. A reminder window stays open, showing the old time, after its
-  reminder is changed elsewhere: redo of a snooze, an editor. Found
-  2026-09-30. **Question for the designer:** should it close?
+- P37. ~~A reminder window stayed open, showing the old time, after its
+  reminder was changed elsewhere; closed by a deletion or completion
+  elsewhere, it snoozed the task~~: fixed 2026-09-30, **asked by
+  designer**: windows self-heal, changing nothing
+  ([UNDO_REDO.md](UNDO_REDO.md#windows)).
+- P38. ~~The test base disconnected `wx.CallAfter`'s handler after the
+  first GUI test of a run, so no deferred call ran in the later ones
+  and tests depending on one passed without checking it~~: fixed
+  2026-09-30 (`tests/test.py`).
 
 ## Views on the Effective Styles
 

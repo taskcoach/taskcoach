@@ -296,6 +296,24 @@ class TaskFile(patterns.Observer):
             self.tasks(), self.notes(), self.categories()
         )
 
+    def holds(self, item):
+        """Whether the item is this file's now: in its lists, an effort
+        of one of its tasks, or a note or attachment one of them owns,
+        at any depth. By identity: a copy, or an item deleted and kept
+        for undo, is not. A window about an item closes once the file
+        no longer holds it (docs/UNDO_REDO.md, Windows)."""
+        if isinstance(item, effort.Effort):
+            owner = item.task()
+            return (
+                owner is not None
+                and self.holds(owner)
+                and any(each is item for each in owner.efforts())
+            )
+        lists = (self.tasks(), self.categories(), self.notes())
+        if any(each is item for collection in lists for each in collection):
+            return True
+        return any(each is item for each in self.owner_chains())
+
     def owner_chains(self):
         """Each owned note and attachment: its owners, from the top."""
         return categorizable.owner_chains(

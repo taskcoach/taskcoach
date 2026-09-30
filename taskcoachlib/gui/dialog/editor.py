@@ -3743,12 +3743,6 @@ class EditBook(widgets.Notebook):
         self.SetSelection(page)
         self[page].setFocusOnEntry(columnName)
 
-    def isDisplayingItemOrChildOfItem(self, targetItem):
-        ancestors = []
-        for item in self.items:
-            ancestors.extend(item.ancestors())
-        return targetItem in self.items + ancestors
-
     def perspective(self):
         """Return the perspective for the notebook."""
         return self.settings.gettext(self.settings_section(), "perspective")
@@ -3887,9 +3881,6 @@ class AttachmentEditBook(EditBook):
 
     def create_subject_page(self):
         return AttachmentSubjectPage(self.items, self, self.settings)
-
-    def isDisplayingItemOrChildOfItem(self, targetItem):
-        return targetItem in self.items
 
 
 class NullableDateTimeWrapper:
@@ -4909,12 +4900,6 @@ class EffortEditBook(Page):
     def setFocus(self, column_name):
         self.setFocusOnEntry(column_name)
 
-    def isDisplayingItemOrChildOfItem(self, item):
-        if hasattr(item, "set_task"):
-            return self.items[0] == item  # Regular effort
-        else:
-            return item.mayContain(self.items[0])  # Composite effort
-
     def entries(self):
         return dict(
             firstEntry=self._start_date_time_combo,
@@ -4948,6 +4933,9 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self._items = items
         self._settings = settings
         self._taskFile = task_file
+        # The items the file holds as the editor opens; it closes when
+        # one leaves the file (docs/UNDO_REDO.md, Windows)
+        self.__held = [item for item in items if task_file.holds(item)]
         self.__items_are_new = kwargs.pop("items_are_new", False)
         column_name = kwargs.pop("columnName", "")
         # A partial adds no frame, so the log names the real caller
@@ -4973,6 +4961,9 @@ class Editor(BalloonTipManager, widgets.Dialog):
             self.on_item_removed,
             eventType=container.removeItemEventType(),
             eventSource=container,
+        )
+        patterns.Publisher().registerObserver(
+            self.on_item_removed, eventType="commandhistory.changed"
         )
         if len(self._items) == 1:
             patterns.Publisher().registerObserver(
@@ -5116,32 +5107,25 @@ class Editor(BalloonTipManager, widgets.Dialog):
     def on_activate(self, event):
         event.Skip()
 
-    def on_item_removed(self, event):
-        """The item we're editing or one of its ancestors has been removed or
-        is hidden by a filter. If the item is really removed, close the tab
-        of the item involved and close the whole editor if there are no
-        tabs left."""
+    def on_item_removed(self, event):  # pylint: disable=W0613
+        """An item left a list, or the file changed (an action, undo,
+        redo): the editor checks it still has what it edits."""
         if self:  # Prevent _wxPyDeadObject TypeError
-            self.__call_after(
-                self.__close_if_item_is_deleted, list(event.values())
-            )
+            self.__call_after(self.__close_if_gone)
 
-    def __close_if_item_is_deleted(self, items):
+    def __close_if_gone(self):
+        """Self-heal: close once the file no longer holds an item this
+        editor edits (deleted, its creation undone, its owner gone). A
+        filter hiding it is no reason."""
         # Run later: the editor may be closing by then
         if not self or self.IsBeingDeleted():
             log_step(
-                "__close_if_item_is_deleted: dialog already "
-                "dead/deleting %x" % id(self),
+                "__close_if_gone: dialog already dead/deleting %x" % id(self),
                 prefix="DEAD-OBJ",
             )
             return
-        for item in items:
-            if (
-                self._interior.isDisplayingItemOrChildOfItem(item)
-                and not item in self._taskFile
-            ):
-                self.Close()
-                break
+        if not all(self._taskFile.holds(item) for item in self.__held):
+            self.Close()
 
     def on_subject_changed(self, event):  # pylint: disable=W0613
         self.SetTitle(self.__title())
