@@ -843,6 +843,28 @@ Rules the first sketch lacked, each needed by the probe:
   equal priorities are ordered by name.
 - An owner's style reaches none of its notes or attachments.
 
+### Verification
+
+`docs/scripts/scheduler_diffprobe.py` (arguments: seed, steps, member
+lookup, outside events; run it from the repository root with
+`PYTHONPATH=.` under `xvfb-run`): 16 kinds of random change; after each,
+an emulated incremental pass, then the real full loop. With the rules:
+0 misses on seeds 1 to 7 (300 to 400 steps, 167 to 714 objects), 0
+out of order, 0 twice, 5 to 13 objects per change. Dropping a rule:
+members from `Category.categorizables()` gives 7 to 10 misses per 300
+steps (seeds 1, 2, 4 to 7); not following effective events sent
+outside the pass, 3 in 200 (seed 3). The full loop re-triggered due
+reminders at nearly every step, the difference in principle above.
+The first full loop after the random file is built changes about 705
+values, the second none: the loop already settles in one pass.
+
+`docs/scripts/scheduler_claims_probe.py` checks single claims: a
+leaf category's rename with a member linked one way pushes nothing;
+fonts from one string compare equal; an owned note and attachment
+ignore their owner's style; default icons; an override changes the
+effective style at once while the children wait for the pass.
+`docs/scripts/category_membership_probe.py` reproduces P28 and P29.
+
 ### Inputs
 
 | Result | Reads |
@@ -875,12 +897,24 @@ Prerequisites act through completion dates, at once, outside the pass
 
 ### Risks
 
+- An owned note or attachment does not know its owner: deciding
+  whether a marked one is still in the file needs an owner map or a
+  walk from the file's items.
+- Members come from the items' categories, which paste leaves
+  one-sided for notes (P29); the member lookup depends on how P29 is
+  solved at the source.
 - Merge: copies share IDs; a full loop.
 - The theme can turn dark or light for up to 1 s without its event;
   the full loop follows `system.theme_colour_changed` too.
 - A failing object must still mark its followers.
 - Over-marking costs work, not correctness: ancestors on date and
   tracking events, descendants on names.
+
+Heard by the scheduler but read by no result, so the pass ignores
+them: budget, percentage complete, planned duration and its mode,
+dependencies, the mark completed setting, an attachment's location, a
+category's filter and exclusive subcategories, an effort's start and
+entry mode, ordering, the derived styles' events.
 
 Questions for the review:
 
@@ -900,6 +934,10 @@ Questions for the review:
    thread 11% busy).
 4. A due reminder triggered at its second only, not again at every
    pass?
+5. When to settle: at the next tick, as today (within a second), or
+   right after the change, all changes of one event dispatch together?
+6. Category membership held twice (P29): store it on one side, or keep
+   both with one writer? Decides the member lookup above.
 
 ---
 
