@@ -42,13 +42,13 @@ Default date/time values for new tasks, configured in Preferences.
    This would eliminate the split between `uicommand.py` (preset) and
    `editor.py` (propose) and ensure domain invariants are always enforced.
 
-2. **Preset completion date bypasses `_on_completion_date_time_changed`.**
-   When `uicommand.py` passes `completionDateTime=...` to the Task
-   constructor, the Attribute is initialized directly (no `.set()` call),
-   so the callback never fires. This means recurrence is not triggered,
-   reminder is not cleared, children are not completed, and parent
-   completion cascade does not happen. The task is born in an inconsistent
-   state. See [Constructor Bypass Problem](#constructor-bypass-problem).
+2. ~~**Preset completion date bypasses `_on_completion_date_time_changed`.**~~
+   Not an issue (2026-09-29): Preferences has offered only Propose for
+   the completion date since release 1.3 (2011-07-26, "More options for
+   default task date and times"), so no new task is created completed.
+   Only a hand-edited settings file reaches the preset path, which
+   `TaskNew` checks for all five dates alike. See
+   [Constructor Bypass Problem](#constructor-bypass-problem).
 
 3. ~~**Fix propose mode for DateTimeComboCtrl**~~ — **Done.** `suggestedValue`
    parameter added to `DateTimeComboCtrl.__init__()`. Editor passes preference-
@@ -170,8 +170,9 @@ When `completionDateTime` is passed to the Task constructor:
 The task is born in an **inconsistent state**: marked completed (percentage
 100) but without any of the normal completion side effects.
 
-Note: The preferences UI only allows propose mode for completion date
-(`preferences.py:2103`), so this path may never be reached in normal usage.
+Note: Preferences allows only propose mode for the completion date, by
+design since release 1.3 (2011), so this path is not reached from the
+user interface.
 But nothing prevents setting `"preset_..."` manually in `TaskCoach.ini`.
 
 ### Reminder Preset
