@@ -176,7 +176,7 @@ The perspective stores each floating pane's position and size, and
 `LoadPerspective()` restores them as saved, whatever the current
 monitors: a pane saved on a monitor that is gone can open off screen.
 Plan: after `LoadPerspective()`, pass each floating pane's rect through
-the shared `restore_rect()`
+the shared `fit_to_monitors()`
 ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#planned-refactoring)) and set
 the result with `FloatingPosition()` and `FloatingSize()` before
 `Update()`. This adapts the loaded geometry only; it does not validate

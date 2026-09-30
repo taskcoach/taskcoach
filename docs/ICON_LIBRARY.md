@@ -947,7 +947,7 @@ nuvola/oxygen.
 
 **Theme wiring** is already in place:
 - `ICON_THEME_CATALOG.json`: `"taskcoach"` is `"active": true`
-- `icon_library.py`: theme loop uses `get_available_themes()`
+- `icon_library.py`: theme loop uses `_load_theme_catalog()`
   (reads the catalog dynamically — no code change needed for new themes)
 - `defaults.py`: `"theme_taskcoach": "True"` in `iconpicker` section
 - `preferences.py`: checkbox "Show TaskCoach icons in picker"
@@ -1133,7 +1133,6 @@ Delete the old icon's PNG files from its theme directory in
 
 #### Step 5 — Update documentation
 
-- `docs/scripts/icon_picker_refactoring_demo.py` — update test data
 - `docs/ICON_LIBRARY.md` — add to "Completed Migrations" table above
 - Delete `icon_overview.html` and `generate_icon_overview.py` if not already removed
 

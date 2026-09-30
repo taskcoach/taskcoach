@@ -283,9 +283,9 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 - `toolbar.Clear()` and `menu.clearMenu()` call `removeInstance()` during
   teardown.
 - `Editor.on_close_editor()` explicitly cleans up its UICommands.
-- 20+ `try/except RuntimeError: pass` blocks now log with `prefix="DEAD-OBJ"`
-  so zombie access is visible. These should eventually be eliminated, not
-  just logged.
+- The `try/except RuntimeError: pass` blocks log with `prefix="DEAD-OBJ"`
+  so zombie access is visible; those left guard what unsubscribing
+  cannot (item 3 below).
 
 ### Target architecture
 
@@ -314,7 +314,7 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
    | Guarded against | Where |
    |---|---|
    | A delayed call reaching a window closed meanwhile | `patterns.later` skips it when its owner is gone ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); the older `__safe*()` wrappers in the widgets and viewers, the in-place editors, `Editor._deferred_destroy()`, and the viewer container's focus remain as a second check; the `not self or IsBeingDeleted()` checks also skip a window being deleted, which the service still runs |
-   | wx events while a window's children are being destroyed | `TaskEntry._onDestroy()`, `Viewer.SetFocus()`, `AttributeSync`'s callback, `NullableDateTimeWrapper`, the tree and list `curselection()`, the column sort |
+   | wx events while a window's children are being destroyed | `TaskEntry._onDestroy()`, `Viewer.SetFocus()`, `AttributeSync`'s callback, the tree and list `curselection()`, the column sort |
    | Menu items that outlive their menu, wx assertions | `update_menu_text()`, `MenuItem.update_state()`, `on_update_menu()` |
    | Shutdown | `Application.display_message()` |
 

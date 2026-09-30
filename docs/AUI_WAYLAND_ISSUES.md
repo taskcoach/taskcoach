@@ -58,7 +58,7 @@ Related commits:
 **Current status**:
 - Fix is in wxWidgets C++ (wx.aui) but requires wxWidgets 3.2.5+
 - Fix is NOT in wxPython's pure Python `wx.lib.agw.aui` (which Task Coach uses)
-- Current wxPython 4.2.0 ships with wxWidgets 3.2.2 (predates the fix)
+- wxPython 4.2.0 (Debian 12) ships wxWidgets 3.2.2, which predates the fix
 
 **Monitoring**: When wxPython AGW AUI is updated with the wxOverlay approach, or when we can switch to wx.aui with a newer wxWidgets, docking hints should work.
 

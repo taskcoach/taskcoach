@@ -27,7 +27,7 @@ Default date/time values for new tasks, configured in Preferences.
 
 1. **Unify preset and propose paths through the Attribute model or
    DateTimeComboCtrl public API.** Currently, preset mode writes directly to
-   the Task constructor kwargs (`uicommand.py:1693-1708`), bypassing both
+   the Task constructor kwargs (`TaskNew.do_command()` in `uicommand.py`), bypassing both
    the Attribute setter/callback chain and the editor widget API. Propose
    mode relies on the editor widget to pre-fill a display value. These two
    paths should be consolidated so that both modes go through the same
@@ -75,7 +75,7 @@ There are two modes:
 | **Preset** | Checked | Yes — on the domain object at creation | `uicommand.py` (before editor opens) |
 | **Propose** | Unchecked | No — display hint only, hidden behind "N/A" | Editor widget (when editor opens) |
 
-Both modes compute the same datetime using `task.Task.suggestedDateTime()`.
+Both modes compute the same datetime using `task.Task.suggested_date_time()`.
 The mode only controls where and how the value is applied.
 
 ---
@@ -98,7 +98,7 @@ Format: `{preset|propose}_{day}_{time}`
 
 **Time options:** `startofday`, `startofworkingday`, `currenttime`, `endofworkingday`, `endofday`
 
-The prefix (`preset` or `propose`) determines the mode. The `suggestedDateTime()`
+The prefix (`preset` or `propose`) determines the mode. The `suggested_date_time()`
 method strips the prefix (`dummy_prefix` at `task.py:1944`) and computes the
 same datetime regardless of mode.
 
@@ -122,7 +122,7 @@ Note: Completion date only supports propose mode (`[check_choices[1]]` at
 
 When the preference starts with `"preset"`:
 
-1. **Task creation** (`uicommand.py:1691-1708`):
+1. **Task creation** (`TaskNew.do_command()` in `uicommand.py`):
    ```python
    def do_command(self, event, show=True):
        kwargs = self.taskKeywords.copy()
@@ -276,18 +276,18 @@ presets are active.
 
 ## Suggested DateTime Computation
 
-The `suggestedDateTime()` classmethod computes a datetime from the preference
+The `suggested_date_time()` classmethod computes a datetime from the preference
 setting and `now()`. It is called at dialog open time (propose mode) or at
 task creation time (preset mode).
 
-**File:** `taskcoachlib/domain/task/task.py:1941-1989`
+**File:** `taskcoachlib/domain/task/task.py`
 
 ```python
 @classmethod
-def suggestedDateTime(cls, defaultDateTimeSetting, now=date.Now):
-    defaultDateTime = cls.settings.get("view", defaultDateTimeSetting)
-    dummy_prefix, defaultDate, defaultTime = defaultDateTime.split("_")
-    dateTime = now()
+def suggested_date_time(cls, default_date_time_setting, now=date.Now):
+    default_date_time = cls.settings.get("view", default_date_time_setting)
+    dummy_prefix, default_date, default_time = default_date_time.split("_")
+    date_time = now()
     # Apply day offset: today, tomorrow, dayaftertomorrow, nextfriday, nextmonday
     # Apply time: startofday, startofworkingday, currenttime, endofworkingday, endofday
     ...

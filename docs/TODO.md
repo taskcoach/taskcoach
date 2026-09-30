@@ -4,17 +4,17 @@ This document tracks planned improvements and known issues to address in future 
 
 ## Table of Contents
 
-1. [Simultaneous Processes and Locking](#1-simultaneous-processes-and-locking)
+1. [Simultaneous Processes and Locking](#1-simultaneous-processes-and-locking) *(Done)*
 2. [Configuration Naming Convention](#2-configuration-naming-convention)
 3. [Refactoring Save Patterns](#3-refactoring-save-patterns)
 4. [Backup Feature Review](#4-backup-feature-review)
 5. [Monkeypatches and Workarounds](#5-monkeypatches-and-workarounds)
 6. [Text-to-Speech Modernization](#6-text-to-speech-modernization)
-7. [GTK3 Widget Sizing Inconsistency](#7-gtk3-widget-sizing-inconsistency)
+7. [GTK3 Widget Sizing Inconsistency](#7-gtk3-widget-sizing-inconsistency) *(No action)*
 8. [BookPage Default Alignment Inconsistency](#8-bookpage-default-alignment-inconsistency) *(Done)*
 9. [Preferences Page Alignment Overrides](#9-preferences-page-alignment-overrides) *(Done)*
 10. [Preferences Dialog: Dirty-Check and Button State](#10-preferences-dialog-dirty-check-and-button-state)
-11. [EVT_TEXT Compatibility Shim in MultiLineTextCtrl](#11-evt_text-compatibility-shim-in-multilinetextctrl)
+11. [EVT_TEXT Compatibility Shim in MultiLineTextCtrl](#11-evt_text-compatibility-shim-in-multilinetextctrl) *(Done)*
 12. [Thunderbird/IMAP Mail Integration Review](#12-thunderbirdimap-mail-integration-review)
 Signaling system cleanup has moved to
 [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup).
@@ -23,36 +23,15 @@ Signaling system cleanup has moved to
 
 ## 1. Simultaneous Processes and Locking
 
-### Current Status
+**Status: Done**
 
-| Resource | Locking | Status |
-|----------|---------|--------|
-| Task files (`.tsk`) | `resourcelock` ([FILE_LOCKING.md](FILE_LOCKING.md)) | ✅ Safe - uses `filename.tsk.lock` |
-| INI file (`taskcoach.ini`) | `resourcelock` ([FILE_LOCKING.md](FILE_LOCKING.md)) | ✅ Safe - uses `taskcoach.ini.lock` |
-| Log file (`taskcoachlog.txt`) | None | ⚠️ Shared between instances |
+| Resource | Locking |
+|----------|---------|
+| Task files (`.tsk`) | `resourcelock`, `filename.tsk.lock` ([FILE_LOCKING.md](FILE_LOCKING.md)) |
+| INI file (`taskcoach.ini`) | `resourcelock`, `taskcoach.ini.lock` ([FILE_LOCKING.md](FILE_LOCKING.md)) |
 
-### TODO: Per-Process Log Files
-
-Currently, all Task Coach instances write to the same `taskcoachlog.txt` file. While append mode is generally atomic, log entries from multiple instances can interleave, making debugging difficult.
-
-**Proposed Solutions:**
-
-1. **INI file setting** - Allow users to specify a custom log file path in settings:
-   ```ini
-   [file]
-   logfile = /path/to/custom/taskcoachlog.txt
-   ```
-
-2. **Auto-numbered log files** - Automatically append instance number to log filename:
-   - First instance: `taskcoachlog.txt`
-   - Second instance: `taskcoachlog-2.txt`
-   - Third instance: `taskcoachlog-3.txt`
-   - etc.
-
-**Implementation Notes:**
-- Would need to detect if log file is already in use by another instance
-- Could use `resourcelock` on the log file to detect conflicts
-- Instance number could be determined by trying locks sequentially
+Task Coach writes no log file: the log goes to the terminal
+([LOGGING_GUIDE.md](LOGGING_GUIDE.md)).
 
 ---
 
@@ -152,26 +131,15 @@ This section documents workarounds and patches in the codebase that should be re
 
 | Location | Workaround | Purpose | Review Notes |
 |----------|------------|---------|--------------|
-| `taskcoach.py:43-71` | `_set_wayland_app_id()` | Sets GLib program name for Wayland app ID matching | Required for proper Wayland dock integration |
-| `taskcoach.py:73-74` | `import workarounds.monkeypatches` | Runtime patches for hypertreelist, inspect.getargspec, Window.SetSize | Required for wxPython compatibility |
-| `monkeypatches.py` | `wx.CallAfter` crash guard | Prevents segfaults from callbacks to destroyed C++ objects | Required for library code; the app's own deferred calls go through `patterns.later` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); see [CRASH_GUARD.md](CRASH_GUARD.md) |
-| `monkeypatches.py` | `wx.Timer` owner guard | Stops timers still running when their owner window is destroyed, logs the start stack | Required for library code, as above; see [CRASH_GUARD.md](CRASH_GUARD.md) |
-| `application.py` | `OnExceptionInMainLoop` | Catches unhandled exceptions during wx event dispatch | Required — see [CRASH_GUARD.md](CRASH_GUARD.md) |
-
-### Python 3.10 Support (Ubuntu 22.04)
-
-The `inspect.getargspec` shim in `monkeypatches.py` is required for Python 3.10 (Ubuntu 22.04 Jammy). Python 3.11+ removed `getargspec()`.
-
-**Remove after:** April 2027 (Ubuntu 22.04 LTS end of standard support)
-
-Once Ubuntu 22.04 is out of LTS:
-- Remove the `getargspec` shim from `monkeypatches.py`
-- Update `setup.py` classifiers to remove Python 3.8, 3.9, 3.10
-- Update `build.in/fedora/taskcoach.spec` to require Python >= 3.11
-- Remove Ubuntu 22.04 .deb from README and CI workflows
-| `taskcoach.py:24-30` | TEE module disabled | Stdout/stderr redirection to log file | Disabled pending further testing |
-| `application.py:511-516` | `SetActiveTarget` disabled | wx log redirection to stderr | Disabled pending further testing |
-| `application.py:21` | `import workarounds` | Imports display, font, encodings | Required |
+| `taskcoach.py` | `_set_wayland_app_id()` | Sets GLib program name for Wayland app ID matching | Required for proper Wayland dock integration |
+| `workarounds/monkeypatches.py` | hypertreelist import hook | Loads Task Coach's own copy of `wx.lib.agw.hypertreelist` | Permanent ([CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)) |
+| `workarounds/monkeypatches.py` | `Window.SetSize` clamp | A negative width or height becomes 0 (GTK asserts `height >= -1`) | Only the two- and four-number forms |
+| `workarounds/monkeypatches.py` | `wx.CallAfter` crash guard | Prevents segfaults from callbacks to destroyed C++ objects | Required for library code; the app's own deferred calls go through `patterns.later` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); see [CRASH_GUARD.md](CRASH_GUARD.md) |
+| `workarounds/monkeypatches.py` | `wx.Timer` owner guard | Stops timers still running when their owner window is destroyed, logs the start stack | Required for library code, as above; see [CRASH_GUARD.md](CRASH_GUARD.md) |
+| `workarounds/display.py` | `wx.Display` replacement (Windows) | Follows monitors plugged in or out | Possibly obsolete since wxWidgets 3.1; check on Windows |
+| `workarounds/encodings.py` | `mac_roman` codec alias | Decodes old macOS text | Required |
+| `widgets/__init__.py` | `wx.Dialog.__init__` binds `EVT_SET_CURSOR` | Stops the main window's sash cursor showing through dialogs | Required |
+| `application.py` | `OnExceptionInMainLoop` | Catches unhandled exceptions during wx event dispatch | Required, see [CRASH_GUARD.md](CRASH_GUARD.md) |
 
 ### Removed Legacy Hacks (January 2026)
 
@@ -184,13 +152,12 @@ The following obsolete workarounds were removed from `taskcoach.py`:
 | `wxversion.select(["2.8-unicode", "3.0"])` | 2008 | Ancient wx 2.8/3.0 selection - obsolete since ~2013 |
 | `/usr/share/pyshared` path hack | 2012 | Ubuntu 12.04 Python path - EOL 2017 |
 
-**Note:** Removing `XLIB_SKIP_ARGB_VISUALS=1` may resolve Issue #64 - user testing required to confirm. TEE module remains disabled pending further testing.
+**Note:** Removing `XLIB_SKIP_ARGB_VISUALS=1` may resolve Issue #64 - user testing required to confirm.
 
-### wxPython Patches
-
-| Location | Patch | Purpose |
-|----------|-------|---------|
-| `apply-wxpython-patch.sh` | `hypertreelist.py` patch | Fixes category row background coloring |
+Removed 2026-09: the `inspect.getargspec` shim (its one caller uses
+`getfullargspec()`), the `wx.FontFromNativeInfoString` replacement
+(`wxhelper.font_from_native_info()`), and the TEE module, disabled
+since January 2026.
 
 ### HyperTreeList Text Truncation Bug (Standard wxPython Issue)
 
@@ -287,14 +254,6 @@ class Speaker(metaclass=patterns.Singleton):
 ---
 
 ## 7. GTK3 Widget Sizing Inconsistency
-
-### TODO: Test App
-
-Create a small wxPython test app with buttons, dropdowns, and text inputs. Experiment with:
-- Less padding on buttons/dropdowns
-- More padding on text entries/spin controls
-
-Test on Linux (GTK3), Windows, and macOS to see if consistent sizing can be achieved.
 
 ### The Problem
 
@@ -413,60 +372,41 @@ No need to store "original values" — the settings object is the baseline.
 
 ## 11. EVT_TEXT Compatibility Shim in MultiLineTextCtrl
 
-`MultiLineTextCtrl` (StyledTextCtrl/Scintilla) overrides `Bind()` to remap `wx.EVT_TEXT` to `stc.EVT_STC_CHANGE` for compatibility with code written for `wx.TextCtrl`. If we keep Scintilla long-term, refactor all callers to use `EVT_STC_CHANGE` directly and remove the shim. File: `taskcoachlib/widgets/textctrl.py`.
+**Status: Done** (September 2026)
+
+No caller binds `wx.EVT_TEXT` on a `MultiLineTextCtrl` (the text
+fields save on `EVT_KILL_FOCUS`), so its remap to `EVT_STC_CHANGE`
+was removed.
 
 ---
 
 ## 12. Thunderbird/IMAP Mail Integration Review
 
-There seems to be a legacy Thunderbird email-drop integration that is likely
-non-functional and/or dead code. It needs review and, if confirmed dead,
-removal.
+**Status:** answered in part (September 2026)
 
-### What it is
+- The feature is live: dragging a Thunderbird mail onto a task works
+  ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md)); a mail on an IMAP
+  account (`imap-message://`) is read from the server
+  (`mailer/thunderbird.py`, `ThunderbirdImapReader`).
+- The IMAP password comes from `widgets/password.py`: the system
+  keyring through `keyring` when installed, else asked each session.
+  Its Python 2 byte handling was fixed 2026-09-30.
+- NTLM was removed 2026-09-30: the vendored `ntlm` could not run on
+  Python 3 ([PYTHON3_MIGRATION_2.md](PYTHON3_MIGRATION_2.md#ntlm-module)).
+  Login is CRAM-MD5 when offered, else the plain IMAP login.
+- The outgoing "Mail" command ([MENUS.md](MENUS.md)) is separate: it
+  uses neither IMAP nor the keyring.
 
-- `taskcoachlib/mailer/thunderbird.py` retrieves a dropped Thunderbird message
-  over **IMAP** (`imaplib.IMAP4_SSL`).
-- To authenticate it calls `GetPassword()` (`taskcoachlib/widgets/password.py`),
-  which stores/reads the mail-account password in the system keyring via the
-  `keyring` module → the freedesktop Secret Service.
-- This is the **only** live consumer of the keyring/secrets path
-  (`iocontroller.py` imports `GetPassword` but never calls it; no other caller
-  exists).
+Left:
 
-### Questions to answer
-
-1. Is the "drag a Thunderbird email onto a task" feature still wired into the UI
-   and working against current Thunderbird (URL format, IMAP, modern auth)?
-2. Is the IMAP/keyring path ever reached in practice, or is it dead?
-3. If dead: remove the IMAP path in `thunderbird.py`, the keyring usage in
-   `password.py`, and the optional `keyring` / `python3-dbus` dependencies.
-
-### Flatpak cross-reference
-
-The Flatpak build deliberately grants **neither** `--share=network` **nor**
-`--talk-name=org.freedesktop.secrets`, because this likely-dead mail feature is
-their only consumer — see [FLATPAK.md](FLATPAK.md) (finish-args). If the feature
-is revived, secret handling must go through the **Secret portal**
-(`org.freedesktop.portal.Secret`), **not** a direct
-`--talk-name=org.freedesktop.secrets` grant; the network access would also need a
-fresh review.
-
-### Related references
-
-- [PYTHON3_MIGRATION_2.md](PYTHON3_MIGRATION_2.md) kept the NTLM/IMAP auth code
-  (`thirdparty/ntlm/IMAPNtlmAuthHandler.py`) as "actively used" by
-  `thunderbird.py` (Nov 2025). That is **import-level** reachability, not a
-  verification that the drag-an-email feature actually works for a user today —
-  which is exactly what this review must establish.
-- A separate **outgoing** "Mail" command (mail a task) exists
-  ([MENUS.md](MENUS.md), [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md)); it is
-  distinct from this **incoming** IMAP email-drop and uses neither IMAP nor the
-  keyring. Don't conflate the two when reviewing.
-- macOS Thunderbird-profile path logic exists ([MACOS.md](MACOS.md)).
-
-**Status:** Needs investigation
+1. No OAuth2, which Gmail and Outlook.com require for IMAP; not yet
+   checked against a real server.
+2. Flatpak: the build grants neither `--share=network` nor
+   `--talk-name=org.freedesktop.secrets`
+   ([FLATPAK.md](FLATPAK.md), finish-args). Supporting this path there
+   needs the network and the **Secret portal**
+   (`org.freedesktop.portal.Secret`), not a direct secrets grant.
 
 ---
 
-**Last Updated:** June 2026
+**Last Updated:** September 2026

@@ -159,6 +159,17 @@ go at the end. Details live in the sections and documents linked.
     2026-09-29, **ruled by designer**: a missing attribute is the
     default, every value written was ruled out
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#defaults)).
+62. Undo design point 4, what is not a step (the program's own
+    changes, view state, the clipboard): built as proposed, **needs
+    the designer's ruling**
+    ([UNDO_REDO.md](UNDO_REDO.md#design-intent)).
+63. ~~Cleanup audit~~: done 2026-09-30, **asked by designer**: the
+    vendored `ntlm`, the old `patches/wxpython/` copy and four unused
+    tools removed; the `getargspec`, font and total-seconds shims
+    replaced; dead code, Python 2 leftovers and unread settings gone
+    (dropped from old INI files on load); the stale tests rewritten or,
+    for removed features, deleted; the docs brought up to date.
+    Decisions left: P43, P45 to P51.
 
 ## Deferred or Will Not Do
 
@@ -331,18 +342,15 @@ In the app:
   the attachment and its notes vanished on the next open. A dropped
   mail now keeps its subject, sender, sent date and a `mid:` link,
   not the mail ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md)).
-- P32. A "save changes?" question that took no clicks, **reported by
-  designer 2026-09-29** on the master release: switching from one file
-  to another, perhaps right after a change that was not saved yet, a
-  "save changes?" question showed with the second file, and none of its
-  buttons responded; only cancelling closed it, and the file was open.
-  Not reproduced 2026-09-29, on this branch nor on master (b6c35ab08): a
-  change and a switch through File > recent files in one burst of input;
-  autosave saved in between and no question showed. Leads from the code:
-  the question is a modal `wx.MessageBox` asked from the menu command,
-  before the current file closes (`IOController.open()`); autosave saves
-  at the next idle moment; a due reminder opens its window as the file
-  loads. Kept open until it is reproduced or reported again.
+- P32. ~~A "save changes?" question that took no clicks~~, reported
+  by designer 2026-09-29 on the master release, switching files right
+  after a change: closed 2026-09-30, not reproduced (2026-09-29, on
+  this branch and on master b6c35ab08: a change and a switch through
+  File > recent files in one burst of input; autosave saved in between
+  and no question showed). Leads if it comes back: the question is a
+  modal `wx.MessageBox` asked from the menu command before the current
+  file closes (`IOController.open()`); autosave saves at the next idle
+  moment; a due reminder opens its window as the file loads.
 - P33. ~~Dropping a file from a file manager, or a mail from
   Evolution or Claws Mail, raised an AttributeError on Linux and
   attached nothing~~: fixed 2026-09-30; the same on master. With
@@ -384,6 +392,66 @@ In the app:
   first GUI test of a run, so no deferred call ran in the later ones
   and tests depending on one passed without checking it~~: fixed
   2026-09-30 (`tests/test.py`).
+- P39. ~~Showing a column with icons (Attachments, Notes) showed none
+  until the tree was rebuilt~~: fixed 2026-09-30; the same on master
+  since March 2026 (6f5fae795). The in-place refresh kept the image
+  columns of the last rebuild.
+- P40. ~~File > Import > CSV failed before its first page~~: fixed
+  2026-09-30; the same on master. Its wizard used wxPython 2 calls
+  (the grid's selection mode, a two-number sizer, old event binding)
+  and Python 2 text handling (the preview decoded text already
+  decoded; Python 3's `csv` refuses an empty escape character).
+  Checked in the app: the preview shows the rows, "Import only the
+  selected rows" imports them (ticking it no longer reloads the
+  preview, which cleared the selection), and a date starting with the
+  year reads year-month-day even with "DD/MM" chosen (dateutil read
+  2026-10-02 as 10 February).
+- P41. ~~Reading a Thunderbird IMAP mail gave the keyring bytes, and a
+  server offering NTLM raised an error~~: fixed 2026-09-30; the
+  vendored `ntlm` could not run on Python 3 and was removed
+  ([TODO.md](TODO.md#12-thunderbirdimap-mail-integration-review)).
+- P42. ~~Strings translated before the translator existed read `LANG`
+  before `LC_ALL`, and the spell check the deprecated
+  `getdefaultlocale()`~~: fixed 2026-09-30, one function,
+  `i18n.system_language()` ([LOCALE.md](LOCALE.md)).
+- P43. Preferences > Windows > "Start with the main window
+  iconized: If it was iconized last session", the default, behaves as
+  Never, since the fork's merge (December 2025): nothing writes or
+  reads `window/iconized`. **Question:** restore it (save the state on
+  close) or drop the option (old INI files read as Never)?
+- P44. ~~The reminder window's tests were skipped on Linux (a crash)
+  and the leak test was a docstring~~: fixed 2026-09-30, the tests
+  only: asking for attention without a window manager crashes GTK
+  (mocked, as in `WindowSelfHealTest`); the file's objects are freed
+  after the loop's next pass.
+- P45. Upstream's release tooling: `legacy/` (Makefile, buildbot,
+  release.py), `changes.in/` (its history stops at 1.6.1.72, so
+  `ChangeHistoryTest` fails), `tests/releasetests/`,
+  `tests/disttests/` (a py2exe build). **Question:** retire them?
+- P46. The pyparsing minimum, 3.1.3 "for `pp.Tag`", in `setup.py` and
+  the packaging: `deltaTime.py` no longer uses `pp.Tag`, and Debian 13
+  ships 3.1.2 (which parses the templates' dates). **Question:** lower
+  it to a tested version?
+- P47. `thirdparty/plasma_window_management`: KWin may offer its
+  global only to a client whose `.desktop` file lists it in
+  `X-KDE-Wayland-Interfaces`, which ours does not
+  ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)). Needs a test on KDE Plasma
+  Wayland; else add the key or retire the binding.
+- P48. `thirdparty/wxScheduler` has no known author or licence, and it
+  and `timeline` are Task Coach forks now; `debian/copyright` lists
+  none of the vendored packages. **Question:** adopt both as
+  first-party code, and add the copyright stanzas?
+- P49. Three preferences that do nothing: "Icon size" (one choice,
+  "Not yet implemented"), "Show Breeze icons in picker" (there is no
+  Breeze theme) and "Check for new version on startup" (the check is
+  disabled: `VersionChecker.retrieveVersionFile()` always fails).
+  **Question:** remove them until the features exist?
+- P50. `workarounds/display.py` replaces `wx.Display` on Windows for
+  monitors plugged in or out; wxWidgets 3.1+ may do it itself. Needs a
+  check on Windows.
+- P51. Workarounds for wxPython 2.8 still run
+  (`settings_uicommand.py`, `searchctrl.py`, `gui/menu.py`); each
+  needs a behaviour check before removal.
 
 ## Views on the Effective Styles
 
@@ -674,7 +742,7 @@ Which signal covers each action:
 | Date set, changed or cleared: editor, viewer, calendar or timeline drag, presets, planned duration, start tracking setting an empty actual start, effort commands, Mark active or inactive | Field changed |
 | Recurring task completed: `recur()` reopens it and moves its dates and reminder | Field changed |
 | Reminder set, changed, snoozed or cleared: editor, reminder dialog, completion of a non-recurring task | Field changed (reminder) |
-| Undo or redo of an edit: `__setstate__()` calls the setters | Field changed |
+| Undo or redo of an edit: the fields put back, their callbacks run | Field changed |
 | New task or subtask, paste, template, import, file opened, file merged, undo of a delete | Tasks added |
 | Due soon hours, Preferences | Due soon hours changed |
 | Delete, cut, undo of an add | Tasks removed: their entries go |
@@ -851,7 +919,8 @@ differential probe: after each of 300 to 400 random changes (16 kinds:
 overrides, category links, priority, renames, moving tasks and
 categories, tracking, dates, completion, prerequisites, new and pasted
 tasks with owned notes, subnotes, delete and undelete,
-`__setstate__`, clock jumps of 1 s to 30 h), on 7 files of 167 to 714
+state restores (then `__setstate__`, since replaced by the undo
+log's snapshots), clock jumps of 1 s to 30 h), on 7 files of 167 to 714
 objects, an emulated incremental pass ran, then the real full loop:
 0 values left for the full loop, 0 objects out of order, 0 processed
 twice; 6 to 13 objects per change. Dropping any rule below brings
@@ -888,9 +957,9 @@ dialog closes.
 
 Rules the first sketch lacked, each needed by the probe:
 
-- Follow the `effective.*` events wherever they are sent: an override
-  setter and `__setstate__` compute an object's effective style at
-  once, outside the pass.
+- Follow the `effective.*` events wherever they are sent: a style
+  change, set or put back by undo, computes the object's effective
+  style at once, outside the pass (the style field's callback).
 - A category's members are the items whose `categories()` hold it:
   `Category.members()`, their index since P29. A task outside the file
   (deleted, kept for undo) is not processed: its reminder must not

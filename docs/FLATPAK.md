@@ -74,7 +74,7 @@ not a direct grant.
 > TODO is tracked, because it is relevant only to the Flatpak build.
 
 Task Coach reads and writes user-chosen files in **one** place:
-`__askUserForFile()` in `taskcoachlib/gui/iocontroller.py`, which calls
+`__ask_user_for_file()` in `taskcoachlib/gui/iocontroller.py`, which calls
 `wx.FileSelector` (a thin wrapper over `wxFileDialog`). Everything funnels
 through it — open / save / save-as / save-selection / save-as-template and **all**
 exports (`exportAsHTML` / `exportAsCSV` / `exportAsICalendar` / `exportAsTodoTxt`

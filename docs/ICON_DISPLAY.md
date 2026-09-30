@@ -199,7 +199,7 @@ Registry — store, retrieve, load themes, resolve duplicates.
 | `.get_wx_icon(icon_id, size)` | method | `wx.Icon or NullIcon` — get_icon + get_wx_icon + fallback |
 | `.get_icon_bundle(icon_id)` | method | `IconBundle` — convenience: get_icon + get_icon_bundle, empty bundle if not found |
 | `.get_path(icon_id, size)` | method | `str or None` — convenience: get_icon + path |
-| `.viewer_icon_ids()` | method | `list[str]` — icon IDs for viewer image lists (non-synthetic; future: only in-use data icons) |
+| `.viewer_icon_ids()` | method | `list[str]`: icon IDs for the icon picker (non-synthetic) |
 | `.normalize_icon_id(icon_id)` | method | `str` — resolve deprecated then duplicate, logs each, returns id unchanged if no match |
 | `._load_all_themes()` | method | File-based themes from icons_parsed.py + synthetic icons |
 | `._load_synthetic_icons()` | method | Create synthetic `Icon` + `SyntheticIconGenerator` instances from `get_icon_defs()` |
@@ -424,7 +424,7 @@ callers that require a valid bitmap.
 themes. If it fails, a `CRITICAL` log message is emitted — the icon system
 itself is broken.
 
-**Recursion guard:** `_get_fallback_bitmap()` checks if the failing icon IS the
+**Recursion guard:** `_fallback_bitmap()` checks if the failing icon IS the
 fallback icon. If so, it returns NullBitmap to avoid infinite recursion.
 
 ---
@@ -440,7 +440,7 @@ See [SYSTEM_TRAY.md — Platform Detection Flow](SYSTEM_TRAY.md#platform-detecti
 - Column class (single + multi image): `taskcoachlib/widgets/itemctrl.py`
 - Viewer adapter: `taskcoachlib/gui/viewer/base.py`
 - Tree refresh: `taskcoachlib/widgets/treectrl.py` (`_refreshImage`)
-- HyperTreeList storage + painting: `patches/wxpython/hypertreelist.py`
+- HyperTreeList storage + painting: `taskcoachlib/patches/hypertreelist.py`
 - Category icons column + callback: `taskcoachlib/gui/viewer/task.py`
 - Synthetic icon composition + cache: `taskcoachlib/gui/icons/synthetic_icon_generator.py`
 - Icon catalog + init + fallback: `taskcoachlib/gui/icons/icon_library.py`

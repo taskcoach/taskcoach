@@ -63,11 +63,10 @@ For more details on the packaging system, see [PACKAGING.md](PACKAGING.md).
 
 This section is for developers who want to work on TaskCoach code. If you just want to use TaskCoach, install the .deb package above.
 
-### ⚠️ IMPORTANT: wxPython Patch Required
-
-Debian Bookworm ships wxPython 4.2.0, which has critical bugs affecting category row background coloring. When running from source, the patch is applied automatically via the import hook.
-
-**For complete details, see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)**
+Task Coach carries its own copy of wxPython's tree list, loaded in
+place of the installed one
+([CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)); nothing
+to install.
 
 ### System Requirements
 
@@ -267,10 +266,10 @@ dpkg -l | grep python3-wx
 dpkg -l | grep python3-lxml
 ```
 
-### Verbose Logging
-```bash
-./taskcoach-run.sh --verbose
-```
+### Logging
+
+Run from a terminal: the log goes to its output
+([LOGGING_GUIDE.md](LOGGING_GUIDE.md)).
 
 ---
 

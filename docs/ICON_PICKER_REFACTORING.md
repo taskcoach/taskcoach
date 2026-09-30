@@ -8,16 +8,13 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
 - [Final Implementation](#final-implementation)
 - [Features](#features)
 - [Usage](#usage)
-- [The noIcon Parameter](#the-noicon-parameter)
+- [The no_icon Parameter](#the-no_icon-parameter)
 - [Files Involved](#files-involved)
-- [Demo Script](#demo-script)
 - [Technical Details](#technical-details)
   - [Button Active Appearance](#button-active-appearance)
   - [Focus Indicator](#focus-indicator)
   - [Escape Key Handling](#escape-key-handling)
 - [Appendix: wxWidgets Reference](#appendix-wxwidgets-reference)
-
-**Demo:** `docs/scripts/icon_picker_refactoring_demo.py`
 
 ## TODO Items
 
@@ -25,7 +22,7 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
 
 | # | Issue | Status | Notes |
 |---|-------|--------|-------|
-| 38 | Demo picker not working and not updated | Not Started | The real icon picker is now functional in the app. The standalone demo script is not kept in sync. To be reviewed as required by future dev/testing needs. |
+| 38 | ~~Demo picker not working and not updated~~ | Done | The demo script was removed (2026-09); the picker is tested in the app. |
 
 
 ### Search Box Issues
@@ -98,7 +95,7 @@ IconPicker (ThemedGenBitmapTextButton)
 - Keyboard navigation (arrows, Enter, Escape)
 - Disabled item support (strikethrough, unselectable)
 - Fixed-width option with text ellipsis
-- "No icon" option via `noIcon` parameter
+- "No icon" option via `no_icon` parameter
 - Button grows/shrinks to fit selected icon label
 - Separation of concerns: button only displays one icon, dialog owns list-building
 - List built fresh each dialog open (no persistent list state on button)
@@ -148,8 +145,8 @@ Icons support additional searchable text shown in a secondary column:
 
 **Data structure:**
 ```python
-# Item format: (icon_id, label, bitmap, hints, theme_label, context_label, enabled)
-("nuvola_actions_ledblue", "LED - Blue", bitmap, "status indicator light", "Legacy", "", True)
+# Item format: (icon_id, label, hints, theme_label, context_label, enabled)
+("nuvola_actions_ledblue", "LED - Blue", "status indicator light", "Legacy", "", True)
 ```
 
 ### Icon Data in icon_library.py
@@ -185,37 +182,37 @@ Disabled icons show:
 from taskcoachlib import widgets
 
 # Basic usage - includes "No icon" option by default
-picker = widgets.IconPicker(parent, currentIcon="calendar_icon")
+picker = widgets.IconPicker(parent, current_icon_id="calendar_icon")
 
 # With excluded icons (shown as disabled/strikethrough)
-picker = widgets.IconPicker(parent, currentIcon, exclude="status")
+picker = widgets.IconPicker(parent, current_icon_id, exclude="status")
 
 # Without "No icon" option - user must select an icon
-picker = widgets.IconPicker(parent, currentIcon, noIcon=False)
+picker = widgets.IconPicker(parent, current_icon_id, no_icon=False)
 
 # Fixed width (no grow/shrink, text truncated with ellipsis)
-picker = widgets.IconPicker(parent, currentIcon, fixedWidth=120)
+picker = widgets.IconPicker(parent, current_icon_id, fixed_width=120)
 
 # Get/set the selected icon
 icon_id = picker.GetValue()  # Returns "" for "No icon", or icon_id string
 picker.SetValue("calendar_icon")
 ```
 
-## The noIcon Parameter
+## The no_icon Parameter
 
-The `IconPicker` widget has a built-in `noIcon` parameter (default: `True`) that adds a "No icon" option to the picker.
+The `IconPicker` widget has a built-in `no_icon` parameter (default: `True`) that adds a "No icon" option to the picker.
 
-**When `noIcon=True` (default):**
+**When `no_icon=True` (default):**
 - Adds a "No icon" option allowing users to clear the icon selection
 - Returns empty string `""` as the value when selected
 
-**When `noIcon=False`:**
+**When `no_icon=False`:**
 - No "No icon" option available
 - User must select an actual icon
 
 **Usage in Task Coach:**
-- Task/Category editors: `noIcon=True` - allows clearing icon
-- Preferences status icons: `noIcon=True` - allows "No icon" for statuses
+- Task/Category editors: `no_icon=True` - allows clearing icon
+- Preferences status icons: `no_icon=True` - allows "No icon" for statuses
 
 ## Files Involved
 
@@ -226,17 +223,6 @@ The `IconPicker` widget has a built-in `noIcon` parameter (default: `True`) that
 | `taskcoachlib/gui/dialog/entry.py` | `IconEntry` uses `IconPicker` (auto-width) |
 | `taskcoachlib/gui/dialog/preferences.py` | Status icon pickers (120px fixed width) |
 | `taskcoachlib/gui/icons/icon_library.py` | Icon definitions and hints |
-| `docs/scripts/icon_picker_refactoring_demo.py` | Demo/test script |
-
-## Demo Script
-
-Run the demo to test the icon picker:
-
-```bash
-python3 docs/scripts/icon_picker_refactoring_demo.py
-```
-
-The demo shows multiple icon picker variants for comparison and testing.
 
 ## Technical Details
 
@@ -244,8 +230,8 @@ The demo shows multiple icon picker variants for comparison and testing.
 
 Two sizing modes:
 
-- **Grow** (`fixedWidth=None`, default): button grows and shrinks to fit the selected icon label.
-- **Fixed width** (`fixedWidth=N`): button constrained to N pixels. Does not grow or shrink. Label text is ellipsized via `wx.Control.Ellipsize()` in `DrawLabel`. Used in Preferences dialog (`fixedWidth=120`).
+- **Grow** (`fixed_width=None`, default): button grows and shrinks to fit the selected icon label.
+- **Fixed width** (`fixed_width=N`): button constrained to N pixels. Does not grow or shrink. Label text is ellipsized via `wx.Control.Ellipsize()` in `DrawLabel`. Used in Preferences dialog (`fixed_width=120`).
 
 In grow mode, after selection changes, `_update_button()` calls:
 
@@ -565,128 +551,6 @@ From wxWidgets source (`src/generic/vlbox.cpp`):
 | `SetItemCount(count)` | Set total items |
 | `RefreshAll()` | Refresh display |
 | `SetSelectionBackground(colour)` | Selection color |
-
-## Recommended Approach
-
-### Selected: `wx.Control` + `wx.PopupTransientWindow`
-
-Due to issues with `wx.ComboCtrl`'s internal text control blocking tab navigation
-and causing focus/highlight issues on GTK, we use a custom `wx.Control` with
-`wx.PopupTransientWindow`:
-
-**Architecture:**
-```
-SearchableIconCombo (wx.Control)
-├── Custom painted: border, background, icon, text, dropdown button
-├── Handles: focus, hover, click, keyboard
-└── SearchableIconPopupWindow (wx.PopupTransientWindow)
-    ├── wx.TextCtrl (filter input - SearchCtrl has focus bugs in popups)
-    └── IconVListBox (wx.VListBox)
-        └── Items: [icon] [label] [hints in grey]
-```
-
-**Pros:**
-- Full control over focus and tab navigation
-- No internal text control interference
-- Proper theme color usage via system colors
-- VListBox provides efficient scrolling with custom drawing
-
-**Cons:**
-- Must implement all painting and state management manually
-- Must track popup_shown flag and handle cleanup carefully
-
-**Known Issues:**
-- `wx.SearchCtrl` has focus bugs in `wx.PopupTransientWindow` - use `wx.TextCtrl` instead
-  (See: https://github.com/wxWidgets/Phoenix/issues/1920)
-- `wx.CB_READONLY` style blocks tab focus on GTK
-- `PopupTransientWindow.OnDismiss()` is only called when popup closes from external events
-  (clicking outside, losing focus) - NOT when `Dismiss()` is called programmatically.
-  Must manually reset parent state after calling `Dismiss()`.
-
-**Native Rendering:**
-- Main control: `RendererNative.DrawChoice()` for native appearance (border, shading, height)
-- Height: Matches native `wx.Choice` via temporary control measurement
-- Flags: `CONTROL_PRESSED`, `CONTROL_CURRENT`, `CONTROL_FOCUSED`, `CONTROL_DISABLED`
-- Focus: `RendererNative.DrawFocusRect()` for dotted focus indicator
-
-**Theme Colors Used:**
-- Text: `SYS_COLOUR_BTNTEXT` (normal), `SYS_COLOUR_GRAYTEXT` (disabled)
-- Popup border: `SYS_COLOUR_BTNSHADOW`
-- Popup background: `SYS_COLOUR_WINDOW`
-
-**Popup Sizing:**
-- Width: Maximum of button width and content width (based on longest label)
-- Height: Shows all items, limited to 75% of screen height
-- Uses `wx.Display.GetFromWindow(parent).GetClientArea().GetHeight()` for screen measurement
-- Per UX best practices, searchable dropdowns can show more items since users filter rather than scroll
-
-## Implementation Status
-
-### Completed
-
-- [x] Custom `wx.Control` replacing `wx.ComboCtrl` for proper tab navigation
-- [x] Custom `wx.PopupTransientWindow` for dropdown
-- [x] `wx.TextCtrl` for search (replaces buggy `wx.SearchCtrl`)
-- [x] `wx.VListBox` for efficient icon list with custom drawing
-- [x] Hints column (grey, searchable)
-- [x] Disabled item support (greyed, unselectable)
-- [x] Theme colors from `wx.SystemSettings`
-- [x] Border colors: `SYS_COLOUR_BTNSHADOW`, `SYS_COLOUR_HIGHLIGHT`
-- [x] Focus rectangle via `DrawFocusRect()`
-- [x] Single-click selection in dropdown
-- [x] Hover moves selection (menu-like behavior)
-- [x] Fixed width option with ellipsis
-
-### Remaining
-
-- [x] Verify search box focus and cursor (MiniFrame popup fixes caret visibility)
-- [x] Move to `taskcoachlib/widgets/iconpicker.py`
-- [x] Integrate into preferences.py (120px fixed width)
-- [x] Integrate into entry.py (auto-width)
-- [x] Add comprehensive hints to icon_library.py (60+ icons covered)
-- [ ] Test on Windows/macOS
-
-## Demo Script
-
-Run the demo to compare approaches:
-
-```bash
-python3 docs/scripts/icon_picker_refactoring_demo.py
-```
-
-The demo shows:
-1. Original `wx.adv.BitmapComboBox` (for comparison)
-2. New stretched full-width version (expands to fill space)
-3. New auto-sized version (natural width, not stretched)
-4. New 75px fixed-width version with ellipsis
-
-### Disabled Test Icons
-
-These icons are disabled in the demo to test disabled item rendering:
-- `led_grey_icon` - LED - Grey
-- `cross_red_icon` - Cross - Red
-- `lock_locked_icon` - Lock - Locked
-
-### Test Scenarios
-
-1. **Search by label**: Type "Bell" - should find Bell icon
-2. **Search by hint**: Type "alarm" - should find Bell (via hint)
-3. **Search by hint**: Type "complete" - should find Check mark
-4. **Search by hint**: Type "status" - should find LED icons
-5. **Disabled items**: LED - Grey, Cross - Red, Lock - Locked should have strikethrough and be unselectable
-6. **Ellipsis**: Long labels should truncate in 75px control
-7. **Wide popup**: Narrow control should have wide popup showing full content
-8. **Auto-size**: Auto-sized control should not stretch to fill width
-9. **Theme**: Control should follow system theme colors and styling
-
-## Files Involved
-
-- `docs/scripts/icon_picker_refactoring_demo.py` - Demo/test script with all icon picker variants
-- `taskcoachlib/widgets/iconpicker.py` - Reusable `IconPicker` widget with hints column
-- `taskcoachlib/widgets/__init__.py` - Exports `IconPicker` class
-- `taskcoachlib/gui/dialog/preferences.py` - Uses `widgets.IconPicker` (120px fixed width)
-- `taskcoachlib/gui/dialog/entry.py` - Uses `widgets.IconPicker` (auto-width)
-- `taskcoachlib/gui/icons/icon_library.py` - Icon catalog, deprecated mappings, normalization
 
 ## Related Issues
 

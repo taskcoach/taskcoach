@@ -548,7 +548,7 @@ the AppIndicator's 560) is platform specific. They stay separate
   look like a wx one, so even its deferred calls name the main window
   as their owner ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
 - **Different icons.** Catalog icons, sized by wx, against icon names
-  in the `tray/hicolor` theme (`icon_id()` against `tray_icon_id()`).
+  in the `tray/hicolor` theme.
 - **Different menus.** A wx menu built when clicked, with left and
   right click apart, against a GTK menu rebuilt on every change,
   shown on any click (the SNI protocol is menu-centric).
@@ -575,7 +575,7 @@ The tables below compare them.
 | `__start_or_stop_ticking` | Dispatch to start/stop |
 | `__start_ticking` / `__stop_ticking` | Clock + icon control |
 | `start_clock` / `stop_clock` / `_on_timer_second` | `timer.second` subscription |
-| Getters | `tooltip()`, `icon_id()` / `tray_icon_id()`, `default_icon_id()` / `default_tray_icon_id()` |
+| Getters | `tooltip()`; the wx icon also `icon_id()`, `default_icon_id()` |
 
 ### Platform-specific (different)
 

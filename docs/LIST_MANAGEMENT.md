@@ -498,7 +498,7 @@ A new method `_schedule_scrollbar_adjustment()` on `TreeListCtrl` (`treectrl.py`
 - **Other platforms**: Adjusts immediately (the deferral is harmless and ensures consistency)
 
 Called from:
-- `_expandDropTarget()` — after explicit expand on drag-drop
+- `_expand_drop_target()`: after explicit expand on drag-drop
 - `on_item_expanding()` — after lazy-loading children when item expands
 - `TreeViewer.on_item_expanded()` / `on_item_collapsed()` — after individual expand/collapse events
 - `TreeViewer.expand_all()` / `collapse_all()` — after bulk expand/collapse operations
@@ -722,7 +722,7 @@ eliminate the UpdateUI overhead entirely.
 
 **Q2: Can we make it event-driven instead?** Selection changes already fire
 `EVT_TREE_SEL_CHANGED` → `onSelect()`. Data changes fire
-`onPresentationChanged()`. Undo/redo state changes when commands execute. We
+`on_presentation_changed()`. Undo/redo state changes when commands execute. We
 could call `UpdateWindowUI()` explicitly at these points and disable the
 polling entirely via `wx.UpdateUIEvent.SetMode(wx.UPDATE_UI_PROCESS_SPECIFIED)`.
 This way button states update immediately on real changes and never poll.
@@ -789,14 +789,14 @@ continuous polling overhead.
 | `EditUndo` | history | `commandhistory.changed` Publisher event → `command.enabled()` |
 | `EditRedo` | history | `commandhistory.changed` Publisher event → `command.enabled()` |
 
-**Custom `enabled()`** (`EVT_UPDATE_UI` but no selection polling):
+**Custom `enabled()`**:
 
 | Command | What `enabled()` checks |
 |---------|-------------------------|
 | `EditPaste` | `TextCtrl.CanPaste()` or clipboard |
 | `RenameViewer` | `activeViewer()` |
 | `ActivateViewer` | `viewerCount() > 1` |
-| `HideCurrentColumn` | `isHideableColumn()` at mouse position |
+| `HideCurrentColumn` | `is_hideable_column()` at mouse position |
 | `EffortStartForTask` | task not completed/tracked |
 | `EffortStartButton` | any task not completed |
 | `DialogCommand` | dialog is closed |
@@ -995,33 +995,14 @@ the motion-only input filter is sufficient to prevent the cascade.
    occur with standard `wx.aui.AuiManager` (C++ implementation) or
    is it specific to the pure-Python `agw` version?
 
-2. **Full rebuild on every editor field change** - Editing any field
-   in the task or category editor (even subject, notes, colors) triggers
-   a full `RefreshAllItems` rebuild of every tree view.  The tree is not
-   virtual - each rebuild deletes all nodes and recreates them (text,
-   colors, fonts, images for every item and column).  For 291 items
-   with 8 columns this is ~2300 text lookups + 291 color/font
-   computations + a 280ms paint.
-
-   The tree already has per-item `RefreshItems()` that updates just the
-   changed rows in place (text, colors, font, repaint line).  The
-   filter's `reset()` and sorter's `reset()` both check whether the
-   result actually changed before firing events.  But something in the
-   event chain still triggers a full rebuild on every edit.  Need caller
-   tracing to identify the exact path.
-
-   User request: "Why every time that I change a value in the edit task
-   window, all lists in my views flicker, seems like they are being
-   fully rebuilt" and "same thing for each time I edit values of a
-   category" and "Any fields, even a task or category subject."
-
-   Ideal fix: attribute changes that don't affect sort order or filter
-   membership should use per-item `RefreshItems()` only, never a full
-   `RefreshAllItems()` rebuild.  The list control (`wx.LC_VIRTUAL`) is
-   already virtual and cheap to refresh.  The tree control
-   (`HyperTreeList`) is not virtual and cannot reorder nodes in place -
-   it has no `MoveItem()` API - so sort order changes do require a full
-   rebuild, but non-sort attribute changes should not.
+2. **Full rebuild on every editor field change**: partly done
+   (March 2026, 6f5fae795). `RefreshAllItems()` compares the tree's
+   structure with the presentation's and refreshes the rows in place
+   when it is unchanged, so an edit no longer deletes and recreates
+   the nodes. Left: every row is refreshed, not only the changed one;
+   an attribute change that moves no row needs only `RefreshItems()`.
+   A sort order change still needs a rebuild: `HyperTreeList` has no
+   `MoveItem()`.
 
 ### Key Files
 

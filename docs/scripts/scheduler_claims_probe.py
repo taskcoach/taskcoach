@@ -15,6 +15,7 @@ import wx
 app = wx.App(False)
 from taskcoachlib import config, persistence
 from taskcoachlib.config import settings2
+from taskcoachlib.tools import wxhelper
 
 s = config.Settings(load=False)
 settings2.init(s)
@@ -47,8 +48,8 @@ sched._last_tick = ts
 c.setSubject("Beta")
 print("(a) objects marked by the rename:", len(sched._marks))
 # (b) font equality
-f1 = wx.FontFromNativeInfoString("0;Sans 10")
-f2 = wx.FontFromNativeInfoString("0;Sans 10")
+f1 = wxhelper.font_from_native_info("0;Sans 10")
+f2 = wxhelper.font_from_native_info("0;Sans 10")
 print(
     "(b) fonts from one string equal:",
     f1 == f2,

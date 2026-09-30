@@ -179,7 +179,9 @@ only for the merge; the same ID in both is the same item.
 - A merge replaces items by their winning copies and edits nothing,
   so no edit rule runs, the parent rules
   ([SCHEDULERS.md](SCHEDULERS.md#ssot-principle-scheduler-vs-events))
-  included (`Task.merging()`). **Ruling, 2026-09-28:** the rules may
+  included (`restoring()`, as undo and redo:
+  [UNDO_REDO.md](UNDO_REDO.md#architecture-snapshot-and-diff)).
+  **Ruling, 2026-09-28:** the rules may
   run, as when adding subtasks in the editor, but not through a
   separate path for this fringe function; what they would change (a
   completed parent holding an open subtask from the other file) is

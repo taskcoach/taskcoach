@@ -436,9 +436,8 @@ A minimal test app exists at `test_aui_toolbar_jitter.py` that reproduces the is
    - Ensure consistent use of str vs bytes
    - Review file I/O encoding
 
-4. **Deprecated wxPython APIs**
-   - Review all wx.FONTSTYLE_* usage
-   - Check for other deprecated constants/methods
+4. ~~**Deprecated wxPython APIs**~~: done, no `wx.FONTSTYLE_*` use
+   left; `wx.NewId()` in wxScheduler replaced 2026-09.
 
 5. **Internationalization Modernization**
    - Migrate from custom `po2dict.py` translation system to standard GNU gettext
@@ -461,7 +460,7 @@ During investigation of a segfault on Ubuntu 24.04 with German locale, several i
 
 | Issue | Severity | Status |
 |-------|----------|--------|
-| `locale.getdefaultlocale()` deprecated since Python 3.11 | High | Fixed |
+| `locale.getdefaultlocale()` deprecated since Python 3.11 | High | Fixed; one function, `i18n.system_language()`, since 2026-09 (the spell check still called it) |
 | wx.Locale object lifecycle can cause segfaults | High | Fixed |
 | No diagnostic logging for locale/i18n issues | Medium | Fixed |
 | Custom translation system diverges from standard gettext | Low | Future work |

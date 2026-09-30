@@ -6,7 +6,7 @@ Simple time and duration input controls with explicit subfields and translatable
 
 - [TODO](#todo)
 - [Location](#location)
-- [Old Control Behavior Reference](#old-control-behavior-reference)
+- [Behavior](#behavior)
   - [N/A Display When Unchecked](#na-display-when-unchecked)
   - [SetNone: Unchecking the Checkbox](#setnone-unchecking-the-checkbox)
   - [Checkbox Checked: Values Appear from Sub-Controls](#checkbox-checked-values-appear-from-sub-controls)
@@ -89,11 +89,9 @@ Self-contained module with custom-painted single field and navigable subfields.
    **Superseded:** DateTimeComboCtrl now inherits `wx.EvtHandler` and posts
    `EVT_VALUE_CHANGED` on itself. See
    [DateTimeComboCtrl Event Ownership](#datetimecomboctrl-event-ownership).
-4. **Sub-control stash model and event contract** — The sub-controls are the
-   stash for DateTimeComboCtrl. `ActivateValue()` and `DeactivateValue()` must
-   each fire `EVT_VALUE_CHANGED` when they change the control's
-   externally-visible state. Sub-control events alone are not sufficient —
-   they don't fire when only the checkbox changes. See
+4. ~~**Sub-control stash model and event contract**~~: **Done.**
+   `ActivateValue()` and `DeactivateValue()` always fire
+   `EVT_VALUE_CHANGED`. See
    [Sub-Control Stash Model](#sub-control-stash-model).
 6. ~~**Editor helpers must go through widget API**~~ — **Done.** All task
    calc helpers (`__deactivateStartDate`, `__deactivateDueDate`,
@@ -137,147 +135,23 @@ Self-contained module with custom-painted single field and navigable subfields.
 
 `taskcoachlib/widgets/maskedtimectrl.py`
 
-## Old Control Behavior Reference
+## Behavior
 
-The new controls should match the behavior of the old `smartdatetimectrl.py` system. Key behaviors to preserve:
+`DateTimeComboCtrl` keeps the old `smartdatetimectrl` behavior (the
+control it replaced in January 2026):
 
-### N/A Display When Unchecked
-
-When the checkbox is unchecked, the old control shows **"N/A"** centered in light grey, hiding the actual values (which are preserved internally in the date/time sub-controls).
-
-**Code reference:** `taskcoachlib/thirdparty/smartdatetimectrl.py:649-671`
-```python
-def OnPaint(self, event):
-    ...
-    if self.IsEnabled():
-        # Paint actual values
-        for widget, x, y, w, h in self.__widgets:
-            ...
-            widget.PaintValue(dc, x, y, w, h)
-    else:
-        # Disabled: show "N/A" instead of values
-        text = "N/A"
-        tw, th = dc.GetTextExtent(text)
-        dc.SetTextForeground(wx.LIGHT_GREY)
-        dc.DrawText(text, (w - tw) // 2, (h - th) // 2)
-```
-
-### SetNone: Unchecking the Checkbox
-
-When `SetNone()` is called (or checkbox is unchecked), the control:
-1. Sets checkbox to unchecked
-2. Disables date/time sub-controls (triggers "N/A" painting)
-3. **Does NOT clear the values** - they remain stored in the sub-controls
-
-**Code reference:** `taskcoachlib/widgets/datectrl.py:179-181`
-```python
-def SetNone(self):
-    self.__value = None
-    self.__ctrl.SetDateTime(None)  # Calls smartdatetimectrl SetDateTime
-```
-
-**Code reference:** `taskcoachlib/thirdparty/smartdatetimectrl.py:2968-2980`
-```python
-def SetDateTime(self, value, notify=False):
-    ...
-    if value is None:
-        if self.__enableNone:
-            self.__checkbox.SetValue(False)  # Uncheck
-            self.Enable(False)                # Disable (shows "N/A")
-        # NOTE: Date/time sub-control values are NOT cleared!
-```
-
-### Checkbox Checked: Values Appear from Sub-Controls
-
-When user checks the checkbox, the **already-stored values** from the date/time sub-controls become visible. The values were never erased - just hidden behind "N/A".
-
-**Code reference:** `taskcoachlib/thirdparty/smartdatetimectrl.py:3008-3022`
-```python
-def OnToggleNone(self, event):
-    if event.IsChecked():
-        # Read values already stored in sub-controls
-        evt = DateTimeChangeEvent(
-            self,
-            datetime.datetime.combine(
-                self.__dateCtrl.GetDate(),   # Values were preserved!
-                self.__timeCtrl.GetTime()
-            ),
-        )
-    else:
-        evt = DateTimeChangeEvent(self, None)
-    self.ProcessEvent(evt)
-    self.Enable(event.IsChecked())  # Enable/disable sub-controls
-    self.Refresh()
-    if event.IsChecked():
-        self.__dateCtrl.SetFocus()  # Focus date field when checked
-```
-
-### Suggested DateTime Feature
-
-When there is **no prior value** but a `suggestedDateTime` is provided:
-1. Set the sub-control values to the suggested datetime
-2. Call `SetNone()` to put in unchecked state (shows "N/A", values hidden)
-3. When user checks the checkbox, the suggested values appear!
-
-**Code reference:** `taskcoachlib/gui/dialog/entry.py:70-81`
-```python
-class DateTimeEntry(widgets.DateTimeCtrl):
-    def __init__(self, ..., suggestedDateTime=None, ...):
-        ...
-        # If no initial value but suggested datetime provided
-        if initialDateTime == date.DateTime() and suggestedDateTime:
-            self.setSuggested(suggestedDateTime)
-        else:
-            self.SetValue(initialDateTime)
-
-    def setSuggested(self, suggestedDateTime):
-        super().SetValue(suggestedDateTime)  # Set values in sub-controls
-        super().SetNone()                     # Uncheck (shows "N/A", hides values)
-```
-
-### Built-in Default to "Now"
-
-The smartdatetimectrl has a **built-in fallback** when no value is provided - it defaults to "now".
-
-**Code reference:** `taskcoachlib/thirdparty/smartdatetimectrl.py:2837`
-```python
-dateTime = value or datetime.datetime.now()  # Default to "now" if no value
-```
-
-**Code reference:** `taskcoachlib/thirdparty/smartdatetimectrl.py:2878-2879`
-```python
-if self.__enableNone and value is None:
-    self.Enable(False)  # Disable (shows "N/A") but "now" is already stored
-```
-
-So when **NO prior value** and **NO suggested datetime**:
-1. `value=None` passed to SmartDateTimeCtrl
-2. `dateTime = None or datetime.datetime.now()` → sub-controls store "now"
-3. `Enable(False)` called → shows "N/A"
-4. User checks checkbox → "now" appears
-
-The `suggestedDateTime` parameter in `entry.py` is for when a **different** suggestion is wanted (e.g., planned start date as suggestion for actual start date, rather than "now").
-
-### Complete Flow Examples
-
-**Example 1: No prior value, no suggested datetime**
-1. Task has no actual start date, no suggestedDateTime provided
-2. smartdatetimectrl defaults to "now" internally (line 2837)
-3. Control disabled → shows "N/A"
-4. User checks checkbox → "now" appears
-
-**Example 2: No prior value, with suggested datetime**
-1. Task has no actual start date, but `suggestedActualStartDateTime()` returns planned start
-2. `setSuggested(plannedStart)` is called:
-   - `SetValue(plannedStart)` → sub-controls store planned start (overrides "now")
-   - `SetNone()` → checkbox unchecked, disabled, shows "N/A"
-3. User sees "N/A" in the field
-4. User checks checkbox → planned start appears (not "now")
-
-**Example 3: Has prior value**
-1. Task has actual start date set
-2. `SetValue(actualStart)` is called → sub-controls store actual start, checkbox checked
-3. User sees the actual start date/time
+- **Unchecked shows "N/A"**: the date and time fields are disabled and
+  paint "N/A" in grey (`DateCtrl._onPaint()`,
+  `_NativeDateCtrl._onPaintNA()`); their values stay (the stash, see
+  [Sub-Control Stash Model](#sub-control-stash-model)).
+- **Checking shows the stash**: `ActivateValue()` shows the values the
+  fields held, or the suggested value when one is given.
+- **Suggested value**: without a value, `suggested_value` fills the
+  fields behind "N/A" (e.g. the planned start for the actual start);
+  without either, now, to the second.
+- `SetValue(date.DateTime())` unchecks (`DeactivateValue()`); any other
+  date checks and shows it (`ActivateValue()`). `GetValue()` returns
+  `date.DateTime()` when unchecked.
 
 ### External Update Mechanism (AttributeSync)
 
@@ -683,8 +557,8 @@ python3 docs/scripts/datetime_controls_demo.py
 The module is fully self-contained with these components:
 
 - **Helper functions**: `getTextCtrlContentOffset()` (system metrics for custom painting), `monthcalendarex()` (calendar grid generation)
-- **Event types**: `EVT_POPUP_DISMISS`, `EVT_CHOICE_SELECTED`, `EVT_CHOICE_PREVIEW`
-- **Event classes**: `PopupDismissEvent`, `ChoiceSelectedEvent`, `ChoicePreviewEvent`
+- **Event types**: `EVT_POPUP_DISMISS`, `EVT_CHOICE_SELECTED`
+- **Event classes**: `PopupDismissEvent`, `ChoiceSelectedEvent`
 - **Popup classes**: `_PopupWindow` (base), `_ChoicesPopup` (dropdown), `_CalendarPopup` (date selection)
 - **Field class**: `NumericField` (individual editable subfield)
 - **Control classes**: `MaskedFieldsCtrl` (base), `DurationCtrl`, `DurationCtrlVerbose`, `TimeCtrl`, `TimeWithSecondsCtrl`, `DateCtrl`, `DateComboCustomCtrl`, `DateComboRouterCtrl` (router), `DateTimeComboCtrl`
@@ -865,8 +739,7 @@ The dropdown width uses the field width as minimum, ensuring the popup is at lea
 
 ### Events from Popup
 
-The popup fires three events:
-- `EVT_CHOICE_PREVIEW`: Arrow key navigation in dropdown (live update to field)
+The popup fires two events:
 - `EVT_CHOICE_SELECTED`: Enter key or click selection (confirms value)
 - `EVT_POPUP_DISMISS`: Popup closed for any reason (Escape, click outside, selection)
 
@@ -1097,7 +970,6 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 | `GetCheckBox()` | `wx.CheckBox` |
 | `GetDateCtrl()` | `DateComboCustomCtrl` |
 | `GetTimeCtrl()` | `TimeCtrl` / `TimeWithSecondsCtrl` |
-| `GetWidgets()` | Tuple of all three |
 | `CreateRowPanel(parent)` | `wx.Panel` with all three arranged horizontally |
 
 **Deprecated methods** (log warnings, no-op, prefer semantic methods above):

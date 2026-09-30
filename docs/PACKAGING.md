@@ -247,30 +247,17 @@ dpkg-buildpackage -us -uc -S
 
 ### wxPython Patch Strategy
 
-**Project files:** [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md) | [patches/wxpython/README.md](../patches/wxpython/README.md)
+**Project files:** [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)
 
-Task Coach requires a patch to wxPython's `hypertreelist.py` for correct background coloring. Since packages cannot modify system `python3-wxgtk4.0`, we bundle the patch.
+Task Coach carries its own copy of wxPython's `hypertreelist.py`
+(`taskcoachlib/patches/`), loaded in place of the installed one on
+every wxPython version; packages cannot modify the system
+`python3-wxgtk4.0`.
 
-### The Problem
-
-- wxPython < 4.2.4 has bugs in `TR_FULL_ROW_HIGHLIGHT` and `TR_FILL_WHOLE_COLUMN_BACKGROUND`
-- Fix merged upstream in wxPython 4.2.4 (October 28, 2025)
-- Current Debian/Ubuntu versions ship older wxPython
-
-### The Solution
-
-1. **Bundled patch** at `taskcoachlib/patches/hypertreelist.py`
-2. **Import hook** in `taskcoachlib/workarounds/monkeypatches.py`
-3. **Redirects** `wx.lib.agw.hypertreelist` to bundled version
-4. System wxPython remains unmodified
-
-This works for all installation methods (Debian, Ubuntu, Fedora, pip, etc.).
-
-### When to Remove
-
-Remove when Debian/Ubuntu ship wxPython >= 4.2.4:
-1. Remove import hook from `monkeypatches.py`
-2. Remove `taskcoachlib/patches/` directory
+The copy has the row background fixes wxPython < 4.2.4 lacks and Task
+Coach's own changes, so it stays on every version. An import hook in
+`taskcoachlib/workarounds/monkeypatches.py` loads it; it ships inside
+`taskcoachlib`, so every package type has it.
 
 ### Dependencies
 

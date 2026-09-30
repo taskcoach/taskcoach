@@ -195,18 +195,9 @@ macOS version detection uses the Darwin kernel version via `platform.release()`:
 
 ### Version Check Code
 
-```python
-# taskcoachlib/operating_system.py
-
-def _platformVersion():
-    return tuple(map(int, platform.release().split(".")))
-
-def isMacOsSonoma_OrNewer():
-    """Check if running on macOS 14 (Sonoma) or newer."""
-    if isMac():
-        return _platformVersion() >= (23,)  # Darwin 23 = macOS 14
-    return False
-```
+None: no code checks the macOS version, since every supported one has
+what Task Coach uses. The last check, `isMacOsXLion_OrNewer()`, was
+removed 2026-09, unused.
 
 ### Reference
 

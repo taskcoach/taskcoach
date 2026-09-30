@@ -130,7 +130,7 @@ This fallback trades visual consistency for implementation simplicity.
 Spell checking is configured in **Edit > Preferences > Regional**:
 
 - **Enable spell checking**: Toggle on/off
-- **Language**: Dropdown shows installed dictionaries (auto-detects system language if not set)
+- **Language**: Dropdown shows installed dictionaries; when not set, the user's language from the environment, as for the translation (`i18n.system_language()`, [LOCALE.md](LOCALE.md))
 
 ## Theme-Aware STC Improvements
 

@@ -895,7 +895,8 @@ UI components should:
 See ATTRIBUTE_PATTERN.md §Volatile vs Persisted Attributes for the general pattern.
 
 The derived and effective Attribute fields are:
-- **Not in `__getstate__()`** — excluded from serialization
+- **Not stored**: not written to the file, not in the undo log's
+  snapshots
 - **Initialized to None/""** after file load
 - **Populated by ComputeStyles polling** within 1 second of app start
 

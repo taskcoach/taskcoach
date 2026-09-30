@@ -93,6 +93,10 @@ Cascading checks for language selection:
 5. `locale.getlocale(locale.LC_MESSAGES)`
 6. Final fallback: `"en_US"`
 
+Steps 4 and 5 are `i18n.system_language()`, the one reading of the
+environment's language: the spell check's default language and the
+strings translated before the translator exists use it too.
+
 - **Files:** `application.py`, `i18n/__init__.py`
 
 ---

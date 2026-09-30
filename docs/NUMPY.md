@@ -61,14 +61,13 @@ distro, and a `<2` constraint would conflict with distros shipping numpy 2.x.
 
 ## Usage in Task Coach
 
-NumPy is used in `taskcoachlib/tools/wxhelper.py` for four image alpha
+NumPy is used in `taskcoachlib/tools/wxhelper.py` for three image alpha
 operations:
 
 | Function | Purpose |
 |----------|---------|
 | `getAlphaDataFromImage()` | Read alpha channel as numpy uint8 array |
 | `setAlphaDataToImage()` | Write alpha data (array, bytes, list) to image |
-| `clearAlphaDataOfImage()` | Fill alpha channel with uniform value |
 | `mergeImagesWithAlpha()` | Composite overlay icon onto base icon |
 
 These are called by the icon library (`taskcoachlib/gui/icons/icon_library.py`)

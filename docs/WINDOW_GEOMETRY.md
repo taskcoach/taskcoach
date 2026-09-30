@@ -238,11 +238,9 @@ measured.
 |---------|-----|-----|
 | `[window]` | `position`, `size`, `maximized` | Main window state |
 | `[window]` | `starticonized`, `hidewheniconized` | [Start Minimized](#start-minimized) |
-| `[window]` | `monitor_index` | Read by `wxhelper.centerOnAppMonitor()`, never written |
 | `[window]` | `iconized` | Not used |
 | `[<type>dialog_with_<tabs>]`, `[effortdialog]` | `position`, `size` | Editor state, one section per editor type and set of tabs |
 | same | `maximized` | Written; editors have a maximize box |
-| same | `parent_offset` | Not used |
 | same | `perspective` | Tab layout, saved but not loaded (see [PYTHON3_MIGRATION_1.md](PYTHON3_MIGRATION_1.md)) |
 
 ### Tracing
@@ -666,7 +664,8 @@ Left:
   (`application.py` only logs it). If per-monitor, store sizes in DIPs
   (`ToDIP()`/`FromDIP()`) so a window moved between monitors with
   different scaling keeps its size. GTK already uses logical pixels.
-- Remove the unused settings keys.
+- Remove the unused `iconized` key, with the start minimized
+  decision.
 
 ### Not Yet Examined
 

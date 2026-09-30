@@ -156,6 +156,10 @@ At startup, `Settings.__init__()` runs:
 2. `ConfigParser.read(inifile)` — merges saved INI on top (existing
    sections get updated values, new sections like `taskviewer1` get
    added)
+3. `_migrateOldSettingNames()` renames options, and
+   `_remove_obsolete_settings()` drops the ones no release reads
+   (`_OBSOLETE_SETTINGS`), so an old INI file carries neither forward.
+   An option retired from `defaults.py` goes on that list.
 
 After step 2, ConfigParser contains both the original template sections
 (possibly overwritten by INI values from instance 0) and all viewer
