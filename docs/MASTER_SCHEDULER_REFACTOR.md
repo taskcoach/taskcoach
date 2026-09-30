@@ -283,6 +283,11 @@ In the app:
   reader refuses it with a clear error; the empty `PIParser` is gone.
 - P27. ~~The tests loaded the icon catalog twice and logged each icon
   as an ID conflict~~: fixed 2026-09-29; the same on master.
+- P28. ~~The editor's Check all and Uncheck all categories linked
+  only the task's side~~: fixed 2026-09-29; the same on master. The
+  file stores the category's side, so the categories were lost on
+  save; they were not undoable either. Both now go through one
+  command, both sides, like a single check.
 
 ## Views on the Effective Styles
 

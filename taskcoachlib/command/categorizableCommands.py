@@ -114,3 +114,48 @@ class ToggleCategoryCommand(base.BaseCommand):
         """Make categorizable no longer belong to category."""
         category.removeCategorizable(categorizable, event=event)
         categorizable.removeCategory(category, event=event)
+
+
+class LinkCategoriesCommand(base.BaseCommand):
+    """Link every category to every item, or unlink them (the editor's
+    Check all and Uncheck all): both sides, as one action."""
+
+    plural_name = _("Toggle category")
+    singular_name = _('Toggle category of "%s"')
+
+    def __init__(self, *args, **kwargs):
+        categories = kwargs.pop("categories")
+        self.__link = kwargs.pop("link", True)
+        super().__init__(*args, **kwargs)
+        # The pairs this action changes; undo reverses exactly these
+        self.__pairs = [
+            (category, item)
+            for category in categories
+            for item in self.items
+            if (category in item.categories()) != self.__link
+        ]
+
+    def canDo(self):
+        return bool(self.__pairs)
+
+    @patterns.eventSource
+    def __apply(self, link, event=None):
+        for category, item in self.__pairs:
+            if link:
+                category.addCategorizable(item, event=event)
+                item.addCategory(category, event=event)
+            else:
+                category.removeCategorizable(item, event=event)
+                item.removeCategory(category, event=event)
+
+    def do_command(self):
+        super().do_command()
+        self.__apply(self.__link)
+
+    def undo_command(self):
+        super().undo_command()
+        self.__apply(not self.__link)
+
+    def redo_command(self):
+        super().redo_command()
+        self.__apply(self.__link)

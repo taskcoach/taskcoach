@@ -100,6 +100,45 @@ class ToggleCategory(ToggleCategoryCommandTestCase):
         )
 
 
+class LinkCategories(ToggleCategoryCommandTestCase):
+    # The editor's Check all and Uncheck all
+    def link(self, link=True):
+        self.other = category.Category("Other")
+        command.LinkCategoriesCommand(
+            None,
+            [self.categorizable],
+            categories=[self.category, self.other],
+            link=link,
+        ).do()
+
+    def both_sides(self):
+        return (
+            self.categorizable.categories(),
+            {
+                each
+                for each in (self.category, self.other)
+                if self.categorizable in each.categorizables()
+            },
+        )
+
+    def test_check_all_links_both_sides(self):
+        self.link()
+        both = {self.category, self.other}
+        self.assertDoUndoRedo(
+            lambda: self.assertEqual((both, both), self.both_sides()),
+            lambda: self.assertEqual((set(), set()), self.both_sides()),
+        )
+
+    def test_uncheck_all_unlinks_both_sides(self):
+        self.toggleItem([self.categorizable])
+        self.link(link=False)
+        linked = {self.category}
+        self.assertDoUndoRedo(
+            lambda: self.assertEqual((set(), set()), self.both_sides()),
+            lambda: self.assertEqual((linked, linked), self.both_sides()),
+        )
+
+
 class ToggleMutualExclusiveCategories(ToggleCategoryCommandTestCase):
     def setUp(self):
         super().setUp()

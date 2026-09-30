@@ -2682,18 +2682,21 @@ class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
 
     def check_all_categories(self):
         """Assign all categories to the items being edited."""
-        for cat in self.presentation():
-            for item in self.__items:
-                if cat not in item.categories():
-                    item.addCategory(cat)
-        self.widget.refresh_all_check_states()
+        self.__link_all_categories(link=True)
 
     def uncheck_all_categories(self):
         """Remove all categories from the items being edited."""
-        for cat in self.presentation():
-            for item in self.__items:
-                if cat in item.categories():
-                    item.removeCategory(cat)
+        self.__link_all_categories(link=False)
+
+    def __link_all_categories(self, link):
+        # Both sides, undoable, as a single check does: the file stores
+        # the category's side
+        command.LinkCategoriesCommand(
+            None,
+            self.__items,
+            categories=list(self.presentation()),
+            link=link,
+        ).do()
         self.widget.refresh_all_check_states()
 
     def createActionToolBarUICommands(self):

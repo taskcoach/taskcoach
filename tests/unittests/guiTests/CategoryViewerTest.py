@@ -42,6 +42,27 @@ class CategoryViewerTest(test.wxTestCase):
         self.categories.extend([cat2, cat1])
         return cat1, cat2
 
+    def test_check_all_in_the_editor_keeps_the_categories_on_save(self):
+        # The file stores the category's side of the link
+        from taskcoachlib.domain import task
+
+        task.Task.settings = self.settings
+        cat1, cat2 = self.addTwoCategories()
+        paint = task.Task(subject="paint")
+        self.taskFile.tasks().append(paint)
+        local = gui.dialog.editor.LocalCategoryViewer(
+            [paint], self.frame, self.taskFile, self.settings
+        )
+        local.check_all_categories()
+        self.assertEqual(
+            ({cat1, cat2}, [paint], [paint]),
+            (
+                paint.categories(),
+                list(cat1.categorizables()),
+                list(cat2.categorizables()),
+            ),
+        )
+
     def testInitialSize(self):
         self.assertEqual(0, self.viewer.size())
 
