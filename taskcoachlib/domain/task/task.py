@@ -794,10 +794,7 @@ class Task(
             .replace("tasks", "")
             .strip()
         )
-        icon_section = self._themedSection("icon")
-        self.__status_icon_id = self.settings.get(
-            icon_section, "%stasks" % new_status
-        )
+        self.__status_icon_id = new_status.icon_id(self.settings)
         self.__status_source = new_source
 
         # Fire event if status changed
@@ -1111,19 +1108,7 @@ class Task(
 
     @classmethod
     def _themedSection(class_, section):
-        try:
-            from taskcoachlib.config import settings2
-
-            return (
-                section + "_dark"
-                if settings2.window.theme_is_dark
-                else section
-            )
-        except Exception as e:
-            from taskcoachlib.meta.debug import log_step
-
-            log_step("_themedSection(%s): %s" % (section, e), prefix="THEME")
-            return section
+        return status.themed_section(section)
 
     @classmethod
     def fgColorForStatus(class_, taskStatus):

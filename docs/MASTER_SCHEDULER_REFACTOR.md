@@ -139,17 +139,11 @@ go at the end. Details live in the sections and documents linked.
     2026-09-29**: the stopgap rebuild does not solve it and points to
     a structural problem; to design with 45
     ([Stale Entries](#stale-entries)).
-58. Plural icons deprecated, **ruled by designer 2026-09-29** (no
-    earlier record; the transform was still applied and its icons all
-    in the catalog): remove the plural/singular transform, so every
-    view shows the effective icon as is. The folder icons stay as
-    regular icons. To go: `plural_or_singular_icon()`, the mapping
-    tables, [ICON_PLURALIZE.md](ICON_PLURALIZE.md). With it, the status
-    icon's old path: `TaskStatus.getBitmap()` (the editor's status line,
-    the Mark active, inactive and completed buttons) reads the light
-    theme's icons only, where the rows read the computed, themed
-    `status_icon_id()`. What a task with subtasks shows instead: the
-    designer's choice, pending.
+58. ~~Plural icons~~: removed 2026-09-29, **ruled by designer**:
+    every view shows the effective icon as is; a task with subtasks
+    shows its status icon, the folders stay as regular icons. One
+    themed status icon, `TaskStatus.icon_id()`, replaces
+    `getBitmap()`, which read the light theme's icons only.
 
 ## Deferred or Will Not Do
 
@@ -308,7 +302,10 @@ The two rules differ, so moving changes what some rows look like:
   a mix ([APPEARANCE_STYLES.md](APPEARANCE_STYLES.md#category-style-priority)).
 - A subtask with no colour or category of its own: legacy takes its
   parent's category colours, else its status colour; effective takes
-  its parent's own or category style, else its own status.
+  its parent's own or category style, else its own status. **Ruling,
+  2026-09-29:** the effective rule stays, for icons too: styles set on
+  a parent carry down the hierarchy; whoever wants the status icons
+  sets no icons or categories.
 - Styles set by categories or the status appear at the loop's next
   tick (within a second); an item's own style at once, as before.
 
@@ -333,7 +330,7 @@ Scan, 2026-09-28 (sources the loop does not compute: none left after):
 |---|---|---|
 | `widgets/treectrl.py`, `widgets/listctrl.py` | Row colours, font (every tree and list view) | `shown_fg_color()`, `shown_bg_color()`, `shown_font()` |
 | `widgets/hcalendar.py`, `widgets/calendarwidget.py` | Task colours, font, icon | The same, `shown_icon_id()` |
-| `gui/viewer/base.py` `subjectImageIndices()`, `gui/viewer/task.py` `get_icon_id()` | Subject icons | `shown_icon_id()`: the effective icon with the plural/singular transform |
+| `gui/viewer/base.py` `subjectImageIndices()`, `gui/viewer/task.py` `get_icon_id()` | Subject icons | `shown_icon_id()`: the effective icon (the plural transform removed, to do 58) |
 | `gui/viewer/task.py` Timeline, Square map | Colours, font | `shown_*()` |
 | `gui/viewer/task.py` task graph | `task.foregroundColor(recursive=True)` (the wrong variable: `task`, not `tsk`) | `tsk.shown_fg_color()` |
 | `gui/taskbaricon.py`, `gui/uicommand/uicommand.py` (start tracking menu) | Task icons | `shown_icon_id()` |

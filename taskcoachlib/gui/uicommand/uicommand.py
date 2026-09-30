@@ -2111,7 +2111,7 @@ class TaskMarkActive(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            icon_id=task.active.getBitmap(kwargs["settings"]),
+            icon_id=task.active.icon_id(kwargs["settings"], required=True),
             menu_text=_("Mark task &active\tAlt+RETURN"),
             help_text=_("Mark the selected task(s) active"),
             *args,
@@ -2145,7 +2145,7 @@ class TaskMarkInactive(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            icon_id=task.inactive.getBitmap(kwargs["settings"]),
+            icon_id=task.inactive.icon_id(kwargs["settings"], required=True),
             menu_text=_("Mark task &inactive\tCtrl+Alt+RETURN"),
             help_text=_("Mark the selected task(s) inactive"),
             *args,
@@ -2176,7 +2176,7 @@ class TaskMarkCompleted(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            icon_id=task.completed.getBitmap(kwargs["settings"]),
+            icon_id=task.completed.icon_id(kwargs["settings"], required=True),
             menu_text=_("Mark task &completed\tCtrl+RETURN"),
             help_text=_("Mark the selected task(s) completed"),
             *args,

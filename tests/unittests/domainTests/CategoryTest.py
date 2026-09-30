@@ -407,11 +407,11 @@ class CategoryTest(test.TestCase):
 
     # Icon:
 
-    def test_subcategory_shows_singular_of_parent_icon(self):
+    def test_subcategory_shows_its_parents_icon_as_is(self):
         self.category.addChild(self.subCategory)
         self.category.set_icon_id("nuvola_mimetypes_inode-directory")
         self.assertEqual(
-            "nuvola_actions_ledblue",
+            "nuvola_mimetypes_inode-directory",
             test.styled(self.subCategory).shown_icon_id(),
         )
 

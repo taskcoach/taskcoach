@@ -536,37 +536,21 @@ class CompositeObjectTest(test.TestCase):
             self.eventsReceived,
         )
 
-    def test_composite_with_children_shows_plural_icon(self):
+    def test_icon_is_shown_as_is_with_or_without_children(self):
+        # Plural icons are deprecated: a group shows its own icon
         self.compositeObject.set_icon_id("nuvola_actions_ledblue")
-        self.assertEqual(
-            "nuvola_actions_ledblue", self.compositeObject.shown_icon_id()
-        )
+        shown = [self.compositeObject.shown_icon_id()]
         self.addChild()
-        self.assertEqual(
-            "nuvola_mimetypes_inode-directory",
-            self.compositeObject.shown_icon_id(),
-        )
-        self.assertEqual(
-            "nuvola_actions_ledblue", self.compositeObject.icon_id()
-        )
+        shown.append(self.compositeObject.shown_icon_id())
+        self.removeChild()
+        shown.append(self.compositeObject.shown_icon_id())
+        self.assertEqual(["nuvola_actions_ledblue"] * 3, shown)
 
-    def test_own_icon_of_composite_without_children_is_not_singularized(self):
+    def test_a_folder_icon_stays_a_folder(self):
         self.compositeObject.set_icon_id("nuvola_mimetypes_inode-directory")
         self.assertEqual(
             "nuvola_mimetypes_inode-directory",
             self.compositeObject.shown_icon_id(),
-        )
-
-    def test_parent_shows_singular_icon_after_child_removed(self):
-        self.compositeObject.set_icon_id("nuvola_actions_ledblue")
-        self.addChild()
-        self.assertEqual(
-            "nuvola_mimetypes_inode-directory",
-            self.compositeObject.shown_icon_id(),
-        )
-        self.removeChild()
-        self.assertEqual(
-            "nuvola_actions_ledblue", self.compositeObject.shown_icon_id()
         )
 
     def testCopy(self):

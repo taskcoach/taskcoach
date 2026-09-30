@@ -780,19 +780,19 @@ class CommonTestsMixin(object):
     def testIconUpdatesWhenPlannedStartDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.set_planned_start_date_time(date.Now() + date.ONE_DAY)
-        self.assertIcon(task.inactive.getBitmap(self.settings))
+        self.assertIcon(task.inactive.icon_id(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenDueDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.set_due_date_time(date.Now() + date.ONE_HOUR)
-        self.assertIcon(task.duesoon.getBitmap(self.settings))
+        self.assertIcon(task.duesoon.icon_id(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenCompletionDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.set_completion_date_time(date.Now())
-        self.assertIcon(task.completed.getBitmap(self.settings))
+        self.assertIcon(task.completed.icon_id(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenPrerequisiteIsAdded(self):
@@ -800,7 +800,7 @@ class CommonTestsMixin(object):
         self.taskList.extend([prerequisite, self.task])
         self.task.add_prerequisites([prerequisite])
         prerequisite.add_dependencies([self.task])
-        self.assertIcon(task.inactive.getBitmap(self.settings))
+        self.assertIcon(task.inactive.icon_id(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenPrerequisiteIsCompleted(self):
@@ -809,7 +809,7 @@ class CommonTestsMixin(object):
         self.task.add_prerequisites([prerequisite])
         prerequisite.add_dependencies([self.task])
         prerequisite.set_completion_date_time(date.Now())
-        self.assertIcon(task.late.getBitmap(self.settings))
+        self.assertIcon(task.late.icon_id(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenEffortTrackingStarts(self):
@@ -822,19 +822,19 @@ class CommonTestsMixin(object):
         self.taskList.append(self.task)
         self.task.addEffort(effort.Effort(self.task))
         self.task.stopTracking()
-        self.assertIcon(task.active.getBitmap(self.settings))
+        self.assertIcon(task.active.icon_id(self.settings))
 
     @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenTaskBecomesOverdue(self):
         dueDateTime = date.Now() + date.TimeDelta(seconds=10)
         self.task.set_due_date_time(dueDateTime)
         self.taskList.append(self.task)
-        self.assertIcon(task.duesoon.getBitmap(self.settings))
+        self.assertIcon(task.duesoon.icon_id(self.settings))
         now = dueDateTime + date.ONE_SECOND
         oldNow = date.Now
         date.Now = lambda: now
         self.task.compute_stored_status()
-        self.assertIcon(task.overdue.getBitmap(self.settings))
+        self.assertIcon(task.overdue.icon_id(self.settings))
         date.Now = oldNow
 
     def testModeIsSavedInSettings(self):

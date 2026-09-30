@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.domain.attribute import icon
 from taskcoachlib.domain.date import Timestamp
 from . import attribute
 from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE, shown
@@ -790,26 +789,6 @@ class CompositeObject(Object, patterns.ObservableComposite):
         """The event type used for notifying changes in the expansion state
         of a composite object."""
         return "%s.expandedContexts" % cls.__name__.lower()
-
-    # Appearance:
-
-    def shown_icon_id(self):
-        # An icon the user chose for the item is only pluralized
-        return self.plural_or_singular_icon(
-            self.effectiveIcon(),
-            native=self.effectiveIconSource() != "[Override]",
-        )
-
-    def plural_or_singular_icon(self, icon_id, native=True):
-        has_children = any(self.children())
-        mapping = (
-            icon.itemImagePlural if has_children else icon.itemImageSingular
-        )
-        # If the icon comes from the user settings, only pluralize it; this is probably
-        # the Way of the Least Astonishment
-        if native or has_children:
-            return mapping.get(icon_id, icon_id)
-        return icon_id
 
     # Event types:
 

@@ -32,7 +32,6 @@
    - [Per-Viewer Filter Settings](#per-viewer-filter-settings)
 9. [Task Icon Decision Sequence](#task-icon-decision-sequence)
    - [Priority Order](#priority-order)
-   - [Plural/Singular Transformation](#pluralsingular-transformation)
    - [Computed vs Final Icon](#computed-vs-final-icon)
 10. [Appearance Inheritance](#appearance-inheritance)
     - [Appearance Tab Layout (3-Column Grid)](#appearance-tab-layout-3-column-grid)
@@ -129,7 +128,6 @@ Higher priority wins. Default is 0.
 - Colors/Fonts: `None` = nothing set (default in `object.py`)
 - Icons: `""` (empty string) = nothing set (default in `object.py`)
 - Both are **falsy** in Python, so `if value:` works for both
-- Do NOT interchange — icon code uses explicit `== ""` checks for plural/singular logic
 
 **System Theme Constants:**
 - `base.SYSTEM_FG_COLOR` = "SYS_COLOUR_WINDOWTEXT"
@@ -188,12 +186,10 @@ def derivedFgColorSource(self):
 - **computeEffective()** in `appearance.py` computes effective from derived + override
 - UI resolves: `color = resolve_color(actual if actual else default)`
 
-**Plural/singular icon logic:** deprecated, ruled by designer; to be
-removed (to do 58 in
-[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
-Until then `shown_icon_id()` in `object.py` calls
-`plural_or_singular_icon()` with
-`native=self.effectiveIconSource() != "[Override]"`.
+**Plural icons:** removed 2026-09-29, **ruled by designer**
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do),
+to do 58): every view shows the effective icon as is; a task with
+subtasks shows its status icon like any task.
 
 ---
 
@@ -204,7 +200,6 @@ Task status is a dynamically computed property of each task, derived from the ta
 **See also:**
 - `docs/SCHEDULERS.md` — GlobalTimer architecture (the single main loop that drives status updates)
 - `docs/ICON_LIBRARY.md` — Icon sources, structure, and adding new icons
-- `docs/ICON_PLURALIZE.md` — Plural/singular icon mapping
 - `docs/legacy/task_states.dot` / `docs/legacy/task_states.png` — Original 2012 state transition diagram (approximate, missing prerequisites and reverse transitions)
 
 ---
@@ -557,7 +552,7 @@ every consumer to potentially trigger computation. The new pattern separates wri
    | Note effectiveXxx(explain) | note.py | ✓ Done |
    | Attachment effectiveXxx(explain) | attachment.py | ✓ Done |
    | Tracking icon in derived/effective | appearance.py | ✓ Done (highest-priority derived, skips override) |
-   | Plural/singular icon transform | object.py | Deprecated, to be removed (to do 58) |
+   | Plural/singular icon transform | object.py | ✓ Removed (to do 58) |
    | Selected icon variant (open/closed folder) | object.py | ✓ Removed |
    | Every view, widget, export and the tray | gui, widgets, persistence | ✓ Done (`shown_*()`, To Do 35) |
 
@@ -629,51 +624,17 @@ result is transformed based on whether the task has children.
 5. Status Icon
    └── status_icon_id(), stored by compute_stored_status()
    └── Determined by task status: active, inactive, late, duesoon, overdue, completed
-   └── Configured in Preferences > Theme > Status Icons
+   └── Configured in Preferences > Statuses (light and dark theme)
 ```
-
-### Plural/Singular Transformation
-
-> Deprecated, to be removed (to do 58 in
-> [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
-> Full mapping tables and all callers: [ICON_PLURALIZE.md](ICON_PLURALIZE.md)
-
-After determining the icon from the priority sequence above, `plural_or_singular_icon()` is applied.
-The transformation depends on whether the task has children AND whether an override is set:
-
-| Has Children | Has Override | Transformation |
-|--------------|--------------|----------------|
-| Yes | No | Pluralize: `nuvola_actions_ledblue` → `nuvola_mimetypes_inode-directory` |
-| Yes | Yes | Pluralize: even override icons are transformed |
-| No | No | Singularize: `nuvola_mimetypes_inode-directory` → `nuvola_actions_ledblue` |
-| No | Yes | None: override icon kept as-is |
-
-**Key insight:** Tasks with children ALWAYS show folder icons (even if you set an LED override).
-Tasks without children and without override will have folder icons converted back to LEDs.
-
-**Plural mapping (LED → Folder):**
-
-| Input | Output |
-|-------|--------|
-| `nuvola_actions_ledblue` | `nuvola_mimetypes_inode-directory` |
-| `taskcoach_actions_led_grey_icon` | `nuvola_places_folder-grey` |
-| `nuvola_actions_ledgreen` | `nuvola_places_folder-green` |
-| `nuvola_actions_ledorange` | `nuvola_places_folder-orange` |
-| `nuvola_actions_ledpurple` | `nuvola_places_folder-violet` |
-| `nuvola_actions_ledred` | `nuvola_places_folder-red` |
-| `nuvola_actions_ledyellow` | `nuvola_places_folder-yellow` |
-| `checkmark_green_icon` | `checkmark_green_icon_multiple` |
-
-**Singular mapping (Folder → LED):** The reverse of the above.
 
 ### Computed vs Final Icon
 
 | Term | Definition | Storage |
 |------|------------|---------|
-| **Status Icon** | Icon based on task status alone | `status_icon_id()` |
+| **Status Icon** | Icon based on task status alone, in the current theme | `status_icon_id()`, from `TaskStatus.icon_id(settings)` |
 | **Derived Icon** | Tracking, categories, parent or status (before override) | `derivedIcon()` |
 | **Effective Icon** | Override, else derived | `effectiveIcon()` |
-| **Shown Icon** | Effective icon with the plural/singular transform | Computed on read by `shown_icon_id()` |
+| **Shown Icon** | The effective icon: what the views draw | `shown_icon_id()` |
 
 ---
 
@@ -1089,7 +1050,7 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 | `foregroundColor()`, `backgroundColor()`, `font()`, `icon_id()` | Own value only (the override) |
 | `effectiveFgColor()` etc. | The master loop's effective value, "SYS_..." for the system theme |
 | `shown_fg_color()`, `shown_bg_color()`, `shown_font()` | Effective value, None for the system theme: what the views draw |
-| `shown_icon_id()` | Effective icon, then the plural/singular transform |
+| `shown_icon_id()` | Effective icon |
 
 ### Notes, Efforts, and Attachments
 

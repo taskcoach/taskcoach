@@ -1432,10 +1432,14 @@ class DatesPage(ScrolledPage):
         # Use centralized computedStatus(explain=True) for status and source
         task_status, status_source = the_task.computedStatus(explain=True)
 
-        # Update icon
-        icon_id = task_status.getBitmap(self.__settings)
-        bitmap = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
-        if bitmap.IsOk():
+        # Update icon: the status's, as the rows show it; none if set so
+        icon_id = task_status.icon_id(self.__settings)
+        bitmap = (
+            icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
+            if icon_id
+            else wx.NullBitmap
+        )
+        if bitmap.IsOk() or not icon_id:
             self._statusIcon.SetBitmap(bitmap)
 
         # Update text and foreground color only (no background painting)

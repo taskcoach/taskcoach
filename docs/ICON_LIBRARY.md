@@ -1019,7 +1019,7 @@ Tier 1 (user-assignable) and Tier 2 icons not on the main toolbar only need
 | `uncheckall` | `taskcoach_actions_uncheckall` | Uncheck all categories (editor toolbar, 16) |
 | `timer_icon` | `nuvola_apps_ktimer` | Clock with blue/red hands (user-assignable, 16) |
 | `star_yellow_icon` | `taskcoach_actions_star_yellow_icon` | Yellow star (user-assignable, 16) |
-| `folder_blue_light_icon` | `taskcoach_actions_folder_blue_light_icon` | Light blue folder (user-assignable + plural target, 16) |
+| `folder_blue_light_icon` | `taskcoach_actions_folder_blue_light_icon` | Light blue folder (user-assignable, 16) |
 | `file_important_icon` | `taskcoach_actions_file_important_icon` | File with exclamation (user-assignable, 16) |
 | `file_locked_icon` | `taskcoach_actions_file_locked_icon` | File with lock (user-assignable, 16) |
 | `link_icon` | `taskcoach_actions_link_icon` | Blue chain link, DnD prereq/dep cursor (16/22/32) |
@@ -1037,7 +1037,7 @@ Tier 1 (user-assignable) and Tier 2 icons not on the main toolbar only need
 | `box_in_icon` | `taskcoach_actions_box_in_icon` | Green inbox/download box (user-assignable, 16) |
 | `box_out_icon` | `taskcoach_actions_box_out_icon` | Red outbox/upload box (user-assignable, 16) |
 | `checkmark_green_icon` | `nuvola_actions_ok` | Green checkmark, completed-tasks status default (16) |
-| `checkmark_green_icon_multiple` | `taskcoach_actions_checkmark_green_icon_multiple` | Double green checkmarks, plural variant (custom, 16) |
+| `checkmark_green_icon_multiple` | `taskcoach_actions_checkmark_green_icon_multiple` | Double green checkmarks (custom, user-assignable, 16) |
 | `listview` | `nuvola_actions_view-list-details` | List view icon, orphaned (16) |
 | `windows` | `nuvola_apps_window_list` | Overlapping windows, preferences page icon (16) |
 | `restore` | `nuvola_apps_preferences-system-windows` | Restore window command icon (16) |
@@ -1063,8 +1063,7 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
 - **Menus and toolbars**: hardcoded UI references in viewer/toolbar code
 - **Icon picker**: `icon_catalog.viewer_icon_ids()` in `icon_library.py`
 - **Defaults**: task status icons, type defaults, viewer defaults
-- **Plural/singular mappings**: `itemImagePlural` in `domain/attribute/icon/__init__.py`
-- **Documentation**: `docs/ICON_PLURALIZE.md`, `docs/ICON_LIBRARY.md`, demo scripts
+- **Documentation**: `docs/ICON_LIBRARY.md`, demo scripts
 - **Data files**: JSON catalogs, `icons_parsed.py`, `nuvola/icons.json`
 - **Test data**: unit tests using the icon name as test data
 - **Auto-generated files**: `SOURCES.txt` (auto-updates on build, no manual action)
@@ -1124,13 +1123,7 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
    }
    ```
 
-3. **`domain/attribute/icon/__init__.py`**: Remove the migrated icon's entry
-   from `itemImagePlural` if it was the singular (key) side of a mapping.
-   Do NOT replace the key with the new nuvola name — the plural icon
-   (e.g., `keys_icon`) is a separate icon that needs its own migration.
-   Just delete the row. Update `docs/ICON_PLURALIZE.md` likewise.
-
-4. **Test files**: Update any tests using the legacy icon name as test data.
+3. **Test files**: Update any tests using the legacy icon name as test data.
 
 #### Step 4 — Delete old files
 
@@ -1139,7 +1132,6 @@ Delete the old icon's PNG files from its theme directory in
 
 #### Step 5 — Update documentation
 
-- `docs/ICON_PLURALIZE.md` — remove row from plural table if applicable
 - `docs/scripts/icon_picker_refactoring_demo.py` — update test data
 - `docs/ICON_LIBRARY.md` — add to "Completed Migrations" table above
 - Delete `icon_overview.html` and `generate_icon_overview.py` if not already removed
@@ -1157,8 +1149,8 @@ Delete the old icon's PNG files from its theme directory in
   follow procedure above. The icon appears only in the picker and user data files.
 - **Tier 2 — Hardcoded defaults** (status LEDs, type icons, viewer icons): requires
   additional code changes beyond the deprecated mapping (default values in code).
-- **Tier 3 — Semantic pairs** (LED→folder, singular→plural with different images):
-  needs replacement concept, not just renaming.
+- **Tier 3: Semantic pairs**: none left; the LED to folder pairs went with
+  the plural icons (2026-09-29).
 
 ## Recently Added Icons
 
@@ -1322,7 +1314,6 @@ Use icon-distillery's hints script:
 
 ## See Also
 
-- [ICON_PLURALIZE.md](ICON_PLURALIZE.md) - Plural/singular icon mapping
 - [ICON_DISPLAY.md](ICON_DISPLAY.md) - Icon display architecture (image lists, viewers, synthetic icons)
 - [SYSTEM_TRAY.md](SYSTEM_TRAY.md) - System tray icons and `tray/hicolor` theme
 - [TASK_STATUS.md](TASK_STATUS.md) - Status icon system

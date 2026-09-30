@@ -20,9 +20,28 @@ from taskcoachlib.i18n import _
 from taskcoachlib.config import defaults
 
 
+def themed_section(section):
+    """The settings section of a status style in the current theme:
+    its _dark twin in a dark one."""
+    try:
+        from taskcoachlib.config import settings2
+
+        return section + "_dark" if settings2.window.theme_is_dark else section
+    except Exception as e:
+        from taskcoachlib.meta.debug import log_step
+
+        log_step("themed_section(%s): %s" % (section, e), prefix="THEME")
+        return section
+
+
 class TaskStatus(object):
     def __init__(
-        self, statusString, pluralLabel, countLabel, hideMenuText, hideHelpText,
+        self,
+        statusString,
+        pluralLabel,
+        countLabel,
+        hideMenuText,
+        hideHelpText,
     ):
         self.statusString = statusString
         self.pluralLabel = pluralLabel
@@ -30,16 +49,20 @@ class TaskStatus(object):
         self.hideMenuText = hideMenuText
         self.hideHelpText = hideHelpText
 
-    # This is only used by uicommands so use default if the user configured 'no bitmap', because we
-    # need one for the toolbar...
-
     def getSortPriority(self, settings):
-        return int(settings.get("statussortpriority", "%stasks" % self.statusString))
+        return int(
+            settings.get("statussortpriority", "%stasks" % self.statusString)
+        )
 
-    def getBitmap(self, settings):
-        if settings.get("icon", "%stasks" % self.statusString):
-            return settings.get("icon", "%stasks" % self.statusString)
-        return defaults.defaults["icon"]["%stasks" % self.statusString]
+    def icon_id(self, settings, required=False):
+        """The status's icon in the current theme (Preferences >
+        Statuses), empty when set to none; required gives the default
+        then (a toolbar button needs one)."""
+        section = themed_section("icon")
+        key = "%stasks" % self.statusString
+        return settings.get(section, key) or (
+            defaults.defaults[section][key] if required else ""
+        )
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, self.statusString)
@@ -66,7 +89,6 @@ inactive = TaskStatus(
     _("Inactive tasks: %d (%d%%)"),
     _("Hide &inactive tasks"),
     _("Show/hide inactive tasks (incomplete tasks without actual start date)"),
-
 )
 
 late = TaskStatus(
@@ -77,7 +99,6 @@ late = TaskStatus(
     _(
         "Show/hide late tasks (inactive tasks with a planned start in the past)"
     ),
-
 )
 
 active = TaskStatus(
@@ -88,7 +109,6 @@ active = TaskStatus(
     _(
         "Show/hide active tasks (incomplete tasks with an actual start date in the past)"
     ),
-
 )
 
 duesoon = TaskStatus(
@@ -99,7 +119,6 @@ duesoon = TaskStatus(
     _(
         "Show/hide due soon tasks (incomplete tasks with a due date in the near future)"
     ),
-
 )
 
 overdue = TaskStatus(
@@ -110,7 +129,6 @@ overdue = TaskStatus(
     _(
         "Show/hide over due tasks (incomplete tasks with a due date in the past)"
     ),
-
 )
 
 completed = TaskStatus(
@@ -119,7 +137,4 @@ completed = TaskStatus(
     _("Completed tasks: %d (%d%%)"),
     _("Hide &completed tasks"),
     _("Show/hide completed tasks"),
-
 )
-
-

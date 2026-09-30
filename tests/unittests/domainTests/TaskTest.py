@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import ast
 from taskcoachlib import patterns, config
 from taskcoachlib.domain import task, effort, date, attachment, note, category
-from taskcoachlib.domain.attribute.icon import getImagePlural
 from unittests import asserts
 import test
 import wx
@@ -263,7 +262,7 @@ class DefaultTaskStateTest(
 
     def testDefaultRecursiveIcon(self):
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -304,7 +303,7 @@ class DefaultTaskStateTest(
     def testSetFuturePlannedStartDateTimeChangesIcon(self):
         self.task.set_planned_start_date_time(self.tomorrow)
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -315,7 +314,7 @@ class DefaultTaskStateTest(
         date.Now = lambda: now
         self.task.compute_stored_status()
         self.assertEqual(
-            task.late.getBitmap(self.settings),
+            task.late.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -361,7 +360,7 @@ class DefaultTaskStateTest(
         date.Now = lambda: now
         self.task.compute_stored_status()
         self.assertEqual(
-            task.overdue.getBitmap(self.settings),
+            task.overdue.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -373,7 +372,7 @@ class DefaultTaskStateTest(
         date.Now = lambda: now
         self.task.compute_stored_status()
         self.assertEqual(
-            task.duesoon.getBitmap(self.settings),
+            task.duesoon.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -387,7 +386,7 @@ class DefaultTaskStateTest(
         date.Now = lambda: now
         self.task.compute_stored_status()
         self.assertEqual(
-            task.duesoon.getBitmap(self.settings),
+            task.duesoon.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1112,14 +1111,14 @@ class TaskDueTodayTest(TaskTestCase, CommonTaskTestsMixin):
 
     def testIcon(self):
         self.assertEqual(
-            task.duesoon.getBitmap(self.settings),
+            task.duesoon.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
     def testIconAfterChangingDueSoonHours(self):
         self.settings.setint("behavior", "duesoonhours", 0)
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1136,7 +1135,7 @@ class TaskDueTodayTest(TaskTestCase, CommonTaskTestsMixin):
         date.Now = lambda: now
         self.task.compute_stored_status()
         self.assertEqual(
-            task.overdue.getBitmap(self.settings),
+            task.overdue.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1173,14 +1172,14 @@ class TaskDueTomorrowTest(TaskTestCase, CommonTaskTestsMixin):
 
     def testIconNotDueSoon(self):
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
     def testIconDueSoon(self):
         self.settings.setint("behavior", "duesoonhours", 48)
         self.assertEqual(
-            task.duesoon.getBitmap(self.settings),
+            task.duesoon.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1224,14 +1223,14 @@ class OverdueTaskTest(TaskTestCase, CommonTaskTestsMixin):
 
     def testIcon(self):
         self.assertEqual(
-            task.overdue.getBitmap(self.settings),
+            task.overdue.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
     def testIconAfterChangingDueDateTime(self):
         self.task.set_due_date_time(date.Now() + date.TimeDelta(hours=72))
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1245,7 +1244,7 @@ class OverdueTaskTest(TaskTestCase, CommonTaskTestsMixin):
     def testIconAfterMarkingComplete(self):
         self.task.set_completion_date_time()
         self.assertEqual(
-            task.completed.getBitmap(self.settings),
+            task.completed.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1305,14 +1304,14 @@ class CompletedTaskTest(TaskTestCase, CommonTaskTestsMixin):
 
     def testIcon(self):
         self.assertEqual(
-            task.completed.getBitmap(self.settings),
+            task.completed.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
     def testIconAfterMarkingUncomplete(self):
         self.task.set_completion_date_time(date.DateTime.max)
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1389,7 +1388,7 @@ class TaskWithPlannedStartDateInTheFutureTest(
 
     def testIcon(self):
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1399,7 +1398,7 @@ class TaskWithPlannedStartDateInTheFutureTest(
         date.Now = lambda: now
         self.run_scheduler_tick(self.task)
         self.assertEqual(
-            task.late.getBitmap(self.settings),
+            task.late.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1416,7 +1415,7 @@ class TaskWithPlannedStartDateInTheFutureTest(
     def testIconAfterMarkingComplete(self):
         self.task.set_completion_date_time()
         self.assertEqual(
-            task.completed.getBitmap(self.settings),
+            task.completed.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1432,7 +1431,7 @@ class TaskWithPlannedStartDateInTheFutureTest(
             date.Now() - date.TimeDelta(hours=72)
         )
         self.assertEqual(
-            task.late.getBitmap(self.settings),
+            task.late.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1510,7 +1509,7 @@ class TaskWithoutPlannedStartDateTimeTest(TaskTestCase, CommonTaskTestsMixin):
         self.task2.set_completion_date_time()
         self.assertTrue(self.task.inactive())
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -1540,7 +1539,7 @@ class InactiveTaskWithChildTest(TaskTestCase):
 
     def testIcon(self):
         self.assertEqual(
-            getImagePlural(task.inactive.getBitmap(self.settings)),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -2174,7 +2173,7 @@ class TaskWithChildTest(
         self.task1_1.set_completion_date_time()
         test.styled(self.task1_1)
         self.assertEqual(
-            task.completed.getBitmap(self.settings),
+            task.completed.icon_id(self.settings),
             self.task1_1.shown_icon_id(),
         )
         self.assertEqual(
@@ -2184,7 +2183,7 @@ class TaskWithChildTest(
     def test_child_of_a_tracked_task_shows_its_own_icon(self):
         self.task.addEffort(effort.Effort(self.task))
         self.assertEqual(
-            task.active.getBitmap(self.settings),
+            task.active.icon_id(self.settings),
             test.styled(self.task1_1).shown_icon_id(),
         )
 
@@ -2241,27 +2240,20 @@ class TaskWithChildTest(
 
     def testIcon(self):
         self.assertEqual(
-            getImagePlural(task.active.getBitmap(self.settings)),
+            task.active.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
     def testChildIcon(self):
         self.assertEqual(
-            task.active.getBitmap(self.settings),
+            task.active.icon_id(self.settings),
             test.styled(self.task1_1).shown_icon_id(),
         )
 
-    def testIconWithPluralVersion(self):
-        self.task.set_icon_id("nuvola_apps_bookcase")
+    def test_chosen_icon_of_a_task_with_subtasks_is_shown_as_is(self):
+        self.task.set_icon_id("nuvola_actions_ledgreen")
         self.assertEqual(
-            "nuvola_apps_bookcase", test.styled(self.task).shown_icon_id()
-        )
-
-    def testIconWithSingularVersion(self):
-        self.task.set_icon_id("nuvola_apps_accessories-dictionary")
-        self.assertEqual(
-            "nuvola_apps_accessories-dictionary",
-            test.styled(self.task).shown_icon_id(),
+            "nuvola_actions_ledgreen", test.styled(self.task).shown_icon_id()
         )
 
     def testChildIsInactiveWhenParentHasPrerequisite(self):
@@ -2277,26 +2269,26 @@ class TaskWithChildTest(
     def test_adding_prerequisite_to_parent_recomputes_child_appearance(self):
         # First make sure the icon is cached:
         self.assertEqual(
-            task.active.getBitmap(self.settings),
+            task.active.icon_id(self.settings),
             test.styled(self.task1_1).shown_icon_id(),
         )
         prerequisite = task.Task()
         self.task.add_prerequisites([prerequisite])
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task1_1).shown_icon_id(),
         )
 
     def test_setting_prerequisites_of_parent_recomputes_child_appearance(self):
         # First make sure the icon is cached:
         self.assertEqual(
-            task.active.getBitmap(self.settings),
+            task.active.icon_id(self.settings),
             test.styled(self.task1_1).shown_icon_id(),
         )
         prerequisite = task.Task()
         self.task.set_prerequisites([prerequisite])
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task1_1).shown_icon_id(),
         )
 
@@ -2307,13 +2299,13 @@ class TaskWithChildTest(
         self.task.add_prerequisites([prerequisite])
         # First make sure the icon is cached:
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task1_1).shown_icon_id(),
         )
         self.task.remove_prerequisites([prerequisite])
         # The child has an actual start date: active, not late
         self.assertEqual(
-            task.active.getBitmap(self.settings),
+            task.active.icon_id(self.settings),
             test.styled(self.task1_1).shown_icon_id(),
         )
 
@@ -2325,13 +2317,13 @@ class TaskWithChildTest(
         prerequisite.add_dependencies([self.task])
         # First make sure the icon is cached:
         self.assertEqual(
-            task.inactive.getBitmap(self.settings),
+            task.inactive.icon_id(self.settings),
             test.styled(self.task1_1).shown_icon_id(),
         )
         prerequisite.set_completion_date_time(date.Now())
         # The child has an actual start date: active, not late
         self.assertEqual(
-            task.active.getBitmap(self.settings),
+            task.active.icon_id(self.settings),
             test.styled(self.task1_1).shown_icon_id(),
         )
 
@@ -2397,7 +2389,7 @@ class CompletedTaskWithChildTest(TaskTestCase):
 
     def testIcon(self):
         self.assertEqual(
-            getImagePlural(task.completed.getBitmap(self.settings)),
+            task.completed.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -2413,7 +2405,7 @@ class OverdueTaskWithChildTest(TaskTestCase):
 
     def testIcon(self):
         self.assertEqual(
-            getImagePlural(task.overdue.getBitmap(self.settings)),
+            task.overdue.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
@@ -2435,7 +2427,7 @@ class DuesoonTaskWithChildTest(TaskTestCase):
 
     def testIcon(self):
         self.assertEqual(
-            getImagePlural(task.duesoon.getBitmap(self.settings)),
+            task.duesoon.icon_id(self.settings),
             test.styled(self.task).shown_icon_id(),
         )
 
