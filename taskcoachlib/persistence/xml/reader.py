@@ -32,6 +32,7 @@ from taskcoachlib.domain import (
     attachment,
 )
 from taskcoachlib.i18n import translate
+from .defaults import read
 from taskcoachlib.thirdparty.deltaTime import nlTimeExpression
 import ast
 import io
@@ -390,15 +391,13 @@ class XMLReader(object):
             )
             kwargs["id"] = obj_id
             notes = self.__parse_note_nodes(category_node)
-            filtered = self.__parse_boolean(
-                category_node.attrib.get("filtered", "False")
+            filtered = self.__value(
+                category_node, "filtered", self.__parse_boolean
             )
-            exclusive = self.__parse_boolean(
-                category_node.attrib.get("exclusiveSubcategories", "False")
+            exclusive = self.__value(
+                category_node, "exclusiveSubcategories", self.__parse_boolean
             )
-            style_priority = self.__parse_int_attribute(
-                category_node, "stylePriority"
-            )
+            style_priority = self.__value(category_node, "stylePriority", int)
             kwargs.update(
                 dict(
                     notes=notes,
@@ -464,64 +463,64 @@ class XMLReader(object):
                 task_node, self.__parse_task_nodes
             )
             kwargs["id"] = obj_id
+            value = self.__value
+
+            def start_time(text):
+                return date.parseDateTime(text, *self.default_start_time)
+
+            def end_time(text):
+                return date.parseDateTime(text, *self.default_end_time)
+
+            def due_time(text):
+                return parseAndAdjustDateTime(text, *self.default_end_time)
+
             kwargs.update(
                 dict(
-                    plannedStartDateTime=date.parseDateTime(
-                        task_node.attrib.get(
-                            planned_start_datetime_attribute_name, ""
-                        ),
-                        *self.default_start_time,
+                    plannedStartDateTime=value(
+                        task_node,
+                        "plannedstartdate",
+                        start_time,
+                        planned_start_datetime_attribute_name,
                     ),
-                    dueDateTime=parseAndAdjustDateTime(
-                        task_node.attrib.get("duedate", ""),
-                        *self.default_end_time,
+                    dueDateTime=value(task_node, "duedate", due_time),
+                    actualStartDateTime=value(
+                        task_node, "actualstartdate", start_time
                     ),
-                    actualStartDateTime=date.parseDateTime(
-                        task_node.attrib.get("actualstartdate", ""),
-                        *self.default_start_time,
+                    completionDateTime=value(
+                        task_node, "completiondate", end_time
                     ),
-                    completionDateTime=date.parseDateTime(
-                        task_node.attrib.get("completiondate", ""),
-                        *self.default_end_time,
+                    percentageComplete=value(
+                        task_node, "percentageComplete", int
                     ),
-                    percentageComplete=self.__parse_int_attribute(
-                        task_node, "percentageComplete"
+                    budget=value(task_node, "budget", date.parseTimeDelta),
+                    plannedDuration=value(
+                        task_node, "plannedDuration", date.parseTimeDelta
                     ),
-                    budget=date.parseTimeDelta(
-                        task_node.attrib.get("budget", "")
+                    plannedDurationMode=value(
+                        task_node, "plannedDurationMode"
                     ),
-                    plannedDuration=date.parseTimeDelta(
-                        task_node.attrib.get("plannedDuration", "")
-                    ),
-                    plannedDurationMode=task_node.attrib.get(
-                        "plannedDurationMode", "implicit"
-                    ),
-                    priority=self.__parse_int_attribute(task_node, "priority"),
-                    hourlyFee=float(task_node.attrib.get("hourlyFee", "0")),
-                    fixedFee=float(task_node.attrib.get("fixedFee", "0")),
-                    reminder=self.__parse_datetime(
-                        task_node.attrib.get("reminder", "")
-                    ),
-                    reminderBeforeSnooze=self.__parse_datetime(
-                        task_node.attrib.get("reminderBeforeSnooze", "")
+                    priority=value(task_node, "priority", int),
+                    hourlyFee=value(task_node, "hourlyFee", float),
+                    fixedFee=value(task_node, "fixedFee", float),
+                    reminder=value(task_node, "reminder", date.parseDateTime),
+                    reminderBeforeSnooze=value(
+                        task_node, "reminderBeforeSnooze", date.parseDateTime
                     ),
                     # Ignore prerequisites for now, they'll be resolved later
                     prerequisites=[],
-                    shouldMarkCompletedWhenAllChildrenCompleted=self.__parse_boolean(
-                        task_node.attrib.get(
-                            "shouldMarkCompletedWhenAllChildrenCompleted", ""
-                        )
+                    shouldMarkCompletedWhenAllChildrenCompleted=value(
+                        task_node,
+                        "shouldMarkCompletedWhenAllChildrenCompleted",
+                        self.__parse_boolean,
                     ),
                     efforts=self.__parse_effort_nodes(task_node),
                     notes=self.__parse_note_nodes(task_node),
                     recurrence=self.__parse_recurrence(task_node),
                 )
             )
-            self.__prerequisites[kwargs["id"]] = [
-                id_
-                for id_ in task_node.attrib.get("prerequisites", "").split(" ")
-                if id_
-            ]
+            self.__prerequisites[kwargs["id"]] = list(
+                value(task_node, "prerequisites", str.split)
+            )
             self.__parse_categories(task_node, kwargs["id"])
             if self.__tskversion > 20:
                 kwargs["attachments"] = self.__parse_attachments(task_node)
@@ -535,9 +534,9 @@ class XMLReader(object):
         """A task's or note's categories, stored on it since tskversion
         38; linked once the categories are read."""
         if self.__tskversion >= 38:
-            self.__categories_of[item_id] = node.attrib.get(
-                "categories", ""
-            ).split()
+            self.__categories_of[item_id] = list(
+                self.__value(node, "categories", str.split)
+            )
 
     def __parse_recurrence(self, task_node):
         """Parse the recurrence from the node and return a recurrence
@@ -550,51 +549,37 @@ class XMLReader(object):
 
     def __parse_recurrence_node(self, task_node):
         """Since tskversion >= 20, recurrence information is stored in a
-        separate node."""
-        kwargs = dict(
-            unit="",
-            amount=1,
-            count=0,
-            maximum=0,
-            stop_datetime=None,
-            sameWeekday=False,
-            weekdays=[],
-        )
+        separate node; without it, the task does not recur."""
         node = task_node.find("recurrence")
-        if node is not None:
-            weekdays_str = node.attrib.get("weekdays", "")
-            weekdays = (
-                [int(d) for d in weekdays_str.split(",") if d]
-                if weekdays_str
-                else []
-            )
-            kwargs = dict(
-                unit=node.attrib.get("unit", ""),
-                amount=int(node.attrib.get("amount", "1")),
-                count=int(node.attrib.get("count", "0")),
-                maximum=int(node.attrib.get("max", "0")),
-                stop_datetime=self.__parse_datetime(
-                    node.attrib.get("stop_datetime", "")
-                ),
-                sameWeekday=self.__parse_boolean(
-                    node.attrib.get("sameWeekday", "False")
-                ),
-                recurBasedOnCompletion=self.__parse_boolean(
-                    node.attrib.get("recurBasedOnCompletion", "False")
-                ),
-                weekdays=weekdays,
-            )
-        return kwargs
+        if node is None:
+            return {}
+        value = self.__value
+        return dict(
+            unit=value(node, "unit"),
+            amount=value(node, "amount", int),
+            count=value(node, "count", int),
+            maximum=value(node, "max", int),
+            stop_datetime=value(node, "stop_datetime", date.parseDateTime),
+            sameWeekday=value(node, "sameWeekday", self.__parse_boolean),
+            recurBasedOnCompletion=value(
+                node, "recurBasedOnCompletion", self.__parse_boolean
+            ),
+            weekdays=value(
+                node,
+                "weekdays",
+                lambda text: [int(each) for each in text.split(",") if each],
+            ),
+        )
 
-    @staticmethod
-    def __parse_recurrence_attributes_from_task_node(task_node):
+    def __parse_recurrence_attributes_from_task_node(self, task_node):
         """In tskversion <= 19 recurrence information was stored as attributes
         of task nodes."""
+        value = self.__value
         return dict(
-            unit=task_node.attrib.get("recurrence", ""),
-            count=int(task_node.attrib.get("recurrenceCount", "0")),
-            amount=int(task_node.attrib.get("recurrenceFrequency", "1")),
-            maximum=int(task_node.attrib.get("maxRecurrenceCount", "0")),
+            unit=value(task_node, "unit", str, "recurrence"),
+            count=value(task_node, "count", int, "recurrenceCount"),
+            amount=value(task_node, "amount", int, "recurrenceFrequency"),
+            maximum=value(task_node, "max", int, "maxRecurrenceCount"),
         )
 
     def __parse_note_node(self, note_node):
@@ -624,17 +609,18 @@ class XMLReader(object):
         keyword arguments dictionary that can be passed to the domain
         object constructor."""
         bg_color_attribute = "color" if self.__tskversion <= 27 else "bgColor"
+        value = self.__value
         attributes = dict(
             id=node.attrib.get("id", ""),
-            subject=node.attrib.get("subject", ""),
+            subject=value(node, "subject"),
             description=self.__parse_description(node),
-            fgColor=self.__parse_tuple(node.attrib.get("fgColor", ""), None),
-            bgColor=self.__parse_tuple(
-                node.attrib.get(bg_color_attribute, ""), None
+            fgColor=value(node, "fgColor", self.__parse_tuple),
+            bgColor=value(
+                node, "bgColor", self.__parse_tuple, bg_color_attribute
             ),
-            font=self.__parse_font_description(node.attrib.get("font", "")),
-            icon=self.__parse_icon(node.attrib.get("icon", "")),
-            ordering=int(node.attrib.get("ordering", "0")),
+            font=value(node, "font", self.__parse_font_description),
+            icon=value(node, "icon", self.__parse_icon),
+            ordering=value(node, "ordering", int),
             **self.__parse_dates(node),
         )
 
@@ -652,8 +638,9 @@ class XMLReader(object):
         expandedContexts."""
         kwargs = self.__parse_base_attributes(node)
         kwargs["children"] = parse_children(node, *parse_children_args)
-        expanded_contexts = node.attrib.get("expandedContexts", "")
-        kwargs["expandedContexts"] = self.__parse_tuple(expanded_contexts, [])
+        kwargs["expandedContexts"] = self.__value(
+            node, "expandedContexts", self.__parse_tuple
+        )
         return kwargs
 
     def __parse_attachments_before_version21(self, parent):
@@ -703,20 +690,18 @@ class XMLReader(object):
                 node.attrib["id"], "Effort", f"started {start_str}"
             )
         start = node.attrib.get("start", "")
-        stop = node.attrib.get("stop", "")
         description = self.__parse_description(node)
         # task=None because it is set when the effort is actually added to the
         # task by the task itself. This way no events are sent for changing the
         # effort owner, which is good.
         # pylint: disable=W0142
-        entryMode = node.attrib.get("entryMode", "standard")
         return self.__save_modification_datetime(
             effort.Effort(
                 task=None,
                 start=date.parseDateTime(start),
-                stop=date.parseDateTime(stop),
+                stop=self.__value(node, "stop", date.parseDateTime),
                 description=description,
-                entryMode=entryMode,
+                entryMode=self.__value(node, "entryMode"),
                 **self.__parse_dates(node),
                 **kwargs,
             )
@@ -784,10 +769,11 @@ class XMLReader(object):
     def __parse_description(self, node):
         """Parse the description from the node."""
         if self.__tskversion <= 6:
-            description = node.attrib.get("description", "")
+            text = node.attrib.get("description")
         else:
-            description = self.__parse_text(node.find("description"))
-        return description
+            element = node.find("description")
+            text = None if element is None else self.__parse_text(element)
+        return read("description", text, str)
 
     def __parse_text(self, node):
         """Parse the text from a node."""
@@ -800,41 +786,33 @@ class XMLReader(object):
                 text = text[:-1]
         return text
 
-    @classmethod
-    def __parse_int_attribute(cls, node, attribute_name, default_value=0):
-        """Parse the integer attribute with the specified name from the
-        node. In case of failure, return the default value."""
-        text = node.attrib.get(attribute_name, "0")
-        return cls.__parse(text, int, default_value)
-
-    @classmethod
-    def __parse_datetime(cls, text):
-        """Parse a datetime from the text."""
-        return cls.__parse(text, date.parseDateTime, None)
+    @staticmethod
+    def __value(node, name, parse=str, attribute=None):
+        """A field's value: its default when the attribute (by default
+        named as the field) is missing (defaults.DEFAULTS)."""
+        return read(name, node.attrib.get(attribute or name), parse)
 
     def __parse_dates(self, node):
         """The creation and modification dates. Without a modification
         date the item was not modified since its creation; without
         either, both are unknown (DateTime.min)."""
-        creation = self.__parse_timestamp(
-            node.attrib.get("creationDateTime", "1-1-1 0:0")
+        value = self.__value
+        creation = value(node, "creationDateTime", self.__parse_timestamp)
+        modification = value(
+            node, "modificationDateTime", self.__parse_timestamp
         )
-        modification = node.attrib.get("modificationDateTime")
         return dict(
             creationDateTime=creation,
-            modificationDateTime=(
-                modification and self.__parse_timestamp(modification)
-            )
-            or creation,
+            modificationDateTime=modification or creation,
         )
 
-    @classmethod
-    def __parse_timestamp(cls, text):
+    @staticmethod
+    def __parse_timestamp(text):
         """Parse a timestamp, fractions of a second included."""
         try:
             return date.Timestamp.parse(text)
         except ValueError:
-            return cls.__parse_datetime(text)
+            return date.parseDateTime(text)
 
     def __parse_font_description(self, text, default_value=None):
         """Parse a font from the text. In case of failure, return the default
@@ -854,42 +832,23 @@ class XMLReader(object):
 
         return icon_catalog.normalize_icon_id(text)
 
-    @classmethod
-    def __parse_boolean(cls, text, default_value=None):
-        """Parse a boolean from the text. In case of failure, return the
-        default value."""
-
-        def text_to_boolean(text):
-            """Transform 'True' to True and 'False' to False, raise a
-            ValueError for any other text."""
-            if text in ("True", "False"):
-                return text == "True"
-            else:
-                raise ValueError("Expected 'True' or 'False', got '%s'" % text)
-
-        return cls.__parse(text, text_to_boolean, default_value)
-
-    @classmethod
-    def __parse_tuple(cls, text, default_value=None):
-        """Parse a tuple from the text. In case of failure, return the default
-        value."""
-        if text.startswith("(") and text.endswith(")"):
-            # A literal only: the text comes from the file, never run it
-            try:
-                return ast.literal_eval(text)
-            except (ValueError, SyntaxError):
-                return default_value
-        else:
-            return default_value
+    @staticmethod
+    def __parse_boolean(text):
+        """'True' or 'False'; a ValueError for any other text."""
+        if text in ("True", "False"):
+            return text == "True"
+        raise ValueError("Expected 'True' or 'False', got '%s'" % text)
 
     @staticmethod
-    def __parse(text, parse_function, default_value):
-        """Parse the text using the parse function. In case of failure, return
-        the default value."""
+    def __parse_tuple(text):
+        """A tuple literal; a ValueError for any other text."""
+        if not (text.startswith("(") and text.endswith(")")):
+            raise ValueError("Expected a tuple, got '%s'" % text)
+        # A literal only: the text comes from the file, never run it
         try:
-            return parse_function(text)
-        except ValueError:
-            return default_value
+            return ast.literal_eval(text)
+        except SyntaxError as error:
+            raise ValueError(str(error))
 
     def __save_modification_datetime(self, item):
         """Save the modification date time of the item for later restore."""

@@ -2221,3 +2221,20 @@ class XMLReaderVersion38Test(XMLReaderTestCase):
             [["One"], ["Two"]],
             [[c.subject() for c in each.categories()] for each in tasks],
         )
+
+    def test_other_forms_of_a_default_read_as_it(self):
+        # defaults.DEFAULTS: the values after each default
+        tasks = self.writeAndReadTasks("""
+        <tasks>
+            <task id="t1" duedate="None" plannedDurationMode="">
+                <effort id="e1" start="2004-01-01 10:00:00" entryMode=""/>
+            </task>
+        </tasks>""")
+        self.assertEqual(
+            (date.DateTime(), "implicit", "standard"),
+            (
+                tasks[0].dueDateTime(),
+                tasks[0].plannedDurationMode(),
+                tasks[0].efforts()[0].entryMode(),
+            ),
+        )

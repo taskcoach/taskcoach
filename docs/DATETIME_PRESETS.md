@@ -329,5 +329,5 @@ list's add event instead, as for a [preset reminder](#reminder-preset)
   pattern, constructor vs `.set()` behavior, three-layer relationship
 - [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) — Duration modes,
   starting state documentation ("Start: Implicit mode")
-- [PERSISTENCE_XML.md](PERSISTENCE_XML.md) — XML writer/reader, skip conditions,
-  round-trip consistency
+- [PERSISTENCE_XML.md](PERSISTENCE_XML.md): XML writer/reader, the
+  defaults

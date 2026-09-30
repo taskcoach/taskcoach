@@ -156,6 +156,10 @@ go at the end. Details live in the sections and documents linked.
     done 2026-09-29, **asked by designer**; tskversion 38, older
     files converted when read
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#category-membership)).
+61. ~~One list of defaults for the writer and the reader~~: done
+    2026-09-29, **ruled by designer**: a missing attribute is the
+    default, every value written was ruled out
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#defaults)).
 
 ## Deferred or Will Not Do
 

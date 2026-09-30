@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from xml.etree import ElementTree as ET
 from taskcoachlib import meta
 from taskcoachlib.domain import category, date, note, task
+from .defaults import NOT_SET, UNKNOWN, is_default
 import os
 import sys
 
@@ -121,8 +122,6 @@ def sortedById(objects):
 
 
 class XMLWriter(object):
-    maxDateTime = date.DateTime()
-
     def __init__(self, fd, versionnr=meta.data.tskversion):
         self.__fd = fd
         self.__versionnr = versionnr
@@ -150,55 +149,42 @@ class XMLWriter(object):
         ).write(self.__fd, "utf-8")
 
     def task_node(self, parent_node, task):  # pylint: disable=W0621
-        maxDateTime = self.maxDateTime
         node = self.base_composite_node(
             parent_node, task, "task", self.task_node
         )
-        if task.plannedStartDateTime() != maxDateTime:
-            node.attrib["plannedstartdate"] = str(task.plannedStartDateTime())
-        if task.dueDateTime() != maxDateTime:
-            node.attrib["duedate"] = str(task.dueDateTime())
-        if task.actualStartDateTime() != maxDateTime:
-            node.attrib["actualstartdate"] = str(task.actualStartDateTime())
-        if task.completionDateTime() != maxDateTime:
-            node.attrib["completiondate"] = str(task.completionDateTime())
-        if task.percentageComplete():
-            node.attrib["percentageComplete"] = str(task.percentageComplete())
+        attribute = self.__attribute
+        attribute(node, "plannedstartdate", task.plannedStartDateTime())
+        attribute(node, "duedate", task.dueDateTime())
+        attribute(node, "actualstartdate", task.actualStartDateTime())
+        attribute(node, "completiondate", task.completionDateTime())
+        attribute(node, "percentageComplete", task.percentageComplete())
         if task.recurrence():
             self.recurrence_node(node, task.recurrence())
-        if task.budget() != date.TimeDelta():
-            node.attrib["budget"] = self.budgetAsAttribute(task.budget())
-        if task.plannedDuration() != date.TimeDelta():
-            node.attrib["plannedDuration"] = self.budgetAsAttribute(
-                task.plannedDuration()
-            )
-        if task.plannedDurationMode() != "implicit":
-            node.attrib["plannedDurationMode"] = task.plannedDurationMode()
-        if task.priority():
-            node.attrib["priority"] = str(task.priority())
-        if task.hourlyFee():
-            node.attrib["hourlyFee"] = str(task.hourlyFee())
-        if task.fixedFee():
-            node.attrib["fixedFee"] = str(task.fixedFee())
-        reminder = task.reminder()
-        if reminder != maxDateTime:
-            node.attrib["reminder"] = str(reminder)
-            before_snooze = task.reminder(include_snooze=False)
-            if before_snooze < reminder:
-                node.attrib["reminderBeforeSnooze"] = str(before_snooze)
-        prerequisiteIds = " ".join(
-            [
-                prerequisite.id()
-                for prerequisite in sortedById(task.prerequisites())
-            ]
+        attribute(node, "budget", task.budget(), self.budgetAsAttribute)
+        attribute(
+            node,
+            "plannedDuration",
+            task.plannedDuration(),
+            self.budgetAsAttribute,
         )
-        if prerequisiteIds:
-            node.attrib["prerequisites"] = prerequisiteIds
+        attribute(node, "plannedDurationMode", task.plannedDurationMode())
+        attribute(node, "priority", task.priority())
+        attribute(node, "hourlyFee", task.hourlyFee())
+        attribute(node, "fixedFee", task.fixedFee())
+        reminder = task.reminder()
+        attribute(node, "reminder", reminder)
+        before_snooze = task.reminder(include_snooze=False)
+        snoozed = reminder != NOT_SET and before_snooze < reminder
+        attribute(
+            node, "reminderBeforeSnooze", before_snooze if snoozed else None
+        )
+        attribute(node, "prerequisites", task.prerequisites(), self.__ids)
         self.__categories_attribute(node, task)
-        if task.shouldMarkCompletedWhenAllChildrenCompleted() != None:
-            node.attrib["shouldMarkCompletedWhenAllChildrenCompleted"] = str(
-                task.shouldMarkCompletedWhenAllChildrenCompleted()
-            )
+        attribute(
+            node,
+            "shouldMarkCompletedWhenAllChildrenCompleted",
+            task.shouldMarkCompletedWhenAllChildrenCompleted(),
+        )
         for effort in sortedById(task.efforts()):
             self.effort_node(node, effort)
         for eachNote in sortedById(task.notes()):
@@ -208,60 +194,55 @@ class XMLWriter(object):
         return node
 
     def recurrence_node(self, parent_node, recurrence):
-        attrs = dict(unit=recurrence.unit)
-        if recurrence.amount > 1:
-            attrs["amount"] = str(recurrence.amount)
-        if recurrence.count > 0:
-            attrs["count"] = str(recurrence.count)
-        if recurrence.max > 0:
-            attrs["max"] = str(recurrence.max)
-        if recurrence.stop_datetime != self.maxDateTime:
-            attrs["stop_datetime"] = str(recurrence.stop_datetime)
-        if recurrence.sameWeekday:
-            attrs["sameWeekday"] = "True"
-        if recurrence.recurBasedOnCompletion:
-            attrs["recurBasedOnCompletion"] = "True"
-        if recurrence.weekdays:
-            attrs["weekdays"] = ",".join(str(d) for d in recurrence.weekdays)
-        return ET.SubElement(parent_node, "recurrence", attrs)
+        node = ET.SubElement(parent_node, "recurrence")
+        attribute = self.__attribute
+        attribute(node, "unit", recurrence.unit)
+        attribute(node, "amount", recurrence.amount)
+        attribute(node, "count", recurrence.count)
+        attribute(node, "max", recurrence.max)
+        attribute(node, "stop_datetime", recurrence.stop_datetime)
+        attribute(node, "sameWeekday", recurrence.sameWeekday)
+        attribute(
+            node, "recurBasedOnCompletion", recurrence.recurBasedOnCompletion
+        )
+        attribute(
+            node,
+            "weekdays",
+            recurrence.weekdays,
+            lambda weekdays: ",".join(str(each) for each in weekdays),
+        )
+        return node
 
     def effort_node(self, parent_node, effort):
-        formattedStart = self.formatDateTime(effort.getStart())
-        attrs = dict(
-            id=effort.id(),
-            start=formattedStart,
+        start = self.formatDateTime(effort.getStart())
+        node = ET.SubElement(
+            parent_node, "effort", dict(id=effort.id(), start=start)
         )
-        stop = effort.getStop()
-        if stop != None:
-            formattedStop = self.formatDateTime(stop)
-            if formattedStop == formattedStart:
-                # Make sure the effort duration is at least one second
-                formattedStop = self.formatDateTime(stop + date.ONE_SECOND)
-            attrs["stop"] = formattedStop
-        entryMode = effort.entryMode()
-        if entryMode and entryMode != "standard":
-            attrs["entryMode"] = entryMode
-        if effort.creationDateTime() > date.DateTime.min:
-            attrs["creationDateTime"] = str(effort.creationDateTime())
-        if effort.modificationDateTime() > date.DateTime.min:
-            attrs["modificationDateTime"] = str(effort.modificationDateTime())
-        node = ET.SubElement(parent_node, "effort", attrs)
-        if effort.description():
-            ET.SubElement(node, "description").text = effort.description()
+
+        def stop_text(stop):
+            text = self.formatDateTime(stop)
+            # At least one second long
+            if text == start:
+                text = self.formatDateTime(stop + date.ONE_SECOND)
+            return text
+
+        self.__attribute(node, "stop", effort.getStop(), stop_text)
+        self.__attribute(node, "entryMode", effort.entryMode())
+        self.__dates(node, effort)
+        self.__description(node, effort)
         return node
 
     def category_node(self, parent_node, category):  # pylint: disable=W0621
         node = self.base_composite_node(
             parent_node, category, "category", self.category_node
         )
-        if category.isFiltered():
-            node.attrib["filtered"] = str(category.isFiltered())
-        if category.hasExclusiveSubcategories():
-            node.attrib["exclusiveSubcategories"] = str(
-                category.hasExclusiveSubcategories()
-            )
-        if category.stylePriority():
-            node.attrib["stylePriority"] = str(category.stylePriority())
+        self.__attribute(node, "filtered", category.isFiltered())
+        self.__attribute(
+            node,
+            "exclusiveSubcategories",
+            category.hasExclusiveSubcategories(),
+        )
+        self.__attribute(node, "stylePriority", category.stylePriority())
         for eachNote in sortedById(category.notes()):
             self.note_node(node, eachNote)
         for attachment in sortedById(category.attachments()):
@@ -280,12 +261,38 @@ class XMLWriter(object):
     def __categories_attribute(self, node, item):
         """The item's categories, stored on the item (tskversion 38,
         docs/PERSISTENCE_XML.md, Category Membership)."""
-        category_ids = " ".join(
-            each.id()
-            for each in sortedById(item.categories() & self.__categories)
+        self.__attribute(
+            node,
+            "categories",
+            item.categories() & self.__categories,
+            self.__ids,
         )
-        if category_ids:
-            node.attrib["categories"] = category_ids
+
+    @staticmethod
+    def __ids(items):
+        return " ".join(each.id() for each in sortedById(items))
+
+    @staticmethod
+    def __attribute(node, name, value, text=str):
+        """The field's attribute, left out when the item holds its
+        default (defaults.DEFAULTS)."""
+        if not is_default(name, value):
+            node.attrib[name] = text(value)
+
+    def __dates(self, node, item):
+        self.__attribute(node, "creationDateTime", item.creationDateTime())
+        # Written when known; a missing one is the creation date
+        modification = item.modificationDateTime()
+        self.__attribute(
+            node,
+            "modificationDateTime",
+            None if modification == UNKNOWN else modification,
+        )
+
+    @staticmethod
+    def __description(node, item):
+        if not is_default("description", item.description()):
+            ET.SubElement(node, "description").text = item.description()
 
     def __base_node(self, parent_node, item, node_name):
         node = ET.SubElement(
@@ -293,32 +300,29 @@ class XMLWriter(object):
             node_name,
             dict(id=item.id()),
         )
-        if item.creationDateTime() > date.DateTime.min:
-            node.attrib["creationDateTime"] = str(item.creationDateTime())
-        if item.modificationDateTime() > date.DateTime.min:
-            node.attrib["modificationDateTime"] = str(
-                item.modificationDateTime()
-            )
-        if item.subject():
-            node.attrib["subject"] = item.subject()
-        if item.description():
-            ET.SubElement(node, "description").text = item.description()
+        self.__dates(node, item)
+        self.__attribute(node, "subject", item.subject())
+        self.__description(node, item)
         return node
+
+    def __appearance(self, node, item):
+        # An invalid colour or font is none
+        self.__attribute(node, "fgColor", item.foregroundColor() or None)
+        self.__attribute(node, "bgColor", item.backgroundColor() or None)
+        self.__attribute(
+            node,
+            "font",
+            item.font() or None,
+            lambda font: font.GetNativeFontInfoDesc(),
+        )
+        self.__attribute(node, "icon", item.icon_id())
+        self.__attribute(node, "ordering", item.ordering())
 
     def base_node(self, parent_node, item, node_name):
         """Create a node and add the attributes that all domain
         objects share, such as id, subject, description."""
         node = self.__base_node(parent_node, item, node_name)
-        if item.foregroundColor():
-            node.attrib["fgColor"] = str(item.foregroundColor())
-        if item.backgroundColor():
-            node.attrib["bgColor"] = str(item.backgroundColor())
-        if item.font():
-            node.attrib["font"] = str(item.font().GetNativeFontInfoDesc())
-        if item.icon_id():
-            node.attrib["icon"] = str(item.icon_id())
-        if item.ordering():
-            node.attrib["ordering"] = str(item.ordering())
+        self.__appearance(node, item)
         return node
 
     def base_composite_node(
@@ -331,21 +335,13 @@ class XMLWriter(object):
     ):
         """Same as base_node, but also create child nodes by means of
         the childNodeFactory."""
-        node = self.__base_node(parent_node, item, node_name)
-        if item.foregroundColor():
-            node.attrib["fgColor"] = str(item.foregroundColor())
-        if item.backgroundColor():
-            node.attrib["bgColor"] = str(item.backgroundColor())
-        if item.font():
-            node.attrib["font"] = str(item.font().GetNativeFontInfoDesc())
-        if item.icon_id():
-            node.attrib["icon"] = str(item.icon_id())
-        if item.ordering():
-            node.attrib["ordering"] = str(item.ordering())
-        if item.expandedContexts():
-            node.attrib["expandedContexts"] = str(
-                tuple(sorted(item.expandedContexts()))
-            )
+        node = self.base_node(parent_node, item, node_name)
+        self.__attribute(
+            node,
+            "expandedContexts",
+            item.expandedContexts(),
+            lambda contexts: str(tuple(sorted(contexts))),
+        )
         for child in sortedById(item.children()):
             childNodeFactory(
                 node, child, *childNodeFactoryArgs

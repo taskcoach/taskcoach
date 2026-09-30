@@ -147,7 +147,7 @@ It plays two roles at once:
   returns it when unchecked, and `SetValue()` takes it or `None` as
   unchecked, [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md)); not written
   to the file, and a missing attribute reads back as it
-  ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#writer-skip-conditions));
+  ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#defaults));
   skipped by exports. A task whose completion date is not set is not
   completed.
 - **Never, infinitely far.** Being the latest date, it makes plain time

@@ -6,16 +6,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 
 - [TODO](#todo)
 - [Overview](#overview)
-- [Writer Skip Conditions](#writer-skip-conditions)
-  - [Task Node](#task-node)
-  - [Recurrence Node](#recurrence-node)
-  - [Effort Node](#effort-node)
-  - [Note Node](#note-node)
-  - [Category Node](#category-node)
-  - [Base Node (All Objects)](#base-node-all-objects)
-- [Reader Defaults](#reader-defaults)
-- [Round-Trip Consistency](#round-trip-consistency)
-- [Skip Condition Categories](#skip-condition-categories)
+- [Defaults](#defaults)
 - [Saving](#saving)
 - [Merging](#merging)
 - [Category Membership](#category-membership)
@@ -27,24 +18,12 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 
 ## TODO
 
-1. **Maybe always write values?** The writer omits attributes when the value
-   equals an assumed default. This scatters default-value knowledge across
-   the writer instead of centralizing it in the domain (Attribute pattern).
-   Always writing every attribute would make the XML slightly larger but
-   eliminate the implicit "is this worth saving" decision and the risk of
-   writer/reader default mismatch. At minimum, the writer and reader should
-   share a common source of truth for defaults.
-
-2. The writer and reader independently decide defaults in two different
-   files with no shared constant or domain method connecting them. They
-   agree by convention, not by contract. If one changes without the other,
-   round-trip silently corrupts data.
-
-3. ~~`plannedDurationMode` skip condition uses hardcoded `"implicit"` but
-   the documented default starting state is "automatic"~~ — **Resolved.**
-   The actual code default is `"implicit"` (`Task.__init__`). The
-   DURATION_CALCULATIONS.md documentation has been corrected to match.
-   Writer and reader both agree on `"implicit"` as the default.
+1. ~~Maybe always write values?~~ **Ruled by designer 2026-09-29:**
+   no ([Defaults](#defaults)).
+2. ~~The writer and reader decide defaults separately~~: done
+   2026-09-29, one list ([Defaults](#defaults)).
+3. ~~`plannedDurationMode` documented as "automatic"~~: resolved, the
+   default is `"implicit"`.
 
 ---
 
@@ -52,175 +31,51 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 
 **File:** `taskcoachlib/persistence/xml/writer.py` (XMLWriter)
 **File:** `taskcoachlib/persistence/xml/reader.py` (XMLReader)
+**File:** `taskcoachlib/persistence/xml/defaults.py` (the defaults)
 
-The writer serializes domain objects to XML. For each field, it checks
-whether the value equals an assumed default — if so, the XML attribute is
-**omitted entirely** (not written as an empty string). The XML element has
-no trace of the attribute.
-
-The reader deserializes XML back to domain objects. For each field, if the
-XML attribute is missing, the reader provides its own default via
-`.get("attributeName", default)`.
-
-These two default decisions are made independently. They happen to agree
-by convention.
+The writer serializes domain objects to XML and the reader
+deserializes them back. A field holding its default is not written,
+and a missing attribute is read as the default: both take the
+defaults from one list.
 
 ---
 
-## Writer Skip Conditions
+## Defaults
 
-The writer conditionally omits attributes from the XML. "Skipped" means
-the attribute is **not written to XML at all** — completely absent from
-the element, not written as an empty value.
+**Ruling, 2026-09-29:** a field holding its default is not written;
+a missing attribute is the default. Writing every value was ruled
+out: it bloats the file for nothing (+118% measured on a generated
+1,000-task file).
 
-### Task Node
+One list, `DEFAULTS` in `persistence/xml/defaults.py`, holds each
+field's default. The writer (`is_default()`) and the reader (`read()`)
+both use it, so they cannot disagree, and `XMLDefaultsTest` checks
+that a new item holds each default, so the domain agrees too.
 
-`task_node()`:
+**Canon, ruled 2026-09-29:** a field's entry lists values. The first
+is the default: an item holding it is saved without the attribute,
+and a missing attribute is read as it. The others are other written
+forms of it, read as the default, for a transition; the next save
+leaves them out. A different default, not another form of it, also
+needs the file version: files saved before the change mean the old
+default by a missing attribute. A value that cannot be read is read
+as the default.
 
-| XML Attribute | Skip Condition | Type |
-|--------------|----------------|------|
-| `plannedstartdate` | `== maxDateTime` | Sentinel |
-| `duedate` | `== maxDateTime` | Sentinel |
-| `actualstartdate` | `== maxDateTime` | Sentinel |
-| `completiondate` | `== maxDateTime` | Sentinel |
-| `percentageComplete` | `== 0` (falsy) | Falsy |
-| `recurrence` | empty Recurrence (falsy) | Falsy |
-| `budget` | `== TimeDelta()` | Sentinel |
-| `plannedDuration` | `== TimeDelta()` | Sentinel |
-| `plannedDurationMode` | `!= "implicit"` (inverted) | Hardcoded string |
-| `priority` | `== 0` (falsy) | Falsy |
-| `hourlyFee` | `== 0` (falsy) | Falsy |
-| `fixedFee` | `== 0` (falsy) | Falsy |
-| `reminder` | `== maxDateTime` | Sentinel |
-| `prerequisites` | empty string (falsy) | Falsy |
-| `categories` | none in the file | Falsy ([Category Membership](#category-membership)) |
-| `shouldMarkCompleted...` | `== None` | None check |
+| Kind | Fields | Default |
+|---|---|---|
+| A date not set | `plannedstartdate`, `duedate`, `actualstartdate`, `completiondate`, `reminder`, a recurrence's `stop_datetime` | the latest date ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#dates-not-set-is-the-latest-date)); `""` and `"None"` read as it |
+| None | `fgColor`, `bgColor`, `font`; `shouldMarkCompletedWhenAllChildrenCompleted` (the preference decides); an effort's `stop` (still running) | none |
+| Zero | `ordering`, `percentageComplete`, `priority`, `hourlyFee`, `fixedFee`, `stylePriority`, a recurrence's `count` and `max` (no maximum) | 0; `budget` and `plannedDuration` 0:00:00 |
+| Empty | `subject`, `description`, `icon`, a recurrence's `unit`; `expandedContexts`, `prerequisites`, `categories`, `weekdays` | empty |
+| False | `filtered`, `exclusiveSubcategories`, `sameWeekday`, `recurBasedOnCompletion` | False |
+| Named | `plannedDurationMode`, an effort's `entryMode`, a recurrence's `amount` | `implicit`, `standard` (`""` reads as either), 1 |
+| Another field | `reminderBeforeSnooze` (written while snoozed), `modificationDateTime` (written when known) | the reminder, the creation date |
+| Unknown | `creationDateTime` | a date from before they were kept (`DateTime.min`) |
 
-`maxDateTime` is the date not set, the latest date
-([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#dates-not-set-is-the-latest-date));
-the reader gives it back for a missing attribute.
-
-### Recurrence Node
-
-`recurrence_node()`:
-
-| XML Attribute | Skip Condition | Type |
-|--------------|----------------|------|
-| `amount` | `<= 1` | Numeric compare |
-| `count` | `<= 0` | Numeric compare |
-| `max` | `<= 0` | Numeric compare |
-| `stop_datetime` | `== maxDateTime` | Sentinel |
-| `sameWeekday` | falsy (`False`) | Falsy |
-| `recurBasedOnCompletion` | falsy (`False`) | Falsy |
-| `weekdays` | falsy (empty) | Falsy |
-
-### Effort Node
-
-`effort_node()`:
-
-| XML Attribute | Skip Condition | Type |
-|--------------|----------------|------|
-| `entryMode` | falsy or `== "standard"` | Hardcoded string |
-| `creationDateTime`, `modificationDateTime` | `<= DateTime.min` | Sentinel; with microseconds (`date.Timestamp`) |
-
-### Note Node
-
-`note_node()`:
-
-| XML Attribute | Skip Condition | Type |
-|--------------|----------------|------|
-| `categories` | none in the file | Falsy ([Category Membership](#category-membership)) |
-
-### Category Node
-
-`category_node()`:
-
-| XML Attribute | Skip Condition | Type |
-|--------------|----------------|------|
-| `filtered` | falsy (`False`) | Falsy |
-| `exclusiveSubcategories` | falsy (`False`) | Falsy |
-| `stylePriority` | `== 0` (falsy) | Falsy |
-
-### Base Node (All Objects)
-
-`__base_node()` / `base_node()` / `base_composite_node()`:
-
-| XML Attribute | Skip Condition | Type |
-|--------------|----------------|------|
-| `creationDateTime` | `<= DateTime.min` | Sentinel; written with microseconds (`date.Timestamp`) |
-| `modificationDateTime` | `<= DateTime.min` | Sentinel; written with microseconds (`date.Timestamp`) |
-| `subject` | `""` (falsy) | Falsy |
-| `description` | `""` (falsy) | Falsy |
-| `fgColor` | `None` (falsy) | Falsy |
-| `bgColor` | `None` (falsy) | Falsy |
-| `font` | `None` (falsy) | Falsy |
-| `icon` | `""` (falsy) | Falsy |
-| `ordering` | `== 0` (falsy) | Falsy |
-| `expandedContexts` | empty (falsy) | Falsy |
-
----
-
-## Reader Defaults
-
-When an XML attribute is missing, the reader provides a default via
-`.get("attr", default)`. Selected examples from `_parse_task_node()`:
-
-| XML Attribute | Reader Default | Matches Writer Skip? |
-|--------------|---------------|---------------------|
-| `subject` | `""` | Yes — writer skips `""` |
-| `plannedstartdate` | not set → `None` → `maxDateTime` | Yes |
-| `percentageComplete` | `"0"` → `0` | Yes |
-| `priority` | `"0"` → `0` | Yes |
-| `plannedDurationMode` | `"implicit"` | Yes: code default is `"implicit"` (`Task.__init__`) |
-| `budget` | `""` → `TimeDelta()` | Yes |
-| `hourlyFee` | `"0"` → `0.0` | Yes |
-
-`selectedIcon` (the open folder icon, removed 2026-09-28) is not read:
-an old file's value is dropped and not written back.
-
----
-
-## Round-Trip Consistency
-
-A value round-trips correctly when:
-
-```
-domain.getValue() → writer skips → XML has no attribute → reader defaults → domain.setValue(default)
-```
-
-...produces the same value as the original. This works today for all fields
-because the writer skip conditions and reader defaults happen to agree.
-
-**Risk:** If the writer's skip condition or the reader's default is changed
-independently, the round-trip breaks silently. There is no shared constant,
-no assertion, and no test that verifies writer/reader default agreement.
-
----
-
-## Skip Condition Categories
-
-The writer uses several types of skip conditions, with varying levels of
-correctness:
-
-**Sentinel-based** (dates, budget, duration) — Comparing against an
-explicit "no value" marker defined by the domain (`maxDateTime`,
-`TimeDelta()`). Semantically correct — the sentinel means "not set."
-
-**Falsy-based** (strings, numbers, booleans) — Using Python truthiness
-(`if value:`). This conflates multiple concepts:
-- `""` is falsy — but `""` is a valid string value (user cleared subject)
-- `0` is falsy — but `0` is a valid numeric value (priority 0, zero fee)
-- `None` is falsy — genuinely means "not set"
-- `False` is falsy — valid boolean value
-
-These work by accident because the falsy value happens to match the
-constructor default. They'd break if any default changed to a non-falsy
-value.
-
-**Hardcoded string** (`plannedDurationMode`, `entryMode`) — Comparing
-against a string literal that the writer assumes is the default. The
-domain constructor defines the actual default separately. If they
-diverge, data is silently lost.
+Always written, with no default: `id`, an attachment's `type` and
+`location`, an effort's `start`. A task without a `recurrence` node
+does not recur. `selectedIcon` (the open folder icon, removed
+2026-09-28) is not read: an old file's value is dropped.
 
 ---
 
