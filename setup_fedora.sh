@@ -118,11 +118,10 @@ echo
 echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
 echo "Fedora has most packages, pip install for:"
 echo "  - squaremap: Not in Fedora repos"
-echo "  - pyparsing>=3.1.3: Fedora has older version, need pp.Tag() API"
 echo "  - distro: Distribution detection"
 
 source "$VENV_PATH/bin/activate"
-pip install --quiet squaremap "pyparsing>=3.1.3" distro
+pip install --quiet squaremap distro
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"

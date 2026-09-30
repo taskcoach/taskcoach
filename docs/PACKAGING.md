@@ -31,7 +31,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 | wxPython | >=4.2.0 | HyperTreeList stability | — |
 | wxPython | >=4.2.4 | hypertreelist row background fix (PR #2088) | All current (Bookworm 4.2.0, Trixie 4.2.3) |
 | wxPython | >=4.3.0 | Native dark mode on Windows (optional, see [WINDOWS.md](WINDOWS.md#dark-mode)) | Windows builds pin 4.3.1 |
-| pyparsing | >=3.1.3 | `pp.Tag()` API | Debian Bookworm (3.0.9) |
+| pyparsing | >=3.0.0 | pyparsing 3 API (`deltaTime.py`); 3.0.0 to 3.1.2 tested alike | none (Ubuntu 22.04 has 3.0.7) |
 | watchdog | >=3.0.0 | File monitoring API | Debian Bookworm (2.2.1) |
 | numpy | >=1.26,<2 | NumPy 2.4+ requires SSE4.2 (crashes old CPUs, see [NUMPY.md](NUMPY.md)) | — |
 
@@ -44,7 +44,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | Package | debian12 | ubuntu22 | debian13 | ubuntu24 | arch | fedora | appimage | ~~flatpak~~ | windows | macos |
 |---------|:--------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|:-------:|:-------:|:-----:|
 | wxpython | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| pyparsing | **pip** | **pip** | distro | distro | distro | **pip** | bundled | bundled | pip | pip |
+| pyparsing | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | watchdog | **pip** | **pip** | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
 | six | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
@@ -100,13 +100,13 @@ backends.
 
 | Target | ID | Python | wxPython | Setup Script | GitHub Workflow | Notes |
 |--------|:--:|:------:|:--------:|--------------|-----------------|-------|
-| [Debian 12 Bookworm](#debianubuntu-packaging) | debian12 | 3.11 | 4.2.0 | `setup_debian12_bookworm.sh` | `build-deb.yml` | pip: pyparsing, watchdog |
+| [Debian 12 Bookworm](#debianubuntu-packaging) | debian12 | 3.11 | 4.2.0 | `setup_debian12_bookworm.sh` | `build-deb.yml` | pip: watchdog |
 | [Debian 13 Trixie](#debianubuntu-packaging) | debian13 | 3.12 | 4.2.3 | `setup_debian13_trixie.sh` | `build-deb.yml` | Distro deps sufficient |
-| [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.1.1 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | pip: pyparsing, watchdog |
+| [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.1.1 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | pip: watchdog |
 | [Ubuntu 24.04 Noble](#debianubuntu-packaging) | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
 | [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
-| [Fedora 43](#fedora-packaging) | fedora43 | 3.13 | 4.2.4 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
+| [Fedora 43](#fedora-packaging) | fedora43 | 3.13 | 4.2.4 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap |
 | [**AppImage**](#appimage-packaging) | appimage | **3.11** | **4.2.5** | — | `build-appimage.yml` | Bundles Python + all deps |
 | [~~**Flatpak**~~](#flatpak-packaging) | flatpak | runtime | **4.3.1 (source)** | `scripts/build-flatpak.sh` | `build-flatpak.yml` | **Flathub release postponed**; GNOME runtime; wxPython from sdist (builds its own bundled wxWidgets) |
 | [**Windows**](#windows-packaging) | windows | **3.11** | **4.3.1** | — | `build-windows.yml` | Python embed + Inno Setup |

@@ -28,11 +28,11 @@ BuildRequires:  libappstream-glib
 
 # Dependency Installation Strategy:
 # 1. Use Fedora packages for all available dependencies
-# 2. Bundle via pip: squaremap (not in repos), pyparsing (version too old)
+# 2. Bundle via pip: squaremap (not in repos)
 # 3. Filter auto-generated deps for bundled packages
 # See docs/PACKAGING.md for full dependency strategy.
-%global __requires_exclude ^python3\\.?[0-9]*dist\\((squaremap|pyparsing)\\)
-%global __provides_exclude ^python3\\.?[0-9]*dist\\((squaremap|pyparsing)\\)
+%global __requires_exclude ^python3\\.?[0-9]*dist\\((squaremap)\\)
+%global __provides_exclude ^python3\\.?[0-9]*dist\\((squaremap)\\)
 
 # Runtime dependencies - from Fedora repos
 Requires:       python3 >= 3.8
@@ -41,6 +41,7 @@ Requires:       python3-six
 Requires:       python3-watchdog
 Requires:       python3-chardet
 Requires:       python3-dateutil
+Requires:       python3-pyparsing >= 3.0.0
 Requires:       python3-lxml
 Requires:       python3-pyxdg
 Requires:       python3-keyring
@@ -61,7 +62,6 @@ Recommends:     python3-pywayland
 
 # Bundled via pip:
 # - squaremap: not in Fedora repos
-# - pyparsing>=3.1.3: Fedora has older version, need pp.Tag() API
 
 %description
 Task Coach is a simple open source todo manager to keep track of personal
@@ -93,12 +93,10 @@ rm -rfv %{buildroot}%{_bindir}/__pycache__
 # Ensure wheel is available for proper dist-info creation
 pip3 install --no-cache-dir wheel
 
-# Bundle packages not in Fedora repos or with version issues
+# Bundle packages not in Fedora repos
 # - squaremap: not in Fedora repos
-# - pyparsing>=3.1.3: Fedora 40 has 3.0.x, need 3.1.3+ for pp.Tag() API
 pip3 install --no-cache-dir --no-deps --target=%{buildroot}%{python3_sitelib} \
-    squaremap \
-    "pyparsing>=3.1.3"
+    squaremap
 
 # Install desktop file
 install -Dm644 build.in/linux_common/taskcoach.desktop \
@@ -130,8 +128,6 @@ install -Dm644 Welcome.tsk \
 %{python3_sitelib}/TaskCoach-*.egg-info/
 %{python3_sitelib}/squaremap/
 %{python3_sitelib}/squaremap-*.dist-info/
-%{python3_sitelib}/pyparsing/
-%{python3_sitelib}/pyparsing-*.dist-info/
 %{_datadir}/applications/%{name}.desktop
 %{_metainfodir}/%{name}.appdata.xml
 %{_datadir}/pixmaps/%{name}.png

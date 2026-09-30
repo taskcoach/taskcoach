@@ -119,7 +119,7 @@ install_dependencies() {
         "watchdog>=3.0.0" \
         "chardet>=5.2.0" \
         "python-dateutil>=2.9.0" \
-        "pyparsing>=3.1.3" \
+        "pyparsing>=3.0.0" \
         lxml \
         pyxdg \
         keyring \

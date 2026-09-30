@@ -77,11 +77,11 @@ except ImportError:
 # On Windows/macOS: Use pip for all dependencies.
 #
 # IMPORTANT: Some packages have minimum version requirements:
-# - pyparsing>=3.1.3: Required for pp.Tag() in delta_time.py
+# - pyparsing>=3.0.0: the pyparsing 3 API of delta_time.py
 # - watchdog>=3.0.0: Required for file monitoring API
 #
-# Debian Bookworm note: pyparsing (3.0.9) and watchdog (2.2.1) are too old,
-# must pip install newer versions. See docs/DEBIAN_BOOKWORM_SETUP.md
+# Debian Bookworm note: watchdog (2.2.1) is too old, must pip install a
+# newer version. See docs/DEBIAN_BOOKWORM_SETUP.md
 #
 # Optional dependencies (in extras_require):
 # - squaremap: Hierarchic data visualization (not in Fedora/Arch repos)
@@ -91,7 +91,7 @@ install_requires = [
     "watchdog>=3.0.0",  # File monitoring - Bookworm too old, needs pip
     "chardet",
     "python-dateutil",
-    "pyparsing>=3.1.3",  # For pp.Tag() - Bookworm too old, needs pip
+    "pyparsing>=3.0.0",  # pyparsing 3 API, every supported distro has it
     "lxml",
     "pyxdg",
     "keyring",

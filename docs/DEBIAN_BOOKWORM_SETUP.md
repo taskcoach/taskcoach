@@ -159,7 +159,7 @@ python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 
 # Install remaining dependencies
-pip install distro 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
+pip install distro 'watchdog>=3.0.0'
 
 # Deactivate when done
 deactivate
@@ -283,14 +283,13 @@ Run from a terminal: the log goes to its output
 - ✅ python3-dateutil (2.8.2)
 - ✅ python3-chardet (5.1.0)
 - ✅ python3-keyring (23.13.1)
-- ⚠️ python3-pyparsing (3.0.9) - **Note: requires 3.1.3+, install via pip**
+- ✅ python3-pyparsing (3.0.9)
 - ✅ python3-pyxdg (0.28)
 - ✅ python3-squaremap
 
 ### From PyPI (pip in venv, for development):
 - 📦
 - 📦 distro
-- 📦 pyparsing>=3.1.3 (Bookworm's 3.0.9 is too old)
 - 📦 watchdog>=3.0.0 (Bookworm's 2.2.1 is too old)
 
 ---

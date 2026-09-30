@@ -164,15 +164,15 @@ get_pip_packages() {
     case "$DISTRO_CODENAME" in
         trixie|sid)
             # Trixie has most packages in repos, only need a few from pip
-            echo "distro 'pyparsing>=3.1.3' squaremap"
+            echo "distro squaremap"
             ;;
         bookworm)
             # Bookworm needs more packages from pip
-            echo "distro 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "distro squaremap 'watchdog>=3.0.0'"
             ;;
         *)
             # Default: install most from pip to be safe
-            echo "distro 'pyparsing>=3.1.3' squaremap 'watchdog>=3.0.0'"
+            echo "distro 'pyparsing>=3.0.0' squaremap 'watchdog>=3.0.0'"
             ;;
     esac
 }

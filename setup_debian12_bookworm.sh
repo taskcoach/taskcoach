@@ -107,12 +107,11 @@ echo
 
 # Install Python dependencies not available in Debian repos or with version issues
 echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
-echo "Installing: distro, pyparsing>=3.1.3, watchdog>=3.0.0"
+echo "Installing: distro, watchdog>=3.0.0"
 
 source "$VENV_PATH/bin/activate"
-# Note: pyparsing>=3.1.3 required for deltaTime.py (Debian Bookworm only has 3.0.9)
 # Note: watchdog>=3.0.0 for file system monitoring (Bookworm has 2.2.1)
-pip install --quiet distro 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
+pip install --quiet distro 'watchdog>=3.0.0'
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -212,7 +211,7 @@ echo
 echo "TaskCoach has been set up with:"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (distro, pyparsing, watchdog)"
+echo "  • Additional packages in venv (distro, watchdog)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"
