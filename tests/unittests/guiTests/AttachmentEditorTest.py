@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
+import wx
 from taskcoachlib import gui, config, persistence, operating_system
 from taskcoachlib.domain import attachment, date
 
@@ -125,13 +126,13 @@ class MailAttachmentEditorTest(test.wxTestCase):
             self.page._from_name_entry,
             self.page._from_address_entry,
         )
+        # Drawn as text, not in input boxes
         self.assertEqual(
             ["Quote", "mid:1@example.com", "Alice", "alice@example.com"],
-            [entry.GetValue() for entry in entries],
+            [entry.GetLabel() for entry in entries],
         )
-        self.assertEqual(
-            [False] * 4, [entry.IsEditable() for entry in entries]
-        )
+        for entry in entries:
+            self.assertIsInstance(entry, wx.StaticText)
 
     def test_the_description_can_change(self):
         entries = self.page.entries()

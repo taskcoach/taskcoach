@@ -23,6 +23,11 @@ Canon decision by designer, 2026-09-28.
   tell what each value means. The core fields that fold a subtree value
   in keep doing so; explicit fields beside them are postponed
   ([TASK_FIELDS.md](TASK_FIELDS.md#postponed-base-and-effective-fields)).
+- **Read-only looks read-only (ruled by designer 2026-09-30):** a
+  value the user cannot change is drawn as the window's text, like the
+  dates in the editors, never in an input box: a box that ignores
+  typing misleads. `widgets.read_only_text()` draws it; a control that
+  turns read-only greys out, as the date controls do.
 - **Deferred calls through `patterns.later`:** a debounce, delay,
   repeat or "when idle" call names its owner and never uses
   `wx.CallLater`, `wx.CallAfter` or `wx.Timer` directly, so none can

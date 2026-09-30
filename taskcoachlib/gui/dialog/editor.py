@@ -523,8 +523,7 @@ class AttachmentSubjectPage(SubjectPage):
         return any(item.type_ == "mail" for item in self.items)
 
     def __add_read_only_entry(self, label, text):
-        # Selectable, to copy an address or a link
-        entry = wx.TextCtrl(self, value=text, style=wx.TE_READONLY)
+        entry = widgets.read_only_text(self, text)
         self.addEntry(label, entry, flags=[None, wx.ALL | wx.EXPAND])
         return entry
 

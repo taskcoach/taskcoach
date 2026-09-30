@@ -77,9 +77,10 @@ hands those two programs' files to the mail drop (P33).
 
 A mail's Description page (`AttachmentSubjectPage`,
 `gui/dialog/editor.py`): Subject, Type, Location, From, From address
-(read-only text, which can be selected and copied), Sent, then the
-Description, which takes the focus, whatever column opened the
-editor. Several attachments with a mail among them: the subject and
+and Sent, drawn as text, not in input boxes, since they cannot change
+([DEVELOPMENT.md](DEVELOPMENT.md#design), "Read-only looks read-only";
+a long value is cut, whole in its tooltip); then the Description,
+which takes the focus, whatever column opened the editor. Several attachments with a mail among them: the subject and
 location are read-only and empty.
 
 ## Opening

@@ -1814,12 +1814,10 @@ class Delete(ViewerCommand):
         )
         sizer.Add(header_text, 0, wx.ALL | wx.ALIGN_CENTER_HORIZONTAL, 10)
 
-        text_ctrl = wx.TextCtrl(
-            dlg,
-            value="\n".join(lines),
-            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_DONTWRAP,
-            size=(600, 400),
+        text_ctrl = widgets.read_only_text(
+            dlg, "\n".join(lines), multiline=True
         )
+        text_ctrl.SetInitialSize((600, 400))
         sizer.Add(text_ctrl, 1, wx.EXPAND | wx.LEFT | wx.RIGHT, 10)
 
         footer_text = wx.StaticText(
@@ -1838,6 +1836,8 @@ class Delete(ViewerCommand):
         dlg.SetSizer(sizer)
         dlg.Fit()
         dlg.CentreOnParent()
+        # Not the list: a cursor there looks like it can be typed in
+        ok_btn.SetFocus()
         dlg.ShowModal()
         dlg.Destroy()
 

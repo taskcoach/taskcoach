@@ -42,6 +42,7 @@ from .maskedtimectrl import (
 )
 from .textctrl import (
     single_line_text_ctrl,
+    read_only_text,
     MultiLineTextCtrl,
     StaticTextWithToolTip,
 )

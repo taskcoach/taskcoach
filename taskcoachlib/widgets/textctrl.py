@@ -990,3 +990,20 @@ class StaticTextWithToolTip(wx.StaticText):
         super().__init__(*args, **kwargs)
         label = kwargs["label"]
         self.SetToolTip(wx.ToolTip(label))
+
+
+def read_only_text(parent, value="", multiline=False):
+    """A value the user cannot change, drawn as the window's text, not in
+    an input box (docs/DEVELOPMENT.md, Design, "Read-only looks
+    read-only"). One line is a label, cut at the end when too long, with
+    the whole value as its tooltip. Several lines scroll in a read-only
+    box with the window's colour."""
+    if multiline:
+        style = wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_DONTWRAP
+        ctrl = wx.TextCtrl(parent, value=value, style=style)
+        ctrl.SetBackgroundColour(parent.GetBackgroundColour())
+        return ctrl
+    ctrl = wx.StaticText(parent, label=value, style=wx.ST_ELLIPSIZE_END)
+    if value:
+        ctrl.SetToolTip(value)
+    return ctrl
