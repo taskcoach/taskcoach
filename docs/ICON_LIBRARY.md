@@ -23,6 +23,7 @@
 - [Recently Added Icons](#recently-added-icons)
 - [Icon Grid Browser and Duplicates (Dev Tools)](#icon-grid-browser-and-duplicates-dev-tools)
 - [Icon Hints Worker Plan](#icon-hints-worker-plan)
+- [Removed: Plural Icons](#removed-plural-icons)
 - [See Also](#see-also)
 
 ## TODO
@@ -1311,6 +1312,25 @@ Use icon-distillery's hints script:
 
 ### Key Files
 - **Import catalogs**: `../icon-distillery/{theme}/icons.json`
+
+## Removed: Plural Icons
+
+Removed 2026-09-29, **ruled by designer**
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do),
+to do 58). An item with children showed the plural twin of its icon (a
+status dot became the folder of its colour, the checkmark a double
+checkmark), and one without showed the singular.
+
+Why:
+
+- Redundant: the tree's expand arrow already shows that an item has
+  children, as it does for the open folder icons removed before.
+- Not scalable: fixed pairs of icons, one twin per icon, cannot grow
+  with the icon library.
+- No longer used: it touched only the default status dots.
+
+Any icons for grouping items need a richer icon feature, not pairs.
+The folder and double checkmark icons stay as regular icons.
 
 ## See Also
 

@@ -187,9 +187,9 @@ def derivedFgColorSource(self):
 - UI resolves: `color = resolve_color(actual if actual else default)`
 
 **Plural icons:** removed 2026-09-29, **ruled by designer**
-([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do),
-to do 58): every view shows the effective icon as is; a task with
-subtasks shows its status icon like any task.
+([ICON_LIBRARY.md](ICON_LIBRARY.md#removed-plural-icons), why): every
+view shows the effective icon as is; a task with subtasks shows its
+status icon like any task.
 
 ---
 

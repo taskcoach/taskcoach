@@ -139,7 +139,8 @@ go at the end. Details live in the sections and documents linked.
     2026-09-29**: the stopgap rebuild does not solve it and points to
     a structural problem; to design with 45
     ([Stale Entries](#stale-entries)).
-58. ~~Plural icons~~: removed 2026-09-29, **ruled by designer**:
+58. ~~Plural icons~~: removed 2026-09-29, **ruled by designer**
+    ([ICON_LIBRARY.md](ICON_LIBRARY.md#removed-plural-icons), why):
     every view shows the effective icon as is; a task with subtasks
     shows its status icon, the folders stay as regular icons. One
     themed status icon, `TaskStatus.icon_id()`, replaces
