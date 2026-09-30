@@ -3202,9 +3202,14 @@ class DateTimeComboCtrl(wx.EvtHandler):
         # Do NOT call event.Skip() — intentionally consumed
 
     def NotifyValueChanged(self):
-        """Fire EVT_VALUE_CHANGED on self (DTC is a wx.EvtHandler)."""
-        event = ValueChangedEvent(self)
-        wx.PostEvent(self, event)
+        """Fire EVT_VALUE_CHANGED on self (DTC is a wx.EvtHandler) once
+        the current event is done. Not a window, DTC outlives its
+        widgets: its checkbox owns the call, which is skipped once they
+        are gone (docs/DEFERRED_CALLS.md)."""
+        patterns.later.soon(self._checkbox, self._send_value_changed)
+
+    def _send_value_changed(self):
+        self.ProcessEvent(ValueChangedEvent(self))
 
     def _onCheckboxChanged(self, event):
         """Handle checkbox state change — route through abstraction."""

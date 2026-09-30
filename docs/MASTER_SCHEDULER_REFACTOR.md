@@ -367,11 +367,13 @@ In the app:
   for the user's edit
   ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md#preconditions-and-global-logic),
   0.5).
-- P36. A date field's change event still pending when its editor
-  closes raises `RuntimeError` (its checkbox deleted) in
-  `AttributeSync.onAttributeEdited()`. Seen 2026-09-30 in
-  `EffortEditorTest`, where a later test processes an earlier editor's
-  events; not seen in the app.
+- P36. ~~A date field's change event still pending when its editor
+  closed reached the closed editor (`RuntimeError`, its checkbox
+  deleted)~~: fixed 2026-09-30. The date control is an event handler,
+  not a window, so wx did not drop what it had posted with its
+  widgets; it now sends the event through the deferred service, owned
+  by its checkbox
+  ([DATETIME_CONTROLS.md](DATETIME_CONTROLS.md#datetimecomboctrl-event-ownership)).
 
 ## Views on the Effective Styles
 

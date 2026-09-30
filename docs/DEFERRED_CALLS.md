@@ -248,6 +248,9 @@ those windows go, as on master.
   worker threads (the version check, the file watcher, the dependency
   graph's plotting) and the tray menu's Quit
   ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)).
+- The date control's change event, posted with `wx.PostEvent` on an
+  event handler that outlived its widgets (P36,
+  [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md#datetimecomboctrl-event-ownership)).
 
 ## Limits
 
