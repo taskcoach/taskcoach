@@ -19,6 +19,7 @@ Snapshots of the stored data and steps, what an action changed: the
 undo log's one mechanism (docs/UNDO_REDO.md, Architecture).
 """
 
+import collections
 import contextlib
 import weakref
 
@@ -125,6 +126,22 @@ class Step:
 
     def __str__(self):
         return self.label
+
+    def summary(self):
+        """What the step changed, for the log: field names with their
+        counts, and list changes."""
+        counts = collections.Counter(
+            name.rsplit("__", 1)[-1]
+            for _item, name, _old, _new in self.changes
+        )
+        fields_changed = ", ".join(
+            "%s x%d" % each for each in sorted(counts.items())
+        )
+        return "%r: %s; %d list(s)" % (
+            self.label,
+            fields_changed or "no field",
+            len(self.members),
+        )
 
     def undo(self):
         self.__put_back(undo=True)

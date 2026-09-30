@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from unittest import mock
+
 import test
 from unittests import asserts
 from taskcoachlib import config, patterns
@@ -157,3 +159,85 @@ class HistoryTest(test.TestCase, asserts.CommandAssertsMixin):
 
     def on_subject(self, event):
         Rename(self.item, "Reaction").do()
+
+
+class EventLoopTest(test.TestCase):
+    """While the event loop runs, a step stays open until the
+    application is idle: what the events its action posted change
+    joins it."""
+
+    def setUp(self):
+        super().setUp()
+        task.Task.settings = config.Settings(load=False)
+        self.commands = patterns.CommandHistory()
+        self.item = task.Task(subject="Before")
+        self.idle_handlers = []
+        app = mock.Mock()
+        app.IsMainLoopRunning.return_value = True
+        app.Bind.side_effect = lambda _type, handler: (
+            self.idle_handlers.append(handler)
+        )
+        app.Unbind.side_effect = lambda _type, handler: (
+            self.idle_handlers.remove(handler)
+        )
+        self.idle_event = mock.Mock()
+        self.idle_event.GetEventObject.return_value = app
+        for patcher in (
+            mock.patch("wx.GetApp", return_value=app),
+            mock.patch("wx.WakeUpIdle"),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        self.commands.clear()
+        super().tearDown()
+
+    def run_posted_events(self):
+        """Then the application is idle."""
+        for handler in list(self.idle_handlers):
+            handler(self.idle_event)
+
+    def labels(self):
+        return [str(step) for step in self.commands.getHistory()]
+
+    def test_a_posted_command_joins_the_step(self):
+        Rename(self.item, "One").do()
+        Rename(self.item, "Two").do()
+        self.assertEqual(1, len(self.idle_handlers))
+        self.run_posted_events()
+        self.assertEqual(["rename"], self.labels())
+        self.commands.undo()
+        self.assertEqual("Before", self.item.subject())
+
+    def test_a_posted_change_outside_commands_joins_the_step(self):
+        Rename(self.item, "One").do()
+        self.item.setSubject("Adjusted")  # As an editor's sync does
+        self.run_posted_events()
+        self.commands.undo()
+        self.assertEqual("Before", self.item.subject())
+        self.commands.redo()
+        self.assertEqual("Adjusted", self.item.subject())
+
+    def test_the_next_gesture_is_another_step(self):
+        Rename(self.item, "One").do()
+        self.run_posted_events()
+        Rename(self.item, "Two").do()
+        self.run_posted_events()
+        self.assertEqual(["rename", "rename"], self.labels())
+
+    def test_undo_closes_the_open_step(self):
+        Rename(self.item, "One").do()
+        self.commands.undo()
+        self.assertEqual("Before", self.item.subject())
+        self.run_posted_events()
+        self.assertEqual([], self.labels())
+
+    def test_a_failed_posted_command_rolls_back_only_itself(self):
+        Rename(self.item, "One").do()
+        with self.assertRaises(RuntimeError):
+            Rename(self.item, "Two", fail=True).do()
+        self.assertEqual("One", self.item.subject())
+        self.run_posted_events()
+        self.commands.undo()
+        self.assertEqual("Before", self.item.subject())
