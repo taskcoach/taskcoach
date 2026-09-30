@@ -133,6 +133,12 @@ go at the end. Details live in the sections and documents linked.
     without a close event; that code left wxWidgets in 3.1, and Escape
     now closes an editor through `Close()` on every port. To check on
     a Mac: two editors, Escape twice, both close and save.
+57. The master timer list keeps stale seconds: its entries carry no
+    task, so a changed date's old seconds cannot be removed and a date
+    not set gives seconds never reached. **Reopened by designer
+    2026-09-29**: the stopgap rebuild does not solve it and points to
+    a structural problem; to design with 45
+    ([Stale Entries](#stale-entries)).
 
 ## Deferred or Will Not Do
 
@@ -437,6 +443,7 @@ Sweep, to leave nothing behind in this branch:
 - [Master Design](#master-design)
 - [Time Resolution](#time-resolution)
 - [The Master Timer List](#the-master-timer-list)
+  - [Stale Entries](#stale-entries)
 - [What Changes the Master Timer List](#what-changes-the-master-timer-list)
 - [Data Changes](#data-changes)
 - [Cost Before](#cost-before)
@@ -482,7 +489,9 @@ second is gone with the others popped. Removing it earlier would need
 its task and the reason it was added (which rule, or which change to
 cascade): the whole analysis over again
 ([Incremental Pass](#incremental-pass)). Entries leave the heap
-only when popped, or when it is emptied or rebuilt.
+only when popped, or when it is emptied or rebuilt. This leaves stale
+entries that grow with the edits: open, to do 57
+([Stale Entries](#stale-entries)).
 
 The due entries are popped before the loop runs, not after: a second
 pushed during the loop at or before now stays and runs the loop at the
@@ -505,9 +514,48 @@ The minute and day changes only tell viewers to refresh; they stay the
 tick's own checks.
 
 Size and cost, measured with `heapq` on `datetime`s: 5000 tasks give
-at most 25,000 entries, about 1.4 MB. Building the heap takes 1.1 ms,
+25,000 entries after a rebuild, about 1.4 MB; edits add more
+([Stale Entries](#stale-entries)). Building the heap takes 1.1 ms,
 a push and a pop 0.4 us, the check each second (the smallest entry)
 0.06 us. After the first loop only the future entries remain.
+
+### Stale Entries
+
+To do 57. **Open, reopened by designer 2026-09-29.**
+
+Every task has five entries, one per rule; a date not set gives an
+entry at the latest date (year 9999), never reached, so no "is it
+set?" check is needed. A change to a task's dates pushes its five
+seconds again, and those of each ancestor; the old ones stay, since
+an entry without its task cannot be found to remove. So the heap grows
+with the edits, not the tasks: stale future seconds stay until due,
+and those at year 9999 never leave.
+
+Stopgap, 2026-09-29: when the heap has doubled since its last rebuild
+(plus 64), `_rebuild()` makes it again from every task's seconds. It
+bounds the size but does not solve the cause, and adds costs:
+
+- A full pass over every task (`timer_seconds()` of each), at a moment
+  set by the edit count, not by a rule of the design.
+- One full loop at the next tick: the rebuild pushes a second due at
+  once, which also keeps a pending data change second it drops.
+- A size threshold chosen by hand.
+
+First thoughts, nothing decided:
+
+1. **Entries carry their task and rule** (`(second, task, rule)`), as
+   the incremental pass's step 1 would ([Incremental Pass](#incremental-pass)).
+2. **Each task knows its current entries**, so a date change replaces
+   exactly its own and a deleted task removes its own.
+3. **A sorted list instead of a heap** (`bisect`), which allows removing
+   an entry; or a heap whose popped entries are checked against their
+   task's current ones and dropped when stale. The first removes at
+   once; the second still keeps stale entries until due.
+4. **No entry for a date not set**: the latest date is never reached,
+   so nothing needs to wait for it.
+
+With these, the list holds exactly the pending seconds, and no rebuild
+is needed except for the clock set back and the due soon hours.
 
 ---
 

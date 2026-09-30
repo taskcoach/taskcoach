@@ -209,10 +209,11 @@ What pushes into the heap:
   A cascade settles one pass per second.
 - The due soon hours changed, the clock set back: the heap is rebuilt
   from the tasks, with a second due at once. A file opened empties it
-  (its tasks removed) and refills it (its tasks added). So it is
-  when it has doubled since its last rebuild (plus 64): old seconds
-  stay until due, and those of dates not set (the latest date) never
-  are.
+  (its tasks removed) and refills it (its tasks added).
+- The heap doubled since its last rebuild (plus 64): rebuilt too, as
+  old seconds stay until due and those of dates not set (the latest
+  date) never are. A stopgap: open, to do 57 in
+  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#stale-entries).
 
 `TASKCOACH_SCHEDULER_CHECK=1` runs the full loop every second as well
 and logs each change it makes at a second the heap did not call for

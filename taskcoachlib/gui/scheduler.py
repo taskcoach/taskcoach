@@ -272,7 +272,8 @@ class MasterScheduler:
         for second in seconds:
             heapq.heappush(self._heap, second)
         # Old seconds stay until due, those of dates not set never are:
-        # rebuilt once at least half is stale, so it stays bounded
+        # rebuilt once at least half is stale. A stopgap: to do 57 in
+        # docs/MASTER_SCHEDULER_REFACTOR.md
         if len(self._heap) > 2 * self._rebuilt_size + 64:
             self._rebuild()
 
