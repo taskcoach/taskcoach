@@ -320,6 +320,12 @@ In the app:
   one walk of the file, `TaskFile.owner_chains()`, now gives every
   owned item's owners: `[Task] Garden -> [Attachment] plan -> [Note]
   Tools`.
+- P31. Saving fails when a task holds a mail attachment whose mail
+  file exists: the writer embeds the file as data with
+  `data.encode("base64")`, Python 2 only (`AttributeError` on bytes).
+  Found 2026-09-29; the same on master. The reader no longer reads
+  embedded data (it keeps a placeholder location), so the writer
+  should write the location as for other attachments.
 
 ## Views on the Effective Styles
 
