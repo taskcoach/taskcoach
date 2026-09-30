@@ -613,6 +613,8 @@ class TaskFile(patterns.Observer):
             merge_file.stop()
             self.__loading = False
         self.mark_dirty(force=True)
+        # Items replaced by their copies: the scheduler redoes them all
+        self._publish("taskfile.merged")
 
     def need_save(self):
         return not self.__loading and self.__needSave

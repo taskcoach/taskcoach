@@ -202,9 +202,9 @@ class MasterTimerListTest(test.wxTestCase):
         self.passes = []
         run_pass = self.master._run_pass
 
-        def record_pass(timestamp, due):
+        def record_pass(timestamp):
             self.passes.append(timestamp)
-            run_pass(timestamp, due)
+            run_pass(timestamp)
 
         self.master._run_pass = record_pass
         self.task = task.Task(subject="task")
@@ -299,21 +299,27 @@ class MasterTimerListTest(test.wxTestCase):
         self.assertTrue(self.tick())
         self.assertEqual(task.status.overdue, added[3].computedStatus())
 
-    def test_the_timer_list_stays_bounded(self):
-        # Every date edit adds seconds; stale ones are dropped in bulk
+    def test_the_timer_list_holds_only_the_current_seconds(self):
+        # A date edit replaces the task's entries (to do 57)
         self.settle()
         for hours in range(1, 500):
             self.task.set_due_date_time(
                 self.start + date.TimeDelta(hours=hours)
             )
-        live = self.task.timer_seconds(self.master._due_soon_hours())
+        current = self.task.timer_seconds(self.master._due_soon_hours())
         self.assertEqual(
-            (True, True),
-            (
-                len(self.master._heap) < 200,
-                set(live) <= set(self.master._heap),
-            ),
+            sorted(current.values()),
+            [entry[0] for entry in self.master._timers],
         )
+
+    def test_a_date_not_set_has_no_entry(self):
+        self.settle()
+        self.assertEqual([], self.master._timers)
+
+    def test_a_deleted_task_leaves_the_timer_list(self):
+        self.task.set_due_date_time(self.start + date.ONE_HOUR)
+        self.task_file.tasks().remove(self.task)
+        self.assertEqual([], self.master._timers)
 
     def test_a_colour_change_runs_the_loop_at_the_next_tick(self):
         self.settle()

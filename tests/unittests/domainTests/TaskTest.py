@@ -1011,48 +1011,58 @@ class TimerSecondsTest(TaskTestCase):
         self.assertNotEqual(expected_status, self.status_at(before))
         self.assertEqual(expected_status, self.status_at(second))
 
-    def timer_second(self, index):
-        return self.task.timer_seconds(self.hours)[index]
+    def timer_second(self, rule):
+        return self.task.timer_seconds(self.hours)[rule]
 
     def test_late_from_the_second_after_the_planned_start(self):
         self.task.set_planned_start_date_time(self.moment)
-        self.assertEqual(self.moment + date.ONE_SECOND, self.timer_second(0))
-        self.assert_starts_at(task.status.late, self.timer_second(0))
+        self.assertEqual(
+            self.moment + date.ONE_SECOND, self.timer_second("late")
+        )
+        self.assert_starts_at(task.status.late, self.timer_second("late"))
 
     def test_active_from_the_actual_start(self):
         self.task.set_actual_start_date_time(self.moment)
-        self.assertEqual(self.moment, self.timer_second(1))
-        self.assert_starts_at(task.status.active, self.timer_second(1))
+        self.assertEqual(self.moment, self.timer_second("active"))
+        self.assert_starts_at(task.status.active, self.timer_second("active"))
 
     def test_due_soon_from_the_second_after_due_less_the_hours(self):
         self.task.set_due_date_time(self.moment)
         due_soon = self.moment - date.TimeDelta(hours=self.hours)
-        self.assertEqual(due_soon + date.ONE_SECOND, self.timer_second(2))
-        self.assert_starts_at(task.status.duesoon, self.timer_second(2))
+        self.assertEqual(
+            due_soon + date.ONE_SECOND, self.timer_second("duesoon")
+        )
+        self.assert_starts_at(
+            task.status.duesoon, self.timer_second("duesoon")
+        )
 
     def test_overdue_from_the_second_after_the_due(self):
         self.task.set_due_date_time(self.moment)
-        self.assertEqual(self.moment + date.ONE_SECOND, self.timer_second(3))
-        self.assert_starts_at(task.status.overdue, self.timer_second(3))
+        self.assertEqual(
+            self.moment + date.ONE_SECOND, self.timer_second("overdue")
+        )
+        self.assert_starts_at(
+            task.status.overdue, self.timer_second("overdue")
+        )
 
     def test_reminder_fires_from_its_second(self):
         self.task.set_reminder(self.moment)
-        second = self.timer_second(4)
+        second = self.timer_second("reminder")
         self.registerObserver("task.reminder.trigger")
         self.task.processReminder(second - date.ONE_SECOND)
         self.assertEqual([], self.events)
         self.task.processReminder(second)
         self.assertEqual(1, len(self.events))
 
-    def test_dates_not_set_give_seconds_never_reached(self):
-        seconds = self.task.timer_seconds(self.hours)
-        self.assertEqual(date.DateTime(), max(seconds))
-        self.assertLess(date.DateTime(9999, 12, 1), min(seconds))
+    def test_dates_not_set_give_no_seconds(self):
+        self.assertEqual({}, self.task.timer_seconds(self.hours))
 
     def test_a_completed_task_keeps_its_seconds(self):
         self.task.set_due_date_time(self.moment)
         self.task.set_completion_date_time(self.moment)
-        self.assertEqual(self.moment + date.ONE_SECOND, self.timer_second(3))
+        self.assertEqual(
+            self.moment + date.ONE_SECOND, self.timer_second("overdue")
+        )
 
 
 class NotSetIsTheLatestDateTest(TaskTestCase):

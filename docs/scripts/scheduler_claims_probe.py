@@ -35,9 +35,8 @@ tf.categories().extend([c])
 t = task.Task("T")
 tf.tasks().extend([t])
 t.addCategory(c)
-sched._pop_due(date.DateTime.max)
-sched._run_pass(ts, 1)
-sched._pop_due(date.DateTime.max)
+sched._run_full(ts)
+sched._marks = {}
 print(
     "(a) T fg source before rename:",
     t.effectiveFgColorSource(),
@@ -45,9 +44,8 @@ print(
     c.members(),
 )
 sched._last_tick = ts
-n0 = len(sched._heap)
 c.setSubject("Beta")
-print("(a) heap entries pushed by the rename:", len(sched._heap) - n0)
+print("(a) objects marked by the rename:", len(sched._marks))
 # (b) font equality
 f1 = wx.FontFromNativeInfoString("0;Sans 10")
 f2 = wx.FontFromNativeInfoString("0;Sans 10")
@@ -65,7 +63,7 @@ a = attachment.FileAttachment("f.txt")
 t2.addAttachment(a)
 tf.tasks().extend([t2])
 t2.setForegroundColor(wx.Colour(0, 0, 200))
-sched._run_pass(ts, 1)
+sched._run_full(ts)
 print(
     "(c) owner fg",
     t2.effectiveFgColor(),
@@ -92,7 +90,7 @@ p = task.Task("P")
 ch = task.Task("Ch", parent=p)
 p.addChild(ch)
 tf.tasks().extend([p])
-sched._run_pass(ts, 1)
+sched._run_full(ts)
 p.setBackgroundColor(wx.Colour(9, 9, 9))
 print(
     "(e) parent bg at once:",

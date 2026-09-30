@@ -735,24 +735,27 @@ class Task(
 
     def timer_seconds(self, due_soon_hours):
         """The seconds at which time alone changes this task's status or
-        fires its reminder, for the master timer list: each the first
-        whole second at which a rule of compute_status() or
-        processReminder() holds (docs/MASTER_SCHEDULER_REFACTOR.md).
-        A date not set gives seconds at the far end, never reached."""
+        fires its reminder, for the master timer list, by rule: each the
+        first whole second at which a rule of compute_status() or
+        processReminder() holds (docs/MASTER_SCHEDULER_REFACTOR.md). A
+        date not set gives none: it is never reached."""
         latest = self.maxDateTime
-
-        def after(moment):
-            # No second exists after the latest one
-            return moment + date.ONE_SECOND if moment < latest else latest
-
+        seconds = {}
+        planned_start = self.plannedStartDateTime()
+        if planned_start != latest:
+            seconds["late"] = planned_start + date.ONE_SECOND
+        actual_start = self.actualStartDateTime()
+        if actual_start != latest:
+            seconds["active"] = actual_start
         due = self.dueDateTime()
-        return [
-            after(self.plannedStartDateTime()),  # Late
-            self.actualStartDateTime(),  # Active
-            after(due - date.TimeDelta(hours=due_soon_hours)),  # Due soon
-            after(due),  # Overdue
-            self.reminder() - self.REMINDER_AHEAD,  # Reminder
-        ]
+        if due != latest:
+            due_soon = due - date.TimeDelta(hours=due_soon_hours)
+            seconds["duesoon"] = due_soon + date.ONE_SECOND
+            seconds["overdue"] = due + date.ONE_SECOND
+        reminder = self.reminder()
+        if reminder != latest:
+            seconds["reminder"] = reminder - self.REMINDER_AHEAD
+        return seconds
 
     def compute_stored_status(self, now=None):
         """Compute and store status fields for this task instance, at
@@ -837,8 +840,9 @@ class Task(
     def processReminder(self, timestamp):
         """Process reminder state and trigger if due.
 
-        Called by the master loop. Fires the trigger at each pass while
-        the reminder is due; the controller shows its dialog once.
+        Called by the scheduler's passes: at the reminder's second, and
+        whenever a pass processes the task while it is due; the
+        controller shows its dialog once.
         """
         # Clear reminder if completed and not recurring
         if self.completed() and not self.recurrence():

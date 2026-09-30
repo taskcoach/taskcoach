@@ -265,7 +265,7 @@ counter = [0]
 
 
 def push_task(t):
-    for sec in t.timer_seconds(s.getint("behavior", "duesoonhours")):
+    for sec in t.timer_seconds(s.getint("behavior", "duesoonhours")).values():
         counter[0] += 1
         heapq.heappush(heap, (sec, counter[0], t))
 
@@ -284,7 +284,7 @@ TIME_TYPES = {
 # ------------------------------------------------------------ passes
 def full_pass(ts):
     del recorded[:]
-    sched._run_pass(ts, 1)
+    sched._run_full(ts)
     changes = [
         (t, srcs)
         for t, srcs, _ in recorded
