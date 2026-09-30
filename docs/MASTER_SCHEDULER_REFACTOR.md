@@ -308,7 +308,15 @@ In the app:
   item's changes and by items entering or leaving the file, the file
   written from it (format unchanged); B. store it on the category
   only, the item's categories an index; C. both, with one writer.
-  Recommended: A.
+  Recommended: A. Checked 2026-09-29: the ownership was decided on
+  2026-09-28 (to do 17, commit 8b9d012a7: the task owns its category
+  links; the category's list became the reverse and sets no date); the
+  list stayed stored because the category list uses it when a category
+  is deleted (the members lose it), undeleted (they get it back),
+  copied or cut and pasted (the members join), and the file keeps the
+  category's side so released versions read it. With A those
+  operations carry the members themselves, as items carry their
+  categories, and the file is written in the same format.
 
 ## Views on the Effective Styles
 
