@@ -100,8 +100,9 @@ go at the end. Details live in the sections and documents linked.
     an issue ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
 42. The designer's desktop test of the branch, from one consolidated
     test list.
-43. Squash to one commit before pushing, version 2.0.3.0 in the body;
-    the release date (2026-09-28) may move.
+43. Squash to one commit when the designer says the pull request is
+    ready (pushes before that keep the full history), version 2.0.3.0
+    in the body; the release date (2026-09-28) may move.
 44. ~~A traceback lost on 2026-09-28~~: both candidates fixed, the
     spell check's timer (53) and the date popup (P12); reopen if it
     shows again.
