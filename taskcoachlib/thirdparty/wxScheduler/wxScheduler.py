@@ -12,8 +12,7 @@ class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
 
         super().__init__(*args, **kwds)
 
-        timerId = wx.NewId()
-        self._sizeTimer = wx.Timer(self, timerId)
+        self._sizeTimer = wx.Timer(self)
 
         self._frozen = False
         self._dirty = False
@@ -30,7 +29,7 @@ class wxScheduler(wxSchedulerCore, scrolled.ScrolledPanel):
         self.Bind(wx.EVT_MOTION, self.OnMotion)
         self.Bind(wx.EVT_LEFT_DCLICK, self.OnDClick)
         self.Bind(wx.EVT_SIZE, self.OnSize)
-        self.Bind(wx.EVT_TIMER, self.OnSizeTimer, id=timerId)
+        self.Bind(wx.EVT_TIMER, self.OnSizeTimer, self._sizeTimer)
         # Stop timers on window destruction to prevent crashes
         self.Bind(wx.EVT_WINDOW_DESTROY, self._OnDestroy)
 

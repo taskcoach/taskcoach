@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 import wx
+from unittest import mock
 from taskcoachlib import config, patterns, widgets
 
 
@@ -30,10 +31,16 @@ class BaseTextCtrlTest(test.wxTestCase):
 
 
 class MultiLineTextCtrlTest(test.wxTestCase):
-    def testOpenWebbrowserOnURLClick(self):
+    def test_click_on_a_url_opens_it(self):
         textctrl = widgets.MultiLineTextCtrl(self.frame)
         textctrl.AppendText("test http://test.com/ test")
-        # FIXME: simulate a mouseclick on the url
+        inner = textctrl._textCtrl
+        inner._performHighlighting()
+        opened = []
+        inner._StyledTextCtrl__webbrowser = mock.Mock(open=opened.append)
+        point = inner.PointFromPosition(len("test http"))
+        inner._onLeftClick(mock.Mock(GetPosition=lambda: point))
+        self.assertEqual(["http://test.com/"], opened)
 
     def testSetInsertionPointAtStart(self):
         textctrl = widgets.MultiLineTextCtrl(self.frame, text="Hiya")

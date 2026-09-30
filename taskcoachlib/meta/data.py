@@ -61,9 +61,6 @@ release_year = "2026"  # Year of the release
 tskversion = 38
 release_status = "alpha"  # One of 'alpha', 'beta', 'stable'
 
-# Legacy: keep version_with_patch for backwards compatibility
-version_with_patch = version_full
-
 # No editing needed below this line for doing a release.
 
 try:
@@ -143,7 +140,6 @@ filename_lower = filename.lower()
 url = "https://github.com/taskcoach/taskcoach"  # Project homepage (GitHub)
 github_url = url  # Alias for backwards compatibility
 faq_url = "https://answers.launchpad.net/taskcoach/+faqs"
-bug_report_url = github_url + "/issues"  # GitHub issues for bug reports
 known_bugs_url = github_url + "/issues"  # GitHub issues for known bugs
 support_request_url = github_url + "/issues"  # GitHub issues for support
 # GitHub issues for feature requests
@@ -194,10 +190,6 @@ platform = "Any"
 pythonversion = "3.8"
 wxpythonversionnumber = "4.2.0"
 wxpythonversion = "%s-unicode" % wxpythonversionnumber
-# NOTE (Twisted Removal - 2024): Twisted is no longer required.
-# Replaced with native wxPython event handling, watchdog, and socketserver.
-watchdogversionnumber = "3.0.0"
-igraphversionnumber = "0.7"
 
 languages = {
     "English (US)": (None, True),

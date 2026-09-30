@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from . import data
 import threading
-import urllib.request, urllib.error, urllib.parse
 import sys
 import traceback
 from taskcoachlib import patterns
@@ -28,10 +27,8 @@ class VersionChecker(threading.Thread):
     def __init__(self, settings, verbose=False):
         self.settings = settings
         self.verbose = verbose
-        super().__init__()
-
-    def _set_daemon(self):
-        return True  # Don't block application exit
+        # Don't block application exit
+        super().__init__(daemon=True)
 
     def run(self):
         from taskcoachlib.gui.dialog import version

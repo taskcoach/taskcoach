@@ -161,7 +161,7 @@ class BookPage(wx.Panel):
         )
 
     def __createStaticTextControlIfNeeded(self, control):
-        if type(control) in [type(""), type("")]:
+        if isinstance(control, str):
             control = wx.StaticText(self, label=control)
         return control
 
@@ -263,7 +263,7 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
         )
 
     def __createStaticTextControlIfNeeded(self, control):
-        if type(control) in [type(""), type("")]:
+        if isinstance(control, str):
             control = wx.StaticText(self, label=control)
         return control
 

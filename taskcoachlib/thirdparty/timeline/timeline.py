@@ -1,5 +1,5 @@
-#! /usr/bin/env python
-import wx, wx.lib
+import wx
+import wx.lib.newevent
 
 
 TimeLineSelectionEvent, EVT_TIMELINE_SELECTED = wx.lib.newevent.NewEvent()
@@ -431,80 +431,3 @@ class DefaultAdapter(object):
     def nowlabel(self):
         return "Now"
 
-
-class TestApp(wx.App):
-    """Basic application for holding the viewing Frame"""
-
-    def __init__(self, size):
-        self.size = size
-        super().__init__(0)
-
-    def OnInit(self):
-        """Initialise the application."""
-        wx.InitAllImageHandlers()
-        self.frame = wx.Frame(None)
-        self.frame.CreateStatusBar()
-        model = self.get_model(self.size)
-        self.timeline = TimeLine(self.frame, model=model)
-        self.frame.Show(True)
-        return True
-
-    def get_model(self, size):
-        parallel_children, sequential_children = [], []
-        if size > 0:
-            parallel_children = [self.get_model(size - 1) for i in range(size)]
-        sequential_children = [
-            Node("Seq 1", 30 + 10 * size, 40 + 10 * size, [], []),
-            Node("Seq 2", 80 - 10 * size, 90 - 10 * size, [], []),
-        ]
-        return Node(
-            "Node %d" % size,
-            0 + 5 * size,
-            100 - 5 * size,
-            parallel_children,
-            sequential_children,
-        )
-
-
-class Node(object):
-    def __init__(self, path, start, stop, subnodes, events):
-        self.path = path
-        self.start = start
-        self.stop = stop
-        self.parallel_children = subnodes
-        self.sequential_children = events
-
-    def __repr__(self):
-        return "%s(%r, %r, %r, %r, %r)" % (
-            self.__class__.__name__,
-            self.path,
-            self.start,
-            self.stop,
-            self.parallel_children,
-            self.sequential_children,
-        )
-
-
-usage = "timeline.py [size]"
-
-
-def main():
-    """Mainloop for the application"""
-    import sys
-
-    size = 3
-    if len(sys.argv) > 1:
-        if sys.argv[1] in ("-h", "--help"):
-            print(usage)
-        else:
-            try:
-                size = int(sys.argv[1])
-            except ValueError:
-                print(usage)
-    else:
-        app = TestApp(size)
-        app.MainLoop()
-
-
-if __name__ == "__main__":
-    main()

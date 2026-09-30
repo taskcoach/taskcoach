@@ -24,7 +24,7 @@ projectRoot = os.path.abspath("..")
 if projectRoot not in sys.path:
     sys.path.insert(0, projectRoot)
 
-# The runtime patches taskcoach.py applies (e.g. inspect.getargspec)
+# The runtime patches taskcoach.py applies (hypertreelist, SetSize)
 import taskcoachlib.workarounds.monkeypatches  # noqa: F401,E402
 
 from taskcoachlib.notify import AbstractNotifier
@@ -48,25 +48,6 @@ def stale(reason):
     """Skip a test that no longer matches the application and needs a
     rewrite. List them with: grep -rn "test.stale" tests"""
     return unittest.skip("stale: " + reason)
-
-
-def skipOnTwistedVersions(*versions):
-    """
-    Decorator for unit tests that were previously skipped on specific
-    versions of Twisted.
-
-    DESIGN NOTE (Twisted Removal - 2024):
-    This decorator is now a no-op since Twisted has been removed.
-    It's kept for backward compatibility with existing test code.
-    Tests that used reactor.iterate() have been updated to use
-    wx event processing instead.
-    """
-
-    def wrapper(func):
-        # No longer skip based on Twisted versions since Twisted is removed
-        return func
-
-    return wrapper
 
 
 class ChangeRecorder(list):
@@ -313,10 +294,6 @@ class AllTests(unittest.TestSuite):
             nrTestsToReport=self._options.time_reports,
         )
         return testrunner.run(self)
-
-    @staticmethod
-    def getPyFilesFromDir(directory):
-        return AllTests.getFilesFromDir(directory, ".py")
 
     @staticmethod
     def getTestFilesFromDir(directory):

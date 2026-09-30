@@ -22,7 +22,6 @@ from setuptools import setup, find_namespace_packages
 import platform
 import re
 import os
-import sys
 
 
 def _read_metadata():
@@ -70,14 +69,6 @@ try:
     import distro
 except ImportError:
     distro = None
-
-
-def majorAndMinorPythonVersion():
-    info = sys.version_info
-    try:
-        return info.major, info.minor
-    except AttributeError:
-        return info[0], info[1]
 
 
 # Dependency Installation Strategy
@@ -190,46 +181,6 @@ if system == "Linux" and distro is not None:
         ]
 elif system == "Windows":
     setupOptions["scripts"].append("taskcoach.pyw")
-    # ...
-    # ModuleFinder can't handle runtime changes to __path__, but win32com uses them
-    try:
-        # py2exe 0.6.4 introduced a replacement modulefinder.
-        # This means we have to add package paths there, not to the built-in
-        # one.  If this new modulefinder gets integrated into Python, then
-        # we might be able to revert this some day.
-        # if this doesn't work, try import modulefinder
-        try:
-            import py2exe.mf as modulefinder
-        except ImportError:
-            import modulefinder
-        import win32com
-
-        for p in win32com.__path__[1:]:
-            modulefinder.AddPackagePath("win32com", p)
-        for extra in ["win32com.shell"]:  # ,"win32com.mapi"
-            __import__(extra)
-            m = sys.modules[extra]
-            for p in m.__path__[1:]:
-                modulefinder.AddPackagePath(extra, p)
-    except ImportError:
-        # no build path setup, no worries.
-        pass
-elif system == "Darwin":
-    # When packaging for MacOS, choose the right binary depending on
-    # the platform word size. Actually, we're always packaging on 32
-    # bits.
-    import struct
-
-    wordSize = "32" if struct.calcsize("L") == 4 else "64"
-    sys.path.insert(
-        0, os.path.join("taskcoachlib", "bin.in", "macos", "IA%s" % wordSize)
-    )
-    sys.path.insert(
-        0, os.path.join("extension", "macos", "bin-ia%s" % wordSize)
-    )
-    # pylint: disable=F0401,W0611
-    import _powermgt  # noqa: F401
-    import _idle  # noqa: F401
 
 
 if __name__ == "__main__":

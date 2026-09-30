@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 from .notifier import AbstractNotifier
 from taskcoachlib import operating_system, patterns
+from taskcoachlib.tools import wxhelper
 
 # ==============================================================================
 # Utils
@@ -149,7 +150,7 @@ class NotificationFrameBase(_NotifyBase):
             )
 
         # Seems that font copy-on-write does not work sometimes...
-        font = wx.FontFromNativeInfoString(
+        font = wxhelper.font_from_native_info(
             wx.NORMAL_FONT.GetNativeFontInfoDesc()
         )
         font.SetPointSize(8)
@@ -174,10 +175,6 @@ class NotificationFrameBase(_NotifyBase):
         sz.Add(panel, 1, wx.EXPAND)
         self.SetSizer(sz)
         self.Fit()
-
-    def Unpopulate(self):
-        self.DestroyChildren()
-        self.SetSizer(None)
 
     def close_button(self, panel):
         """
@@ -430,8 +427,6 @@ class NotificationCenter(object):
 
 
 class UniversalNotifier(AbstractNotifier):
-    def getName(self):
-        return "Task Coach"
 
     def isAvailable(self):
         return True
@@ -443,68 +438,3 @@ class UniversalNotifier(AbstractNotifier):
 
 
 AbstractNotifier.register(UniversalNotifier())
-
-
-if __name__ == "__main__":
-    from taskcoachlib.gui.icons.icon_library import (
-        icon_catalog,
-        LIST_ICON_SIZE,
-    )
-
-    class TestNotificationFrame(NotificationFrameBase):
-        def add_inner_content(self, sizer, panel):
-            choice = wx.Choice(panel, wx.ID_ANY)
-            choice.Append("One")
-            choice.Append("Two")
-            choice.Append("Three")
-            sizer.Add(choice, 0, wx.ALL | wx.EXPAND, 5)
-
-            hsz = wx.BoxSizer(wx.HORIZONTAL)
-            hsz.Add(wx.Button(panel, wx.ID_ANY, "OK"), 1, wx.ALL, 2)
-            hsz.Add(wx.Button(panel, wx.ID_ANY, "Cancel"), 1, wx.ALL, 2)
-            sizer.Add(hsz, 0, wx.EXPAND | wx.ALL, 5)
-
-        def close_button(self, panel):
-            return None
-
-    class TestFrame(wx.Frame):
-        def __init__(self):
-            super().__init__(None, wx.ID_ANY, "Test frame")
-            # pylint: disable=E1101
-            NotificationCenter().notify(
-                "Sample title", "Sample content", timeout=3
-            )
-            NotificationCenter().notify(
-                "Other sample",
-                "Multi-line sample content\nfor example\nDont try this at home",
-                timeout=3,
-                wx_bitmap=icon_catalog.get_bitmap(
-                    "nuvola_apps_korganizer", LIST_ICON_SIZE
-                ),
-            )
-            NotificationCenter().notify("Before last sample", "Spam!")
-            NotificationCenter().notify_frame(
-                TestNotificationFrame(
-                    "Test custom",
-                    wx_bitmap=icon_catalog.get_bitmap(
-                        "nuvola_apps_korganizer", LIST_ICON_SIZE
-                    ),
-                )
-            )
-            NotificationCenter().notify("Last sample", "Foobar!")
-
-            self.Bind(wx.EVT_CLOSE, self.OnClose)
-
-        def OnClose(self, evt):
-            NotificationCenter().hide_all()  # pylint: disable=E1101
-            evt.Skip()
-
-    class App(wx.App):
-        def OnInit(self):
-            from taskcoachlib.gui.icons import icon_library
-
-            icon_library.init()
-            TestFrame().Show()
-            return True
-
-    App(0).MainLoop()

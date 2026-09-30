@@ -41,32 +41,25 @@ class TaskEditorSetterMixin(object):
         return page
 
     def set_planned_start_date_time(self, date_time):
-        self.setDateTime(
-            self.editor._interior[1]._plannedStartDateTimeEntry, date_time
-        )
+        self.set_date_time("plannedStartDateTime", date_time)
 
     def set_due_date_time(self, date_time):
-        self.setDateTime(self.editor._interior[1]._dueDateTimeEntry, date_time)
+        self.set_date_time("dueDateTime", date_time)
 
     def set_actual_start_date_time(self, date_time):
-        self.setDateTime(
-            self.editor._interior[1]._actualStartDateTimeEntry, date_time
-        )
+        self.set_date_time("actualStartDateTime", date_time)
 
     def set_completion_date_time(self, date_time):
-        self.setDateTime(
-            self.editor._interior[1]._completionDateTimeEntry, date_time
-        )
+        self.set_date_time("completionDateTime", date_time)
 
     def set_reminder(self, date_time):
-        self.setDateTime(
-            self.editor._interior[1]._reminderDateTimeEntry, date_time
-        )
+        self.set_date_time("reminderDateTime", date_time)
 
-    def setDateTime(self, entry, dateTime):
-        entry.SetValue(dateTime)
-        entry.onDateTimeCtrlEdited()
-        wx.YieldIfNeeded()
+    def set_date_time(self, name, date_time):
+        """The user's edit of a date field on the Dates page."""
+        page = self.editor._interior[1]
+        getattr(page, "_%sCombo" % name).SetValue(date_time)
+        getattr(page, "_%sSync" % name).onAttributeEdited(dummy.Event())
 
     def set_recurrence(self, new_recurrence):
         recurrence_entry = self.editor._interior[1]._recurrenceEntry
@@ -93,17 +86,6 @@ class TaskEditorBySettingFocusMixin(TaskEditorSetterMixin):
             )  # pragma: no cover
         else:
             page._subjectEntry.SetFocus()  # pragma: no cover
-
-
-class TaskEditBookWithPerspective(gui.dialog.editor.TaskEditBook):
-    testPerspective = "503e3c7d0000018300000002=+0,1,2,3,4,5,6,7,8,9@layout2|name=dummy;caption=;state=67372030;dir=3;layer=0;row=0;pos=0;prop=100000;bestw=381;besth=173;minw=381;minh=173;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name=503e3c7d0000018300000002;caption=;state=67372028;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=200;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|dock_size(5,0,0)=202|"
-
-    def perspective(self):
-        return self.testPerspective
-
-
-class TaskEditorWithPerspective(gui.dialog.editor.TaskEditor):
-    EditBookClass = TaskEditBookWithPerspective
 
 
 class TaskEditorTestCase(test.wxTestCase):
@@ -168,18 +150,16 @@ class EditorDisplayTest(TaskEditorTestCase):
             "Task to edit", self.editor._interior[0]._subjectEntry.GetValue()
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testDueDateTime(self):
+    def test_due_date_time(self):
         self.assertEqual(
             date.DateTime(),
-            self.editor._interior[1]._dueDateTimeEntry.GetValue(),
+            self.editor._interior[1]._dueDateTimeCombo.GetValue(),
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testActualStartDateTime(self):
+    def test_actual_start_date_time(self):
         self.assertEqual(
             date.DateTime(),
-            self.editor._interior[1]._actualStartDateTimeEntry.GetValue(),
+            self.editor._interior[1]._actualStartDateTimeCombo.GetValue(),
         )
 
     def testRecurrenceUnit(self):
@@ -194,11 +174,10 @@ class EditorDisplayTest(TaskEditorTestCase):
         ]._recurrenceEntry._recurrenceFrequencyEntry
         self.assertEqual(1, freq.GetValue())
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testRecurrenceStopDateTime(self):
+    def test_recurrence_stop_date_time(self):
         stop = self.editor._interior[
             1
-        ]._recurrenceEntry._recurrenceStopDateTimeEntry
+        ]._recurrenceEntry._recurrenceStopDateTimeCombo
         self.assertEqual(self.stop_datetime, stop.GetValue())
 
 
@@ -223,8 +202,7 @@ class EditTaskTestMixin(object):
 
     # pylint: disable=W0212
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetPlannedStartDateTime(self):
+    def test_set_planned_start_date_time(self):
         self.set_planned_start_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
@@ -232,8 +210,7 @@ class EditTaskTestMixin(object):
             places=2,
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetDueDateTime(self):
+    def test_set_due_date_time(self):
         self.set_due_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
@@ -241,8 +218,7 @@ class EditTaskTestMixin(object):
             places=2,
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetActualStartDateTime(self):
+    def test_set_actual_start_date_time(self):
         self.set_actual_start_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
@@ -250,8 +226,7 @@ class EditTaskTestMixin(object):
             places=2,
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetCompletionDateTime(self):
+    def test_set_completion_date_time(self):
         self.set_completion_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
@@ -259,14 +234,12 @@ class EditTaskTestMixin(object):
             places=2,
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetUncompleted(self):
+    def test_set_uncompleted(self):
         self.set_completion_date_time(date.Now())
         self.set_completion_date_time(date.DateTime())
         self.assertEqual(date.DateTime(), self.task.completionDateTime())
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetReminder(self):
+    def test_set_reminder(self):
         reminderDateTime = date.DateTime(2005, 1, 1)
         self.set_reminder(reminderDateTime)
         self.assertEqual(reminderDateTime, self.task.reminder())
@@ -446,24 +419,19 @@ class FocusTest(TaskEditorTestCase):
     def getItems(self):
         return [self.task]
 
-    @test.stale("the subject entry wraps a styled text control")
-    def testFocus(self):
+    def test_focus(self):
         # pylint: disable=W0212
         self.assertEqual(
-            self.editor._interior[0]._subjectEntry, wx.Window.FindFocus()
+            self.editor._interior[0]._subjectEntry._textCtrl,
+            wx.Window.FindFocus(),
         )
 
-    @test.stale("the subject entry wraps a styled text control")
-    def testSelection(self):
+    def test_selection(self):
         # pylint: disable=W0212
+        subject = self.editor._interior[0]._subjectEntry
         self.assertEqual(
-            self.editor._interior[0]._subjectEntry.GetStringSelection(),
-            self.editor._interior[0]._subjectEntry.GetValue(),
+            subject.GetValue(), subject._textCtrl.GetSelectedText()
         )
-
-
-class FocusTestWithPerspective(FocusTest):
-    editorClass = TaskEditorWithPerspective
 
 
 class ChangeFromElsewhereTest(TaskEditorTestCase):
@@ -518,71 +486,3 @@ class ChangeFromElsewhereTest(TaskEditorTestCase):
             (self.task.plannedStartDateTime(), self.task.dueDateTime()),
         )
         self.assertTrue(self.history.has_future())
-
-
-class DatesTestBase(TaskEditorSetterMixin, TaskEditorTestCase):
-    def createTasks(self):
-        # pylint: disable=W0201
-        self.task = task.Task("Task to edit")
-        return [self.task]
-
-    def getItems(self):
-        return [self.task]
-
-
-class DatesStartDueTest(DatesTestBase):
-    extraSettings = [("view", "datestied", "startdue")]
-
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testChangePlannedStartDateChangesDueDate(self):
-        self.set_planned_start_date_time(self.yesterday)
-        self.set_due_date_time(self.today)
-        self.set_planned_start_date_time(self.today)
-        self.assertAlmostEqual(
-            self.editor._interior[1]._dueDateTimeEntry.GetValue().toordinal(),
-            self.tomorrow.toordinal(),
-            places=2,
-        )
-
-
-class DatesDueStartBase(DatesTestBase):
-    extraSettings = [("view", "datestied", "duestart")]
-
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testChangeDueDateChangesPlannedStartDate(self):
-        self.set_planned_start_date_time(self.yesterday)
-        self.set_due_date_time(self.today)
-        self.set_due_date_time(self.yesterday)
-        self.assertAlmostEqual(
-            self.editor._interior[1]
-            ._plannedStartDateTimeEntry.GetValue()
-            .toordinal(),
-            self.twodaysago.toordinal(),
-            places=2,
-        )
-
-
-class DatesTest(DatesTestBase):
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testChangePlannedStartDateDoesNotChangeDueDate(self):
-        self.set_planned_start_date_time(self.yesterday)
-        self.set_due_date_time(self.today)
-        self.set_planned_start_date_time(self.today)
-        self.assertAlmostEqual(
-            self.editor._interior[1]._dueDateTimeEntry.GetValue().toordinal(),
-            self.today.toordinal(),
-            places=2,
-        )
-
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testChangeDueDateDoesNotChangePlannedStartDate(self):
-        self.set_planned_start_date_time(self.yesterday)
-        self.set_due_date_time(self.today)
-        self.set_due_date_time(self.yesterday)
-        self.assertAlmostEqual(
-            self.editor._interior[1]
-            ._plannedStartDateTimeEntry.GetValue()
-            .toordinal(),
-            self.yesterday.toordinal(),
-            places=2,
-        )

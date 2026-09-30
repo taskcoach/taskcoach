@@ -48,15 +48,7 @@ class SpellCheckMixin:
     @classmethod
     def _detectLanguage(cls):
         """Detect the system language for spell checking."""
-        import locale
-
-        try:
-            lang, _ = locale.getdefaultlocale()
-            if lang:
-                return lang
-        except (ValueError, TypeError):
-            pass
-        return "en_US"  # Default fallback
+        return i18n.system_language() or "en_US"
 
     @classmethod
     def getAvailableLanguages(cls):
@@ -455,12 +447,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
 
         language = self._spellCheckLanguage
         if language is None:
-            import locale
-
-            try:
-                language, _ = locale.getdefaultlocale()
-            except (ValueError, TypeError):
-                language = "en_US"
+            language = SpellCheckMixin._detectLanguage()
 
         if language not in self._spell_dicts:
             try:
@@ -922,16 +909,11 @@ class MultiLineTextCtrl(wx.Panel):
     def Bind(self, event, handler, *args, **kwargs):
         # Text and focus events go to inner control; others to panel
         if event in (
-            wx.EVT_TEXT,
             wx.EVT_TEXT_URL,
             wx.EVT_TEXT_ENTER,
             wx.EVT_SET_FOCUS,
             wx.EVT_KILL_FOCUS,
         ):
-            if event == wx.EVT_TEXT:
-                return self._textCtrl.Bind(
-                    stc.EVT_STC_CHANGE, handler, *args, **kwargs
-                )
             return self._textCtrl.Bind(event, handler, *args, **kwargs)
         return super().Bind(event, handler, *args, **kwargs)
 
@@ -971,13 +953,6 @@ def single_line_text_ctrl(
         spell_check=spell_check,
         **kwargs
     )
-
-
-class StaticTextWithToolTip(wx.StaticText):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        label = kwargs["label"]
-        self.SetToolTip(wx.ToolTip(label))
 
 
 def read_only_text(parent, value="", multiline=False):

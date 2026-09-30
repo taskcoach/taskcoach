@@ -29,77 +29,13 @@ from taskcoachlib.application.application import (
 from taskcoachlib.domain import date, task
 from taskcoachlib.meta import data
 from taskcoachlib.i18n import _
+from taskcoachlib.tools import wxhelper
 from wx.lib.agw.hyperlink import HyperLinkCtrl
 import ast
 import wx
 import calendar
 import wx.lib.scrolledpanel
 from wx.lib.agw import ultimatelistctrl as ULC
-
-
-class BitmapOwnerDrawnComboBox(wx.adv.OwnerDrawnComboBox):
-    """A ComboBox that displays bitmaps with text, supporting SetPopupMinWidth.
-
-    Unlike wx.adv.BitmapComboBox, this inherits from OwnerDrawnComboBox which
-    provides SetPopupMinWidth for making the dropdown wider than the control.
-    """
-
-    def __init__(self, parent, **kwargs):
-        super().__init__(parent, **kwargs)
-        self._bitmaps = []  # Store bitmaps for each item
-        self._clientData = []  # Store client data for each item
-
-    def Append(self, label, bitmap=None):
-        """Add an item with optional bitmap."""
-        index = super().Append(label)
-        # Ensure lists are long enough
-        while len(self._bitmaps) <= index:
-            self._bitmaps.append(None)
-        while len(self._clientData) <= index:
-            self._clientData.append(None)
-        self._bitmaps[index] = bitmap
-        return index
-
-    def SetClientData(self, index, data):
-        """Store client data for an item."""
-        while len(self._clientData) <= index:
-            self._clientData.append(None)
-        self._clientData[index] = data
-
-    def GetClientData(self, index):
-        """Get client data for an item."""
-        if 0 <= index < len(self._clientData):
-            return self._clientData[index]
-        return None
-
-    def OnDrawItem(self, dc, rect, item, flags):
-        """Draw an item with bitmap and text."""
-        if item == wx.NOT_FOUND:
-            return
-
-        r = wx.Rect(*rect)
-        r.Deflate(2, 2)
-
-        # Draw bitmap if available
-        x_offset = r.x + 2
-        if item < len(self._bitmaps) and self._bitmaps[item]:
-            bitmap = self._bitmaps[item]
-            y_pos = r.y + (r.height - bitmap.GetHeight()) // 2
-            dc.DrawBitmap(bitmap, x_offset, y_pos, True)
-            x_offset += bitmap.GetWidth() + 4
-
-        # Draw text
-        text = self.GetString(item)
-        y_pos = r.y + (r.height - dc.GetCharHeight()) // 2
-        dc.DrawText(text, x_offset, y_pos)
-
-    def OnMeasureItem(self, item):
-        """Return height of an item."""
-        return 22
-
-    def OnMeasureItemWidth(self, item):
-        """Return width of an item (use -1 for default)."""
-        return -1
 
 
 class FontColorSyncer(object):
@@ -203,13 +139,6 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         self.addEntry(text, panel, flags=kwargs.get("flags", None))
         self._choiceSettings.append((section, setting, choiceCtrls))
         return choiceCtrls
-
-    def enableChoiceSetting(self, section, setting, enabled):
-        for theSection, theSetting, ctrls in self._choiceSettings:
-            if theSection == section and theSetting == setting:
-                for ctrl in ctrls:
-                    ctrl.Enable(enabled)
-                break
 
     def addMultipleChoiceSettings(
         self, section, setting, text, choices, help_text="", **kwargs
@@ -353,32 +282,6 @@ class SettingsPageBase(widgets.ScrolledBookPage):
                 self._workingHourEndOfDayCheck.IsChecked(),
             )
 
-    def addFontSetting(self, section, setting, text):
-        default_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-        native_info_string = self.gettext(section, setting)
-        current_font = (
-            wx.FontFromNativeInfoString(native_info_string)
-            if native_info_string
-            else None
-        )
-        font_button = widgets.FontPickerCtrl(
-            self,
-            font=current_font or default_font,
-            colour=(0, 0, 0, 255),
-            bgColour=(255, 255, 255, 255),
-            fixedWidth=75,
-        )
-        self.addEntry(
-            text,
-            font_button,
-            flags=(
-                wx.ALL | wx.ALIGN_CENTER_VERTICAL,
-                wx.ALL
-                | wx.ALIGN_CENTER_VERTICAL,  # wx.EXPAND causes the button to be top aligned on Mac OS X
-            ),
-        )
-        self._fontSettings.append((section, setting, font_button))
-
     def addAppearanceHeader(self):
         # Row 0: Group headers - only Light and Dark bold headers (cols 2-5, 6-9)
         lightLabel = wx.StaticText(self, label=_("Light Theme"))
@@ -487,14 +390,10 @@ class SettingsPageBase(widgets.ScrolledBookPage):
         )
         defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         nativeInfoString = self.gettext(fontSection, fontSetting)
-        currentFont = (
-            wx.FontFromNativeInfoString(nativeInfoString)
-            if nativeInfoString
-            else None
-        )
+        current_font = wxhelper.font_from_native_info(nativeInfoString)
         fontButton = widgets.FontPickerCtrl(
             self,
-            font=currentFont or defaultFont,
+            font=current_font or defaultFont,
             colour=currentFgColor,
             bgColour=currentBgColor,
             fixedWidth=75,

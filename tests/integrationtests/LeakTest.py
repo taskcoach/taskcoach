@@ -18,7 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from integrationtests import mock
+from taskcoachlib.domain import date
+import gc
 import os
+import weakref
 
 
 class LeakTest(test.TestCase):
@@ -35,8 +38,11 @@ class LeakTest(test.TestCase):
         mock.App.deleteInstance()
         super().tearDown()
 
-    def testClear(self):
-        """taskRef = weakref.ref(self.mockApp.task)
+    def test_clear_frees_the_task(self):
+        task_ref = weakref.ref(self.mockApp.task)
         del self.mockApp.task
         self.mockApp.taskFile.clear()
-        self.failUnless(taskRef() is None)"""
+        # The master loop keeps what changed until its next pass
+        self.mockApp.mainwindow._masterScheduler._run_pass(date.Now())
+        gc.collect()
+        self.assertIsNone(task_ref())

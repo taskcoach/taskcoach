@@ -51,7 +51,7 @@ class Dialog(sized_controls.SizedDialog):
         )
         self.SetIcon(icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE))
 
-        if operating_system.isWindows7_OrNewer():
+        if operating_system.isWindows():
             # Without this the window has no taskbar icon on Windows, and the focus comes back to the main
             # window instead of this one when returning to Task Coach through Alt+Tab. Which is probably not
             # what we want.
@@ -180,16 +180,6 @@ class Dialog(sized_controls.SizedDialog):
             event.Skip()
         self.Close(True)
         self.Destroy()
-
-    def disableOK(self):
-        wxhelper.getButtonFromStdDialogButtonSizer(
-            self._buttons, wx.ID_OK
-        ).Disable()
-
-    def enableOK(self):
-        wxhelper.getButtonFromStdDialogButtonSizer(
-            self._buttons, wx.ID_OK
-        ).Enable()
 
 
 class NotebookDialog(Dialog):

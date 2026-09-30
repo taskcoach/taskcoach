@@ -395,20 +395,16 @@ class Column(object):
         if self.__sortCallback:
             self.__sortCallback(*args, **kwargs)
 
-    def __filterArgs(self, func, kwargs):
-        actualKwargs = dict()
-        argNames = inspect.getargspec(func).args
-        return dict(
-            [
-                (name, value)
-                for name, value in list(kwargs.items())
-                if name in argNames
-            ]
-        )
+    @staticmethod
+    def __accepted(func, kwargs):
+        """The keyword arguments func takes."""
+        spec = inspect.getfullargspec(func)
+        names = spec.args + spec.kwonlyargs
+        return {name: value for name, value in kwargs.items() if name in names}
 
     def render(self, *args, **kwargs):
         return self.__renderCallback(
-            *args, **self.__filterArgs(self.__renderCallback, kwargs)
+            *args, **self.__accepted(self.__renderCallback, kwargs)
         )
 
     def defaultRenderer(self, *args, **kwargs):  # pylint: disable=W0613
@@ -507,9 +503,6 @@ class _BaseCtrlWithColumnsMixin(object):
                 newMap.append((colIndex, col))
         self.__indexMap = newMap
         self.DeleteColumn(columnIndex)
-
-    def _allColumns(self):
-        return self.__allColumns
 
     def _getColumn(self, columnIndex):
         for colIndex, col in self.__indexMap:

@@ -23,7 +23,6 @@ from taskcoachlib import patterns
 from taskcoachlib.domain import task, effort, date
 from taskcoachlib.i18n import _
 from . import base
-from . import noteCommands
 
 
 @contextlib.contextmanager
@@ -328,10 +327,6 @@ class EditPriorityCommand(base.BaseCommand):
         super().do_command()
         for item in self.items:
             item.setPriority(self.__newPriority)
-
-
-class AddTaskNoteCommand(noteCommands.AddNoteCommand):
-    plural_name = _("Add note to tasks")
 
 
 class EditDateTimeCommand(base.BaseCommand):

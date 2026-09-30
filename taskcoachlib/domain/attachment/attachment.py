@@ -180,9 +180,6 @@ class Attachment(base.Object, NoteOwner):
         state.update(dict(location=self.location()))
         return state
 
-    def __unicode__(self):
-        return self.subject()
-
     @classmethod
     def modificationEventTypes(class_):
         eventTypes = super(Attachment, class_).modificationEventTypes()

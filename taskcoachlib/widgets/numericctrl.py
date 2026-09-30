@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import locale
 import wx
-from taskcoachlib.widgets.maskedtimectrl import EVT_VALUE_CHANGED, ValueChangedEvent
+from taskcoachlib.widgets.maskedtimectrl import ValueChangedEvent
 
 
 def _get_locale_decimal_char():
@@ -33,6 +33,7 @@ def _get_configured_decimal_char():
     """
     try:
         from taskcoachlib.config import settings
+
         val = settings.Settings().get("view", "decimal_separator")
         if val:
             return val
@@ -61,8 +62,14 @@ class NumericCtrl(wx.TextCtrl):
             fires EVT_VALUE_CHANGED
     """
 
-    def __init__(self, parent, value=0.0, decimal_places=None,
-                 decimal_char=None, **kwargs):
+    def __init__(
+        self,
+        parent,
+        value=0.0,
+        decimal_places=None,
+        decimal_char=None,
+        **kwargs
+    ):
         self._decimalPlaces = decimal_places
         self._decimalChar = decimal_char or _get_configured_decimal_char()
         self._lastSetValue = float(value)

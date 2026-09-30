@@ -59,12 +59,6 @@ class ExportDialog(sized_controls.SizedDialog):
     def createInterior(self, pane):
         raise NotImplementedError
 
-    def exportableViewers(self):
-        return self.window.viewer
-
-    def activeViewer(self):
-        return self.window.viewer.active_viewer()
-
     def options(self):
         result = dict()
         for component in self.components:
@@ -80,78 +74,6 @@ class ExportDialog(sized_controls.SizedDialog):
 # Controls for adding behavior to the base export dialog:
 
 ViewerPickedEvent, EVT_VIEWERPICKED = wx.lib.newevent.NewEvent()
-
-
-class ViewerPicker(sized_controls.SizedPanel):
-    """Control for adding a viewer chooser widget to the export dialog."""
-
-    def __init__(self, parent, viewers, activeViewer):
-        super().__init__(parent)
-        self.SetSizerType("horizontal")
-        self.createPicker()
-        self.populatePicker(viewers)
-        self.selectActiveViewer(viewers, activeViewer)
-
-    def createPicker(self):
-        label = wx.StaticText(self, label=_("Export items from:"))
-        label.SetSizerProps(valign="center")
-        self.viewerComboBox = wx.ComboBox(
-            self, style=wx.CB_READONLY | wx.CB_SORT
-        )  # pylint: disable=W0201
-        self.viewerComboBox.Bind(wx.EVT_COMBOBOX, self.onViewerChanged)
-
-    def populatePicker(self, viewers):
-        self.titleToViewer = dict()  # pylint: disable=W0201
-        for viewer in viewers:
-            self.viewerComboBox.Append(viewer.title())  # pylint: disable=E1101
-            # Would like to user client data in the combobox, but that
-            # doesn't work on all platforms
-            self.titleToViewer[viewer.title()] = viewer
-
-    def selectActiveViewer(self, viewers, activeViewer):
-        selectedViewer = (
-            activeViewer if activeViewer in viewers else viewers[0]
-        )
-        self.viewerComboBox.SetValue(selectedViewer.title())
-
-    def selectedViewer(self):
-        return self.titleToViewer[self.viewerComboBox.GetValue()]
-
-    def options(self):
-        return dict(selectedViewer=self.selectedViewer())
-
-    def onViewerChanged(self, event):
-        event.Skip()
-        wx.PostEvent(self, ViewerPickedEvent(viewer=self.selectedViewer()))
-
-    def saveSettings(self):
-        pass  # No settings to remember
-
-
-class SelectionOnlyCheckBox(wx.CheckBox):
-    """Control for adding a widget to the export dialog that lets the
-    user choose between exporting all items or just the selected items."""
-
-    def __init__(self, parent, settings, section, setting):
-        super().__init__(parent, label=_("Export only the selected items"))
-        self.settings = settings
-        self.section = section
-        self.setting = setting
-        self.initializeCheckBox()
-
-    def initializeCheckBox(self):
-        selectionOnly = self.settings.getboolean(self.section, self.setting)
-        self.SetValue(selectionOnly)
-
-    def options(self):
-        return dict(selectionOnly=self.GetValue())
-
-    def saveSettings(self):
-        self.settings.set(
-            self.section,
-            self.setting,  # pylint: disable=E1101
-            str(self.GetValue()),
-        )
 
 
 class ColumnPicker(sized_controls.SizedPanel):

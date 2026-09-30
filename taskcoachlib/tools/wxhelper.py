@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Union, List
+from typing import Union
 import wx
 import numpy as np
 
@@ -10,8 +10,7 @@ def centerOnAppMonitor(window):
 
     This function determines the correct monitor by:
     1. If main window exists, use its monitor
-    2. Otherwise, try to get saved monitor_index from app settings
-    3. Fall back to primary monitor
+    2. Fall back to primary monitor
 
     Call this after the window is created and sized but before Show().
     """
@@ -25,19 +24,11 @@ def centerOnAppMonitor(window):
         if main_window and main_window is not window and main_window.IsShown():
             main_rect = main_window.GetScreenRect()
             target_monitor = wx.Display.GetFromPoint(
-                wx.Point(main_rect.x + main_rect.width // 2,
-                         main_rect.y + main_rect.height // 2)
+                wx.Point(
+                    main_rect.x + main_rect.width // 2,
+                    main_rect.y + main_rect.height // 2,
+                )
             )
-
-    # Fall back to saved monitor from settings
-    if target_monitor is None or target_monitor == wx.NOT_FOUND:
-        if app and hasattr(app, 'settings'):
-            try:
-                saved_monitor = app.settings.getint("window", "monitor_index")
-                if 0 <= saved_monitor < wx.Display.GetCount():
-                    target_monitor = saved_monitor
-            except (KeyError, ValueError, AttributeError):
-                pass
 
     # Fall back to primary monitor
     if target_monitor is None or target_monitor == wx.NOT_FOUND:
@@ -51,6 +42,22 @@ def centerOnAppMonitor(window):
         x = display_rect.x + (display_rect.width - window_size.width) // 2
         y = display_rect.y + (display_rect.height - window_size.height) // 2
         window.SetPosition(wx.Point(x, y))
+
+
+def font_from_native_info(text):
+    """The font a native font description gives, or None.
+
+    A description saved on another platform can hold a zero point size,
+    which wx asserts on.
+    """
+    if text:
+        info = wx.NativeFontInfo()
+        try:
+            if info.FromString(text):
+                return wx.Font(info)
+        except wx.PyAssertionError:
+            pass
+    return None
 
 
 def getButtonFromStdDialogButtonSizer(
@@ -101,16 +108,6 @@ def setAlphaDataToImage(image: wx.Image, data):
     image.SetAlpha(data_array.tobytes())
 
 
-def clearAlphaDataOfImage(image: wx.Image, value: int):
-    """Fill image alpha channel with a uniform value."""
-    if not image.HasAlpha():
-        image.InitAlpha()
-
-    size = image.GetWidth() * image.GetHeight()
-    alpha_array = np.full(size, value, dtype=np.uint8)
-    image.SetAlpha(alpha_array.tobytes())
-
-
 def mergeImagesWithAlpha(main_image, overlay_image, overlay_position):
     """Merge alpha channels of two images."""
     main_width, main_height = main_image.GetWidth(), main_image.GetHeight()
@@ -132,8 +129,10 @@ def mergeImagesWithAlpha(main_image, overlay_image, overlay_position):
         overlay_image.GetAlphaBuffer(), dtype=np.uint8
     ).reshape(overlay_height, overlay_width)
 
-    if (actual_overlay_height < overlay_height
-            or actual_overlay_width < overlay_width):
+    if (
+        actual_overlay_height < overlay_height
+        or actual_overlay_width < overlay_width
+    ):
         overlay_alpha = overlay_alpha[
             :actual_overlay_height, :actual_overlay_width
         ]

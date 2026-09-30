@@ -121,12 +121,6 @@ class DateTime(StrftimeFix, datetime.datetime):
             except ValueError:
                 pass
 
-    def startOfYear(self):
-        return DateTime(self.year, 1, 1).startOfDay()
-
-    def endOfYear(self):
-        return DateTime(self.year, 12, 31).endOfDay()
-
     def __sub__(self, other):
         """Make sure substraction returns instances of the right classes."""
         if self == DateTime() and isinstance(other, datetime.datetime):

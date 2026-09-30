@@ -33,6 +33,7 @@ from taskcoachlib.domain import (
 from taskcoachlib.i18n import translate
 from .defaults import read
 from taskcoachlib.thirdparty.deltaTime import nlTimeExpression
+from taskcoachlib.tools import wxhelper
 import ast
 import io
 import operator
@@ -846,7 +847,7 @@ class XMLReader(object):
         """Parse a font from the text. In case of failure, return the default
         value."""
         if text:
-            font = wx.FontFromNativeInfoString(text)
+            font = wxhelper.font_from_native_info(text)
             if font and font.IsOk():
                 if font.GetPointSize() < 4:
                     font.SetPointSize(self.__default_font_size)

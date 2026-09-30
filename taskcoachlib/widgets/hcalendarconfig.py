@@ -21,21 +21,13 @@ import wx
 import wx.lib.colourselect as csel
 from wx.lib import sized_controls
 from taskcoachlib.i18n import _
-from taskcoachlib.thirdparty.wxScheduler import (
-    wxSCHEDULER_DAILY,
-    wxSCHEDULER_WEEKLY,
-    wxSCHEDULER_MONTHLY,
-    wxSCHEDULER_HORIZONTAL,
-    wxSCHEDULER_VERTICAL,
-)
 
 
 class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
     def __init__(self, settings, settingsSection, *args, **kwargs):
         self._settings = settings
         self._settingsSection = settingsSection
-        kwargs.setdefault(
-            "style", wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        kwargs.setdefault("style", wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         super().__init__(*args, **kwargs)
         pane = self.GetContentsPane()
         pane.SetSizerType("form")

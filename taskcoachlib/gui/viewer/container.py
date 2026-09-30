@@ -70,10 +70,6 @@ class ViewerContainer(object):
             )
         self.activate_viewer(self.viewers[new_index])
 
-    def is_viewer_container(self):
-        """Return whether this is a viewer container or an actual viewer."""
-        return True
-
     def __bind_event_handlers(self):
         """Register for pane closing, activating and floating events."""
         self.containerWidget.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_page_closed)

@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import widgets, operating_system
 from taskcoachlib.domain import date
 from taskcoachlib.i18n import _
-import datetime
 from wx.lib import combotreebox, newevent
 import wx
 import wx.adv
@@ -341,9 +340,6 @@ class FontEntry(widgets.PanelWithBoxSizer):
 
     def SetColor(self, newColor):
         self._fontPicker.SetSelectedColour(newColor)
-
-    def GetBgColor(self):
-        return self._fontPicker.GetSelectedBgColour()
 
     def SetBgColor(self, newColor):
         self._fontPicker.SetSelectedBgColour(newColor)

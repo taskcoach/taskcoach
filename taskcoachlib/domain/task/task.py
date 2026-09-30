@@ -24,6 +24,7 @@ from taskcoachlib.domain import date, categorizable, note, attachment
 from taskcoachlib.domain.base import is_restoring
 from taskcoachlib.domain.base.attribute import Attribute, SetAttribute
 from taskcoachlib.patterns.field import ListField
+from taskcoachlib.tools import wxhelper
 from . import status
 import ast
 import wx
@@ -1115,11 +1116,7 @@ class Task(
         nativeInfoString = class_.settings.get(
             section, "%stasks" % taskStatus
         )  # pylint: disable=E1101
-        return (
-            wx.FontFromNativeInfoString(nativeInfoString)
-            if nativeInfoString
-            else None
-        )
+        return wxhelper.font_from_native_info(nativeInfoString)
 
     def _update_status(self, recursive=False):
         """The status at once after a change of what it reads, without
@@ -1627,10 +1624,6 @@ class Task(
 
     def _on_dependencies_changed(self, event, *dependencies):
         event.addSource(self, type=self.dependenciesChangedEventType())
-
-    def addTaskAsPrerequisiteOf(self, dependencies):
-        for dependency in dependencies:
-            dependency.add_prerequisites([self])
 
     def removeTaskAsPrerequisiteOf(self, dependencies):
         for dependency in dependencies:

@@ -96,8 +96,10 @@ class Translator(metaclass=patterns.Singleton):
             _log_i18n(f"Trying wx.Locale for: {localeString!r}")
             languageInfo = wx.Locale.FindLanguageInfo(localeString)
             if languageInfo:
-                _log_i18n(f"Found wx language info: {languageInfo.CanonicalName} "
-                          f"(Language={languageInfo.Language})")
+                _log_i18n(
+                    f"Found wx language info: {languageInfo.CanonicalName} "
+                    f"(Language={languageInfo.Language})"
+                )
 
                 # CRITICAL: Delete old locale before creating new one to prevent
                 # segfaults. The C++ locale object must be destroyed first.
@@ -113,7 +115,9 @@ class Translator(metaclass=patterns.Singleton):
                     del log_null
                     # Check if locale was properly initialized
                     if not self.__locale.IsOk():
-                        _log_i18n(f"wx.Locale created but IsOk() returned False")
+                        _log_i18n(
+                            "wx.Locale created but IsOk() returned False"
+                        )
                         self._locale_ok = False
                     else:
                         _log_i18n(f"Created wx.Locale successfully")
@@ -129,13 +133,17 @@ class Translator(metaclass=patterns.Singleton):
                     locale_set = True
                     break
                 except Exception as e:
-                    _log_i18n(f"Failed to create wx.Locale for {localeString}: {e}")
+                    _log_i18n(
+                        f"Failed to create wx.Locale for {localeString}: {e}"
+                    )
                     self.__locale = None
             else:
                 _log_i18n(f"No wx language info found for: {localeString!r}")
 
         if not locale_set:
-            _log_i18n(f"WARNING: Could not set wx.Locale for language '{language}'")
+            _log_i18n(
+                f"WARNING: Could not set wx.Locale for language '{language}'"
+            )
             self._locale_ok = False
 
         if operating_system.isGTK():
@@ -156,7 +164,9 @@ class Translator(metaclass=patterns.Singleton):
             return
 
         if current_language and "_NO" in current_language:
-            _log_i18n(f"Detected problematic Norwegian locale: {current_language}")
+            _log_i18n(
+                f"Detected problematic Norwegian locale: {current_language}"
+            )
             # nb_BO and ny_NO cause crashes in the wx.DatePicker. Set the
             # time part of the locale to some other locale. Since we don't
             # know which ones are available we try a few. First we try the
@@ -197,18 +207,6 @@ class Translator(metaclass=patterns.Singleton):
         return self.__language.get(string, string)
 
 
-def currentLanguageIsRightToLeft():
-    return wx.GetApp().GetLayoutDirection() == wx.Layout_RightToLeft
-
-
-def isCurrentLocaleOk():
-    """Return True if the current locale was set up successfully."""
-    try:
-        return Translator._instance.locale_ok
-    except AttributeError:
-        return True  # Not initialized yet, assume OK
-
-
 def isLocaleAvailable(language_code):
     """Check if a locale is available on the system for the given language code.
 
@@ -232,10 +230,12 @@ def isLocaleAvailable(language_code):
                 # Test if we can set this locale temporarily
                 test_locale_str = language_info.CanonicalName
                 # Try common locale name formats
-                for suffix in ['.UTF-8', '.utf8', '']:
+                for suffix in [".UTF-8", ".utf8", ""]:
                     try:
-                        locale.setlocale(locale.LC_ALL, test_locale_str + suffix)
-                        locale.setlocale(locale.LC_ALL, '')  # Reset
+                        locale.setlocale(
+                            locale.LC_ALL, test_locale_str + suffix
+                        )
+                        locale.setlocale(locale.LC_ALL, "")  # Reset
                         return True
                     except locale.Error:
                         continue
@@ -245,35 +245,29 @@ def isLocaleAvailable(language_code):
     return False
 
 
-def _get_system_language():
-    """Get the system language from environment or locale settings.
-
-    Note: locale.getdefaultlocale() is deprecated since Python 3.11 and
-    doesn't reliably read LANG environment variable on Linux. We check
-    environment variables directly first.
-    """
-    # Check LANG and LC_ALL environment variables first
-    lang = os.environ.get('LANG', os.environ.get('LC_ALL', ''))
-    if lang:
-        # Strip encoding suffix (e.g., "de_DE.UTF-8" -> "de_DE")
-        lang = lang.split('.')[0]
-        if lang and lang != "C" and lang != "POSIX":
-            return lang
-
-    # Fallback to locale.getlocale()
-    try:
-        lang = locale.getlocale(locale.LC_MESSAGES)[0]
-        if lang and lang != "C" and lang != "POSIX":
-            return lang
-    except Exception:
-        pass
-
-    # Final fallback
-    return "en_US"
+def system_language(locale=locale):
+    """The user's language from the environment, or None: the first set
+    of LC_ALL, LC_MESSAGES and LANG, in POSIX order, else the locale's
+    (docs/LOCALE.md). C and POSIX name none. locale.getdefaultlocale()
+    is deprecated since Python 3.11 and doesn't reliably read them on
+    Linux."""
+    language = ""
+    for name in ("LC_ALL", "LC_MESSAGES", "LANG"):
+        language = os.environ.get(name, "")
+        if language:
+            break
+    # Strip the encoding suffix (e.g., "de_DE.UTF-8" -> "de_DE")
+    language = language.split(".")[0]
+    if language in ("", "C", "POSIX"):
+        try:
+            language = locale.getlocale(locale.LC_MESSAGES)[0]
+        except Exception:
+            language = None
+    return None if language in ("C", "POSIX") else language or None
 
 
 def translate(string):
-    return Translator(_get_system_language()).translate(string)
+    return Translator(system_language() or "en_US").translate(string)
 
 
 _ = translate  # This prevents a warning from pygettext.py

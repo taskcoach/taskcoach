@@ -77,9 +77,6 @@ class BaseEffort(object):
         task = self.task()
         return task.shown_font() if task else None
 
-    def duration(self, recursive=False):
-        raise NotImplementedError  # pragma: no cover
-
     def revenue(self, recursive=False):
         raise NotImplementedError  # pragma: no cover
 

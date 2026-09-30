@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # This module works around bugs in third party modules, mostly by
 # monkey-patching so import it first
 from taskcoachlib import workarounds  # noqa: F401
-from taskcoachlib import patterns, operating_system
+from taskcoachlib import i18n, patterns, operating_system
 from taskcoachlib.i18n import _
 import datetime
 import locale
@@ -27,35 +27,13 @@ import os
 import sys
 import wx
 import calendar
-import subprocess
 
-# ============================================================================
-# Logging Functions
-# ============================================================================
-#
-# Simple logging using stdout/stderr. The tee module (initialized in
-# taskcoach.py) captures all output to the log file.
-#
-# Architecture:
-#   - log_message() prints to stdout (informational messages)
-#   - log_error() prints to stderr (errors)
-#   - The tee captures both stdout and stderr to log file
-#   - Any stderr output triggers error popup on exit
-#
-# ============================================================================
-
-# TEMPORARILY DISABLED: TEE module import
-# from taskcoachlib import tee
+# Logging goes to stdout (docs/LOGGING_GUIDE.md).
 
 
 def log_message(msg):
-    """Log a message to stdout (captured by tee to log file)."""
+    """Log a message to stdout."""
     print(msg)
-
-
-def log_error(msg):
-    """Log an error to stderr (captured by tee, triggers exit popup)."""
-    print(msg, file=sys.stderr)
 
 
 def _log_environment():
@@ -193,11 +171,7 @@ def _log_locale_info():
             log_message(f"  {var}: {value}")
 
     # Python locale settings
-    try:
-        default_locale = locale_module.getdefaultlocale()
-        log_message(f"  locale.getdefaultlocale(): {default_locale}")
-    except Exception as e:
-        log_message(f"  locale.getdefaultlocale(): ERROR - {e}")
+    log_message(f"  i18n.system_language(): {i18n.system_language()}")
 
     try:
         current_locale = locale_module.getlocale()
@@ -501,121 +475,6 @@ def _log_wx_info():
             log_message("Tray diagnostics failed: %s" % e)
 
 
-def _log_windows_environment():
-    """Log Windows-specific GUI environment info."""
-    import platform
-
-    # Windows version
-    log_message(
-        f"Windows Version: {platform.win32_ver()[0]} {platform.win32_ver()[1]}"
-    )
-    log_message(f"Windows Edition: {platform.win32_edition()}")
-
-    # DPI awareness
-    try:
-        import ctypes
-
-        awareness = ctypes.windll.shcore.GetProcessDpiAwareness(0)
-        awareness_names = {0: "Unaware", 1: "System", 2: "PerMonitor"}
-        log_message(
-            f"DPI Awareness: {awareness_names.get(awareness, awareness)}"
-        )
-    except Exception as e:
-        log_message(f"DPI Awareness: unavailable ({e})")
-
-    # DWM (Desktop Window Manager) composition
-    try:
-        import ctypes
-
-        dwm_enabled = ctypes.c_bool()
-        ctypes.windll.dwmapi.DwmIsCompositionEnabled(ctypes.byref(dwm_enabled))
-        state = "Enabled" if dwm_enabled.value else "Disabled"
-        log_message(f"DWM Composition: {state}")
-    except Exception as e:
-        log_message(f"DWM Composition: unavailable ({e})")
-
-    # System DPI
-    try:
-        import ctypes
-
-        hdc = ctypes.windll.user32.GetDC(0)
-        dpi_x = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)  # LOGPIXELSX
-        dpi_y = ctypes.windll.gdi32.GetDeviceCaps(hdc, 90)  # LOGPIXELSY
-        ctypes.windll.user32.ReleaseDC(0, hdc)
-        log_message(
-            f"System DPI: {dpi_x}x{dpi_y} (scale: {dpi_x/96*100:.0f}%)"
-        )
-    except Exception as e:
-        log_message(f"System DPI: unavailable ({e})")
-
-    # Log locale info on Windows too
-    _log_locale_info()
-
-
-def _log_macos_environment():
-    """Log macOS-specific GUI environment info."""
-    import platform
-
-    # macOS version
-    mac_ver = platform.mac_ver()
-    log_message(f"macOS Version: {mac_ver[0]}")
-    log_message(f"Architecture: {mac_ver[2]}")
-
-    # Check if running under Rosetta (Apple Silicon)
-    try:
-        result = subprocess.run(
-            ["sysctl", "-n", "sysctl.proc_translated"],
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        if result.returncode == 0 and result.stdout.strip() == "1":
-            log_message("Rosetta 2: Yes (x86_64 on ARM)")
-        else:
-            log_message("Rosetta 2: No (native)")
-    except Exception:
-        pass
-
-    # Retina/scaling info via system_profiler (slow but comprehensive)
-    try:
-        result = subprocess.run(
-            ["system_profiler", "SPDisplaysDataType", "-json"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0:
-            import json
-
-            data = json.loads(result.stdout)
-            displays = data.get("SPDisplaysDataType", [{}])[0].get(
-                "spdisplays_ndrvs", []
-            )
-            for i, disp in enumerate(displays):
-                res = disp.get("_spdisplays_resolution", "unknown")
-                retina = disp.get("spdisplays_retina", "unknown")
-                log_message(f"  macOS Display {i}: {res} Retina={retina}")
-    except Exception:
-        pass
-
-    # Window server info
-    try:
-        result = subprocess.run(
-            ["defaults", "read", "com.apple.WindowServer"],
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        # Just check if it runs - detailed parsing would be verbose
-        if result.returncode == 0:
-            log_message("WindowServer: accessible")
-    except Exception:
-        pass
-
-    # Log locale info on macOS too
-    _log_locale_info()
-
-
 # pylint: disable=W0404
 
 
@@ -722,11 +581,6 @@ class Application(object, metaclass=patterns.Singleton):
             dict(monday=0, sunday=6)[self.settings.get("view", "weekstart")]
         )
 
-    # NOTE: initTwisted(), stopTwisted(), and registerApp() methods removed.
-    # Previously used Twisted's wxreactor for event loop integration.
-    # Now using native wx.App.MainLoop() which is simpler and more reliable.
-    # See class docstring for migration details.
-
     def start(self):
         """Call this to start the Application."""
         from taskcoachlib import meta
@@ -814,7 +668,6 @@ class Application(object, metaclass=patterns.Singleton):
     def init(self, load_settings=True, load_task_file=True):
         """Initialize the application. Needs to be called before
         Application.start()."""
-        # Note: tee is initialized in taskcoach.py before any imports
         # Note: Settings and logging already done in __init__ before
         # wxApp creation
 
@@ -916,7 +769,6 @@ class Application(object, metaclass=patterns.Singleton):
 
     def __init_language(self):
         """Initialize the current translation."""
-        from taskcoachlib import i18n
         from taskcoachlib.meta.debug import log_step
 
         if i18n.Translator.hasInstance():
@@ -948,27 +800,7 @@ class Application(object, metaclass=patterns.Singleton):
             # Get language as set by the user or externally (e.g. PortableApps)
             language = settings.get("view", "language")
         if not language:
-            # The user's locale from the environment, in POSIX order:
-            # the first set of LC_ALL, LC_MESSAGES and LANG
-            # (docs/LOCALE.md). locale.getdefaultlocale() is deprecated
-            # since Python 3.11 and doesn't reliably read them on Linux.
-            for name in ("LC_ALL", "LC_MESSAGES", "LANG"):
-                language = os.environ.get(name, "")
-                if language:
-                    break
-            if language:
-                # Strip encoding suffix (e.g., "de_DE.UTF-8" -> "de_DE")
-                language = language.split(".")[0]
-                if not language or language == "C" or language == "POSIX":
-                    language = None
-        if not language:
-            # Fallback to locale.getlocale() which may work after setlocale
-            try:
-                language = locale.getlocale(locale.LC_MESSAGES)[0]
-                if language == "C" or language == "POSIX":
-                    language = None
-            except Exception:
-                language = None
+            language = i18n.system_language(locale)
         if not language:
             # Fall back on what the majority of our users use
             language = "en_US"

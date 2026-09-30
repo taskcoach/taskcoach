@@ -66,12 +66,6 @@ class BaseCommand(patterns.Command):
 class CompositeMixin(object):
     """Mixin class for commands that deal with composites."""
 
-    def getAncestors(self, composites):
-        ancestors = []
-        for composite in composites:
-            ancestors.extend(composite.ancestors())
-        return ancestors
-
     def getAllChildren(self, composites):
         allChildren = []
         for composite in composites:
@@ -290,20 +284,6 @@ class OrderingDragAndDropCommand(DragAndDropCommand):
                         item.ordering()
                         for idx, item in enumerate(siblings)
                         if idx < insertIndex
-                    ]
-                )
-                minOrderingOfPreviousSiblings = min(
-                    [
-                        item.ordering()
-                        for idx, item in enumerate(siblings)
-                        if idx < insertIndex
-                    ]
-                )
-                maxOrderingOfNextSiblings = max(
-                    [
-                        item.ordering()
-                        for idx, item in enumerate(siblings)
-                        if idx >= insertIndex
                     ]
                 )
                 minOrderingOfNextSiblings = min(

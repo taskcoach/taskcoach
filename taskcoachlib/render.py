@@ -25,7 +25,6 @@ from taskcoachlib.domain import date as datemodule
 from taskcoachlib.i18n import _
 from taskcoachlib import operating_system
 import datetime
-import codecs
 import locale
 import re
 
@@ -80,7 +79,6 @@ def time_spent(
         )
 
 
-
 def recurrence(recurrence):
     """Render the recurrence as a short string describing the frequency of
     the recurrence."""
@@ -131,6 +129,7 @@ def budget(budget, decimal=False):
 # Changing date/time format in preferences requires a restart.
 try:
     from taskcoachlib.widgets.maskedtimectrl import getEffectiveTimeFormat
+
     _timeFormatSetting = getEffectiveTimeFormat()
 except Exception:
     _timeFormatSetting = "24"
@@ -147,17 +146,19 @@ else:
 # Display-only overrides applied on top of the entry-compatible date
 # format when rendering. Cannot be used for date input (no name parsing).
 _DISPLAY_ONLY_DATE_FORMATS = {
-    "LONG_DMY": "%A, %d %B %Y",      # Saturday, 28 March 2026
-    "ISO_ABBREV": "%Y-%b-%d-%a",     # 2026-Mar-28-Sat
+    "LONG_DMY": "%A, %d %B %Y",  # Saturday, 28 March 2026
+    "ISO_ABBREV": "%Y-%b-%d-%a",  # 2026-Mar-28-Sat
 }
 
 
 def _get_display_override_from_settings():
     try:
         from taskcoachlib.config import settings
+
         return settings.Settings().get("view", "dateformat_display_override")
     except Exception as exc:
         from taskcoachlib.meta.debug import log_step
+
         log_step(
             "could not read dateformat_display_override (%s); treating as empty"
             % exc,
@@ -173,19 +174,22 @@ try:
     else:
         if _display_override:
             from taskcoachlib.meta.debug import log_step
+
             log_step(
                 "unknown dateformat_display_override %r; ignoring"
                 % _display_override,
                 prefix="RENDER",
             )
         from taskcoachlib.widgets.maskedtimectrl import getEffectiveDateFormat
+
         _field_order, _separator = getEffectiveDateFormat()
-        _format_map = {'year': '%Y', 'month': '%m', 'date_day': '%d'}
+        _format_map = {"year": "%Y", "month": "%m", "date_day": "%d"}
         dateFormat = _separator.join(
-            _format_map.get(f, '%Y') for f in _field_order
+            _format_map.get(f, "%Y") for f in _field_order
         )
 except Exception as exc:
     from taskcoachlib.meta.debug import log_step
+
     log_step(
         "failed to resolve dateFormat (%s); falling back to locale %%x" % exc,
         prefix="RENDER",
@@ -204,9 +208,7 @@ def rawTimeFunc(dt, minutes=True, seconds=False):
 
 
 def rawDateFunc(dt=None):
-    return operating_system.decodeSystemString(
-        datetime.datetime.strftime(dt, dateFormat)
-    )
+    return datetime.datetime.strftime(dt, dateFormat)
 
 
 def dateFunc(dt=None, human_readable=False):
@@ -227,9 +229,7 @@ if operating_system.isWindows():
 
     def rawTimeFunc(dt, minutes=True, seconds=False):
         if dt is None:
-            return operating_system.decodeSystemString(
-                win32api.GetTimeFormat(0x400, 0, None, None)
-            )
+            return win32api.GetTimeFormat(0x400, 0, None, None)
         # Use strftime directly to avoid pywintypes.Time() timezone issues.
         # pywintypes.Time() interprets naive datetimes as UTC and converts to
         # local time, causing times like 07:00 to display as 06:00 in UTC+1.
@@ -239,17 +239,15 @@ if operating_system.isWindows():
             fmt = timeWithMinutesFormat
         else:
             fmt = timeFormat
-        return operating_system.decodeSystemString(dt.strftime(fmt))
+        return dt.strftime(fmt)
 
     def rawDateFunc(dt):
         if dt is None:
-            return operating_system.decodeSystemString(
-                win32api.GetDateFormat(0x400, 0, None, None)
-            )
+            return win32api.GetDateFormat(0x400, 0, None, None)
         # Use strftime directly to avoid pywintypes.Time() timezone issues.
         # pywintypes.Time() interprets naive datetimes as UTC and converts to
         # local time, which can shift dates when times are near midnight.
-        return operating_system.decodeSystemString(dt.strftime(dateFormat))
+        return dt.strftime(dateFormat)
 
 elif operating_system.isMac():
     # Use simple strftime formatting on macOS
@@ -270,10 +268,6 @@ elif operating_system.isMac():
             dt = datetime.datetime.now()
         return dt.strftime(dateFormat)
 
-
-timeFunc = lambda dt, minutes=True, seconds=False: operating_system.decodeSystemString(
-    rawTimeFunc(dt, minutes=minutes, seconds=seconds)
-)
 
 def dateTimeFunc(dt=None, human_readable=False):
     """Format date and time together. Uses time() to avoid Windows timezone issues."""
@@ -339,17 +333,20 @@ def dateTimePeriod(start, stop, human_readable=False):
         )
 
 
-def time(dateTime, seconds=False, minutes=True):
+def time(date_time, seconds=False, minutes=True):
     """Format a time or datetime for display."""
     try:
         # strftime doesn't handle years before 1900, be prepared:
-        dateTime = dateTime.replace(year=2000)
-    except TypeError:  # We got a time instead of a dateTime
+        date_time = date_time.replace(year=2000)
+    except TypeError:  # We got a time instead of a datetime
         # Convert time to datetime for strftime
         import datetime as dt
-        dateTime = dt.datetime(2000, 1, 1, dateTime.hour, dateTime.minute, dateTime.second)
 
-    return timeFunc(dateTime, minutes=minutes, seconds=seconds)
+        date_time = dt.datetime(
+            2000, 1, 1, date_time.hour, date_time.minute, date_time.second
+        )
+
+    return rawTimeFunc(date_time, minutes=minutes, seconds=seconds)
 
 
 def month(dateTime):
@@ -380,18 +377,6 @@ def exception(exception, instance):
     """Safely render an exception, being prepared for new exceptions."""
 
     try:
-        # In this order. Python 2.6 fixed the unicode exception problem.
-        try:
-            return str(instance)
-        except UnicodeDecodeError:
-            # On Windows, some exceptions raised by win32all lead to this
-            # Hack around it
-            result = []
-            for val in instance.args:
-                if isinstance(val, str):
-                    result.append(val.encode("UTF-8"))
-                else:
-                    result.append(val)
-            return str(result)
+        return str(instance)
     except UnicodeEncodeError:
         return "<class %s>" % str(exception)

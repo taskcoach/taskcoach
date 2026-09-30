@@ -21,7 +21,7 @@ from unittest import mock
 
 import test
 import wx
-from taskcoachlib import meta, application, config
+from taskcoachlib import meta, application, config, i18n
 
 
 class DummyOptions(object):
@@ -48,9 +48,7 @@ class AppTests(test.TestCase):
         self.options = DummyOptions()
 
     def testAppProperties(self):
-        import locale
-
-        if locale.getdefaultlocale()[0] != "en_US":
+        if i18n.system_language() != "en_US":
             # Somehow wx displays an error dialog box if en_US is not installed, when
             # quit_application() calls ProcessIdle and I don't know how to get rid of it.
             # I don't know how to find out if en_US is installed either, so skip if

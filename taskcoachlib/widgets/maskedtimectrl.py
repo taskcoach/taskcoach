@@ -210,32 +210,6 @@ def getEffectiveDateFormat():
     return getLocaleDateFormat(override=override if override else None)
 
 
-def getDateFormatFunctionForOldControl():
-    """Get a format function suitable for the old smartdatetimectrl DateEntry.
-
-    Returns a function that takes a date and returns a formatted string,
-    which DateEntry parses to understand field order.
-
-    If no override is set, returns None (use default locale detection).
-    """
-    override = getDateFormatFromSettings()
-    if not override or len(override) < 4:
-        return None  # Use default
-
-    # Build format string from override (e.g., "YMD-" -> "%Y-%m-%d")
-    order_str = override[:3].upper()
-    separator = override[3]
-
-    format_map = {"Y": "%Y", "M": "%m", "D": "%d"}
-    format_parts = [format_map.get(c, "%Y") for c in order_str]
-    strftime_format = separator.join(format_parts)
-
-    def format_func(d):
-        return d.strftime(strftime_format)
-
-    return format_func
-
-
 def getDetectedLocaleTimeFormat():
     """Detect locale time format (12-hour vs 24-hour).
 
@@ -487,9 +461,6 @@ EVT_POPUP_DISMISS = wx.PyEventBinder(wxEVT_POPUP_DISMISS)
 wxEVT_CHOICE_SELECTED = wx.NewEventType()
 EVT_CHOICE_SELECTED = wx.PyEventBinder(wxEVT_CHOICE_SELECTED)
 
-wxEVT_CHOICE_PREVIEW = wx.NewEventType()
-EVT_CHOICE_PREVIEW = wx.PyEventBinder(wxEVT_CHOICE_PREVIEW)
-
 wxEVT_VALUE_CHANGED = wx.NewEventType()
 EVT_VALUE_CHANGED = wx.PyEventBinder(wxEVT_VALUE_CHANGED, 1)
 
@@ -515,18 +486,6 @@ class ChoiceSelectedEvent(wx.PyCommandEvent):
 
     def __init__(self, owner, value):
         super().__init__(wxEVT_CHOICE_SELECTED)
-        self.__value = value
-        self.SetEventObject(owner)
-
-    def GetValue(self):
-        return self.__value
-
-
-class ChoicePreviewEvent(wx.PyCommandEvent):
-    """Event fired when navigating choices in popup (live preview)."""
-
-    def __init__(self, owner, value):
-        super().__init__(wxEVT_CHOICE_PREVIEW)
         self.__value = value
         self.SetEventObject(owner)
 
@@ -1376,7 +1335,6 @@ class MaskedFieldsCtrl(wx.Panel):
         popup.Popup(pos)
         popup.Bind(EVT_POPUP_DISMISS, self._onPopupDismiss)
         popup.Bind(EVT_CHOICE_SELECTED, self._onChoiceSelected)
-        popup.Bind(EVT_CHOICE_PREVIEW, self._onChoicePreview)
 
     def _onPopupDismiss(self, event):
         """Handle popup dismissal - track for toggle behavior and preserve focus."""
@@ -1387,13 +1345,6 @@ class MaskedFieldsCtrl(wx.Panel):
         self._returningFromPopup = True
         self.SetFocus()  # Return focus to control
         event.Skip()
-
-    def _onChoicePreview(self, event):
-        """Handle preview of choice (arrow key navigation in popup)."""
-        if self._popup:
-            popup, field = self._popup
-            field.SetValue(event.GetValue())
-            self.Refresh()
 
     def _onChoiceSelected(self, event):
         """Handle choice selection from popup."""
@@ -1452,9 +1403,6 @@ class MaskedFieldsCtrl(wx.Panel):
     def ValidateChange(self, field, value):
         """Override in subclasses to validate field changes (e.g., clamp day for month)."""
         return value
-
-    def GetField(self, name):
-        return self._fields.get(name)
 
     def GetFieldValue(self, name):
         field = self._fields.get(name)
@@ -1612,10 +1560,6 @@ class DurationCtrl(MaskedFieldsCtrl):
             self.SetFieldValue("second", seconds)
         self.NotifyValueChanged()
 
-    def SetTimeDelta(self, duration):
-        """Alias for SetDuration for consistency with other controls."""
-        self.SetDuration(duration)
-
     def GetValue(self):
         """Alias for GetDuration for AttributeSync compatibility."""
         return self.GetDuration()
@@ -1747,10 +1691,6 @@ class DurationCtrlVerbose(MaskedFieldsCtrl):
         if self._showSeconds:
             self.SetFieldValue("second", seconds)
         self.NotifyValueChanged()
-
-    def SetTimeDelta(self, duration):
-        """Alias for SetDuration for consistency with other controls."""
-        self.SetDuration(duration)
 
     def GetValue(self):
         """Alias for GetDuration for AttributeSync compatibility."""
@@ -2245,7 +2185,6 @@ class _CalendarComboPopup(wx.ComboPopup):
             xinf = w - contentOffsetX - 48 + 16 - buttonDim
             xsup = w - contentOffsetX - 48 + 16
             yinf = contentOffsetY + th / 2 + 1 - buttonDim / 2
-            ysup = contentOffsetY + th / 2 + 1 + buttonDim / 2
 
             gp.MoveToPoint(xinf, contentOffsetY + th // 2 + 1)
             gp.AddArc(
@@ -3252,9 +3191,6 @@ class DateTimeComboCtrl(wx.EvtHandler):
     def GetTimeCtrl(self):
         return self._timeCtrl
 
-    def GetWidgets(self):
-        return (self._checkbox, self._dateCtrl, self._timeCtrl)
-
     def HideCheckBox(self):
         """Hide the checkbox for always-active controls (e.g. effort start)."""
         self._checkbox.Hide()
@@ -3285,9 +3221,6 @@ class DateTimeComboCtrl(wx.EvtHandler):
         self._updateEnabled()
 
         return panel
-
-    def ContainsControl(self, ctrl):
-        return ctrl in (self._checkbox, self._dateCtrl, self._timeCtrl)
 
     def HasOpenPopup(self):
         """Return True if any child control has an open popup."""

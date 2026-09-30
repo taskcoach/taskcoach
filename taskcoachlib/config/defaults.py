@@ -47,7 +47,6 @@ defaults = {
         "customizabletoolbars": "True",
         "customizabletoolbars_dnd": "True",
         "filtershiftclick": "True",
-        "autosavehint": "True",
         "manualordering": "True",
         "treemanualordering": "True",
         "treechildrenmanualordering": "True",
@@ -59,8 +58,6 @@ defaults = {
         "autoscrollselection": "True",
         "toolbar": str((MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2),
         "toolbarperspective": "FileOpen,Print,Separator,EditUndo,EditRedo,Separator,EffortStartButton,EffortStop,Separator,ToggleAutoScroll",
-        # Index of the active effort viewer in task editor:
-        "effortviewerintaskeditor": "0",
         "taskviewercount": "1",  # Number of task viewers in main window
         "categoryviewercount": "1",  # Number of category viewers in main window
         "noteviewercount": "0",  # Number of note viewers in main window
@@ -510,7 +507,6 @@ defaults = {
     "window": {
         "size": "(900, 500)",  # Default size of the main window
         "position": "(-1, -1)",  # Position of the main window, undefined by default
-        "monitor_index": "-1",  # Monitor the window was on, -1 means unknown/default
         "iconized": "False",  # Don't start up iconized by default
         "maximized": "False",  # Don't start up maximized by default
         # Possible strticonized values: 'Never', 'Always', 'WhenClosedIconized'
@@ -527,7 +523,6 @@ defaults = {
     "effortdialog": {
         "size": "(-1, -1)",  # Size of the dialogs, calculated by default
         "position": "(-1, -1)",  # Position of the dialog, undefined by default
-        "parent_offset": "(-1, -1)",  # Offset from parent window for multi-monitor support
         "maximized": "False",  # Don't open the dialog maximized by default
     },
     "file": {
@@ -652,12 +647,8 @@ defaults = {
         "orientation": str(wx.PORTRAIT),
     },
     "export": {
-        "html_selectiononly": "False",
         "html_separatecss": "False",
-        "csv_selectiononly": "False",
         "csv_separatedateandtimecolumns": "False",
-        "ical_selectiononly": "False",
-        "todotxt_selectiononly": "False",
     },
     "spellcheck": {
         # Enable spell checking for subject and description fields

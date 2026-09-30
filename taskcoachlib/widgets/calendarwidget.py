@@ -493,7 +493,6 @@ class TaskSchedule(wxSchedule):
             ).do()
 
     def Offset(self, ts):
-        kwargs = dict()
         if self.task.plannedStartDateTime() != date.DateTime():
             start = self.GetStart()
             start.Add(ts)

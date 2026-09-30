@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib.domain import effort, date
+from taskcoachlib.domain import effort
 from taskcoachlib.i18n import _
 from . import base
 

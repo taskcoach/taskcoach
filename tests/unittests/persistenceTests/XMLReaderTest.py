@@ -23,7 +23,6 @@ import xml.parsers.expat
 import wx
 import io
 import os
-import tempfile
 import base64
 import sys
 import test
@@ -144,42 +143,6 @@ class XMLReaderWithoutVersionTest(test.TestCase):
         fd = io.StringIO("<tasks/>")
         fd.name = "testfile.tsk"
         self.assertRaises(ValueError, persistence.XMLReader(fd).read)
-
-
-class TempFileLockTest(XMLReaderTestCase):
-    tskversion = 25
-
-    def setUp(self):
-        self.oldMkstemp = tempfile.mkstemp
-
-        def newMkstemp(*args, **kwargs):  # pragma: no cover
-            handle, name = self.oldMkstemp(*args, **kwargs)
-            self.__filename = name  # pylint: disable=W0201
-            return handle, name
-
-        tempfile.mkstemp = newMkstemp
-        super().setUp()
-
-    def tearDown(self):
-        tempfile.mkstemp = self.oldMkstemp
-        super().tearDown()
-
-    @test.stale("inline attachment data is no longer read (#378)")
-    def testLock(self):
-        if os.name == "nt":  # pragma: no cover
-            self.writeAndReadTasks(
-                '<tasks>\n<task status="0">\n'
-                '<attachment type="mail" status="0">\n'
-                '<data extension="eml">%s</data>\n'
-                "</attachment>\n</task>\n</tasks>\n"
-                % base64.encodebytes(b"Data").decode("ascii")
-            )
-            try:
-                os.remove(self.__filename)
-            except OSError:
-                pass  # File removal may fail on Windows
-
-            self.assertTrue(os.path.exists(self.__filename))
 
 
 class XMLReaderVersion6Test(XMLReaderTestCase):

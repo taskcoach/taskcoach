@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # lacks events
 
 import wx
-from wx.lib.embeddedimage import PyEmbeddedImage
 from taskcoachlib import patterns
 
 

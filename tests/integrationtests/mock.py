@@ -40,9 +40,6 @@ class MockWxApp(object):
     def SetTopWindow(self, *args):
         pass
 
-    def onQuit(self):
-        pass
-
 
 class App(application.Application):
     def __init__(self, args=None):  # pylint: disable=W0231
@@ -55,15 +52,6 @@ class App(application.Application):
         self.init()
         self.sessionMonitor = None
         application.Application.instance = self
-
-    def initTwisted(self):
-        pass
-
-    def stopTwisted(self):
-        pass
-
-    def registerApp(self):
-        pass
 
     def init(self):  # pylint: disable=W0221
         # The harness made a translator for the unit tests; the app

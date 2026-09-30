@@ -104,6 +104,7 @@ class Settings(CachingConfigParser):
                 ):
                     self.read(self.filename(), encoding="utf-8")
                 self._migrateOldSettingNames()
+                self._remove_obsolete_settings()
             except configparser.ParsingError as errorMessage:
                 # Ignore exceptions and simply use default values.
                 # Also record the failure in the settings:
@@ -200,9 +201,6 @@ class Settings(CachingConfigParser):
                 super().set(section, name, value)
         return result
 
-    def getRawValue(self, section, option):
-        return super().get(section, option)
-
     def init(self, section, option, value):
         return super().set(section, option, value)
 
@@ -249,6 +247,26 @@ class Settings(CachingConfigParser):
                     self.remove_option(section, old_name)
             except (configparser.NoSectionError, configparser.NoOptionError):
                 pass
+
+    # Options no release reads any more (2.0.3.0)
+    _OBSOLETE_SETTINGS = (
+        ("balloontips", "autosavehint"),
+        ("view", "effortviewerintaskeditor"),
+        ("window", "monitor_index"),
+        ("export", "html_selectiononly"),
+        ("export", "csv_selectiononly"),
+        ("export", "ical_selectiononly"),
+        ("export", "todotxt_selectiononly"),
+    )
+
+    def _remove_obsolete_settings(self):
+        """Drop from an old INI file the options nothing reads."""
+        for section, option in self._OBSOLETE_SETTINGS:
+            if self.has_section(section):
+                self.remove_option(section, option)
+        for section in self.sections():
+            if section == "effortdialog" or "dialog_with_" in section:
+                self.remove_option(section, "parent_offset")
 
     def _fixValuesFromOldIniFiles(self, section, option, result):
         """Try to fix settings from old TaskCoach.ini files that are no longer
@@ -542,12 +560,6 @@ class Settings(CachingConfigParser):
         elif operating_system.isMac():
             return os.path.expanduser("~/Documents")
         elif operating_system.isGTK():
-            try:
-                from PyKDE4.kdeui import KGlobalSettings
-            except ImportError:
-                pass
-            else:
-                return str(KGlobalSettings.documentPath())
             # Check XDG_DOCUMENTS_DIR (standard on Linux)
             xdg_docs = os.environ.get("XDG_DOCUMENTS_DIR")
             if xdg_docs and os.path.isdir(xdg_docs):
@@ -723,7 +735,7 @@ class Settings(CachingConfigParser):
                 # path not expanded: apparently, there is no home dir
                 path = os.getcwd()
             path = os.path.join(path, ".%s" % meta.filename)
-        return operating_system.decodeSystemString(path)
+        return path
 
     def pathToTemplatesDir_deprecated(self, doCreate=True):
         path = os.path.join(self.path(), "taskcoach-templates")
@@ -744,7 +756,7 @@ class Settings(CachingConfigParser):
                 os.makedirs(path)
             except OSError:
                 pass
-        return operating_system.decodeSystemString(path)
+        return path
 
     def pathToIniFileSpecifiedOnCommandLine(self):
         return os.path.dirname(self.__iniFileSpecifiedOnCommandLine) or "."

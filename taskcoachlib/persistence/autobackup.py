@@ -108,11 +108,6 @@ class BackupManifest(object):
     def addFile(self, filename):
         self.__files[SHA(filename)] = filename
 
-    def removeFile(self, filename):
-        sha = SHA(filename)
-        if sha in self.__files:
-            del self.__files[sha]
-
     def restoreFile(self, filename, dateTime, dstName):
         """Restore the backup of filename made at dateTime as dstName.
         dstName is locked while it is written, so a file open in

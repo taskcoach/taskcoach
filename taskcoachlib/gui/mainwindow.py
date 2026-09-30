@@ -79,7 +79,7 @@ class MainWindow(
             kwargs["size"] = (800, 600)
         super().__init__(None, -1, "", *args, **kwargs)
         # This prevents the viewers from flickering on Windows 7 when refreshed:
-        if operating_system.isWindows7_OrNewer():
+        if operating_system.isWindows():
             turn_on_double_buffering_on_windows(self)
         self.__dimensions_tracker = (
             windowdimensionstracker.WindowDimensionsTracker(self, settings)

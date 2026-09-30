@@ -205,9 +205,6 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
         self.load_perspective(perspective)
         self.__window.saveToolBarPerspective(perspective)
 
-    # Keep old name as alias
-    savePerspective = save_perspective
-
     def uiCommands(self, cache=True):
         if self.__cache is None or not cache:
             raw = self.__window.createToolBarUICommands()
@@ -216,9 +213,6 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
 
     def visible_ui_commands(self):
         return self.__visible_ui_commands[:]
-
-    # Keep old name as alias
-    visibleUICommands = visible_ui_commands
 
     def get_default_perspective(self):
         """Get the default toolbar perspective from settings."""
@@ -229,22 +223,13 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
             section = "view"
         return self.__settings.getDefault(section, "toolbarperspective")
 
-    # Keep old name as alias
-    getDefaultPerspective = get_default_perspective
-
     def AppendSeparator(self):
         """This little adapter is needed for
         uicommand.UICommandContainerMixin.append_ui_commands"""
         self.AddSeparator()
 
-    def AppendStretchSpacer(self, proportion):
-        self.AddStretchSpacer(proportion)
-
     def append_ui_command(self, ui_command):
         return ui_command.append_to_toolbar(self)
-
-    # Keep old name as alias
-    appendUICommand = append_ui_command
 
 
 class MainToolBar(ToolBar):

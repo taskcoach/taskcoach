@@ -15,7 +15,6 @@ wx.ArtProvider middleman.
 import importlib
 import json
 import os
-import sys
 
 from taskcoachlib.meta.debug import log_step
 
@@ -318,8 +317,6 @@ class Icon:
         logs error (safety guard — any icon could produce a cursor,
         remove the error and open the else block when needed).
         """
-        import wx
-
         scaleFactor = 1.0
         if window:
             try:

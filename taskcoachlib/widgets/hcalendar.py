@@ -173,15 +173,9 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         self._invalidate()
         self.Refresh()
 
-    def HeaderFormat(self):
-        return self.__hdrFormat
-
     def SetDrawNow(self, drawNow):
         self.__drawNow = drawNow
         self.Refresh()
-
-    def DrawNow(self):
-        return self.__drawNow
 
     def refresh_now_line(self):
         """Redraw the "now" line, if shown (called every minute)."""

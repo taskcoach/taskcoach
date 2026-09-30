@@ -107,15 +107,6 @@ def resolve_font(value):
         return wx.NullFont
 
 
-def is_system_theme(value):
-    """Check if value is a system theme symbolic constant."""
-    return value in (
-        base.SYSTEM_FG_COLOR,
-        base.SYSTEM_BG_COLOR,
-        base.SYSTEM_FONT,
-    )
-
-
 def _end_subscriptions(page):
     """A page's subscriptions end with it, its field syncs' too
     (docs/PUBLISHER_OBSERVER.md, Signaling System Cleanup)."""
@@ -3615,9 +3606,6 @@ class EditBook(widgets.Notebook):
         for page_name in page_names:
             page = self.createPage(page_name, task_file, items_are_new)
             self.AddPage(page, page.pageTitle, page.pageIcon)
-        # DISABLED: SetMinSize was locking entire notebook to max page size
-        # width, height = self.__get_minimum_page_size()
-        # self.SetMinSize((width, self.GetHeightForPageHeight(height)))
 
     def onPageChanged(self, event):
         self.GetPage(event.Selection).selected()
@@ -3637,14 +3625,6 @@ class EditBook(widgets.Notebook):
             if page_name == self[index].pageName:
                 return index
         return None
-
-    def __get_minimum_page_size(self):
-        min_widths, min_heights = [], []
-        for page in self:
-            min_width, min_height = page.GetMinSize()
-            min_widths.append(min_width)
-            min_heights.append(min_height)
-        return max(min_widths), max(min_heights)
 
     def __pages_to_create(self):
         return [
@@ -3799,10 +3779,6 @@ class EditBook(widgets.Notebook):
         section = self.__settings_section_name()
         if not self.settings.has_section(section):
             self.__create_settings_section(section)
-        else:
-            # Ensure parent_offset exists for backward compatibility with old sections
-            if not self.settings.has_option(section, "parent_offset"):
-                self.settings.init(section, "parent_offset", "(-1, -1)")
         return section
 
     def __settings_section_name(self):
@@ -3822,7 +3798,6 @@ class EditBook(widgets.Notebook):
                 pages=str(self.__pages_to_create()),
                 size="(-1, -1)",
                 position="(-1, -1)",
-                parent_offset="(-1, -1)",  # Offset from parent window for multi-monitor support
                 maximized="False",
             ).items()
         ):
@@ -3881,79 +3856,6 @@ class AttachmentEditBook(EditBook):
 
     def create_subject_page(self):
         return AttachmentSubjectPage(self.items, self, self.settings)
-
-
-class NullableDateTimeWrapper:
-    """Virtual wrapper linking a checkbox with a DateTimeEntry.
-
-    GetValue returns None when checkbox is unchecked, otherwise returns
-    the datetime value. The checkbox and datetime entry remain separate
-    widgets for grid layout, but this wrapper provides unified GetValue.
-    """
-
-    def __init__(self, checkbox, datetime_entry):
-        self._checkbox = checkbox
-        self._datetime_entry = datetime_entry
-
-    def GetValue(self):
-        """Return None if checkbox unchecked, else datetime value."""
-        try:
-            if not self._checkbox.GetValue():
-                return None
-            return self._datetime_entry.GetValue()
-        except RuntimeError:
-            log_step(
-                "DateTimeEntry.GetValue: widget dead %x" % id(self),
-                prefix="DEAD-OBJ",
-            )
-            return None
-
-    def SetValue(self, value):
-        """Set value - None unchecks checkbox, otherwise sets datetime."""
-        try:
-            if value is None:
-                self._checkbox.SetValue(False)
-                self._datetime_entry.Enable(False)
-            else:
-                self._checkbox.SetValue(True)
-                self._datetime_entry.Enable(True)
-                self._datetime_entry.SetValue(value)
-        except RuntimeError:
-            log_step(
-                "DateTimeEntry.SetValue: widget dead %x" % id(self),
-                prefix="DEAD-OBJ",
-            )
-
-    def Bind(
-        self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
-    ):
-        """Forward bind to datetime entry."""
-        self._datetime_entry.Bind(event_type, handler, source, id, id2)
-
-    def LoadChoices(self, choices):
-        """Forward to datetime entry."""
-        self._datetime_entry.LoadChoices(choices)
-
-    def SetRelativeChoicesStart(self, start=None):
-        """Forward to datetime entry."""
-        self._datetime_entry.SetRelativeChoicesStart(start)
-
-    def GetChildren(self):
-        """Return children for focus tracking."""
-        return self._datetime_entry.GetChildren()
-
-    def SetFocus(self):
-        """Forward focus to datetime entry."""
-        self._datetime_entry.SetFocus()
-
-    def Enable(self, enable=True):
-        """Enable/disable the datetime entry."""
-        self._datetime_entry.Enable(enable)
-        return True
-
-    def GetId(self):
-        """Return ID of datetime entry for widget validity checks."""
-        return self._datetime_entry.GetId()
 
 
 class EffortEditBook(Page):
@@ -4380,8 +4282,7 @@ class EffortEditBook(Page):
         Args:
             source_field: Which field triggered this sync:
                          'start', 'stop', 'duration', 'mode', or None (depth>0 loop).
-                         Proxy for user-action — cannot differentiate user clicks from
-                         system-triggered changes. See TODO item 4 in doc.
+                         Only the user's edits call it (doc 0.5).
             depth: Recursive depth counter (doc 0.3).
                    0 = initial call from handler (default).
                    1 = explicit Loop call (source_field=None, reads
@@ -5103,9 +5004,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
                 "_deferred_destroy: already dead %x" % (id(self)),
                 prefix="DEAD-OBJ",
             )
-
-    def on_activate(self, event):
-        event.Skip()
 
     def on_item_removed(self, event):  # pylint: disable=W0613
         """An item left a list, or the file changed (an action, undo,

@@ -846,12 +846,6 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def tooltip(self):
         return self.__tooltip_text
 
-    def tray_icon_id(self):
-        return self.__tray_icon_id
-
-    def default_tray_icon_id(self):
-        return self.__default_tray_icon_id
-
     # Private methods:
 
     def __start_or_stop_ticking(self):

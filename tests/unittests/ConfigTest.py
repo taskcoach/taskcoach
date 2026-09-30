@@ -187,6 +187,26 @@ class SettingsIOTest(SettingsTestCase):
             self.settings.getdict(section, "columnwidths"),
         )
 
+    def test_options_nothing_reads_are_dropped(self):
+        editor = "taskdialog_with_dates_subject"
+        self.fakeFile.write(
+            "[window]\nmonitor_index = 1\n"
+            "[export]\nhtml_selectiononly = True\n"
+            "[%s]\nparent_offset = (-1, -1)\nsize = (10, 10)\n" % editor
+        )
+        self.fakeFile.seek(0)
+        self.settings.read_file(self.fakeFile)
+        self.settings._remove_obsolete_settings()
+        self.assertEqual(
+            (False, False, False, True),
+            (
+                self.settings.has_option("window", "monitor_index"),
+                self.settings.has_option("export", "html_selectiononly"),
+                self.settings.has_option(editor, "parent_offset"),
+                self.settings.has_option(editor, "size"),
+            ),
+        )
+
 
 class SettingsObservableTest(SettingsTestCase):
     def setUp(self):

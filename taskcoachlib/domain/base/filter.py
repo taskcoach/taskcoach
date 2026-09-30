@@ -106,14 +106,6 @@ class Filter(patterns.SetDecorator):
         )
         patterns.Event(self.filter_change_event_type(), self).send()
 
-    def getFilterForced(self):
-        """Return items that were added as ancestors, not directly matched.
-
-        These items are in the filter only to maintain tree hierarchy, not
-        because they passed the filter criteria.
-        """
-        return self.__filterForced.copy()
-
     def getAccumulatedFilterForced(self):
         """Return filter_forced items accumulated from the entire filter chain.
 

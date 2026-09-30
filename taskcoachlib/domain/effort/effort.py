@@ -161,16 +161,6 @@ class Effort(baseeffort.BaseEffort, base.Object):
             return stop - self._start.get()
         return now() - self._start.get()
 
-    def duration(self, now=date.DateTime.now):
-        """DEPRECATED: use timeSpent() instead."""
-        from taskcoachlib.meta.debug import log_step
-
-        log_step(
-            "DEPRECATED effort.duration() called, use timeSpent()",
-            prefix="DEPRECATION",
-        )
-        return
-
     def stored_duration(self):
         """The stored duration: None while the effort is tracked."""
         return self.__duration.get()

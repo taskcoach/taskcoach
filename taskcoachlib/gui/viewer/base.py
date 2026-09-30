@@ -544,9 +544,6 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def widgetCreationKeywordArguments(self):
         return {}
 
-    def is_viewer_container(self):
-        return False
-
     def is_showing_tasks(self):
         return False
 

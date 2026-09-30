@@ -173,13 +173,6 @@ class VirtualListCtrl(
             return ""
         return self.getItemText(item, columnIndex)
 
-    def OnGetItemTooltipData(self, rowIndex, columnIndex):
-        try:
-            item = self.get_item_with_index(rowIndex)
-        except IndexError:
-            return None
-        return self.getItemTooltipData(item)
-
     def OnGetItemImage(self, rowIndex):
         try:
             item = self.get_item_with_index(rowIndex)

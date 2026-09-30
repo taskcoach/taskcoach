@@ -30,9 +30,6 @@ class AbstractNotifier(object):
     _notifier = None
     _enabled = True
 
-    def getName(self):
-        raise NotImplementedError
-
     def isAvailable(self):
         raise NotImplementedError
 
@@ -62,9 +59,6 @@ class AbstractNotifier(object):
         else:
 
             class DummyNotifier(AbstractNotifier):
-                def getName(self):
-                    return "Dummy"
-
                 def isAvailable(self):
                     return True
 
