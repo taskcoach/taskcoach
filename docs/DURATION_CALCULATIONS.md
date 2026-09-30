@@ -24,20 +24,14 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
 ## TODO
 
 5. ~~Add cross-references to ATTRIBUTE_PATTERN.md~~ — **Done.** Cross-reference
-   added to section 0.2. No-mode safety cross-ref deferred to TODO items 6/7.
-6. Add section 0.5: No-mode safety. If mode is None or invalid, sync
-   functions must return immediately without entering any mode branch.
-   No silent fallback to a default mode.
-   - 0.5.1 __syncTaskState: if mode not in valid set → return.
-   - 0.5.2 __sync_effort_state: if mode not in valid set → return.
-     Current gap: else branch catches None mode incorrectly.
-7. Add section 0.6: Calculation mode is always explicitly required.
-   If no mode explicitly set, never default to a calculation mode.
-   In logic flow, add final item (e.g. item 5 for Task, item 4 for
-   Effort): "If no calculation mode specified, do nothing."
-   OPEN QUESTION: How to differentiate between loading in process
-   (mode not yet set, should wait) and invalid value requiring reset
-   to automatic?
+   added to section 0.2.
+6. ~~No-mode safety~~: done. Both sync functions branch on each mode
+   explicitly, with no catch-all `else`; an unknown mode enters no
+   branch.
+7. ~~Calculation mode always explicit~~: decided. A new task starts in
+   Implicit mode ([Logic Flow](#logic-flow), note), an effort in
+   Standard; the mode is set when the item is created, read from the
+   file or defaulted, so there is no "not yet set" state to wait for.
 9. ~~DateTimeComboCtrl Checkbox toggle EVT_KILL_FOCUS gap~~ — **Resolved.**
    ~~Editor binds `EVT_CHECKBOX` via `combo.Bind(wx.EVT_CHECKBOX, handler)`
    and calls `sync.commit()` explicitly.~~
