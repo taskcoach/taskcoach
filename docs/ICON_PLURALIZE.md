@@ -1,7 +1,7 @@
 # Icon Plural/Singular Mapping
 
-**Deprecated, ruled by designer** (restated 2026-09-29): the transform
-and this document go
+**Deprecated, ruled by designer 2026-09-29**: the transform and this
+document go; the folder icons stay as regular icons
 ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do),
 to do 58).
 
