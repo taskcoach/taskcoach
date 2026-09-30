@@ -18,7 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import email
 import email.policy
+import os
 import re
+import tempfile
 import urllib.parse
 
 from taskcoachlib import operating_system
@@ -29,9 +31,63 @@ from taskcoachlib.tools import openfile
 # other characters escaped
 _MID_SAFE = "@!$&'()*+,;=:/~"
 
-
 # The line starting each mail in an mbox file
 _MBOX_FROM = re.compile(rb"^From .*\r?\n", re.MULTILINE)
+
+# A header line's name (RFC 5322)
+_HEADER_NAME = re.compile(rb"^([!-9;-~]+):")
+
+# Enough of a file to tell a mail by its headers
+_HEAD_SIZE = 65536
+
+
+def dropped_mails(filename):
+    """The fields of each mail in a file a mail program dropped: a mail
+    or mbox file in a temporary folder, where the programs put what
+    they drag. [] for any other file, a saved mail included, which is
+    attached as a file (docs/EMAIL_ATTACHMENTS.md, The Drop)."""
+    if not is_temporary(filename):
+        return []
+    try:
+        with open(filename, "rb") as mail_file:
+            head = mail_file.read(_HEAD_SIZE)
+    except OSError:
+        return []
+    return read_mails(filename) if looks_like_mail(head) else []
+
+
+def is_temporary(filename):
+    """Whether the file is in a temporary folder: under the system's,
+    or in (or one folder below) a folder named tmp or temp, as the
+    mail programs keeping their own use (Evolution's Flatpak cache,
+    Claws Mail's)."""
+    folder = os.path.dirname(os.path.abspath(filename))
+    system = os.path.abspath(tempfile.gettempdir())
+    if os.path.commonpath([folder, system]) == system:
+        return True
+    names = (
+        os.path.basename(folder),
+        os.path.basename(os.path.dirname(folder)),
+    )
+    return any(name.lower() in ("tmp", "temp") for name in names)
+
+
+def looks_like_mail(data):
+    """Whether the bytes start as a mail: an mbox file's From line, or
+    a header block with a sender and a date, Message-ID, subject or
+    Received header."""
+    if data.startswith(b"From "):
+        return True
+    names = set()
+    for line in re.split(rb"\r?\n\r?\n", data, maxsplit=1)[0].splitlines():
+        match = _HEADER_NAME.match(line)
+        if match:
+            names.add(match.group(1).lower())
+        elif not line[:1].isspace():  # Not a header nor its next line
+            return False
+    return b"from" in names and bool(
+        names & {b"date", b"message-id", b"subject", b"received"}
+    )
 
 
 def read_mails(filename):
@@ -47,16 +103,41 @@ def read_mails(filename):
 
 def parse_mail(data):
     """The fields of a mail's attachment, from the mail's bytes."""
-    message = email.message_from_bytes(data, policy=email.policy.default)
+    message = email.message_from_bytes(
+        _utf8_headers(data), policy=email.policy.default
+    )
     sender = message["from"]
     addresses = getattr(sender, "addresses", ())
     sent = message["date"]
     return mail_fields(
-        subject=str(message["subject"] or ""),
-        from_name=addresses[0].display_name if addresses else "",
-        from_address=addresses[0].addr_spec if addresses else "",
+        subject=_text(message["subject"]),
+        from_name=_text(addresses[0].display_name if addresses else ""),
+        from_address=_text(addresses[0].addr_spec if addresses else ""),
         sent=getattr(sent, "datetime", None),
-        message_id=str(message["message-id"] or ""),
+        message_id=_text(message["message-id"]),
+    )
+
+
+def _utf8_headers(data):
+    """The mail with its headers in UTF-8. RFC 6532 allows UTF-8 in
+    headers; older mails may hold Latin-1, which the parser would turn
+    into replacement characters."""
+    end = re.search(rb"\r?\n\r?\n", data)
+    headers = data[: end.start()] if end else data
+    try:
+        headers.decode("utf-8")
+    except UnicodeDecodeError:
+        return headers.decode("latin-1").encode("utf-8") + data[len(headers) :]
+    return data
+
+
+def _text(value):
+    """A header's text. The parser keeps raw 8-bit bytes in some headers
+    (addresses) as surrogates, which the task file cannot hold."""
+    return (
+        str(value or "")
+        .encode("utf-8", "surrogateescape")
+        .decode("utf-8", "replace")
     )
 
 

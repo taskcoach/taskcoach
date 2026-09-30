@@ -39,6 +39,11 @@ _RX_IMAP = re.compile(
 )
 _RX_MAILBOX = re.compile(r"mailbox://([^?]+)\?number=(\d+)")
 
+# What Thunderbird drags as text: each message's URI, concatenated on
+# Windows (docs/EMAIL_ATTACHMENTS.md, The Drop)
+_MESSAGE_SCHEMES = ("mailbox-message://", "imap-message://")
+_RX_MESSAGE_START = re.compile(r"(?=mailbox-message://|imap-message://)")
+
 
 class ThunderbirdError(Exception):
     pass
@@ -458,6 +463,19 @@ class ThunderbirdLocalMailboxReader(object):
 
     def saveToFile(self, fp):
         fp.write(self._getMail())
+
+
+def message_uris(text):
+    """The message URIs a Thunderbird drag gave as text; [] when the
+    text is anything else."""
+    parts = [
+        part
+        for part in _RX_MESSAGE_START.split("".join(text.split()))
+        if part
+    ]
+    if parts and all(part.startswith(_MESSAGE_SCHEMES) for part in parts):
+        return parts
+    return []
 
 
 def getMail(id_):

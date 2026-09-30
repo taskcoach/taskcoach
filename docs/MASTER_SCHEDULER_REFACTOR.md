@@ -350,6 +350,12 @@ In the app:
   never the uri-list object the drop read. Every file drop now takes
   one path, which hands those two programs' mail files to the mail
   drop (`DropTarget.onFileDrop()`).
+- P34. Text holding a character XML forbids (a control character such
+  as a form feed or NUL, pasted from another program, or a stray
+  surrogate) is saved as is, and the file then cannot be opened
+  (`XMLSyntaxError` when read). Found 2026-09-30; the same on master. A
+  dropped mail's raw 8-bit headers were one source, fixed where they
+  are read (`mailer`, [EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#reading-a-mail)).
 
 ## Views on the Effective Styles
 

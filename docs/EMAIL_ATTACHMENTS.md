@@ -52,26 +52,93 @@ for files and links, so the columns and sort keys work on mixed lists.
 `email.policy.default`, which decodes encoded headers (accents) and
 reads addresses and dates; `mail_fields()` makes the fields.
 `read_mails()` reads a file a mail program dropped: one mail, or
-several in mbox format (a `From ` line before each).
+several in mbox format (a `From ` line before each). Headers in UTF-8
+(RFC 6532) or Latin-1 are read as text, never as bytes the task file
+could not hold.
 
 ## The Drop
 
-Each mail program hands the mails over its own way; each path ends in
-the same fields, and the viewer makes one attachment per mail, in one
-command (`onDropMail()`, `gui/viewer/mixin.py`). The drop target is
-`DropTarget` (`widgets/draganddrop.py`).
+Each mail program hands its mails over its own way; Task Coach reads
+them by one set of rules, so a program need not be named, and each
+path ends in the same fields; the viewer makes one attachment per mail,
+in one command (`onDropMail()`, `gui/viewer/mixin.py`). The drop target
+is `DropTarget` (`widgets/draganddrop.py`).
 
-| Program | What it drags | How Task Coach reads it |
-|---|---|---|
-| Evolution | a file in mbox format, one or several mails, in a `drag-n-drop-XXXXXX` folder: in `/tmp` (seen 2026-09-30), before in `~/.cache/evolution/tmp` | a file drop whose folder is named so: `read_mails()` |
-| Claws Mail | a file in `~/.claws-mail/tmp` | a file drop from that folder: `read_mails()` |
-| Thunderbird | the message's URI (`mailbox-message://`, `imap-message://`), UTF-16 (`text/x-moz-message`) | the mail from the profile's mailbox file or the IMAP server (`mailer/thunderbird.py`) |
-| Outlook (Windows) | its own formats | the selected mails, asked from the running Outlook (`mailer/outlook.py`); not tested since the 2026-09-30 rewrite |
-| Apple Mail | a `message:` link | kept as a link attachment |
+- **A mail file in a temporary folder:** a dropped file that starts as
+  a mail (an mbox `From ` line, or headers with a sender) and lies under
+  the system's temporary folder, or in a folder named `tmp` or `temp`
+  (or one below it), where the programs write what they drag, is read
+  as the mails it holds (`mailer.dropped_mails()`). A mail saved
+  elsewhere stays a file attachment: the file is kept.
+- **Thunderbird's message URIs as text** (`mailbox-message://`,
+  `imap-message://`), one or several, even run together: each message
+  is read from the profile's mailbox file, or from the IMAP server,
+  which asks for the password (`thunderbird.message_uris()`,
+  `getMail()`). The same for a macOS link (`public.url`) to a
+  Thunderbird message (`mailbox:`, `imap:`).
+- **Outlook (classic)**, recognized by its own `RenPrivateMessages`
+  format (not `Object Descriptor`, which any OLE program's drag offers):
+  the mails are asked from the running Outlook (`mailer/outlook.py`).
+- Anything else: a file, a link or text, as before.
 
-On GTK, a dropped file list (`text/uri-list`) reaches the file names
-object, so every file drop takes one path (`onFileDrop()`), which
-hands those two programs' files to the mail drop (P33).
+Which format wx takes: GTK the source's first format Task Coach
+accepts (Wayland reverses the source's order); Windows and macOS Task
+Coach's first format the source offers, in the order `public.url`,
+Outlook's, text, files. macOS rewrites a format name with no dot, so
+there only `public.url` and files can match.
+
+### By Program and System
+
+Researched 2026-09-30 from the programs' sources; each row is a test
+in `MailDropTest`.
+
+| Program | System | What arrives | Result |
+|---|---|---|---|
+| Evolution 3.44 and later | Linux | a `text/uri-list` of one mbox file with every mail, `/tmp/drag-n-drop-XXXXXX/<YYYYMMDDHHMMSS>_<subject>` (`.mbox` since 3.56; several: `Messages from <folder>`) | mails |
+| Evolution before 3.44 | Linux | the same, in `~/.cache/evolution/tmp/drag-n-drop-XXXXXX/` | mails |
+| Evolution Flatpak | Linux | the same file straight in `~/.var/app/org.gnome.Evolution/cache/evolution/tmp/` | mails |
+| Thunderbird 115 and later | Linux X11, one message | text first: the message's URI | mails, read from the profile |
+| Thunderbird | Linux Wayland, or several messages | a `text/uri-list` of `.eml` files, `/tmp/dnd_file*/<subject>.eml`, deleted after 5 minutes | mails |
+| Thunderbird | Windows | text first: the URI, several run together | mails, read from the profile |
+| Thunderbird | macOS | `public.url`: the message's URL; one message only | a mail, read from the profile |
+| Claws Mail | Linux | a `text/uri-list`, one file per mail, `~/.claws-mail/tmp/<subject>.<number>.txt` | mails |
+| Claws Mail, mail without a subject | Linux | the mail's own file in the mail folder | a file attachment |
+| Outlook (classic) | Windows | `RenPrivateMessages`, `FileGroupDescriptorW`, `FileContents` (IStorage, which wx cannot read) | mails, from the running Outlook; not tested |
+| Apple Mail | macOS | a `message:` link with the Message-ID | a link attachment |
+| KMail | Linux | `akonadi:` links, which wx refuses in a `text/uri-list` | nothing |
+
+Not supported: Geary (drags only within itself), the new Outlook for
+Windows (a delayed file drop wx cannot take), Outlook for Mac
+(proprietary formats), Claws Mail on Windows (no drag to other
+programs). Thunderbird has not offered `text/x-moz-message` to other
+programs since version 52 (2017): it lives only inside its
+`application/x-moz-custom-clipdata`.
+
+Sources: Evolution 3.56.2 `src/mail/message-list.c` (drag types),
+`src/mail/em-utils.c` (`em_utils_selection_set_urilist`), commit
+409c789f (temporary files moved to `/tmp`, 3.44) and 8f17ed9e
+(Flatpak); Thunderbird 140 `mail/base/content/about3Pane.js` (drag
+start), Gecko `dom/events/DataTransfer.cpp` (custom clipdata, bug
+1226977) and `widget/gtk/nsDragService.cpp`,
+`widget/windows/nsDataObj.cpp`, `widget/cocoa/nsDragService.mm`; Claws
+Mail 4.4.0 `src/summaryview.c`; KMail `messagelib`
+`messagelist/src/widget.cpp`; wxWidgets 3.2.7 `src/gtk/dnd.cpp`,
+`src/msw/ole/droptgt.cpp`, `src/osx/carbon/dataobj.cpp`; Outlook's
+formats from a Qt drop target's listing (forum.qt.io, topic 70101) and
+github.com/yasoonOfficial/outlook-dndprotocol.
+
+### Testing
+
+- `tests/unittests/widgetTests/MailDropTest.py`: each program and
+  system of the table, the data wx hands over.
+- `tests/unittests/MailerTest.py`: reading mails (encoded headers,
+  UTF-8 or Latin-1 in headers, mbox files) and Thunderbird's readers on
+  a scratch profile.
+- `tools/fake_mail_drag.py`: a window that drags as each program does,
+  with the files where the program writes them, into the running
+  application; `--profile` makes a Thunderbird profile for the drags
+  that give a URI. What a wx drag source cannot make (KMail's links,
+  Outlook's formats, macOS promises) is left to the tests.
 
 ## Editor
 

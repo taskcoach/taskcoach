@@ -17,10 +17,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import os
 import wx
 from taskcoachlib import mailer, patterns
 from taskcoachlib.mailer import thunderbird, outlook
+from taskcoachlib.mailer.outlook import OUTLOOK_FORMAT
 from taskcoachlib.i18n import _
 
 
@@ -88,27 +88,24 @@ class DropTarget(wx.DropTarget):
 
     def reinit(self):
         # pylint: disable=W0201
-        self.__compositeDataObject = wx.DataObjectComposite()
-        self.__urlDataObject = wx.TextDataObject()
-        self.__fileDataObject = wx.FileDataObject()
-        self.__thunderbirdMailDataObject = wx.CustomDataObject(
-            "text/x-moz-message"
-        )
-        self.__outlookDataObject = wx.CustomDataObject("Object Descriptor")
-        # Starting with Snow Leopard, mail.app supports the message: protocol
-        self.__macMailObject = wx.CustomDataObject("public.url")
-        for dataObject in (
-            self.__thunderbirdMailDataObject,
-            self.__macMailObject,
-            self.__outlookDataObject,
-            self.__urlDataObject,
-            self.__fileDataObject,
+        self._text_data = wx.TextDataObject()
+        self._file_data = wx.FileDataObject()
+        # Only Outlook drags this format (docs/EMAIL_ATTACHMENTS.md)
+        self._outlook_data = wx.CustomDataObject(OUTLOOK_FORMAT)
+        # A macOS drag's link: an Apple Mail or Thunderbird message
+        self._url_data = wx.CustomDataObject("public.url")
+        self.__composite = wx.DataObjectComposite()
+        # On Windows and macOS the first format here that the source
+        # offers is taken, so Outlook's comes before text; GTK takes
+        # the source's first format we accept
+        for data_object in (
+            self._url_data,
+            self._outlook_data,
+            self._text_data,
+            self._file_data,
         ):
-            # Note: The first data object added is the preferred data object.
-            # We add urlData after outlookData so that Outlook messages are not
-            # interpreted as text objects.
-            self.__compositeDataObject.Add(dataObject)
-        self.SetDataObject(self.__compositeDataObject)
+            self.__composite.Add(data_object)
+        self.SetDataObject(self.__composite)
 
     def OnDragOver(self, x, y, result):  # pylint: disable=W0221
         if self.__onDragOverCallback is None:
@@ -121,95 +118,78 @@ class DropTarget(wx.DropTarget):
 
     def OnData(self, x, y, result):  # pylint: disable=W0613
         self.GetData()
-        formatType, formatId = self.getReceivedFormatTypeAndId()
-
-        if formatId == "text/x-moz-message":
-            self.onThunderbirdDrop(x, y)
-        elif formatId == "Object Descriptor":
-            self.onOutlookDrop(x, y)
-        elif formatId == "public.url":
-            # GetData() returns memoryview in wxPython 4, convert to string
-            url = self.__macMailObject.GetData()
-            if isinstance(url, memoryview):
-                url = bytes(url).decode("utf-8", errors="replace")
-            elif isinstance(url, bytes):
-                url = url.decode("utf-8", errors="replace")
-            if (
-                url.startswith("imap:") or url.startswith("mailbox:")
-            ) and self.__onDropMailCallback:
-                try:
-                    self.__onDropMailCallback(x, y, [thunderbird.getMail(url)])
-                except thunderbird.ThunderbirdCancelled:
-                    pass
-                except thunderbird.ThunderbirdError as e:
-                    wx.MessageBox(str(e), _("Error"), wx.OK)
-            elif self.__onDropURLCallback:
-                self.__onDropURLCallback(x, y, url)
-        elif formatType in (wx.DF_TEXT, wx.DF_UNICODETEXT):
-            self.onUrlDrop(x, y)
-        elif formatType == wx.DF_FILENAME:
-            self.onFileDrop(x, y)
-
+        self.dispatch(x, y, *self.getReceivedFormatTypeAndId())
         self.reinit()
         return wx.DragCopy
 
     def getReceivedFormatTypeAndId(self):
-        receivedFormat = self.__compositeDataObject.GetReceivedFormat()
-        formatType = receivedFormat.GetType()
+        received_format = self.__composite.GetReceivedFormat()
         try:
-            formatId = receivedFormat.GetId()
+            format_id = received_format.GetId()
         except RuntimeError:
-            formatId = None  # Format ID not available
-        return formatType, formatId
+            format_id = None  # Format ID not available
+        return received_format.GetType(), format_id
 
-    @staticmethod
-    def __is_dropped_mail(filename):
-        """Whether the file holds mails Evolution or Claws Mail dropped:
-        Evolution writes them to a drag-n-drop-XXXXXX folder (in /tmp,
-        before in ~/.cache/evolution/tmp), Claws Mail to its tmp
-        folder."""
-        folder = os.path.basename(os.path.dirname(filename))
-        return (
-            folder.startswith("drag-n-drop") or "/.claws-mail/tmp/" in filename
-        )
+    def dispatch(self, x, y, format_type, format_id):
+        """Hand the dropped data, as the data objects hold it, to its
+        callback: a mail program's mails, files, a link or text."""
+        if format_id == OUTLOOK_FORMAT:
+            self.onOutlookDrop(x, y)
+        elif format_id == "public.url":
+            self.onMacUrlDrop(x, y)
+        elif format_type in (wx.DF_TEXT, wx.DF_UNICODETEXT):
+            self.onUrlDrop(x, y)
+        elif format_type == wx.DF_FILENAME:
+            self.onFileDrop(x, y)
 
-    def onThunderbirdDrop(self, x, y):
-        if self.__onDropMailCallback:
-            # The mail's URI in UTF-16, Mozilla's text encoding
-            data = bytes(self.__thunderbirdMailDataObject.GetData())
-            data = data.decode("utf-16").strip("\x00\r\n ")
+    def __drop_mails(self, x, y, mails):
+        if mails and self.__onDropMailCallback:
+            self.__onDropMailCallback(x, y, mails)
 
-            try:
-                email = thunderbird.getMail(data)
-            except thunderbird.ThunderbirdCancelled:
-                pass
-            except thunderbird.ThunderbirdError as e:
-                wx.MessageBox(e.args[0], _("Error"), wx.OK | wx.ICON_ERROR)
-            else:
-                self.__onDropMailCallback(x, y, [email])
+    def __thunderbird_mails(self, uris):
+        try:
+            return [thunderbird.getMail(uri) for uri in uris]
+        except thunderbird.ThunderbirdCancelled:
+            return []
+        except thunderbird.ThunderbirdError as reason:
+            wx.MessageBox(str(reason), _("Error"), wx.OK | wx.ICON_ERROR)
+            return []
 
     def onOutlookDrop(self, x, y):
-        if self.__onDropMailCallback:
-            self.__onDropMailCallback(x, y, outlook.getCurrentSelection())
+        self.__drop_mails(x, y, outlook.getCurrentSelection())
+
+    def onMacUrlDrop(self, x, y):
+        url = bytes(self._url_data.GetData()).decode("utf-8", "replace")
+        url = url.strip("\x00\r\n ")
+        if url.startswith(("imap:", "mailbox:")):
+            # Thunderbird's message
+            self.__drop_mails(x, y, self.__thunderbird_mails([url]))
+        elif self.__onDropURLCallback:
+            self.__onDropURLCallback(x, y, url)
 
     def onUrlDrop(self, x, y):
-        if self.__onDropURLCallback:
-            url = self.__urlDataObject.GetText()
-            if ":" not in url:  # No protocol; assume http
-                url = "http://" + url
+        text = self._text_data.GetText()
+        # Thunderbird drags its messages' URIs as text
+        uris = thunderbird.message_uris(text)
+        if uris:
+            self.__drop_mails(x, y, self.__thunderbird_mails(uris))
+        elif self.__onDropURLCallback:
+            url = text if ":" in text else "http://" + text  # No scheme
             self.__onDropURLCallback(x, y, url)
 
     def onFileDrop(self, x, y):
-        # On GTK a dropped uri-list (a file manager's, Evolution's) comes
-        # here, as file names; web links in it are refused by wx
+        # A mail program drags its mails as files in a temporary
+        # folder (docs/EMAIL_ATTACHMENTS.md, The Drop). On GTK a dropped
+        # uri-list comes here too, as file names; wx refuses web links
+        # in it
         filenames, mails = [], []
-        for filename in self.__fileDataObject.GetFilenames():
-            if self.__is_dropped_mail(filename) and self.__onDropMailCallback:
-                mails.extend(mailer.read_mails(filename))
+        for filename in self._file_data.GetFilenames():
+            dropped = mailer.dropped_mails(filename)
+            if dropped and self.__onDropMailCallback:
+                mails.extend(dropped)
             else:
                 filenames.append(filename)
-        if mails:
-            self.__onDropMailCallback(x, y, mails)
+        self.__drop_mails(x, y, mails)
         if filenames and self.__onDropFileCallback:
             self.__onDropFileCallback(x, y, filenames)
 

@@ -100,6 +100,20 @@ class ParseMailTest(test.TestCase):
             ],
         )
 
+    def test_raw_8_bit_headers(self):
+        # RFC 6532: UTF-8 in headers, no encoded words; or Latin-1
+        for raw in ("Renée".encode("utf-8"), "Renée".encode("latin-1")):
+            fields = mailer.parse_mail(
+                b"From: "
+                + raw
+                + b" <renee@example.com>\nSubject: "
+                + raw
+                + b"\n\nText\n"
+            )
+            self.assertEqual(
+                ("Renée", "Renée"), (fields["from_name"], fields["subject"])
+            )
+
     def test_an_address_without_a_name(self):
         fields = mailer.parse_mail(b"From: alerts@example.com\n\nBody\n")
         self.assertEqual(

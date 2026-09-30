@@ -21,6 +21,11 @@ import os
 
 from taskcoachlib import mailer
 
+# A format only Outlook (classic) drags, with the dragged items' IDs;
+# not "Object Descriptor", which any OLE program's drag offers
+# (docs/EMAIL_ATTACHMENTS.md, The Drop)
+OUTLOOK_FORMAT = "RenPrivateMessages"
+
 # Outlook's MAPI property for the mail's Message-ID
 _MESSAGE_ID = "http://schemas.microsoft.com/mapi/proptag/0x1035001F"
 
@@ -31,10 +36,12 @@ if os.name == "nt":
 
     def getCurrentSelection():
         """The fields of the mails selected in Outlook, one attachment
-        each (mailer.mail_fields())."""
-        selection = (
-            GetActiveObject("Outlook.Application").ActiveExplorer().Selection
-        )
+        each (mailer.mail_fields()): the dragged ones."""
+        try:
+            outlook = GetActiveObject("Outlook.Application")
+            selection = outlook.ActiveExplorer().Selection
+        except com_error:
+            return []  # Outlook gone meanwhile
         return [
             _fields(selection.Item(n)) for n in range(1, selection.Count + 1)
         ]
@@ -72,3 +79,8 @@ if os.name == "nt":
         except com_error:
             # Not sent through the Internet: no Message-ID
             return ""
+
+else:
+
+    def getCurrentSelection():
+        return []  # Outlook runs on Windows only
