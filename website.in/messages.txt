@@ -1,4 +1,0 @@
-# This file contains at most one message for users of Task Coach. 
-# Format of the message and url, without the # of course:
-# Message text|url
-

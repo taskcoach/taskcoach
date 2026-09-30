@@ -1,9 +1,0 @@
-include *.txt
-recursive-include tests *.py
-include Welcome.tsk
-include setup.py
-include pymake.py
-prune dist.in
-recursive-include taskcoachlib/bin.in/windows *.so *.pyd
-include icons.in/taskcoach.png
-prune website.in

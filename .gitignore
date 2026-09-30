@@ -11,9 +11,6 @@ taskcoachlib/i18n/pap.py
 taskcoachlib/thirdparty/wmi.py
 website.out
 taskcoachlib/used.txt
-website.in/all_changes.html
-website.in/changes.html
-website.in/md5digests.py
 taskcoachlib/imported.txt
 taskcoachlib/meta/revision.py
 i18n.in/messages.pot

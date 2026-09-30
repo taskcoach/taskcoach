@@ -330,7 +330,8 @@ This links the desktop entry to both WM_CLASS (X11) and app_id (Wayland) for pro
 
 #### macOS: CFBundleIdentifier
 
-Set in `pymake.py` for app bundle creation:
+Set by the macOS build (`.github/workflows/build-macos.yml`) for the app
+bundle:
 
 ```python
 "CFBundleIdentifier": "org.taskcoach.TaskCoach"
@@ -353,7 +354,7 @@ if operating_system.isWindows():
 | `taskcoach.py` | g_set_prgname via ctypes (Wayland) |
 | `taskcoachlib/application/application.py` | SetClassName (X11), AppUserModelID (Windows) |
 | `build.in/linux_common/taskcoach.desktop` | StartupWMClass=taskcoach |
-| `pymake.py` | CFBundleIdentifier for macOS |
+| `.github/workflows/build-macos.yml` | CFBundleIdentifier for macOS |
 
 ### Testing
 
@@ -704,8 +705,8 @@ nothing) and its slot in the tuple `read()` returns, the task file's
 `syncMLConfig()`, the writer's `syncMLConfig` parameter, and the delete
 command's shadow path (mark deleted instead of removing), which only a
 test still used. Checked in the real app with a release 0.71.3 file
-(`tests/disttests/win32/test.tsk`): it loads and saves in the current
-format.
+(`tests/disttests/win32/test.tsk`, removed with the dist tests; in git
+history): it loads and saves in the current format.
 
 Also removed in 2026-09: the items' sync status (`SynchronizedObject`:
 new, changed, deleted), saved as their `status` attribute. SyncML used

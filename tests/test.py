@@ -265,17 +265,6 @@ class AllTests(unittest.TestSuite):
                 testFiles.extend(self.getTestFilesFromDir("integrationtests"))
             if self._options.languagetests:
                 testFiles.extend(self.getTestFilesFromDir("languagetests"))
-            if self._options.releasetests:
-                testFiles.extend(self.getTestFilesFromDir("releasetests"))
-            if self._options.disttests:
-                path = os.path.join("disttests", sys.platform)
-                if os.path.exists(path):
-                    testFiles.extend(self.getTestFilesFromDir(path))
-                else:
-                    print(
-                        "WARNING: no disttest for your platform (%s)"
-                        % sys.platform
-                    )
         for filename in testFiles:
             moduleName = self.filenameToModuleName(filename)
             # Importing the module is not strictly necessary because
@@ -437,7 +426,7 @@ class TestOptionParser(config.OptionParser):
             self, "Test selection", "Options to determine which tests to run."
         )
 
-        description = dict(dist="the platform-specific package", all="all")
+        description = dict(all="all")
 
         def help_text(selection):
             return "run %s tests" % description.get(
@@ -448,8 +437,6 @@ class TestOptionParser(config.OptionParser):
             "unit",
             "integration",
             "language",
-            "release",
-            "dist",
             "all",
         ):
             testselection.add_option(
@@ -471,8 +458,6 @@ class TestOptionParser(config.OptionParser):
             options.unittests
             or options.integrationtests
             or options.languagetests
-            or options.releasetests
-            or options.disttests
             or options.alltests
         ):
             options.unittests = True  # the default option
@@ -480,8 +465,6 @@ class TestOptionParser(config.OptionParser):
             options.unittests = True
             options.integrationtests = True
             options.languagetests = True
-            options.releasetests = True
-            options.disttests = True
         return options, args
 
 
