@@ -289,6 +289,13 @@ In the app:
   file stores the category's side, so the categories were lost on
   save; they were not undoable either. Both now go through one
   command, both sides, like a single check.
+- P29. Pasted notes lose their categories on save: a pasted task's
+  notes, and a note pasted in the task editor. The same on master.
+  Membership is held twice in memory (the item's categories, the
+  category's members) and the file is written from the category's
+  side, which paste does not fill for notes. Open: the fix is a design
+  choice (the item's categories are its own data and the members
+  derived, [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
 
 ## Views on the Effective Styles
 
@@ -828,8 +835,10 @@ Rules the first sketch lacked, each needed by the probe:
 - A category's members are the items whose `categories()` hold it (an
   index), not `Category.categorizables()`: pasted items' owned notes
   keep their categories without the category's side.
-- An added object marks its whole subtree: children, owned notes and
-  attachments.
+- An added object is computed with its whole subtree (children, owned
+  notes and attachments): each reads what is above it, its parent and
+  its categories, so it inherits their styles; the fixed order settles
+  what is above first.
 - A category's rename or style priority change reaches its members:
   equal priorities are ordered by name.
 - An owner's style reaches none of its notes or attachments.
