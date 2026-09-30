@@ -296,6 +296,18 @@ In the app:
   side, which paste does not fill for notes. Open: the fix is a design
   choice (the item's categories are its own data and the members
   derived, [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+  The designer wants it solved at the source, no mix (2026-09-29).
+  Today both sides are stored and written: both by the commands, the
+  readers and merge; one alone by constructors (copies), undo of one
+  object's state, and each list filling the other's side when items
+  are added (the category list the items', the task list the
+  categories', not for owned notes). 66 calls read the item's side,
+  10 the category's (the writer, the category filter, merge). Options:
+  A. store it on the item only, the members an index kept by the
+  item's changes and by items entering or leaving the file, the file
+  written from it (format unchanged); B. store it on the category
+  only, the item's categories an index; C. both, with one writer.
+  Recommended: A.
 
 ## Views on the Effective Styles
 
