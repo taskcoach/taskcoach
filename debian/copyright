@@ -11,7 +11,7 @@ Copyright: 2004-2025 Task Coach developers
            2004-2016 Aaron Wolf
 License: GPL-3+
 
-Files: patches/wxpython/hypertreelist.py
+Files: taskcoachlib/patches/hypertreelist.py
 Copyright: 2006-2014 Andrea Gavana <andrea.gavana@gmail.com>
            2023 cbeytas (PR #2088 fixes)
 License: wxWindows

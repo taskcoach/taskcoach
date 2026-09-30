@@ -204,7 +204,6 @@ thirdpartymodules:
 
 website: changes
 	cd website.in; $(PYTHON) make.py; cd ..
-	$(PYTHON) tools/webchecker.py website.out/index.html
 
 epydoc:
 	$(EPYDOC) --parse-only -v --simple-term -o epydoc.out taskcoachlib taskcoach.py

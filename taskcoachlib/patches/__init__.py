@@ -7,6 +7,7 @@ are needed to fix bugs not yet available in the versions shipped by
 various operating systems.
 
 Currently included:
-- hypertreelist.py: Patched wxPython HyperTreeList with fixes from PR #2088
-  (required for wxPython < 4.2.4)
+- hypertreelist.py: wxPython's HyperTreeList with the fixes from PR
+  #2088 and Task Coach's own changes, used on every wxPython version
+  (docs/CRITICAL_WXPYTHON_PATCH.md)
 """

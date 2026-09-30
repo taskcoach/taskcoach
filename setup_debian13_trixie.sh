@@ -46,7 +46,7 @@ elif [ ! -f /etc/debian_version ]; then
 fi
 
 # Check Python version - Trixie uses Python 3.13
-echo -e "${BLUE}[1/7] Checking Python version...${NC}"
+echo -e "${BLUE}[1/5] Checking Python version...${NC}"
 
 # On Trixie, use the default python3 (which is 3.13)
 PYTHON_CMD="python3"
@@ -66,7 +66,7 @@ fi
 echo
 
 # Install system dependencies
-echo -e "${BLUE}[2/7] Installing system dependencies...${NC}"
+echo -e "${BLUE}[2/5] Installing system dependencies...${NC}"
 echo "This will install system packages from Debian repos."
 echo "Trixie has more packages available than Bookworm."
 echo "Requires sudo privileges."
@@ -95,7 +95,7 @@ fi
 echo
 
 # Create virtual environment
-echo -e "${BLUE}[3/7] Creating virtual environment...${NC}"
+echo -e "${BLUE}[3/5] Creating virtual environment...${NC}"
 VENV_PATH="$SCRIPT_DIR/.venv"
 
 if [ -d "$VENV_PATH" ]; then
@@ -116,7 +116,7 @@ fi
 echo
 
 # Install Python dependencies not available in Debian repos
-echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
+echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
 # Trixie has most packages in repos, only need a few from pip
 echo "Installing: distro"
 
@@ -128,7 +128,7 @@ echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
 
 # Check launch script
-echo -e "${BLUE}[5/7] Checking launch script...${NC}"
+echo -e "${BLUE}[5/5] Checking launch script...${NC}"
 if [ -f "$SCRIPT_DIR/taskcoach-run.sh" ]; then
     chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
     echo -e "${GREEN}✓ Launch script is ready: taskcoach-run.sh${NC}"
@@ -211,20 +211,6 @@ else
 fi
 
 echo
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}[6/7] Applying wxPython patch...${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo
-
-# Apply the wxPython background color patch automatically
-if [ -f "$SCRIPT_DIR/apply-wxpython-patch.sh" ]; then
-    "$SCRIPT_DIR/apply-wxpython-patch.sh"
-else
-    echo -e "${YELLOW}⚠ Warning: apply-wxpython-patch.sh not found${NC}"
-    echo "  Category row background coloring may not work correctly"
-fi
-
-echo
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
@@ -234,7 +220,6 @@ echo "  • Python: $PYTHON_CMD ($PYTHON_VERSION)"
 echo "  • System packages from Debian repos (wxPython, numpy, lxml, watchdog, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  • Additional packages in venv (distro)"
-echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"
@@ -242,5 +227,5 @@ echo
 echo "To see all options:"
 echo -e "  ${BLUE}./taskcoach-run.sh --help${NC}"
 echo
-echo "For more information, see docs/DEBIAN_TRIXIE_PLANNING.md"
+echo "For more information, see docs/DEBIAN_BOOKWORM_SETUP.md"
 echo

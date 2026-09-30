@@ -43,7 +43,7 @@ else
 fi
 
 # Check Python version
-echo -e "${BLUE}[1/7] Checking Python version...${NC}"
+echo -e "${BLUE}[1/5] Checking Python version...${NC}"
 PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
 PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
 PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
@@ -59,7 +59,7 @@ fi
 echo
 
 # Install system dependencies
-echo -e "${BLUE}[2/7] Installing system dependencies...${NC}"
+echo -e "${BLUE}[2/5] Installing system dependencies...${NC}"
 echo "This will install system packages from Ubuntu repos."
 echo "Requires sudo privileges."
 
@@ -85,7 +85,7 @@ fi
 echo
 
 # Create virtual environment
-echo -e "${BLUE}[3/7] Creating virtual environment...${NC}"
+echo -e "${BLUE}[3/5] Creating virtual environment...${NC}"
 VENV_PATH="$SCRIPT_DIR/.venv"
 
 if [ -d "$VENV_PATH" ]; then
@@ -106,7 +106,7 @@ fi
 echo
 
 # Install Python dependencies not available in Ubuntu repos or with version issues
-echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
+echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
 echo "Installing: distro, pyparsing>=3.1.3, watchdog>=3.0.0"
 
 source "$VENV_PATH/bin/activate"
@@ -119,7 +119,7 @@ echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
 
 # Check launch script
-echo -e "${BLUE}[5/7] Checking launch script...${NC}"
+echo -e "${BLUE}[5/5] Checking launch script...${NC}"
 if [ -f "$SCRIPT_DIR/taskcoach-run.sh" ]; then
     chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
     echo -e "${GREEN}✓ Launch script is ready: taskcoach-run.sh${NC}"
@@ -189,20 +189,6 @@ else
 fi
 
 echo
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}[6/7] Applying wxPython patch...${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo
-
-# Apply the wxPython background color patch automatically
-if [ -f "$SCRIPT_DIR/apply-wxpython-patch.sh" ]; then
-    "$SCRIPT_DIR/apply-wxpython-patch.sh"
-else
-    echo -e "${YELLOW}⚠ Warning: apply-wxpython-patch.sh not found${NC}"
-    echo "  Category row background coloring may not work correctly"
-fi
-
-echo
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
@@ -211,7 +197,6 @@ echo "TaskCoach has been set up for Ubuntu 22.04 (Jammy) with:"
 echo "  • System packages from Ubuntu repos (wxPython, numpy, lxml, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  • Additional packages in venv (distro, pyparsing, watchdog)"
-echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"

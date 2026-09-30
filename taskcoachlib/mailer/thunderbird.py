@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import mailer, persistence, operating_system
-from taskcoachlib.thirdparty.ntlm import IMAPNtlmAuthHandler
 from taskcoachlib.widgets.password import GetPassword
 from taskcoachlib.i18n import _
 import io
@@ -25,7 +24,6 @@ import os
 import re
 import imaplib
 import configparser
-import wx
 import socket
 import mailbox
 
@@ -384,19 +382,6 @@ class ThunderbirdImapReader(object):
                 if "AUTH=CRAM-MD5" in imap.capabilities:
                     response, dummy = imap.login_cram_md5(
                         str(self.user), str(pwd)
-                    )
-                elif "AUTH=NTLM" in imap.capabilities:
-                    domain = wx.GetTextFromUser(
-                        _("Please enter the domain for user %s") % self.user
-                    )
-                    domain_username = "\\".join(
-                        [domain.upper(), str(self.user)]
-                    )
-                    response, dummy_parameters = imap.authenticate(
-                        "NTLM",
-                        IMAPNtlmAuthHandler.IMAPNtlmAuthHandler(
-                            domain_username, str(pwd)
-                        ),
                     )
                 else:
                     response, dummy_parameters = imap.login(self.user, pwd)

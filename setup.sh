@@ -186,7 +186,7 @@ main() {
     echo
 
     # Step 1: Detect distribution
-    echo -e "${BLUE}[1/7] Detecting distribution...${NC}"
+    echo -e "${BLUE}[1/6] Detecting distribution...${NC}"
     detect_distro
     echo "Detected: $DISTRO_NAME"
     echo "  ID: $DISTRO_ID"
@@ -197,7 +197,7 @@ main() {
     echo
 
     # Step 2: Detect Python version
-    echo -e "${BLUE}[2/7] Checking Python version...${NC}"
+    echo -e "${BLUE}[2/6] Checking Python version...${NC}"
     detect_python
     echo "Using: $PYTHON_CMD (version $PYTHON_VERSION)"
 
@@ -210,7 +210,7 @@ main() {
     echo
 
     # Step 3: Install system dependencies
-    echo -e "${BLUE}[3/7] Installing system dependencies...${NC}"
+    echo -e "${BLUE}[3/6] Installing system dependencies...${NC}"
     SYSTEM_PACKAGES=$(get_system_packages)
     echo "Installing: $SYSTEM_PACKAGES"
     echo "Requires sudo privileges."
@@ -226,7 +226,7 @@ main() {
     echo
 
     # Step 4: Create virtual environment
-    echo -e "${BLUE}[4/7] Creating virtual environment...${NC}"
+    echo -e "${BLUE}[4/6] Creating virtual environment...${NC}"
     VENV_PATH="$SCRIPT_DIR/.venv"
 
     if [ -d "$VENV_PATH" ]; then
@@ -247,7 +247,7 @@ main() {
     echo
 
     # Step 5: Install pip packages
-    echo -e "${BLUE}[5/7] Installing Python dependencies in venv...${NC}"
+    echo -e "${BLUE}[5/6] Installing Python dependencies in venv...${NC}"
     PIP_PACKAGES=$(get_pip_packages)
     echo "Installing: $PIP_PACKAGES"
 
@@ -259,7 +259,7 @@ main() {
     echo
 
     # Step 6: Check launch script
-    echo -e "${BLUE}[6/7] Checking launch script...${NC}"
+    echo -e "${BLUE}[6/6] Checking launch script...${NC}"
     if [ -f "$SCRIPT_DIR/taskcoach-run.sh" ]; then
         chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
         echo -e "${GREEN}✓ Launch script is ready: taskcoach-run.sh${NC}"
@@ -267,16 +267,6 @@ main() {
         echo -e "${RED}✗ Launch script not found${NC}"
         echo "taskcoach-run.sh should be included in the repository"
         exit 1
-    fi
-    echo
-
-    # Step 7: Apply wxPython patch (if needed)
-    echo -e "${BLUE}[7/7] Applying wxPython patch...${NC}"
-    if [ -f "$SCRIPT_DIR/apply-wxpython-patch.sh" ]; then
-        "$SCRIPT_DIR/apply-wxpython-patch.sh"
-    else
-        echo -e "${YELLOW}⚠ Warning: apply-wxpython-patch.sh not found${NC}"
-        echo "  Category row background coloring may not work correctly"
     fi
     echo
 

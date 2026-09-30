@@ -1,6 +1,5 @@
 .DS_Store
 *.pyc
-@webchecker.pickle
 dist
 CHANGES.txt
 changelog_content

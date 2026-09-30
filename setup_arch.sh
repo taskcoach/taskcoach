@@ -43,7 +43,7 @@ else
 fi
 
 # Check Python version
-echo -e "${BLUE}[1/8] Checking Python version...${NC}"
+echo -e "${BLUE}[1/7] Checking Python version...${NC}"
 PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
 PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
 PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
@@ -59,7 +59,7 @@ fi
 echo
 
 # Install system dependencies
-echo -e "${BLUE}[2/8] Installing system dependencies...${NC}"
+echo -e "${BLUE}[2/7] Installing system dependencies...${NC}"
 echo "This will install system packages from Arch/Manjaro repos."
 echo "Requires sudo privileges."
 
@@ -92,7 +92,7 @@ fi
 echo
 
 # Check for AUR packages
-echo -e "${BLUE}[3/8] Checking AUR packages...${NC}"
+echo -e "${BLUE}[3/7] Checking AUR packages...${NC}"
 AUR_PACKAGES=""
 
 # Check for python-squaremap (optional)
@@ -126,7 +126,7 @@ fi
 echo
 
 # Create virtual environment
-echo -e "${BLUE}[4/8] Creating virtual environment...${NC}"
+echo -e "${BLUE}[4/7] Creating virtual environment...${NC}"
 VENV_PATH="$SCRIPT_DIR/.venv"
 
 if [ -d "$VENV_PATH" ]; then
@@ -147,7 +147,7 @@ fi
 echo
 
 # Install Python dependencies not available in Arch repos
-echo -e "${BLUE}[5/8] Installing Python dependencies in venv...${NC}"
+echo -e "${BLUE}[5/7] Installing Python dependencies in venv...${NC}"
 # Most packages are available in Arch repos, only install what's missing
 echo "Installing: distro"
 
@@ -166,7 +166,7 @@ echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
 
 # Check launch script
-echo -e "${BLUE}[6/8] Checking launch script...${NC}"
+echo -e "${BLUE}[6/7] Checking launch script...${NC}"
 if [ -f "$SCRIPT_DIR/taskcoach-run.sh" ]; then
     chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
     echo -e "${GREEN}✓ Launch script is ready: taskcoach-run.sh${NC}"
@@ -177,18 +177,8 @@ else
 fi
 echo
 
-# Apply wxPython patch
-echo -e "${BLUE}[7/8] Applying wxPython patch...${NC}"
-if [ -f "$SCRIPT_DIR/apply-wxpython-patch.sh" ]; then
-    "$SCRIPT_DIR/apply-wxpython-patch.sh"
-else
-    echo -e "${YELLOW}⚠ Warning: apply-wxpython-patch.sh not found${NC}"
-    echo "  Category row background coloring may not work correctly"
-fi
-echo
-
 # Test installation
-echo -e "${BLUE}[8/8] Testing installation...${NC}"
+echo -e "${BLUE}[7/7] Testing installation...${NC}"
 echo "===================="
 echo
 
@@ -254,7 +244,6 @@ echo "TaskCoach has been set up for Arch/Manjaro Linux with:"
 echo "  • System packages from official repos (wxPython, numpy, lxml, watchdog, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  • Additional packages in venv (distro)"
-echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "Optional packages (install from AUR if needed):"
 echo "  • python-squaremap: Hierarchical data visualization"
