@@ -198,28 +198,31 @@ Categories have none (removed in #389): an icon of their own or their parent's.
 
 ## The Master Loop
 
-The master loop runs `computeStyles()` for every object at each pass: the
-seconds a change or a time condition calls for
-([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#master-design)).
+The scheduler's pass runs `computeStyles()` for the objects a change or
+a time condition concerns and what reads them, each once; the full
+loop, for every object, when what every object reads changed
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#incremental-pass)).
 
 **File:** `taskcoachlib/gui/scheduler.py` (`MasterScheduler._run_pass()`)
 
 ### Processing Order
 
-1. **Categories** (so tasks/notes can read their effective values)
-2. **Tasks** (including child tasks via flat `CompositeSet`)
-3. **Global notes** (standalone notes from `taskFile.notes()`)
+Each object once, sorted by kind, then depth (`_order()`), so what an
+object reads is processed before it:
+
+1. **Categories** (so tasks and notes can read their effective values)
+2. **Tasks** (parents before subtasks)
+3. **Notes**, global and owned (parents before subnotes)
+4. **Attachments**
 
 ### Owned Object Traversal
 
-`MasterScheduler._process_task()` and `_process_note()` process owned
-objects after computing the object's own styles:
-
-- `obj.notes(recursive=True)` - all owned notes (flat list + children)
-- `obj.attachments()` - all owned attachments
-
-This covers the full ownership graph: task -> notes -> attachments -> notes -> ...
-No circular ownership exists because users create new objects under owners.
+The full loop takes each task's, category's and note's owned objects
+with them (`_owned()`): `obj.notes(recursive=True)` and
+`obj.attachments()`, then what those own in turn (task -> notes ->
+attachments -> notes -> ...), and sorts them into the order above: an
+owned note reads its categories, never its owner. No circular
+ownership exists because users create new objects under owners.
 
 ---
 

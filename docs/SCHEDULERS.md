@@ -53,9 +53,10 @@ See also: `docs/TASK_STATUS.md` section "SSOT Principle: Action vs Display"
 ## Architecture
 
 The system uses a `GlobalTimer` that fires every second, and a
-`MasterScheduler` that keeps the master timer list and runs the full
-loop at the seconds it holds
-([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md)). Only
+`MasterScheduler` that keeps the master timer list and, at the seconds
+it holds or after a change, processes the objects concerned and what
+reads them
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#incremental-pass)). Only
 MasterScheduler subscribes to `timer.second` for data processing.
 
 ### Core Components
@@ -66,7 +67,7 @@ MasterScheduler subscribes to `timer.second` for data processing.
   as Publisher events (`patterns.Event`, source is the GlobalTimer, value is
   the tick timestamp). See
   [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md).
-- `MasterScheduler`: Subscribes to `timer.second`; after its processing, sends the Publisher events `scheduler.pass` (after a full loop pass), `scheduler.date` and `scheduler.minute`
+- `MasterScheduler`: Subscribes to `timer.second`; after its processing, sends the Publisher events `scheduler.pass` (after a pass), `scheduler.date` and `scheduler.minute`
 
 ### Event Flow
 
@@ -82,7 +83,7 @@ Every 1 second (_on_tick):
 
 | Event | Subscriber | Purpose |
 |-------|------------|---------|
-| `timer.second` | `MasterScheduler` | The master timer list check; the full loop when a second is due |
+| `timer.second` | `MasterScheduler` | The master timer list check; a pass when an entry is due or an object marked |
 | `scheduler.pass` | Task `Sorter`, `ViewFilter` | Re-sort and refilter once by the statuses the pass changed |
 | `scheduler.date` | `ViewFilter` | Re-filter tasks at midnight, with the new day's statuses |
 | `scheduler.date` | `CalendarViewer`, `HierarchicalCalendarViewer` | Move to the new day |
@@ -113,7 +114,7 @@ on `scheduler.minute`). The calendars draw their "now" line on
 
 | Component | File | How It Uses Timer |
 |-----------|------|-------------------|
-| MasterScheduler | `gui/scheduler.py` | Subscribes to `timer.second`; runs the full loop when the master timer list holds a due second |
+| MasterScheduler | `gui/scheduler.py` | Subscribes to `timer.second`; runs a pass when the master timer list holds a due entry or an object is marked |
 | Reminder Controller | `gui/remindercontroller.py` | Subscribes to `task.reminder.trigger` event (see [REMINDERS.md](REMINDERS.md)) |
 | View Filter | `domain/task/filter.py` | `ViewFilter` subscribes to `scheduler.date`, calls `reset()` |
 | Calendar Viewers | `gui/viewer/task.py` | Subscribe to `scheduler.date` and `scheduler.minute` |
@@ -163,33 +164,36 @@ quitting the Publisher dispatches nothing; a cancelled quit resumes it.
 
 ## MasterScheduler Processing Flow
 
-The master timer list is a binary heap of the seconds not processed
-yet at which something changes: each task's time rules
-(`Task.timer_seconds()`) and the second of each data change. Its
-design, rulings and coverage are in
-[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md).
+The master timer list holds, sorted, each task's seconds at which time
+alone changes it (`Task.timer_seconds()`, one per rule; a date not set
+has none), each entry with its task and rule; a date change replaces
+the task's entries, a deletion removes them. A change the passes read
+marks the objects it concerns as its event arrives. Its design,
+rulings and coverage are in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#incremental-pass).
 
 ```
 Every second (_on_second):
   Skip if no task file loaded
-  A tick earlier than the last one (clock set back): rebuild the heap
+  A tick earlier than the last one (clock set back): rebuild the list,
+  and the full loop
 
   Detect minute changes
 
-  Pop every entry up to now (past ones and this second's), leaving
-  the first later one; if any, run the full loop once, parents before
-  children (allItemsSorted()):
-    For each category:
-      computeStyles(category)
-    For each task:
+  The entries up to now (past ones and this second's) mark their
+  tasks and leave the list. Then one pass:
+    The full loop, if due: every object
+    Otherwise: the marked objects and what reads a style they change
+      (a category's subcategories and members, a parent's children)
+  each object once, categories, tasks, notes, attachments, parents
+  first:
+    A task in the file:
       task.compute_stored_status(tick)      # The status at the tick
       task.processReminder(tick)            # Fire trigger if due
       computeStyles(task)
-      computeStyles(task.notes)
-      computeStyles(task.attachments)
-    For each global note:
-      computeStyles(note)
-      computeStyles(note.attachments)
+    A category, note or attachment:
+      computeStyles(item)
+  send 'scheduler.pass' if a pass ran
 
   if dateChanged:
     send 'scheduler.date'
@@ -197,31 +201,28 @@ Every second (_on_second):
     send 'scheduler.minute'
 ```
 
-What pushes into the heap:
+What marks, and what runs the full loop:
 
+- A change the passes read (domain changes except subject,
+  description, expansion, fees and priority): its sources; an added
+  object with everything under it; a style changed outside a pass, or
+  a category's style priority, also what reads it. A name marks only
+  what shows it as a style source (a category's items, a parent's
+  children), so typing a leaf's name runs nothing.
 - A task's planned start, actual start, due or reminder changed, or
-  tasks added: their timer seconds.
-- Any change the loop reads (domain changes except subject,
-  description, expansion, fees and priority, though the subject of an
-  item that is another's style source, a category or a parent, counts; the appearance settings; the system
-  theme), and the loop's own changes (statuses, styles): the current
-  tick's second, which the next tick takes with every other due entry.
-  A cascade settles one pass per second.
-- The due soon hours changed, the clock set back: the heap is rebuilt
-  from the tasks, with a second due at once. A file opened empties it
-  (its tasks removed) and refills it (its tasks added).
-- The heap doubled since its last rebuild (plus 64): rebuilt too, as
-  old seconds stay until due and those of dates not set (the latest
-  date) never are. A stopgap: open, to do 57 in
-  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#stale-entries).
+  tasks added: their entries; tasks removed: theirs removed.
+- A file read or merged, the due soon hours, the clock set back: the
+  list rebuilt and the full loop. The appearance settings, the theme
+  and the system colours: the full loop.
 
-`TASKCOACH_SCHEDULER_CHECK=1` runs the full loop every second as well
-and logs each change it makes at a second the heap did not call for
-(`[SCHEDULER] missed at ...`). Once a minute, if passes ran, a
-`[SCHEDULER]` line gives the ticks, the passes and their cost: fewer
-than 60 ticks means the UI thread was held.
+`TASKCOACH_SCHEDULER_CHECK=1` runs the full loop after every tick's
+pass and logs each change it still makes (`[SCHEDULER] missed at
+...`). Once a minute, if passes ran, a `[SCHEDULER]` line gives the
+ticks, the passes (how many full), their cost, the objects processed
+and the timer entries: fewer than 60 ticks means the UI thread was
+held.
 
-Each category, task and note, and each of the two events, runs
+Each object, and each of the events, runs
 isolated (`_run_isolated`): these steps notify listeners (viewers,
 reminder dialogs), and one failing listener must not skip the rest of
 the pass or keep the date and minute events from being sent. The
@@ -239,7 +240,7 @@ count every 100 repeats.
 
 1. **Single Timestamp Per Tick**: `DateTime.now()` called once, passed to all subscribers
 2. **Tuple Comparison**: MasterScheduler stores date/minute as tuples for fast integer comparison
-3. **The heap's smallest entry**: the check each second reads one value; the full loop runs only when it is due
+3. **The list's first entry**: the check each second reads one value; a pass runs only for due entries and marked objects
 4. **Timestamp Reuse**: Subscribers receive timestamp parameter, no extra `now()` calls
 
 ---
@@ -248,7 +249,9 @@ count every 100 repeats.
 
 Measured on 2026-09-27 with 2000 tasks and dates spread 20 days
 around now: the old loop cost 258 ms every second; the master timer
-list runs one pass a minute (213 ms) and 59 of 60 ticks do nothing
+list ran one pass a minute (213 ms) and 59 of 60 ticks did nothing.
+With the incremental pass (2026-09-30), dates 60 minutes around now:
+about 20 passes a minute, 9 to 19 ms each, instead of 29 of 379 ms
 ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#cost-after)).
 Profile before optimizing further.
 

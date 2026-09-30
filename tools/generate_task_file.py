@@ -83,7 +83,6 @@ def generate(count, filename, minutes=None):
     for item in task_file.tasks():
         for chosen in rng.sample(categories, rng.randint(0, 2)):
             item.addCategory(chosen)
-            chosen.addCategorizable(item)
     task_file.notes().extend(
         note.Note(subject="Note %d" % i) for i in range(NOTES)
     )

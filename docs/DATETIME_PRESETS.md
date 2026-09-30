@@ -170,7 +170,7 @@ called, so the `reminderChangedEventType` event is not fired.
 
 This is **not a problem**: the master timer list takes the new task's
 reminder second from the task list's add event (`_on_tasks_added`, via
-`timer_seconds()`), and the full loop calls `task.processReminder()` at
+`timer_seconds()`), and the pass calls `task.processReminder()` at
 that second (see [SCHEDULERS.md](SCHEDULERS.md#the-master-timer-list)),
 which reads `task.reminder()` directly.
 

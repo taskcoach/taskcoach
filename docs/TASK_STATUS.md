@@ -100,7 +100,7 @@ seconds that matter ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md
 **Processing order:** Categories → Tasks → Notes → Attachments
 
 **Key classes:**
-- `MasterScheduler` in `scheduler.py` - Runs the full loop at each due second, calls `computeStyles()` for each object
+- `MasterScheduler` in `scheduler.py` - At each due second or after a change, processes the objects concerned and what reads them, each once (`computeStyles()`; for tasks the status and reminder too)
 - `computeDerived(obj, field_type)` - Computes derived value from sources
 - `computeEffective(obj, field_type)` - Computes effective from override + derived
 
@@ -331,8 +331,9 @@ Status is recomputed in three scenarios:
 **Instantiated in:** `taskcoachlib/gui/mainwindow.py:_create_window_components()`
 
 `MasterScheduler` subscribes to `timer.second` (the GlobalTimer's 1-second tick) and,
-when its timer list holds a due second, processes all objects. For each task, the
-per-object flow is:
+when its timer list holds a due entry or an object is marked, processes those
+objects and what reads them (the full loop when every object is concerned). For
+each task, the per-object flow is:
 
 ```
 GlobalTimer._on_tick() (every 1 second)

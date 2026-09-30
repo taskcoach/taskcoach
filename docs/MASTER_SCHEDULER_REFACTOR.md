@@ -106,10 +106,10 @@ go at the end. Details live in the sections and documents linked.
 44. ~~A traceback lost on 2026-09-28~~: both candidates fixed, the
     spell check's timer (53) and the date popup (P12); reopen if it
     shows again.
-45. Incremental pass: at a due second, process only what changed and
-    what depends on it, each object once, not every object; analysis
-    verified 2026-09-29 (it can match the full loop exactly), with 57;
-    to decide ([Incremental Pass](#incremental-pass)).
+45. ~~Incremental pass~~: built 2026-09-30, **the designer's go-ahead**
+    with the recommended answers: a tick processes only what changed
+    and what reads it, each object once, a cascade in one pass
+    ([Incremental Pass](#incremental-pass)).
 46. ~~Status-first sort re-sorts on the clock's status changes~~: once
     after the loop's pass ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md#re-sorting)).
 47. ~~Effort viewer's Task and Categories columns refresh~~.
@@ -135,11 +135,9 @@ go at the end. Details live in the sections and documents linked.
     without a close event; that code left wxWidgets in 3.1, and Escape
     now closes an editor through `Close()` on every port. To check on
     a Mac: two editors, Escape twice, both close and save.
-57. The master timer list keeps stale seconds: its entries carry no
-    task, so a changed date's old seconds cannot be removed and a date
-    not set gives seconds never reached. **Reopened by designer
-    2026-09-29**: the stopgap rebuild does not solve it and points to
-    a structural problem; to design with 45
+57. ~~The master timer list keeps stale seconds~~: done 2026-09-30,
+    with 45: entries carry their task and rule and are replaced when
+    its dates change; a date not set has none
     ([Stale Entries](#stale-entries)).
 58. ~~Plural icons~~: removed 2026-09-29, **ruled by designer**
     ([ICON_LIBRARY.md](ICON_LIBRARY.md#removed-plural-icons), why):
@@ -411,40 +409,37 @@ Scan, 2026-09-28 (sources the loop does not compute: none left after):
 ## Master Design
 
 The old master loop scanned every category, task and note every second
-([Cost Before](#cost-before)). The goal is a cheap entry point each
-second, and the full scan only at the seconds when time or data
-changes something: instead of every second, only when a second
-matters.
+([Cost Before](#cost-before)). The goal: a cheap entry point each
+second, and work only for the seconds and the objects a change
+reaches. Built in two steps: the timer list and the full loop at its
+seconds (2026-09-27), then the incremental pass (2026-09-30,
+[Incremental Pass](#incremental-pass)).
 
-1. **One master timer list**: every second not processed yet at which
-   something changes, in a binary heap (`heapq`). Seconds are only ever
-   added, on every change; they leave only when processed. An entry
-   may lie in the past: it is then simply due.
+1. **One master timer list**: each task's seconds at which time alone
+   changes it, one per rule, sorted (`bisect`), each entry with its
+   task and rule; a date not set has none. A change of the task's
+   dates replaces its entries, a deletion removes them, so the list
+   holds exactly the pending seconds. An entry may lie in the past: it
+   is then simply due.
 2. **Whole seconds, one rule**: every date and time is a whole second
    ([Time Resolution](#time-resolution)), and each entry is the first
    whole second at which its rule holds. A rule that holds after a
    date (overdue: due `<` now) gets the second after it; a rule that
    holds from a date on (active: actual start `<=` now) gets the
    date's own second. No other case.
-3. **Each second**: if the smallest entry is at or before now, pop
-   every entry up to now and run the full loop once, however many
-   were due. Otherwise nothing else runs. A reminder set in the past,
-   a file just opened, a late tick or a jump forward (suspend, resume)
-   all come down to entries at or before now.
-4. **The full loop**: run the full master loop, as today, with the
-   statuses computed at the current second: every status, reminder and
-   style, in one place. This is how the recursive updates stay
-   manageable: subtasks, categories, prerequisites. **The cascade runs
-   through the heap** (ruling below): one pass per second, never a
-   loop inside a tick.
-5. **Clock set back** (a time change): rebuild the heap from the tasks.
-   The seconds between the new time and the old one are future again;
-   the ones before it are due, so the full loop runs at once.
-6. **Data changes**: a change to anything the full loop reads (an edit,
-   a task added, a category's colour, an appearance setting) pushes
-   the current second, so the loop at the next tick recomputes the
-   styles and the cascades through the hierarchy
-   ([Data Changes](#data-changes)).
+3. **Marks**: a change to anything the passes read marks the objects
+   it concerns as its event arrives ([Data Changes](#data-changes)).
+4. **Each second**: the entries at or before now mark their tasks;
+   if anything is marked, one pass processes the marked objects and
+   what reads them, each once, in a fixed order (categories, tasks,
+   notes, attachments; parents first), so a cascade settles in the
+   same pass. Otherwise nothing else runs. A reminder set in the past,
+   a late tick or a jump forward (suspend, resume) all come down to
+   entries at or before now.
+5. **The full loop**: every object, in the same order, when what every
+   object reads changed: a file read or merged, the clock set back
+   (the list is rebuilt), the due soon hours, the status styles, the
+   theme and the system colours.
 
 ## Time Resolution
 
@@ -533,7 +528,8 @@ Sweep, to leave nothing behind in this branch:
 ## The Master Timer List
 
 The entries, per task, each the first whole second at which its rule
-holds:
+holds, `(second, number, task, rule)`; the number orders the entries
+of one second:
 
 | Rule | Holds when | Entry |
 |---|---|---|
@@ -544,120 +540,71 @@ holds:
 | Reminder | Reminder less 2 s `<=` now (2 s ahead, as today) | That second |
 
 Dates are whole seconds ([Time Resolution](#time-resolution)). These
-are the only time conditions in the loop: `Task.compute_status()`
+are the only time conditions in the passes: `Task.compute_status()`
 (overdue, due soon, active, late, each on the task's own dates, not
-its subtasks') and `processReminder()`.
-Completion is not one: a completion date, even a future one, makes the
-task completed at once. Styles read time only through the status.
+its subtasks') and `processReminder()`. A date not set gives no entry:
+it is never reached. Completion is not one: a completion date, even a
+future one, makes the task completed at once. Styles read time only
+through the status.
 
-Completed tasks get entries too: one rule for every task, and
+Completed tasks keep their entries: one rule for every task, and
 completing or reopening one needs no signal. At an entry of a
-completed task the full loop finds nothing new.
+completed task the pass finds nothing new.
 
-One function gives a task's entries; the build, the add event and the
-field changes all use it.
+One function gives a task's entries (`Task.timer_seconds()`, by
+rule); the build, the add event and the date changes all use it. Each
+task's current entries are kept with it (`_timers_of`), so a date
+change replaces exactly its own and a deleted task removes its own.
+A due entry leaves the list when it marks its task.
 
-The entries are seconds only, without their task: the full loop needs
-no more. A date changed or a task deleted leaves its old second in the
-heap; at that second the full loop runs, finds nothing new, and the
-second is gone with the others popped. Removing it earlier would need
-its task and the reason it was added (which rule, or which change to
-cascade): the whole analysis over again
-([Incremental Pass](#incremental-pass)). Entries leave the heap
-only when popped, or when it is emptied or rebuilt. This leaves stale
-entries that grow with the edits: open, to do 57
-([Stale Entries](#stale-entries)).
-
-The due entries are popped before the loop runs, not after: a second
-pushed during the loop at or before now stays and runs the loop at the
-next tick.
-
-Every change pushes its seconds, duplicates included: identical
-seconds are popped together and give one loop. Tasks added (a file
-opened, a paste, an import) push their seconds one by one (25,000
-into an empty heap: 4.7 ms); a rebuild
-(the clock set back, the due soon hours changed) collects every task's
-seconds and calls `heapify()` once.
-
-Opening a file: `TaskFile.load()` empties the task list, then adds the
-file's tasks in one add event. The heap is emptied with the task list
-(its remove event leaving it empty), so the file's tasks fill an empty
-heap; their past seconds are due, so the next tick runs the full loop
-once and pops them.
+Opening a file: `TaskFile.load()` empties the task list (the list is
+emptied with it), adds the file's tasks, and its read event rebuilds
+the list and runs the full loop once.
 
 The minute and day changes only tell viewers to refresh; they stay the
 tick's own checks.
 
-Size and cost, measured with `heapq` on `datetime`s: 5000 tasks give
-25,000 entries after a rebuild, about 1.4 MB; edits add more
-([Stale Entries](#stale-entries)). Building the heap takes 1.1 ms,
-a push and a pop 0.4 us, the check each second (the smallest entry)
-0.06 us. After the first loop only the future entries remain.
+Size: one entry per set date and reminder. The generated 2000-task
+file with dates 60 minutes around now holds about 1,500 entries; the
+heap before held about 13,600 (2026-09-30).
 
 ### Stale Entries
 
-To do 57. **Open, reopened by designer 2026-09-29.**
+To do 57. **Done 2026-09-30**, with the incremental pass.
 
-Every task has five entries, one per rule; a date not set gives an
-entry at the latest date (year 9999), never reached, so no "is it
-set?" check is needed. A change to a task's dates pushes its five
-seconds again, and those of each ancestor; the old ones stay, since
-an entry without its task cannot be found to remove. So the heap grows
-with the edits, not the tasks: stale future seconds stay until due,
-and those at year 9999 never leave.
-
-Stopgap, 2026-09-29: when the heap has doubled since its last rebuild
-(plus 64), `_rebuild()` makes it again from every task's seconds. It
-bounds the size but does not solve the cause, and adds costs:
-
-- A full pass over every task (`timer_seconds()` of each), at a moment
-  set by the edit count, not by a rule of the design.
-- One full loop at the next tick: the rebuild pushes a second due at
-  once, which also keeps a pending data change second it drops.
-- A size threshold chosen by hand.
-
-First thoughts, nothing decided:
-
-1. **Entries carry their task and rule** (`(second, task, rule)`), as
-   the incremental pass's step 1 would ([Incremental Pass](#incremental-pass)).
-2. **Each task knows its current entries**, so a date change replaces
-   exactly its own and a deleted task removes its own.
-3. **A sorted list instead of a heap** (`bisect`), which allows removing
-   an entry; or a heap whose popped entries are checked against their
-   task's current ones and dropped when stale. The first removes at
-   once; the second still keeps stale entries until due.
-4. **No entry for a date not set**: the latest date is never reached,
-   so nothing needs to wait for it.
-
-With these, the list holds exactly the pending seconds, and no rebuild
-is needed except for the clock set back and the due soon hours. Part
-of the incremental pass's design ([Incremental Pass](#incremental-pass),
-Design, 1).
+The first list was a heap of seconds without their task: a change to a
+task's dates pushed its five seconds again, and those of each
+ancestor; the old ones stayed, since an entry without its task could
+not be found to remove, and a date not set gave an entry in the year
+9999, never reached. The heap grew with the edits, and a rebuild once
+it doubled only bounded it. Entries now carry their task and rule, a
+task knows its entries, a date change replaces them and a date not set
+has none (above).
 
 ---
 
 ## What Changes the Master Timer List
 
-For time, the list listens to three signals, each pushing the
-seconds of the tasks concerned (data changes push the current second
-as well: [Data Changes](#data-changes)):
+For time, the list listens to these signals (the changes also mark
+their objects: [Data Changes](#data-changes)):
 
 | Signal | Today | Change to the list |
 |---|---|---|
-| A task's due, planned start, actual start or reminder changed | Publisher `task.<field>` from the field's change callback, the task as source ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)) | Push the task's seconds |
-| Tasks added to the task file's task list | Publisher add event of the task list; `extend()` includes every subtask | Push their seconds |
-| Due soon hours changed | Publisher `behavior.duesoonhours`, the settings as source | Push every task's due soon second |
+| A task's due, planned start, actual start or reminder changed | Publisher `task.<field>` from the field's change callback, the task as source ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)) | Replace the task's entries |
+| Tasks added to the task file's task list | Publisher add event of the task list; `extend()` includes every subtask | Their entries |
+| Tasks removed | Publisher remove event of the task list | Their entries removed |
+| Due soon hours changed, a file read or merged | Publisher `behavior.duesoonhours`, `taskfile.justRead`, `taskfile.merged` | Rebuilt, and the full loop |
 
-Each ancestor is a source of the same event too; it pushes the
-ancestor's own seconds again, a harmless duplicate.
+Each ancestor is a source of the same event too; its entries are
+replaced by the same ones, harmlessly.
 
-A second pushed at or before now is due at the next tick: a
-reminder set to a past time fires, a task pasted with a past due date
-is shown overdue.
+An entry at or before now is due at the next tick: a reminder set to
+a past time fires, a task pasted with a past due date is shown
+overdue.
 
-Clock changes: a tick earlier than the one before rebuilds the heap
-([Master Design](#master-design), 5). Jumping forward needs nothing:
-the seconds passed are due.
+Clock changes: a tick earlier than the one before rebuilds the list
+and runs the full loop ([Master Design](#master-design), 5). Jumping
+forward needs nothing: the seconds passed are due.
 
 ### Why Nothing Is Missed
 
@@ -687,24 +634,23 @@ Which signal covers each action:
 | Undo or redo of an edit: `__setstate__()` calls the setters | Field changed |
 | New task or subtask, paste, template, import, file opened, file merged, undo of a delete | Tasks added |
 | Due soon hours, Preferences | Due soon hours changed |
-| Delete, cut, undo of an add | None: the old seconds stay, find nothing and are removed when processed |
+| Delete, cut, undo of an add | Tasks removed: their entries go |
 | Completed or reopened | None: completion is not a time condition, and completed tasks keep their entries |
 
 No other change gives a task new time seconds: moving a task to
 another parent, prerequisites (a task waiting for one keeps its
-entries; the full loop finds it inactive), categories, subjects,
-styles, other settings.
+entries; the pass finds it inactive), categories, subjects, styles,
+other settings.
 
 ---
 
 ## Data Changes
 
-**Rule:** a change to anything the full loop reads pushes the current
-second. The loop at the next tick recomputes every status, style and
-cascade through the hierarchy, as it does today every second. Several
-changes in one second are popped together: one loop.
+**Rule:** a change to anything the passes read marks the objects it
+concerns; the next tick's pass processes them and what reads them.
+Several changes in one second give one pass.
 
-What the loop reads, so what pushes the current second:
+What the passes read, so what marks:
 
 - A task's dates, completion, reminder, recurrence, prerequisites,
   categories, parent, own colours, font and icon, efforts being
@@ -713,25 +659,36 @@ What the loop reads, so what pushes the current second:
   category's style priority
 - Tasks, categories, notes and attachments added or removed
 - The appearance settings (colour, font and icon per status, light and
-  dark), the theme, the due soon hours
+  dark), the theme, the due soon hours: the full loop
 
 The hook is the domain's modification events (`_data_event_types()`
-in `gui/scheduler.py`), a task's tracking, and the loop's own outputs
+in `gui/scheduler.py`), a task's tracking, and the passes' own outputs
 (status, derived and effective styles), except fields that change no
 status, reminder or style, such as the subject, the description, the
-fees, the priority and the expanded state, so typing does not run the
-loop every second. A name the loop reads only as the style source it
-gives other items ("[Category] Work"): renaming a category, or an item
-with children, pushes the second; a leaf's name runs nothing. Computed values the loop does not read (time
-spent, budget left, revenue, the subtree values) run nothing.
+fees, the priority and the expanded state, so typing runs no pass.
+What each event marks:
 
-The safe side decides doubtful fields: one wrongly left in costs a
-loop; one wrongly left out is a miss, which the check mode of item 5
-logs. Settings are the other way round: only the sections listed
-above, as window and other settings change often and the loop reads
-none of them.
+- Its sources.
+- An added object with everything under it (children, owned notes and
+  attachments): each reads what is above it.
+- An effective style changed outside a pass (an override, undo), or a
+  category's style priority: also what reads it, its children and, for
+  a category, its members.
+- A name: only what reads it as a style source ("[Category] Work"),
+  so a leaf's name marks nothing.
+
+Computed values the passes do not read (time spent, budget left,
+revenue, the subtree values) mark nothing. The safe side decides
+doubtful fields: one wrongly left in costs a pass; one wrongly left
+out is a miss, which the check mode logs. Settings are the other way
+round: only the sections listed above, as window and other settings
+change often and the passes read none of them.
 
 ### Ruling: the Cascade Runs Through the Heap
+
+**Superseded 2026-09-30** by the incremental pass (question 1 there): a
+cascade settles in one pass, each object once in the fixed order, so
+no pass runs long and none runs for nothing. Kept as it was:
 
 **Ruling, 2026-09-27 (design intent).** When the heap has a due entry,
 the full loop runs once over all objects. Every change it makes (a
@@ -816,20 +773,29 @@ Measured 2026-09-27 in the real app on the desktop with the
 | 200 tasks, dates 60 minutes around now | 39 ms every second | 2 to 4 passes a minute, about 50 ms each |
 | 2000 tasks, dates 60 minutes around now (about 25 statuses changing a minute) | UI thread busy 98%, 5 to 10 ticks a minute, autosave re-reading the file after every status change | Busy 11%, the passes; 28 to 54 ticks a minute ([To Do](#to-do), 11) |
 
-Nothing missed: with `TASKCOACH_SCHEDULER_CHECK=1` the full loop ran
-every second as well for 3 minutes with 200 tasks and with 2000, dates
-within 60 minutes (about 25 statuses changing a minute), and made no
-change at a second the heap did not call for.
+With the incremental pass, measured 2026-09-30 on the virtual display,
+the same generated files (`tools/generate_task_file.py`):
 
-Each due second costs its pass and one more that finds nothing (the
-[cascade ruling](#ruling-the-cascade-runs-through-the-heap)).
+| File | Full loop at due seconds | Incremental pass |
+|---|---|---|
+| 2000 tasks, dates 60 minutes around now | 29 passes a minute, median 379 ms, max 786 ms; 13,618 heap entries | 20 to 22 passes a minute, median 9 to 19 ms, max 36 to 278 ms, 24 to 37 objects a minute; about 1,500 entries |
+| 2000 tasks, dates 20 days around now, idle | 1 pass a minute | No pass in minutes: the next entry is later |
+| First tick after opening the 60 minute file, without the interface | 1,466 ms, then 581 ms for the second pass (each due reminder fired twice) | 1,383 ms, then 14 ms (each due reminder fired once) |
 
----
+In the app, the first minute is dominated by the reminder windows the
+due reminders open (about 130 in these files).
+
+Nothing missed: with `TASKCOACH_SCHEDULER_CHECK=1` the full loop runs
+after every tick's pass and logs what it still changes. It logged
+nothing for 3.5 minutes on the 60 minute file (2000 tasks), nor while
+completing, pasting, deleting and undoing in another file.
 
 ## Incremental Pass
 
 To do 45, with to do 57 ([Stale Entries](#stale-entries)). **Analysis
-2026-09-29, verified; nothing built or decided.**
+2026-09-29, verified; built 2026-09-30** (`gui/scheduler.py`), with
+the designer's go-ahead for the recommended answers (questions
+below).
 
 The designer's idea (2026-09-29): a master list of the seconds, each
 with its tasks; when a second lands, process its tasks and cascade
@@ -869,10 +835,13 @@ dialog closes.
 4. **Global changes keep the full loop:** a file opened, a merge
    (copies share IDs), the clock set back, the due soon hours, the
    status styles (light and dark), the theme and the system colours.
-5. **Proof, kept:** the differential probe becomes a unit test that
-   compares against the full loop; the check mode
-   (`TASKCOACH_SCHEDULER_CHECK=1`) stays for the app. No periodic full
-   loop (ruling below).
+   It runs in the same fixed order, so it settles in one loop too: the
+   earlier loop styled a category's owned notes right after the
+   category, before a category they belong to (found by the test).
+5. **Proof, kept:** the differential probe became a unit test
+   (`SchedulerIncrementalTest`) that compares against the full loop;
+   the check mode (`TASKCOACH_SCHEDULER_CHECK=1`) stays for the app. No
+   periodic full loop (ruling below).
 
 Rules the first sketch lacked, each needed by the probe:
 
@@ -880,8 +849,9 @@ Rules the first sketch lacked, each needed by the probe:
   setter and `__setstate__` compute an object's effective style at
   once, outside the pass.
 - A category's members are the items whose `categories()` hold it:
-  `Category.members()`, their index since P29, less the items
-  outside the file.
+  `Category.members()`, their index since P29. A task outside the file
+  (deleted, kept for undo) is not processed: its reminder must not
+  fire; styling another object outside the file is harmless.
 - An added object is computed with its whole subtree (children, owned
   notes and attachments): each reads what is above it, its parent and
   its categories, so it inherits their styles; the fixed order settles
@@ -892,6 +862,14 @@ Rules the first sketch lacked, each needed by the probe:
 
 ### Verification
 
+The built pass, 2026-09-30: `SchedulerIncrementalTest` runs 150
+random changes of the 16 kinds below on a random file, each followed
+by a real tick, then the full loop, which must change nothing; with
+400 changes on seeds 1 to 7, nothing either. It found one fault while
+built: the full loop's own order (Design, 4). The check mode in the
+app: [Cost After](#cost-after).
+
+The analysis before it was built:
 `docs/scripts/scheduler_diffprobe.py` (arguments: seed, steps, member
 lookup, outside events; run it from the repository root with
 `PYTHONPATH=.` under `xvfb-run`): 16 kinds of random change; after each,
@@ -907,13 +885,12 @@ principle above.
 The first full loop after the random file is built changes about 705
 values, the second none: the loop already settles in one pass.
 
-`docs/scripts/scheduler_claims_probe.py` checks single claims: a
-leaf category's rename with a member pushes a pass (its member shows
-the name as its style source; before P29 a member linked one way
-pushed nothing);
-fonts from one string compare equal; an owned note and attachment
-ignore their owner's style; default icons; an override changes the
-effective style at once while the children wait for the pass.
+`docs/scripts/scheduler_claims_probe.py` checks single claims: a leaf
+category's rename with a member marks it (its member shows the name as
+its style source; before P29 a member linked one way was missed); fonts
+from one string compare equal; an owned note and attachment ignore their
+owner's style; default icons; an override changes the effective style at
+once while the children wait for the pass.
 `docs/scripts/category_membership_probe.py` shows P28 and P29 fixed.
 
 ### Inputs
@@ -948,18 +925,19 @@ Prerequisites act through completion dates, at once, outside the pass
 
 ### Risks
 
-- Whether a marked object is still in the file: an owned note or
-  attachment does not know its owner, and a category's members
-  include items outside it (a copy, a deleted item kept for undo).
-  The file's walk, `TaskFile.owner_chains()` (P30), gives each owned
-  item's owners, and `categorizables_in()` (P29) the items with
-  categories.
-- Merge: copies share IDs; a full loop.
+How each is handled in the built pass:
+
+- Whether a marked object is still in the file: a task is checked (a
+  set lookup) and skipped when outside; an owned note or attachment
+  does not know its owner, and styling one outside the file (a
+  deleted item's, a copy) is harmless, so it is not checked.
+- Merge: copies share IDs; a full loop (`taskfile.merged`).
 - The theme can turn dark or light for up to 1 s without its event;
   the full loop follows `system.theme_colour_changed` too.
-- A failing object must still mark its followers.
+- A failing object still reaches its followers: each object runs
+  isolated, and the style events it sent before failing are followed.
 - Over-marking costs work, not correctness: ancestors on date and
-  tracking events, descendants on names.
+  tracking events, a category on its members' links.
 
 Heard by the scheduler but read by no result, so the pass ignores
 them: budget, percentage complete, planned duration and its mode,
@@ -969,24 +947,23 @@ entry mode, ordering, the derived styles' events.
 
 Questions for the review:
 
-1. The cascade ruling ([Ruling](#ruling-the-cascade-runs-through-the-heap))
-   spreads a cascade one level per second, so a pass never runs long.
-   With each object computed once in a fixed order, settle it all at
-   once instead? That also drops the empty pass each due second costs
-   today.
+1. ~~The cascade ruling spreads a cascade one level per second; settle
+   it all at once instead?~~ **Designer's go-ahead 2026-09-30:** at
+   once, each object once in the fixed order; the ruling is superseded
+   ([Ruling](#ruling-the-cascade-runs-through-the-heap)).
 2. ~~Keep a full loop as a safety net (once a minute, say), or only
    the check mode during development?~~ **Ruled by designer
    2026-09-29:** no periodic full loop; it would admit the pass cannot
    cover everything. A missed follower is found (the check mode) and
    fixed.
-3. Worth it? Today the pass runs once a minute with typical files and
-   costs 213 ms with 2000 tasks; the gain is large with big files and
-   many dates close to now (2000 tasks, dates within an hour: UI
-   thread 11% busy).
-4. A due reminder triggered at its second only, not again at every
-   pass?
-5. When to settle: at the next tick, as today (within a second), or
-   right after the change, all changes of one event dispatch together?
+3. ~~Worth it?~~ **Built 2026-09-30, the designer's go-ahead**
+   ([Cost After](#cost-after)).
+4. ~~A due reminder triggered at its second only?~~ Yes, by the
+   2026-09-27 ruling: the pass at the reminder's second triggers it
+   once, and again only when a pass processes the task while it is
+   due.
+5. ~~When to settle?~~ At the next tick, as before (within a second):
+   one pass per tick, bursts of changes in one pass.
 6. ~~Category membership held twice (P29): store it on one side, or
    keep both with one writer?~~ **Ruled by designer 2026-09-29:** on
    the item only; the member lookup reads the category's index, less
