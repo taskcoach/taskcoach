@@ -149,7 +149,7 @@ go at the end. Details live in the sections and documents linked.
     `getBitmap()`, which read the light theme's icons only.
 59. Wrappers left by P29: `Category.addCategorizable()` and
     `removeCategorizable()` only call the items and only the tests use
-    them (87 calls in 18 files); remove them and link from the items,
+    them (78 calls in 16 files); remove them and link from the items,
     and review the now empty `CategorizableContainer`. **Asked by
     designer 2026-09-29**, once P29 works.
 60. ~~Category membership stored on the items in the file too~~:
