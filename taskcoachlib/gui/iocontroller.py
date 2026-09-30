@@ -737,14 +737,16 @@ class IOController(object):
         )
 
     def import_csv(self, **kwargs):
-        persistence.CSVReader(
-            self.__task_file.tasks(), self.__task_file.categories()
-        ).read(**kwargs)
+        with patterns.CommandHistory().action(_("Import CSV")):
+            persistence.CSVReader(
+                self.__task_file.tasks(), self.__task_file.categories()
+            ).read(**kwargs)
 
     def import_todo_txt(self, filename):
-        persistence.TodoTxtReader(
-            self.__task_file.tasks(), self.__task_file.categories()
-        ).read(filename)
+        with patterns.CommandHistory().action(_("Import Todo.txt")):
+            persistence.TodoTxtReader(
+                self.__task_file.tasks(), self.__task_file.categories()
+            ).read(filename)
 
     def filename(self):
         return self.__task_file.filename()

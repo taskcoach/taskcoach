@@ -938,6 +938,15 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.merge()
         self.assertEqual(2, len(self.taskFile.tasks()))
 
+    def test_a_merge_is_an_undo_step(self):
+        # Every change to the file is (docs/UNDO_REDO.md, Design Intent)
+        self.mergeFile.tasks().append(task.Task(subject="theirs"))
+        self.merge()
+        patterns.CommandHistory().undo()
+        self.assertEqual([self.task], list(self.taskFile.tasks()))
+        patterns.CommandHistory().redo()
+        self.assertEqual(2, len(self.taskFile.tasks()))
+
     def test_merge_sends_no_messages_about_the_merged_file(self):
         self.mergeFile.save()
         names = test.ChangeRecorder("taskfile.filenameChanged")

@@ -22,7 +22,7 @@ docs/REMINDERS.md.
 
 import test
 import wx
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import gui, config, patterns, persistence
 from taskcoachlib.domain import task, date, effort
 
 
@@ -208,6 +208,15 @@ class ReminderControllerTest(ReminderControllerTestCase):
             abs(self.nowDateTime + date.ONE_HOUR - self.task.reminder())
             < date.TimeDelta(seconds=5)
         )
+
+    def test_snoozing_is_an_undo_step(self):
+        # Every change to the file is (docs/UNDO_REDO.md, Design Intent)
+        self.task.set_reminder(self.reminderDateTime)
+        self.reminderController.onCloseReminderDialog(
+            self.dummyCloseEvent(date.ONE_HOUR), show=False
+        )
+        patterns.CommandHistory().undo()
+        self.assertEqual(self.reminderDateTime, self.task.reminder())
 
     def testOnCloseMayOpenTask(self):
         self.task.set_reminder(self.reminderDateTime)

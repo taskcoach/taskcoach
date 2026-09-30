@@ -769,8 +769,9 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
     def _do_stop_tracking(self):
         """Stop tracking all efforts (called from wx main thread)."""
-        for tracked_task in self.__task_list.tasks_being_tracked():
-            tracked_task.stopTracking()
+        with patterns.CommandHistory().action(_("Stop tracking")):
+            for tracked_task in self.__task_list.tasks_being_tracked():
+                tracked_task.stopTracking()
 
     def _on_new_category(self, widget):
         """Handle New Category menu item."""

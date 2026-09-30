@@ -26,6 +26,7 @@ See docs/SCHEDULERS.md for architecture documentation.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.i18n import _
 from taskcoachlib.gui.dialog import reminder, editor
 from taskcoachlib.tools import wxhelper
 import wx
@@ -102,11 +103,10 @@ class ReminderController(object):
             snoozeTimeDelta = snoozeOptions.GetClientData(
                 snoozeOptions.Selection
             )
-            taskWithReminder.snooze_reminder(
-                snoozeTimeDelta
-            )  # Note that this is not undoable
-            # Undoing the snoozing makes little sense, because it would set the
-            # reminder back to its original date-time, which is now in the past.
+            # An undo step, as every change to the file
+            # (docs/UNDO_REDO.md, Design Intent)
+            with patterns.CommandHistory().action(_("Snooze")):
+                taskWithReminder.snooze_reminder(snoozeTimeDelta)
 
         if dialog.openTaskAfterClose:
             editTask = editor.TaskEditor(

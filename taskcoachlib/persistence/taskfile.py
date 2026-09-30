@@ -26,6 +26,7 @@ from .merge import merge_into
 from taskcoachlib import patterns
 from taskcoachlib.domain import attachment, categorizable, category, effort
 from taskcoachlib.domain import note, task
+from taskcoachlib.i18n import _
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.filesystem import (
     FilesystemNotifier,
@@ -604,15 +605,18 @@ class TaskFile(patterns.Observer):
         # to it.
         merge_file = TaskFile(read_only=True)
         self.__loading = True
-        try:
-            merge_file.load(filename)
-            merge_into(self, merge_file)
-        finally:
-            # Also on failure: stop its file watcher, and leave loading
-            merge_file.close()
-            merge_file.stop()
-            self.__loading = False
-        self.mark_dirty(force=True)
+        # An undo step (docs/UNDO_REDO.md, Design Intent)
+        with patterns.CommandHistory().action(_("Merge")):
+            try:
+                merge_file.load(filename)
+                merge_into(self, merge_file)
+            finally:
+                # Also on failure: stop its file watcher, and leave
+                # loading
+                merge_file.close()
+                merge_file.stop()
+                self.__loading = False
+            self.mark_dirty(force=True)
         # Items replaced by their copies: the scheduler redoes them all
         self._publish("taskfile.merged")
 
