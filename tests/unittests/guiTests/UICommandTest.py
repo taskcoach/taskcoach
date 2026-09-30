@@ -22,7 +22,8 @@ import test
 from unittest import mock
 from unittests import dummy
 from taskcoachlib import gui, config, persistence
-from taskcoachlib.domain import task, category, date, attachment, effort
+from taskcoachlib.domain import attachment, category, date, effort, note
+from taskcoachlib.domain import task
 from taskcoachlib.gui.dialog.editor import NoteEditor, TaskEditor
 from taskcoachlib.tools import openfile
 
@@ -753,4 +754,20 @@ class AttachmentTest(test.wxTestCase):
         self.assertEqual(
             [self.attachment.location()],
             [each.location() for each in self.task.attachments()],
+        )
+
+
+class CategoryInUseTextTest(wxTestCaseWithFrameAsTopLevelWindow):
+    def test_a_note_shows_its_owners_from_the_top(self):
+        garden = task.Task(subject="Garden")
+        plan = attachment.FileAttachment("plan.txt")
+        tools = note.Note(subject="Tools")
+        plan.addNote(tools)
+        garden.addAttachments(plan)
+        self.taskFile.tasks().append(garden)
+        self.assertEqual(
+            "[Task] Garden -> [Attachment] plan -> [Note] Tools",
+            gui.uicommand.Delete._get_object_display_path(
+                tools, self.taskFile.owner_chains()
+            ),
         )

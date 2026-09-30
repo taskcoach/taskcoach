@@ -289,6 +289,12 @@ class TaskFile(patterns.Observer):
             self.tasks(), self.notes(), self.categories()
         )
 
+    def owner_chains(self):
+        """Each owned note and attachment: its owners, from the top."""
+        return categorizable.owner_chains(
+            self.tasks(), self.notes(), self.categories()
+        )
+
     def corrected_ids(self):
         """The duplicate IDs the last load corrected: ID -> the items'
         (type, path), the first kept the ID."""

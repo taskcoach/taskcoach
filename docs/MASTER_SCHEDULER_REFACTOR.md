@@ -314,10 +314,12 @@ In the app:
   why the list had stayed stored after to do 17 (commit 8b9d012a7).
   The file stores it on the items too since to do 60. Cleanup: to do
   59.
-- P30. The "Cannot Delete - Category In Use" dialog shows a note owned
-  by an attachment without its owner (`[Note] Tools`, not the task and
-  attachment): `_find_note_owner()` searches only the notes of tasks
-  and categories. Found 2026-09-29; the same on master. Display only.
+- P30. ~~The "Cannot Delete - Category In Use" dialog showed a note
+  owned by an attachment without its owners~~: fixed 2026-09-29; the
+  same on master. It searched only the notes of tasks and categories;
+  one walk of the file, `TaskFile.owner_chains()`, now gives every
+  owned item's owners: `[Task] Garden -> [Attachment] plan -> [Note]
+  Tools`.
 
 ## Views on the Effective Styles
 
@@ -924,8 +926,9 @@ Prerequisites act through completion dates, at once, outside the pass
 - Whether a marked object is still in the file: an owned note or
   attachment does not know its owner, and a category's members
   include items outside it (a copy, a deleted item kept for undo).
-  The file's walk, `categorizables_in()` (P29), answers it for items
-  with categories; attachments need the same walk or an owner map.
+  The file's walk, `TaskFile.owner_chains()` (P30), gives each owned
+  item's owners, and `categorizables_in()` (P29) the items with
+  categories.
 - Merge: copies share IDs; a full loop.
 - The theme can turn dark or light for up to 1 s without its event;
   the full loop follows `system.theme_colour_changed` too.

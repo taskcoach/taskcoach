@@ -17,4 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from .categorizable import CategorizableCompositeObject
-from .categorizablecontainer import CategorizableContainer, categorizables_in
+from .categorizablecontainer import (
+    CategorizableContainer,
+    categorizables_in,
+    owner_chains,
+)

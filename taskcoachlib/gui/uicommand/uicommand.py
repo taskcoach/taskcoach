@@ -32,7 +32,6 @@ from taskcoachlib import (
 from taskcoachlib.domain import (
     base,
     task,
-    note,
     category,
     attachment,
     effort,
@@ -1766,44 +1765,27 @@ class Delete(ViewerCommand):
                     all_assigned[c] = list(categorizables)
         return all_assigned
 
-    def _find_note_owner(self, target_note, task_file):
-        """Find the owner (task or category) of a note."""
-        for a_task in task_file.tasks():
-            if hasattr(a_task, "notes"):
-                for a_note in a_task.notes(recursive=True):
-                    if a_note is target_note:
-                        return a_task
-        for a_cat in task_file.categories():
-            if hasattr(a_cat, "notes"):
-                for a_note in a_cat.notes(recursive=True):
-                    if a_note is target_note:
-                        return a_cat
-        return None
+    @staticmethod
+    def _get_object_display_path(obj, owners):
+        """The item after its owners, from the top: "[Task] Garden ->
+        [Attachment] plan -> [Note] Tools"."""
 
-    def _get_object_display_path(self, obj, task_file):
-        """Get the full display path for an object, including its owner."""
-        obj_type = obj.__class__.__name__
-        obj_subject = obj.subject(recursive=True)
+        def label(item):
+            if isinstance(item, attachment.Attachment):
+                return "[Attachment] %s" % item.subject()
+            return "[%s] %s" % (
+                item.__class__.__name__,
+                item.subject(recursive=True),
+            )
 
-        if isinstance(obj, note.Note):
-            owner = self._find_note_owner(obj, task_file)
-            if owner:
-                owner_path = owner.subject(recursive=True)
-                owner_type = owner.__class__.__name__
-                return "[%s] %s -> [%s] %s" % (
-                    owner_type,
-                    owner_path,
-                    obj_type,
-                    obj_subject,
-                )
-
-        return "[%s] %s" % (obj_type, obj_subject)
+        return " -> ".join(label(each) for each in owners.get(obj, []) + [obj])
 
     def _show_category_in_use_dialog(self, assigned_objects):
         """Show a scrollable dialog listing all objects that prevent
         category deletion."""
         lines = []
         task_file = self.main_window().taskFile
+        owners = task_file.owner_chains()
 
         for cat, objects in assigned_objects.items():
             cat_name = cat.subject(recursive=True)
@@ -1811,7 +1793,7 @@ class Delete(ViewerCommand):
             for obj in sorted(
                 objects, key=lambda x: x.subject(recursive=True)
             ):
-                display_path = self._get_object_display_path(obj, task_file)
+                display_path = self._get_object_display_path(obj, owners)
                 lines.append("  - %s" % display_path)
             lines.append("")
 

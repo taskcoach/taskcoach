@@ -104,6 +104,21 @@ class TaskFileTest(TaskFileTestCase):
     def testIsEmptyInitially(self):
         self.assertTrue(self.emptyTaskFile.isEmpty())
 
+    def test_owners_of_a_note_of_an_attachment(self):
+        plan = attachment.FileAttachment("plan.txt")
+        tools = note.Note(subject="Tools")
+        plan.addNote(tools)
+        self.task.addAttachments(plan)
+        chains = self.taskFile.owner_chains()
+        self.assertEqual(
+            ([self.task], [self.task, plan], True),
+            (
+                chains[plan],
+                chains[tools],
+                tools in self.taskFile.categorizables(),
+            ),
+        )
+
     def testHasNoTasksInitially(self):
         self.assertFalse(self.emptyTaskFile.tasks())
 
