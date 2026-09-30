@@ -327,6 +327,10 @@ In the app:
   2026-09-29; the same on master.
   - From Thunderbird on Linux and Windows the drop fails: it decodes
     with `unicode_internal`, gone from Python 3 (`draganddrop.py`).
+  - Reading the dropped mail fails for most mails
+    (`mailer.readMail()`): an encoded subject (accents) raises
+    `TypeError`, a body with a transfer encoding, as almost every mail
+    has, `AttributeError`. Only plain ASCII mails get through.
   - The other mail programs leave a temporary `.eml` file: Task
     Coach's own, deleted at exit (Thunderbird on macOS, Outlook), or
     the mail program's (Evolution, Claws Mail).
