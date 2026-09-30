@@ -212,9 +212,8 @@ class CommonTestsMixin(object):
         self.taskList.append(self.task)
         self.viewer.select([self.task])
         self.viewer.updateSelection()
-        deleteItem = self.viewer.deleteItemCommand()
-        deleteItem.do()
-        deleteItem.undo()
+        self.viewer.deleteItemCommand().do()
+        patterns.CommandHistory().undo()
         if self.viewer.is_tree_viewer():
             self.assertItems((self.task, 1), self.child)
         else:

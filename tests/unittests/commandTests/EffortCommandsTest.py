@@ -72,18 +72,25 @@ class NewEffortCommandTest(EffortCommandTestCase):
         newEffortCommand = command.NewEffortCommand(
             self.effortList, [self.originalTask]
         )
-        newEffort = newEffortCommand.efforts[0]
-        newEffort.set_task(secondTask)
         newEffortCommand.do()
+        newEffort = newEffortCommand.efforts[0]
+        # The effort editor moves it: a step of its own
+        command.EditTaskCommand(None, [newEffort], newValue=secondTask).do()
         self.assertDoUndoRedo(
             lambda: self.assertTrue(
                 newEffort in secondTask.efforts()
                 and newEffort not in self.originalTask.efforts()
             ),
             lambda: self.assertTrue(
-                newEffort not in secondTask.efforts()
-                and newEffort not in self.originalTask.efforts()
+                newEffort in self.originalTask.efforts()
+                and newEffort not in secondTask.efforts()
             ),
+        )
+        self.undo()
+        self.undo()
+        self.assertTrue(
+            newEffort not in secondTask.efforts()
+            and newEffort not in self.originalTask.efforts()
         )
 
 

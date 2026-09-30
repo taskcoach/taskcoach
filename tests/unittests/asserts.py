@@ -126,9 +126,16 @@ class CommandAssertsMixin(object):
     def assertHistoryAndFuture(self, expectedHistory, expectedFuture):
         from taskcoachlib import patterns
 
+        # A step is named after the command that started it
         commands = patterns.CommandHistory()
-        self.assertEqual(expectedHistory, commands.getHistory())
-        self.assertEqual(expectedFuture, commands.getFuture())
+        self.assertEqual(
+            [str(each) for each in expectedHistory],
+            [str(step) for step in commands.getHistory()],
+        )
+        self.assertEqual(
+            [str(each) for each in expectedFuture],
+            [str(step) for step in commands.getFuture()],
+        )
 
     def assertDoUndoRedo(self, assertDone, assertUndone=None):
         if not assertUndone:

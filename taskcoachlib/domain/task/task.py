@@ -21,11 +21,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import date, categorizable, note, attachment
+from taskcoachlib.domain.base import is_restoring
 from taskcoachlib.domain.base.attribute import Attribute, SetAttribute
-from weakref import WeakSet
+from taskcoachlib.patterns.field import ListField
 from . import status
 import ast
-import contextlib
 import wx
 
 
@@ -36,20 +36,6 @@ class Task(
 ):
 
     maxDateTime = date.DateTime()
-
-    # Nonzero during File > Merge, which replaces tasks by their
-    # newest copies instead of editing them, so the parent rules of
-    # addChild() and removeChild() do not run
-    _merging = 0
-
-    @staticmethod
-    @contextlib.contextmanager
-    def merging():
-        Task._merging += 1
-        try:
-            yield
-        finally:
-            Task._merging -= 1
 
     def __init__(
         self,
@@ -136,7 +122,8 @@ class Task(
             self,
             self._on_planned_duration_mode_changed,
         )
-        self._efforts = efforts or []
+        # A stored field (docs/UNDO_REDO.md, Architecture)
+        self.__efforts = ListField(efforts, self, self._efforts_restored)
         self.__priority = Attribute(priority, self, self._on_priority_changed)
         self.__hourlyFee = Attribute(
             hourlyFee, self, self._on_hourly_fee_changed
@@ -145,8 +132,10 @@ class Task(
         self.__reminder = Attribute(
             reminder or maxDateTime, self, self._on_reminder_changed
         )
-        self.__reminder_before_snooze = (
-            reminderBeforeSnooze or self.__reminder.get()
+        self.__reminder_before_snooze = Attribute(
+            reminderBeforeSnooze or self.__reminder.get(),
+            self,
+            self._on_reminder_before_snooze_changed,
         )
         self.__recurrence = Attribute(
             date.Recurrence() if recurrence is None else recurrence,
@@ -159,7 +148,14 @@ class Task(
             changeEvent=self._on_prerequisites_changed,
             weak=True,
         )
-        self.__dependencies = WeakSet(dependencies or [])
+        # The reverse of other tasks' prerequisites: no date
+        self.__dependencies = SetAttribute(
+            set(dependencies or []),
+            self,
+            changeEvent=self._on_dependencies_changed,
+            weak=True,
+            dates=False,
+        )
         self.__shouldMarkCompletedWhenAllChildrenCompleted = Attribute(
             shouldMarkCompletedWhenAllChildrenCompleted,
             self,
@@ -216,7 +212,7 @@ class Task(
                 percentageComplete=self.__percentageComplete.get(),
                 children=self.children(),
                 parent=self.parent(),
-                efforts=self._efforts,
+                efforts=self._efforts[:],
                 budget=self.__budget.get(),
                 plannedDuration=self.__plannedDuration.get(),
                 plannedDurationMode=self.__plannedDurationMode.get(),
@@ -226,7 +222,7 @@ class Task(
                 recurrence=self.__recurrence.get().copy(),
                 reminder=self.__reminder.get(),
                 prerequisites=self.__prerequisites.get(),
-                dependencies=set(self.__dependencies),
+                dependencies=self.__dependencies.get(),
                 shouldMarkCompletedWhenAllChildrenCompleted=(
                     self.shouldMarkCompletedWhenAllChildrenCompleted()
                 ),
@@ -280,7 +276,7 @@ class Task(
         wasTracking = self.isBeingTracked(recursive=True)
         super().addChild(child, event=event)
         self.childChangeEvent(child, wasTracking, event)
-        if not Task._merging:
+        if not is_restoring():
             if self.shouldBeMarkedCompleted():
                 self.set_completion_date_time(child.completionDateTime())
             elif self.completed() and not child.completed():
@@ -295,7 +291,7 @@ class Task(
         wasTracking = self.isBeingTracked(recursive=True)
         super().removeChild(child, event=event)
         self.childChangeEvent(child, wasTracking, event)
-        if not Task._merging and self.shouldBeMarkedCompleted():
+        if not is_restoring() and self.shouldBeMarkedCompleted():
             # The removed child was the last uncompleted child
             self.set_completion_date_time(date.Now())
         child._update_status(recursive=True)
@@ -511,11 +507,13 @@ class Task(
         completionDateTime = self.completionDateTime()
         isCompleted = completionDateTime != self.maxDateTime
 
-        if isCompleted and self.recurrence():
+        if isCompleted and self.recurrence() and not is_restoring():
             self.recur(completionDateTime)
             return  # recur resets completionDateTime, triggering this callback again
 
-        if isCompleted:
+        if is_restoring():
+            pass  # The edit rules' effects are put back too
+        elif isCompleted:
             self.set_reminder(None)
             self.setPercentageComplete(100)
             if self.isBeingTracked():
@@ -893,7 +891,10 @@ class Task(
         wasTracking = self.isBeingTracked()
         oldValue = self._efforts[:]
         self._efforts.append(effort)
-        if effort.getStart() < self.actualStartDateTime():
+        if (
+            effort.getStart() < self.actualStartDateTime()
+            and not is_restoring()
+        ):
             self.set_actual_start_date_time(effort.getStart())
         self.__send_efforts_changed(oldValue)
         if effort.isBeingTracked() and not wasTracking:
@@ -943,8 +944,23 @@ class Task(
         if efforts == self._efforts:
             return
         oldValue = self._efforts[:]
-        self._efforts = efforts
+        self._efforts[:] = efforts
         self.__send_efforts_changed(oldValue)
+        self.send_time_spent_changed()
+
+    @property
+    def _efforts(self):
+        """The task's own efforts: the list itself."""
+        return self.__efforts.get()
+
+    def _efforts_restored(self, added, removed, event=None):
+        added_ids = {id(each) for each in added}
+        self.__send_efforts_changed(
+            [each for each in self._efforts if id(each) not in added_ids]
+            + removed
+        )
+        if any(each.isBeingTracked() for each in added + removed):
+            self.send_tracking_changed(tracking=self.isBeingTracked())
         self.send_time_spent_changed()
 
     @classmethod
@@ -1188,7 +1204,11 @@ class Task(
 
     def _on_percentage_complete_changed(self, event):
         percentage = self.__percentageComplete.get()
-        if percentage == 100 and self.completionDateTime() == self.maxDateTime:
+        if is_restoring():
+            pass  # The edit rules' effects are put back too
+        elif (
+            percentage == 100 and self.completionDateTime() == self.maxDateTime
+        ):
             self.set_completion_date_time(date.Now())
         elif (
             percentage != 100 and self.completionDateTime() != self.maxDateTime
@@ -1197,6 +1217,7 @@ class Task(
         if (
             0 < percentage < 100
             and self.actualStartDateTime() == date.DateTime()
+            and not is_restoring()
         ):
             self.set_actual_start_date_time(date.Now())
         self.percentage_complete_changed_event(event=event)
@@ -1385,7 +1406,7 @@ class Task(
             return (
                 self.__reminder.get()
                 if include_snooze
-                else self.__reminder_before_snooze
+                else self.__reminder_before_snooze.get()
             )
 
     def set_reminder(self, reminder_date_time=None, event=None):
@@ -1393,7 +1414,7 @@ class Task(
         reminder_date_time = reminder_date_time or self.maxDateTime
         if reminder_date_time == self.__reminder.get():
             return
-        self.__reminder_before_snooze = reminder_date_time
+        self.__reminder_before_snooze.set(reminder_date_time, event=event)
         self.__reminder.set(reminder_date_time, event=event)
 
     def snooze_reminder(self, time_delta, now=date.Now):
@@ -1403,6 +1424,9 @@ class Task(
             self.__reminder.set(self.maxDateTime)
         else:
             self.set_reminder()
+
+    def _on_reminder_before_snooze_changed(self, event):
+        pass  # Shown nowhere: the reminder's own event tells the views
 
     def _on_reminder_changed(self, event):
         self._send_to_self_and_ancestors(
@@ -1612,7 +1636,7 @@ class Task(
     # Dependencies
 
     def dependencies(self, recursive=False, upwards=False):
-        dependencies = set(self.__dependencies)
+        dependencies = self.__dependencies.get()
         if recursive and upwards and self.parent() is not None:
             dependencies |= self.parent().dependencies(
                 recursive=True, upwards=True
@@ -1643,9 +1667,10 @@ class Task(
                 self.dependencies() - dependencies, event=event
             )
 
-    @patterns.eventSource
     def __set_dependencies(self, dependencies, event=None):
-        self.__dependencies = WeakSet(dependencies)
+        self.__dependencies.set(dependencies, event=event)
+
+    def _on_dependencies_changed(self, event, *dependencies):
         event.addSource(self, type=self.dependenciesChangedEventType())
 
     def addTaskAsPrerequisiteOf(self, dependencies):

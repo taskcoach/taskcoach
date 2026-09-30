@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.domain.base import ModificationDateRecorder
 from taskcoachlib.i18n import _
 from .clipboard import Clipboard
 
@@ -31,7 +30,6 @@ class BaseCommand(patterns.Command):
         super().__init__(*args, **kwargs)
         self.list = list
         self.items = [item for item in items] if items else []
-        self.__dates_before = self.__dates_after = {}
 
     def __str__(self):
         return self.name()
@@ -62,33 +60,7 @@ class BaseCommand(patterns.Command):
 
     def do(self):
         if self.canDo():
-            with patterns.CommandHistory().running():
-                with ModificationDateRecorder() as recorder:
-                    self.do_command()
-            self.__dates_before = recorder.dates_before
-            self.__dates_after = {
-                key: (item, item.modificationDateTime())
-                for key, (item, _date) in recorder.dates_before.items()
-            }
-            super().do()  # Into the history once done, as undo and redo
-
-    def undo(self):
-        super().undo()
-        self.__set_dates(self.undo_command, self.__dates_before)
-
-    def redo(self):
-        super().redo()
-        self.__set_dates(self.redo_command, self.__dates_after)
-
-    @staticmethod
-    def __set_dates(run, dates):
-        """Undo puts back the modification dates from before the change,
-        redo those from after it; any other date keeps its value
-        (docs/ATTRIBUTE_PATTERN.md, Modification Date)."""
-        with ModificationDateRecorder() as recorder:
-            run()
-        for item, date_time in {**recorder.dates_before, **dates}.values():
-            item.set_modification_datetime(date_time)
+            super().do()
 
     def __tryInvokeMethodOnSuper(self, methodName, *args, **kwargs):
         try:

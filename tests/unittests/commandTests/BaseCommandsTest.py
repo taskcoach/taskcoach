@@ -25,7 +25,8 @@ class DeleteCommandTest(CommandTestCase):
     def setUp(self):
         super().setUp()
         self.item = task.Task()
-        self.items = patterns.List([self.item])
+        # A list of the file: the undo log records which items it holds
+        self.items = task.TaskList([self.item])
 
     def deleteItem(self, items=None):
         delete = command.DeleteCommand(self.items, items or [])

@@ -22,7 +22,6 @@ from taskcoachlib.domain import date, base, task
 from taskcoachlib.domain.base.attribute import Attribute
 from . import base as baseeffort
 import functools
-import weakref
 
 
 @functools.total_ordering
@@ -50,12 +49,12 @@ class Effort(baseeffort.BaseEffort, base.Object):
 
     @patterns.eventSource
     def set_task(self, task, event=None):
-        if self._task is None:
+        if self._task.get() is None:
             # We haven't been fully initialised yet, so allow setting of the
             # task, without notifying observers. Also, don't call addEffort()
             # on the new task, because we assume set_task was invoked by
             # the new task itself.
-            self._task = None if task is None else weakref.ref(task)
+            self._task.set(task)
             return
         current_task = self.task()
         # Identity, not ==: domain objects compare equal by id, so a
@@ -64,7 +63,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         if task is None or task is current_task:
             return
         current_task.removeEffort(self)
-        self._task = weakref.ref(task)
+        self._task.set(task)
         task.addEffort(self)
         # A link, not an Attribute: its change sets the date here
         self.set_modification_datetime(date.Timestamp.now(), event=event)
@@ -72,6 +71,10 @@ class Effort(baseeffort.BaseEffort, base.Object):
 
     # FIXME: should we create a common superclass for Effort and Task?
     set_parent = set_task
+
+    @patterns.eventSource
+    def _task_restored(self, event=None):
+        event.addSource(self, self.task(), type=self.taskChangedEventType())
 
     @classmethod
     def taskChangedEventType(class_):

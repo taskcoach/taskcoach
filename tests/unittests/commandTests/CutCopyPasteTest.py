@@ -23,7 +23,7 @@ from .TaskCommandsTest import (
     CommandWithChildrenTestCase,
     CommandWithEffortTestCase,
 )
-from taskcoachlib import command
+from taskcoachlib import command, patterns
 from taskcoachlib.domain import note
 
 
@@ -42,7 +42,8 @@ class CutCommandWithTasksTest(TaskCommandTestCase):
             ),
             lambda: (
                 self.assertTaskList([self.task1, self.task2]),
-                self.assertFalse(command.Clipboard()),
+                # The clipboard is not undone (docs/UNDO_REDO.md)
+                self.assertEqual([self.task1], command.Clipboard().get()[0]),
             ),
         )
 
@@ -330,8 +331,14 @@ class PasteIntoTaskCommandWithEffortTest(CommandWithEffortTestCase):
         command.PasteAsSubItemCommand(items=[self.task2]).do()
         self.assertDoUndoRedo(
             lambda: self.assertEqual(2, len(self.task2.efforts())),
-            lambda: self.assertEqual(1, len(self.task1.efforts())),
+            # Only the paste is undone: the cut stands
+            lambda: self.assertEqual(
+                (1, 0), (len(self.task2.efforts()), len(self.task1.efforts()))
+            ),
         )
+        self.undo()
+        self.undo()  # The cut
+        self.assertEqual(1, len(self.task1.efforts()))
 
 
 class CutAndPasteTasksIntegrationTest(TaskCommandTestCase):
@@ -389,32 +396,25 @@ class CopyCommandWithTasksTest(TaskCommandTestCase):
             self.assertTaskList(self.originalList),
         )
 
+    def assertNoUndoStep(self):
+        # A copy changes nothing in the file (docs/UNDO_REDO.md)
+        self.assertFalse(patterns.CommandHistory().hasHistory())
+
     def testCopyTask(self):
         self.copy([self.task1])
         copiedTask = command.Clipboard().get()[0][0]
-        self.assertDoUndoRedo(
-            lambda: (
-                self.assertTaskCopy(self.task1, copiedTask),
-                self.assertTaskList(self.originalList),
-            ),
-            lambda: (
-                self.assertTaskList(self.originalList),
-                self.assertFalse(command.Clipboard()),
-            ),
-        )
+        self.assertTaskCopy(self.task1, copiedTask)
+        self.assertTaskList(self.originalList)
+        self.assertNoUndoStep()
 
 
 class CopyCommandWithTasksWithChildrenTest(CommandWithChildrenTestCase):
     def testCopy(self):
         self.copy([self.parent])
         copiedTask = command.Clipboard().get()[0][0]
-        self.assertDoUndoRedo(
-            lambda: self.assertTaskCopy(self.parent, copiedTask),
-            lambda: (
-                self.assertTaskList(self.originalList),
-                self.assertFalse(command.Clipboard()),
-            ),
-        )
+        self.assertTaskCopy(self.parent, copiedTask)
+        self.assertTaskList(self.originalList)
+        self.assertFalse(patterns.CommandHistory().hasHistory())
 
 
 class CopyCommandWithEffortTest(CommandWithEffortTestCase):
@@ -428,27 +428,17 @@ class CopyCommandWithEffortTest(CommandWithEffortTestCase):
     def testCopyEffort(self):
         self.copy([self.effort1])
         copiedEffort = command.Clipboard().get()[0][0]
-        self.assertDoUndoRedo(
-            lambda: self.assertEqualEfforts(self.effort1, copiedEffort),
-            lambda: (
-                self.assertEffortList(self.originalEffortList),
-                self.assertFalse(command.Clipboard()),
-            ),
-        )
+        self.assertEqualEfforts(self.effort1, copiedEffort)
+        self.assertEffortList(self.originalEffortList)
+        self.assertFalse(patterns.CommandHistory().hasHistory())
 
     def testCopyMultipleEfforts(self):
         self.copy([self.effort1, self.effort2])
         copiedEfforts = command.Clipboard().get()[0]
-        self.assertDoUndoRedo(
-            lambda: (
-                self.assertEqualEfforts(self.effort1, copiedEfforts[0]),
-                self.assertEqualEfforts(self.effort2, copiedEfforts[1]),
-            ),
-            lambda: (
-                self.assertEffortList(self.originalEffortList),
-                self.assertFalse(command.Clipboard()),
-            ),
-        )
+        self.assertEqualEfforts(self.effort1, copiedEfforts[0])
+        self.assertEqualEfforts(self.effort2, copiedEfforts[1])
+        self.assertEffortList(self.originalEffortList)
+        self.assertFalse(patterns.CommandHistory().hasHistory())
 
 
 class DragAndDropWithTasksTest(CommandWithChildrenTestCase):

@@ -16,7 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from .object import Object, CompositeObject, ModificationDateRecorder, new_id
+from .object import (
+    Object,
+    CompositeObject,
+    ModificationDateRecorder,
+    new_id,
+)
+from taskcoachlib.patterns.snapshot import restoring, is_restoring
 from .attribute import Attribute, SetAttribute
 from .collection import Collection
 from .filter import Filter, SearchFilter, SelectedItemsFilter

@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.patterns.snapshot import is_held
 
 
 class Clipboard(metaclass=patterns.Singleton):
@@ -27,8 +28,7 @@ class Clipboard(metaclass=patterns.Singleton):
         # pylint: disable=W0201
         self._contents = items
         self._source = source
-        # Cut items move: the first paste takes them, IDs included
-        self._move_pending = cut
+        self._cut = cut
 
     def get(self):
         currentContents = self._contents
@@ -37,24 +37,19 @@ class Clipboard(metaclass=patterns.Singleton):
 
     def state(self):
         """What put() needs to restore the clipboard as it is."""
-        return self._contents, self._source, self._move_pending
+        return self._contents, self._source, self._cut
 
     def items_to_paste(self):
-        """The items a paste inserts: the cut items themselves at the
-        first paste after a cut, a move that keeps their IDs; copies,
-        with new IDs, otherwise (docs/PERSISTENCE_XML.md, IDs)."""
-        if self._move_pending:
-            self._move_pending = False
+        """The items a paste inserts: cut items themselves while the
+        file does not hold them, a move that keeps their IDs; copies,
+        with new IDs, otherwise (docs/PERSISTENCE_XML.md, IDs;
+        docs/UNDO_REDO.md, Design Intent)."""
+        if self._cut and not any(is_held(item) for item in self._contents):
             return list(self._contents)
         return [item.copy() for item in self._contents]
 
     def spend_move(self, items):
-        """A redone paste inserts items again: a move of them, armed
-        again by redoing their cut, is spent as at the first paste."""
-        if len(items) == len(self._contents) and all(
-            pasted is cut for pasted, cut in zip(items, self._contents)
-        ):
-            self._move_pending = False
+        pass  # Gone with the commands' own undo
 
     def peek(self):
         return self._contents
@@ -62,7 +57,7 @@ class Clipboard(metaclass=patterns.Singleton):
     def clear(self):
         self._contents = []
         self._source = None
-        self._move_pending = False
+        self._cut = False
 
     def __bool__(self):
         return len(self._contents) > 0

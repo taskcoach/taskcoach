@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain.date import Timestamp
+from taskcoachlib.patterns.snapshot import register_item
 from . import attribute
 from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE, shown
 import functools
@@ -84,9 +85,14 @@ class Object:
         self.__creationDateTime = (
             kwargs.pop("creationDateTime", None) or Timestamp.now()
         )
-        # A new item was last modified when it was created
-        self.__modificationDateTime = (
-            kwargs.pop("modificationDateTime", None) or self.__creationDateTime
+        # A new item was last modified when it was created. The date
+        # itself dates nothing
+        self.__modificationDateTime = Attribute(
+            kwargs.pop("modificationDateTime", None)
+            or self.__creationDateTime,
+            self,
+            self._on_modification_datetime_changed,
+            dates=False,
         )
         self.__subject = Attribute(
             kwargs.pop("subject", ""), self, self.subjectChangedEvent
@@ -179,6 +185,8 @@ class Object:
         )
 
         super().__init__(*args, **kwargs)
+        # Its stored fields are in the undo log's snapshots
+        register_item(self)
 
     def __repr__(self):
         return self.subject()
@@ -204,7 +212,7 @@ class Object:
             dict(
                 id=self.__id,
                 creationDateTime=self.__creationDateTime,
-                modificationDateTime=self.__modificationDateTime,
+                modificationDateTime=self.__modificationDateTime.get(),
                 subject=self.__subject.get(),
                 description=self.__description.get(),
                 fgColor=self.__fgColor.get(),
@@ -287,19 +295,20 @@ class Object:
         return self.__creationDateTime
 
     def modificationDateTime(self):
-        return self.__modificationDateTime
+        return self.__modificationDateTime.get()
 
-    @patterns.eventSource
     def set_modification_datetime(self, date_time, event=None):
         """Set by the stored fields' Attributes when they change, and
         restored from the file when loading."""
-        if date_time == self.__modificationDateTime:
-            return
-        ModificationDateRecorder.record(self, self.__modificationDateTime)
-        self.__modificationDateTime = date_time
+        previous = self.__modificationDateTime.get()
+        if date_time != previous:
+            ModificationDateRecorder.record(self, previous)
+            self.__modificationDateTime.set(date_time, event=event)
+
+    def _on_modification_datetime_changed(self, event):
         event.addSource(
             self,
-            date_time,
+            self.modificationDateTime(),
             type=self.modification_datetime_changed_event_type(),
         )
 

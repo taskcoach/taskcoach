@@ -227,8 +227,9 @@ class Category(
 
     def _on_exclusive_subcategories_changed(self, event):
         self.exclusiveSubcategoriesEvent(event)
-        for child in self.children():
-            child.setFiltered(False, event=event)
+        if not base.is_restoring():
+            for child in self.children():
+                child.setFiltered(False, event=event)
 
     def exclusiveSubcategoriesEvent(self, event):
         event.addSource(

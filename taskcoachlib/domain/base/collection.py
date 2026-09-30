@@ -17,9 +17,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.patterns.snapshot import register_collection
 
 
 class Collection(patterns.CompositeSet):
+    """A list of the file's items: which items it holds is stored data
+    (docs/UNDO_REDO.md, Architecture)."""
+
+    def __init__(self, *args, **kwargs):
+        register_collection(self)
+        super().__init__(*args, **kwargs)
+
+    def restore_items(self, added, removed, event=None):
+        """Put the items back as a snapshot holds them: the items
+        only, without their subitems or links, which are their
+        fields."""
+        if removed:
+            patterns.ObservableSet.removeItems(self, removed, event=event)
+        if added:
+            patterns.ObservableSet.extend(self, added, event=event)
+
     def getObjectById(self, domainObjectId):
         for domainObject in self:
             if domainObjectId == domainObject.id():

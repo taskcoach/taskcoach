@@ -17,101 +17,71 @@ modification date, the entry holds the field's value before and the
 item's modification date before. Every kind of change works the same
 way. One user action is one entry.
 
-### Options
+### Design Intent
 
-**A. Undo code per command (today).** Each command class undoes its
-own changes (below, Current Implementation). Changes that spread to
-other items are undone only when the command thought of them; about
-78 classes to keep right.
+**Ruled by designer 2026-09-30** (points 1 to 3; 4 proposed, view
+state ruled 2026-09-28): one universal undo, no code per command nor
+per case, standard behaviour.
 
-**B. Field log.** The storage units (Attribute, SetAttribute, the
-links) record each change into the open entry: item, field, value
-before, modification date before. Undo sets them back in reverse,
-redo sets the values after. Complete once every stored field is a
-storage unit; many small records per action.
+1. **Every user action that changes the file is one step:** commands,
+   editor edits, snoozing a reminder, tracking started or stopped from
+   the tray, File > Merge, imports. The step is named after the
+   action ("Undo Snooze").
+2. **A step holds everything the action changed**, what the edit rules
+   changed in turn included (a parent completing its subtasks, a
+   recurrence moving the dates).
+3. **Standard behaviour:** undo and redo walk the steps; a new action
+   clears the redo steps; opening or closing a file clears them all;
+   undo or redo back to the saved state clears the unsaved mark.
+4. **Not steps:** changes the program makes on its own (the scheduler,
+   automatic imports), view state (expanded rows, a category's filter)
+   and the clipboard.
 
-**C. Object versions, keyed by modification date (the designer's
-idea, 2026-09-28; see Findings).** Every stored change sets its
-item's modification date: that is the
-moment the log saves the item's version before the change (its saved
-state, as the file has it, date included), under its UUID, once per
-action. Changes that spread set their items' dates too, so they are
-logged, in order, without the command knowing about them. An entry is
-an action number and the UUIDs it changed, each with its version
-before and, at the end of the action, after. Undo puts the versions
-before back into the same objects, in reverse; redo the versions
-after. Items created or deleted have no version before or after, and
-are removed or re-added. Open editors, selection and the tree stay,
-since the objects stay.
+### Architecture: Snapshot and Diff
 
-**D. Whole-file or whole-model versions.** Save a copy of everything
-per action, undo reloads the previous one. Simple, but every undo
-rebuilds all objects (open editors, selection and the tree are lost,
-the scheduler rebuilds) and costs as much as opening the file; a full
-copy per edit. Earlier versions of the file already exist as backups
-(File > Manage backups).
+The designer's approach (2026-09-28, 2026-09-30): the file's content
+in memory, compared before and after each action.
 
-### Findings, 2026-09-30
+- **Snapshot:** every saved value of every item in the file, read by
+  one generic loop over the items' fields, and which items the file
+  holds. About 27 ms for a 2,000-task file, a comparison 2 ms
+  (measured 2026-09-30).
+- **Step:** a snapshot when the action starts and one when it ends;
+  the difference is the step: the items changed, with their values
+  before and after, and the items added to or removed from the file.
+- **Undo** writes the values before back into the same objects, as
+  loading a file does: no edit rule runs (their effects are in the
+  step), the views are told. **Redo** writes the values after.
+- **Nothing is recorded while undoing or redoing:** a view reacting to
+  it starts no action.
 
-Option C (the designer's idea, 2026-09-28) is sound: a full copy of
-what the file stores for each changed item, put back on undo, as if
-reopening the previous version for those items only. Today's copy and
-restore code (`__getstate__`, `__setstate__`) is not such a copy;
-checked in memory:
+What the model needs: every saved value is a field of the attribute
+pattern ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md)), so the snapshot
+reads and writes them all the same way. Missing on 2026-09-30:
 
-- **It restores through the editing setters, so the edit rules run
-  again.** Redo of completing a parent (which completed its recurring
-  subtask and cleared the subtask's recurrence) moved the subtask's
-  due date 2 days: the completion date is set back before the
-  recurrence, so the subtask recurs. Loading a file runs no such rule.
-- **It sets the modification date to now** instead of the copy's date.
-- **It misses a stored field:** the reminder before snooze (a snoozed
-  task's original reminder, from which a recurring task computes its
-  next reminder). The reminder itself comes back.
-- **It shares live lists** (subtasks, efforts) with the item, so later
-  changes leak into the copy.
-- **A copy is taken only of the item that points:** moving a subtask
-  changes the old and new parent's lists of subtasks, an owner's notes
-  and a task's efforts likewise, and these items' dates do not change.
-- **No hook runs before a stored value changes:** the value is written
-  first, the date after.
-- By reading the commands, not reproduced: an editor can run a command
-  during an undo, which empties the redo list.
+- a task's reminder before snooze, a plain value;
+- the links and lists: a subitem's parent and the parent's subitems,
+  an owner's notes and attachments, a task's efforts and an effort's
+  task, a task's dependencies;
+- one switch that turns the edit rules off while values are put back
+  (completion, recurrence, percentage, parent completion), used by
+  merging too (instead of `Task.merging()`).
 
-### Design, proposed 2026-09-30
-
-Option C, with copies that are exact:
-
-1. **The copy is what the file stores** for the item: every stored
-   field, its links and its own lists, copied (not shared), the
-   modification date included.
-2. **Taken before the first change** within an action, from the one
-   place every stored change passes, and taken of every item whose
-   stored data changes: the item that points and the items holding the
-   other side (a parent's subtasks, an owner's notes and attachments, a
-   task's efforts). Items added to or removed from the file are
-   recorded as such.
-3. **Put back as loading does:** stored values set directly, no edit
-   rule run (completion, recurrence, percentage, parent completion),
-   their effects being copies of the same action; the views are told.
-   Redo puts back the copies taken when the action ended.
-4. **Nothing is done while putting back:** a command a view starts in
-   reaction does nothing.
-5. **One user action is one entry**, derived adjustments included.
-
-Whole-file versions (D) give the same result and remain the fallback.
+Findings on today's copy code (`__getstate__`, `__setstate__`),
+checked 2026-09-30, which the snapshot replaces: it restores through
+the edit setters, so the rules run again (redo of completing a parent
+moved its recurring subtask's due date 2 days); it sets the
+modification date to now; it misses the reminder before snooze; it
+shares live lists with the item.
 
 ### Path
 
-Small steps, each safe on its own:
-
-1. **Check mode:** the copies are taken beside today's undo, changing
-   nothing; after each undo an item that differs from its copy is
-   logged. This measures where today's undo is wrong.
-2. **Undo finishes from the copies:** after a command's own undo, the
-   copies are put back. The commands stay as they are.
-3. **Per-command undo code goes,** one family of commands at a time,
-   where check mode shows the copies cover it.
+1. The model: the fields above, and the edit rules' switch.
+2. The snapshot log beside today's undo, in check mode: after each
+   undo, an item that differs from the snapshot is logged.
+3. Undo and redo from the log; the commands lose their undo code; the
+   actions outside commands (snooze, tray, merge, imports) become
+   steps.
 
 ### Persistence
 

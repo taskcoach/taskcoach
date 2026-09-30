@@ -19,15 +19,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain.base.attribute import Attribute
-import weakref
+from taskcoachlib.patterns.field import LinkField
 
 
 class BaseEffort(object):
     def __init__(self, task, start, stop, *args, **kwargs):
-        self._task = None if task is None else weakref.ref(task)
+        # A stored field (docs/UNDO_REDO.md, Architecture)
+        self._task = LinkField(task, self, self._task_restored)
         self._start = Attribute(start, self, self._on_start_changed)
         self._stop = Attribute(stop, self, self._on_stop_changed)
         super().__init__(*args, **kwargs)
+
+    @patterns.eventSource
+    def _task_restored(self, event=None):
+        pass  # An effort of the file tells its observers
 
     def _on_start_changed(self, event):
         pass
@@ -36,7 +41,7 @@ class BaseEffort(object):
         pass
 
     def task(self):
-        return None if self._task is None else self._task()
+        return self._task.get()
 
     def parent(self):
         # Efforts don't have real parents since they are not composite.

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain.date import Timestamp
+from taskcoachlib.patterns.field import ListField
 from .object import fresh_state
 
 
@@ -41,15 +42,24 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
     # to be inherited by children.
 
     klass = type(name, bases, ns)
+    field_name = "_%s__%ss" % (name, klass.__ownedType__.lower())
+    restored_name = "_%ss_restored" % klass.__ownedType__.lower()
 
     def constructor(instance, *args, **kwargs):
-        # NB: we use a simple list here. Maybe we should use a container type.
+        # A stored field (docs/UNDO_REDO.md, Architecture)
         setattr(
             instance,
-            "_%s__%ss" % (name, klass.__ownedType__.lower()),
-            kwargs.pop(klass.__ownedType__.lower() + "s", []),
+            field_name,
+            ListField(
+                kwargs.pop(klass.__ownedType__.lower() + "s", []),
+                instance,
+                getattr(instance, restored_name),
+            ),
         )
         super(klass, instance).__init__(*args, **kwargs)
+
+    def owned_list(instance):
+        return getattr(instance, field_name).get()
 
     klass.__init__ = constructor
 
@@ -98,10 +108,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
     klass.modificationEventTypes = classmethod(modification_event_types)
 
     def objects(instance, recursive=False):
-        owned_objects = getattr(
-            instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
-        )
-        result = list(owned_objects)
+        result = list(owned_list(instance))
         if recursive:
             for owned_object in result[:]:
                 result.extend(owned_object.children(recursive=True))
@@ -114,11 +121,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         old_objects = objects(instance)
         if new_objects == old_objects:
             return
-        setattr(
-            instance,
-            "_%s__%ss" % (name, klass.__ownedType__.lower()),
-            new_objects,
-        )
+        owned_list(instance)[:] = new_objects
         old_ids = {id(each) for each in old_objects}
         new_ids = {id(each) for each in new_objects}
         owner_changed(
@@ -162,10 +165,18 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
     )
 
     @patterns.eventSource
+    def restored(instance, added, removed, event=None):
+        changed_event(instance, event, *objects(instance))
+        if added:
+            added_event(instance, event, *added)
+        if removed:
+            removed_event(instance, event, *removed)
+
+    setattr(klass, restored_name, restored)
+
+    @patterns.eventSource
     def add_object(instance, owned_object, event=None):
-        getattr(
-            instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
-        ).append(owned_object)
+        owned_list(instance).append(owned_object)
         owner_changed([owned_object], event)
         changed_event(instance, event, owned_object)
         added_event(instance, event, owned_object)
@@ -176,9 +187,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
     def add_objects(instance, *owned_objects, **kwargs):
         if not owned_objects:
             return
-        getattr(
-            instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
-        ).extend(owned_objects)
+        owned_list(instance).extend(owned_objects)
         event = kwargs.pop("event", None)
         owner_changed(owned_objects, event)
         changed_event(instance, event, *owned_objects)
@@ -188,9 +197,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
 
     @patterns.eventSource
     def remove_object(instance, owned_object, event=None):
-        getattr(
-            instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
-        ).remove(owned_object)
+        owned_list(instance).remove(owned_object)
         owner_changed([owned_object], event)
         changed_event(instance, event, owned_object)
         removed_event(instance, event, owned_object)
@@ -204,9 +211,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         removed = []
         for owned_object in owned_objects:
             try:
-                getattr(
-                    instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
-                ).remove(owned_object)
+                owned_list(instance).remove(owned_object)
             except ValueError:
                 pass
             else:
@@ -220,9 +225,7 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
 
     def getstate(instance):
         state = fresh_state(super(klass, instance), instance)
-        state[klass.__ownedType__.lower() + "s"] = getattr(
-            instance, "_%s__%ss" % (name, klass.__ownedType__.lower())
-        )[:]
+        state[klass.__ownedType__.lower() + "s"] = owned_list(instance)[:]
         return state
 
     klass.__getstate__ = getstate

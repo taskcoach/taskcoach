@@ -17,27 +17,29 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from . import observer
-import weakref
+from .field import LinkField, ListField
 
 
 class Composite(object):
     def __init__(self, children=None, parent=None):
         super().__init__()
-        self.__parent = parent if parent is None else weakref.ref(parent)
-        self.__children = children or []
-        for child in self.__children:
+        # Stored fields (docs/UNDO_REDO.md, Architecture)
+        self.__parent = LinkField(parent, self)
+        self.__children = ListField(children, self, self._children_restored)
+        for child in self.__children.get():
             # Only the link: building an item changes no child (a
             # subclass's set_parent may date one)
             Composite.set_parent(child, self)
 
+    def _children_restored(self, added, removed, event=None):
+        pass  # An observable composite tells its observers
+
     def __getstate__(self):
-        return dict(children=self.__children[:], parent=self.parent())
+        return dict(children=self.__children.get()[:], parent=self.parent())
 
     def __setstate__(self, state):
-        self.__parent = (
-            None if state["parent"] is None else weakref.ref(state["parent"])
-        )
-        self.__children = state["children"]
+        self.__parent.set(state["parent"])
+        self.__children.get()[:] = state["children"]
 
     def __getcopystate__(self):
         """Return the information needed to create a copy as a dict."""
@@ -47,14 +49,14 @@ class Composite(object):
             state = dict()
         state.update(
             dict(
-                children=[child.copy() for child in self.__children],
+                children=[child.copy() for child in self.__children.get()],
                 parent=self.parent(),
             )
         )
         return state
 
     def parent(self):
-        return None if self.__parent is None else self.__parent()
+        return self.__parent.get()
 
     def ancestors(self):
         """Return the parent, and its parent, etc., as a list."""
@@ -67,19 +69,19 @@ class Composite(object):
         return self.ancestors() + [self] + self.children(recursive=True)
 
     def set_parent(self, parent):
-        self.__parent = None if parent is None else weakref.ref(parent)
+        self.__parent.set(parent)
 
     def children(self, recursive=False):
         # Warning: this must satisfy the same condition as
         # allItemsSorted() below.
 
         if recursive:
-            result = self.__children[:]
-            for child in self.__children:
+            result = self.__children.get()[:]
+            for child in self.__children.get():
                 result.extend(child.children(recursive=True))
             return result
         else:
-            return self.__children
+            return self.__children.get()
 
     def siblings(self, recursive=False):
         parent = self.parent()
@@ -102,11 +104,11 @@ class Composite(object):
         return self.__class__(*args, **kwargs)
 
     def addChild(self, child):
-        self.__children.append(child)
+        self.__children.get().append(child)
         child.set_parent(self)
 
     def removeChild(self, child):
-        self.__children.remove(child)
+        self.__children.get().remove(child)
         # We don't reset the parent of the child, because that makes restoring
         # the parent-child relationship easier.
 
@@ -124,6 +126,13 @@ class ObservableComposite(Composite):
         childrenAdded = newChildren - oldChildren
         if childrenAdded:
             self.addChildEvent(event, *childrenAdded)
+
+    @observer.eventSource
+    def _children_restored(self, added, removed, event=None):
+        if removed:
+            self.removeChildEvent(event, *removed)
+        if added:
+            self.addChildEvent(event, *added)
 
     @observer.eventSource
     def addChild(self, child, event=None):  # pylint: disable=W0221
