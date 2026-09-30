@@ -356,6 +356,20 @@ In the app:
   (`XMLSyntaxError` when read). Found 2026-09-30; the same on master. A
   dropped mail's raw 8-bit headers were one source, fixed where they
   are read (`mailer`, [EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#reading-a-mail)).
+- P35. ~~An open editor wrote back what it was shown from elsewhere
+  (undo, another window)~~: fixed 2026-09-30; master's editors have
+  the same code (not reproduced there). A date field showing minutes wrote a reminder with seconds back
+  rounded, and the dates logic ran on the change as if the user had
+  made it; after an undo, that write was a new step and redo was lost.
+  The field compares an edit with what it shows; the logic runs only
+  for the user's edit
+  ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md#preconditions-and-global-logic),
+  0.5).
+- P36. A date field's change event still pending when its editor
+  closes raises `RuntimeError` (its checkbox deleted) in
+  `AttributeSync.onAttributeEdited()`. Seen 2026-09-30 in
+  `EffortEditorTest`, where a later test processes an earlier editor's
+  events; not seen in the app.
 
 ## Views on the Effective Styles
 

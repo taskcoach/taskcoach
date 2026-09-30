@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import gui, config, persistence
+import wx
+from taskcoachlib import command, config, gui, patterns, persistence
 from taskcoachlib.domain import task, effort, date
 from unittests import dummy
 
@@ -102,3 +103,25 @@ class EffortEditorTest(test.wxTestCase):
         self.editor._interior._task_entry.SetValue(self.task2)
         self.editor._interior._task_sync.onAttributeEdited(dummy.Event())
         self.assertFalse(self.editor.editorClosed)
+
+    def test_undo_writes_nothing_back(self):
+        # A change from elsewhere is shown, not edited
+        # (docs/DURATION_CALCULATIONS.md, 0.5)
+        history = patterns.CommandHistory()
+        start = date.DateTime(2026, 9, 30, 11, 3, 52)
+        self.effort.setStart(start)
+        self.effort.setStop(start + date.ONE_HOUR)
+        wx.Yield()
+        history.clear()
+        self.addCleanup(history.clear)
+        command.EditEffortStartDateTimeCommand(
+            items=[self.effort], newValue=start - date.ONE_HOUR
+        ).do()
+        wx.Yield()
+        history.undo()
+        wx.Yield()
+        self.assertEqual(
+            (start, start + date.ONE_HOUR),
+            (self.effort.getStart(), self.effort.getStop()),
+        )
+        self.assertTrue(history.hasFuture())

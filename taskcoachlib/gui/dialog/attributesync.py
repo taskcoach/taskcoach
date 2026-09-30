@@ -26,7 +26,12 @@ class AttributeSync(object):
     a control in a dialog. If the user edits the value using the control,
     the domain object is changed, using the appropriate command. If the
     attribute of the domain object is changed (e.g. in another dialog) the
-    value of the control is updated."""
+    value of the control is updated.
+
+    callback(value, edited) follows both: edited is whether the user
+    edited it here, not a change from elsewhere (undo, another window),
+    which the dialog's own logic must not act on
+    (docs/DURATION_CALCULATIONS.md, 0.5)."""
 
     def __init__(
         self,
@@ -65,15 +70,18 @@ class AttributeSync(object):
         self._commandClass(
             None, self._items, **command_kw_args
         ).do()  # pylint: disable=W0142
-        self.__invokeCallback(new_value)
+        self.__invoke_callback(new_value, edited=True)
 
     def on_attribute_changed(self, event):  # pylint: disable=W0613
         if self._entry:
             new_value = getattr(self._items[0], self._getter)()
             if new_value != self._currentValue:
-                self._currentValue = new_value
                 self.set_value(new_value)
-                self.__invokeCallback(new_value)
+                # What the control shows, which may be coarser (a time
+                # without seconds): the change event it posts is no
+                # edit (docs/UNDO_REDO.md, Actions)
+                self._currentValue = self.get_value()
+                self.__invoke_callback(new_value, edited=False)
         else:
             self.__stop_observing_attribute()
 
@@ -88,10 +96,10 @@ class AttributeSync(object):
     def get_value(self):
         return self._entry.GetValue()
 
-    def __invokeCallback(self, value):
+    def __invoke_callback(self, value, edited):
         if self.__callback is not None:
             try:
-                self.__callback(value)
+                self.__callback(value, edited)
             except RuntimeError:
                 pass  # Widget has been deleted (e.g., dialog closing)
             except Exception as e:

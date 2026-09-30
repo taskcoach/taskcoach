@@ -84,6 +84,12 @@ tracking from the tray, File > Merge, the CSV and Todo.txt imports.
   the edit that caused it. Without an event loop (tests, startup) the
   step closes at once; every read of the log closes it first.
 - **A failed action is rolled back**, and its error raised again.
+- **Views show undo and redo, they do not edit:** what a view does in
+  reaction records nothing. An editor's field compares an edit with
+  what it shows (a time without seconds), and the editors' dates logic
+  runs only for the user's own edit
+  ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md#preconditions-and-global-logic),
+  0.5).
 - **An action that changes nothing is no step** (a copy).
 
 ## Persistence

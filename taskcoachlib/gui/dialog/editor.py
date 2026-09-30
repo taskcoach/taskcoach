@@ -1380,35 +1380,39 @@ class DatesPage(ScrolledPage):
             )
         super().close()
 
-    def __onPlannedStartChanged(self, value):
+    def __on_planned_start_changed(self, value, edited):
         """AttributeSync callback for planned start date changes."""
         self._currentPlannedStartDateTime = value
-        self.__onPlannedStartDateTimeChanged(value)
+        self.__task_field_changed("start", edited)
 
-    def __onPlannedStartDateTimeChanged(self, value):
-        """Called when planned start date changes - update based on mode."""
-        if hasattr(self, "_currentPlannedDurationMode"):
-            self.__syncTaskState(sourceField="start")
-
-    def __onDueDateChanged(self, value):
+    def __on_due_date_changed(self, value, edited):
         """AttributeSync callback for due date changes."""
         self._currentDueDateTime = value
-        self.__onDueDateTimeChanged(value)
+        self.__task_field_changed("due", edited)
 
-    def __onDueDateTimeChanged(self, value):
-        """Called when due date changes - update based on mode."""
-        if hasattr(self, "_currentPlannedDurationMode"):
-            self.__syncTaskState(sourceField="due")
+    def __task_field_changed(self, source_field, edited):
+        """The user's edit runs the logic flow; a change from elsewhere
+        (undo, another window) only shows, the fields' states
+        following (docs/DURATION_CALCULATIONS.md, 0.5)."""
+        if not hasattr(self, "_currentPlannedDurationMode"):
+            return
+        if edited:
+            self.__syncTaskState(sourceField=source_field)
+        else:
+            self.__updateFieldStates()
 
     def _on_domain_planned_duration_mode_changed(self, event):
         """Layer 2: Domain plannedDurationMode changed externally."""
-        self._currentPlannedDurationMode = self.items[0].plannedDurationMode()
+        mode = self.items[0].plannedDurationMode()
+        if mode == getattr(self, "_currentPlannedDurationMode", None):
+            return  # This editor's own change: its logic flow runs
+        self._currentPlannedDurationMode = mode
         self.__updateDurationModeDropdown()
-        self.__syncTaskState()
+        self.__updateFieldStates()
 
-    def __onPlannedDurationSyncCallback(self, value):
+    def __on_planned_duration_sync_callback(self, value, edited):
         """AttributeSync callback: duration committed or changed externally."""
-        self.__syncTaskState(sourceField="duration")
+        self.__task_field_changed("duration", edited)
 
     def __on_task_duration_domain_changed(self, event):
         """Domain duration changed: match the preset dropdown."""
@@ -1562,7 +1566,7 @@ class DatesPage(ScrolledPage):
             command.EditPlannedStartDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].plannedStartDateTimeChangedEventType(),
-            callback=self.__onPlannedStartChanged,
+            callback=self.__on_planned_start_changed,
         )
         # Rebuild dropdown when focus leaves this field
         self._plannedStartDateTimeCombo.Bind(
@@ -1614,7 +1618,7 @@ class DatesPage(ScrolledPage):
             command.EditPlannedDurationCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].plannedDurationChangedEventType(),
-            callback=self.__onPlannedDurationSyncCallback,
+            callback=self.__on_planned_duration_sync_callback,
         )
 
         # Subscribe to domain changes BEFORE __syncTaskState()
@@ -1736,7 +1740,7 @@ class DatesPage(ScrolledPage):
             command.EditDueDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].dueDateTimeChangedEventType(),
-            callback=self.__onDueDateChanged,
+            callback=self.__on_due_date_changed,
         )
         # Rebuild dropdown when focus leaves this field
         self._dueDateTimeCombo.Bind(
@@ -1792,7 +1796,7 @@ class DatesPage(ScrolledPage):
             command.EditActualStartDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].actualStartDateTimeChangedEventType(),
-            callback=self.__onActualStartChanged,
+            callback=self.__on_actual_start_changed,
         )
 
         self.addEntry(
@@ -1801,7 +1805,7 @@ class DatesPage(ScrolledPage):
             wx.StaticText(self, label=""),
         )
 
-    def __onActualStartChanged(self, value):
+    def __on_actual_start_changed(self, value, edited):
         """AttributeSync callback for actual start date changes."""
         self._currentActualStartDateTime = value
 
@@ -2294,7 +2298,7 @@ class DatesPage(ScrolledPage):
             command.EditReminderDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].reminderChangedEventType(),
-            callback=self.__onReminderChanged,
+            callback=self.__on_reminder_changed,
         )
 
         self.addEntry(
@@ -2303,7 +2307,7 @@ class DatesPage(ScrolledPage):
             wx.StaticText(self, label=""),
         )
 
-    def __onReminderChanged(self, value):
+    def __on_reminder_changed(self, value, edited):
         """AttributeSync callback for reminder date changes."""
         self._currentReminderDateTime = value
 
@@ -4303,21 +4307,31 @@ class EffortEditBook(Page):
         mode_index = {"standard": 0, "retroactive": 1, "implicit": 2}.get(
             self.items[0].entryMode(), 0
         )
+        if mode_index == self._effort_entry_mode:
+            return  # This editor's own change: its logic flow runs
         self._effort_entry_mode = mode_index
         self._effort_entry_mode_choice.SetSelection(mode_index)
-        self.__apply_effort_entry_mode()
+        self.__show_effort_change()
 
-    def __on_effort_duration_changed(self, value):
+    def __on_effort_duration_changed(self, value, edited):
         """AttributeSync callback: effort duration committed or changed externally."""
-        self.__sync_effort_state(source_field="duration")
+        self.__effort_field_changed("duration", edited)
 
-    def __on_effort_start_changed(self, value):
+    def __on_effort_start_changed(self, value, edited):
         """Called when start datetime is committed."""
-        self.__sync_effort_state(source_field="start")
+        self.__effort_field_changed("start", edited)
 
-    def __on_effort_stop_changed(self, value):
+    def __on_effort_stop_changed(self, value, edited):
         """Called when stop datetime is committed."""
-        self.__sync_effort_state(source_field="stop")
+        self.__effort_field_changed("stop", edited)
+
+    def __effort_field_changed(self, source_field, edited):
+        """The user's edit runs the logic flow; a change from elsewhere
+        only shows (docs/DURATION_CALCULATIONS.md, 0.5)."""
+        if edited:
+            self.__sync_effort_state(source_field=source_field)
+        else:
+            self.__show_effort_change()
 
     def __on_effort_entry_mode_changed(self, event):
         """Handle switching between Standard and Retroactive entry modes."""
@@ -4404,13 +4418,8 @@ class EffortEditBook(Page):
 
         if self._effort_entry_mode == 0:  # 1. If Mode Standard
             # 1.3 Set Start-Date editable
-            self._start_date_time_combo.SetEditable()
-            self._start_from_last_effort_button.Enable(
-                self._effort_list.maxDateTime() is not None
-            )
             # 1.4 Set Duration editable
-            self._effort_duration_ctrl.Enable(True)
-            self._effort_duration_ctrl.SetReadOnly(False)
+            self.__set_effort_editability(stop)
             # 1.5 Set Presets dropdown enabled [Ref1]
 
             # 1.6 If Duration Unset-Action, Then disable Stop-Date
@@ -4489,11 +4498,8 @@ class EffortEditBook(Page):
 
         elif self._effort_entry_mode == 1:  # 2. If Mode Retroactive
             # 2.3 Set Start-Date read-only
-            self._start_date_time_combo.SetReadOnly()
-            self._start_from_last_effort_button.Enable(False)
             # 2.4 Set Duration editable
-            self._effort_duration_ctrl.Enable(True)
-            self._effort_duration_ctrl.SetReadOnly(False)
+            self.__set_effort_editability(stop)
             # 2.5 Set Presets dropdown enabled [Ref1]
 
             # 2.6 If Duration Unset-Action, Then disable Stop-Date
@@ -4545,26 +4551,50 @@ class EffortEditBook(Page):
         elif self._effort_entry_mode == 2:  # 3. If Mode Implicit
             # 3.3 Set Presets dropdown disabled [Ref1]
             # 3.4 Set Start-Date editable
-            self._start_date_time_combo.SetEditable()
-            self._start_from_last_effort_button.Enable(
-                self._effort_list.maxDateTime() is not None
-            )
+            # 3.5 and 3.6.1: Duration disabled without Stop-Date,
+            # else enabled (Read-Only)
+            self.__set_effort_editability(stop)
 
             # 3.5 If Stop-Date does not exist, Disable Duration
             if stop is None:
-                self._effort_duration_ctrl.Enable(False)
                 self._effort_duration_ctrl.SetDuration(date.TimeDelta())
 
             # 3.6 If Stop-Date exists
             elif stop is not None:
-                # 3.6.1 Enable Duration (Read-Only)
-                self._effort_duration_ctrl.Enable(True)
-                self._effort_duration_ctrl.SetReadOnly(True)
                 # 3.6.2 Adj Duration (duration = stop - start)
                 # 3.6.3 Negative Durations permitted
                 if start is not None and stop is not None:
                     self._effort_duration_ctrl.SetDuration(stop - start)
 
+        self.__update_invalid_period_message()
+        self.__update_field_states()
+
+    def __set_effort_editability(self, stop):
+        """Which fields the mode lets the user edit (steps 1.3 and 1.4,
+        2.3 and 2.4, 3.4 to 3.6.1)."""
+        mode = self._effort_entry_mode
+        if mode == 1:  # Retroactive
+            self._start_date_time_combo.SetReadOnly()
+            self._start_from_last_effort_button.Enable(False)
+        else:
+            self._start_date_time_combo.SetEditable()
+            self._start_from_last_effort_button.Enable(
+                self._effort_list.maxDateTime() is not None
+            )
+        if mode != 2:
+            self._effort_duration_ctrl.Enable(True)
+            self._effort_duration_ctrl.SetReadOnly(False)
+        elif stop is None:  # Implicit
+            self._effort_duration_ctrl.Enable(False)
+        else:
+            self._effort_duration_ctrl.Enable(True)
+            self._effort_duration_ctrl.SetReadOnly(True)
+
+    def __show_effort_change(self):
+        """A change from elsewhere (undo, another window): the fields
+        show it, and their states follow; no value is adjusted
+        (docs/DURATION_CALCULATIONS.md, 0.5)."""
+        self.__set_effort_editability(self._stop_date_time_combo.GetDateTime())
         self.__update_invalid_period_message()
         self.__update_field_states()
 

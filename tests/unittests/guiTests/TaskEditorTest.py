@@ -18,7 +18,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import gui, config, persistence, operating_system
+from taskcoachlib import command, config, gui, operating_system
+from taskcoachlib import patterns, persistence
 from taskcoachlib.domain import task, effort, date, note, attachment
 from taskcoachlib.gui import uicommand
 from unittests import dummy
@@ -463,6 +464,60 @@ class FocusTest(TaskEditorTestCase):
 
 class FocusTestWithPerspective(FocusTest):
     editorClass = TaskEditorWithPerspective
+
+
+class ChangeFromElsewhereTest(TaskEditorTestCase):
+    """A change made elsewhere (undo, another window) is shown, not
+    edited: the fields write nothing back
+    (docs/DURATION_CALCULATIONS.md, 0.5)."""
+
+    def getItems(self):
+        return [self.task]
+
+    def createTasks(self):
+        # pylint: disable=W0201
+        self.task = task.Task("Task")
+        self.start = date.DateTime(2026, 9, 30, 9, 0, 0)
+        self.due = date.DateTime(2026, 10, 1, 9, 0, 0)
+        self.task.set_planned_start_date_time(self.start)
+        self.task.set_due_date_time(self.due)
+        return [self.task]
+
+    def setUp(self):
+        super().setUp()
+        self.history = patterns.CommandHistory()
+        self.process_events()
+        self.history.clear()
+        self.addCleanup(self.history.clear)
+
+    @staticmethod
+    def process_events():
+        wx.Yield()
+
+    def steps(self):
+        return [str(step) for step in self.history.getHistory()]
+
+    def test_seconds_the_fields_do_not_show_stay(self):
+        reminder = date.DateTime(2026, 9, 30, 14, 2, 52)
+        command.EditReminderDateTimeCommand(
+            items=[self.task], newValue=reminder
+        ).do()
+        self.process_events()
+        self.assertEqual(reminder, self.task.reminder())
+        self.assertEqual(1, len(self.steps()))
+
+    def test_undo_writes_nothing_back(self):
+        command.EditPlannedStartDateTimeCommand(
+            items=[self.task], newValue=self.start - date.ONE_DAY
+        ).do()
+        self.process_events()
+        self.history.undo()
+        self.process_events()
+        self.assertEqual(
+            (self.start, self.due),
+            (self.task.plannedStartDateTime(), self.task.dueDateTime()),
+        )
+        self.assertTrue(self.history.hasFuture())
 
 
 class DatesTestBase(TaskEditorSetterMixin, TaskEditorTestCase):

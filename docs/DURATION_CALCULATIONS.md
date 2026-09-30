@@ -102,6 +102,13 @@ for the next user change.
        callbacks are harmless because the loop completes the state
        transition. Any deferred callback that arrives after sync-mode
        clears will run against the correct final state.
+   0.5 A change from elsewhere (undo, redo, another window, the tray)
+       is no user action: the fields show it and their states follow
+       (__updateFieldStates(), __show_effort_change()); the logic
+       flow does not run, so it writes nothing back. AttributeSync
+       tells its callback which it is (edited), and compares an edit
+       with what the field shows, not the stored value (a time
+       without seconds) (UNDO_REDO.md, Actions).
 ```
 
 ---
