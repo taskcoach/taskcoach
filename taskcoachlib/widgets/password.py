@@ -25,8 +25,8 @@ class KeychainPasswordWidget(wx.Dialog):
     def __init__(self, domain, username, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.domain = domain.encode("UTF-8")
-        self.username = username.encode("UTF-8")
+        self.domain = domain
+        self.username = username
 
         pnl = wx.Panel(self, wx.ID_ANY)
         hsz = wx.BoxSizer(wx.HORIZONTAL)
@@ -35,7 +35,7 @@ class KeychainPasswordWidget(wx.Dialog):
         from keyring import get_password
 
         password = get_password(self.domain, self.username)
-        self.password = (password or "").decode("UTF-8")
+        self.password = password or ""
         self.passwordField = wx.TextCtrl(
             pnl, wx.ID_ANY, self.password, style=wx.TE_PASSWORD
         )
@@ -74,9 +74,7 @@ class KeychainPasswordWidget(wx.Dialog):
         from keyring import set_password
 
         if self.keepInKeychain.GetValue():
-            set_password(
-                self.domain, self.username, self.password.encode("UTF-8")
-            )
+            set_password(self.domain, self.username, self.password)
         else:
             set_password(self.domain, self.username, "")
         self.EndModal(wx.ID_OK)
@@ -124,13 +122,11 @@ def GetPassword(domain, username, reset=False):
 
     try:
         if reset:
-            set_password(domain.encode("UTF-8"), username.encode("UTF-8"), "")
+            set_password(domain, username, "")
         else:
-            pwd = get_password(
-                domain.encode("UTF-8"), username.encode("UTF-8")
-            )
+            pwd = get_password(domain, username)
             if pwd:
-                return pwd.decode("UTF-8")
+                return pwd
     except ImportError:
         # Bug seen on Ubuntu 13.10: secretstorage cannot import ._gi
         return _GetCachedPassword(domain, username, reset)

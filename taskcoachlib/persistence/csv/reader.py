@@ -26,6 +26,8 @@ import io
 import re
 import math
 
+_YEAR_FIRST = re.compile(r"\s*\d{4}[-/.]")
+
 
 class CSVReader(object):
     def __init__(self, taskList, categoryList):
@@ -222,6 +224,9 @@ class CSVReader(object):
     ):
         if not fieldValue:
             return None
+        # A date starting with the year is year-month-day (ISO 8601);
+        # dateutil would read it year-day-month when day first
+        dayfirst = dayfirst and not _YEAR_FIRST.match(fieldValue)
         try:
             dateTime = dparser.parse(
                 fieldValue, dayfirst=dayfirst, fuzzy=True

@@ -649,14 +649,6 @@ class FileExportAsICalendar(FileExportCommand):
     def getExportDialogClass():
         return dialog.export.ExportAsICalendarDialog
 
-    @staticmethod
-    def exportableViewer(aViewer):
-        """Return whether the viewer can be exported to iCalendar format."""
-        return aViewer.is_showing_tasks() or (
-            aViewer.is_showing_effort()
-            and not aViewer.is_showing_aggregated_effort()
-        )
-
 
 class FileExportAsTodoTxt(FileExportCommand):
     """Action for exporting the contents of a viewer to Todo.txt format.
@@ -737,9 +729,12 @@ class FileImportCSV(IOCommand):
                 wizard = CSVImportWizard(
                     filename, None, wx.ID_ANY, _("Import CSV")
                 )
-                if wizard.RunWizard():
-                    self.iocontroller.import_csv(**wizard.GetOptions())
-                    break
+                try:
+                    if wizard.RunWizard():
+                        self.iocontroller.import_csv(**wizard.GetOptions())
+                        break
+                finally:
+                    wizard.Destroy()
             else:
                 break
 

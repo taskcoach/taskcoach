@@ -166,8 +166,9 @@ class TaskViewerTestCase(test.wxTestCase):
         )
 
     def assertIcon(self, icon, column=0):
+        self.run_style_pass()
         self.assertEqual(
-            self.viewer.imageIndex[icon], self.getFirstItemIcon(column)
+            image_list_cache.get_index(icon), self.getFirstItemIcon(column)
         )
 
 
@@ -491,13 +492,15 @@ class CommonTestsMixin(object):
         self.taskList.append(taskWithRecurrence)
         self.assertEqual("Every other week", self.getItemText(0, 3))
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testRenderAttachment(self):
         att = attachment.FileAttachment("whatever")
         self.task.addAttachment(att)
         self.taskList.append(self.task)
         self.showColumn("attachments")
-        self.assertIcon("nuvola_status_mail-attachment", column=1)
+        names = [column.name() for column in self.viewer.visibleColumns()]
+        self.assertIcon(
+            "nuvola_status_mail-attachment", column=names.index("attachments")
+        )
 
     def testOneDayLeft(self):
         self.showColumn("timeLeft")
@@ -762,25 +765,21 @@ class CommonTestsMixin(object):
         self.taskList.append(task.Task(font=wx.SWISS_FONT))
         self.assertEqual(wx.SWISS_FONT, self.getFirstItemFont())
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenPlannedStartDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.set_planned_start_date_time(date.Now() + date.ONE_DAY)
         self.assertIcon(task.inactive.icon_id(self.settings))
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenDueDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.set_due_date_time(date.Now() + date.ONE_HOUR)
         self.assertIcon(task.duesoon.icon_id(self.settings))
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenCompletionDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.set_completion_date_time(date.Now())
         self.assertIcon(task.completed.icon_id(self.settings))
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenPrerequisiteIsAdded(self):
         prerequisite = task.Task("zzz")
         self.taskList.extend([prerequisite, self.task])
@@ -788,7 +787,6 @@ class CommonTestsMixin(object):
         prerequisite.add_dependencies([self.task])
         self.assertIcon(task.inactive.icon_id(self.settings))
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenPrerequisiteIsCompleted(self):
         prerequisite = task.Task(subject="zzz")
         self.taskList.extend([prerequisite, self.task])
@@ -797,20 +795,17 @@ class CommonTestsMixin(object):
         prerequisite.set_completion_date_time(date.Now())
         self.assertIcon(task.late.icon_id(self.settings))
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenEffortTrackingStarts(self):
         self.taskList.append(self.task)
         self.task.addEffort(effort.Effort(self.task))
         self.assertIcon("nuvola_apps_clock")
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenEffortTrackingStops(self):
         self.taskList.append(self.task)
         self.task.addEffort(effort.Effort(self.task))
         self.task.stopTracking()
         self.assertIcon(task.active.icon_id(self.settings))
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testIconUpdatesWhenTaskBecomesOverdue(self):
         dueDateTime = date.Now() + date.TimeDelta(seconds=10)
         self.task.set_due_date_time(dueDateTime)

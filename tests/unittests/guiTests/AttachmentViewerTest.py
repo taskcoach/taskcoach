@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import test
 import wx
 from taskcoachlib import gui, config, persistence
+from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.domain import attachment, date
 
 
@@ -42,32 +43,30 @@ class AttachmentViewerTest(test.wxTestCase):
 
     def assertIcon(self, expectedIcon, anAttachment, **kwargs):
         self.assertEqual(
-            self.viewer.imageIndex[expectedIcon],
+            image_list_cache.get_index(expectedIcon),
             self.viewer.typeImageIndices(anAttachment, **kwargs)[
                 wx.TreeItemIcon_Normal
             ],
         )
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testTypeImageIndex_WhenFileDoesNotExist(self):
         fileAttachment = attachment.FileAttachment("whatever")
-        self.assertIcon("fileopen_red", fileAttachment)
+        self.assertIcon("taskcoach_actions_fileopen_red", fileAttachment)
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testTypeImageIndex_WhenFileDoesExist(self):
         fileAttachment = attachment.FileAttachment("whatever")
         self.assertIcon(
-            "fileopen", fileAttachment, exists=lambda filename: True
+            "nuvola_mimetypes_application-x-dvi",
+            fileAttachment,
+            exists=lambda filename: True,
         )
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testTypeImageIndex_UriAttachment(self):
         uriAttachment = attachment.URIAttachment("http://whatever.we")
         self.assertIcon(
             "nuvola_categories_applications-internet", uriAttachment
         )
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def test_type_image_index_of_a_mail(self):
         mail_attachment = attachment.MailAttachment("mid:1@example.com")
         self.assertIcon("nuvola_apps_email", mail_attachment)

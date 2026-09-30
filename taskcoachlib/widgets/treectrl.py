@@ -448,6 +448,12 @@ class TreeListCtrl(
         return result
 
     def RefreshAllItems(self, count=0):  # pylint: disable=W0613
+        # A column shown or hidden since the last refresh changes them
+        self.__columns_with_images = [
+            index
+            for index in range(self.GetColumnCount())
+            if self.__adapter.hasColumnImages(index)
+        ]
         # Check if tree structure actually changed before rebuilding
         root_item = self.GetRootItem()
         if root_item:
@@ -499,11 +505,6 @@ class TreeListCtrl(
         self.StopEditing()
         self.__selection = self.curselection()
         self.DeleteAllItems()
-        self.__columns_with_images = [
-            index
-            for index in range(self.GetColumnCount())
-            if self.__adapter.hasColumnImages(index)
-        ]
         root_item = self.GetRootItem()
         if not root_item:
             root_item = self.AddRoot("Hidden root")

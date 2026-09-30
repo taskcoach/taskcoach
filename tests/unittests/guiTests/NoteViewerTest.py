@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from taskcoachlib import command, gui, config, persistence
+from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.domain import note, attachment, category
 
 
@@ -84,11 +85,10 @@ class NoteViewerTest(test.wxTestCase):
         self.viewer.showColumnByName("categories")
         self.assertEqual("Category", self.firstItemText(column=3))
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testShowAttachmentColumn(self):
         self.note.addAttachments(attachment.FileAttachment("whatever"))
         self.assertEqual(
-            self.viewer.imageIndex["nuvola_status_mail-attachment"],
+            image_list_cache.get_index("nuvola_status_mail-attachment"),
             self.firstItemIcon(column=2),
         )
 

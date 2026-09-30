@@ -373,3 +373,19 @@ class CSVReaderTestCase(test.TestCase):
         self.assertEqual(
             set([1, 3, 4]), set(t.dueDateTime().month for t in self.taskList)
         )
+
+    def test_year_first_dates_are_year_month_day(self):
+        # Whatever the day-first choice (ISO 8601)
+        filename = self.createCSVFile("T1,2026-10-02\nT2,2026/10/02 14:30")
+        self.reader.read(
+            filename=filename,
+            mappings={0: "Subject", 1: "Due date"},
+            **self.defaultReaderKwArgs
+        )
+        self.assertEqual(
+            {(10, 2)},
+            {
+                (t.dueDateTime().month, t.dueDateTime().day)
+                for t in self.taskList
+            },
+        )

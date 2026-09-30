@@ -21,14 +21,14 @@ from taskcoachlib.i18n import _
 import chardet
 import wx
 import csv
-import tempfile
+import io
 import wx.grid as gridlib
 import wx.adv as wiz
 
 
 class CSVDialect(csv.Dialect):
     def __init__(
-        self, delimiter=",", quotechar='"', doublequote=True, escapechar=""
+        self, delimiter=",", quotechar='"', doublequote=True, escapechar=None
     ):
         self.delimiter = delimiter
         self.quotechar = quotechar
@@ -98,51 +98,52 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
         self.grid.SetColLabelSize(0)
         self.grid.CreateGrid(0, 0)
         self.grid.EnableEditing(False)
-        self.grid.SetSelectionMode(self.grid.wxGridSelectRows)
+        self.grid.SetSelectionMode(gridlib.Grid.GridSelectRows)
+        self.grid.SetMinSize((-1, 150))  # A few rows of the preview
 
         vsizer = wx.BoxSizer(wx.VERTICAL)
-        gridSizer = wx.FlexGridSizer(0, 2)
+        grid_sizer = wx.FlexGridSizer(0, 2, 0, 0)
 
-        gridSizer.Add(
+        grid_sizer.Add(
             wx.StaticText(self, wx.ID_ANY, _("Delimiter")),
             0,
             wx.ALIGN_CENTRE_VERTICAL | wx.ALL,
             3,
         )
-        gridSizer.Add(self.delimiter, 0, wx.ALL, 3)
+        grid_sizer.Add(self.delimiter, 0, wx.ALL, 3)
 
-        gridSizer.Add(
+        grid_sizer.Add(
             wx.StaticText(self, wx.ID_ANY, _("Date format")),
             0,
             wx.ALIGN_CENTER_VERTICAL | wx.ALL,
             3,
         )
-        gridSizer.Add(self.date, 0, wx.ALL, 3)
+        grid_sizer.Add(self.date, 0, wx.ALL, 3)
 
-        gridSizer.Add(
+        grid_sizer.Add(
             wx.StaticText(self, wx.ID_ANY, _("Quote character")),
             0,
             wx.ALIGN_CENTRE_VERTICAL | wx.ALL,
             3,
         )
-        gridSizer.Add(self.quoteChar, 0, wx.ALL, 3)
+        grid_sizer.Add(self.quoteChar, 0, wx.ALL, 3)
 
-        gridSizer.Add(
+        grid_sizer.Add(
             wx.StaticText(self, wx.ID_ANY, _("Escape quote")),
             0,
             wx.ALIGN_CENTRE_VERTICAL | wx.ALL,
             3,
         )
-        gridSizer.Add(self.quotePanel, 0, wx.ALL, 3)
+        grid_sizer.Add(self.quotePanel, 0, wx.ALL, 3)
 
-        gridSizer.Add(self.importSelectedRowsOnly, 0, wx.ALL, 3)
-        gridSizer.Add((0, 0))
+        grid_sizer.Add(self.importSelectedRowsOnly, 0, wx.ALL, 3)
+        grid_sizer.Add((0, 0))
 
-        gridSizer.Add(self.hasHeaders, 0, wx.ALL, 3)
-        gridSizer.Add((0, 0))
+        grid_sizer.Add(self.hasHeaders, 0, wx.ALL, 3)
+        grid_sizer.Add((0, 0))
 
-        gridSizer.AddGrowableCol(1)
-        vsizer.Add(gridSizer, 0, wx.EXPAND | wx.ALL, 3)
+        grid_sizer.AddGrowableCol(1)
+        vsizer.Add(grid_sizer, 0, wx.EXPAND | wx.ALL, 3)
 
         vsizer.Add(self.grid, 1, wx.EXPAND | wx.ALL, 3)
 
@@ -156,7 +157,6 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
 
         self.delimiter.Bind(wx.EVT_CHOICE, self.OnOptionChanged)
         self.quoteChar.Bind(wx.EVT_CHOICE, self.OnOptionChanged)
-        self.importSelectedRowsOnly.Bind(wx.EVT_CHECKBOX, self.OnOptionChanged)
         self.hasHeaders.Bind(wx.EVT_CHECKBOX, self.OnOptionChanged)
         self.doubleQuote.Bind(wx.EVT_RADIOBUTTON, self.OnOptionChanged)
         self.escapeQuote.Bind(wx.EVT_RADIOBUTTON, self.OnOptionChanged)
@@ -174,10 +174,10 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
         else:
             if self.doubleQuote.GetValue():
                 doublequote = True
-                escapechar = ""
+                escapechar = None
             else:
                 doublequote = False
-                escapechar = self.escapeChar.GetValue().encode("UTF-8")
+                escapechar = self.escapeChar.GetValue()[:1] or None
             self.dialect = CSVDialect(
                 delimiter={0: ",", 1: "\t", 2: " ", 3: ":", 4: ";", 5: "|"}[
                     self.delimiter.GetSelection()
@@ -187,53 +187,36 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
                 escapechar=escapechar,
             )
 
-            fp = tempfile.TemporaryFile()
-            try:
-                fp.write(
-                    open(self.filename, "r")
-                    .read()
-                    .decode(self.encoding)
-                    .encode("UTF-8")
-                )
-                fp.seek(0)
+            with open(self.filename, encoding=self.encoding, newline="") as fp:
+                text = fp.read()
+            reader = csv.reader(io.StringIO(text), dialect=self.dialect)
 
-                reader = csv.reader(fp, dialect=self.dialect)
-
-                if self.hasHeaders.GetValue():
-                    self.headers = [
-                        header.decode("UTF-8") for header in next(reader)
-                    ]
-                else:
-                    # In some cases, empty fields are omitted if they're at the end...
-                    hsize = 0
-                    for line in reader:
-                        hsize = max(hsize, len(line))
-                    self.headers = [
-                        _("Field #%d") % idx for idx in range(hsize)
-                    ]
-                    fp.seek(0)
-                    reader = csv.reader(fp, dialect=self.dialect)
-
-                if self.grid.GetNumberCols():
-                    self.grid.DeleteRows(0, self.grid.GetNumberRows())
-                    self.grid.DeleteCols(0, self.grid.GetNumberCols())
-                self.grid.InsertCols(0, len(self.headers))
-
-                self.grid.SetColLabelSize(20)
-                for idx, header in enumerate(self.headers):
-                    self.grid.SetColLabelValue(idx, header)
-
-                lineno = 0
+            if self.hasHeaders.GetValue():
+                self.headers = next(reader, [])
+            else:
+                # Empty fields at the end of a line may be omitted
+                hsize = 0
                 for line in reader:
-                    self.grid.InsertRows(lineno, 1)
-                    for idx, value in enumerate(line):
-                        if idx < self.grid.GetNumberCols():
-                            self.grid.SetCellValue(
-                                lineno, idx, value.decode("UTF-8")
-                            )
-                    lineno += 1
-            finally:
-                fp.close()
+                    hsize = max(hsize, len(line))
+                self.headers = [_("Field #%d") % idx for idx in range(hsize)]
+                reader = csv.reader(io.StringIO(text), dialect=self.dialect)
+
+            if self.grid.GetNumberCols():
+                self.grid.DeleteRows(0, self.grid.GetNumberRows())
+                self.grid.DeleteCols(0, self.grid.GetNumberCols())
+            self.grid.InsertCols(0, len(self.headers))
+
+            self.grid.SetColLabelSize(20)
+            for idx, header in enumerate(self.headers):
+                self.grid.SetColLabelValue(idx, header)
+
+            lineno = 0
+            for line in reader:
+                self.grid.InsertRows(lineno, 1)
+                for idx, value in enumerate(line):
+                    if idx < self.grid.GetNumberCols():
+                        self.grid.SetCellValue(lineno, idx, value)
+                lineno += 1
 
     def GetOptions(self):
         return dict(
@@ -248,17 +231,12 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
         )
 
     def GetSelectedRows(self):
-        startRows = [
-            row for row, dummy_column in self.grid.GetSelectionBlockTopLeft()
-        ]
-        stopRows = [
-            row
-            for row, dummy_column in self.grid.GetSelectionBlockBottomRight()
-        ]
-        selectedRows = []
-        for startRow, stopRow in zip(startRows, stopRows):
-            selectedRows.extend(list(range(startRow, stopRow + 1)))
-        return selectedRows
+        selected_rows = []
+        for block in self.grid.GetSelectedRowBlocks():
+            selected_rows.extend(
+                range(block.GetTopRow(), block.GetBottomRow() + 1)
+            )
+        return selected_rows
 
     def CanGoNext(self):
         if self.filename is not None:
@@ -321,8 +299,8 @@ class CSVImportMappingPage(wiz.WizardPageSimple):
                 self.interior, wx.ID_ANY, _("%s attribute") % meta.name
             )
         )
-        gsz.AddSpacer((3, 3))
-        gsz.AddSpacer((3, 3))
+        gsz.Add((3, 3))
+        gsz.Add((3, 3))
         tcFieldNames = [field[0] for field in self.fields]
         for fieldName in options["fields"]:
             gsz.Add(
@@ -406,12 +384,12 @@ class CSVImportWizard(wiz.Wizard):
         self.optionsPage.SetNext(self.mappingPage)
         self.mappingPage.SetPrev(self.optionsPage)
 
-        self.SetPageSize(
-            (600, -1)
-        )  # I know this is obsolete but it's the only one that works...
+        self.SetPageSize((600, -1))
+        # The wizard's size fits the pages, the preview grid included
+        self.GetPageAreaSizer().Add(self.optionsPage)
 
-        wiz.EVT_WIZARD_PAGE_CHANGING(self, wx.ID_ANY, self.OnPageChanging)
-        wiz.EVT_WIZARD_PAGE_CHANGED(self, wx.ID_ANY, self.OnPageChanged)
+        self.Bind(wiz.EVT_WIZARD_PAGE_CHANGING, self.OnPageChanging)
+        self.Bind(wiz.EVT_WIZARD_PAGE_CHANGED, self.OnPageChanged)
 
     def OnPageChanging(self, event):
         if event.GetDirection():
