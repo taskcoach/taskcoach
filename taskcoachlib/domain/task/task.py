@@ -213,9 +213,10 @@ class Task(
     def addChild(self, child, event=None):
         if child in self.children():
             return
-        wasTracking = self.isBeingTracked(recursive=True)
+        was_tracking = bool(self.isBeingTracked(recursive=True))
         super().addChild(child, event=event)
-        self.childChangeEvent(child, wasTracking, event)
+        self.__child_changed(child, event)
+        self.__send_tracking_if_changed(was_tracking)
         if not is_restoring():
             if self.shouldBeMarkedCompleted():
                 self.set_completion_date_time(child.completionDateTime())
@@ -228,42 +229,56 @@ class Task(
     def removeChild(self, child, event=None):
         if child not in self.children():
             return
-        wasTracking = self.isBeingTracked(recursive=True)
+        was_tracking = bool(self.isBeingTracked(recursive=True))
         super().removeChild(child, event=event)
-        self.childChangeEvent(child, wasTracking, event)
+        self.__child_changed(child, event)
+        self.__send_tracking_if_changed(was_tracking)
         if not is_restoring() and self.shouldBeMarkedCompleted():
             # The removed child was the last uncompleted child
             self.set_completion_date_time(date.Now())
         child._update_status(recursive=True)
 
-    def childChangeEvent(self, child, wasTracking, event):
-        childHasTimeSpent = child.timeSpent(recursive=True)
-        childHasBudget = child.budget(recursive=True)
-        childHasBudgetLeft = child.budgetLeft(recursive=True)
-        childHasRevenue = child.revenue(recursive=True)
-        childPriority = child.priority(recursive=True)
-        # Determine what changes due to the child being added or removed:
-        if childHasTimeSpent:
+    def _children_restored(self, added, removed, event=None):
+        """Undo or redo moved subtasks: what adding or removing them
+        tells, without the edit rules (their effects are the step's)."""
+        super()._children_restored(added, removed, event=event)
+        for child in added + removed:
+            self.__child_changed(child, event)
+            child._update_status(recursive=True)
+        if any(
+            child.isBeingTracked(recursive=True) for child in added + removed
+        ):
+            self.send_tracking_changed(
+                tracking=bool(self.isBeingTracked(recursive=True))
+            )
+
+    def __send_tracking_if_changed(self, was_tracking):
+        is_tracking = bool(self.isBeingTracked(recursive=True))
+        if was_tracking != is_tracking:
+            self.send_tracking_changed(tracking=is_tracking)
+
+    def __child_changed(self, child, event):
+        has_time_spent = child.timeSpent(recursive=True)
+        has_budget = child.budget(recursive=True)
+        has_budget_left = child.budgetLeft(recursive=True)
+        has_revenue = child.revenue(recursive=True)
+        priority = child.priority(recursive=True)
+        # What the child's arrival or departure changes here
+        if has_time_spent:
             self.send_time_spent_changed()
-        if childHasRevenue:
+        if has_revenue:
             self.send_revenue_changed()
-        if childHasBudget:
+        if has_budget:
             self.budget_changed_event(event)
-        if childHasBudgetLeft or (
-            childHasTimeSpent and (childHasBudget or self.budget())
+        if has_budget_left or (
+            has_time_spent and (has_budget or self.budget())
         ):
             self.send_budget_left_changed()
-        if childPriority > self.priority():
+        if priority > self.priority():
             event.addSource(self, type=self.priorityChangedEventType())
-        isTracking = self.isBeingTracked(recursive=True)
-        if wasTracking and not isTracking:
-            self.send_tracking_changed(tracking=False)
-        elif not wasTracking and isTracking:
-            self.send_tracking_changed(tracking=True)
 
-    @patterns.eventSource
-    def setSubject(self, subject, event=None):
-        super().setSubject(subject, event=event)
+    def subject_changed_event(self, event):
+        super().subject_changed_event(event)
         # Linked tasks show this subject in their prerequisites and
         # dependencies
         for prerequisite in self.prerequisites():
@@ -900,7 +915,7 @@ class Task(
             + removed
         )
         if any(each.isBeingTracked() for each in added + removed):
-            self.send_tracking_changed(tracking=self.isBeingTracked())
+            self.send_tracking_changed(tracking=bool(self.isBeingTracked()))
         self.send_time_spent_changed()
 
     @classmethod

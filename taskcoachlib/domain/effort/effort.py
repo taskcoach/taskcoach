@@ -46,6 +46,9 @@ class Effort(baseeffort.BaseEffort, base.Object):
         self.__duration = Attribute(
             self._computeDuration(), self, self._on_duration_changed
         )
+        # The stop the callback last saw: tracking started or stopped
+        # whether it was set or put back by undo
+        self.__stop_seen = self._stop.get()
 
     @patterns.eventSource
     def set_task(self, task, event=None):
@@ -198,12 +201,11 @@ class Effort(baseeffort.BaseEffort, base.Object):
             newStop = date.DateTime.now()
         elif newStop == date.DateTime.max or newStop == date.DateTime():
             newStop = None
-        self._previous_stop = self._stop.get()
         self._stop.set(newStop, event=event)
 
     def _on_stop_changed(self, event):
-        previous_stop = getattr(self, "_previous_stop", None)
-        new_stop = self._stop.get()
+        previous_stop, new_stop = self.__stop_seen, self._stop.get()
+        self.__stop_seen = new_stop
         task = self.task()
         if new_stop is None:
             patterns.Event(self.trackingChangedEventType(), self, True).send()

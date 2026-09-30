@@ -195,6 +195,18 @@ class UndoTest(test.TestCase):
 
         self.assert_undone_and_redone(change)
 
+    def test_starting_tracking(self):
+        self.assert_undone_and_redone(
+            lambda: command.StartEffortCommand(self.tasks, [self.other]).do()
+        )
+
+    def test_stopping_tracking(self):
+        command.StartEffortCommand(self.tasks, [self.other]).do()
+        self.history.clear()
+        self.assert_undone_and_redone(
+            lambda: command.StopEffortCommand(self.task_file.efforts()).do()
+        )
+
     def test_moving_an_effort(self):
         self.assert_undone_and_redone(lambda: self.effort.set_task(self.other))
 
@@ -242,3 +254,78 @@ class UndoTest(test.TestCase):
             command.PasteAsSubItemCommand(self.tasks, [self.other]).do()
 
         self.assert_undone_and_redone(change)
+
+
+class WhatUndoTellsTest(test.TestCase):
+    """Undo and redo tell the views what the change told them: the
+    work a change does beyond storing lives in its field's callback,
+    which runs whether it is set or put back (docs/UNDO_REDO.md,
+    Architecture)."""
+
+    def setUp(self):
+        super().setUp()
+        task.Task.settings = config.Settings(load=False)
+        self.history = patterns.CommandHistory()
+        self.history.clear()
+        self.addCleanup(self.history.clear)
+        self.task_file = persistence.TaskFile()
+        self.addCleanup(self.task_file.stop)
+        self.addCleanup(self.task_file.close)
+        self.parent = task.Task(subject="Parent")
+        self.child = task.Task(subject="Child")
+        self.parent.addChild(self.child)
+        self.other = task.Task(subject="Other")
+        self.task_file.tasks().extend([self.parent, self.other])
+
+    def change(self, what):
+        with self.history.action("change"):
+            what()
+
+    def test_undo_of_resuming_tracking_tells_it_stopped(self):
+        worked = effort.Effort(self.child, OLD, OLD + date.ONE_HOUR)
+        self.child.addEffort(worked)
+        self.change(lambda: worked.setStop(OLD + 2 * date.ONE_HOUR))
+        self.change(lambda: worked.setStop(date.DateTime.max))  # Resume
+        tracking = test.ChangeRecorder(task.Task.trackingChangedEventType())
+        self.history.undo()
+        stopped = set(tracking)
+        del tracking[:]
+        self.history.redo()
+        # An event's sources come in no set order
+        self.assertEqual(
+            (
+                {(False, self.child), (False, self.parent)},
+                {(True, self.child), (True, self.parent)},
+            ),
+            (stopped, set(tracking)),
+        )
+
+    def test_undo_of_moving_a_tracked_subtask_tells_both_parents(self):
+        self.child.addEffort(effort.Effort(self.child, OLD))  # Tracked
+        self.change(
+            lambda: command.DragAndDropTaskCommand(
+                self.task_file.tasks(), [self.child], drop=[self.other]
+            ).do()
+        )
+        tracking = test.ChangeRecorder(task.Task.trackingChangedEventType())
+        self.history.undo()
+        self.assertEqual(
+            {(True, self.parent), (False, self.other)},
+            {each for each in tracking if each[1] is not self.child},
+        )
+
+    def test_undo_of_a_subject_tells_the_linked_tasks(self):
+        self.other.add_prerequisites([self.parent])
+        self.other.addTaskAsDependencyOf([self.parent])
+        self.change(lambda: self.parent.setSubject("Renamed"))
+        linked = test.ChangeRecorder(task.Task.prerequisitesChangedEventType())
+        self.history.undo()
+        self.assertIn(self.other, linked)
+
+    def test_undo_of_a_colour_shows_at_once(self):
+        self.change(lambda: self.other.setForegroundColor(wx.RED))
+        self.assertEqual(wx.RED, self.other.effectiveFgColor())
+        self.history.undo()
+        self.assertNotEqual(wx.RED, self.other.effectiveFgColor())
+        self.history.redo()
+        self.assertEqual(wx.RED, self.other.effectiveFgColor())

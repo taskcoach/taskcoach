@@ -59,7 +59,7 @@ class Object:
         self.__subject = Attribute(
             kwargs.pop("subject", ""),
             self,
-            self.subjectChangedEvent,
+            self.subject_changed_event,
             normalize=text.single_line,
         )
         self.__description = Attribute(
@@ -270,7 +270,7 @@ class Object:
     def setSubject(self, subject, event=None):
         self.__subject.set(subject, event=event)
 
-    def subjectChangedEvent(self, event):
+    def subject_changed_event(self, event):
         event.addSource(
             self, self.subject(), type=self.subjectChangedEventType()
         )
@@ -351,20 +351,12 @@ class Object:
 
     def setForegroundColor(self, color, event=None):
         self.__fgColor.set(color, event=event)
-        # Trigger computeEffective after SSOT update
-        from . import appearance
-
-        appearance.computeEffective(self, "fgColor")
 
     def foregroundColor(self):
         return self.__fgColor.get()
 
     def setBackgroundColor(self, color, event=None):
         self.__bgColor.set(color, event=event)
-        # Trigger computeEffective after SSOT update
-        from . import appearance
-
-        appearance.computeEffective(self, "bgColor")
 
     def backgroundColor(self):
         return self.__bgColor.get()
@@ -376,10 +368,6 @@ class Object:
 
     def setFont(self, font, event=None):
         self.__font.set(font, event=event)
-        # Trigger computeEffective after SSOT update
-        from . import appearance
-
-        appearance.computeEffective(self, "font")
 
     # Icons:
 
@@ -392,10 +380,6 @@ class Object:
         self.__icon_id.set(
             icon_catalog.normalize_icon_id(icon_id), event=event
         )
-        # Trigger computeEffective after SSOT update
-        from . import appearance
-
-        appearance.computeEffective(self, "icon")
 
     # Event types:
 
@@ -405,6 +389,12 @@ class Object:
 
     def appearanceChangedEvent(self, event):
         event.addSource(self, type=self.appearanceChangedEventType())
+        # What the item shows follows at once, when set and when undo
+        # or redo puts a style back
+        from . import appearance
+
+        for field_type in appearance.FIELD_TYPES:
+            appearance.computeEffective(self, field_type)
 
     # --- Derived SSOT Getters ---
 
@@ -672,10 +662,10 @@ class CompositeObject(Object, patterns.ObservableComposite):
             )
         return subject
 
-    def subjectChangedEvent(self, event):
-        super().subjectChangedEvent(event)
+    def subject_changed_event(self, event):
+        super().subject_changed_event(event)
         for child in self.children():
-            child.subjectChangedEvent(event)
+            child.subject_changed_event(event)
 
     @staticmethod
     def subjectSortFunction(**kwargs):

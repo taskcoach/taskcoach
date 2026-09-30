@@ -121,8 +121,8 @@ class Category(
         )
         return state
 
-    def subjectChangedEvent(self, event):
-        super().subjectChangedEvent(event)
+    def subject_changed_event(self, event):
+        super().subject_changed_event(event)
         self.categorySubjectChangedEvent(event)
 
     def categorySubjectChangedEvent(self, event):

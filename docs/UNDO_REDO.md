@@ -61,6 +61,11 @@ in memory, compared before and after each action.
   action: each field changed, with its values before and after, and
   the items added to or removed from each list. Items the action
   created are left out: undo takes them out of the lists.
+- **What a change tells lives in its field's callback**, which runs
+  whether the value is set or put back: the views' events, a task's
+  tracking and time spent, a moved subtask's news to its parents, the
+  linked tasks' subject, the effective styles. A setter only
+  normalizes and stores; work done there would be skipped by undo.
 - **Undo** writes the values before back into the same objects,
   inside `restoring()`: no edit rule runs (completion, recurrence,
   percentage, the actual start, a parent's completion, the exclusive
@@ -140,6 +145,9 @@ it. All of it is removed.
 - `tests/unittests/domainTests/UndoTest.py`: for each kind of change,
   the file written after undo is the file written before, dates
   included; redo gives the file after; no field differs in memory.
+- `WhatUndoTellsTest` (in `UndoTest.py`): undo and redo tell what the
+  change told (tracking, a moved subtask's parents, linked subjects,
+  styles).
 - `tests/unittests/guiTests/UndoWithEditorsTest.py`: the same cases
   with an editor open on each item; what an editor shows of a change,
   its undo or its redo, it writes nothing back.
