@@ -106,8 +106,9 @@ go at the end. Details live in the sections and documents linked.
     spell check's timer (53) and the date popup (P12); reopen if it
     shows again.
 45. Incremental pass: at a due second, process only what changed and
-    what depends on it, not every object; first thoughts, to review
-    ([Incremental Pass](#incremental-pass)).
+    what depends on it, each object once, not every object; analysis
+    verified 2026-09-29 (it can match the full loop exactly), with 57;
+    to decide ([Incremental Pass](#incremental-pass)).
 46. ~~Status-first sort re-sorts on the clock's status changes~~: once
     after the loop's pass ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md#re-sorting)).
 47. ~~Effort viewer's Task and Categories columns refresh~~.
@@ -575,7 +576,9 @@ First thoughts, nothing decided:
    so nothing needs to wait for it.
 
 With these, the list holds exactly the pending seconds, and no rebuild
-is needed except for the clock set back and the due soon hours.
+is needed except for the clock set back and the due soon hours. Part
+of the incremental pass's design ([Incremental Pass](#incremental-pass),
+Design, 1).
 
 ---
 
@@ -771,53 +774,112 @@ Each due second costs its pass and one more that finds nothing (the
 
 ## Incremental Pass
 
-To do 45. **First thoughts, 2026-09-29, to review; nothing decided.**
+To do 45, with to do 57 ([Stale Entries](#stale-entries)). **Analysis
+2026-09-29, verified; nothing built or decided.**
 
-The designer's idea (2026-09-29): at a due second, instead of the full
-loop over every object, keep the IDs of what changed, process only
-those, and cascade along a tree of what depends on them. First noted
-as "the reason for each entry": each heap entry with its task and why
-it was added. It waited for the costs measured after items 5 and 6
-([Cost After](#cost-after)).
+The designer's idea (2026-09-29): a master list of the seconds, each
+with its tasks; when a second lands, process its tasks and cascade
+only what they change, each object once, instead of the full loop over
+every object; data changes (a category's icon or priority, a move)
+cascade the same way, through the Publisher events.
 
-What the pass computes, what each result reads, and what must follow
-when it changes (status already updates at once on a data change,
-`_update_status()`; the pass adds the clock's changes and the styles):
+**Verdict: it can match the full loop exactly.** Checked by a
+differential probe: after each of 300 to 400 random changes (16 kinds:
+overrides, category links, priority, renames, moving tasks and
+categories, tracking, dates, completion, prerequisites, new and pasted
+tasks with owned notes, subnotes, delete and undelete,
+`__setstate__`, clock jumps of 1 s to 30 h), on 7 files of 167 to 714
+objects, an emulated incremental pass ran, then the real full loop:
+0 values left for the full loop, 0 objects out of order, 0 processed
+twice; 6 to 13 objects per change. Dropping any rule below brings
+misses back. The one difference in principle: the full loop triggers
+a due reminder again at every pass, the incremental pass at its second
+only; no action in the interface leaves a reminder due after its
+dialog closes.
 
-| Result | Reads | Follows when it changes |
-|---|---|---|
-| Category style | own style, parent category | subcategories; items in it or its subcategories |
-| Task status | own dates, completion, the prerequisites of the task and its ancestors, the clock | tasks that have it as a prerequisite, and their subtasks; its own style |
-| Task reminder | reminder, completion, the clock | nothing |
-| Task style | own style, categories, parent, status | subtasks; its notes and attachments |
-| Note style | own style, categories, parent note | subnotes; its attachments |
+### Design
 
-Sketch:
+1. **The timer list** (to do 57): a sorted list of `(second, task,
+   rule)`; each task knows its entries, so a date change replaces them
+   and a deletion removes them; no entry for a date not set. A landing
+   second gives its tasks: their status and reminder are computed, and
+   a changed status marks the task's style.
+2. **Marks from events:** each change the scheduler already hears
+   ([Data Changes](#data-changes)) marks the objects that read it
+   (Followers below), by identity, not ID.
+3. **Settling:** the marked objects in a fixed order: categories by
+   depth, then tasks by depth, then notes (global and owned) by depth,
+   then attachments. A changed effective value or source marks its
+   followers, which always come later in the order, so each object is
+   computed once and nothing loops.
+4. **Global changes keep the full loop:** a file opened, a merge
+   (copies share IDs), the clock set back, the due soon hours, the
+   status styles (light and dark), the theme and the system colours.
+5. **Proof, kept:** the differential probe becomes a unit test that
+   compares against the full loop; the check mode
+   (`TASKCOACH_SCHEDULER_CHECK=1`) stays for the app. No periodic full
+   loop (ruling below).
 
-1. **Entries carry their task:** `(second, task)`. A popped entry
-   gives the task whose time rule came due; one whose task was deleted
-   is skipped when popped (lazy, as in
-   [DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
-2. **Data changes mark the object** in a set of changed IDs instead of
-   pushing the current second.
-3. **At a due second**, process the marked objects parents first; each
-   result that changes marks its followers (table); stop when nothing
-   is marked. The work follows what changed, not the file's size.
-4. **Global changes keep the full loop:** a file opened, the clock set
-   back, the due soon hours, the appearance settings, the theme.
-5. **Proof:** the check mode (`TASKCOACH_SCHEDULER_CHECK=1`) runs the
-   full loop beside it and logs whatever the incremental pass missed.
+Rules the first sketch lacked, each needed by the probe:
 
-The risk is a missing follower: a stale colour or status that nothing
-corrects until a full loop. The check mode finds these, but only in
-the cases exercised.
+- Follow the `effective.*` events wherever they are sent: an override
+  setter and `__setstate__` compute an object's effective style at
+  once, outside the pass.
+- A category's members are the items whose `categories()` hold it (an
+  index), not `Category.categorizables()`: pasted items' owned notes
+  keep their categories without the category's side.
+- An added object marks its whole subtree: children, owned notes and
+  attachments.
+- A category's rename or style priority change reaches its members:
+  equal priorities are ordered by name.
+- An owner's style reaches none of its notes or attachments.
+
+### Inputs
+
+| Result | Reads |
+|---|---|
+| Category style | own override; the parent category's effective value and name |
+| Task style | own override; tracking (icon); its categories: their priority, name, ID and effective values; the parent task's effective value, source and name; its status and the status styles in the settings (light or dark theme) |
+| Note style | own override; its categories (as a task's); the parent note's effective value and name; not its owner |
+| Attachment style | own override only |
+| Task status | own planned start, actual start, due and completion; the completion of the prerequisites of the task and its ancestors; the due soon hours; the clock |
+| Task reminder | reminder (with snooze), completion, recurrence, the clock |
+
+### Followers
+
+| When this changes | Recompute |
+|---|---|
+| A category's effective value | its subcategories; its direct members (tasks, global and owned notes) |
+| A category's name | its subcategories and direct members (source, and the winner of a tie) |
+| A category's style priority | its direct members |
+| A task's effective value or source | its subtasks (not when both old and new come from its own status or tracking) |
+| A task's or note's name | its subtasks or subnotes (source) |
+| A task's status | its own style; the filter and sorter (`scheduler.pass`) |
+| A task's tracking | its own icon |
+| A note's effective value | its subnotes |
+| An owner's style, an attachment | nothing |
+
+The graph has no cycles: edges run category to subcategory, category
+to member, task to subtask, note to subnote, status to own style.
+Prerequisites act through completion dates, at once, outside the pass
+(`_update_status()`).
+
+### Risks
+
+- Merge: copies share IDs; a full loop.
+- The theme can turn dark or light for up to 1 s without its event;
+  the full loop follows `system.theme_colour_changed` too.
+- A failing object must still mark its followers.
+- Over-marking costs work, not correctness: ancestors on date and
+  tracking events, descendants on names.
 
 Questions for the review:
 
 1. The cascade ruling ([Ruling](#ruling-the-cascade-runs-through-the-heap))
    spreads a cascade one level per second, so a pass never runs long.
-   With work bounded by the change, settle it within the tick instead?
-   That also drops the empty pass each due second costs today.
+   With each object computed once in a fixed order, settle it all at
+   once instead? That also drops the empty pass each due second costs
+   today.
 2. ~~Keep a full loop as a safety net (once a minute, say), or only
    the check mode during development?~~ **Ruled by designer
    2026-09-29:** no periodic full loop; it would admit the pass cannot
@@ -827,6 +889,8 @@ Questions for the review:
    costs 213 ms with 2000 tasks; the gain is large with big files and
    many dates close to now (2000 tasks, dates within an hour: UI
    thread 11% busy).
+4. A due reminder triggered at its second only, not again at every
+   pass?
 
 ---
 
