@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from xml.etree import ElementTree as ET
 from taskcoachlib import meta
-from taskcoachlib.domain import date, task, note, category
+from taskcoachlib.domain import categorizable, category, date, note, task
 import os
 import sys
 
@@ -133,13 +133,11 @@ class XMLWriter(object):
         for root_task in sortedById(task_list.rootItems()):
             self.task_node(root, root_task)
 
-        owned_notes = self.notes_owned_by_note_owners(
-            task_list, category_container
+        in_file = categorizable.categorizables_in(
+            task_list, note_container, category_container
         )
         for root_category in sortedById(category_container.rootItems()):
-            self.category_node(
-                root, root_category, task_list, note_container, owned_notes
-            )
+            self.category_node(root, root_category, in_file)
 
         for root_note in sortedById(note_container.rootItems()):
             self.note_node(root, root_note)
@@ -150,13 +148,6 @@ class XMLWriter(object):
             % (meta.data.version, self.__versionnr),
             root,
         ).write(self.__fd, "utf-8")
-
-    def notes_owned_by_note_owners(self, *collections_of_note_owners):
-        notes = []
-        for note_owners in collections_of_note_owners:
-            for note_owner in note_owners:
-                notes.extend(note_owner.notes(recursive=True))
-        return notes
 
     def task_node(self, parent_node, task):  # pylint: disable=W0621
         maxDateTime = self.maxDateTime
@@ -259,20 +250,10 @@ class XMLWriter(object):
         return node
 
     def category_node(
-        self, parent_node, category, *categorizable_containers
+        self, parent_node, category, in_file
     ):  # pylint: disable=W0621
-        def inCategorizableContainer(categorizable):
-            for container in categorizable_containers:
-                if categorizable in container:
-                    return True
-            return False
-
         node = self.base_composite_node(
-            parent_node,
-            category,
-            "category",
-            self.category_node,
-            categorizable_containers,
+            parent_node, category, "category", self.category_node, (in_file,)
         )
         if category.isFiltered():
             node.attrib["filtered"] = str(category.isFiltered())
@@ -286,17 +267,13 @@ class XMLWriter(object):
             self.note_node(node, eachNote)
         for attachment in sortedById(category.attachments()):
             self.attachment_node(node, attachment)
-        # Make sure the categorizables referenced are actually in the
-        # categorizableContainer, i.e. they are not deleted
-        categorizableIds = " ".join(
-            [
-                categorizable.id()
-                for categorizable in sortedById(category.categorizables())
-                if inCategorizableContainer(categorizable)
-            ]
+        # Its members in the file, not a copy or a deleted item
+        member_ids = " ".join(
+            member.id()
+            for member in sortedById(category.categorizables() & in_file)
         )
-        if categorizableIds:
-            node.attrib["categorizables"] = categorizableIds
+        if member_ids:
+            node.attrib["categorizables"] = member_ids
         return node
 
     def note_node(self, parent_node, note):  # pylint: disable=W0621

@@ -1,8 +1,10 @@
-"""Category membership held twice (P28, P29 in
-docs/MASTER_SCHEDULER_REFACTOR.md): the item's categories and the
-category's members. The file is written from the category's side, so a
-change that fills only the item's side is lost on save. Each scenario
-prints both sides, then the categories after a save and reload.
+"""Category membership (P28, P29 in docs/MASTER_SCHEDULER_REFACTOR.md).
+It was held twice, the item's categories and the category's members,
+and the file was written from the category's side, so a change that
+filled only the item's side was lost on save. Now the item's side is
+the only data and the category's members its index. Each scenario
+prints the item's categories, whether the index lists it, then the
+categories after a save and reload: all keep Home.
 
 Run from the repository root:
 
@@ -45,7 +47,7 @@ def names(categories):
 
 
 def check_all():
-    """P28, fixed: the editor's Check all linked the item side only."""
+    """P28: the editor's Check all linked the item side only."""
     task_file, home = new_file()
     paint = task.Task(subject="Paint")
     task_file.tasks().append(paint)
@@ -58,8 +60,8 @@ def check_all():
 
 
 def paste_task_with_note():
-    """P29: a pasted task's notes keep their categories on their side
-    only; the task list links the category side for tasks, not notes."""
+    """P29: a pasted task's notes kept their categories on their side
+    only; the task list linked the category side for tasks only."""
     task_file, home = new_file()
     paint = task.Task(subject="Paint")
     colours = note.Note(subject="Colours")
@@ -81,7 +83,7 @@ def paste_task_with_note():
 
 
 def paste_note_in_editor():
-    """P29: a note pasted in the task editor (AddNoteCommand) keeps its
+    """P29: a note pasted in the task editor (AddNoteCommand) kept its
     categories on its side only."""
     task_file, home = new_file()
     first, second = task.Task(subject="A"), task.Task(subject="B")

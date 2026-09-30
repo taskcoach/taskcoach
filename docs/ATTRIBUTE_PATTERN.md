@@ -310,8 +310,14 @@ subitem's parent, an owned note's or attachment's owner, an effort's
 task, a task's prerequisites and a task's or note's categories are
 that item's own data: changing them sets its date. The reverse lists
 (children, owned notes and attachments, efforts, dependencies, a
-category's members) are derived and set no date. The file stores
-category membership on the category, but it is read both ways.
+category's members) are derived and set no date. Membership is
+stored once, as the items' categories; a category's members are
+their index, kept by the items alone, and hold every item that claims
+it, in the file or not (a copy, a deleted item kept for undo)
+(2026-09-29, P29 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+The file stores it on the category, from the members in the file, the
+format released versions read; it is read both ways.
 Building an item with its children (a copy, a read) links them and
 sets no date: nothing changed.
 Merging follows the same rule

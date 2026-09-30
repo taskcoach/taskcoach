@@ -147,6 +147,11 @@ go at the end. Details live in the sections and documents linked.
     shows its status icon, the folders stay as regular icons. One
     themed status icon, `TaskStatus.icon_id()`, replaces
     `getBitmap()`, which read the light theme's icons only.
+59. Wrappers left by P29: `Category.addCategorizable()` and
+    `removeCategorizable()` only call the items and only the tests use
+    them (87 calls in 18 files); remove them and link from the items,
+    and review the now empty `CategorizableContainer`. **Asked by
+    designer 2026-09-29**, once P29 works.
 
 ## Deferred or Will Not Do
 
@@ -290,33 +295,20 @@ In the app:
   file stores the category's side, so the categories were lost on
   save; they were not undoable either. Both now go through one
   command, both sides, like a single check.
-- P29. Pasted notes lose their categories on save: a pasted task's
-  notes, and a note pasted in the task editor. The same on master.
-  Membership is held twice in memory (the item's categories, the
-  category's members) and the file is written from the category's
-  side, which paste does not fill for notes. Open: the fix is a design
-  choice (the item's categories are its own data and the members
-  derived, [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
-  The designer wants it solved at the source, no mix (2026-09-29).
-  Today both sides are stored and written: both by the commands, the
-  readers and merge; one alone by constructors (copies), undo of one
-  object's state, and each list filling the other's side when items
-  are added (the category list the items', the task list the
-  categories', not for owned notes). 66 calls read the item's side,
-  10 the category's (the writer, the category filter, merge). Options:
-  A. store it on the item only, the members an index kept by the
-  item's changes and by items entering or leaving the file, the file
-  written from it (format unchanged); B. store it on the category
-  only, the item's categories an index; C. both, with one writer.
-  Recommended: A. Checked 2026-09-29: the ownership was decided on
-  2026-09-28 (to do 17, commit 8b9d012a7: the task owns its category
-  links; the category's list became the reverse and sets no date); the
-  list stayed stored because the category list uses it when a category
-  is deleted (the members lose it), undeleted (they get it back),
-  copied or cut and pasted (the members join), and the file keeps the
-  category's side so released versions read it. With A those
-  operations carry the members themselves, as items carry their
-  categories, and the file is written in the same format.
+- P29. ~~Notes lost their categories on save~~: fixed 2026-09-29;
+  the same on master. A pasted task's notes, a note pasted in the task
+  editor and a note owned by an attachment kept them on their own side
+  only; the file is written from the category's side, which paste did
+  not fill and the writer's in-file check skipped for attachments'
+  notes. **Ruled by designer** (2026-09-29): solved at the source,
+  membership stored on the item only (option A). A category's members
+  are an index the items keep (`member_joined()`, `member_left()`),
+  every item that claims it; one walk, `categorizables_in()`, says
+  which are in the file, for the writer and the delete dialog. A
+  category leaving or entering the file (delete, undo, cut, paste)
+  takes its members with it (`leave_file()`, `enter_file()`): why the
+  list had stayed stored after to do 17 (commit 8b9d012a7). The file
+  format is unchanged. Cleanup: to do 59.
 
 ## Views on the Effective Styles
 
@@ -853,9 +845,9 @@ Rules the first sketch lacked, each needed by the probe:
 - Follow the `effective.*` events wherever they are sent: an override
   setter and `__setstate__` compute an object's effective style at
   once, outside the pass.
-- A category's members are the items whose `categories()` hold it (an
-  index), not `Category.categorizables()`: pasted items' owned notes
-  keep their categories without the category's side.
+- A category's members are the items whose `categories()` hold it:
+  `Category.categorizables()`, their index since P29, less the items
+  outside the file.
 - An added object is computed with its whole subtree (children, owned
   notes and attachments): each reads what is above it, its parent and
   its categories, so it inherits their styles; the fixed order settles
@@ -872,10 +864,12 @@ lookup, outside events; run it from the repository root with
 an emulated incremental pass, then the real full loop. With the rules:
 0 misses on seeds 1 to 7 (300 to 400 steps, 167 to 714 objects), 0
 out of order, 0 twice, 5 to 13 objects per change. Dropping a rule:
-members from `Category.categorizables()` gives 7 to 10 misses per 300
-steps (seeds 1, 2, 4 to 7); not following effective events sent
-outside the pass, 3 in 200 (seed 3). The full loop re-triggered due
-reminders at nearly every step, the difference in principle above.
+not following effective events sent outside the pass gives 3 misses
+in 200 steps (seed 3). Members from `Category.categorizables()` gave
+7 to 10 misses per 300 steps (seeds 1, 2, 4 to 7) while paste left
+notes one-sided; since P29, 0 (rerun 2026-09-29). The full loop
+re-triggered due reminders at nearly every step, the difference in
+principle above.
 The first full loop after the random file is built changes about 705
 values, the second none: the loop already settles in one pass.
 
@@ -884,7 +878,7 @@ leaf category's rename with a member linked one way pushes nothing;
 fonts from one string compare equal; an owned note and attachment
 ignore their owner's style; default icons; an override changes the
 effective style at once while the children wait for the pass.
-`docs/scripts/category_membership_probe.py` reproduces P28 and P29.
+`docs/scripts/category_membership_probe.py` shows P28 and P29 fixed.
 
 ### Inputs
 
@@ -918,12 +912,11 @@ Prerequisites act through completion dates, at once, outside the pass
 
 ### Risks
 
-- An owned note or attachment does not know its owner: deciding
-  whether a marked one is still in the file needs an owner map or a
-  walk from the file's items.
-- Members come from the items' categories, which paste leaves
-  one-sided for notes (P29); the member lookup depends on how P29 is
-  solved at the source.
+- Whether a marked object is still in the file: an owned note or
+  attachment does not know its owner, and a category's members
+  include items outside it (a copy, a deleted item kept for undo).
+  The file's walk, `categorizables_in()` (P29), answers it for items
+  with categories; attachments need the same walk or an owner map.
 - Merge: copies share IDs; a full loop.
 - The theme can turn dark or light for up to 1 s without its event;
   the full loop follows `system.theme_colour_changed` too.
@@ -957,8 +950,10 @@ Questions for the review:
    pass?
 5. When to settle: at the next tick, as today (within a second), or
    right after the change, all changes of one event dispatch together?
-6. Category membership held twice (P29): store it on one side, or keep
-   both with one writer? Decides the member lookup above.
+6. ~~Category membership held twice (P29): store it on one side, or
+   keep both with one writer?~~ **Ruled by designer 2026-09-29:** on
+   the item only; the member lookup reads the category's index, less
+   the items outside the file.
 
 ---
 

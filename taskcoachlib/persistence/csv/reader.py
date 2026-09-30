@@ -170,7 +170,6 @@ class CSVReader(object):
                 tasksById[id_] = task
 
             for category in categories:
-                category.addCategorizable(task)
                 task.addCategory(category)
 
             tasks.append(task)

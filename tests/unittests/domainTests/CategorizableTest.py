@@ -114,9 +114,10 @@ class CategorizableCompositeObjectTest(test.TestCase):
         )
         self.assertEqual(set(categories), categorizableObject.categories())
 
-    def testAddCategoryDoesNotAddCategorizableToCategory(self):
+    def test_adding_a_category_makes_the_item_a_member(self):
+        # The category's members are the index of its items' categories
         self.categorizable.addCategory(self.category)
-        self.assertEqual(set([]), self.category.categorizables())
+        self.assertEqual({self.categorizable}, self.category.categorizables())
 
     def testAddParentToCategory(self):
         child = categorizable.CategorizableCompositeObject(subject="child")

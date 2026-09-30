@@ -17,20 +17,33 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib.domain import base
-from taskcoachlib import patterns
+from .categorizable import CategorizableCompositeObject
 
 
 class CategorizableContainer(base.Collection):
-    @patterns.eventSource
-    def extend(self, items, event=None):
-        super().extend(items, event=event)
-        for item in self._compositesAndAllChildren(items):
-            for category in item.categories():
-                category.addCategorizable(item, event=event)
+    """Items with categories. Adding or removing one changes no
+    membership: the item's categories are its own, and each category's
+    index follows them (Category.member_joined)."""
 
-    @patterns.eventSource
-    def removeItems(self, items, event=None):
-        super().removeItems(items, event=event)
-        for item in self._compositesAndAllChildren(items):
-            for category in item.categories():
-                category.removeCategorizable(item, event=event)
+
+def categorizables_in(*collections):
+    """Every item in a file's tasks, notes and categories that can have
+    categories, with the notes they and their attachments own at any
+    depth. A category's members may include items outside the file (a
+    copy, a deleted item kept for undo); this says which are in."""
+    found = set()
+
+    def add(item):
+        if isinstance(item, CategorizableCompositeObject):
+            found.add(item)
+        notes = item.notes(recursive=True) if hasattr(item, "notes") else []
+        attachments = (
+            item.attachments() if hasattr(item, "attachments") else []
+        )
+        for each in list(notes) + list(attachments):
+            add(each)
+
+    for collection in collections:
+        for item in collection:
+            add(item)
+    return found

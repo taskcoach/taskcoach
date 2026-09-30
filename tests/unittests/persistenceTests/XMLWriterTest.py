@@ -723,6 +723,15 @@ class XMLWriterTest(test.TestCase):
         self.category.addCategorizable(newSubNote)
         self.expect_in_xml('categorizables="%s"' % newSubNote.id())
 
+    def test_note_of_an_attachment_with_category(self):
+        # The writer used to skip notes owned by attachments
+        task_attachment = attachment.FileAttachment("whatever.txt")
+        attachment_note = note.Note()
+        task_attachment.addNote(attachment_note)
+        self.task.addAttachments(task_attachment)
+        attachment_note.addCategory(self.category)
+        self.expect_in_xml('categorizables="%s"' % attachment_note.id())
+
     def testCategoryWithNote(self):
         self.category.addNote(self.note)
         self.expect_in_xml_without_dates(

@@ -353,7 +353,6 @@ class XMLReader(object):
             for categorizableId in categorizableIds:
                 if categorizableId in categorizableMap:
                     theCategorizable = categorizableMap[categorizableId]
-                    theCategory.addCategorizable(theCategorizable, event=event)
                     theCategorizable.addCategory(theCategory, event=event)
         event.send()
 

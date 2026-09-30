@@ -49,7 +49,7 @@ class FakeAttachment(base.Object):
     def location(self):
         return self.__location
 
-    def notes(self):
+    def notes(self, recursive=False):
         return self.__notes
 
 

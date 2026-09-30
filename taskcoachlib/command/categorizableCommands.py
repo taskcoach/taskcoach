@@ -88,7 +88,7 @@ class ToggleCategoryCommand(base.BaseCommand):
         """Look for the category that categorizable belongs to and remove
         categorizable from it."""
         for category in categories:
-            if categorizable in category.categorizables():
+            if category in categorizable.categories():
                 self.unlink_previous_category(category, categorizable, event)
 
     def unlink_previous_category(self, category, categorizable, event):
@@ -107,18 +107,16 @@ class ToggleCategoryCommand(base.BaseCommand):
 
     def link_category(self, category, categorizable, event):
         """Make categorizable belong to category."""
-        category.addCategorizable(categorizable, event=event)
         categorizable.addCategory(category, event=event)
 
     def unlink_category(self, category, categorizable, event):
         """Make categorizable no longer belong to category."""
-        category.removeCategorizable(categorizable, event=event)
         categorizable.removeCategory(category, event=event)
 
 
 class LinkCategoriesCommand(base.BaseCommand):
     """Link every category to every item, or unlink them (the editor's
-    Check all and Uncheck all): both sides, as one action."""
+    Check all and Uncheck all), as one action."""
 
     plural_name = _("Toggle category")
     singular_name = _('Toggle category of "%s"')
@@ -142,10 +140,8 @@ class LinkCategoriesCommand(base.BaseCommand):
     def __apply(self, link, event=None):
         for category, item in self.__pairs:
             if link:
-                category.addCategorizable(item, event=event)
                 item.addCategory(category, event=event)
             else:
-                category.removeCategorizable(item, event=event)
                 item.removeCategory(category, event=event)
 
     def do_command(self):

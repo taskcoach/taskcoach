@@ -24,7 +24,8 @@ import stat
 from . import xml
 from .merge import merge_into
 from taskcoachlib import patterns
-from taskcoachlib.domain import task, category, note, effort, attachment
+from taskcoachlib.domain import attachment, categorizable, category, effort
+from taskcoachlib.domain import note, task
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.filesystem import (
     FilesystemNotifier,
@@ -281,6 +282,12 @@ class TaskFile(patterns.Observer):
 
     def efforts(self):
         return self.__efforts
+
+    def categorizables(self):
+        """Every item in the file that can have categories."""
+        return categorizable.categorizables_in(
+            self.tasks(), self.notes(), self.categories()
+        )
 
     def corrected_ids(self):
         """The duplicate IDs the last load corrected: ID -> the items'

@@ -53,14 +53,17 @@ class CutCommandWithTasksTest(TaskCommandTestCase):
             lambda: self.assertTaskList(self.originalList),
         )
 
-    def testCutTaskThatBelongsToCategory(self):
-        self.category.addCategorizable(self.task1)
+    def test_cut_task_is_no_member_in_the_list(self):
+        # A cut task keeps its categories, to take them with it
         self.task1.addCategory(self.category)
         self.cut("all")
         self.assertDoUndoRedo(
-            lambda: self.assertFalse(self.category.categorizables()),
+            lambda: self.assertFalse(
+                self.category.categorizables() & set(self.taskList)
+            ),
             lambda: self.assertEqual(
-                set([self.task1]), self.category.categorizables()
+                {self.task1},
+                self.category.categorizables() & set(self.taskList),
             ),
         )
 

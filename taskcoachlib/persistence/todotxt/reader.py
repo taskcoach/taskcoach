@@ -169,7 +169,6 @@ class TodoTxtReader(object):
         newTask.set_due_date_time(dueDateTime)
         for eachCategory in categories:
             newTask.addCategory(eachCategory, event=event)
-            eachCategory.addCategorizable(newTask, event=event)
 
     @staticmethod
     def priority(match):

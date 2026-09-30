@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from weakref import WeakSet
+
 from taskcoachlib import patterns
 from taskcoachlib.domain import base, note, attachment
 
@@ -50,15 +52,14 @@ class Category(
             *args,
             **kwargs
         )
-        # The reverse of the categorizables' categories, which they own
-        self.__categorizables = base.SetAttribute(
-            set(categorizables or []),
-            self,
-            self.categorizableAddedEvent,
-            self.categorizableRemovedEvent,
-            weak=True,
-            volatile=True,
-        )
+        # Membership is the items' own data, their categories; this is
+        # its index, kept by them alone (docs/ATTRIBUTE_PATTERN.md,
+        # Modification Date). Every item that claims the category, in
+        # the file or not (a copy, a deleted item kept for undo)
+        self.__members = WeakSet()
+        # Outside the file (a copy, a deleted category), the members
+        # that rejoin it when it enters
+        self.__rejoining = list(categorizables or [])
         self.__filtered = filtered
         self.__exclusiveSubcategories = base.Attribute(
             exclusiveSubcategories,
@@ -114,7 +115,6 @@ class Category(
         state = super().__getstate__()
         state.update(
             dict(
-                categorizables=self.__categorizables.get(),
                 filtered=self.__filtered,
                 stylePriority=self.stylePriority(),
             ),
@@ -125,7 +125,6 @@ class Category(
     @patterns.eventSource
     def __setstate__(self, state, event=None):
         super().__setstate__(state, event=event)
-        self.setCategorizables(state["categorizables"], event=event)
         self.setFiltered(state["filtered"], event=event)
         self.makeSubcategoriesExclusive(
             state["exclusiveSubcategories"], event=event
@@ -136,7 +135,8 @@ class Category(
         state = super().__getcopystate__()
         state.update(
             dict(
-                categorizables=self.__categorizables.get(),
+                # A copy's members join it when it is pasted
+                categorizables=list(self.__members) + self.__rejoining,
                 filtered=self.__filtered,
                 stylePriority=self.stylePriority(),
             )
@@ -153,16 +153,45 @@ class Category(
             eachCategorizable.categorySubjectChangedEvent(event, subject)
 
     def categorizables(self, recursive=False):
-        result = self.__categorizables.get()
+        """The items that claim this category (their categories hold
+        it); whether each is in the file is the file's to say."""
+        result = set(self.__members)
         if recursive:
             for child in self.children():
                 result |= child.categorizables(recursive)
         return result
 
     def addCategorizable(self, *categorizables, **kwargs):
-        self.__categorizables.add(
-            set(categorizables), event=kwargs.pop("event", None)
-        )
+        # The item's categories are the data: the item joins
+        event = kwargs.pop("event", None)
+        for each in categorizables:
+            each.addCategory(self, event=event)
+
+    def member_joined(self, categorizable, event=None):
+        """Called by an item whose categories now hold it."""
+        self.__members.add(categorizable)
+        if event is not None:
+            self.categorizableAddedEvent(event, categorizable)
+
+    def member_left(self, categorizable, event=None):
+        """Called by an item whose categories no longer hold it."""
+        self.__members.discard(categorizable)
+        if event is not None:
+            self.categorizableRemovedEvent(event, categorizable)
+
+    def leave_file(self, event=None):
+        """Deleted or cut: the members lose it, and it remembers them
+        to rejoin if it comes back (undo, paste)."""
+        self.__rejoining = list(self.__members)
+        for each in self.__rejoining:
+            each.removeCategory(self, event=event)
+
+    def enter_file(self, event=None):
+        """Added (paste, undo of a delete): the members it remembers,
+        a copy's too, rejoin it."""
+        rejoining, self.__rejoining = self.__rejoining, []
+        for each in rejoining:
+            each.addCategory(self, event=event)
 
     def categorizableAddedEvent(self, event, *categorizables):
         event.addSource(
@@ -172,9 +201,10 @@ class Category(
         )
 
     def removeCategorizable(self, *categorizables, **kwargs):
-        self.__categorizables.remove(
-            set(categorizables), event=kwargs.pop("event", None)
-        )
+        # The item's categories are the data: the item leaves
+        event = kwargs.pop("event", None)
+        for each in categorizables:
+            each.removeCategory(self, event=event)
 
     def categorizableRemovedEvent(self, event, *categorizables):
         event.addSource(
@@ -182,9 +212,6 @@ class Category(
             *categorizables,
             **dict(type=self.categorizableRemovedEventType())
         )
-
-    def setCategorizables(self, categorizables, event=None):
-        self.__categorizables.set(set(categorizables), event=event)
 
     def isFiltered(self):
         return self.__filtered

@@ -39,6 +39,15 @@ class TaskCommandTestCase(CommandTestCase, asserts.Mixin):
         self.taskList.append(self.task1)
         self.originalList = [self.task1]
 
+    def assert_members(self, members):
+        """Each category's members, and each member claims it. Delete
+        and undo change no membership: a deleted task keeps its
+        categories, to come back with them."""
+        for cat, expected in members.items():
+            self.assertEqual(expected, cat.categorizables())
+            for each in expected:
+                self.assertIn(cat, each.categories())
+
     def delete(self, items=None):
         if items == "all":
             items = list(self.list)
@@ -163,34 +172,26 @@ class DeleteCommandWithTasksTest(TaskCommandTestCase):
             lambda: self.assertTaskList(self.originalList),
         )
 
-    def testDeleteTaskWithCategory(self):
-        self.category.addCategorizable(self.task1)
+    def test_deleted_task_keeps_its_category(self):
         self.task1.addCategory(self.category)
         self.delete("all")
+        members = {self.category: {self.task1}}
         self.assertDoUndoRedo(
-            lambda: self.assertFalse(self.category.categorizables()),
-            lambda: self.assertEqual(
-                set([self.task1]), self.category.categorizables()
-            ),
+            lambda: self.assert_members(members),
+            lambda: self.assert_members(members),
         )
 
-    def testDeleteTaskWithTwoCategories(self):
+    def test_deleted_task_keeps_its_two_categories(self):
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
         self.categories.extend([cat1, cat2])
         for cat in cat1, cat2:
-            cat.addCategorizable(self.task1)
             self.task1.addCategory(cat)
         self.delete("all")
+        members = {cat1: {self.task1}, cat2: {self.task1}}
         self.assertDoUndoRedo(
-            lambda: self.assertFalse(
-                cat1.categorizables() or cat2.categorizables()
-            ),
-            lambda: self.assertTrue(
-                set([self.task1])
-                == cat1.categorizables()
-                == cat2.categorizables()
-            ),
+            lambda: self.assert_members(members),
+            lambda: self.assert_members(members),
         )
 
     def testDeleteTaskThatIsPrerequisite(self):
@@ -251,48 +252,36 @@ class DeleteCommandWithTasksWithChildrenTest(CommandWithChildrenTestCase):
             lambda: self.assertFalse(self.parent.completed()),
         )
 
-    def testDeleteParentAndChildWhenChildBelongsToCategory(self):
-        self.category.addCategorizable(self.child)
+    def test_deleted_child_keeps_its_category(self):
         self.child.addCategory(self.category)
         self.delete([self.parent])
+        members = {self.category: {self.child}}
         self.assertDoUndoRedo(
-            lambda: self.assertFalse(self.category.categorizables()),
-            lambda: self.assertEqual(
-                set([self.child]), self.category.categorizables()
-            ),
+            lambda: self.assert_members(members),
+            lambda: self.assert_members(members),
         )
 
-    def testDeleteParentAndChildWhenParentAndChildBelongToDifferentCategories(
-        self,
-    ):
+    def test_deleted_parent_and_child_keep_their_categories(self):
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
         self.categories.extend([cat1, cat2])
-        cat1.addCategorizable(self.child)
         self.child.addCategory(cat1)
-        cat2.addCategorizable(self.parent)
         self.parent.addCategory(cat2)
         self.delete([self.parent])
+        members = {cat1: {self.child}, cat2: {self.parent}}
         self.assertDoUndoRedo(
-            lambda: self.assertFalse(
-                cat1.categorizables() or cat2.categorizables()
-            ),
-            lambda: self.assertTrue(
-                set([self.child]) == cat1.categorizables()
-                and set([self.parent]) == cat2.categorizables()
-            ),
+            lambda: self.assert_members(members),
+            lambda: self.assert_members(members),
         )
 
-    def testDeleteParentAndChildWhenParentAndChildBelongToSameCategory(self):
-        for eachTask in self.parent, self.child:
-            self.category.addCategorizable(eachTask)
-            eachTask.addCategory(self.category)
+    def test_deleted_parent_and_child_keep_a_shared_category(self):
+        for each_task in self.parent, self.child:
+            each_task.addCategory(self.category)
         self.delete([self.parent])
+        members = {self.category: {self.parent, self.child}}
         self.assertDoUndoRedo(
-            lambda: self.assertFalse(self.category.categorizables()),
-            lambda: self.assertEqualLists(
-                [self.parent, self.child], self.category.categorizables()
-            ),
+            lambda: self.assert_members(members),
+            lambda: self.assert_members(members),
         )
 
 
@@ -328,12 +317,14 @@ class NewTaskCommandTest(TaskCommandTestCase):
             lambda: self.assertTaskList(self.originalList),
         )
 
-    def testNewTaskWithCategory_AddsTaskToCategory(self):
+    def test_new_task_with_category_is_its_member(self):
+        # Undone, it keeps the category, to come back with it on redo
         cat = category.Category("cat")
-        newTask = self.new(categories=[cat])
+        new_task = self.new(categories=[cat])
+        members = {cat: {new_task}}
         self.assertDoUndoRedo(
-            lambda: self.assertEqual(set([newTask]), cat.categorizables()),
-            lambda: self.assertFalse(cat.categorizables()),
+            lambda: self.assert_members(members),
+            lambda: self.assert_members(members),
         )
 
     def testNewTaskWithPrerequisite(self):

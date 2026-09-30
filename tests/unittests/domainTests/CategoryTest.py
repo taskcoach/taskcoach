@@ -129,9 +129,10 @@ class CategoryTest(test.TestCase):
         self.category.removeCategorizable(self.categorizable)
         self.assertEqual(before, self.category.modificationDateTime())
 
-    def testAddCategorizableDoesNotAddCategoryToCategorizable(self):
+    def test_adding_a_member_adds_the_category_to_it(self):
+        # Membership is the item's own data, its categories
         self.category.addCategorizable(self.categorizable)
-        self.assertEqual(set([]), self.categorizable.categories())
+        self.assertEqual({self.category}, self.categorizable.categories())
 
     def testAddCategorizableTwice(self):
         self.category.addCategorizable(self.categorizable)
@@ -151,9 +152,12 @@ class CategoryTest(test.TestCase):
         self.assertFalse(self.category.categorizables())
         self.assertFalse(self.categorizable.categories())
 
-    def testCreateWithCategorizable(self):
+    def test_members_given_at_creation_join_when_it_enters_the_file(self):
         cat = category.Category("category", [self.categorizable])
-        self.assertEqual(set([self.categorizable]), cat.categorizables())
+        members = [cat.categorizables()]
+        category.CategoryList([cat])
+        members.append(cat.categorizables())
+        self.assertEqual([set(), {self.categorizable}], members)
 
     def testCreateWithCategorizableDoesNotSetCategorizableCategories(self):
         category.Category("category", [self.categorizable])
@@ -297,9 +301,10 @@ class CategoryTest(test.TestCase):
         copy = self.category.copy()
         self.assertEqual(copy.isFiltered(), self.category.isFiltered())
 
-    def testCopy_CategorizablesAreCopied(self):
+    def test_a_copys_members_join_it_when_it_is_pasted(self):
         self.category.addCategorizable(self.categorizable)
         copy = self.category.copy()
+        category.CategoryList([copy])
         self.assertEqual(copy.categorizables(), self.category.categorizables())
 
     def testCopy_CategorizablesAreCopiedIntoADifferentList(self):

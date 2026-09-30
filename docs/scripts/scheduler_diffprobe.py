@@ -9,8 +9,9 @@ Run from the repository root:
     PYTHONPATH=. xvfb-run -a .venv/bin/python \
         docs/scripts/scheduler_diffprobe.py SEED STEPS [MEMBERS] [OUTSIDE]
 
-MEMBERS: "scan" (members from the items' categories, the rule) or
-"reverse" (from Category.categorizables(), to show its misses).
+MEMBERS: "scan" (members from the items' categories) or "reverse"
+(from Category.categorizables(), their index since P29 was solved;
+it missed before, while paste left notes' membership one-sided).
 OUTSIDE: "yes" (follow effective events sent outside the pass, the
 rule) or "no" (to show its misses).
 """

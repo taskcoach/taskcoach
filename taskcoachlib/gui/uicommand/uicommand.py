@@ -1754,13 +1754,14 @@ class Delete(ViewerCommand):
             delete_command.do()
 
     def _get_assigned_objects(self, categories):
-        """Collect all objects assigned to the given categories and their
-        subcategories."""
+        """Collect all objects in the file assigned to the given
+        categories and their subcategories."""
+        in_file = self.viewer.taskFile.categorizables()
         all_assigned = {}
         for cat in categories:
             all_categories = [cat] + list(cat.children(recursive=True))
             for c in all_categories:
-                categorizables = c.categorizables()
+                categorizables = c.categorizables() & in_file
                 if categorizables:
                     all_assigned[c] = list(categorizables)
         return all_assigned

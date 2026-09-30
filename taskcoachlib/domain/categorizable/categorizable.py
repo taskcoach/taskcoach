@@ -33,6 +33,9 @@ class CategorizableCompositeObject(base.CompositeObject):
             self.removeCategoryEvent,
         )
         super().__init__(*args, **kwargs)
+        # The one place that keeps the categories' member index
+        for category in self.__categories.get():
+            category.member_joined(self)
 
     def __getstate__(self):
         state = super().__getstate__()
@@ -68,6 +71,8 @@ class CategorizableCompositeObject(base.CompositeObject):
         )
 
     def addCategoryEvent(self, event, *categories):
+        for category in categories:
+            category.member_joined(self, event)
         event.addSource(
             self, *categories, **dict(type=self.categoryAddedEventType())
         )
@@ -86,6 +91,8 @@ class CategorizableCompositeObject(base.CompositeObject):
         )
 
     def removeCategoryEvent(self, event, *categories):
+        for category in categories:
+            category.member_left(self, event)
         event.addSource(
             self, *categories, **dict(type=self.categoryRemovedEventType())
         )

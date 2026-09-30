@@ -45,7 +45,7 @@ def merge_into(task_file, other):
             _merge_collection(mine, theirs, their_file_is_newer)
         _merge_owned(task_file, mine_owned, theirs_owned, their_file_is_newer)
         items = {item.id(): item for item in _walk(_roots(task_file))}
-        _link_categories(task_file.categories(), items, links)
+        _link_categories(items, links)
         _link_prerequisites(task_file.tasks(), items, links)
     for item, date_time in recorder.dates_before.values():
         item.set_modification_datetime(date_time)
@@ -247,7 +247,7 @@ def _links(task_file):
     return links
 
 
-def _link_categories(categories, items, links):
+def _link_categories(items, links):
     """Category membership as each winning task or note copy has it:
     they own their categories, and a category's members are the
     reverse (docs/ATTRIBUTE_PATTERN.md, Modification Date)."""
@@ -259,21 +259,13 @@ def _link_categories(categories, items, links):
                 item,
                 {items[each] for each in category_ids if each in items},
             )
-    members = {id(each): set() for each in categories}
-    for item, its_categories in categories_of.values():
-        for each in its_categories:
-            members.setdefault(id(each), set()).add(item)
     # Only where a link changed or points to a replaced copy; emptied
-    # first, as a set holding an equal copy (same id) is unchanged
+    # first, as a set holding an equal copy (same id) is unchanged. The
+    # categories' member index follows the items
     for item, its_categories in categories_of.values():
         if not _same_objects(item.categories(), its_categories):
             item.setCategories(set())
             item.setCategories(its_categories)
-    for each in categories:
-        wanted = members.get(id(each), set())
-        if not _same_objects(each.categorizables(), wanted):
-            each.setCategorizables(set())
-            each.setCategorizables(wanted)
 
 
 def _link_prerequisites(tasks, items, links):
