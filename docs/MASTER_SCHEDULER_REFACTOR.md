@@ -144,7 +144,12 @@ go at the end. Details live in the sections and documents linked.
     in the catalog): remove the plural/singular transform, so every
     view shows the effective icon as is. The folder icons stay as
     regular icons. To go: `plural_or_singular_icon()`, the mapping
-    tables, [ICON_PLURALIZE.md](ICON_PLURALIZE.md).
+    tables, [ICON_PLURALIZE.md](ICON_PLURALIZE.md). With it, the status
+    icon's old path: `TaskStatus.getBitmap()` (the editor's status line,
+    the Mark active, inactive and completed buttons) reads the light
+    theme's icons only, where the rows read the computed, themed
+    `status_icon_id()`. What a task with subtasks shows instead: the
+    designer's choice, pending.
 
 ## Deferred or Will Not Do
 
