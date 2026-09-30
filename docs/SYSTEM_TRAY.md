@@ -25,11 +25,11 @@ This document describes the system tray (notification area) icon implementation 
 
 ## TODO
 
-1. **Extract base class.** `TaskBarIcon` and `AppIndicatorTaskBarIcon` duplicate
-   ~100 lines of identical logic (see [Code Duplication](#code-duplication)).
-   Extract shared logic into `TaskBarIconBase(patterns.Observer)`. Subclasses
-   override only `_set_icon()` and menu handling. `TaskBarIcon` additionally
-   inherits from `wx.adv.TaskBarIcon`.
+1. ~~**Extract base class.**~~ Will not be done, **ruled by designer
+   2026-09-29** (D4 in
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-or-will-not-do)):
+   the two classes differ by design and share little
+   ([Code Duplication](#code-duplication)).
 
 ---
 
@@ -535,10 +535,30 @@ Key log messages:
 
 ## Code Duplication
 
-`TaskBarIcon` and `AppIndicatorTaskBarIcon` in `taskbaricon.py` duplicate
-~100 lines of identical logic. Only `__set_icon()` and menu handling differ.
+`TaskBarIcon` and `AppIndicatorTaskBarIcon` in `taskbaricon.py` share
+little: measured 2026-09-29, 31 lines are identical (six small
+methods: ticking, the tracking icon, the default icon, the tooltip
+getter); about 90 more are alike but differ; the rest (about 400 of
+the AppIndicator's 560) is platform specific. They stay separate
+(D4), because they differ by design:
 
-### Shared (duplicated)
+- **Different objects.** `TaskBarIcon` is a `wx.adv.TaskBarIcon`, a wx
+  object with wx's lifetime; `AppIndicatorTaskBarIcon` is a plain
+  object driving GTK through AppIndicator over D-Bus, with stubs to
+  look like a wx one, so even its deferred calls name the main window
+  as their owner ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+- **Different icons.** Catalog icons, sized by wx, against icon names
+  in the `tray/hicolor` theme (`icon_id()` against `tray_icon_id()`).
+- **Different menus.** A wx menu built when clicked, with left and
+  right click apart, against a GTK menu rebuilt on every change,
+  shown on any click (the SNI protocol is menu-centric).
+- **Platforms apart.** A shared base would couple Windows/macOS code
+  with Linux code, so a change for one risks the other, which cannot
+  be tested on the same machine; for about 30 lines saved.
+
+The tables below compare them.
+
+### In Both Classes
 
 | Code | Description |
 |------|-------------|

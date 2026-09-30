@@ -32,12 +32,11 @@
 
 ## TODO
 
-1. **Attachment styling**: Attachments appear to use the parent task's styling
-   for fg/bg/font, but not for icon (icon is file-type based). However,
-   attachments have no categories and the current `computeDerived` gives them
-   no sources. Consider whether the Attachment Appearance tab and the
-   Attachment branch in the derived/effective logic should be removed entirely,
-   or whether parent-task inheritance should be added properly.
+1. **Attachment styling**: deferred, not in this release (D3 in
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-or-will-not-do)).
+   Attachments draw only their own style, as on master: no categories,
+   and `computeDerived` gives them no sources. Open for later: remove
+   their Appearance tab and branch, or inherit the owner's style.
 
 2. ~~**Note styling incomplete**~~: **Done.** Tested and confirmed that
    `computeDerived` correctly flows category fg/bg/font/icon values through

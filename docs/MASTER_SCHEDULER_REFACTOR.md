@@ -167,6 +167,12 @@ Numbered D1, D2, ...
   GTK at the main window's first show, with no Python code on the
   stack (traced under gdb with `G_DEBUG=fatal-criticals`); left in the
   logs as is.
+- D3. Attachment styling, **ruled by designer 2026-09-29**: deferred,
+  not in this release. Attachments keep drawing only their own style,
+  as on master ([APPEARANCE_STYLES.md](APPEARANCE_STYLES.md#todo)).
+- D4. One base class for the two tray icons, **ruled by designer
+  2026-09-29**: will not be done; the classes are different by
+  design ([SYSTEM_TRAY.md](SYSTEM_TRAY.md#code-duplication)).
 
 ## Pre-existing Issues
 
@@ -807,8 +813,11 @@ Questions for the review:
    spreads a cascade one level per second, so a pass never runs long.
    With work bounded by the change, settle it within the tick instead?
    That also drops the empty pass each due second costs today.
-2. Keep a full loop as a safety net (once a minute, say), or only the
-   check mode during development?
+2. ~~Keep a full loop as a safety net (once a minute, say), or only
+   the check mode during development?~~ **Ruled by designer
+   2026-09-29:** no periodic full loop; it would admit the pass cannot
+   cover everything. A missed follower is found (the check mode) and
+   fixed.
 3. Worth it? Today the pass runs once a minute with typical files and
    costs 213 ms with 2000 tasks; the gain is large with big files and
    many dates close to now (2000 tasks, dates within an hour: UI
