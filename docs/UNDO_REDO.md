@@ -30,8 +30,9 @@ before, modification date before. Undo sets them back in reverse,
 redo sets the values after. Complete once every stored field is a
 storage unit; many small records per action.
 
-**C. Object versions, keyed by modification date (recommended).**
-Every stored change sets its item's modification date: that is the
+**C. Object versions, keyed by modification date (the designer's
+idea, 2026-09-28; see Findings).** Every stored change sets its
+item's modification date: that is the
 moment the log saves the item's version before the change (its saved
 state, as the file has it, date included), under its UUID, once per
 action. Changes that spread set their items' dates too, so they are
@@ -50,28 +51,75 @@ the scheduler rebuilds) and costs as much as opening the file; a full
 copy per edit. Earlier versions of the file already exist as backups
 (File > Manage backups).
 
-### Path for C
+### Findings, 2026-09-30
 
-1. Every stored change sets the modification date: the migration
-   table ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)),
-   links included. This is its purpose as well as merging.
-2. Save an item's version at its first change within an action, from
-   the same place that sets the date, before the change is written.
-   Commands keep their own undo code meanwhile: restoring an item to
-   the same state twice is harmless, and each command's existing
-   do/undo/redo test checks every step.
-3. Drop the undo code of commands whose fields are all covered, then
-   of the others as their fields are migrated; record adding and
-   removing items, then drop the undo code of new, delete, cut and
-   paste, and `SaveStateMixin`.
-4. Derived adjustments land in the entry of the action that caused
-   them, not in entries of their own (below, Command Pattern).
-5. The date recorder (below, Modification Dates) goes: the versions
-   include the dates.
+Option C (the designer's idea, 2026-09-28) restores items with their
+saved state (`__getstate__`, `__setstate__`). Mapped against the
+model, that cannot restore exactly:
 
-Group by action number, not by time: two quick edits may share a
-second. The modification date keeps fractions of a second anyway
-([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+- Setting a state runs the edit rules again: a completed recurring
+  task restored this way recurs twice (its due date moved 2 days).
+- The state misses stored data: a task's reminder before snooze.
+- Saved states share live lists (children, efforts) with the item, so
+  later changes leak into them.
+- A link held on one item and dated on another (a parent's children,
+  an owner's notes and attachments, a task's efforts) is not restored
+  with the item that points.
+- The setters reset the modification date to now.
+- Today a view reacting to an undo can run a command during it, which
+  empties the redo list.
+
+### Design, proposed 2026-09-30
+
+C's idea kept, at the grain of the fields, as the ruling above words
+it: every change dates its item, the log keeps what changed, in order,
+one entry per user action.
+
+1. **Storage units record.** Every stored value lives in a storage
+   unit: `Attribute`, `SetAttribute`, and units for the links and
+   lists (an item's parent and children, an owner's notes and
+   attachments, a task's efforts, an effort's task, a container's
+   items); the modification date is one too, and a task's reminder
+   before snooze becomes an `Attribute`. At its first change within
+   the open action, a unit gives the log its value before; when the
+   action closes, the log takes each unit's value after.
+2. **One action per user gesture.** A command opens the action; the
+   commands run before the application is idle again join it (an
+   editor's derived adjustments, posted events), as a platform undo
+   manager groups by event loop pass. The first command names it
+   ("Undo Edit subject"). Changes outside commands (scheduler, snooze,
+   import, merge) record nothing.
+3. **Undo and redo write values back, raw.** Undo writes each unit's
+   value before, last change first; redo each value after, in order.
+   The units send their change events and keep the derived indexes (a
+   category's members, a task's dependencies), but no edit rule runs
+   (completion and recurrence cascades, percentage, parent completion):
+   their effects are units of the same action. One mode,
+   `restoring()`, which a merge uses too (instead of `Task.merging()`).
+4. **Nothing is done while restoring:** a command started by a view
+   reacting to restored data does nothing.
+5. **Commands only do.** `undo_command()`, `redo_command()`,
+   `SaveStateMixin` and the date recorder go.
+6. **A failed action rolls back** what it had changed.
+7. **Outside the model.** The clipboard is not undone: a cut pastes its
+   originals while they are out of the file, copies otherwise (one
+   rule instead of the move flag). A tracking effort's stop comes back
+   exactly: redo does not take a new "now".
+8. **One side of each link:** a task's dependencies follow its
+   prerequisites, as a category's members follow the items'
+   categories; commands set the prerequisites only.
+
+### Path
+
+1. Every stored change sets the modification date: done
+   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+2. Storage units for the links, lists and containers; dependencies
+   derived; `restoring()` gates the edit rules.
+3. The log records and restores; commands lose their undo code, the
+   existing do/undo/redo tests unchanged as the check.
+4. Grouping by user gesture, rollback, the clipboard rule.
+
+Group by action, not by time: two quick edits may share a second.
 
 ### Persistence
 
