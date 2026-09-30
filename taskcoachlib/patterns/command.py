@@ -175,32 +175,31 @@ class CommandHistory(object, metaclass=patterns.Singleton):
         del self.__future[:]
         self._notify()
 
-    def hasHistory(self):
+    def has_history(self):
         self.flush()
         return self.__history
 
-    def getHistory(self):
+    def get_history(self):
         self.flush()
         return self.__history
 
-    def hasFuture(self):
+    def has_future(self):
         self.flush()
         return self.__future
 
-    def getFuture(self):
+    def get_future(self):
         self.flush()
         return self.__future
 
-    def _extendLabel(self, label, commandList):
-        if commandList:
-            commandName = " %s" % commandList[-1]
-            label += commandName.lower()
+    def _extend_label(self, label, steps):
+        if steps:
+            label += (" %s" % steps[-1]).lower()
         return label
 
     def undostr(self, label="Undo"):
         self.flush()
-        return self._extendLabel(label, self.__history)
+        return self._extend_label(label, self.__history)
 
     def redostr(self, label="Redo"):
         self.flush()
-        return self._extendLabel(label, self.__future)
+        return self._extend_label(label, self.__future)

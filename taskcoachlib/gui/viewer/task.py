@@ -2347,7 +2347,7 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
         for part, status in zip(series, task.Task.possibleStatuses()):
             nrTasks = counts[status]
             percentage = round(100.0 * nrTasks / total) if total else 0
-            part.SetLabel(status.countLabel % (nrTasks, percentage))
+            part.SetLabel(status.count_label % (nrTasks, percentage))
             part.SetValue(nrTasks)
             part.SetColour(self.getFgColor(status))
         # PietCtrl can't handle empty pie charts:

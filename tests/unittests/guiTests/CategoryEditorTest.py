@@ -93,7 +93,7 @@ class CategoryEditorTest(test.wxTestCase):
         self.assertEqual("Description", self.category.description())
 
     def testAddAttachment(self):
-        self.editor._interior[2].viewer.onDropFiles(
+        self.editor._interior[2].viewer.on_drop_files(
             self.category, ["filename"]
         )
         self.assertTrue(

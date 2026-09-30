@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import patterns, command
+from taskcoachlib import command
 from taskcoachlib.domain import task
 from .CommandTestCase import CommandTestCase
 
@@ -25,8 +25,8 @@ class DeleteCommandTest(CommandTestCase):
     def setUp(self):
         super().setUp()
         self.item = task.Task()
-        # A list of the file: the undo log records which items it holds
-        self.items = task.TaskList([self.item])
+        self.items = self.task_file.tasks()
+        self.items.append(self.item)
 
     def deleteItem(self, items=None):
         delete = command.DeleteCommand(self.items, items or [])

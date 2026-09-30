@@ -436,26 +436,26 @@ Compact duration format: `1d 02:30` or with seconds: `1d 02:30:15`
 **Constructor:**
 ```python
 DurationCtrl(parent, days=0, hours=0, minutes=0, seconds=0,
-             dayChoices=None, hourChoices=None, minuteChoices=None,
-             showSeconds=False, secondChoices=None)
+             day_choices=None, hour_choices=None, minute_choices=None,
+             show_seconds=False, second_choices=None)
 ```
 
 **Parameters:**
 - `days, hours, minutes, seconds`: Initial values
-- `dayChoices`: Dropdown choices for days:
+- `day_choices`: Dropdown choices for days:
   - `None` (default): Use defaults `[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]`
   - `list`: Use that specific list
   - `False`: No dropdown
-- `hourChoices`: Dropdown choices for hours:
+- `hour_choices`: Dropdown choices for hours:
   - `None` (default): Use defaults `[0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]`
   - `list`: Use that specific list
   - `False`: No dropdown
-- `minuteChoices`: Dropdown choices for minutes:
+- `minute_choices`: Dropdown choices for minutes:
   - `None` (default): Use defaults from settings (based on `effortminuteinterval`)
   - `list`: Use that specific list
   - `False`: No dropdown
-- `showSeconds`: If True, include seconds field (default False)
-- `secondChoices`: Dropdown choices for seconds:
+- `show_seconds`: If True, include seconds field (default False)
+- `second_choices`: Dropdown choices for seconds:
   - `None` (default): Use defaults from settings (based on `effortsecondinterval`)
   - `list`: Use that specific list
   - `False`: No dropdown
@@ -466,11 +466,11 @@ ctrl = DurationCtrl(parent, days=1, hours=8, minutes=30)
 
 # With seconds (for effort tracking)
 ctrl = DurationCtrl(parent, days=0, hours=2, minutes=30, seconds=15,
-    showSeconds=True)
+    show_seconds=True)
 
 # Explicitly no dropdowns
 ctrl = DurationCtrl(parent, days=1, hours=2, minutes=30,
-    dayChoices=False, hourChoices=False, minuteChoices=False)
+    day_choices=False, hour_choices=False, minute_choices=False)
 
 duration = ctrl.GetDuration()  # date.TimeDelta
 ctrl.SetDuration(date.TimeDelta(days=1, hours=2))
@@ -490,26 +490,26 @@ Duration with full word suffixes: `1 days 02 hours 30 mins` or with seconds: `1 
 **Constructor:**
 ```python
 DurationCtrlVerbose(parent, days=0, hours=0, minutes=0, seconds=0,
-                    dayChoices=None, hourChoices=None, minuteChoices=None,
-                    showSeconds=False, secondChoices=None)
+                    day_choices=None, hour_choices=None, minute_choices=None,
+                    show_seconds=False, second_choices=None)
 ```
 
 **Parameters:**
 - `days, hours, minutes, seconds`: Initial values
-- `dayChoices`: Dropdown choices for days:
+- `day_choices`: Dropdown choices for days:
   - `None` (default): Use defaults `[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]`
   - `list`: Use that specific list
   - `False`: No dropdown
-- `hourChoices`: Dropdown choices for hours:
+- `hour_choices`: Dropdown choices for hours:
   - `None` (default): Use defaults `[0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]`
   - `list`: Use that specific list
   - `False`: No dropdown
-- `minuteChoices`: Dropdown choices for minutes:
+- `minute_choices`: Dropdown choices for minutes:
   - `None` (default): Use defaults from settings (based on `effortminuteinterval`)
   - `list`: Use that specific list
   - `False`: No dropdown
-- `showSeconds`: If True, include seconds field (default False)
-- `secondChoices`: Dropdown choices for seconds:
+- `show_seconds`: If True, include seconds field (default False)
+- `second_choices`: Dropdown choices for seconds:
   - `None` (default): Use defaults from settings (based on `effortsecondinterval`)
   - `list`: Use that specific list
   - `False`: No dropdown
@@ -520,11 +520,11 @@ ctrl = DurationCtrlVerbose(parent, days=0, hours=0, minutes=0)
 
 # With seconds (for effort tracking)
 ctrl = DurationCtrlVerbose(parent, days=0, hours=2, minutes=30, seconds=15,
-    showSeconds=True)
+    show_seconds=True)
 
 # Explicitly no dropdowns
 ctrl = DurationCtrlVerbose(parent, days=0, hours=0, minutes=0,
-    dayChoices=False, hourChoices=False, minuteChoices=False)
+    day_choices=False, hour_choices=False, minute_choices=False)
 
 duration = ctrl.GetDuration()  # date.TimeDelta
 ctrl.SetDuration(date.TimeDelta(hours=1, minutes=30))
@@ -545,15 +545,15 @@ ctrl = TimeCtrl(parent, hours=14, minutes=30)
 
 # With custom dropdowns
 ctrl = TimeCtrl(parent, hours=9, minutes=0,
-    hourChoices=[9, 10, 11, 12, 13, 14, 15, 16, 17],
-    minuteChoices=[0, 15, 30, 45])
+    hour_choices=[9, 10, 11, 12, 13, 14, 15, 16, 17],
+    minute_choices=[0, 15, 30, 45])
 
 # Explicitly no dropdowns
 ctrl = TimeCtrl(parent, hours=14, minutes=30,
-    hourChoices=False, minuteChoices=False)
+    hour_choices=False, minute_choices=False)
 
 # Explicit 12-hour format
-ctrl = TimeCtrl(parent, hours=14, minutes=30, timeFormat="12")
+ctrl = TimeCtrl(parent, hours=14, minutes=30, time_format="12")
 
 time = ctrl.GetTime()  # datetime.time (always 24-hour internally)
 ctrl.SetTime(datetime.time(14, 30))
@@ -575,13 +575,13 @@ ctrl = TimeWithSecondsCtrl(parent, hours=14, minutes=30, seconds=0)
 
 # With custom dropdowns
 ctrl = TimeWithSecondsCtrl(parent, hours=0, minutes=0, seconds=0,
-    hourChoices=list(range(24)),
-    minuteChoices=list(range(60)),
-    secondChoices=[0, 15, 30, 45])
+    hour_choices=list(range(24)),
+    minute_choices=list(range(60)),
+    second_choices=[0, 15, 30, 45])
 
 # Explicitly no dropdowns
 ctrl = TimeWithSecondsCtrl(parent, hours=14, minutes=30, seconds=0,
-    hourChoices=False, minuteChoices=False, secondChoices=False)
+    hour_choices=False, minute_choices=False, second_choices=False)
 ```
 
 ### Locale and Date Format Settings
@@ -626,13 +626,13 @@ Subclass `MaskedFieldsCtrl`:
 ```python
 class MyDurationCtrl(MaskedFieldsCtrl):
     def __init__(self, parent, days=0, hours=0, minutes=0,
-                 dayChoices=None, hourChoices=None, minuteChoices=None):
+                 day_choices=None, hour_choices=None, minute_choices=None):
         elements = [
-            ("day", days, dayChoices),
+            ("day", days, day_choices),
             ("literal", _("d") + " "),
-            ("hour", hours, hourChoices),
+            ("hour", hours, hour_choices),
             ("literal", ":"),
-            ("minute", minutes, minuteChoices),
+            ("minute", minutes, minute_choices),
         ]
         super().__init__(parent, elements)
 
@@ -937,11 +937,11 @@ are the stash.
 
 At construction, the sub-controls are initialized with either:
 - The domain value (`value` parameter), if the field is active (preset mode), or
-- The preference-suggested datetime (`suggestedValue` parameter), if the field
+- The preference-suggested datetime (`suggested_value` parameter), if the field
   is inactive (propose mode), or
 - `datetime.now()` as a fallback
 
-See [DATETIME_PRESETS.md](DATETIME_PRESETS.md) for how `suggestedValue` is
+See [DATETIME_PRESETS.md](DATETIME_PRESETS.md) for how `suggested_value` is
 computed from user preferences and passed at editor construction time
 ([Propose Mode](DATETIME_PRESETS.md#propose-mode),
 [Suggested DateTime Computation](DATETIME_PRESETS.md#suggested-datetime-computation)).
@@ -1209,7 +1209,7 @@ are converted to Win32 date format tokens:
 | `"DMY."` | `dd.MM.yyyy` | 18.01.2026 |
 | `""` (auto) | Detected from locale | varies |
 
-**Live update:** `SetDateFormat(dateFormat)` re-sends `DTM_SETFORMATW` — the
+**Live update:** `SetDateFormat(date_format)` re-sends `DTM_SETFORMATW` — the
 native control updates instantly without needing to destroy/recreate.
 
 ### macOS — Custom Control (No Native Format Override)

@@ -30,7 +30,7 @@ import wx.adv
 # These are used by both entry.py and editor.py for datetime controls
 #
 # For dynamic updates when preferences change, pass as lambda:
-#   hourChoices=lambda: get_suggested_hour_choices(settings)
+#   hour_choices=lambda: get_suggested_hour_choices(settings)
 
 
 def get_suggested_hour_choices(settings, override=None):
@@ -793,8 +793,10 @@ class RecurrenceEntry(wx.Panel):
         self._recurrenceStopDateTimeCombo = widgets.DateTimeComboCtrl(
             stopPanel,
             value=None,  # unchecked by default
-            hourChoices=lambda: get_suggested_hour_choices(self._settings),
-            minuteChoices=lambda: get_suggested_minute_choices(self._settings),
+            hour_choices=lambda: get_suggested_hour_choices(self._settings),
+            minute_choices=lambda: get_suggested_minute_choices(
+                self._settings
+            ),
         )
         # Bind value change — fires on checkbox toggle AND date/time edits
         self._recurrenceStopDateTimeCombo.Bind(

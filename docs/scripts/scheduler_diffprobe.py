@@ -7,7 +7,8 @@ still changes is a miss. To become the unit test that gates the pass.
 Run from the repository root:
 
     PYTHONPATH=. xvfb-run -a .venv/bin/python \
-        docs/scripts/scheduler_diffprobe.py SEED STEPS [MEMBERS] [OUTSIDE]
+        docs/scripts/scheduler_diffprobe.py \
+        SEED STEPS [MEMBERS] [OUTSIDE]
 
 MEMBERS: "scan" (members from the items' categories) or "reverse"
 (from Category.members(), their index since P29 was solved;
@@ -31,7 +32,6 @@ settings2.init(s)
 settings2.wx_ready()
 from taskcoachlib.domain import task, attachment, category, note, effort
 from taskcoachlib.domain import date as datemod
-from taskcoachlib.domain import base
 
 task.Task.settings = s
 attachment.Attachment.settings = s

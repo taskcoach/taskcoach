@@ -631,9 +631,9 @@ class AttachmentDropTargetMixin(object):
         kwargs = super(
             AttachmentDropTargetMixin, self
         ).widgetCreationKeywordArguments()
-        kwargs["on_drop_url"] = self.onDropURL
-        kwargs["on_drop_files"] = self.onDropFiles
-        kwargs["on_drop_mail"] = self.onDropMail
+        kwargs["on_drop_url"] = self.on_drop_url
+        kwargs["on_drop_files"] = self.on_drop_files
+        kwargs["on_drop_mail"] = self.on_drop_mail
         return kwargs
 
     def _add_attachments(self, attachments, item, **item_dialog_kwargs):
@@ -763,13 +763,13 @@ class AttachmentDropTargetMixin(object):
 
             patterns.later.soon(itemEditor, openAttachmentEditor)
 
-    def onDropURL(self, item, url, **kwargs):
+    def on_drop_url(self, item, url, **kwargs):
         """This method is called by the widget when a URL is dropped on an
         item."""
         attachments = [attachment.URIAttachment(url)]
         self._add_attachments(attachments, item, **kwargs)
 
-    def onDropFiles(self, item, filenames, **kwargs):
+    def on_drop_files(self, item, filenames, **kwargs):
         """This method is called by the widget when one or more files
         are dropped on an item."""
         import os
@@ -791,7 +791,7 @@ class AttachmentDropTargetMixin(object):
                 attachments.append(attachment.FileAttachment(filename))
         self._add_attachments(attachments, item, **kwargs)
 
-    def onDropMail(self, item, mails, **kwargs):
+    def on_drop_mail(self, item, mails, **kwargs):
         """Called by the widget when mails are dropped on an item, with
         each mail's fields (mailer.mail_fields())."""
         self._add_attachments(

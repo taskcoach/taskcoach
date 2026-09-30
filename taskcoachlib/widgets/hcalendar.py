@@ -63,7 +63,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
 
         self.__tip = tooltip.SimpleToolTip(self)
         self.__dropTarget = draganddrop.DropTarget(
-            self.OnDropURL, self.OnDropFiles, self.OnDropMail
+            self.on_drop_url, self.on_drop_files, self.on_drop_mail
         )
         self.SetDropTarget(self.__dropTarget)
 
@@ -299,13 +299,13 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
     def GetFont(self, task):
         return task.shown_font() or wx.NORMAL_FONT
 
-    def OnDropURL(self, x, y, url):
+    def on_drop_url(self, x, y, url):
         self.__Drop(x, y, url, self.__on_drop_url_callback)
 
-    def OnDropFiles(self, x, y, filenames):
+    def on_drop_files(self, x, y, filenames):
         self.__Drop(x, y, filenames, self.__on_drop_files_callback)
 
-    def OnDropMail(self, x, y, mails):
+    def on_drop_mail(self, x, y, mails):
         self.__Drop(x, y, mails, self.__on_drop_mail_callback)
 
     def __Drop(self, x, y, objects, callback):

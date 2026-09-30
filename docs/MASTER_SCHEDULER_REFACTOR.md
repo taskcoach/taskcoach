@@ -172,9 +172,9 @@ Numbered D1, D2, ...
   `computedStatus`, `processReminder`, the viewers' `onSelect`,
   `createWidget`, `_createColumns` and `subjectImageIndices`, the
   Publisher's `registerObserver` and `removeObserver`); keyword
-  families: the date and time widgets' arguments (7 files),
-  `taskList` and `effortList`, the export's `cssFilename` and
-  `selectionOnly`.
+  families: `taskList` and `effortList`, the export's `cssFilename`
+  and `selectionOnly`. The date and time widgets' arguments were
+  renamed 2026-09-30, in the audit the designer asked for.
 - D2. The GTK warning at every launch
   (`gtk_distribute_natural_allocation: assertion 'extra_space >= 0'
   failed`), **ruled by designer 2026-09-29**: it comes from inside
@@ -349,7 +349,7 @@ In the app:
   wxPython 4 on GTK a dropped uri-list reaches the file names object,
   never the uri-list object the drop read. Every file drop now takes
   one path, which hands those two programs' mail files to the mail
-  drop (`DropTarget.onFileDrop()`).
+  drop (`DropTarget.on_file_drop()`).
 - P34. ~~Text holding a character XML forbids (a control character
   such as a form feed or NUL, pasted from another program, or a stray
   surrogate) was saved as is, and the file then could not be
@@ -360,9 +360,10 @@ In the app:
   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#text)).
 - P35. ~~An open editor wrote back what it was shown from elsewhere
   (undo, another window)~~: fixed 2026-09-30; master's editors have
-  the same code (not reproduced there). A date field showing minutes wrote a reminder with seconds back
-  rounded, and the dates logic ran on the change as if the user had
-  made it; after an undo, that write was a new step and redo was lost.
+  the same code (not reproduced there). A date field showing minutes
+  wrote a reminder with seconds back rounded, and the dates logic ran
+  on the change as if the user had made it; after an undo, that write
+  was a new step and redo was lost.
   The field compares an edit with what it shows; the logic runs only
   for the user's edit
   ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md#preconditions-and-global-logic),
@@ -374,6 +375,9 @@ In the app:
   widgets; it now sends the event through the deferred service, owned
   by its checkbox
   ([DATETIME_CONTROLS.md](DATETIME_CONTROLS.md#datetimecomboctrl-event-ownership)).
+- P37. A reminder window stays open, showing the old time, after its
+  reminder is changed elsewhere: redo of a snooze, an editor. Found
+  2026-09-30. **Question for the designer:** should it close?
 
 ## Views on the Effective Styles
 

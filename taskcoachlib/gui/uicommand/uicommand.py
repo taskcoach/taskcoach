@@ -828,7 +828,7 @@ class EditUndo(base_uicommand.UICommand):
         window_with_focus = wx.Window.FindFocus()
         if isinstance(window_with_focus, wx.TextCtrl):
             return window_with_focus.CanUndo()
-        return bool(patterns.CommandHistory().hasHistory())
+        return bool(patterns.CommandHistory().has_history())
 
 
 class EditRedo(base_uicommand.UICommand):
@@ -873,7 +873,7 @@ class EditRedo(base_uicommand.UICommand):
         window_with_focus = wx.Window.FindFocus()
         if isinstance(window_with_focus, wx.TextCtrl):
             return window_with_focus.CanRedo()
-        return bool(patterns.CommandHistory().hasFuture())
+        return bool(patterns.CommandHistory().has_future())
 
 
 class EditCut(ViewerCommand):
@@ -1552,9 +1552,9 @@ class ViewerHideTasks(ViewerCommand, settings_uicommand.UICheckCommand):
     def __init__(self, taskStatus, *args, **kwargs):
         self.__taskStatus = taskStatus
         super().__init__(
-            menu_text=taskStatus.hideMenuText,
-            help_text=taskStatus.hideHelpText,
-            icon_id="synthetic_hide_%s" % taskStatus.statusString,
+            menu_text=taskStatus.hide_menu_text,
+            help_text=taskStatus.hide_help_text,
+            icon_id="synthetic_hide_%s" % taskStatus.status_string,
             *args,
             **kwargs
         )

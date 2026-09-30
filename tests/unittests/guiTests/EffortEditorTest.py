@@ -124,4 +124,4 @@ class EffortEditorTest(test.wxTestCase):
             (start, start + date.ONE_HOUR),
             (self.effort.getStart(), self.effort.getStop()),
         )
-        self.assertTrue(history.hasFuture())
+        self.assertTrue(history.has_future())

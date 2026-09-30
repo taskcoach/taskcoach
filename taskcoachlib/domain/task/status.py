@@ -37,21 +37,21 @@ def themed_section(section):
 class TaskStatus(object):
     def __init__(
         self,
-        statusString,
-        pluralLabel,
-        countLabel,
-        hideMenuText,
-        hideHelpText,
+        status_string,
+        plural_label,
+        count_label,
+        hide_menu_text,
+        hide_help_text,
     ):
-        self.statusString = statusString
-        self.pluralLabel = pluralLabel
-        self.countLabel = countLabel
-        self.hideMenuText = hideMenuText
-        self.hideHelpText = hideHelpText
+        self.status_string = status_string
+        self.plural_label = plural_label
+        self.count_label = count_label
+        self.hide_menu_text = hide_menu_text
+        self.hide_help_text = hide_help_text
 
-    def getSortPriority(self, settings):
+    def get_sort_priority(self, settings):
         return int(
-            settings.get("statussortpriority", "%stasks" % self.statusString)
+            settings.get("statussortpriority", "%stasks" % self.status_string)
         )
 
     def icon_id(self, settings, required=False):
@@ -59,28 +59,28 @@ class TaskStatus(object):
         Statuses), empty when set to none; required gives the default
         then (a toolbar button needs one)."""
         section = themed_section("icon")
-        key = "%stasks" % self.statusString
+        key = "%stasks" % self.status_string
         return settings.get(section, key) or (
             defaults.defaults[section][key] if required else ""
         )
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.statusString)
+        return "%s(%s)" % (self.__class__.__name__, self.status_string)
 
     def __str__(self):
-        return self.statusString
+        return self.status_string
 
     def __eq__(self, other):
-        return self.statusString == other.statusString
+        return self.status_string == other.status_string
 
     def __neq__(self, other):
-        return self.statusString != other.statusString
+        return self.status_string != other.status_string
 
     def __bool__(self):
         return True
 
     def __hash__(self) -> int:
-        return hash(self.statusString)
+        return hash(self.status_string)
 
 
 inactive = TaskStatus(

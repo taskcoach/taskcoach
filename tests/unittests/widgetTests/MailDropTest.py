@@ -173,7 +173,7 @@ class ThunderbirdTest(DropTestCase):
         super().setUp()
         patcher = mock.patch.object(
             thunderbird,
-            "getMail",
+            "get_mail",
             side_effect=lambda uri: mailer.mail_fields(
                 uri.rsplit("#", 1)[-1], "", "", None, ""
             ),
@@ -284,7 +284,7 @@ class OutlookTest(DropTestCase):
     def test_windows(self):
         with mock.patch.object(
             outlook,
-            "getCurrentSelection",
+            "get_current_selection",
             return_value=[mailer.mail_fields("Quote", "", "", None, "1@x")],
         ):
             self.target.dispatch(0, 0, wx.DF_PRIVATE, outlook.OUTLOOK_FORMAT)

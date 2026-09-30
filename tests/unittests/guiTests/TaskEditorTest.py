@@ -335,7 +335,7 @@ class EditTaskTestMixin(object):
         )
 
     def testAddAttachment(self):
-        self.editor._interior[8].viewer.onDropFiles(self.task, ["filename"])
+        self.editor._interior[8].viewer.on_drop_files(self.task, ["filename"])
         # pylint: disable=E1101
         self.assertTrue(
             "filename" in [att.location() for att in self.task.attachments()]
@@ -495,7 +495,7 @@ class ChangeFromElsewhereTest(TaskEditorTestCase):
         wx.Yield()
 
     def steps(self):
-        return [str(step) for step in self.history.getHistory()]
+        return [str(step) for step in self.history.get_history()]
 
     def test_seconds_the_fields_do_not_show_stay(self):
         reminder = date.DateTime(2026, 9, 30, 14, 2, 52)
@@ -517,7 +517,7 @@ class ChangeFromElsewhereTest(TaskEditorTestCase):
             (self.start, self.due),
             (self.task.plannedStartDateTime(), self.task.dueDateTime()),
         )
-        self.assertTrue(self.history.hasFuture())
+        self.assertTrue(self.history.has_future())
 
 
 class DatesTestBase(TaskEditorSetterMixin, TaskEditorTestCase):

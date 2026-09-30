@@ -26,8 +26,8 @@ class TaskCommandTestCase(CommandTestCase, asserts.Mixin):
     def setUp(self):
         super().setUp()
         self.settings = task.Task.settings = config.Settings(load=False)
-        self.list = self.taskList = task.TaskList()
-        self.categories = category.CategoryList()
+        self.list = self.taskList = self.task_file.tasks()
+        self.categories = self.task_file.categories()
         self.category = category.Category("cat")
         self.categories.append(self.category)
         self.task1 = task.Task(
@@ -163,7 +163,7 @@ class DeleteCommandWithTasksTest(TaskCommandTestCase):
     def testDeleteEmptyList_NoCommandHistory(self):
         self.taskList.remove(self.task1)
         self.delete("all")
-        self.assertDoUndoRedo(lambda: self.assertHistoryAndFuture([], []))
+        self.assertDoUndoRedo(lambda: self.assert_history_and_future([], []))
 
     def testDelete(self):
         self.delete("all")
@@ -708,15 +708,15 @@ class MarkInactiveCommandTest(TaskCommandTestCase):
 class DragAndDropTaskCommandTest(CommandWithChildrenTestCase):
     def testCannotDropOnParent(self):
         self.dragAndDrop([self.parent], [self.child])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testCannotDropOnChild(self):
         self.dragAndDrop([self.child], [self.parent])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testCannotDropOnGrandchild(self):
         self.dragAndDrop([self.grandchild], [self.parent])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testDropAsRootTask(self):
         self.dragAndDrop([], [self.grandchild])

@@ -183,7 +183,7 @@ class ThunderbirdTest(test.TestCase):
     def test_a_local_folder_mail(self):
         self.assertEqual(
             mailer.parse_mail(MAIL)["location"],
-            thunderbird.getMail(
+            thunderbird.get_mail(
                 "mailbox-message://nobody@Local%%20Folders/Inbox#%d"
                 % self.offset
             )["location"],
@@ -192,7 +192,7 @@ class ThunderbirdTest(test.TestCase):
     def test_a_mailbox_mail(self):
         self.assertEqual(
             mailer.parse_mail(MAIL)["subject"],
-            thunderbird.getMail(
+            thunderbird.get_mail(
                 "mailbox://%s?number=%d"
                 % (os.path.join(self.folder, "Inbox"), self.offset)
             )["subject"],

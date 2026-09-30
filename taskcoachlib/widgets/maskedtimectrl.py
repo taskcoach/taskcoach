@@ -39,10 +39,10 @@ Dropdown Choices - Static or Dynamic:
     Choices can be a list or a callable (for dynamic updates):
 
     # Static choices (evaluated once at creation):
-    hourChoices=[8, 9, 10, 17, 18]
+    hour_choices=[8, 9, 10, 17, 18]
 
     # Dynamic choices (evaluated each time dropdown opens):
-    hourChoices=lambda: get_hour_choices_from_settings(settings)
+    hour_choices=lambda: get_hour_choices_from_settings(settings)
 
     Dynamic choices are useful when preferences may change while the control
     is open (e.g., user changes "Minutes between suggested times" in prefs).
@@ -288,37 +288,22 @@ def getEffectiveTimeFormat():
     return getDetectedLocaleTimeFormat()
 
 
-def getHourRangeForTimeFormat(timeFormat=None):
-    """Get the appropriate hour range for dropdown choices based on time format.
-
-    Args:
-        timeFormat: "24", "12", or None to use effective format from settings
-
-    Returns:
-        list: [0, 1, ..., 23] for 24-hour mode, [1, 2, ..., 12] for 12-hour mode
-    """
-    if timeFormat is None:
-        timeFormat = getEffectiveTimeFormat()
-    if timeFormat == "12":
-        return list(range(1, 13))
-    return list(range(24))
-
-
-def getDefaultHourChoices(timeFormat=None):
+def get_default_hour_choices(time_format=None):
     """Get default hour choices for TimeCtrl dropdowns.
 
-    In 24-hour mode: returns working hours from settings (efforthourstart to efforthourend)
-    In 12-hour mode: returns 1-12
+    In 24-hour mode: the working hours from settings (efforthourstart
+    to efforthourend); in 12-hour mode: 1 to 12.
 
     Args:
-        timeFormat: "24", "12", or None to use effective format from settings
+        time_format: "24", "12", or None for the format the settings
+            give
 
     Returns:
         list of hour values for dropdown
     """
-    if timeFormat is None:
-        timeFormat = getEffectiveTimeFormat()
-    if timeFormat == "12":
+    if time_format is None:
+        time_format = getEffectiveTimeFormat()
+    if time_format == "12":
         return list(range(1, 13))
     # 24-hour mode: use working hours from settings
     try:
@@ -814,21 +799,21 @@ class NumericField:
         self,
         name,
         width,
-        minVal,
-        maxVal,
+        min_val,
+        max_val,
         value,
         choices,
         observer,
-        padZeros=True,
+        pad_zeros=True,
     ):
         self.__name = name
         self.__width = width
-        self.__minVal = minVal
-        self.__maxVal = maxVal
-        self.__value = max(minVal, min(maxVal, value))
+        self.__minVal = min_val
+        self.__maxVal = max_val
+        self.__value = max(min_val, min(max_val, value))
         self.__choices = None  # Will be set by SetChoices
         self.__observer = observer
-        self.__padZeros = padZeros
+        self.__padZeros = pad_zeros
         self.__digitCount = 0  # Number of digits typed in current entry
         self.__lastKeyTime = 0  # Timestamp of last digit keystroke
         self._negativePrefix = False  # If True, paint "-" before value
@@ -1106,7 +1091,7 @@ class MaskedFieldsCtrl(wx.Panel):
                 value = elem[1] if len(elem) > 1 else 0
                 customChoices = elem[2] if len(elem) > 2 else None
 
-                width, minVal, maxVal, padZeros = FIELD_TYPES[fieldType]
+                width, min_val, max_val, pad_zeros = FIELD_TYPES[fieldType]
 
                 # Pass choices to NumericField - it handles conversion and callables
                 # Choices can be: None, list of values, list of tuples, or callable
@@ -1115,12 +1100,12 @@ class MaskedFieldsCtrl(wx.Panel):
                 field = NumericField(
                     fieldType,
                     width,
-                    minVal,
-                    maxVal,
+                    min_val,
+                    max_val,
                     value,
                     choices,
                     self,
-                    padZeros,
+                    pad_zeros,
                 )
                 self._fields[fieldType] = field
                 self._fieldList.append(field)
@@ -1512,20 +1497,20 @@ class DurationCtrl(MaskedFieldsCtrl):
     Args:
         parent: Parent window
         days, hours, minutes, seconds: Initial values
-        dayChoices: Dropdown choices for days:
+        day_choices: Dropdown choices for days:
             - None (default): Use defaults [0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]
             - list: Use that specific list
             - False: No dropdown
-        hourChoices: Dropdown choices for hours:
+        hour_choices: Dropdown choices for hours:
             - None (default): Use defaults [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]
             - list: Use that specific list
             - False: No dropdown
-        minuteChoices: Dropdown choices for minutes:
+        minute_choices: Dropdown choices for minutes:
             - None (default): Use defaults from settings (based on effortminuteinterval)
             - list: Use that specific list
             - False: No dropdown
-        showSeconds: If True, include seconds field (default False)
-        secondChoices: Dropdown choices for seconds:
+        show_seconds: If True, include seconds field (default False)
+        second_choices: Dropdown choices for seconds:
             - None (default): Use defaults from settings (based on effortsecondinterval)
             - list: Use that specific list
             - False: No dropdown
@@ -1538,49 +1523,49 @@ class DurationCtrl(MaskedFieldsCtrl):
         hours=0,
         minutes=0,
         seconds=0,
-        dayChoices=None,
-        hourChoices=None,
-        minuteChoices=None,
-        showSeconds=False,
-        secondChoices=None,
+        day_choices=None,
+        hour_choices=None,
+        minute_choices=None,
+        show_seconds=False,
+        second_choices=None,
     ):
-        self._showSeconds = showSeconds
+        self._showSeconds = show_seconds
 
         # Resolve day choices: None=defaults, False=no dropdown, list=use as-is
-        if dayChoices is None:
-            dayChoices = getDefaultDayChoices()
-        elif dayChoices is False:
-            dayChoices = None
+        if day_choices is None:
+            day_choices = getDefaultDayChoices()
+        elif day_choices is False:
+            day_choices = None
 
         # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
-        if hourChoices is None:
-            hourChoices = getDefaultDurationHourChoices()
-        elif hourChoices is False:
-            hourChoices = None
+        if hour_choices is None:
+            hour_choices = getDefaultDurationHourChoices()
+        elif hour_choices is False:
+            hour_choices = None
 
         # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
-        if minuteChoices is None:
-            minuteChoices = getDefaultMinuteChoices()
-        elif minuteChoices is False:
-            minuteChoices = None
+        if minute_choices is None:
+            minute_choices = getDefaultMinuteChoices()
+        elif minute_choices is False:
+            minute_choices = None
 
         # Resolve second choices: None=defaults, False=no dropdown, list=use as-is
-        if secondChoices is None:
-            secondChoices = getDefaultSecondChoices()
-        elif secondChoices is False:
-            secondChoices = None
+        if second_choices is None:
+            second_choices = getDefaultSecondChoices()
+        elif second_choices is False:
+            second_choices = None
 
         elements = [
-            ("day", days, dayChoices),
+            ("day", days, day_choices),
             ("literal", _("d") + " "),
-            ("hour", hours, hourChoices),
+            ("hour", hours, hour_choices),
             ("literal", ":"),
-            ("minute", minutes, minuteChoices),
+            ("minute", minutes, minute_choices),
         ]
 
-        if showSeconds:
+        if show_seconds:
             elements.append(("literal", ":"))
-            elements.append(("second", seconds, secondChoices))
+            elements.append(("second", seconds, second_choices))
 
         self._negative = False
         super().__init__(parent, elements)
@@ -1646,20 +1631,20 @@ class DurationCtrlVerbose(MaskedFieldsCtrl):
     Args:
         parent: Parent window
         days, hours, minutes, seconds: Initial values
-        dayChoices: Dropdown choices for days:
+        day_choices: Dropdown choices for days:
             - None (default): Use defaults [0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]
             - list: Use that specific list
             - False: No dropdown
-        hourChoices: Dropdown choices for hours:
+        hour_choices: Dropdown choices for hours:
             - None (default): Use defaults [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]
             - list: Use that specific list
             - False: No dropdown
-        minuteChoices: Dropdown choices for minutes:
+        minute_choices: Dropdown choices for minutes:
             - None (default): Use defaults from settings (based on effortminuteinterval)
             - list: Use that specific list
             - False: No dropdown
-        showSeconds: If True, include seconds field (default False)
-        secondChoices: Dropdown choices for seconds:
+        show_seconds: If True, include seconds field (default False)
+        second_choices: Dropdown choices for seconds:
             - None (default): Use defaults from settings (based on effortsecondinterval)
             - list: Use that specific list
             - False: No dropdown
@@ -1672,50 +1657,50 @@ class DurationCtrlVerbose(MaskedFieldsCtrl):
         hours=0,
         minutes=0,
         seconds=0,
-        dayChoices=None,
-        hourChoices=None,
-        minuteChoices=None,
-        showSeconds=False,
-        secondChoices=None,
+        day_choices=None,
+        hour_choices=None,
+        minute_choices=None,
+        show_seconds=False,
+        second_choices=None,
     ):
-        self._showSeconds = showSeconds
+        self._showSeconds = show_seconds
 
         # Resolve day choices: None=defaults, False=no dropdown, list=use as-is
-        if dayChoices is None:
-            dayChoices = getDefaultDayChoices()
-        elif dayChoices is False:
-            dayChoices = None
+        if day_choices is None:
+            day_choices = getDefaultDayChoices()
+        elif day_choices is False:
+            day_choices = None
 
         # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
-        if hourChoices is None:
-            hourChoices = getDefaultDurationHourChoices()
-        elif hourChoices is False:
-            hourChoices = None
+        if hour_choices is None:
+            hour_choices = getDefaultDurationHourChoices()
+        elif hour_choices is False:
+            hour_choices = None
 
         # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
-        if minuteChoices is None:
-            minuteChoices = getDefaultMinuteChoices()
-        elif minuteChoices is False:
-            minuteChoices = None
+        if minute_choices is None:
+            minute_choices = getDefaultMinuteChoices()
+        elif minute_choices is False:
+            minute_choices = None
 
         # Resolve second choices: None=defaults, False=no dropdown, list=use as-is
-        if secondChoices is None:
-            secondChoices = getDefaultSecondChoices()
-        elif secondChoices is False:
-            secondChoices = None
+        if second_choices is None:
+            second_choices = getDefaultSecondChoices()
+        elif second_choices is False:
+            second_choices = None
 
         elements = [
-            ("day", days, dayChoices),
+            ("day", days, day_choices),
             ("literal", " " + _("days") + " "),
-            ("hour", hours, hourChoices),
+            ("hour", hours, hour_choices),
             ("literal", " " + _("hours") + " "),
-            ("minute", minutes, minuteChoices),
+            ("minute", minutes, minute_choices),
             ("literal", " " + _("mins")),
         ]
 
-        if showSeconds:
+        if show_seconds:
             elements.append(("literal", " "))
-            elements.append(("second", seconds, secondChoices))
+            elements.append(("second", seconds, second_choices))
             elements.append(("literal", " " + _("secs")))
 
         self._negative = False
@@ -1785,15 +1770,16 @@ class TimeCtrl(MaskedFieldsCtrl):
     Args:
         parent: Parent window
         hours, minutes: Initial values (always in 24-hour format internally)
-        hourChoices: Dropdown choices for hours:
+        hour_choices: Dropdown choices for hours:
             - None (default): Use defaults from settings (working hours for 24h, 1-12 for 12h)
             - list: Use that specific list
             - False: No dropdown
-        minuteChoices: Dropdown choices for minutes:
+        minute_choices: Dropdown choices for minutes:
             - None (default): Use defaults from settings (based on effortminuteinterval)
             - list: Use that specific list
             - False: No dropdown
-        timeFormat: "24" for 24-hour, "12" for 12-hour with AM/PM, None to use settings
+        time_format: "24" for 24-hour, "12" for 12-hour with AM/PM, None
+            to use settings
     """
 
     def __init__(
@@ -1801,46 +1787,46 @@ class TimeCtrl(MaskedFieldsCtrl):
         parent,
         hours=0,
         minutes=0,
-        hourChoices=None,
-        minuteChoices=None,
-        timeFormat=None,
+        hour_choices=None,
+        minute_choices=None,
+        time_format=None,
     ):
         # Determine time format from parameter or settings
-        if timeFormat is not None:
+        if time_format is not None:
             self._timeFormat = (
-                timeFormat if timeFormat in ("24", "12") else "24"
+                time_format if time_format in ("24", "12") else "24"
             )
         else:
             self._timeFormat = getEffectiveTimeFormat()
 
         # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
-        if hourChoices is None:
-            hourChoices = getDefaultHourChoices(self._timeFormat)
-        elif hourChoices is False:
-            hourChoices = None
+        if hour_choices is None:
+            hour_choices = get_default_hour_choices(self._timeFormat)
+        elif hour_choices is False:
+            hour_choices = None
 
         # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
-        if minuteChoices is None:
-            minuteChoices = getDefaultMinuteChoices()
-        elif minuteChoices is False:
-            minuteChoices = None
+        if minute_choices is None:
+            minute_choices = getDefaultMinuteChoices()
+        elif minute_choices is False:
+            minute_choices = None
 
         if self._timeFormat == "12":
             # 12-hour format: convert 24h to 12h display
             hour12, period = self._to12Hour(hours)
             elements = [
-                ("hour12", hour12, hourChoices),
+                ("hour12", hour12, hour_choices),
                 ("literal", ":"),
-                ("minute", minutes, minuteChoices),
+                ("minute", minutes, minute_choices),
                 ("literal", " "),
                 ("period", period, [("AM", 0), ("PM", 1)]),
             ]
         else:
             # 24-hour format (default)
             elements = [
-                ("hour", hours, hourChoices),
+                ("hour", hours, hour_choices),
                 ("literal", ":"),
-                ("minute", minutes, minuteChoices),
+                ("minute", minutes, minute_choices),
             ]
 
         super().__init__(parent, elements)
@@ -1903,19 +1889,20 @@ class TimeWithSecondsCtrl(MaskedFieldsCtrl):
     Args:
         parent: Parent window
         hours, minutes, seconds: Initial values (always in 24-hour format internally)
-        hourChoices: Dropdown choices for hours:
+        hour_choices: Dropdown choices for hours:
             - None (default): Use defaults from settings (working hours for 24h, 1-12 for 12h)
             - list: Use that specific list
             - False: No dropdown
-        minuteChoices: Dropdown choices for minutes:
+        minute_choices: Dropdown choices for minutes:
             - None (default): Use defaults from settings (based on effortminuteinterval)
             - list: Use that specific list
             - False: No dropdown
-        secondChoices: Dropdown choices for seconds:
+        second_choices: Dropdown choices for seconds:
             - None (default): Use defaults from settings (based on effortsecondinterval)
             - list: Use that specific list
             - False: No dropdown
-        timeFormat: "24" for 24-hour, "12" for 12-hour with AM/PM, None to use settings
+        time_format: "24" for 24-hour, "12" for 12-hour with AM/PM, None
+            to use settings
     """
 
     def __init__(
@@ -1924,57 +1911,57 @@ class TimeWithSecondsCtrl(MaskedFieldsCtrl):
         hours=0,
         minutes=0,
         seconds=0,
-        hourChoices=None,
-        minuteChoices=None,
-        secondChoices=None,
-        timeFormat=None,
+        hour_choices=None,
+        minute_choices=None,
+        second_choices=None,
+        time_format=None,
     ):
         # Determine time format from parameter or settings
-        if timeFormat is not None:
+        if time_format is not None:
             self._timeFormat = (
-                timeFormat if timeFormat in ("24", "12") else "24"
+                time_format if time_format in ("24", "12") else "24"
             )
         else:
             self._timeFormat = getEffectiveTimeFormat()
 
         # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
-        if hourChoices is None:
-            hourChoices = getDefaultHourChoices(self._timeFormat)
-        elif hourChoices is False:
-            hourChoices = None
+        if hour_choices is None:
+            hour_choices = get_default_hour_choices(self._timeFormat)
+        elif hour_choices is False:
+            hour_choices = None
 
         # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
-        if minuteChoices is None:
-            minuteChoices = getDefaultMinuteChoices()
-        elif minuteChoices is False:
-            minuteChoices = None
+        if minute_choices is None:
+            minute_choices = getDefaultMinuteChoices()
+        elif minute_choices is False:
+            minute_choices = None
 
         # Resolve second choices: None=defaults, False=no dropdown, list=use as-is
-        if secondChoices is None:
-            secondChoices = getDefaultSecondChoices()
-        elif secondChoices is False:
-            secondChoices = None
+        if second_choices is None:
+            second_choices = getDefaultSecondChoices()
+        elif second_choices is False:
+            second_choices = None
 
         if self._timeFormat == "12":
             # 12-hour format: convert 24h to 12h display
             hour12, period = self._to12Hour(hours)
             elements = [
-                ("hour12", hour12, hourChoices),
+                ("hour12", hour12, hour_choices),
                 ("literal", ":"),
-                ("minute", minutes, minuteChoices),
+                ("minute", minutes, minute_choices),
                 ("literal", ":"),
-                ("second", seconds, secondChoices),
+                ("second", seconds, second_choices),
                 ("literal", " "),
                 ("period", period, [("AM", 0), ("PM", 1)]),
             ]
         else:
             # 24-hour format (default)
             elements = [
-                ("hour", hours, hourChoices),
+                ("hour", hours, hour_choices),
                 ("literal", ":"),
-                ("minute", minutes, minuteChoices),
+                ("minute", minutes, minute_choices),
                 ("literal", ":"),
-                ("second", seconds, secondChoices),
+                ("second", seconds, second_choices),
             ]
 
         super().__init__(parent, elements)
@@ -2041,10 +2028,10 @@ class _CalendarComboPopup(wx.ComboPopup):
     window (including Wayland-safe positioning).
     """
 
-    def __init__(self, minDate=None, maxDate=None):
+    def __init__(self, min_date=None, max_date=None):
         super().__init__()
-        self._minDate = minDate
-        self._maxDate = maxDate
+        self._minDate = min_date
+        self._maxDate = max_date
         self._panel = None
         self._selection = datetime.date.today()
         self._highlightedDate = self._selection
@@ -2481,13 +2468,13 @@ class DateCtrl(MaskedFieldsCtrl):
     def __init__(
         self,
         parent,
-        comboCtrl,
+        combo_ctrl,
         year=None,
         month=None,
         day=None,
-        minDate=None,
-        maxDate=None,
-        dateFormat=None,
+        min_date=None,
+        max_date=None,
+        date_format=None,
     ):
         # Default to today's date
         today = datetime.date.today()
@@ -2498,14 +2485,14 @@ class DateCtrl(MaskedFieldsCtrl):
         if day is None:
             day = today.day
 
-        self._minDate = minDate
-        self._maxDate = maxDate
-        self._comboCtrl = comboCtrl
+        self._minDate = min_date
+        self._maxDate = max_date
+        self._comboCtrl = combo_ctrl
 
         # Get date format: use explicit override, or read from settings, or detect from locale
-        if dateFormat is not None:
+        if date_format is not None:
             field_order, separator = getLocaleDateFormat(
-                override=dateFormat if dateFormat else None
+                override=date_format if date_format else None
             )
         else:
             field_order, separator = getEffectiveDateFormat()
@@ -2703,28 +2690,28 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         year=None,
         month=None,
         day=None,
-        minDate=None,
-        maxDate=None,
-        dateFormat=None,
+        min_date=None,
+        max_date=None,
+        date_format=None,
     ):
         super().__init__(parent)
 
         # Calendar popup via ComboPopup interface
         self._calendarPopup = _CalendarComboPopup(
-            minDate=minDate, maxDate=maxDate
+            min_date=min_date, max_date=max_date
         )
         self.SetPopupControl(self._calendarPopup)
 
         # Clean embedded DateCtrl — no monkey-patches needed
         self._dateCtrl = DateCtrl(
             self,
-            comboCtrl=self,
+            combo_ctrl=self,
             year=year,
             month=month,
             day=day,
-            minDate=minDate,
-            maxDate=maxDate,
-            dateFormat=dateFormat,
+            min_date=min_date,
+            max_date=max_date,
+            date_format=date_format,
         )
 
         # Derive horizontal padding from the vertical padding the ComboCtrl
@@ -2897,9 +2884,9 @@ class _NativeDateCtrl(wx.Panel):
         year=None,
         month=None,
         day=None,
-        minDate=None,
-        maxDate=None,
-        dateFormat=None,
+        min_date=None,
+        max_date=None,
+        date_format=None,
     ):
         super().__init__(parent)
 
@@ -2921,18 +2908,22 @@ class _NativeDateCtrl(wx.Panel):
         )
 
         # Set date range if specified
-        if minDate is not None or maxDate is not None:
+        if min_date is not None or max_date is not None:
             wx_min = (
-                self._date_to_wxdt(minDate) if minDate else wx.DefaultDateTime
+                self._date_to_wxdt(min_date)
+                if min_date
+                else wx.DefaultDateTime
             )
             wx_max = (
-                self._date_to_wxdt(maxDate) if maxDate else wx.DefaultDateTime
+                self._date_to_wxdt(max_date)
+                if max_date
+                else wx.DefaultDateTime
             )
             self._picker.SetRange(wx_min, wx_max)
 
         # Apply custom date format via Win32 DTM_SETFORMATW
-        if dateFormat is not None:
-            self.SetDateFormat(dateFormat)
+        if date_format is not None:
+            self.SetDateFormat(date_format)
 
         # Bridge native EVT_DATE_CHANGED → app's EVT_VALUE_CHANGED
         self._picker.Bind(wx.adv.EVT_DATE_CHANGED, self._onDateChanged)
@@ -3053,17 +3044,17 @@ class _NativeDateCtrl(wx.Panel):
         else:
             super().Bind(event_type, handler, source, id, id2)
 
-    def SetDateFormat(self, dateFormat):
+    def SetDateFormat(self, date_format):
         """Set display format using Win32 DTM_SETFORMATW message.
 
         Args:
-            dateFormat: 4-char format string (e.g. "YMD-", "MDY/", "DMY.")
-                       as used by getLocaleDateFormat().
+            date_format: 4-char format string (e.g. "YMD-", "MDY/",
+                "DMY.") as used by getLocaleDateFormat().
         """
         if wx.Platform != "__WXMSW__":
             return  # DTM_SETFORMATW is Windows-only
 
-        field_order, separator = getLocaleDateFormat(override=dateFormat)
+        field_order, separator = getLocaleDateFormat(override=date_format)
         dtp_map = {"year": "yyyy", "month": "MM", "date_day": "dd"}
         fmt = separator.join(dtp_map[f] for f in field_order)
 
@@ -3115,30 +3106,32 @@ class DateTimeComboCtrl(wx.EvtHandler):
     Args:
         parent: Parent window for the widgets
         value: datetime.datetime object, or None for unchecked state
-        hourChoices, minuteChoices: Dropdown choices for time fields
-        showSeconds: If True, use TimeWithSecondsCtrl (default False)
-        secondChoices: Dropdown choices for seconds field
+        hour_choices, minute_choices: Dropdown choices for time fields
+        show_seconds: If True, use TimeWithSecondsCtrl (default False)
+        second_choices: Dropdown choices for seconds field
     """
 
     def __init__(
         self,
         parent,
         value=None,
-        suggestedValue=None,
-        hourChoices=None,
-        minuteChoices=None,
-        showSeconds=False,
-        secondChoices=None,
+        suggested_value=None,
+        hour_choices=None,
+        minute_choices=None,
+        show_seconds=False,
+        second_choices=None,
     ):
         wx.EvtHandler.__init__(self)
         self._parent = parent
-        self._showSeconds = showSeconds
-        self._suggestedValue = suggestedValue
+        self._showSeconds = show_seconds
+        self._suggestedValue = suggested_value
 
         checked = value is not None
         # Whole seconds, as every date in Task Coach
         now = datetime.datetime.now().replace(microsecond=0)
-        display_value = value if value is not None else (suggestedValue or now)
+        display_value = (
+            value if value is not None else (suggested_value or now)
+        )
 
         self._checkbox = wx.CheckBox(parent)
         self._checkbox.SetValue(checked)
@@ -3151,23 +3144,23 @@ class DateTimeComboCtrl(wx.EvtHandler):
             day=display_value.day,
         )
 
-        if showSeconds:
+        if show_seconds:
             self._timeCtrl = TimeWithSecondsCtrl(
                 parent,
                 hours=display_value.hour,
                 minutes=display_value.minute,
                 seconds=display_value.second,
-                hourChoices=hourChoices,
-                minuteChoices=minuteChoices,
-                secondChoices=secondChoices,
+                hour_choices=hour_choices,
+                minute_choices=minute_choices,
+                second_choices=second_choices,
             )
         else:
             self._timeCtrl = TimeCtrl(
                 parent,
                 hours=display_value.hour,
                 minutes=display_value.minute,
-                hourChoices=hourChoices,
-                minuteChoices=minuteChoices,
+                hour_choices=hour_choices,
+                minute_choices=minute_choices,
             )
 
         self._readOnly = False

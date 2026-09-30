@@ -14,15 +14,10 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
 
-"""
-Reminder Controller - Event-based implementation.
-
-This module responds to reminder trigger events fired by Task.processReminder(),
-which MasterScheduler calls in its pass at a reminder's second.
-
-See docs/SCHEDULERS.md for architecture documentation.
+Reminder Controller: responds to the reminders Task.processReminder()
+fires, which MasterScheduler calls in its pass at a reminder's second
+(docs/SCHEDULERS.md).
 """
 
 from taskcoachlib import patterns
@@ -89,10 +84,10 @@ class ReminderController(object):
         )
         # Position on app's monitor even though it has no parent
         wxhelper.centerOnAppMonitor(reminderDialog)
-        reminderDialog.Bind(wx.EVT_CLOSE, self.onCloseReminderDialog)
+        reminderDialog.Bind(wx.EVT_CLOSE, self.on_close_reminder_dialog)
         reminderDialog.Show()
 
-    def onCloseReminderDialog(self, event, show=True):
+    def on_close_reminder_dialog(self, event, show=True):
         """Handle reminder dialog close."""
         event.Skip()
         dialog = event.EventObject

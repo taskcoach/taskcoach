@@ -18,15 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from unittests import asserts
 from .CommandTestCase import CommandTestCase
-from taskcoachlib import command, config
+from taskcoachlib import command
 from taskcoachlib.domain import task, effort, date
 
 
 class EffortCommandTestCase(CommandTestCase, asserts.CommandAssertsMixin):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
-        self.taskList = task.TaskList()
-        self.effortList = effort.EffortList(self.taskList)
+        super().setUp()
+        self.taskList = self.task_file.tasks()
+        self.effortList = self.task_file.efforts()
         self.originalTask = task.Task()
         self.taskList.append(self.originalTask)
         self.originalStop = date.DateTime.now()
@@ -66,31 +66,31 @@ class NewEffortCommandTest(EffortCommandTestCase):
             ),
         )
 
-    def testNewEffortWhenUserEditsTask(self):
-        secondTask = task.Task()
-        self.taskList.append(secondTask)
-        newEffortCommand = command.NewEffortCommand(
+    def test_new_effort_when_user_edits_task(self):
+        second_task = task.Task()
+        self.taskList.append(second_task)
+        new_effort_command = command.NewEffortCommand(
             self.effortList, [self.originalTask]
         )
-        newEffortCommand.do()
-        newEffort = newEffortCommand.efforts[0]
+        new_effort_command.do()
+        new_effort = new_effort_command.efforts[0]
         # The effort editor moves it: a step of its own
-        command.EditTaskCommand(None, [newEffort], newValue=secondTask).do()
+        command.EditTaskCommand(None, [new_effort], newValue=second_task).do()
         self.assertDoUndoRedo(
             lambda: self.assertTrue(
-                newEffort in secondTask.efforts()
-                and newEffort not in self.originalTask.efforts()
+                new_effort in second_task.efforts()
+                and new_effort not in self.originalTask.efforts()
             ),
             lambda: self.assertTrue(
-                newEffort in self.originalTask.efforts()
-                and newEffort not in secondTask.efforts()
+                new_effort in self.originalTask.efforts()
+                and new_effort not in second_task.efforts()
             ),
         )
         self.undo()
         self.undo()
         self.assertTrue(
-            newEffort not in secondTask.efforts()
-            and newEffort not in self.originalTask.efforts()
+            new_effort not in second_task.efforts()
+            and new_effort not in self.originalTask.efforts()
         )
 
 

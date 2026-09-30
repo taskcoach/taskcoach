@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittests import asserts
 from .CommandTestCase import CommandTestCase
 from taskcoachlib import command, patterns
-from taskcoachlib.domain import base, note, category, task
+from taskcoachlib.domain import base, note, category
 
 
 class NoteOwnerUnderTest(note.NoteOwner, base.Object):
@@ -28,8 +28,9 @@ class NoteOwnerUnderTest(note.NoteOwner, base.Object):
 
 class NoteCommandTestCase(CommandTestCase, asserts.CommandAssertsMixin):
     def setUp(self):
-        self.notes = note.NoteContainer()
-        self.taskList = task.TaskList()
+        super().setUp()
+        self.notes = self.task_file.notes()
+        self.taskList = self.task_file.tasks()
 
 
 class NewNoteCommandTest(NoteCommandTestCase):
@@ -151,15 +152,15 @@ class DragAndDropNoteCommand(NoteCommandTestCase):
 
     def testCannotDropOnParent(self):
         self.dragAndDrop([self.parent], [self.child])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testCannotDropOnChild(self):
         self.dragAndDrop([self.child], [self.parent])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testCannotDropOnGrandchild(self):
         self.dragAndDrop([self.grandchild], [self.parent])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testDropAsRootTask(self):
         self.dragAndDrop([], [self.grandchild])

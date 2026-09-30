@@ -6,7 +6,7 @@ When "Sort by status first" is enabled (the default), tasks organize by status r
 
 ## Current Implementation
 
-The system uses a numeric priority system where each status has a distinct sort priority, read with `TaskStatus.getSortPriority(settings)`. These priorities are **user-configurable** via the Preferences > Statuses tab.
+The system uses a numeric priority system where each status has a distinct sort priority, read with `TaskStatus.get_sort_priority(settings)`. These priorities are **user-configurable** via the Preferences > Statuses tab.
 
 ### Default Priorities
 
@@ -34,15 +34,15 @@ Priorities can be changed in Preferences > Statuses using the "Sort Priority" dr
 - **Moving up** (e.g., 6 to 2): all priorities in [2, 6) shift up by 1
 - **Moving down** (e.g., 1 to 4): all priorities in (1, 4] shift down by 1
 
-Priorities are stored in the `[statussortpriority]` section of the settings file; `getSortPriority()` reads them on each call.
+Priorities are stored in the `[statussortpriority]` section of the settings file; `get_sort_priority()` reads them on each call.
 
 ### Sort Key Construction
 
 The sorter uses:
 
 ```python
-sort_key = [-status.getSortPriority(settings)] + [column_sort_key]  # ascending
-sort_key = [status.getSortPriority(settings)] + [column_sort_key]   # descending
+sort_key = [-status.get_sort_priority(settings)] + [column_sort_key]  # ascending
+sort_key = [status.get_sort_priority(settings)] + [column_sort_key]   # descending
 ```
 
 For ascending sort, priority is negated to maintain urgency-first ordering.
@@ -96,7 +96,7 @@ sort_key = [not completed(), not inactive()] + [column_sort_key]
 ## Core Files
 
 - `taskcoachlib/domain/task/sorter.py` - Composite key logic, subscribes to priority changes
-- `taskcoachlib/domain/task/status.py` - Status definitions, `getSortPriority(settings)`
+- `taskcoachlib/domain/task/status.py` - Status definitions, `get_sort_priority(settings)`
 - `taskcoachlib/domain/task/task.py` - Status computation methods
 - `taskcoachlib/config/defaults.py` - Default priorities in `statussortpriority` section
 - `taskcoachlib/gui/dialog/preferences.py` - Statuses tab with priority dropdowns

@@ -74,15 +74,15 @@ class TextDropTarget(wx.TextDropTarget):
 class DropTarget(wx.DropTarget):
     def __init__(
         self,
-        onDropURLCallback,
-        onDropFileCallback,
-        onDropMailCallback,
+        on_drop_url,
+        on_drop_files,
+        on_drop_mail,
         onDragOverCallback=None,
     ):
         super().__init__()
-        self.__onDropURLCallback = onDropURLCallback
-        self.__onDropFileCallback = onDropFileCallback
-        self.__onDropMailCallback = onDropMailCallback
+        self.__on_drop_url = on_drop_url
+        self.__on_drop_files = on_drop_files
+        self.__on_drop_mail = on_drop_mail
         self.__onDragOverCallback = onDragOverCallback
         self.reinit()
 
@@ -118,11 +118,11 @@ class DropTarget(wx.DropTarget):
 
     def OnData(self, x, y, result):  # pylint: disable=W0613
         self.GetData()
-        self.dispatch(x, y, *self.getReceivedFormatTypeAndId())
+        self.dispatch(x, y, *self.get_received_format_type_and_id())
         self.reinit()
         return wx.DragCopy
 
-    def getReceivedFormatTypeAndId(self):
+    def get_received_format_type_and_id(self):
         received_format = self.__composite.GetReceivedFormat()
         try:
             format_id = received_format.GetId()
@@ -134,50 +134,50 @@ class DropTarget(wx.DropTarget):
         """Hand the dropped data, as the data objects hold it, to its
         callback: a mail program's mails, files, a link or text."""
         if format_id == OUTLOOK_FORMAT:
-            self.onOutlookDrop(x, y)
+            self.on_outlook_drop(x, y)
         elif format_id == "public.url":
-            self.onMacUrlDrop(x, y)
+            self.on_mac_url_drop(x, y)
         elif format_type in (wx.DF_TEXT, wx.DF_UNICODETEXT):
-            self.onUrlDrop(x, y)
+            self.on_url_drop(x, y)
         elif format_type == wx.DF_FILENAME:
-            self.onFileDrop(x, y)
+            self.on_file_drop(x, y)
 
     def __drop_mails(self, x, y, mails):
-        if mails and self.__onDropMailCallback:
-            self.__onDropMailCallback(x, y, mails)
+        if mails and self.__on_drop_mail:
+            self.__on_drop_mail(x, y, mails)
 
     def __thunderbird_mails(self, uris):
         try:
-            return [thunderbird.getMail(uri) for uri in uris]
+            return [thunderbird.get_mail(uri) for uri in uris]
         except thunderbird.ThunderbirdCancelled:
             return []
         except thunderbird.ThunderbirdError as reason:
             wx.MessageBox(str(reason), _("Error"), wx.OK | wx.ICON_ERROR)
             return []
 
-    def onOutlookDrop(self, x, y):
-        self.__drop_mails(x, y, outlook.getCurrentSelection())
+    def on_outlook_drop(self, x, y):
+        self.__drop_mails(x, y, outlook.get_current_selection())
 
-    def onMacUrlDrop(self, x, y):
+    def on_mac_url_drop(self, x, y):
         url = bytes(self._url_data.GetData()).decode("utf-8", "replace")
         url = url.strip("\x00\r\n ")
         if url.startswith(("imap:", "mailbox:")):
             # Thunderbird's message
             self.__drop_mails(x, y, self.__thunderbird_mails([url]))
-        elif self.__onDropURLCallback:
-            self.__onDropURLCallback(x, y, url)
+        elif self.__on_drop_url:
+            self.__on_drop_url(x, y, url)
 
-    def onUrlDrop(self, x, y):
+    def on_url_drop(self, x, y):
         text = self._text_data.GetText()
         # Thunderbird drags its messages' URIs as text
         uris = thunderbird.message_uris(text)
         if uris:
             self.__drop_mails(x, y, self.__thunderbird_mails(uris))
-        elif self.__onDropURLCallback:
+        elif self.__on_drop_url:
             url = text if ":" in text else "http://" + text  # No scheme
-            self.__onDropURLCallback(x, y, url)
+            self.__on_drop_url(x, y, url)
 
-    def onFileDrop(self, x, y):
+    def on_file_drop(self, x, y):
         # A mail program drags its mails as files in a temporary
         # folder (docs/EMAIL_ATTACHMENTS.md, The Drop). On GTK a dropped
         # uri-list comes here too, as file names; wx refuses web links
@@ -185,13 +185,13 @@ class DropTarget(wx.DropTarget):
         filenames, mails = [], []
         for filename in self._file_data.GetFilenames():
             dropped = mailer.dropped_mails(filename)
-            if dropped and self.__onDropMailCallback:
+            if dropped and self.__on_drop_mail:
                 mails.extend(dropped)
             else:
                 filenames.append(filename)
         self.__drop_mails(x, y, mails)
-        if filenames and self.__onDropFileCallback:
-            self.__onDropFileCallback(x, y, filenames)
+        if filenames and self.__on_drop_files:
+            self.__on_drop_files(x, y, filenames)
 
 
 class HoverExpander:

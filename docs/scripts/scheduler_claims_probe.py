@@ -13,7 +13,7 @@ Run from the repository root:
 import wx
 
 app = wx.App(False)
-from taskcoachlib import config, patterns, persistence
+from taskcoachlib import config, persistence
 from taskcoachlib.config import settings2
 
 s = config.Settings(load=False)

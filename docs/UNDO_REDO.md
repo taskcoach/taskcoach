@@ -50,8 +50,9 @@ in memory, compared before and after each action.
   parent, an effort's task). Each copies its value (`snapshot()`) and
   puts one back (`restore()`), telling the views without dating the
   item. A computed (volatile) Attribute is not stored.
-- **Registries:** every item, and every list of the file's items (its
-  tasks, categories, notes), registers when created, held weakly
+- **Registries:** every item registers when created; the open task
+  file registers its lists (tasks, categories, notes); a view's list
+  is not the file's and does not. All are held weakly
   (`patterns/snapshot.py`).
 - **Snapshot:** every live item's fields, and which items each list
   holds. About 27 ms for a 2,000-task file, a comparison 2 ms
@@ -139,6 +140,9 @@ it. All of it is removed.
 - `tests/unittests/domainTests/UndoTest.py`: for each kind of change,
   the file written after undo is the file written before, dates
   included; redo gives the file after; no field differs in memory.
+- `tests/unittests/guiTests/UndoWithEditorsTest.py`: the same cases
+  with an editor open on each item; what an editor shows of a change,
+  its undo or its redo, it writes nothing back.
 - `tests/unittests/patternsTests/CommandTest.py`: the log (steps,
   joining, rollback, grouping by event).
 - The command tests check each command's undo and redo.

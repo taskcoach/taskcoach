@@ -2227,7 +2227,7 @@ class LanguagePage(SettingsPage):
             year=today.year,
             month=today.month,
             day=today.day,
-            dateFormat=date_format,
+            date_format=date_format,
         )
         sizer.Add(self._demo_date_ctrl, 0, wx.ALIGN_CENTER_VERTICAL)
         parent.Layout()
@@ -2244,7 +2244,7 @@ class LanguagePage(SettingsPage):
         if self._demo_time_ctrl:
             self._demo_time_ctrl.Destroy()
         self._demo_time_ctrl = TimeCtrl(
-            parent, hours=now.hour, minutes=now.minute, timeFormat=time_format
+            parent, hours=now.hour, minutes=now.minute, time_format=time_format
         )
         sizer.Add(self._demo_time_ctrl, 0, wx.ALIGN_CENTER_VERTICAL)
         parent.Layout()
@@ -2492,7 +2492,7 @@ class StatusesPage(SettingsPage):
         self.addAppearanceHeader()
         for status in task.Task.possibleStatuses():
             setting = "%stasks" % status
-            label = status.pluralLabel.replace(" tasks", "")
+            label = status.plural_label.replace(" tasks", "")
             self.addAppearanceSetting(
                 "fgcolor",
                 setting,
@@ -3125,7 +3125,7 @@ class DurationPresetsPage(SettingsPage):
         self.__addSizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # Create duration control - initially without seconds (Task Due Date is default)
-        self.__durationEntry = self.__createDurationCtrl(showSeconds=False)
+        self.__durationEntry = self.__create_duration_ctrl(show_seconds=False)
         self.__addSizer.Add(
             self.__durationEntry, 0, wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, 5
         )
@@ -3210,16 +3210,16 @@ class DurationPresetsPage(SettingsPage):
     def __getCurrentPresets(self):
         return self.__presets[self.__getCurrentSettingKey()]
 
-    def __createDurationCtrl(self, showSeconds=False):
+    def __create_duration_ctrl(self, show_seconds=False):
         """Create a duration control with or without seconds field."""
-        if showSeconds:
+        if show_seconds:
             return widgets.MaskedDurationCtrl(
                 self.__addPanel,
                 days=0,
                 hours=0,
                 minutes=15,
                 seconds=0,
-                showSeconds=True,
+                show_seconds=True,
             )
         else:
             return widgets.MaskedDurationCtrl(
@@ -3233,7 +3233,9 @@ class DurationPresetsPage(SettingsPage):
         is_effort = self.__isEffortPreset()
         self.__addSizer.Detach(self.__durationEntry)
         self.__durationEntry.Destroy()
-        self.__durationEntry = self.__createDurationCtrl(showSeconds=is_effort)
+        self.__durationEntry = self.__create_duration_ctrl(
+            show_seconds=is_effort
+        )
         self.__addSizer.Insert(
             0, self.__durationEntry, 0, wx.RIGHT | wx.ALIGN_CENTRE_VERTICAL, 10
         )

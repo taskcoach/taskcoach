@@ -28,6 +28,7 @@ from taskcoachlib.domain import attachment, categorizable, category, effort
 from taskcoachlib.domain import note, task
 from taskcoachlib.i18n import _
 from taskcoachlib.meta.debug import log_step
+from taskcoachlib.patterns.snapshot import register_collection
 from taskcoachlib.filesystem import (
     FilesystemNotifier,
     FilesystemPollerNotifier,
@@ -238,6 +239,11 @@ class TaskFile(patterns.Observer):
         self.__saved_stat = None
         # A read-only task file (merge) sends no messages about itself
         self.__read_only = kwargs.pop("read_only", False)
+        if not self.__read_only:
+            # Which items the file holds is stored data; views' lists
+            # are not (docs/UNDO_REDO.md, Architecture)
+            for each in (self.__tasks, self.__categories, self.__notes):
+                register_collection(each)
         if kwargs.pop("poll", False):
             self.__notifier = TaskCoachFilesystemPollerNotifier(self)
         else:
@@ -312,13 +318,13 @@ class TaskFile(patterns.Observer):
     def onDomainObjectAddedOrRemoved(self, event):  # pylint: disable=W0613
         if self.__loading or self.__saving:
             return
-        self.mark_dirty()
+        self.mark_dirty(event)
 
     def on_saved_data_changed(self, event):
         if self.__loading or self.__saving:
             return
         if any(self.__holds(item) for item in event.sources()):
-            self.mark_dirty()
+            self.mark_dirty(event)
 
     def __holds(self, item):
         """Whether the item is this file's. Owned notes and attachments
@@ -356,11 +362,18 @@ class TaskFile(patterns.Observer):
     def is_dirty(self):
         return self.__needSave
 
-    def mark_dirty(self, force=False):
+    def mark_dirty(self, event=None, force=False):
         if not patterns.CommandHistory().is_running():
-            # Changed outside a command: undo cannot bring back the
-            # saved state
+            # Changed outside an undo step: undo cannot bring back the
+            # saved state. Only the program's own changes should be
+            # (docs/UNDO_REDO.md, Design Intent 4)
             self.__saved_at = _UNREACHABLE
+            if event is not None:
+                log_step(
+                    "changed outside an undo step:",
+                    ", ".join(sorted(event.types())),
+                    prefix="UNDO",
+                )
         if force or not self.__needSave:
             self.__needSave = True
             self._publish("taskfile.dirty")

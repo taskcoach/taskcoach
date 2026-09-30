@@ -672,10 +672,10 @@ class CommonTestsMixin(object):
             self.viewer.statusMessages(),
         )
 
-    def testOnDropFiles(self):
+    def test_on_drop_files(self):
         aTask = task.Task()
         self.taskList.append(aTask)
-        self.viewer.onDropFiles(aTask, ["filename"])
+        self.viewer.on_drop_files(aTask, ["filename"])
         self.assertEqual(
             ["filename"],
             [
@@ -684,10 +684,10 @@ class CommonTestsMixin(object):
             ],
         )
 
-    def testOnDropURL(self):
+    def test_on_drop_url(self):
         aTask = task.Task()
         self.taskList.append(aTask)
-        self.viewer.onDropURL(aTask, "http://www.example.com/")
+        self.viewer.on_drop_url(aTask, "http://www.example.com/")
         self.assertEqual(
             ["http://www.example.com/"],
             [
@@ -696,10 +696,10 @@ class CommonTestsMixin(object):
             ],
         )
 
-    def testOnDropMail(self):
+    def test_on_drop_mail(self):
         aTask = task.Task()
         self.taskList.append(aTask)
-        self.viewer.onDropMail(
+        self.viewer.on_drop_mail(
             aTask,
             [
                 mailer.parse_mail(

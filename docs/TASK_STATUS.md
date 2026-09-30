@@ -210,7 +210,7 @@ Task status is a dynamically computed property of each task, derived from the ta
 
 Each status is a `TaskStatus` singleton object (`domain/task/status.py`) with these attributes:
 
-| `statusString` | Display Text | Icon | FG Color | Condition |
+| `status_string` | Display Text | Icon | FG Color | Condition |
 |---|---|---|---|---|
 | `"inactive"` | `"Inactive"` | `taskcoach_actions_led_grey_icon` | Grey (192,192,192) | No actual start, planned start in future (or has incomplete prerequisites) |
 | `"late"` | `"Late"` | `nuvola_actions_ledpurple` | Purple (160,32,240) | Planned start date has passed, no actual start |
@@ -219,14 +219,14 @@ Each status is a `TaskStatus` singleton object (`domain/task/status.py`) with th
 | `"overdue"` | `"Overdue"` | `nuvola_actions_ledred` | Red (255,0,0) | Due date has passed |
 | `"completed"` | `"Completed"` | `checkmark_green_icon` | Green (0,255,0) | Completion date is set |
 
-Settings key for each status: `"%stasks" % statusString` (e.g., `"activetasks"`)
+Settings key for each status: `"%stasks" % status_string` (e.g., `"activetasks"`)
 Configurable in settings sections: `fgcolor`, `bgcolor`, `icon`, `font`
 
 ### Identity and Comparison
 
-TaskStatus objects use `statusString` for equality and hashing:
-- `__eq__`: compares `self.statusString == other.statusString`
-- `__hash__`: `hash(self.statusString)`
+TaskStatus objects use `status_string` for equality and hashing:
+- `__eq__`: compares `self.status_string == other.status_string`
+- `__hash__`: `hash(self.status_string)`
 - This enables O(1) set membership checks in filtering
 
 ---

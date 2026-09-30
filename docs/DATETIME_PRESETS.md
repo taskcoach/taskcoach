@@ -50,7 +50,7 @@ Default date/time values for new tasks, configured in Preferences.
    offers is supported). See
    [Constructor Bypass Problem](#constructor-bypass-problem).
 
-3. ~~**Fix propose mode for DateTimeComboCtrl**~~ — **Done.** `suggestedValue`
+3. ~~**Fix propose mode for DateTimeComboCtrl**~~ — **Done.** `suggested_value`
    parameter added to `DateTimeComboCtrl.__init__()`. Editor passes preference-
    computed datetime at construction. See [Fix](#fix) section.
 
@@ -217,18 +217,18 @@ When `value=None` (propose mode), the constructor defaulted to
 
 ### Fix
 
-**Done.** `suggestedValue` parameter added to `DateTimeComboCtrl.__init__()`.
+**Done.** `suggested_value` parameter added to `DateTimeComboCtrl.__init__()`.
 The editor passes the preference-computed datetime at construction time:
 
 ```python
-def __init__(self, parent, value=None, suggestedValue=None, ...):
+def __init__(self, parent, value=None, suggested_value=None, ...):
     ...
-    display_value = value if value is not None else (suggestedValue or datetime.datetime.now())
+    display_value = value if value is not None else (suggested_value or datetime.datetime.now())
 ```
 
 The sub-controls are initialized with the suggested datetime and hold it
 while the checkbox is unchecked. In preset mode, `value` is already
-non-None, so `suggestedValue` is ignored.
+non-None, so `suggested_value` is ignored.
 
 For how the sub-controls serve as the stash for DateTimeComboCtrl (retaining
 the proposed value through activate/deactivate cycles), see
@@ -236,7 +236,7 @@ the proposed value through activate/deactivate cycles), see
 
 **Editor construction sites** (`taskcoachlib/gui/dialog/editor.py`):
 
-| Date Field | suggestedValue |
+| Date Field | suggested_value |
 |-----------|---------------|
 | Planned start | `task.Task.suggestedPlannedStartDateTime()` |
 | Due date | `task.Task.suggestedDueDateTime()` |

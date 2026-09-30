@@ -210,8 +210,8 @@ class DateTimeCtrl(
         self._dateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=combo_value,
-            hourChoices=lambda: get_suggested_hour_choices(settings),
-            minuteChoices=lambda: get_suggested_minute_choices(settings),
+            hour_choices=lambda: get_suggested_hour_choices(settings),
+            minute_choices=lambda: get_suggested_minute_choices(settings),
         )
 
         # Get widgets directly (they're children of self) - don't use CreateRowPanel

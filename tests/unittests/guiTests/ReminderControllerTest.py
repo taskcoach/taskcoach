@@ -194,14 +194,14 @@ class ReminderControllerTest(ReminderControllerTestCase):
 
     def testOnCloseReminderResetsReminder(self):
         self.task.set_reminder(self.reminderDateTime)
-        self.reminderController.onCloseReminderDialog(
+        self.reminderController.on_close_reminder_dialog(
             self.dummyCloseEvent(), show=False
         )
         self.assertEqual(date.DateTime(), self.task.reminder())
 
     def testOnCloseReminderSetsReminder(self):
         self.task.set_reminder(self.reminderDateTime)
-        self.reminderController.onCloseReminderDialog(
+        self.reminderController.on_close_reminder_dialog(
             self.dummyCloseEvent(date.ONE_HOUR), show=False
         )
         self.assertTrue(
@@ -212,7 +212,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
     def test_snoozing_is_an_undo_step(self):
         # Every change to the file is (docs/UNDO_REDO.md, Design Intent)
         self.task.set_reminder(self.reminderDateTime)
-        self.reminderController.onCloseReminderDialog(
+        self.reminderController.on_close_reminder_dialog(
             self.dummyCloseEvent(date.ONE_HOUR), show=False
         )
         patterns.CommandHistory().undo()
@@ -220,7 +220,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
 
     def testOnCloseMayOpenTask(self):
         self.task.set_reminder(self.reminderDateTime)
-        frame = self.reminderController.onCloseReminderDialog(
+        frame = self.reminderController.on_close_reminder_dialog(
             self.dummyCloseEvent(openAfterClose=True), show=False
         )
         self.assertTrue(frame)

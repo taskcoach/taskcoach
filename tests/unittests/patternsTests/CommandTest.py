@@ -62,24 +62,24 @@ class HistoryTest(test.TestCase, asserts.CommandAssertsMixin):
     def testClear(self):
         self.command.do()
         self.commands.clear()
-        self.assertHistoryAndFuture([], [])
+        self.assert_history_and_future([], [])
 
     def testDo(self):
         self.command.do()
-        self.assertHistoryAndFuture([self.command], [])
+        self.assert_history_and_future([self.command], [])
         self.assertEqual("After", self.item.subject())
 
     def testUndo(self):
         self.command.do()
         self.commands.undo()
-        self.assertHistoryAndFuture([], [self.command])
+        self.assert_history_and_future([], [self.command])
         self.assertEqual("Before", self.item.subject())
 
     def testRedo(self):
         self.command.do()
         self.commands.undo()
         self.commands.redo()
-        self.assertHistoryAndFuture([self.command], [])
+        self.assert_history_and_future([self.command], [])
         self.assertEqual("After", self.item.subject())
 
     def test_undo_puts_back_the_modification_date(self):
@@ -107,26 +107,26 @@ class HistoryTest(test.TestCase, asserts.CommandAssertsMixin):
         self.assertEqual("Redo %s" % self.command, self.commands.redostr())
 
     def testHasHistory(self):
-        self.assertFalse(self.commands.hasHistory())
+        self.assertFalse(self.commands.has_history())
         self.command.do()
-        self.assertTrue(self.commands.hasHistory())
+        self.assertTrue(self.commands.has_history())
         self.commands.undo()
-        self.assertFalse(self.commands.hasHistory())
+        self.assertFalse(self.commands.has_history())
 
     def testHasFuture(self):
         self.command.do()
-        self.assertFalse(self.commands.hasFuture())
+        self.assertFalse(self.commands.has_future())
         self.commands.undo()
-        self.assertTrue(self.commands.hasFuture())
+        self.assertTrue(self.commands.has_future())
         self.commands.redo()
-        self.assertFalse(self.commands.hasFuture())
+        self.assertFalse(self.commands.has_future())
 
     def test_an_action_is_one_step_whatever_its_commands(self):
         with self.commands.action("edit"):
             Rename(self.item, "One").do()
             Rename(self.item, "Two").do()
         self.assertEqual(
-            ["edit"], [str(s) for s in self.commands.getHistory()]
+            ["edit"], [str(s) for s in self.commands.get_history()]
         )
         self.commands.undo()
         self.assertEqual("Before", self.item.subject())
@@ -135,17 +135,17 @@ class HistoryTest(test.TestCase, asserts.CommandAssertsMixin):
         with self.assertRaises(RuntimeError):
             Rename(self.item, "After", fail=True).do()
         self.assertEqual("Before", self.item.subject())
-        self.assertFalse(self.commands.hasHistory())
+        self.assertFalse(self.commands.has_history())
 
     def test_an_action_changing_nothing_is_no_step(self):
         Rename(self.item, "Before").do()
-        self.assertFalse(self.commands.hasHistory())
+        self.assertFalse(self.commands.has_history())
 
     def test_a_new_action_clears_the_steps_to_redo(self):
         self.command.do()
         self.commands.undo()
         Rename(self.item, "Other").do()
-        self.assertFalse(self.commands.hasFuture())
+        self.assertFalse(self.commands.has_future())
 
     def test_nothing_is_done_while_a_step_is_put_back(self):
         self.command.do()
@@ -155,7 +155,7 @@ class HistoryTest(test.TestCase, asserts.CommandAssertsMixin):
         )
         self.commands.undo()
         self.assertEqual("Before", self.item.subject())
-        self.assertTrue(self.commands.hasFuture())
+        self.assertTrue(self.commands.has_future())
 
     def on_subject(self, event):
         Rename(self.item, "Reaction").do()
@@ -199,7 +199,7 @@ class EventLoopTest(test.TestCase):
             handler(self.idle_event)
 
     def labels(self):
-        return [str(step) for step in self.commands.getHistory()]
+        return [str(step) for step in self.commands.get_history()]
 
     def test_a_posted_command_joins_the_step(self):
         Rename(self.item, "One").do()

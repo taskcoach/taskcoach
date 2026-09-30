@@ -41,7 +41,8 @@ def register_item(item):
 def register_collection(collection):
     """A list of the file's items, such as its tasks: which items it
     holds is stored data. It puts them back with
-    restore_items(added, removed, event)."""
+    restore_items(added, removed, event). A view's list is not
+    registered."""
     _collections[id(collection)] = collection
 
 

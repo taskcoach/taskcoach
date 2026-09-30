@@ -40,10 +40,16 @@ class UndoTest(test.TestCase):
         self.history = patterns.CommandHistory()
         self.history.clear()
         self.addCleanup(self.history.clear)
+        self.task_file = persistence.TaskFile()
+        self.addCleanup(self.task_file.stop)
+        self.addCleanup(self.task_file.close)
+        self.tasks = self.task_file.tasks()
+        self.categories = self.task_file.categories()
+        self.notes = self.task_file.notes()
         self.category = category.Category("Category")
         self.subcategory = category.Category("Subcategory")
         self.category.addChild(self.subcategory)
-        self.categories = category.CategoryList([self.category])
+        self.categories.append(self.category)
         self.parent = task.Task(subject="Parent")
         self.child = task.Task(
             subject="Child", recurrence=date.Recurrence("daily")
@@ -51,7 +57,7 @@ class UndoTest(test.TestCase):
         self.child.set_due_date_time(NOW)
         self.parent.addChild(self.child)
         self.other = task.Task(subject="Other")
-        self.tasks = task.TaskList([self.parent, self.other])
+        self.tasks.extend([self.parent, self.other])
         self.effort = effort.Effort(self.child, OLD, OLD + date.ONE_HOUR)
         self.child.addEffort(self.effort)
         self.note = note.Note(subject="Note")
@@ -63,7 +69,7 @@ class UndoTest(test.TestCase):
         self.parent.addAttachments(self.file, self.mail)
         self.other.addCategory(self.subcategory)
         self.top_note = note.Note(subject="Top")
-        self.notes = note.NoteContainer([self.top_note])
+        self.notes.append(self.top_note)
         # Any dating shows in the file
         for item, _fields in Snapshot().items.values():
             item.set_modification_datetime(OLD)
@@ -76,19 +82,33 @@ class UndoTest(test.TestCase):
         )
         return stream.getvalue().decode("utf-8")
 
+    def settle(self):
+        """What the views do in reaction runs (UndoWithEditorsTest)."""
+
     def assert_undone_and_redone(self, change):
         before, stored_before = self.xml(), Snapshot()
         with self.history.action("change"):
             change()
+        self.settle()
         after, stored_after = self.xml(), Snapshot()
         self.assertNotEqual(before, after)
         self.history.undo()
+        self.settle()
         self.assertEqual(before, self.xml())
         # In memory too, the links not saved included
         self.assertFalse(Step("", stored_before, Snapshot()))
         self.history.redo()
+        self.settle()
         self.assertEqual(after, self.xml())
         self.assertFalse(Step("", stored_after, Snapshot()))
+        # Nothing else was recorded
+        self.assertEqual(
+            (["change"], []),
+            (
+                [str(step) for step in self.history.get_history()],
+                self.history.get_future(),
+            ),
+        )
 
     def test_texts_and_appearance(self):
         def change():

@@ -225,9 +225,9 @@ class StartEffortCommand(EffortCommand):
 
     def do_command(self):
         super().do_command()
-        self.addEfforts()
+        self.add_efforts()
 
-    def addEfforts(self):
+    def add_efforts(self):
         for item, new_effort in zip(self.items, self.efforts):
             item.addEffort(new_effort)
 

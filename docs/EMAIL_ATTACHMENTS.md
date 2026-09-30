@@ -61,7 +61,7 @@ could not hold.
 Each mail program hands its mails over its own way; Task Coach reads
 them by one set of rules, so a program need not be named, and each
 path ends in the same fields; the viewer makes one attachment per mail,
-in one command (`onDropMail()`, `gui/viewer/mixin.py`). The drop target
+in one command (`on_drop_mail()`, `gui/viewer/mixin.py`). The drop target
 is `DropTarget` (`widgets/draganddrop.py`).
 
 - **A mail file in a temporary folder:** a dropped file that starts as
@@ -74,7 +74,7 @@ is `DropTarget` (`widgets/draganddrop.py`).
   `imap-message://`), one or several, even run together: each message
   is read from the profile's mailbox file, or from the IMAP server,
   which asks for the password (`thunderbird.message_uris()`,
-  `getMail()`). The same for a macOS link (`public.url`) to a
+  `get_mail()`). The same for a macOS link (`public.url`) to a
   Thunderbird message (`mailbox:`, `imap:`).
 - **Outlook (classic)**, recognized by its own `RenPrivateMessages`
   format (not `Object Descriptor`, which any OLE program's drag offers):

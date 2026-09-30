@@ -1467,7 +1467,7 @@ class DatesPage(ScrolledPage):
         )
 
         # Initial display
-        self._updateStatusDisplay()
+        self._update_status_display()
 
         # Subscribe to the status change event, fired by
         # compute_stored_status() when the status changes
@@ -1478,9 +1478,9 @@ class DatesPage(ScrolledPage):
         )
 
     def _on_status_changed(self, event):  # pylint: disable=W0613
-        self._updateStatusDisplay()
+        self._update_status_display()
 
-    def _updateStatusDisplay(self):
+    def _update_status_display(self):
         if not hasattr(self, "_statusLabel"):
             return
         the_task = self.items[0]
@@ -1499,7 +1499,7 @@ class DatesPage(ScrolledPage):
 
         # Update text and foreground color only (no background painting)
         status_text = (
-            task_status.pluralLabel.replace(" tasks", "")
+            task_status.plural_label.replace(" tasks", "")
             .replace("tasks", "")
             .strip()
         )
@@ -1548,11 +1548,11 @@ class DatesPage(ScrolledPage):
         self._plannedStartDateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=value,
-            suggestedValue=task.Task.suggestedPlannedStartDateTime(),
-            hourChoices=lambda: get_suggested_hour_choices(
+            suggested_value=task.Task.suggestedPlannedStartDateTime(),
+            hour_choices=lambda: get_suggested_hour_choices(
                 self._DatesPage__settings
             ),
-            minuteChoices=lambda: get_suggested_minute_choices(
+            minute_choices=lambda: get_suggested_minute_choices(
                 self._DatesPage__settings
             ),
         )
@@ -1722,11 +1722,11 @@ class DatesPage(ScrolledPage):
         self._dueDateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=value,
-            suggestedValue=task.Task.suggestedDueDateTime(),
-            hourChoices=lambda: get_suggested_hour_choices(
+            suggested_value=task.Task.suggestedDueDateTime(),
+            hour_choices=lambda: get_suggested_hour_choices(
                 self._DatesPage__settings
             ),
-            minuteChoices=lambda: get_suggested_minute_choices(
+            minute_choices=lambda: get_suggested_minute_choices(
                 self._DatesPage__settings
             ),
         )
@@ -1778,11 +1778,11 @@ class DatesPage(ScrolledPage):
         self._actualStartDateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=value,
-            suggestedValue=task.Task.suggestedActualStartDateTime(),
-            hourChoices=lambda: get_suggested_hour_choices(
+            suggested_value=task.Task.suggestedActualStartDateTime(),
+            hour_choices=lambda: get_suggested_hour_choices(
                 self._DatesPage__settings
             ),
-            minuteChoices=lambda: get_suggested_minute_choices(
+            minute_choices=lambda: get_suggested_minute_choices(
                 self._DatesPage__settings
             ),
         )
@@ -1827,11 +1827,11 @@ class DatesPage(ScrolledPage):
         self._completionDateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=value,
-            suggestedValue=task.Task.suggestedCompletionDateTime(),
-            hourChoices=lambda: get_suggested_hour_choices(
+            suggested_value=task.Task.suggestedCompletionDateTime(),
+            hour_choices=lambda: get_suggested_hour_choices(
                 self._DatesPage__settings
             ),
-            minuteChoices=lambda: get_suggested_minute_choices(
+            minute_choices=lambda: get_suggested_minute_choices(
                 self._DatesPage__settings
             ),
         )
@@ -2280,11 +2280,11 @@ class DatesPage(ScrolledPage):
         self._reminderDateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=value,
-            suggestedValue=task.Task.suggestedReminderDateTime(),
-            hourChoices=lambda: get_suggested_hour_choices(
+            suggested_value=task.Task.suggestedReminderDateTime(),
+            hour_choices=lambda: get_suggested_hour_choices(
                 self._DatesPage__settings
             ),
-            minuteChoices=lambda: get_suggested_minute_choices(
+            minute_choices=lambda: get_suggested_minute_choices(
                 self._DatesPage__settings
             ),
         )
@@ -2467,7 +2467,9 @@ class BudgetPage(ScrolledPage):
             if len(self.items) == 1
             else date.TimeDelta()
         )
-        self._budget_entry = widgets.MaskedDurationCtrl(self, showSeconds=True)
+        self._budget_entry = widgets.MaskedDurationCtrl(
+            self, show_seconds=True
+        )
         self._budget_entry.SetDuration(current_budget)
         self._budget_sync = attributesync.AttributeSync(
             "budget",
@@ -2484,7 +2486,7 @@ class BudgetPage(ScrolledPage):
         assert len(self.items) == 1
         # pylint: disable=W0201
         self._time_spent_entry = widgets.MaskedDurationCtrl(
-            self, showSeconds=True
+            self, show_seconds=True
         )
         self._time_spent_entry.SetDuration(self.items[0].timeSpent())
         self._time_spent_entry.SetReadOnly(True)
@@ -2506,7 +2508,7 @@ class BudgetPage(ScrolledPage):
         assert len(self.items) == 1
         # pylint: disable=W0201
         self._budget_left_entry = widgets.MaskedDurationCtrl(
-            self, showSeconds=True
+            self, show_seconds=True
         )
         self._budget_left_entry.SetDuration(self.items[0].budgetLeft())
         self._budget_left_entry.SetReadOnly(True)
@@ -4066,10 +4068,14 @@ class EffortEditBook(Page):
         self._start_date_time_combo = widgets.DateTimeComboCtrl(
             self,
             value=current_start_date_time,
-            showSeconds=True,
-            hourChoices=lambda: get_suggested_hour_choices(self._settings),
-            minuteChoices=lambda: get_suggested_minute_choices(self._settings),
-            secondChoices=lambda: get_suggested_second_choices(self._settings),
+            show_seconds=True,
+            hour_choices=lambda: get_suggested_hour_choices(self._settings),
+            minute_choices=lambda: get_suggested_minute_choices(
+                self._settings
+            ),
+            second_choices=lambda: get_suggested_second_choices(
+                self._settings
+            ),
         )
         # Hide checkbox - start is always required
         self._start_date_time_combo.HideCheckBox()
@@ -4131,7 +4137,7 @@ class EffortEditBook(Page):
             hours=ts_hours,
             minutes=ts_minutes,
             seconds=ts_seconds,
-            showSeconds=True,
+            show_seconds=True,
         )
         # Initial state managed by __update_time_spent_display (called
         # from __apply_effort_entry_mode)
@@ -4173,7 +4179,7 @@ class EffortEditBook(Page):
             hours=hours,
             minutes=minutes,
             seconds=seconds,
-            showSeconds=True,
+            show_seconds=True,
         )
         # Standard mode: duration always active (start always exists)
         # Retroactive mode: duration inactive only if stop is inactive
@@ -4253,10 +4259,14 @@ class EffortEditBook(Page):
         self._stop_date_time_combo = widgets.DateTimeComboCtrl(
             self,
             value=current_stop_date_time,
-            showSeconds=True,
-            hourChoices=lambda: get_suggested_hour_choices(self._settings),
-            minuteChoices=lambda: get_suggested_minute_choices(self._settings),
-            secondChoices=lambda: get_suggested_second_choices(self._settings),
+            show_seconds=True,
+            hour_choices=lambda: get_suggested_hour_choices(self._settings),
+            minute_choices=lambda: get_suggested_minute_choices(
+                self._settings
+            ),
+            second_choices=lambda: get_suggested_second_choices(
+                self._settings
+            ),
         )
 
         self._stop_date_time_sync = attributesync.AttributeSync(

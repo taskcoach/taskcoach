@@ -34,7 +34,7 @@ if os.name == "nt":
     from pywintypes import com_error  # pylint: disable=F0401
     from win32com.client import GetActiveObject  # pylint: disable=F0401
 
-    def getCurrentSelection():
+    def get_current_selection():
         """The fields of the mails selected in Outlook, one attachment
         each (mailer.mail_fields()): the dragged ones."""
         try:
@@ -82,5 +82,5 @@ if os.name == "nt":
 
 else:
 
-    def getCurrentSelection():
+    def get_current_selection():
         return []  # Outlook runs on Windows only

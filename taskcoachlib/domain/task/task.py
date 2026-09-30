@@ -731,7 +731,7 @@ class Task(
         old_status = self.__computed_status
         self.__computed_status = new_status
         self.__status_text = (
-            new_status.pluralLabel.replace(" tasks", "")
+            new_status.plural_label.replace(" tasks", "")
             .replace("tasks", "")
             .strip()
         )

@@ -29,7 +29,6 @@ import wx
 import socket
 import mailbox
 
-
 _RX_MAILBOX_MESSAGE = re.compile(
     r"mailbox-message://(.*)@(.*)/(.*)#((?:-)?\d+)"
 )
@@ -74,7 +73,9 @@ def loadPreferences():
     config = {}
 
     # Regex to parse user_pref("key", value) lines safely
-    pref_pattern = re.compile(r'user_pref\s*\(\s*"([^"]+)"\s*,\s*(.+?)\s*\)\s*;')
+    pref_pattern = re.compile(
+        r'user_pref\s*\(\s*"([^"]+)"\s*,\s*(.+?)\s*\)\s*;'
+    )
 
     for line in open(os.path.join(getDefaultProfileDir(), "prefs.js"), "r"):
         if line.startswith("user_pref("):
@@ -90,11 +91,15 @@ def loadPreferences():
                     value = False
                 elif value_str.startswith('"') and value_str.endswith('"'):
                     # String value - handle escape sequences
-                    value = value_str[1:-1].replace('\\"', '"').replace('\\\\', '\\')
+                    value = (
+                        value_str[1:-1]
+                        .replace('\\"', '"')
+                        .replace("\\\\", "\\")
+                    )
                 else:
                     # Try to parse as number
                     try:
-                        if '.' in value_str:
+                        if "." in value_str:
                             value = float(value_str)
                         else:
                             value = int(value_str)
@@ -469,16 +474,14 @@ def message_uris(text):
     """The message URIs a Thunderbird drag gave as text; [] when the
     text is anything else."""
     parts = [
-        part
-        for part in _RX_MESSAGE_START.split("".join(text.split()))
-        if part
+        part for part in _RX_MESSAGE_START.split("".join(text.split())) if part
     ]
     if parts and all(part.startswith(_MESSAGE_SCHEMES) for part in parts):
         return parts
     return []
 
 
-def getMail(id_):
+def get_mail(id_):
     """The fields of the dragged mail's attachment
     (mailer.mail_fields())."""
     if id_.startswith("mailbox-message://"):

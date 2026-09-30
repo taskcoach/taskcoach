@@ -68,7 +68,7 @@ class AttachmentViewerTest(test.wxTestCase):
         )
 
     @test.stale("imageIndex was replaced by image_list_cache")
-    def testTypeImgeIndex_MailAttachment(self):
+    def test_type_image_index_of_a_mail(self):
         mail_attachment = attachment.MailAttachment("mid:1@example.com")
         self.assertIcon("nuvola_apps_email", mail_attachment)
 
