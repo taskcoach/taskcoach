@@ -125,7 +125,6 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         self.taskFile.categories().append(phone)
         pizza = task.Task(subject="Order pizza")
         self.taskFile.tasks().append(pizza)
-        phone.addCategorizable(pizza)
         pizza.addCategory(phone)
         self.writer.write(self.viewer, self.settings, False)
         self.assertEqual(
@@ -137,7 +136,6 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         self.taskFile.categories().append(at_home)
         dishes = task.Task(subject="Do dishes")
         self.taskFile.tasks().append(dishes)
-        at_home.addCategorizable(dishes)
         dishes.addCategory(at_home)
         self.writer.write(self.viewer, self.settings, False)
         self.assertEqual(
@@ -152,7 +150,6 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         discuss_proposal = task.Task(subject="Discuss the proposal")
         self.taskFile.tasks().append(discuss_proposal)
         discuss_proposal.addCategory(staff_meeting)
-        staff_meeting.addCategorizable(discuss_proposal)
         self.writer.write(self.viewer, self.settings, False)
         self.assertEqual(
             "Discuss the proposal @Work->Staff_meeting tcid:%s\n"
@@ -166,9 +163,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         self.taskFile.categories().extend([phone, food])
         pizza = task.Task(subject="Order pizza")
         self.taskFile.tasks().append(pizza)
-        phone.addCategorizable(pizza)
         pizza.addCategory(phone)
-        food.addCategorizable(pizza)
         pizza.addCategory(food)
         self.writer.write(self.viewer, self.settings, False)
         self.assertEqual(
@@ -181,7 +176,6 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         self.taskFile.categories().append(alive)
         pizza = task.Task(subject="Order pizza")
         self.taskFile.tasks().append(pizza)
-        alive.addCategorizable(pizza)
         pizza.addCategory(alive)
         self.writer.write(self.viewer, self.settings, False)
         self.assertEqual(
@@ -194,7 +188,6 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         self.taskFile.categories().append(phone)
         pizza = task.Task(subject="Order pizza")
         self.taskFile.tasks().append(pizza)
-        phone.addCategorizable(pizza)
         pizza.addCategory(phone)
         self.writer.write(self.viewer, self.settings, False)
         self.assertEqual(

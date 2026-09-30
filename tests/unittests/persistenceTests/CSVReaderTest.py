@@ -333,10 +333,10 @@ class CSVReaderTestCase(test.TestCase):
         parentCategory = [c for c in self.categoryList if not c.parent()][0]
         childCategory = parentCategory.children()[0]
         self.assertEqual(
-            "Subject 1", list(childCategory.categorizables())[0].subject()
+            "Subject 1", list(childCategory.members())[0].subject()
         )
         self.assertEqual(
-            "Subject 2", list(parentCategory.categorizables())[0].subject()
+            "Subject 2", list(parentCategory.members())[0].subject()
         )
 
     def testHierarchy(self):

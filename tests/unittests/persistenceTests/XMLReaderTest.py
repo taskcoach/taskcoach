@@ -295,7 +295,7 @@ class XMLReaderVersion13Test(XMLReaderTestCase):
         </tasks>""")
 
         self.assertEqual("test", categories[0].subject())
-        self.assertEqual(set([tasks[0]]), categories[0].categorizables())
+        self.assertEqual(set([tasks[0]]), categories[0].members())
         self.assertEqual(set([categories[0]]), tasks[0].categories())
 
     def testMultipleCategories(self):
@@ -309,7 +309,7 @@ class XMLReaderVersion13Test(XMLReaderTestCase):
         </tasks>""")
 
         for category in categories:
-            self.assertEqual(set([tasks[0]]), category.categorizables())
+            self.assertEqual(set([tasks[0]]), category.members())
             self.assertTrue(category in tasks[0].categories())
 
     def testSubTaskWithCategories(self):
@@ -324,8 +324,8 @@ class XMLReaderVersion13Test(XMLReaderTestCase):
         </tasks>""")
         testCategory = categories[0]
         anotherCategory = categories[1]
-        self.assertEqual("1", list(testCategory.categorizables())[0].id())
-        self.assertEqual("1.1", list(anotherCategory.categorizables())[0].id())
+        self.assertEqual("1", list(testCategory.members())[0].id())
+        self.assertEqual("1.1", list(anotherCategory.members())[0].id())
         self.assertEqual(set([testCategory]), tasks[0].categories())
         self.assertEqual(
             set([anotherCategory]), tasks[0].children()[0].categories()
@@ -860,7 +860,7 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
             <category subject="cat" categorizables="1"/>
             <task id="1"/>
         </tasks>""")
-        self.assertEqual(set(tasks), categories[0].categorizables())
+        self.assertEqual(set(tasks), categories[0].members())
 
     def testTwoRecursiveCategories(self):
         categories = self.writeAndReadCategories("""
@@ -890,9 +890,9 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
             <task subject="task2" id="2"/>
         </tasks>""")
 
-        self.assertEqual(tasks[0], list(categories[0].categorizables())[0])
+        self.assertEqual(tasks[0], list(categories[0].members())[0])
         self.assertEqual(
-            tasks[1], list(categories[0].children()[0].categorizables())[0]
+            tasks[1], list(categories[0].children()[0].members())[0]
         )
 
     def testSubtaskCategory(self):
@@ -904,7 +904,7 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
             </task>
         </tasks>""")
         self.assertEqual(
-            tasks[0].children()[0], list(categories[0].categorizables())[0]
+            tasks[0].children()[0], list(categories[0].members())[0]
         )
 
     def testFilteredCategory(self):
@@ -922,7 +922,7 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
         <tasks>
             <category subject="cat" tasks="some_task_id"/>
         </tasks>""")
-        self.assertFalse(categories[0].categorizables())
+        self.assertFalse(categories[0].members())
 
     def testNote(self):
         notes = self.writeAndReadNotes("""
@@ -987,7 +987,7 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
             <note id="noteId" subject="Note"/>
             <category categorizables="noteId" subject="Category"/>
         </tasks>""")
-        self.assertEqual(notes[0], list(categories[0].categorizables())[0])
+        self.assertEqual(notes[0], list(categories[0].members())[0])
 
     def testNoteId(self):
         notes = self.writeAndReadNotes("""
@@ -1826,7 +1826,7 @@ class XMLReaderVersion34Test(XMLReaderTestCase):
             <category id="cat1" categorizables="note1"/>
         </tasks>\n""")
         self.assertEqual(
-            list(tasks[0].notes())[0], list(categories[0].categorizables())[0]
+            list(tasks[0].notes())[0], list(categories[0].members())[0]
         )
 
 
@@ -1915,7 +1915,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
         self.assertEqual(["Kept"], [each.subject() for each in tasks])
         self.assertEqual([], tasks[0].children())
         self.assertEqual(set(), set(tasks[0].prerequisites()))
-        self.assertEqual(set([tasks[0]]), set(categories[0].categorizables()))
+        self.assertEqual(set([tasks[0]]), set(categories[0].members()))
         self.assertEqual(["Kept note"], [each.subject() for each in notes])
 
     def test_members_are_saved_as_the_items_categories(self):
@@ -1942,7 +1942,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
 
     def test_categories_are_resolved_in_one_event(self):
         # Filters reset on each event: one per item would be quadratic
-        self.registerObserver(category.Category.categorizableAddedEventType())
+        self.registerObserver(category.Category.member_added_event_type())
         self.writeAndReadTasksAndCategories("""
         <tasks>
             <task id="1"/><task id="2"/><task id="3"/>
@@ -2096,7 +2096,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           <category categorizables="noteid" />
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
     def testSubtaskNoteCategory(self):
@@ -2110,7 +2110,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           <category categorizables="noteid" />
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
     def testCategoryNoteCategory(self):
@@ -2121,7 +2121,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           </category>
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
     def testSubcategoryNoteCategory(self):
@@ -2135,7 +2135,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           </category>
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
     def testTaskAttachmentNoteCategory(self):
@@ -2149,7 +2149,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           <category categorizables="noteid" />
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
     def testSubtaskAttachmentNoteCategory(self):
@@ -2165,7 +2165,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           <category categorizables="noteid" subject="Category" />
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
 
@@ -2206,7 +2206,7 @@ class XMLReaderVersion38Test(XMLReaderTestCase):
         </tasks>""")
         self.assertEqual(
             {"n1", "n2", "n3", "n5"},
-            {each.id() for each in categories[0].categorizables()},
+            {each.id() for each in categories[0].members()},
         )
 
     def test_a_duplicate_id_keeps_its_own_categories(self):

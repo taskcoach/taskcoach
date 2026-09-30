@@ -331,7 +331,6 @@ class MasterTimerListTest(test.wxTestCase):
 
         work = category.Category("Work", fgColor=(255, 0, 0, 255))
         self.task_file.categories().append(work)
-        work.addCategorizable(self.task)
         self.task.addCategory(work)
         self.settle()
         work.setSubject("Job")

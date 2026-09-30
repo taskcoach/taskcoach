@@ -36,7 +36,6 @@ class CategoryFilterHelpersMixin(object):
         self.settings.setboolean("view", "categoryfiltermatchall", True)
 
     def link(self, category, categorizable):  # pylint: disable=W0621
-        category.addCategorizable(categorizable)
         categorizable.addCategory(category)
 
     def assertChildTaskIsFiltered(self):
@@ -870,7 +869,7 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
         self.child = task.Task("child task")
         self.child.set_completion_date_time()
         self.childCategory = category.Category("child category")
-        self.childCategory.addCategorizable(self.child)
+        self.child.addCategory(self.childCategory)
         self.parent.addChild(self.child)
         self.tasks = task.TaskList([self.parent, self.child])
         self.categories = category.CategoryList([self.childCategory])
@@ -954,7 +953,7 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
         self.child = task.Task("child task")
         self.child.set_completion_date_time()
         self.childCategory = category.Category("child category")
-        self.childCategory.addCategorizable(self.child)
+        self.child.addCategory(self.childCategory)
         self.parent.addChild(self.child)
         self.tasks = task.TaskList([self.parent, self.child])
         self.categories = category.CategoryList([self.childCategory])

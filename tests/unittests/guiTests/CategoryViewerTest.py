@@ -58,8 +58,8 @@ class CategoryViewerTest(test.wxTestCase):
             ({cat1, cat2}, [paint], [paint]),
             (
                 paint.categories(),
-                list(cat1.categorizables()),
-                list(cat2.categorizables()),
+                list(cat1.members()),
+                list(cat2.members()),
             ),
         )
 

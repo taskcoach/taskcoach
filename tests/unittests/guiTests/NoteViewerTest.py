@@ -81,7 +81,6 @@ class NoteViewerTest(test.wxTestCase):
         newCategory = category.Category("Category")
         self.taskFile.categories().append(newCategory)
         self.note.addCategory(newCategory)
-        newCategory.addCategorizable(self.note)
         self.viewer.showColumnByName("categories")
         self.assertEqual("Category", self.firstItemText(column=3))
 
@@ -97,7 +96,6 @@ class NoteViewerTest(test.wxTestCase):
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
         self.note.addCategory(cat1)
-        cat1.addCategorizable(self.note)
         self.taskFile.categories().extend([cat1, cat2])
         cat1.setFiltered(True)
         cat2.setFiltered(True)
@@ -109,7 +107,6 @@ class NoteViewerTest(test.wxTestCase):
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
         self.note.addCategory(cat1)
-        cat1.addCategorizable(self.note)
         self.taskFile.categories().extend([cat1, cat2])
         cat1.setFiltered(True)
         cat2.setFiltered(True)

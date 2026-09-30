@@ -292,7 +292,7 @@ class XMLWriterTest(test.TestCase):
 
     def test_task_with_subcategory(self):
         parent = category.Category(subject="parent")
-        child = category.Category(subject="child", categorizables=[self.task])
+        child = category.Category(subject="child", members=[self.task])
         parent.addChild(child)
         self.categoryContainer.extend([parent, child])
         self.expect_categories(self.task, child)

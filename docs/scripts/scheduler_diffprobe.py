@@ -10,7 +10,7 @@ Run from the repository root:
         docs/scripts/scheduler_diffprobe.py SEED STEPS [MEMBERS] [OUTSIDE]
 
 MEMBERS: "scan" (members from the items' categories) or "reverse"
-(from Category.categorizables(), their index since P29 was solved;
+(from Category.members(), their index since P29 was solved;
 it missed before, while paste left notes' membership one-sided).
 OUTSIDE: "yes" (follow effective events sent outside the pass, the
 rule) or "no" (to show its misses).
@@ -41,7 +41,7 @@ from taskcoachlib.domain.base.appearance import computeStyles
 SEED = int(sys.argv[1]) if len(sys.argv) > 1 else 1
 STEPS = int(sys.argv[2]) if len(sys.argv) > 2 else 400
 # Variants: "scan" members from item.categories(); "reverse" members
-# from category.categorizables(); "pass_only" follows effective events
+# from category.members(); "pass_only" follows effective events
 # only when emitted inside the incremental pass
 MEMBERS = sys.argv[3] if len(sys.argv) > 3 else "scan"
 OUTSIDE_EFFECTIVE = (sys.argv[4] if len(sys.argv) > 4 else "yes") == "yes"
@@ -65,15 +65,12 @@ def is_domain(x):
 
 
 # ---------------------------------------------------------------- model
-def link_category(item, cat, both=True):
+def link_category(item, cat):
     item.addCategory(cat)
-    if both:
-        cat.addCategorizable(item)
 
 
 def unlink_category(item, cat):
     item.removeCategory(cat)
-    cat.removeCategorizable(item)
 
 
 COLOURS = [wx.Colour(200, 0, 0), wx.Colour(0, 150, 0), wx.Colour(0, 0, 200)]
@@ -205,7 +202,7 @@ def order_key(obj):
 
 def members(cat, live):
     if MEMBERS == "reverse":
-        return [x for x in cat.categorizables() if id(x) in live]
+        return [x for x in cat.members() if id(x) in live]
     return [
         x
         for x in live.values()
@@ -441,15 +438,8 @@ def m_cat_link():
     if c in x.categories():
         unlink_category(x, c)
         return "unlink %s from %s" % (c.subject(), x.subject())
-    both = (
-        rnd.random() < 0.8 or __import__("os").environ.get("NOONEWAY") == "1"
-    )
-    link_category(x, c, both=both)
-    return "link%s %s to %s" % (
-        "" if both else " ONE-WAY",
-        c.subject(),
-        x.subject(),
-    )
+    link_category(x, c)
+    return "link %s to %s" % (c.subject(), x.subject())
 
 
 def m_priority():

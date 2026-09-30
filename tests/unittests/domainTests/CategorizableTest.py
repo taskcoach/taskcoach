@@ -117,7 +117,7 @@ class CategorizableCompositeObjectTest(test.TestCase):
     def test_adding_a_category_makes_the_item_a_member(self):
         # The category's members are the index of its items' categories
         self.categorizable.addCategory(self.category)
-        self.assertEqual({self.categorizable}, self.category.categorizables())
+        self.assertEqual({self.categorizable}, self.category.members())
 
     def testAddParentToCategory(self):
         child = categorizable.CategorizableCompositeObject(subject="child")
@@ -157,7 +157,6 @@ class CategorizableCompositeObjectTest(test.TestCase):
     def testCategorySubjectChanged(self):
         self.registerObserver(self.categorySubjectChangedEventType)
         self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
         self.category.setSubject("New subject")
         self.assertEvent(
             self.categorySubjectChangedEventType,
@@ -175,7 +174,6 @@ class CategorizableCompositeObjectTest(test.TestCase):
         )
         self.categorizable.addChild(childCategorizable)
         self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
         self.category.setSubject("New subject")
         self.assertEvent(
             self.categorySubjectChangedEventType,

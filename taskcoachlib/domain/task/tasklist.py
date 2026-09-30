@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib.i18n import _
-from taskcoachlib.domain import categorizable
+from taskcoachlib.domain import base
 from taskcoachlib import help, operating_system  # pylint: disable=W0622
 from . import task
 
@@ -34,7 +34,7 @@ class TaskListQueryMixin(object):
         return count
 
 
-class TaskList(TaskListQueryMixin, categorizable.CategorizableContainer):
+class TaskList(TaskListQueryMixin, base.Collection):
     # FIXME: TaskList should be called TaskCollection or TaskSet
 
     newItemMenuText = _("&New task...") + (

@@ -130,7 +130,7 @@ class IntegrationTest(IntegrationTestCase):
             children=[note.Note(subject="Child")],
         )
         self.notes.append(self.note)
-        self.category.addCategorizable(self.note)
+        self.note.addCategory(self.category)
         self.task.set_modification_datetime(
             date.DateTime(2012, 1, 1, 10, 9, 8)
         )
@@ -233,9 +233,7 @@ class IntegrationTest(IntegrationTestCase):
         )
 
     def testCategory(self):
-        categorizables = list(self.categoriesWrittenAndRead)[
-            0
-        ].categorizables()
+        categorizables = list(self.categoriesWrittenAndRead)[0].members()
         categorizableIds = set([item.id() for item in categorizables])
         self.assertEqual(
             set([self.task.id(), self.note.id()]), categorizableIds
@@ -318,7 +316,7 @@ class IntegrationTest(IntegrationTestCase):
     def testNoteWithCategory(self):
         self.assertTrue(
             self.notesWrittenAndRead.rootItems()[0]
-            in list(self.categoriesWrittenAndRead)[0].categorizables()
+            in list(self.categoriesWrittenAndRead)[0].members()
         )
 
     def testTaskNote(self):

@@ -592,7 +592,6 @@ class ToggleCategoryTest(test.TestCase):
         self.category.set_parent(child_category)
         task_with_category = task.Task("Task")
         task_with_category.addCategory(self.category)
-        self.category.addCategorizable(task_with_category)
         viewer = DummyViewer(selection=[task_with_category])
         uiCommand = gui.uicommand.ToggleCategory(
             viewer=viewer, category=self.category

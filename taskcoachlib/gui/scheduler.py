@@ -336,7 +336,7 @@ class MasterScheduler:
         # items ("[Category] Work"): a category's, a parent's. A leaf's
         # name runs nothing, so typing one does not run the loop
         for each in event.sources():
-            if each.children() or getattr(each, "categorizables", list)():
+            if each.children() or getattr(each, "members", list)():
                 self._push_changed(event.types())
                 return
 

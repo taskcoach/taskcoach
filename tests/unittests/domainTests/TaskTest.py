@@ -2130,7 +2130,6 @@ class TaskWithChildTest(
         self.task.addEffort(effort.Effort(self.task))
         self.task1_1.addEffort(effort.Effort(self.task1_1))
         cat = category.Category("Cat")
-        cat.addCategorizable(self.task)
         self.task.addCategory(cat)
         cat.setForegroundColor(wx.RED)
         test.styled(self.task1_1)
@@ -2146,7 +2145,6 @@ class TaskWithChildTest(
         self.task.addEffort(effort.Effort(self.task))
         self.task1_1.addEffort(effort.Effort(self.task1_1))
         cat = category.Category("Cat")
-        cat.addCategorizable(self.task)
         self.task.addCategory(cat)
         cat.setBackgroundColor(wx.RED)
         test.styled(self.task1_1)
@@ -2160,7 +2158,6 @@ class TaskWithChildTest(
 
     def testChildUsesForegroundColorOfParentsCategory(self):
         cat = category.Category("Cat", fgColor=wx.RED)
-        cat.addCategorizable(self.task)
         self.task.addCategory(cat)
         self.assertEqual(wx.RED, test.styled(self.task1_1).shown_fg_color())
 
@@ -3110,7 +3107,7 @@ class TaskWithCategoryTestCase(TaskTestCase):
 
     def setUp(self):
         super().setUp()
-        self.category.addCategorizable(self.task)
+        self.task.addCategory(self.category)
 
     def testCategory(self):
         self.assertEqual(set([self.category]), self.task.categories())
@@ -3160,7 +3157,6 @@ class TaskColorTest(test.TestCase):
         activeTask = task.Task(actualStartDateTime=date.Now())
         redCategory = category.Category(subject="Red category", fgColor=wx.RED)
         activeTask.addCategory(redCategory)
-        redCategory.addCategorizable(activeTask)
         self.assertEqual(wx.RED, test.styled(activeTask).shown_fg_color())
 
 

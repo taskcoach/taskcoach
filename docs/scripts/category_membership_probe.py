@@ -53,9 +53,7 @@ def check_all():
     paint = task.Task(subject="Paint")
     task_file.tasks().append(paint)
     command.LinkCategoriesCommand(None, [paint], categories=[home]).do()
-    print(
-        "check all:", names(paint.categories()), paint in home.categorizables()
-    )
+    print("check all:", names(paint.categories()), paint in home.members())
     reloaded = save_and_reload(task_file)
     print("  after reload:", names(list(reloaded.tasks())[0].categories()))
 
@@ -76,7 +74,7 @@ def paste_task_with_note():
     print(
         "paste task:",
         names(pasted.categories()),
-        pasted in home.categorizables(),
+        pasted in home.members(),
     )
     reloaded = save_and_reload(task_file)
     for each in reloaded.tasks():
@@ -98,7 +96,7 @@ def paste_note_in_editor():
     print(
         "paste note:",
         names(pasted[0].categories()),
-        pasted[0] in home.categorizables(),
+        pasted[0] in home.members(),
     )
     reloaded = save_and_reload(task_file)
     for each in reloaded.tasks():

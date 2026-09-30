@@ -38,8 +38,8 @@ class CategoryFilter(base.Filter):
                 eventSource=self.__categories,
             )
         for event_type in (
-            Category.categorizableAddedEventType(),
-            Category.categorizableRemovedEventType(),
+            Category.member_added_event_type(),
+            Category.member_removed_event_type(),
         ):
             patterns.Publisher().registerObserver(
                 self.on_membership_changed, eventType=event_type
@@ -82,7 +82,7 @@ class CategoryFilter(base.Filter):
 
     @staticmethod
     def __categorizablesBelongingToCategory(category):
-        categorizables = category.categorizables(recursive=True)
+        categorizables = category.members(recursive=True)
         for categorizable in categorizables.copy():
             categorizables |= set(categorizable.children(recursive=True))
         return categorizables

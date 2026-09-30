@@ -161,3 +161,39 @@ class CategorizableCompositeObject(base.CompositeObject):
             class_.categoryAddedEventType(),
             class_.categoryRemovedEventType(),
         ]
+
+
+def owner_chains(*collections):
+    """Each note and attachment owned in a file's tasks, notes and
+    categories -> its owners, from the top. They own them at any depth
+    (a task's attachment's note), and an owned item does not know its
+    owner."""
+    chains = {}
+
+    def walk(owner, chain):
+        chain = chain + [owner]
+        notes = owner.notes(recursive=True) if hasattr(owner, "notes") else []
+        attachments = (
+            owner.attachments() if hasattr(owner, "attachments") else []
+        )
+        for each in list(notes) + list(attachments):
+            chains[each] = chain
+            walk(each, chain)
+
+    for collection in collections:
+        for item in collection:
+            walk(item, [])
+    return chains
+
+
+def categorizables_in(*collections):
+    """Every item in a file's tasks, notes and categories that can have
+    categories, owned ones included. A category's members may include
+    items outside the file (a copy, a deleted item kept for undo); this
+    says which are in."""
+    items = [item for collection in collections for item in collection]
+    return {
+        each
+        for each in items + list(owner_chains(*collections))
+        if isinstance(each, CategorizableCompositeObject)
+    }

@@ -196,7 +196,6 @@ class IOControllerTest(test.TestCase):
         self.taskFile.categories().append(aCategory)
         for eachTask in self.taskFile.tasks():
             eachTask.addCategory(aCategory)
-            aCategory.addCategorizable(eachTask)
         self.iocontroller.save_selection(
             tasks=self.taskFile.tasks(), filename=self.filename1
         )
@@ -217,7 +216,6 @@ class IOControllerTest(test.TestCase):
         aCategory.addChild(aSubCategory)
         self.taskFile.categories().append(aCategory)
         task1.addCategory(aSubCategory)
-        aSubCategory.addCategorizable(task1)
         self.iocontroller.save_selection(
             tasks=self.taskFile.tasks(), filename=self.filename1
         )

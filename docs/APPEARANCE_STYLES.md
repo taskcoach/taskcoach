@@ -43,7 +43,7 @@
    to Notes via `_getFromCategories` for all field types.
 
 3. ~~**Category assignment triggers filter refresh**~~: **Done
-   2026-09-29.** Membership events (`categorizableAdded/Removed`) have
+   2026-09-29.** Membership events (`member_added/removed_event_type()`) have
    their own handler, `CategoryFilter.on_membership_changed()`, which
    refilters only when the category or one it is under is filtered;
    filter events (`filterChangedEventType`) still refilter.

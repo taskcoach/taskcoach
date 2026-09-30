@@ -59,11 +59,11 @@ class CutCommandWithTasksTest(TaskCommandTestCase):
         self.cut("all")
         self.assertDoUndoRedo(
             lambda: self.assertFalse(
-                self.category.categorizables() & set(self.taskList)
+                self.category.members() & set(self.taskList)
             ),
             lambda: self.assertEqual(
                 {self.task1},
-                self.category.categorizables() & set(self.taskList),
+                self.category.members() & set(self.taskList),
             ),
         )
 

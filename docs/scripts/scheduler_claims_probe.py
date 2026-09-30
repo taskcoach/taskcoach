@@ -1,6 +1,6 @@
 """Checks of single claims behind the incremental pass analysis (to do
 45 in docs/MASTER_SCHEDULER_REFACTOR.md): (a) a leaf category's rename
-with a one-way member, (b) font and colour equality, (c) an owned note
+with a member, (b) font and colour equality, (c) an owned note
 and attachment ignore their owner's style, (d) default icons, (e) an
 override changes the effective style at once, outside the pass.
 
@@ -28,21 +28,21 @@ from taskcoachlib.gui import scheduler
 tf = persistence.TaskFile()
 sched = scheduler.MasterScheduler(tf)
 ts = date.Now()
-# (a) one-way member, leaf category rename: does the scheduler push?
+# (a) a leaf category with a member, renamed: does the scheduler push?
 c = category.Category("Alpha")
 c.setForegroundColor(wx.Colour(200, 0, 0))
 tf.categories().extend([c])
 t = task.Task("T")
 tf.tasks().extend([t])
-t.addCategory(c)  # one-way, as the editor's check-all
+t.addCategory(c)
 sched._pop_due(date.DateTime.max)
 sched._run_pass(ts, 1)
 sched._pop_due(date.DateTime.max)
 print(
     "(a) T fg source before rename:",
     t.effectiveFgColorSource(),
-    "; C.categorizables:",
-    c.categorizables(),
+    "; C.members:",
+    c.members(),
 )
 sched._last_tick = ts
 n0 = len(sched._heap)

@@ -34,7 +34,7 @@ class Category(
     def __init__(
         self,
         subject,
-        categorizables=None,
+        members=None,
         children=None,
         filtered=False,
         parent=None,
@@ -59,7 +59,7 @@ class Category(
         self.__members = WeakSet()
         # Outside the file (a copy, a deleted category), the members
         # that rejoin it when it enters
-        self.__rejoining = list(categorizables or [])
+        self.__rejoining = list(members or [])
         self.__filtered = filtered
         self.__exclusiveSubcategories = base.Attribute(
             exclusiveSubcategories,
@@ -73,21 +73,19 @@ class Category(
 
     @classmethod
     def filterChangedEventType(class_):
-        """Event type to notify observers that categorizables belonging to
+        """Event type to notify observers that the items belonging to
         this category are filtered or not."""
         return "category.filter"
 
     @classmethod
-    def categorizableAddedEventType(class_):
-        """Event type to notify observers that categorizables have been added
-        to this category."""
-        return "category.categorizable.added"
+    def member_added_event_type(cls):
+        """An item's categories now hold this one."""
+        return "category.member.added"
 
     @classmethod
-    def categorizableRemovedEventType(class_):
-        """Event type to notify observers that categorizables have been removed
-        from this category."""
-        return "category.categorizable.removed"
+    def member_removed_event_type(cls):
+        """An item's categories no longer hold this one."""
+        return "category.member.removed"
 
     @classmethod
     def exclusiveSubcategoriesChangedEventType(class_):
@@ -105,8 +103,8 @@ class Category(
         eventTypes = super(Category, class_).modificationEventTypes()
         return eventTypes + [
             class_.filterChangedEventType(),
-            class_.categorizableAddedEventType(),
-            class_.categorizableRemovedEventType(),
+            class_.member_added_event_type(),
+            class_.member_removed_event_type(),
             class_.exclusiveSubcategoriesChangedEventType(),
             class_.stylePriorityChangedEventType(),
         ]
@@ -136,7 +134,7 @@ class Category(
         state.update(
             dict(
                 # A copy's members join it when it is pasted
-                categorizables=list(self.__members) + self.__rejoining,
+                members=list(self.__members) + self.__rejoining,
                 filtered=self.__filtered,
                 stylePriority=self.stylePriority(),
             )
@@ -149,35 +147,29 @@ class Category(
 
     def categorySubjectChangedEvent(self, event):
         subject = self.subject()
-        for eachCategorizable in self.categorizables(recursive=True):
-            eachCategorizable.categorySubjectChangedEvent(event, subject)
+        for member in self.members(recursive=True):
+            member.categorySubjectChangedEvent(event, subject)
 
-    def categorizables(self, recursive=False):
+    def members(self, recursive=False):
         """The items that claim this category (their categories hold
         it); whether each is in the file is the file's to say."""
         result = set(self.__members)
         if recursive:
             for child in self.children():
-                result |= child.categorizables(recursive)
+                result |= child.members(recursive)
         return result
 
-    def addCategorizable(self, *categorizables, **kwargs):
-        # The item's categories are the data: the item joins
-        event = kwargs.pop("event", None)
-        for each in categorizables:
-            each.addCategory(self, event=event)
-
-    def member_joined(self, categorizable, event=None):
+    def member_joined(self, item, event=None):
         """Called by an item whose categories now hold it."""
-        self.__members.add(categorizable)
+        self.__members.add(item)
         if event is not None:
-            self.categorizableAddedEvent(event, categorizable)
+            self.member_added_event(event, item)
 
-    def member_left(self, categorizable, event=None):
+    def member_left(self, item, event=None):
         """Called by an item whose categories no longer hold it."""
-        self.__members.discard(categorizable)
+        self.__members.discard(item)
         if event is not None:
-            self.categorizableRemovedEvent(event, categorizable)
+            self.member_removed_event(event, item)
 
     def leave_file(self, event=None):
         """Deleted or cut: the members lose it, and it remembers them
@@ -193,25 +185,11 @@ class Category(
         for each in rejoining:
             each.addCategory(self, event=event)
 
-    def categorizableAddedEvent(self, event, *categorizables):
-        event.addSource(
-            self,
-            *categorizables,
-            **dict(type=self.categorizableAddedEventType())
-        )
+    def member_added_event(self, event, *members):
+        event.addSource(self, *members, type=self.member_added_event_type())
 
-    def removeCategorizable(self, *categorizables, **kwargs):
-        # The item's categories are the data: the item leaves
-        event = kwargs.pop("event", None)
-        for each in categorizables:
-            each.removeCategory(self, event=event)
-
-    def categorizableRemovedEvent(self, event, *categorizables):
-        event.addSource(
-            self,
-            *categorizables,
-            **dict(type=self.categorizableRemovedEventType())
-        )
+    def member_removed_event(self, event, *members):
+        event.addSource(self, *members, type=self.member_removed_event_type())
 
     def isFiltered(self):
         return self.__filtered
@@ -232,10 +210,9 @@ class Category(
         """Its items show this icon in their Category icons column, so
         the event names them too."""
         super()._on_effective_icon_changed(event)
-        for categorizable in self.categorizables():
+        for member in self.members():
             event.addSource(
-                categorizable,
-                type=categorizable.effectiveIconChangedEventType(),
+                member, type=member.effectiveIconChangedEventType()
             )
 
     def hasExclusiveSubcategories(self):

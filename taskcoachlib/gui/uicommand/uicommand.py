@@ -1760,7 +1760,7 @@ class Delete(ViewerCommand):
         for cat in categories:
             all_categories = [cat] + list(cat.children(recursive=True))
             for c in all_categories:
-                categorizables = c.categorizables() & in_file
+                categorizables = c.members() & in_file
                 if categorizables:
                     all_assigned[c] = list(categorizables)
         return all_assigned

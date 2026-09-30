@@ -44,7 +44,7 @@ class TaskCommandTestCase(CommandTestCase, asserts.Mixin):
         and undo change no membership: a deleted task keeps its
         categories, to come back with them."""
         for cat, expected in members.items():
-            self.assertEqual(expected, cat.categorizables())
+            self.assertEqual(expected, cat.members())
             for each in expected:
                 self.assertIn(cat, each.categories())
 

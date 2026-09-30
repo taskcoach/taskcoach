@@ -31,7 +31,7 @@ class TaskViewerAndCategoryFilterIntegrationTestFixture(test.wxTestCase):
         self.category = category.Category("category")
         self.app.mainwindow.taskFile.categories().append(self.category)
         self.app.mainwindow.taskFile.tasks().extend([parent, child])
-        self.category.addCategorizable(child)
+        child.addCategory(self.category)
         self.category.setFiltered()
         self.taskViewer = self.app.mainwindow.viewer[0]
 

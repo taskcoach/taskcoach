@@ -327,7 +327,6 @@ class CommonTestsMixin(object):
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
         self.task.addCategory(cat1)
-        cat1.addCategorizable(self.task)
         self.taskFile.categories().extend([cat1, cat2])
         cat1.setFiltered(True)
         cat2.setFiltered(True)
@@ -341,7 +340,6 @@ class CommonTestsMixin(object):
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
         self.task.addCategory(cat1)
-        cat1.addCategorizable(self.task)
         self.taskFile.categories().extend([cat1, cat2])
         cat1.setFiltered(True)
         cat2.setFiltered(True)
@@ -428,14 +426,12 @@ class CommonTestsMixin(object):
     def testRenderSingleCategory(self):
         cat = category.Category(subject="Category")
         self.task.addCategory(cat)
-        cat.addCategorizable(self.task)
         self.assertEqual("Category", self.viewer.renderCategories(self.task))
 
     def testRenderMultipleCategories(self):
         for index in range(1, 3):
             cat = category.Category(subject="Category %d" % index)
             self.task.addCategory(cat)
-            cat.addCategorizable(self.task)
         self.assertEqual(
             "Category 1, Category 2", self.viewer.renderCategories(self.task)
         )
@@ -445,7 +441,6 @@ class CommonTestsMixin(object):
         self.taskList.append(self.task)
         cat = category.Category(subject="Category")
         self.child.addCategory(cat)
-        cat.addCategorizable(self.child)
         expectedCategory = "(Category)" if self.viewer.is_tree_viewer() else ""
         self.assertEqual(
             expectedCategory, self.viewer.renderCategories(self.task)
@@ -457,7 +452,6 @@ class CommonTestsMixin(object):
         for index in range(1, 3):
             cat = category.Category(subject="Category %d" % index)
             self.child.addCategory(cat)
-            cat.addCategorizable(self.child)
         expectedCategory = (
             "(Category 1, Category 2)" if self.viewer.is_tree_viewer() else ""
         )
@@ -471,7 +465,6 @@ class CommonTestsMixin(object):
         for index, eachTask in enumerate([self.task, self.child]):
             cat = category.Category(subject="Category %d" % index)
             eachTask.addCategory(cat)
-            cat.addCategorizable(eachTask)
         expectedCategory = (
             "Category 0 (Category 1)"
             if self.viewer.is_tree_viewer()
@@ -487,7 +480,6 @@ class CommonTestsMixin(object):
         cat = category.Category(subject="Category")
         for eachTask in (self.task, self.child):
             eachTask.addCategory(cat)
-            cat.addCategorizable(eachTask)
         expectedCategory = "Category"
         self.assertEqual(
             expectedCategory, self.viewer.renderCategories(self.task)
@@ -620,9 +612,7 @@ class CommonTestsMixin(object):
         task0 = task.Task(subject="0")
         task1 = task.Task(subject="1")
         task0.addCategory(cat1)
-        cat1.addCategorizable(task0)
         task1.addCategory(cat0)
-        cat0.addCategorizable(task1)
         self.taskList.extend([task0, task1])
         self.assertItems(task0, task1)
         self.viewer.sortBy("categories")
@@ -636,9 +626,7 @@ class CommonTestsMixin(object):
         task1_1 = task.Task(subject="1.1")
         task1.addChild(task1_1)
         task0.addCategory(cat1)
-        cat1.addCategorizable(task0)
         task1_1.addCategory(cat0)
-        cat0.addCategorizable(task1_1)
         self.taskList.extend([task0, task1])
         if self.viewer.is_tree_viewer():
             self.assertItems(task0, (task1, 1), task1_1)
@@ -731,7 +719,6 @@ class CommonTestsMixin(object):
         cat = category.Category(
             "category with background color", bgColor=self.newColor
         )
-        cat.addCategorizable(self.task)
         self.task.addCategory(cat)
         self.taskList.append(self.task)
         self.assertBackgroundColor()
@@ -761,7 +748,6 @@ class CommonTestsMixin(object):
                 subject, icon=icon_id
             )
             each.setStylePriority(1 if subject == "c" else 0)
-            each.addCategorizable(self.task)
             self.task.addCategory(each)
             test.styled(each)
         self.assertEqual(

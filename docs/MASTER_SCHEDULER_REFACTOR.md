@@ -147,11 +147,12 @@ go at the end. Details live in the sections and documents linked.
     shows its status icon, the folders stay as regular icons. One
     themed status icon, `TaskStatus.icon_id()`, replaces
     `getBitmap()`, which read the light theme's icons only.
-59. Wrappers left by P29: `Category.addCategorizable()` and
-    `removeCategorizable()` only call the items and only the tests use
-    them (78 calls in 16 files); remove them and link from the items,
-    and review the now empty `CategorizableContainer`. **Asked by
-    designer 2026-09-29**, once P29 works.
+59. ~~Wrappers left by P29~~: removed 2026-09-29, **asked by
+    designer**: the tests link from the items, the empty
+    `CategorizableContainer` is gone, and the category side is named
+    for what it is: `Category.members()`, `member_added_event_type()`,
+    `member_removed_event_type()`, the `members` argument of a copy.
+    "Categorizable" names the items that can have categories.
 60. ~~Category membership stored on the items in the file too~~:
     done 2026-09-29, **asked by designer**; tskversion 38, older
     files converted when read
@@ -330,6 +331,18 @@ In the app:
   Found 2026-09-29; the same on master. The reader no longer reads
   embedded data (it keeps a placeholder location), so the writer
   should write the location as for other attachments.
+- P32. A "save changes?" question that took no clicks, **reported by
+  designer 2026-09-29** on the master release: switching from one file
+  to another, perhaps right after a change that was not saved yet, a
+  "save changes?" question showed with the second file, and none of its
+  buttons responded; only cancelling closed it, and the file was open.
+  Not reproduced 2026-09-29, on this branch nor on master (b6c35ab08): a
+  change and a switch through File > recent files in one burst of input;
+  autosave saved in between and no question showed. Leads from the code:
+  the question is a modal `wx.MessageBox` asked from the menu command,
+  before the current file closes (`IOController.open()`); autosave saves
+  at the next idle moment; a due reminder opens its window as the file
+  loads. Kept open until it is reproduced or reported again.
 
 ## Views on the Effective Styles
 
@@ -867,7 +880,7 @@ Rules the first sketch lacked, each needed by the probe:
   setter and `__setstate__` compute an object's effective style at
   once, outside the pass.
 - A category's members are the items whose `categories()` hold it:
-  `Category.categorizables()`, their index since P29, less the items
+  `Category.members()`, their index since P29, less the items
   outside the file.
 - An added object is computed with its whole subtree (children, owned
   notes and attachments): each reads what is above it, its parent and
@@ -886,7 +899,7 @@ an emulated incremental pass, then the real full loop. With the rules:
 0 misses on seeds 1 to 7 (300 to 400 steps, 167 to 714 objects), 0
 out of order, 0 twice, 5 to 13 objects per change. Dropping a rule:
 not following effective events sent outside the pass gives 3 misses
-in 200 steps (seed 3). Members from `Category.categorizables()` gave
+in 200 steps (seed 3). Members from `Category.members()` gave
 7 to 10 misses per 300 steps (seeds 1, 2, 4 to 7) while paste left
 notes one-sided; since P29, 0 (rerun 2026-09-29). The full loop
 re-triggered due reminders at nearly every step, the difference in
@@ -895,7 +908,9 @@ The first full loop after the random file is built changes about 705
 values, the second none: the loop already settles in one pass.
 
 `docs/scripts/scheduler_claims_probe.py` checks single claims: a
-leaf category's rename with a member linked one way pushes nothing;
+leaf category's rename with a member pushes a pass (its member shows
+the name as its style source; before P29 a member linked one way
+pushed nothing);
 fonts from one string compare equal; an owned note and attachment
 ignore their owner's style; default icons; an override changes the
 effective style at once while the children wait for the pass.
