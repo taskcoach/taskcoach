@@ -136,7 +136,7 @@ This section documents workarounds and patches in the codebase that should be re
 | `workarounds/monkeypatches.py` | `Window.SetSize` clamp | A negative width or height becomes 0 (GTK asserts `height >= -1`) | Only the two- and four-number forms |
 | `workarounds/monkeypatches.py` | `wx.CallAfter` crash guard | Prevents segfaults from callbacks to destroyed C++ objects | Required for library code; the app's own deferred calls go through `patterns.later` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); see [CRASH_GUARD.md](CRASH_GUARD.md) |
 | `workarounds/monkeypatches.py` | `wx.Timer` owner guard | Stops timers still running when their owner window is destroyed, logs the start stack | Required for library code, as above; see [CRASH_GUARD.md](CRASH_GUARD.md) |
-| `workarounds/display.py` | `wx.Display` replacement (Windows) | Follows monitors plugged in or out | Possibly obsolete since wxWidgets 3.1; check on Windows |
+| `workarounds/display.py` | `wx.Display` replacement (Windows) | Follows monitors plugged in or out | Possibly obsolete since wxWidgets 3.1; a check on Windows is deferred (D6 in MASTER_SCHEDULER_REFACTOR.md) |
 | `workarounds/encodings.py` | `mac_roman` codec alias | Decodes old macOS text | Required |
 | `widgets/__init__.py` | `wx.Dialog.__init__` binds `EVT_SET_CURSOR` | Stops the main window's sash cursor showing through dialogs | Required |
 | `application.py` | `OnExceptionInMainLoop` | Catches unhandled exceptions during wx event dispatch | Required, see [CRASH_GUARD.md](CRASH_GUARD.md) |

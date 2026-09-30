@@ -159,17 +159,20 @@ go at the end. Details live in the sections and documents linked.
     2026-09-29, **ruled by designer**: a missing attribute is the
     default, every value written was ruled out
     ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#defaults)).
-62. Undo design point 4, what is not a step (the program's own
-    changes, view state, the clipboard): built as proposed, **needs
-    the designer's ruling**
-    ([UNDO_REDO.md](UNDO_REDO.md#design-intent)).
+62. Undo design point 4, what is not a step: **ruled by designer
+    2026-09-30** for the program's own changes and view state, which
+    no release ever made undo steps: they stay out. The clipboard was
+    part of undo in every release (Copy was a step, undoing a Cut put
+    the old clipboard back) and is not on this branch: **needs the
+    designer's ruling** ([UNDO_REDO.md](UNDO_REDO.md#design-intent)).
 63. ~~Cleanup audit~~: done 2026-09-30, **asked by designer**: the
     vendored `ntlm`, the old `patches/wxpython/` copy and four unused
     tools removed; the `getargspec`, font and total-seconds shims
     replaced; dead code, Python 2 leftovers and unread settings gone
     (dropped from old INI files on load); the stale tests rewritten or,
     for removed features, deleted; the docs brought up to date.
-    Decisions left: P43, P45 to P51.
+    Decisions made 2026-09-30: P45, P46, P48, P49 done; P47, P50, P51
+    deferred (D5 to D7). Left: P43.
 
 ## Deferred or Will Not Do
 
@@ -198,6 +201,20 @@ Numbered D1, D2, ...
 - D4. One base class for the two tray icons, **ruled by designer
   2026-09-29**: will not be done; the classes are different by
   design ([SYSTEM_TRAY.md](SYSTEM_TRAY.md#code-duplication)).
+- D5. `thirdparty/plasma_window_management` on KDE Plasma Wayland
+  (was P47), **ruled by designer 2026-09-30**: deferred, for users on
+  that desktop to test. KWin may offer its global only to a client
+  whose `.desktop` file lists it in `X-KDE-Wayland-Interfaces`, which
+  ours does not ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)); without it the tray
+  falls back to hide and show.
+- D6. `workarounds/display.py`, the `wx.Display` replacement on
+  Windows for monitors plugged in or out (was P50), **ruled by
+  designer 2026-09-30**: deferred, for Windows users to test whether
+  wxWidgets 3.1+ makes it unneeded.
+- D7. The wxPython 2.8 workarounds still running
+  (`settings_uicommand.py`, `searchctrl.py`, `gui/menu.py`; was P51),
+  **ruled by designer 2026-09-30**: deferred, each needs a behaviour
+  check on the platforms they were for.
 
 ## Pre-existing Issues
 
@@ -416,42 +433,51 @@ In the app:
   `i18n.system_language()` ([LOCALE.md](LOCALE.md)).
 - P43. Preferences > Windows > "Start with the main window
   iconized: If it was iconized last session", the default, behaves as
-  Never, since the fork's merge (December 2025): nothing writes or
-  reads `window/iconized`. **Question:** restore it (save the state on
-  close) or drop the option (old INI files read as Never)?
+  Never: nothing writes or reads `window/iconized`. It worked from 2007
+  (0a18a95db) to release 1.4.6 (2019) and upstream's Python 3 port
+  (v1.5.0-starofrainnight): the window state was saved at quit and read
+  at start. The fork's merge (def3832cf, December 2025) replaced the
+  window tracker, so every 2.0.x release behaves as Never. **Ruled by
+  designer 2026-09-30:** the option stays. **Question:** restore it
+  (save `IsIconized()` at quit, read it at start; a window hidden in
+  the tray may need to count as iconized), or leave it as Never?
 - P44. ~~The reminder window's tests were skipped on Linux (a crash)
   and the leak test was a docstring~~: fixed 2026-09-30, the tests
   only: asking for attention without a window manager crashes GTK
   (mocked, as in `WindowSelfHealTest`); the file's objects are freed
   after the loop's next pass.
-- P45. Upstream's release tooling: `legacy/` (Makefile, buildbot,
-  release.py), `changes.in/` (its history stops at 1.6.1.72, so
-  `ChangeHistoryTest` fails), `tests/releasetests/`,
-  `tests/disttests/` (a py2exe build). **Question:** retire them?
-- P46. The pyparsing minimum, 3.1.3 "for `pp.Tag`", in `setup.py` and
-  the packaging: `deltaTime.py` no longer uses `pp.Tag`, and Debian 13
-  ships 3.1.2 (which parses the templates' dates). **Question:** lower
-  it to a tested version?
-- P47. `thirdparty/plasma_window_management`: KWin may offer its
-  global only to a client whose `.desktop` file lists it in
-  `X-KDE-Wayland-Interfaces`, which ours does not
-  ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)). Needs a test on KDE Plasma
-  Wayland; else add the key or retire the binding.
-- P48. `thirdparty/wxScheduler` has no known author or licence, and it
-  and `timeline` are Task Coach forks now; `debian/copyright` lists
-  none of the vendored packages. **Question:** adopt both as
-  first-party code, and add the copyright stanzas?
-- P49. Three preferences that do nothing: "Icon size" (one choice,
-  "Not yet implemented"), "Show Breeze icons in picker" (there is no
-  Breeze theme) and "Check for new version on startup" (the check is
-  disabled: `VersionChecker.retrieveVersionFile()` always fails).
-  **Question:** remove them until the features exist?
-- P50. `workarounds/display.py` replaces `wx.Display` on Windows for
-  monitors plugged in or out; wxWidgets 3.1+ may do it itself. Needs a
-  check on Windows.
-- P51. Workarounds for wxPython 2.8 still run
-  (`settings_uicommand.py`, `searchctrl.py`, `gui/menu.py`); each
-  needs a behaviour check before removal.
+- P45. ~~Upstream's release tooling~~: retired 2026-09-30, **ruled by
+  designer** (unused, kept in git history): `legacy/` (Makefile,
+  buildbot, release.py), `changes.in/` (its history stopped at
+  1.6.1.72), `tests/releasetests/`, `tests/disttests/`, and by the same
+  rule `dist.in/`, `build.in/windows/`, `build.in/portableapps/`,
+  `build.in/winpenpack/`, `build.in/debian/MANIFEST.in` and the old
+  website generator (`website.in/`; its screenshots stay, the Flatpak
+  metadata links them).
+- P46. ~~The pyparsing minimum, 3.1.3 "for `pp.Tag`"~~: lowered to
+  3.0.0 on 2026-09-30, **ruled by designer**: 3.0.0, 3.0.7 (Ubuntu
+  22.04), 3.0.9 (Debian 12), 3.1.1 and 3.1.2 pass the template tests
+  and parse 21 sample expressions alike. The builds use each distro's
+  package instead of bundling it
+  ([PACKAGING.md](PACKAGING.md#minimum-version-requirements)).
+- P47. Deferred: D5.
+- P48. ~~`thirdparty/wxScheduler` without author or licence~~: closed
+  2026-09-30, no code change. Its licence was known: the wxWindows
+  Library Licence (Daniele Esposti, Michele Petrazzo, Jérôme Laheurte;
+  Google Code "wxscheduler" 1.3, 2014, gone since); its readme was
+  dropped when the fork unpacked it in 2024 (0751ddfe4) and is back
+  (`wxScheduler/README.txt`), as the licence requires. There is no
+  upstream or replacement to move to, so it stays as it is, as does
+  `timeline` (written for Task Coach, MIT-style). `debian/copyright`
+  now lists every vendored package.
+- P49. ~~Three preferences that did nothing~~: **ruled by designer
+  2026-09-30**: "Icon size" and "Show Breeze icons in picker" stay for
+  their planned features. "Check for new version on startup" works
+  again, against GitHub: a newer release is shown once, with a link to
+  it ([PACKAGING.md](PACKAGING.md#version-check)); checked in the app
+  with a copy labelled 2.0.2.25.
+- P50. Deferred: D6.
+- P51. Deferred: D7.
 
 ## Views on the Effective Styles
 
