@@ -53,73 +53,65 @@ copy per edit. Earlier versions of the file already exist as backups
 
 ### Findings, 2026-09-30
 
-Option C (the designer's idea, 2026-09-28) restores items with their
-saved state (`__getstate__`, `__setstate__`). Mapped against the
-model, that cannot restore exactly:
+Option C (the designer's idea, 2026-09-28) is sound: a full copy of
+what the file stores for each changed item, put back on undo, as if
+reopening the previous version for those items only. Today's copy and
+restore code (`__getstate__`, `__setstate__`) is not such a copy;
+checked in memory:
 
-- Setting a state runs the edit rules again: a completed recurring
-  task restored this way recurs twice (its due date moved 2 days).
-- The state misses stored data: a task's reminder before snooze.
-- Saved states share live lists (children, efforts) with the item, so
-  later changes leak into them.
-- A link held on one item and dated on another (a parent's children,
-  an owner's notes and attachments, a task's efforts) is not restored
-  with the item that points.
-- The setters reset the modification date to now.
-- Today a view reacting to an undo can run a command during it, which
-  empties the redo list.
+- **It restores through the editing setters, so the edit rules run
+  again.** Redo of completing a parent (which completed its recurring
+  subtask and cleared the subtask's recurrence) moved the subtask's
+  due date 2 days: the completion date is set back before the
+  recurrence, so the subtask recurs. Loading a file runs no such rule.
+- **It sets the modification date to now** instead of the copy's date.
+- **It misses a stored field:** the reminder before snooze (a snoozed
+  task's original reminder, from which a recurring task computes its
+  next reminder). The reminder itself comes back.
+- **It shares live lists** (subtasks, efforts) with the item, so later
+  changes leak into the copy.
+- **A copy is taken only of the item that points:** moving a subtask
+  changes the old and new parent's lists of subtasks, an owner's notes
+  and a task's efforts likewise, and these items' dates do not change.
+- **No hook runs before a stored value changes:** the value is written
+  first, the date after.
+- By reading the commands, not reproduced: an editor can run a command
+  during an undo, which empties the redo list.
 
 ### Design, proposed 2026-09-30
 
-C's idea kept, at the grain of the fields, as the ruling above words
-it: every change dates its item, the log keeps what changed, in order,
-one entry per user action.
+Option C, with copies that are exact:
 
-1. **Storage units record.** Every stored value lives in a storage
-   unit: `Attribute`, `SetAttribute`, and units for the links and
-   lists (an item's parent and children, an owner's notes and
-   attachments, a task's efforts, an effort's task, a container's
-   items); the modification date is one too, and a task's reminder
-   before snooze becomes an `Attribute`. At its first change within
-   the open action, a unit gives the log its value before; when the
-   action closes, the log takes each unit's value after.
-2. **One action per user gesture.** A command opens the action; the
-   commands run before the application is idle again join it (an
-   editor's derived adjustments, posted events), as a platform undo
-   manager groups by event loop pass. The first command names it
-   ("Undo Edit subject"). Changes outside commands (scheduler, snooze,
-   import, merge) record nothing.
-3. **Undo and redo write values back, raw.** Undo writes each unit's
-   value before, last change first; redo each value after, in order.
-   The units send their change events and keep the derived indexes (a
-   category's members, a task's dependencies), but no edit rule runs
-   (completion and recurrence cascades, percentage, parent completion):
-   their effects are units of the same action. One mode,
-   `restoring()`, which a merge uses too (instead of `Task.merging()`).
-4. **Nothing is done while restoring:** a command started by a view
-   reacting to restored data does nothing.
-5. **Commands only do.** `undo_command()`, `redo_command()`,
-   `SaveStateMixin` and the date recorder go.
-6. **A failed action rolls back** what it had changed.
-7. **Outside the model.** The clipboard is not undone: a cut pastes its
-   originals while they are out of the file, copies otherwise (one
-   rule instead of the move flag). A tracking effort's stop comes back
-   exactly: redo does not take a new "now".
-8. **One side of each link:** a task's dependencies follow its
-   prerequisites, as a category's members follow the items'
-   categories; commands set the prerequisites only.
+1. **The copy is what the file stores** for the item: every stored
+   field, its links and its own lists, copied (not shared), the
+   modification date included.
+2. **Taken before the first change** within an action, from the one
+   place every stored change passes, and taken of every item whose
+   stored data changes: the item that points and the items holding the
+   other side (a parent's subtasks, an owner's notes and attachments, a
+   task's efforts). Items added to or removed from the file are
+   recorded as such.
+3. **Put back as loading does:** stored values set directly, no edit
+   rule run (completion, recurrence, percentage, parent completion),
+   their effects being copies of the same action; the views are told.
+   Redo puts back the copies taken when the action ended.
+4. **Nothing is done while putting back:** a command a view starts in
+   reaction does nothing.
+5. **One user action is one entry**, derived adjustments included.
+
+Whole-file versions (D) give the same result and remain the fallback.
 
 ### Path
 
-1. Every stored change sets the modification date: done
-   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
-2. Storage units for the links, lists and containers; dependencies
-   derived; `restoring()` gates the edit rules.
-3. The log records and restores; commands lose their undo code, the
-   existing do/undo/redo tests unchanged as the check.
-4. Grouping by user gesture, rollback, the clipboard rule.
+Small steps, each safe on its own:
 
-Group by action, not by time: two quick edits may share a second.
+1. **Check mode:** the copies are taken beside today's undo, changing
+   nothing; after each undo an item that differs from its copy is
+   logged. This measures where today's undo is wrong.
+2. **Undo finishes from the copies:** after a command's own undo, the
+   copies are put back. The commands stay as they are.
+3. **Per-command undo code goes,** one family of commands at a time,
+   where check mode shows the copies cover it.
 
 ### Persistence
 
