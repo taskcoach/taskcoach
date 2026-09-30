@@ -172,7 +172,7 @@ class AttachmentViewer(
                 renderCallback=lambda item: item.location(),
                 resizeCallback=self.onResizeColumn,
             ),
-            # A mail's fields (docs/ATTACHMENTS.md)
+            # A mail's fields (docs/EMAIL_ATTACHMENTS.md)
             widgets.Column(
                 "fromName",
                 _("From"),

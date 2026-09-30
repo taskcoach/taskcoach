@@ -519,7 +519,7 @@ class AttachmentSubjectPage(SubjectPage):
 
     def __has_mail(self):
         # A mail's fields show the mail as it is: the user's are its
-        # description and the other pages (docs/ATTACHMENTS.md)
+        # description and the other pages (docs/EMAIL_ATTACHMENTS.md)
         return any(item.type_ == "mail" for item in self.items)
 
     def __add_read_only_entry(self, label, text):

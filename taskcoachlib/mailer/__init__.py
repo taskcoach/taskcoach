@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import email
 import email.policy
+import re
 import urllib.parse
 
 from taskcoachlib import operating_system
@@ -29,11 +30,19 @@ from taskcoachlib.tools import openfile
 _MID_SAFE = "@!$&'()*+,;=:/~"
 
 
-def read_mail(filename):
-    """The fields of a dropped mail's attachment, from the mail file
-    the mail program left (docs/ATTACHMENTS.md)."""
+# The line starting each mail in an mbox file
+_MBOX_FROM = re.compile(rb"^From .*\r?\n", re.MULTILINE)
+
+
+def read_mails(filename):
+    """The fields of each dropped mail's attachment, from the file the
+    mail program left: one mail, or several in mbox format (Evolution)
+    (docs/EMAIL_ATTACHMENTS.md)."""
     with open(filename, "rb") as mail_file:
-        return parse_mail(mail_file.read())
+        data = mail_file.read()
+    if not data.startswith(b"From "):
+        return [parse_mail(data)]
+    return [parse_mail(mail) for mail in _MBOX_FROM.split(data)[1:]]
 
 
 def parse_mail(data):

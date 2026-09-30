@@ -89,7 +89,7 @@ class AttachmentEditorTest(test.wxTestCase):
 
 class MailAttachmentEditorTest(test.wxTestCase):
     """A mail's fields show the mail as it is: only the description
-    can change (docs/ATTACHMENTS.md)."""
+    can change (docs/EMAIL_ATTACHMENTS.md)."""
 
     def setUp(self):
         super().setUp()

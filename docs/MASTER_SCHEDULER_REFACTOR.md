@@ -330,7 +330,7 @@ In the app:
   temporary copy existed (Python 2 embedding), and once it was gone
   the attachment and its notes vanished on the next open. A dropped
   mail now keeps its subject, sender, sent date and a `mid:` link,
-  not the mail ([ATTACHMENTS.md](ATTACHMENTS.md#e-mail-attachments)).
+  not the mail ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md)).
 - P32. A "save changes?" question that took no clicks, **reported by
   designer 2026-09-29** on the master release: switching from one file
   to another, perhaps right after a change that was not saved yet, a

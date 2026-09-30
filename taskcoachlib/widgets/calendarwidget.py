@@ -132,8 +132,8 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
     def OnDropFiles(self, x, y, filenames):
         self._handleDrop(x, y, filenames, self.__on_drop_files_callback)
 
-    def OnDropMail(self, x, y, mail):
-        self._handleDrop(x, y, mail, self.__on_drop_mail_callback)
+    def OnDropMail(self, x, y, mails):
+        self._handleDrop(x, y, mails, self.__on_drop_mail_callback)
 
     def SetShowNoStartDate(self, doShow):
         self.__showNoPlannedStartDate = doShow

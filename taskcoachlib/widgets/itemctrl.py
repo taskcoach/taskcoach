@@ -271,12 +271,12 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
                 self._objectBelongingTo(item), filenames
             )
 
-    def on_drop_mail(self, x, y, mail):
+    def on_drop_mail(self, x, y, mails):
         self._clearDropHighlight()  # Clear highlight on drop
         draganddrop.hover_expander(self).stop()
         item = self.HitTest((x, y))[0]
         if self.__on_drop_mail_callback:
-            self.__on_drop_mail_callback(self._objectBelongingTo(item), mail)
+            self.__on_drop_mail_callback(self._objectBelongingTo(item), mails)
 
     def on_drag_over(self, x, y, defaultResult):
         item, flags = self.HitTest((x, y))[:2]

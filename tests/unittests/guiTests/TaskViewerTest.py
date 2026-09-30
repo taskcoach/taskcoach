@@ -702,9 +702,11 @@ class CommonTestsMixin(object):
         self.taskList.append(aTask)
         self.viewer.onDropMail(
             aTask,
-            mailer.parse_mail(
-                b"Subject: foo\r\nMessage-ID: <1@example.com>\r\n\r\nBody\r\n"
-            ),
+            [
+                mailer.parse_mail(
+                    b"Subject: foo\r\nMessage-ID: <1@example.com>\r\n\r\n"
+                )
+            ],
         )
         self.assertEqual(
             [("mid:1@example.com", "foo", "")],

@@ -236,7 +236,7 @@ class URIAttachment(Attachment):
 class MailAttachment(Attachment):
     """A mail kept in the user's mail program: its subject, sender and
     sent date, and a mid: link to it by its Message-ID, not the mail
-    itself (docs/ATTACHMENTS.md)."""
+    itself (docs/EMAIL_ATTACHMENTS.md)."""
 
     type_ = "mail"
 

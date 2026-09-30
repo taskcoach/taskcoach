@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
 import wx
 from taskcoachlib import mailer, patterns
 from taskcoachlib.mailer import thunderbird, outlook
@@ -137,7 +138,7 @@ class DropTarget(wx.DropTarget):
                 url.startswith("imap:") or url.startswith("mailbox:")
             ) and self.__onDropMailCallback:
                 try:
-                    self.__onDropMailCallback(x, y, thunderbird.getMail(url))
+                    self.__onDropMailCallback(x, y, [thunderbird.getMail(url)])
                 except thunderbird.ThunderbirdCancelled:
                     pass
                 except thunderbird.ThunderbirdError as e:
@@ -163,10 +164,13 @@ class DropTarget(wx.DropTarget):
 
     @staticmethod
     def __is_dropped_mail(filename):
-        """Whether the file is a mail Evolution or Claws Mail dropped."""
+        """Whether the file holds mails Evolution or Claws Mail dropped:
+        Evolution writes them to a drag-n-drop-XXXXXX folder (in /tmp,
+        before in ~/.cache/evolution/tmp), Claws Mail to its tmp
+        folder."""
+        folder = os.path.basename(os.path.dirname(filename))
         return (
-            "/.cache/evolution/tmp/drag-n-drop" in filename
-            or "/.claws-mail/tmp/" in filename
+            folder.startswith("drag-n-drop") or "/.claws-mail/tmp/" in filename
         )
 
     def onThunderbirdDrop(self, x, y):
@@ -182,12 +186,11 @@ class DropTarget(wx.DropTarget):
             except thunderbird.ThunderbirdError as e:
                 wx.MessageBox(e.args[0], _("Error"), wx.OK | wx.ICON_ERROR)
             else:
-                self.__onDropMailCallback(x, y, email)
+                self.__onDropMailCallback(x, y, [email])
 
     def onOutlookDrop(self, x, y):
         if self.__onDropMailCallback:
-            for mail in outlook.getCurrentSelection():
-                self.__onDropMailCallback(x, y, mail)
+            self.__onDropMailCallback(x, y, outlook.getCurrentSelection())
 
     def onUrlDrop(self, x, y):
         if self.__onDropURLCallback:
@@ -199,12 +202,14 @@ class DropTarget(wx.DropTarget):
     def onFileDrop(self, x, y):
         # On GTK a dropped uri-list (a file manager's, Evolution's) comes
         # here, as file names; web links in it are refused by wx
-        filenames = []
+        filenames, mails = [], []
         for filename in self.__fileDataObject.GetFilenames():
             if self.__is_dropped_mail(filename) and self.__onDropMailCallback:
-                self.__onDropMailCallback(x, y, mailer.read_mail(filename))
+                mails.extend(mailer.read_mails(filename))
             else:
                 filenames.append(filename)
+        if mails:
+            self.__onDropMailCallback(x, y, mails)
         if filenames and self.__onDropFileCallback:
             self.__onDropFileCallback(x, y, filenames)
 

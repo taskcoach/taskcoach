@@ -60,7 +60,7 @@ class TestMailer(test.TestCase):
 
 class ParseMailTest(test.TestCase):
     """A dropped mail's attachment keeps its subject, sender, sent date
-    and a link to it, not the mail (docs/ATTACHMENTS.md)."""
+    and a link to it, not the mail (docs/EMAIL_ATTACHMENTS.md)."""
 
     def test_fields(self):
         self.assertEqual(
@@ -74,14 +74,31 @@ class ParseMailTest(test.TestCase):
             mailer.parse_mail(MAIL),
         )
 
-    def test_read_from_a_file(self):
+    def read_mails(self, data):
         with tempfile.TemporaryDirectory() as folder:
-            filename = os.path.join(folder, "dropped.eml")
+            filename = os.path.join(folder, "dropped")
             with open(filename, "wb") as mail_file:
-                mail_file.write(MAIL)
-            self.assertEqual(
-                mailer.parse_mail(MAIL), mailer.read_mail(filename)
-            )
+                mail_file.write(data)
+            return mailer.read_mails(filename)
+
+    def test_read_a_mail_file(self):
+        self.assertEqual([mailer.parse_mail(MAIL)], self.read_mails(MAIL))
+
+    def test_read_an_mbox_file(self):
+        # As Evolution drops mails: a "From " line before each
+        other = b"Subject: Second\nMessage-ID: <2@example.com>\n\n>From me\n"
+        self.assertEqual(
+            ["Devis révisé for the garden", "Second"],
+            [
+                fields["subject"]
+                for fields in self.read_mails(
+                    b"From renee@example.com Tue Sep 29 18:05:00 2026\n"
+                    + MAIL
+                    + b"From - Wed Sep 30 09:15:00 2026\n"
+                    + other
+                )
+            ],
+        )
 
     def test_an_address_without_a_name(self):
         fields = mailer.parse_mail(b"From: alerts@example.com\n\nBody\n")

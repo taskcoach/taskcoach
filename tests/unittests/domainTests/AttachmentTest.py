@@ -103,7 +103,7 @@ class FileAttachmentTest(test.TestCase):
 
 class MailAttachmentTest(test.TestCase):
     """A mail's subject, sender, sent date and mid: link, not the mail
-    (docs/ATTACHMENTS.md)."""
+    (docs/EMAIL_ATTACHMENTS.md)."""
 
     def setUp(self):
         super().setUp()

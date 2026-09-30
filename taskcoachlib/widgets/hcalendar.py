@@ -305,8 +305,8 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
     def OnDropFiles(self, x, y, filenames):
         self.__Drop(x, y, filenames, self.__on_drop_files_callback)
 
-    def OnDropMail(self, x, y, mail):
-        self.__Drop(x, y, mail, self.__on_drop_mail_callback)
+    def OnDropMail(self, x, y, mails):
+        self.__Drop(x, y, mails, self.__on_drop_mail_callback)
 
     def __Drop(self, x, y, objects, callback):
         if callback is not None:

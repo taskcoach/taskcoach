@@ -212,7 +212,7 @@ class FilterableViewerForTasksMixin(FilterableViewerForCategorizablesMixin):
         return task.filter.ViewFilter(
             taskList,
             tree_mode=self.is_tree_viewer(),
-            **self.viewFilterOptions()
+            **self.viewFilterOptions(),
         )
 
     def viewFilterOptions(self):
@@ -670,7 +670,7 @@ class AttachmentDropTargetMixin(object):
             newItemDialog = self.newItemDialog(
                 icon_id="nuvola_actions_document-new",
                 attachments=attachments,
-                **item_dialog_kwargs
+                **item_dialog_kwargs,
             )
             newItemDialog.Show()
             # Later, so the dialog has the focus once the drop completes
@@ -791,11 +791,13 @@ class AttachmentDropTargetMixin(object):
                 attachments.append(attachment.FileAttachment(filename))
         self._add_attachments(attachments, item, **kwargs)
 
-    def onDropMail(self, item, mail, **kwargs):
-        """Called by the widget when a mail is dropped on an item, with
-        the mail's fields (mailer.mail_fields())."""
+    def onDropMail(self, item, mails, **kwargs):
+        """Called by the widget when mails are dropped on an item, with
+        each mail's fields (mailer.mail_fields())."""
         self._add_attachments(
-            [attachment.MailAttachment(**mail)], item, **kwargs
+            [attachment.MailAttachment(**mail) for mail in mails],
+            item,
+            **kwargs,
         )
 
 
