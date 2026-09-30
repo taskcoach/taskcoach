@@ -16,7 +16,8 @@ Source: https://github.com/pyparsing/pyparsing/blob/master/examples/delta_time.p
 Copied on: 2025-11
 Changes for Task Coach:
   - Added backward compatibility alias (nlTimeExpression = time_expression)
-  - pp.Tag() replaced by pp.Empty() with a parse action
+  - pp.Tag() replaced by pp.Empty() with a parse action, so pyparsing 3.0.0
+    or later is enough
 
 ---
 
@@ -41,19 +42,19 @@ Note: provenance and edits in plasma_window_management/README.md
 Component: timeline/
 Name: Timeline Widget
 Author: Frank Niessink, Mike C. Fletcher (timeline/license.txt)
-Version: 2009, with Task Coach's wxPython 4 fixes and renames
-License: See timeline/license.txt
-Note: wxPython timeline visualization widget
+Version: 2009, written for Task Coach, with its wxPython 4 fixes and renames
+License: MIT-style, see timeline/license.txt
+Note: wxPython timeline visualization widget; never released on its own
 
 ---
 
 Component: wxScheduler/
 Name: wxScheduler
-Author: Unknown
-Version: 1.3 (wxSchedulerConstants.py), with Task Coach's changes
-License: Unknown
-Source: Unknown
-Note: Calendar/schedule visualization widget for wxPython
+Author: Daniele Esposti, Michele Petrazzo, Jérôme Laheurte
+Version: 1.3 (Google Code svn r151, 2014), with Task Coach's changes
+License: wxWindows Library Licence 3.1
+Source: Google Code "wxscheduler"; the project is gone, maintained here
+Note: Calendar/schedule visualization widget; see wxScheduler/README.txt
 
 ---
 
