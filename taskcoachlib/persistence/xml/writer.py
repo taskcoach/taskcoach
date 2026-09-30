@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from xml.etree import ElementTree as ET
 from taskcoachlib import meta
-from taskcoachlib.domain import categorizable, category, date, note, task
+from taskcoachlib.domain import category, date, note, task
 import os
 import sys
 
@@ -126,18 +126,18 @@ class XMLWriter(object):
     def __init__(self, fd, versionnr=meta.data.tskversion):
         self.__fd = fd
         self.__versionnr = versionnr
+        self.__categories = set()
 
     def write(self, task_list, category_container, note_container):
         root = ET.Element("tasks")
+        # The categories an item may link to (a template has none)
+        self.__categories = set(category_container)
 
         for root_task in sortedById(task_list.rootItems()):
             self.task_node(root, root_task)
 
-        in_file = categorizable.categorizables_in(
-            task_list, note_container, category_container
-        )
         for root_category in sortedById(category_container.rootItems()):
-            self.category_node(root, root_category, in_file)
+            self.category_node(root, root_category)
 
         for root_note in sortedById(note_container.rootItems()):
             self.note_node(root, root_note)
@@ -194,6 +194,7 @@ class XMLWriter(object):
         )
         if prerequisiteIds:
             node.attrib["prerequisites"] = prerequisiteIds
+        self.__categories_attribute(node, task)
         if task.shouldMarkCompletedWhenAllChildrenCompleted() != None:
             node.attrib["shouldMarkCompletedWhenAllChildrenCompleted"] = str(
                 task.shouldMarkCompletedWhenAllChildrenCompleted()
@@ -249,11 +250,9 @@ class XMLWriter(object):
             ET.SubElement(node, "description").text = effort.description()
         return node
 
-    def category_node(
-        self, parent_node, category, in_file
-    ):  # pylint: disable=W0621
+    def category_node(self, parent_node, category):  # pylint: disable=W0621
         node = self.base_composite_node(
-            parent_node, category, "category", self.category_node, (in_file,)
+            parent_node, category, "category", self.category_node
         )
         if category.isFiltered():
             node.attrib["filtered"] = str(category.isFiltered())
@@ -267,22 +266,26 @@ class XMLWriter(object):
             self.note_node(node, eachNote)
         for attachment in sortedById(category.attachments()):
             self.attachment_node(node, attachment)
-        # Its members in the file, not a copy or a deleted item
-        member_ids = " ".join(
-            member.id()
-            for member in sortedById(category.categorizables() & in_file)
-        )
-        if member_ids:
-            node.attrib["categorizables"] = member_ids
         return node
 
     def note_node(self, parent_node, note):  # pylint: disable=W0621
         node = self.base_composite_node(
             parent_node, note, "note", self.note_node
         )
+        self.__categories_attribute(node, note)
         for attachment in sortedById(note.attachments()):
             self.attachment_node(node, attachment)
         return node
+
+    def __categories_attribute(self, node, item):
+        """The item's categories, stored on the item (tskversion 38,
+        docs/PERSISTENCE_XML.md, Category Membership)."""
+        category_ids = " ".join(
+            each.id()
+            for each in sortedById(item.categories() & self.__categories)
+        )
+        if category_ids:
+            node.attrib["categories"] = category_ids
 
     def __base_node(self, parent_node, item, node_name):
         node = ET.SubElement(

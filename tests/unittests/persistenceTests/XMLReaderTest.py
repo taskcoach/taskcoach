@@ -28,7 +28,7 @@ import base64
 import sys
 import test
 from taskcoachlib import persistence, config, operating_system
-from taskcoachlib.domain import category, date, task
+from taskcoachlib.domain import category, date, note, task
 
 
 class XMLTemplateReaderTestCase(test.TestCase):
@@ -1918,6 +1918,28 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
         self.assertEqual(set([tasks[0]]), set(categories[0].categorizables()))
         self.assertEqual(["Kept note"], [each.subject() for each in notes])
 
+    def test_members_are_saved_as_the_items_categories(self):
+        # Converted when read: the next save writes the new form
+        tasks, categories, notes = self.writeAndReadTasksAndCategoriesAndNotes(
+            """
+        <tasks>
+            <task id="t1"/>
+            <category id="c1" subject="Category" categorizables="t1 n1"/>
+            <note id="n1"/>
+        </tasks>"""
+        )
+        fd = io.BytesIO()
+        persistence.XMLWriter(fd).write(
+            task.TaskList(tasks),
+            category.CategoryList(categories),
+            note.NoteContainer(notes),
+        )
+        written = fd.getvalue().decode("utf-8")
+        self.assertEqual(
+            (2, False),
+            (written.count('categories="c1"'), "categorizables" in written),
+        )
+
     def test_categories_are_resolved_in_one_event(self):
         # Filters reset on each event: one per item would be quadratic
         self.registerObserver(category.Category.categorizableAddedEventType())
@@ -2144,4 +2166,58 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
         </tasks>""")
         self.assertTrue(
             "noteid" in [obj.id() for obj in categories[0].categorizables()]
+        )
+
+
+class XMLReaderVersion38Test(XMLReaderTestCase):
+    tskversion = 38  # New in release 2.0.3.0: categories on the items
+
+    def test_task_categories(self):
+        tasks, categories = self.writeAndReadTasksAndCategories("""
+        <tasks>
+            <task id="t1" categories="c1 c2"/>
+            <category id="c1" subject="One"/>
+            <category id="c2" subject="Two"/>
+        </tasks>""")
+        self.assertEqual(set(categories), tasks[0].categories())
+
+    def test_subtask_with_subcategory(self):
+        tasks, categories = self.writeAndReadTasksAndCategories("""
+        <tasks>
+            <task id="t1"><task id="t2" categories="c2"/></task>
+            <category id="c1"><category id="c2"/></category>
+        </tasks>""")
+        self.assertEqual(
+            {categories[0].children()[0]},
+            tasks[0].children()[0].categories(),
+        )
+
+    def test_notes_of_every_owner_keep_their_categories(self):
+        categories = self.writeAndReadCategories("""
+        <tasks>
+            <task id="t1">
+                <note id="n1" categories="c1"/>
+                <attachment location="test" type="file">
+                    <note id="n2" categories="c1"/>
+                </attachment>
+            </task>
+            <category id="c1"><note id="n3" categories="c1"/></category>
+            <note id="n4"><note id="n5" categories="c1"/></note>
+        </tasks>""")
+        self.assertEqual(
+            {"n1", "n2", "n3", "n5"},
+            {each.id() for each in categories[0].categorizables()},
+        )
+
+    def test_a_duplicate_id_keeps_its_own_categories(self):
+        tasks, categories = self.writeAndReadTasksAndCategories("""
+        <tasks>
+            <task id="1" subject="first" categories="c1"/>
+            <task id="1" subject="second" categories="c2"/>
+            <category id="c1" subject="One"/>
+            <category id="c2" subject="Two"/>
+        </tasks>""")
+        self.assertEqual(
+            [["One"], ["Two"]],
+            [[c.subject() for c in each.categories()] for each in tasks],
         )

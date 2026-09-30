@@ -2,9 +2,10 @@
 It was held twice, the item's categories and the category's members,
 and the file was written from the category's side, so a change that
 filled only the item's side was lost on save. Now the item's side is
-the only data and the category's members its index. Each scenario
-prints the item's categories, whether the index lists it, then the
-categories after a save and reload: all keep Home.
+the only data, in memory and in the file (tskversion 38), and the
+category's members its index. Each scenario prints the item's
+categories, whether the index lists it, then the categories after a
+save and reload: all keep Home.
 
 Run from the repository root:
 

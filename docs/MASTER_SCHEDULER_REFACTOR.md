@@ -76,7 +76,7 @@ go at the end. Details live in the sections and documents linked.
 31. ~~IDs carried the network (MAC) address: done, random UUIDs.~~
     [PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)
 32. ~~The unused file GUID: removed.~~
-33. ~~Version: 2.0.3.0.~~
+33. ~~Version: 2.0.3.0; file version 38 (to do 60).~~
 34. The undo log as object versions keyed by the modification date:
     step 1 done, steps 2 to 5 open
     ([UNDO_REDO.md](UNDO_REDO.md#todo-one-undo-log), option C).
@@ -152,6 +152,10 @@ go at the end. Details live in the sections and documents linked.
     them (87 calls in 18 files); remove them and link from the items,
     and review the now empty `CategorizableContainer`. **Asked by
     designer 2026-09-29**, once P29 works.
+60. ~~Category membership stored on the items in the file too~~:
+    done 2026-09-29, **asked by designer**; tskversion 38, older
+    files converted when read
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#category-membership)).
 
 ## Deferred or Will Not Do
 
@@ -298,17 +302,18 @@ In the app:
 - P29. ~~Notes lost their categories on save~~: fixed 2026-09-29;
   the same on master. A pasted task's notes, a note pasted in the task
   editor and a note owned by an attachment kept them on their own side
-  only; the file is written from the category's side, which paste did
-  not fill and the writer's in-file check skipped for attachments'
-  notes. **Ruled by designer** (2026-09-29): solved at the source,
-  membership stored on the item only (option A). A category's members
-  are an index the items keep (`member_joined()`, `member_left()`),
-  every item that claims it; one walk, `categorizables_in()`, says
-  which are in the file, for the writer and the delete dialog. A
-  category leaving or entering the file (delete, undo, cut, paste)
-  takes its members with it (`leave_file()`, `enter_file()`): why the
-  list had stayed stored after to do 17 (commit 8b9d012a7). The file
-  format is unchanged. Cleanup: to do 59.
+  only; the file was written from the category's side, which paste
+  did not fill and the writer's in-file check skipped for
+  attachments' notes. **Ruled by designer** (2026-09-29): solved at
+  the source, membership stored on the item only (option A). A
+  category's members are an index the items keep (`member_joined()`,
+  `member_left()`), every item that claims it; one walk,
+  `categorizables_in()`, says which are in the file, for the delete
+  dialog. A category leaving or entering the file (delete, undo, cut,
+  paste) takes its members with it (`leave_file()`, `enter_file()`):
+  why the list had stayed stored after to do 17 (commit 8b9d012a7).
+  The file stores it on the items too since to do 60. Cleanup: to do
+  59.
 - P30. The "Cannot Delete - Category In Use" dialog shows a note owned
   by an attachment without its owner (`[Note] Tools`, not the task and
   attachment): `_find_note_owner()` searches only the notes of tasks

@@ -56,8 +56,9 @@ release_year = "2026"  # Year of the release
 # =============================================================================
 
 
-# Task file format version (37 since release 1.3.23).
-tskversion = 37
+# Task file format version (38 since release 2.0.3.0: categories
+# stored on the items).
+tskversion = 38
 release_status = "alpha"  # One of 'alpha', 'beta', 'stable'
 
 # Legacy: keep version_with_patch for backwards compatibility

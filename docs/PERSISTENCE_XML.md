@@ -10,6 +10,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
   - [Task Node](#task-node)
   - [Recurrence Node](#recurrence-node)
   - [Effort Node](#effort-node)
+  - [Note Node](#note-node)
   - [Category Node](#category-node)
   - [Base Node (All Objects)](#base-node-all-objects)
 - [Reader Defaults](#reader-defaults)
@@ -17,6 +18,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 - [Skip Condition Categories](#skip-condition-categories)
 - [Saving](#saving)
 - [Merging](#merging)
+- [Category Membership](#category-membership)
 - [IDs](#ids)
 - [Duplicate IDs](#duplicate-ids)
 - [Related Documentation](#related-documentation)
@@ -91,6 +93,7 @@ the element, not written as an empty value.
 | `fixedFee` | `== 0` (falsy) | Falsy |
 | `reminder` | `== maxDateTime` | Sentinel |
 | `prerequisites` | empty string (falsy) | Falsy |
+| `categories` | none in the file | Falsy ([Category Membership](#category-membership)) |
 | `shouldMarkCompleted...` | `== None` | None check |
 
 `maxDateTime` is the date not set, the latest date
@@ -119,6 +122,14 @@ the reader gives it back for a missing attribute.
 |--------------|----------------|------|
 | `entryMode` | falsy or `== "standard"` | Hardcoded string |
 | `creationDateTime`, `modificationDateTime` | `<= DateTime.min` | Sentinel; with microseconds (`date.Timestamp`) |
+
+### Note Node
+
+`note_node()`:
+
+| XML Attribute | Skip Condition | Type |
+|--------------|----------------|------|
+| `categories` | none in the file | Falsy ([Category Membership](#category-membership)) |
 
 ### Category Node
 
@@ -318,6 +329,23 @@ only for the merge; the same ID in both is the same item.
 - Deletions do not carry over: an item deleted in one file comes back
   from the other.
 
+## Category Membership
+
+**Asked by designer, 2026-09-29:** stored the same way in memory, in
+the file and in the code: on the item that points, like a task's
+prerequisites. Since tskversion 38 (release 2.0.3.0) a task's or
+note's `categories` attribute lists its categories' IDs, sorted; a
+note of a task, a category, an attachment or a note included. Only
+categories in the file are written, so a template has none, as
+before. The category node lists no members.
+
+Older files stored it on the category: its `categorizables` attribute
+(`tasks` before tskversion 19; before 14, category nodes inside the
+task nodes). The reader turns those into the items' categories, and
+the next save writes the new form. A release before 2.0.3.0 refuses a
+version 38 file as too new (a check since 0.72.9) rather than losing
+its categories.
+
 ## IDs
 
 **Ruling, 2026-09-28:** a new item's ID is a random UUID, version 4
@@ -349,7 +377,8 @@ sync was removed. A file that has one still loads.
 **Ruling, 2026-09-28:** an ID is unique within a file, fixed when the
 file is read. The first item with an ID keeps it; each later one gets a
 new ID (`XMLReader.__register_id()`), so references to the ID
-(prerequisites, category members) mean the first. The file is marked
+(prerequisites, an older file's category members) mean the first; an
+item's own categories stay its own. The file is marked
 unsaved, and a message lists the items and how to keep or drop the
 correction: Save, Save As, or close without saving; with autosave on,
 the correction is saved at once and the file as it was can be restored

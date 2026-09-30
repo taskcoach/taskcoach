@@ -242,31 +242,35 @@ class XMLWriterTest(test.TestCase):
             'subject="test" />' % aCategory.creationDateTime()
         )
 
-    def testOneCategoryWithOneTask(self):
+    def expect_categories(self, item, *categories):
+        """The item's node lists its categories, sorted by ID
+        (tskversion 38)."""
+        category_ids = " ".join(sorted(each.id() for each in categories))
+        self.expect_in_xml_without_dates(
+            'categories="%s" id="%s"' % (category_ids, item.id())
+        )
+
+    def test_task_with_one_category(self):
+        cat = category.Category("test", [self.task])
+        self.categoryContainer.append(cat)
+        self.expect_categories(self.task, cat)
+
+    def test_task_with_two_categories(self):
+        cats = [category.Category(each, [self.task]) for each in "ab"]
+        self.categoryContainer.extend(cats)
+        self.expect_categories(self.task, *cats)
+
+    def test_category_lists_no_members(self):
         self.categoryContainer.append(category.Category("test", [self.task]))
-        self.expect_in_xml('categorizables="%s"' % self.task.id())
+        self.expect_not_in_xml("categorizables")
 
-    def testTwoCategoriesWithOneTask(self):
-        subjects = ["test", "another"]
-        expectedResults = []
-        for subject in subjects:
-            cat = category.Category(subject, [self.task])
-            self.categoryContainer.append(cat)
-            expectedResults.append(
-                '<category categorizables="%s" '
-                'creationDateTime="%s" id="%s" '
-                'subject="%s" />'
-                % (self.task.id(), cat.creationDateTime(), cat.id(), subject)
-            )
-        for expectedResult in expectedResults:
-            self.expect_in_xml_without_dates(expectedResult)
-
-    def testOneCategoryWithSubTask(self):
+    def test_subtask_with_category(self):
         child = task.Task()
         self.taskList.append(child)
         self.task.addChild(child)
-        self.categoryContainer.append(category.Category("test", [child]))
-        self.expect_in_xml('categorizables="%s"' % child.id())
+        cat = category.Category("test", [child])
+        self.categoryContainer.append(cat)
+        self.expect_categories(child, cat)
 
     def testSubCategoryWithoutTasks(self):
         parent = category.Category(subject="parent")
@@ -286,25 +290,12 @@ class XMLWriterTest(test.TestCase):
             )
         )
 
-    def testSubCategoryWithOneTask(self):
+    def test_task_with_subcategory(self):
         parent = category.Category(subject="parent")
         child = category.Category(subject="child", categorizables=[self.task])
         parent.addChild(child)
         self.categoryContainer.extend([parent, child])
-        self.expect_in_xml_without_dates(
-            '<category creationDateTime="%s" id="%s" '
-            'subject="parent">\n'
-            '<category categorizables="%s" creationDateTime="%s" '
-            'id="%s" subject="child" />\n'
-            "</category>"
-            % (
-                parent.creationDateTime(),
-                parent.id(),
-                self.task.id(),
-                child.creationDateTime(),
-                child.id(),
-            )
-        )
+        self.expect_categories(self.task, child)
 
     def testFilteredCategory(self):
         self.categoryContainer.extend(
@@ -328,19 +319,10 @@ class XMLWriterTest(test.TestCase):
         self.categoryContainer.extend([unicodeCategory])
         self.expect_in_xml('subject="ï¬Ÿï­Žï­–"')
 
-    def testCategoryWithDeletedTask(self):
-        aCategory = category.Category(
-            subject="category", categorizables=[self.task], id="id"
-        )
-        self.categoryContainer.append(aCategory)
-        self.taskList.remove(self.task)
-        # Losing the task changed the category's members, and so its
-        # modification date
-        self.expect_in_xml(
-            '<category creationDateTime="%s" id="id" '
-            'modificationDateTime="%s" subject="category" />'
-            % (aCategory.creationDateTime(), aCategory.modificationDateTime())
-        )
+    def test_no_link_to_a_category_outside_the_file(self):
+        # A template or a saved selection holds only some categories
+        self.task.addCategory(category.Category(subject="elsewhere"))
+        self.expect_not_in_xml("categories=")
 
     def testDefaultPriority(self):
         self.expect_not_in_xml("priority")
@@ -450,12 +432,11 @@ class XMLWriterTest(test.TestCase):
             )
         )
 
-    def testNoteWithCategory(self):
+    def test_note_with_category(self):
         cat = category.Category(subject="cat")
         self.categoryContainer.append(cat)
         self.note.addCategory(cat)
-        cat.addCategorizable(self.note)
-        self.expect_in_xml('categorizables="%s"' % self.note.id())
+        self.expect_categories(self.note, cat)
 
     def testCategoryForegroundColor(self):
         self.categoryContainer.append(
@@ -707,30 +688,27 @@ class XMLWriterTest(test.TestCase):
             )
         )
 
-    def testTaskWithNoteWithCategory(self):
-        newNote = note.Note()
-        self.task.addNote(newNote)
-        newNote.addCategory(self.category)
-        self.category.addCategorizable(newNote)
-        self.expect_in_xml('categorizables="%s"' % newNote.id())
+    def test_note_of_a_task_with_category(self):
+        new_note = note.Note()
+        self.task.addNote(new_note)
+        new_note.addCategory(self.category)
+        self.expect_categories(new_note, self.category)
 
-    def testTaskWithNoteWithSubNoteWithCategory(self):
-        newNote = note.Note()
-        newSubNote = note.Note()
-        newNote.addChild(newSubNote)
-        self.task.addNote(newNote)
-        newSubNote.addCategory(self.category)
-        self.category.addCategorizable(newSubNote)
-        self.expect_in_xml('categorizables="%s"' % newSubNote.id())
+    def test_subnote_of_a_task_with_category(self):
+        new_note = note.Note()
+        new_sub_note = note.Note()
+        new_note.addChild(new_sub_note)
+        self.task.addNote(new_note)
+        new_sub_note.addCategory(self.category)
+        self.expect_categories(new_sub_note, self.category)
 
     def test_note_of_an_attachment_with_category(self):
-        # The writer used to skip notes owned by attachments
         task_attachment = attachment.FileAttachment("whatever.txt")
         attachment_note = note.Note()
         task_attachment.addNote(attachment_note)
         self.task.addAttachments(task_attachment)
         attachment_note.addCategory(self.category)
-        self.expect_in_xml('categorizables="%s"' % attachment_note.id())
+        self.expect_categories(attachment_note, self.category)
 
     def testCategoryWithNote(self):
         self.category.addNote(self.note)

@@ -169,7 +169,10 @@ class XMLReader(object):
         ).GetPointSize()
         self.__modification_datetimes = {}
         self.__prerequisites = {}
-        self.__categorizables = {}
+        # A task's or note's ID -> its categories' IDs
+        self.__categories_of = {}
+        # Before tskversion 38: a category's ID -> its members' IDs
+        self.__members_of = {}
         # Track all IDs and their locations for duplicate detection
         # Maps ID -> list of (object_type, hierarchical_path) tuples
         self.__id_registry = {}
@@ -321,39 +324,44 @@ class XMLReader(object):
         resolve_ids(tasks)
 
     def __resolve_categories(self, categories, tasks, notes):
-        def mapCategorizables(obj, resultMap, categoryMap):
+        """Link each task and note to its categories. Before tskversion
+        38 the file stored the links on the category, as its members:
+        they are turned into the items' own, where the next save writes
+        them (docs/PERSISTENCE_XML.md, Category Membership)."""
+
+        items, categories_by_id = {}, {}
+
+        def map_ids(obj):
             if isinstance(obj, categorizable.CategorizableCompositeObject):
-                resultMap[obj.id()] = obj
+                items[obj.id()] = obj
             if isinstance(obj, category.Category):
-                categoryMap[obj.id()] = obj
+                categories_by_id[obj.id()] = obj
             if isinstance(obj, base.CompositeObject):
                 for child in obj.children():
-                    mapCategorizables(child, resultMap, categoryMap)
+                    map_ids(child)
             if isinstance(obj, note.NoteOwner):
-                for theNote in obj.notes():
-                    mapCategorizables(theNote, resultMap, categoryMap)
+                for each in obj.notes():
+                    map_ids(each)
             if isinstance(obj, attachment.AttachmentOwner):
-                for theAttachment in obj.attachments():
-                    mapCategorizables(theAttachment, resultMap, categoryMap)
+                for each in obj.attachments():
+                    map_ids(each)
 
-        categorizableMap = dict()
-        categoryMap = dict()
-        for theCategory in categories:
-            mapCategorizables(theCategory, categorizableMap, categoryMap)
-        for theTask in tasks:
-            mapCategorizables(theTask, categorizableMap, categoryMap)
-        for theNote in notes:
-            mapCategorizables(theNote, categorizableMap, categoryMap)
-
+        for each in list(categories) + list(tasks) + list(notes):
+            map_ids(each)
+        for category_id, member_ids in self.__members_of.items():
+            for member_id in member_ids:
+                self.__categories_of.setdefault(member_id, []).append(
+                    category_id
+                )
         event = patterns.Event()
-        for categoryId, categorizableIds in list(
-            self.__categorizables.items()
-        ):
-            theCategory = categoryMap[categoryId]
-            for categorizableId in categorizableIds:
-                if categorizableId in categorizableMap:
-                    theCategorizable = categorizableMap[categorizableId]
-                    theCategorizable.addCategory(theCategory, event=event)
+        for item_id, category_ids in self.__categories_of.items():
+            linked = [
+                categories_by_id[each]
+                for each in category_ids
+                if each in categories_by_id
+            ]
+            if linked and item_id in items:
+                items[item_id].addCategory(*linked, event=event)
         event.send()
 
     def __parse_category_nodes(self, node):
@@ -399,18 +407,17 @@ class XMLReader(object):
                     stylePriority=style_priority,
                 )
             )
-            if self.__tskversion < 19:
-                categorizable_ids = category_node.attrib.get("tasks", "")
-            else:
-                categorizable_ids = category_node.attrib.get(
-                    "categorizables", ""
-                )
             if self.__tskversion > 20:
                 kwargs["attachments"] = self.__parse_attachments(category_node)
             theCategory = category.Category(**kwargs)  # pylint: disable=W0142
-            self.__categorizables.setdefault(theCategory.id(), list()).extend(
-                categorizable_ids.split(" ")
-            )
+            if self.__tskversion < 38:
+                members = category_node.attrib.get(
+                    "tasks" if self.__tskversion < 19 else "categorizables",
+                    "",
+                )
+                self.__members_of.setdefault(theCategory.id(), []).extend(
+                    members.split()
+                )
             return self.__save_modification_datetime(theCategory)
         finally:
             self.__current_path.pop()
@@ -429,9 +436,7 @@ class XMLReader(object):
                 else:
                     cat = category.Category(subject)
                     subject_category_mapping[subject] = cat
-                self.__categorizables.setdefault(cat.id(), list()).append(
-                    task_id
-                )
+                self.__members_of.setdefault(cat.id(), []).append(task_id)
         return list(subject_category_mapping.values())
 
     def __parse_category_nodes_within_task_nodes(self, task_nodes):
@@ -517,6 +522,7 @@ class XMLReader(object):
                 for id_ in task_node.attrib.get("prerequisites", "").split(" ")
                 if id_
             ]
+            self.__parse_categories(task_node, kwargs["id"])
             if self.__tskversion > 20:
                 kwargs["attachments"] = self.__parse_attachments(task_node)
             return self.__save_modification_datetime(
@@ -524,6 +530,14 @@ class XMLReader(object):
             )  # pylint: disable=W0142
         finally:
             self.__current_path.pop()
+
+    def __parse_categories(self, node, item_id):
+        """A task's or note's categories, stored on it since tskversion
+        38; linked once the categories are read."""
+        if self.__tskversion >= 38:
+            self.__categories_of[item_id] = node.attrib.get(
+                "categories", ""
+            ).split()
 
     def __parse_recurrence(self, task_node):
         """Parse the recurrence from the node and return a recurrence
@@ -595,6 +609,7 @@ class XMLReader(object):
                 note_node, self.__parse_note_nodes
             )
             kwargs["id"] = obj_id
+            self.__parse_categories(note_node, obj_id)
             if self.__tskversion > 20:
                 kwargs["attachments"] = self.__parse_attachments(note_node)
             return self.__save_modification_datetime(
