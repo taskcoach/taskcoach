@@ -20,7 +20,7 @@ import os
 import urllib.parse
 from taskcoachlib.domain import base, date
 from taskcoachlib.domain.base.attribute import Attribute
-from taskcoachlib.tools import openfile
+from taskcoachlib.tools import openfile, text
 from taskcoachlib.domain.note.noteowner import NoteOwner
 from functools import total_ordering
 
@@ -86,7 +86,12 @@ class Attachment(base.Object, NoteOwner):
             filename = os.path.basename(location)
             kwargs["subject"] = os.path.splitext(filename)[0] or location
         super().__init__(*args, **kwargs)
-        self.__location = Attribute(location, self, self._on_location_changed)
+        self.__location = Attribute(
+            location,
+            self,
+            self._on_location_changed,
+            normalize=text.single_line,
+        )
         # Note: Effective appearance is computed by the master loop
 
     def set_parent(self, parent):
@@ -233,9 +238,14 @@ class MailAttachment(Attachment):
         **kwargs
     ):
         super().__init__(location, *args, **kwargs)
-        self.__from_name = Attribute(from_name, self, self._on_mail_changed)
+        self.__from_name = Attribute(
+            from_name, self, self._on_mail_changed, normalize=text.single_line
+        )
         self.__from_address = Attribute(
-            from_address, self, self._on_mail_changed
+            from_address,
+            self,
+            self._on_mail_changed,
+            normalize=text.single_line,
         )
         self.__sent_datetime = Attribute(
             date.DateTime() if sent_datetime is None else sent_datetime,

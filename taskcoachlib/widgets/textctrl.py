@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import i18n, operating_system, patterns
 from taskcoachlib.meta.debug import log_step
+from taskcoachlib.tools import text as tools_text
 import functools
 import wx
 import wx.stc as stc
@@ -73,12 +74,6 @@ class SpellCheckMixin:
             return []
 
 
-UNICODE_CONTROL_CHARACTERS_TO_WEED = {}
-for ordinal in range(0x20):
-    if chr(ordinal) not in "\t\r\n":
-        UNICODE_CONTROL_CHARACTERS_TO_WEED[ordinal] = None
-
-
 class BaseTextCtrl(wx.TextCtrl):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, -1, *args, **kwargs)
@@ -91,9 +86,7 @@ class BaseTextCtrl(wx.TextCtrl):
             self.__undone_value = None
 
     def GetValue(self, *args, **kwargs):
-        value = super().GetValue(*args, **kwargs)
-        # Don't allow unicode control characters:
-        return value.translate(UNICODE_CONTROL_CHARACTERS_TO_WEED)
+        return tools_text.multi_line(super().GetValue(*args, **kwargs))
 
     def SetValue(self, *args, **kwargs):
         super().SetValue(*args, **kwargs)
@@ -315,7 +308,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         event.Skip()
 
     def _pasteWithoutNewlines(self):
-        """Paste clipboard text with newlines replaced by spaces."""
+        """Paste clipboard text as one line."""
         if wx.TheClipboard.Open():
             try:
                 if wx.TheClipboard.IsSupported(
@@ -323,15 +316,10 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                 ):
                     data = wx.TextDataObject()
                     wx.TheClipboard.GetData(data)
-                    text = data.GetText()
-                    # Replace newlines with spaces
-                    text = (
-                        text.replace("\r\n", " ")
-                        .replace("\r", " ")
-                        .replace("\n", " ")
-                    )
                     # Insert at current position (replacing selection if any)
-                    self.ReplaceSelection(text)
+                    self.ReplaceSelection(
+                        tools_text.single_line(data.GetText())
+                    )
             finally:
                 wx.TheClipboard.Close()
 
@@ -696,7 +684,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
     # Compatibility methods to match wx.TextCtrl interface
     def GetValue(self):
         """Get the text value (TextCtrl compatibility)."""
-        return self.GetText().translate(UNICODE_CONTROL_CHARACTERS_TO_WEED)
+        return tools_text.multi_line(self.GetText())
 
     def SetValue(self, value):
         """Set the text value (TextCtrl compatibility)."""
@@ -993,8 +981,8 @@ class StaticTextWithToolTip(wx.StaticText):
 
 
 def read_only_text(parent, value="", multiline=False):
-    """A value the user cannot change, drawn as the window's text, not in
-    an input box (docs/DEVELOPMENT.md, Design, "Read-only looks
+    """A value the user cannot change, drawn as the window's text, not
+    in an input box (docs/DEVELOPMENT.md, Design, "Read-only looks
     read-only"). One line is a label, cut at the end when too long, with
     the whole value as its tooltip. Several lines scroll in a read-only
     box with the window's colour."""

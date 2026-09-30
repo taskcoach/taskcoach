@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import patterns
 from taskcoachlib.domain.date import Timestamp
 from taskcoachlib.patterns.snapshot import is_restoring, register_item
+from taskcoachlib.tools import text
 from . import attribute
 from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE, shown
 import functools
@@ -56,10 +57,16 @@ class Object:
             dates=False,
         )
         self.__subject = Attribute(
-            kwargs.pop("subject", ""), self, self.subjectChangedEvent
+            kwargs.pop("subject", ""),
+            self,
+            self.subjectChangedEvent,
+            normalize=text.single_line,
         )
         self.__description = Attribute(
-            kwargs.pop("description", ""), self, self.descriptionChangedEvent
+            kwargs.pop("description", ""),
+            self,
+            self.descriptionChangedEvent,
+            normalize=text.multi_line,
         )
         self.__fgColor = Attribute(
             kwargs.pop("fgColor", None), self, self.appearanceChangedEvent

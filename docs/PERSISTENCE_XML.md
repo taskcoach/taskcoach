@@ -36,7 +36,10 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 The writer serializes domain objects to XML and the reader
 deserializes them back. A field holding its default is not written,
 and a missing attribute is read as the default: both take the
-defaults from one list.
+defaults from one list. A file saved before stored text dropped the
+characters XML forbids may hold them: the reader drops them, raw or
+as references, before parsing
+([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#text)).
 
 ---
 

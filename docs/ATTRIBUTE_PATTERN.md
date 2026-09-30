@@ -12,6 +12,7 @@ The domain model's change-detection and event-notification pattern.
 - [SetAttribute Class API](#setattribute-class-api)
 - [Value Normalization](#value-normalization)
   - [Dates: Not Set Is the Latest Date](#dates-not-set-is-the-latest-date)
+  - [Text](#text)
 - [Setter / Callback Pattern](#setter--callback-pattern)
 - [Event Batching](#event-batching)
 - [Volatile vs Persisted Attributes](#volatile-vs-persisted-attributes)
@@ -131,7 +132,24 @@ check only works reliably when the same logical state always has the same value.
 
 Normalization happens in the **setter**, before calling `.set()`.
 Example: `setPlannedDurationMode()` maps old mode names and rejects
-invalid values to `None` before delegating to the Attribute.
+invalid values to `None` before delegating to the Attribute. A field
+whose every value takes the same normalization gives it to its
+Attribute (`normalize=`), which applies it when created and on every
+set, whatever the path: text does.
+
+### Text
+
+**Ruled by designer 2026-09-30:** multi-line text (a description) keeps
+tab and the line breaks (LF, CR, CR LF) and no other control
+character; single-line text (a subject, a location, a mail's sender)
+keeps none: a tab or line break becomes a space, as a paste into a
+one-line field does. Halves of a character (surrogates) and the
+non-characters U+FFFE and U+FFFF go too: a task file cannot hold them.
+`tools/text.py` (`multi_line()`, `single_line()`) is the one rule; the
+text fields' Attributes, the text controls and the one-line paste use
+it, so pasted, dropped, imported, merged and loaded text all pass
+through it. A file saved before 2026-09-30 may hold such characters;
+the reader drops them ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#overview)).
 
 ### Dates: Not Set Is the Latest Date
 

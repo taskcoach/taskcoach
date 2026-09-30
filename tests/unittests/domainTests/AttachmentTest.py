@@ -115,6 +115,18 @@ class MailAttachmentTest(test.TestCase):
             sent_datetime=date.DateTime(2026, 9, 29, 14, 5, 0),
         )
 
+    def test_its_fields_are_one_line_of_text(self):
+        # docs/ATTRIBUTE_PATTERN.md, Text
+        mail = attachment.MailAttachment(
+            "mid:2@example.com\n",
+            from_name="Bob\x00\tSmith",
+            from_address="bob@example.com\r\n",
+        )
+        self.assertEqual(
+            ("mid:2@example.com ", "Bob Smith", "bob@example.com "),
+            (mail.location(), mail.from_name(), mail.from_address()),
+        )
+
     def fields(self, mail):
         return (
             mail.location(),

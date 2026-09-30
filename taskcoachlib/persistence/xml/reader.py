@@ -37,6 +37,7 @@ import ast
 import io
 import operator
 import os
+import re
 import types
 import wx
 from lxml import etree as ET
@@ -51,6 +52,40 @@ OLD_TEMPLATE_NAMES = dict(
     Date=date.Date,
     TimeDelta=date.TimeDelta,
 )
+
+
+# Characters XML forbids, and references to them: a file saved before
+# stored text dropped them (P34) holds them, and the parser refuses it
+_XML_FORBIDDEN = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\ufffe\uffff]")
+_REFERENCE = re.compile("&#(x[0-9a-fA-F]+|[0-9]+);")
+
+
+def _xml_forbids(code):
+    return (
+        code < 0x20
+        and code not in (0x9, 0xA, 0xD)
+        or 0xD800 <= code <= 0xDFFF
+        or code in (0xFFFE, 0xFFFF)
+        or code > 0x10FFFF
+    )
+
+
+def _without_forbidden_reference(match):
+    number = match.group(1)
+    code = int(number[1:], 16) if number[0] == "x" else int(number)
+    return "" if _xml_forbids(code) else match.group(0)
+
+
+def _without_broken_lines(content):
+    """tskversion 24 may hold newlines in element tags: they go."""
+    if "><spds><sources><TaskCoach-\n" not in content:
+        return content
+    lines = content.splitlines(keepends=True)
+    for index, line in enumerate(lines):
+        if line.endswith(("<TaskCoach-\n", "</TaskCoach-\n")):
+            lines[index] = line[:-1]
+            lines[index + 1] = lines[index + 1][:-1]
+    return "".join(lines)
 
 
 def safe_eval_date_expr(expr, context):
@@ -208,9 +243,12 @@ class XMLReader(object):
     def read(self):
         """Read the task file and return the tasks, categories and
         notes."""
-        if self.__has_broken_lines():
-            self.__fix_broken_lines()
-        root = ET.parse(self.__fd).getroot()  # lxml reads the PIs
+        content = self.__without_characters_xml_forbids(
+            _without_broken_lines(self.__fd.read())
+        )
+        # As bytes: lxml refuses text that declares its encoding. lxml
+        # reads the PIs
+        root = ET.parse(io.BytesIO(content.encode("utf-8"))).getroot()
         versions = [
             pi.attrib.get("tskversion")
             for pi in root.xpath("//processing-instruction()")
@@ -246,26 +284,20 @@ class XMLReader(object):
 
         return tasks, categories, notes
 
-    def __has_broken_lines(self):
-        """tskversion 24 may contain newlines in element tags."""
-        has_broken_lines = "><spds><sources><TaskCoach-\n" in self.__fd.read()
-        self.__fd.seek(0)
-        return has_broken_lines
-
-    def __fix_broken_lines(self):
-        """Remove spurious newlines from element tags."""
-        self.__origFd = self.__fd  # pylint: disable=W0201
-        self.__fd = io.StringIO()
-        self.__fd.name = self.__origFd.name
-        lines = self.__origFd.readlines()
-        for index in range(len(lines)):
-            if lines[index].endswith("<TaskCoach-\n") or lines[index].endswith(
-                "</TaskCoach-\n"
-            ):
-                lines[index] = lines[index][:-1]  # Remove newline
-                lines[index + 1] = lines[index + 1][:-1]  # Remove newline
-        self.__fd.write("".join(lines))
-        self.__fd.seek(0)
+    def __without_characters_xml_forbids(self, content):
+        """Stored text drops them since 2026-09-30
+        (docs/ATTRIBUTE_PATTERN.md, Text); an older file may hold
+        them."""
+        cleaned = _REFERENCE.sub(
+            _without_forbidden_reference, _XML_FORBIDDEN.sub("", content)
+        )
+        if cleaned != content:
+            log_step(
+                "dropped characters XML forbids from",
+                self.__fd.name,
+                prefix="XML",
+            )
+        return cleaned
 
     def __children_to_load(self, node, tag):
         """The child nodes with the tag, except those saved as deleted:

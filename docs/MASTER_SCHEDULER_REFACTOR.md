@@ -350,12 +350,14 @@ In the app:
   never the uri-list object the drop read. Every file drop now takes
   one path, which hands those two programs' mail files to the mail
   drop (`DropTarget.onFileDrop()`).
-- P34. Text holding a character XML forbids (a control character such
-  as a form feed or NUL, pasted from another program, or a stray
-  surrogate) is saved as is, and the file then cannot be opened
-  (`XMLSyntaxError` when read). Found 2026-09-30; the same on master. A
-  dropped mail's raw 8-bit headers were one source, fixed where they
-  are read (`mailer`, [EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#reading-a-mail)).
+- P34. ~~Text holding a character XML forbids (a control character
+  such as a form feed or NUL, pasted from another program, or a stray
+  surrogate) was saved as is, and the file then could not be
+  opened~~: fixed 2026-09-30; the same on master. Stored text keeps no
+  control character but tab and line breaks, one-line text none
+  (ruled by designer 2026-09-30); a file that already holds them opens
+  with them dropped
+  ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#text)).
 - P35. ~~An open editor wrote back what it was shown from elsewhere
   (undo, another window)~~: fixed 2026-09-30; master's editors have
   the same code (not reproduced there). A date field showing minutes wrote a reminder with seconds back

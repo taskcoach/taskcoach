@@ -2288,3 +2288,14 @@ class XMLReaderVersion38Test(XMLReaderTestCase):
             ("", "", date.DateTime()),
             (mail.from_name(), mail.from_address(), mail.sent_datetime()),
         )
+
+    def test_characters_xml_forbids_are_dropped(self):
+        # Saved before stored text dropped them (P34), raw or referenced
+        tasks = self.writeAndReadTasks(
+            '<tasks><task subject="a&#12;b">'
+            "<description>c\x00d&#x1f;e\tf</description>"
+            "</task></tasks>"
+        )
+        self.assertEqual(
+            ("ab", "cde\tf"), (tasks[0].subject(), tasks[0].description())
+        )

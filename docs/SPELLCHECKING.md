@@ -94,7 +94,7 @@ Using `StyledTextCtrl` means Scintilla captures Tab and Enter by default. Task C
 | Shift+Tab        | Navigate to prev control  | Navigate to prev control   |
 | Ctrl+Tab         | Switch notebook tab (OS)  | Switch notebook tab (OS)   |
 | Enter            | Navigate to next control  | Insert newline (normal)    |
-| Ctrl+V           | Paste (newlines stripped) | Paste (normal)             |
+| Ctrl+V           | Paste as one line         | Paste (normal)             |
 
 **Implementation:** `CmdKeyClear` removes Scintilla's default Tab binding in all modes, and Enter binding in single-line mode. `EVT_KEY_DOWN` in `_onKeyDown` handles Tab navigation and single-line Enter navigation. Tab always navigates — no literal tab insertion (Ctrl+Tab is reserved for notebook tab switching). In multiline mode, Enter inserts newlines normally (Scintilla default). Tab navigation uses `Navigate()` which preserves forward/backward direction.
 
@@ -107,7 +107,7 @@ Using `StyledTextCtrl` for a single-line field (like Subject) requires several p
 | 1  | Enter key creates newlines   | `CmdKeyClear(STC_KEY_RETURN, 0)` + navigate focus| Done       |
 | 2  | Tab key inserts tab char     | `CmdKeyClear(STC_KEY_TAB, 0)` + navigate focus   | Done (all modes) |
 | 3  | Height too small for scrollbar| 50% extra height: `int(baseHeight * 1.5)`       | Done       |
-| 4  | Paste can include newlines   | `EVT_KEY_DOWN` intercepts Ctrl+V, strips newlines| Done       |
+| 4  | Paste can include newlines   | `EVT_KEY_DOWN` intercepts Ctrl+V, pastes one line ([Text](ATTRIBUTE_PATTERN.md#text))| Done       |
 | 5  | Word wrap enabled            | `SetWrapMode(STC_WRAP_NONE)`                     | Done       |
 | 6  | Scrollbars visible           | `SetUseVerticalScrollBar(False)` + `SetUseHorizontalScrollBar(False)` | Done |
 | 7  | Rich text paste (fonts)      | STC is plain text by default                     | N/A        |

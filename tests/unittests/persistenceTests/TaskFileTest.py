@@ -913,6 +913,30 @@ class TaskFileSaveAndLoadTest(TaskFileTestCase):
         self.taskFile.close()
         self.remove("new.tsk")
 
+    def test_a_file_holding_characters_xml_forbids_opens(self):
+        # Saved before stored text dropped them (P34)
+        with open(self.filename, "w", encoding="utf-8") as file:
+            file.write(
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<?taskcoach release="2.0.2" tskversion="37"?>\n'
+                '<tasks><task id="1" subject="T">'
+                "<description>\na\x00b\n</description></task></tasks>\n"
+            )
+        self.emptyTaskFile.load()
+        self.assertEqual(
+            "ab", list(self.emptyTaskFile.tasks())[0].description()
+        )
+
+    def test_text_saves_and_loads_whatever_was_pasted(self):
+        # docs/ATTRIBUTE_PATTERN.md, Text
+        self.saveAndLoad(
+            [task.Task(subject="a\x0cb", description="c\x00d\ud800\ne")]
+        )
+        loaded = list(self.emptyTaskFile.tasks())[0]
+        self.assertEqual(
+            ("ab", "cd\ne"), (loaded.subject(), loaded.description())
+        )
+
 
 class TaskFileMergeTest(TaskFileTestCase):
     def setUp(self):

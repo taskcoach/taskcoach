@@ -91,6 +91,20 @@ class ObjectSubclass(base.Object):
 
 
 class ObjectTest(test.TestCase):
+
+    def test_a_subject_is_one_line_of_text(self):
+        # docs/ATTRIBUTE_PATTERN.md, Text
+        item = base.Object(subject="a\tb\r\nc\x00d")
+        self.assertEqual("a b cd", item.subject())
+        item.setSubject("e\nf\x0c")
+        self.assertEqual("e f", item.subject())
+
+    def test_a_description_keeps_tabs_and_line_breaks(self):
+        item = base.Object(description="a\tb\r\nc\x00d\x85\ud800")
+        self.assertEqual("a\tb\r\ncd", item.description())
+        item.setDescription("e\x0cf\ufffe")
+        self.assertEqual("ef", item.description())
+
     def setUp(self):
         self.object = base.Object()
         self.subclassObject = ObjectSubclass()

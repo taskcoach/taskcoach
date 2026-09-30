@@ -27,13 +27,31 @@ class Attribute(Field):
     is set. A stored field's change sets its owner's modification date;
     a volatile one, a computed value, does not, nor does the date
     itself (dates=False) (docs/ATTRIBUTE_PATTERN.md, Modification
-    Date)."""
+    Date). A field whose every value takes the same normalization
+    applies it when created and when set (normalize), as text does
+    (docs/ATTRIBUTE_PATTERN.md, Value Normalization)."""
 
-    __slots__ = ("__value", "__owner", "__set_event", "__volatile", "__dates")
+    __slots__ = (
+        "__value",
+        "__owner",
+        "__set_event",
+        "__volatile",
+        "__dates",
+        "__normalize",
+    )
 
-    def __init__(self, value, owner, set_event, volatile=False, dates=True):
+    def __init__(
+        self,
+        value,
+        owner,
+        set_event,
+        volatile=False,
+        dates=True,
+        normalize=None,
+    ):
         super().__init__()
-        self.__value = value
+        self.__normalize = normalize
+        self.__value = normalize(value) if normalize else value
         self.__owner = weakref.ref(owner)
         self.__set_event = set_event.__func__
         self.__volatile = volatile
@@ -55,6 +73,8 @@ class Attribute(Field):
             self.__change(owner, value, dates=False, event=event)
 
     def set(self, value, event=None):
+        if self.__normalize:
+            value = self.__normalize(value)
         owner = self.__owner()
         # Checked before an event is created: the master loop sets
         # thousands of unchanged values
