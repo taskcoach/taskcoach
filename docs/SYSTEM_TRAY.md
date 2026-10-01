@@ -58,7 +58,7 @@ old settings files lose them on load.
 | Windows, X11 (any desktop) | Minimizes (`Iconize()`) | Kept | Yes |
 | macOS | Menu: minimizes to the Dock; double click: raises only | Kept | Yes |
 | KDE Plasma, Wayland | Minimizes through `org_kde_plasma_window_management` if KWin offers it to Task Coach, else hides; untested (D5) | Kept, or lost when hidden | Yes |
-| Other Wayland (GNOME, wlroots, COSMIC) | **Hides** (`Hide()`); minimizing is deferred (D8) | **Lost** until restored | Yes, the only way back |
+| Other Wayland (GNOME, wlroots, COSMIC) | **Hides** (`Hide()`) | **Lost** until restored | Yes, the only way back |
 
 Wayland is the one exception: it gives an app no minimize it can undo
 ([Window Show/Hide on Wayland](#window-showhide-on-wayland)), so
@@ -436,9 +436,8 @@ that an external app cannot reach. GTK3 `Iconize()` does ask for the
 minimize (`xdg_toplevel_set_minimized`, `gdk_wayland_window_iconify()`
 in GTK 3.24.38), but nothing lets the app undo it or learn that the
 user did; only unmapping and remapping the window (`Hide()`, `Show()`)
-brings it back. Until that is tried (D8 in
-[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-or-will-not-do)),
-the tray "Hide" is tray-only on that configuration.
+brings it back. So the tray "Hide" is tray-only there, by Mutter's
+design.
 
 Consequence for implementation: a single "out-of-band toplevel
 manager" abstraction with two protocol backends
