@@ -385,10 +385,15 @@ def run_catalog(options, test_files):
     options_given = [arg for arg in sys.argv[1:] if arg not in test_files]
     failed, tests_run = [], 0
     for filename in files:
+        # A crash leaves a traceback, and the output before it
+        environment = dict(
+            os.environ, PYTHONFAULTHANDLER="1", PYTHONUNBUFFERED="1"
+        )
         result = subprocess.run(
             [sys.executable, sys.argv[0], *options_given, filename],
             capture_output=True,
             text=True,
+            env=environment,
         )
         output = result.stdout + result.stderr
         ran = re.search(r"^Ran (\d+) tests?", output, re.MULTILINE)
@@ -401,6 +406,7 @@ def run_catalog(options, test_files):
         )
         if result.returncode:
             failed.append(filename)
+            print("exit status %d" % result.returncode)
             report = output.find("=" * 70)
             lines = output[report:] if report >= 0 else output
             print("\n".join(lines.splitlines()[-60:]) + "\n", flush=True)

@@ -718,7 +718,10 @@ each with the recommended action, none ruled yet:
   (2026-09-30, one catalog run of five; three reruns pass): the
   editor's OK button was not found in its button sizer
   (`wxhelper.getButtonFromStdDialogButtonSizer()` returned None, so
-  `createButtons()` raised). Cause not known yet.
+  `createButtons()` raised). Cause not known yet. Again 2026-10-01:
+  the file ended without output (three reruns pass); the catalog now
+  gives each file Python's crash report and unbuffered output, and
+  shows a failed file's exit status.
 - P114. ~~The task list's Budget cell ignored typing ("2:30" left it at
   0:00:00; Enter saved nothing)~~: fixed 2026-09-30, **asked by
   designer**; the same on master. The cell is the task editor's
