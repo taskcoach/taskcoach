@@ -137,8 +137,6 @@ class WindowGeometryTracker:
         self._slowest_answer = 0.0  # Seconds from a request to a change
         self._requested_size = None  # Last size given to SetSize()
         self._seen = None  # Geometry at the last event
-        # Placed at once but started minimized: maximize when restored
-        self._maximize_on_restore = False
 
         # Tracing
         self._started = time.perf_counter()
@@ -617,11 +615,6 @@ class WindowGeometryTracker:
     def _on_iconize(self, event):
         if self._tracing:
             self._trace("EVT_ICONIZE iconized=%s" % event.IsIconized())
-        if self._maximize_on_restore and not event.IsIconized():
-            self._maximize_on_restore = False
-            if not self._window.IsMaximized():
-                self._trace("restored: Maximize()", always=True)
-                self._request(self._window.Maximize)
         if not self.ready and not event.IsIconized():
             if self._step_started is not None:
                 self._step_started = time.perf_counter()
@@ -662,25 +655,6 @@ class WindowDimensionsTracker(WindowGeometryTracker):
 
     def __init__(self, window, settings):
         super().__init__(window, settings, "window")
-
-        # Handle start iconized setting (Task Coach specific)
-        if self._should_start_iconized():
-            self._trace("start iconized: Show() then Iconize(True)")
-            if operating_system.isMac() or operating_system.isGTK():
-                self._window.Show()
-            self._window.Iconize(True)
-            # Minimizing a window not shown yet drops the Maximize()
-            # asked before the show (wxMSW)
-            self._maximize_on_restore = self._direct and self.maximized
-            if not operating_system.isMac() and self._get_setting(
-                "hidewheniconized"
-            ):
-                patterns.later.soon(self._window, self._window.Hide)
-
-    def _should_start_iconized(self):
-        """Return whether the window should be opened iconized."""
-        start_iconized = self._settings.get("window", "starticonized")
-        return start_iconized == "Always"
 
     def save_position(self):
         """Save the position of the window in the settings."""

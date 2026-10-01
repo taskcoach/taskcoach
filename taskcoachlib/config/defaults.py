@@ -507,12 +507,7 @@ defaults = {
     "window": {
         "size": "(900, 500)",  # Default size of the main window
         "position": "(-1, -1)",  # Position of the main window, undefined by default
-        "iconized": "False",  # Don't start up iconized by default
         "maximized": "False",  # Don't start up maximized by default
-        # Possible strticonized values: 'Never', 'Always', 'WhenClosedIconized'
-        "starticonized": "WhenClosedIconized",
-        "hidewheniconized": "False",  # Don't hide the window from the task bar
-        "hidewhenclosed": "False",  # Close window quits the application
         "tips": "True",  # Show tips after starting up
         "tipsindex": "0",  # Start at the first tip
         "blinktaskbariconwhentrackingeffort": "True",

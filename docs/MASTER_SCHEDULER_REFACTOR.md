@@ -171,7 +171,14 @@ go at the end. Details live in the sections and documents linked.
     (dropped from old INI files on load); the stale tests rewritten or,
     for removed features, deleted; the docs brought up to date.
     Decisions made 2026-09-30: P45, P46, P48, P49 done; P47, P50, P51
-    deferred (D5 to D7). Left: P43.
+    deferred (D5 to D7); P43 done with 64.
+64. ~~Window options "Start with the main window iconized", "Hide main
+    window when iconized" and "Minimize main window when closed"~~:
+    removed 2026-09-30, **ruled by designer**: Task Coach is worked in
+    on screen, start iconized had not worked since December 2025
+    without a complaint, and the window's Close quits, Minimize
+    minimizes ([SYSTEM_TRAY.md](SYSTEM_TRAY.md#minimize-and-hide)).
+    The keys are dropped from old INI files on load.
 
 ## Deferred or Will Not Do
 
@@ -261,8 +268,8 @@ refactor; unchanged by its steps, crossed out when fixed):
   merged 2026-09-29.
 - P11. ~~`unittests/guiTests/MainWindowTest.py`: 1 failure~~: fixed
   2026-09-29 with the merge, the test only: the maximize comes once
-  the placement is quiet, and unloaded settings start minimized; it
-  is skipped without a window manager to grant the maximize.
+  the placement is quiet; it is skipped without a window manager to
+  grant the maximize.
   ~~`thirdPartySoftwareTests/wxPythonTest.py`~~: fixed 2026-09-29,
   the test only: since wxWidgets 3.2, GTK also sends no text event
   when an empty text control is cleared.
@@ -430,17 +437,12 @@ In the app:
   before `LC_ALL`, and the spell check the deprecated
   `getdefaultlocale()`~~: fixed 2026-09-30, one function,
   `i18n.system_language()` ([LOCALE.md](LOCALE.md)).
-- P43. Preferences > Windows > "Start with the main window
-  iconized: If it was iconized last session", the default, behaves as
-  Never: nothing writes or reads `window/iconized`. It worked from 2007
-  (0a18a95db) to release 1.4.6 (2019) and upstream's Python 3 port
-  (v1.5.0-starofrainnight): the window state was saved at quit and read
-  at start. The fork's merge (def3832cf, December 2025) replaced the
-  window tracker, so every 2.0.x release behaves as Never. **Ruled by
-  designer 2026-09-30:** the option stays. Analysis and proposal
-  against the window geometry rules:
-  [WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#start-minimized).
-  **Question:** restore it as proposed?
+- P43. ~~"Start with the main window iconized: If it was iconized last
+  session", the default, behaved as Never~~: nothing wrote or read
+  `window/iconized` since the fork's merge (def3832cf, December 2025);
+  it had worked from 2007 (0a18a95db) to release 1.4.6 and upstream's
+  Python 3 port. The option was removed 2026-09-30, **ruled by
+  designer**, with the hide options (To Do 64).
 - P44. ~~The reminder window's tests were skipped on Linux (a crash)
   and the leak test was a docstring~~: fixed 2026-09-30, the tests
   only: asking for attention without a window manager crashes GTK

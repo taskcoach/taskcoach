@@ -791,32 +791,11 @@ class WindowBehaviorPage(SettingsPage):
             "tips",
             _("Show tips window on startup"),
         )
-        self.addChoiceSetting(
-            "window",
-            "starticonized",
-            _("Start with the main window iconized"),
-            "",
-            [
-                ("Never", _("Never")),
-                ("Always", _("Always")),
-                ("WhenClosedIconized", _("If it was iconized last session")),
-            ],
-        )
         self.addBooleanSetting(
             "version",
             "notify",
             _("Check for new version of %(name)s on startup")
             % meta.data.metaDict,
-        )
-        self.addBooleanSetting(
-            "window",
-            "hidewheniconized",
-            _("Hide main window when iconized"),
-        )
-        self.addBooleanSetting(
-            "window",
-            "hidewhenclosed",
-            _("Minimize main window when closed"),
         )
         self.addBooleanSetting(
             "window",

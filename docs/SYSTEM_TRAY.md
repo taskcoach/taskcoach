@@ -6,6 +6,7 @@ This document describes the system tray (notification area) icon implementation 
 
 - [TODO](#todo)
 - [Overview](#overview)
+- [Minimize and Hide](#minimize-and-hide)
 - [Implementation Architecture](#implementation-architecture)
 - [Platform Behavior Matrix](#platform-behavior-matrix)
 - [Windows Quit-from-Tray Safety](#windows-quit-from-tray-safety)
@@ -36,10 +37,34 @@ This document describes the system tray (notification area) icon implementation 
 ## Overview
 
 Task Coach displays a system tray icon that allows users to:
-- Show/hide the main window
+- Minimize and restore the main window
 - Access common actions (new task, new effort, etc.)
 - Start/stop effort tracking
 - See tracking status via icon animation
+
+## Minimize and Hide
+
+Task Coach does not tell iconized, minimized and hidden apart: the
+tray's Hide minimizes, and the window keeps its taskbar or dock entry,
+wherever the platform lets an app minimize itself. The window's own
+buttons keep their meaning: Close quits (asking to save any changes),
+Minimize minimizes. The options to start minimized, to hide the window
+when minimized and to minimize it when closed were removed 2026-09-30,
+**ruled by designer** (why: [Modern best practice](#modern-best-practice-2025-2026));
+old settings files lose them on load.
+
+| Session | Tray Hide | Taskbar entry | Tray restore |
+|---------|-----------|---------------|--------------|
+| Windows, X11 (any desktop) | Minimizes (`Iconize()`) | Kept | Yes |
+| macOS | Menu: minimizes to the Dock; double click: raises only | Kept | Yes |
+| KDE Plasma, Wayland | Minimizes through `org_kde_plasma_window_management` if KWin offers it to Task Coach, else hides; untested (D5) | Kept, or lost when hidden | Yes |
+| Other Wayland (GNOME; wlroots and COSMIC until their backend exists) | **Hides** (`Hide()`) | **Lost** until restored | Yes, the only way back |
+
+Wayland is the one exception: it gives an app no minimize it can undo
+([Window Show/Hide on Wayland](#window-showhide-on-wayland)), so
+without a desktop protocol the tray hides the window instead. The
+window's own Minimize button is the compositor's and minimizes as
+usual there.
 
 ## Implementation Architecture
 
@@ -85,20 +110,20 @@ Size constants: `TRAY_ICON_SIZE_MACOS` (128) and `LIST_ICON_SIZE` (16) in
 
 | OS | Distro | Desktop | Session | Implementation | Left-Click | Right-Click | Notes |
 |----|--------|---------|---------|----------------|------------|-------------|-------|
-| Windows | — | — | — | wx.adv.TaskBarIcon | Show/hide | Popup menu | Full support |
-| macOS | — | — | — | wx.adv.TaskBarIcon | Show/hide | Popup menu | Full support |
-| Linux | — | GNOME | X11 | AppIndicator | Menu | Menu | Requires extension [1] |
-| Linux | — | GNOME | Wayland | AppIndicator | Menu | Menu | Requires extension [1] |
+| Windows | - | - | - | wx.adv.TaskBarIcon | Minimize/restore | Popup menu | Full support |
+| macOS | - | - | - | wx.adv.TaskBarIcon | Double click: raise/restore | Popup menu | Full support |
+| Linux | - | GNOME | X11 | AppIndicator | Menu | Menu | Requires extension [1] |
+| Linux | - | GNOME | Wayland | AppIndicator | Menu | Menu | Requires extension [1] |
 | Linux | Ubuntu | GNOME | X11 | AppIndicator | Menu | Menu | Extension pre-installed |
 | Linux | Ubuntu | GNOME | Wayland | AppIndicator | Menu | Menu | Extension pre-installed |
-| Linux | — | KDE Plasma | X11 | AppIndicator | Menu | Conflict [2] | Use left-click |
-| Linux | — | KDE Plasma | Wayland | AppIndicator | Menu | Menu | |
-| Linux | — | XFCE | X11 | AppIndicator | Menu | Menu | wx may work [3] |
-| Linux | — | LXDE | X11 | AppIndicator | Menu | Menu | wx right-click broken [4] |
-| Linux | — | LXQt | X11 | AppIndicator | Menu | Menu | |
-| Linux | — | LXQt | Wayland | AppIndicator | Menu | Menu | |
-| Linux | — | MATE | X11 | AppIndicator | Menu | Menu | |
-| Linux | — | Cinnamon | X11 | AppIndicator | Menu | Menu | wx may work [3] |
+| Linux | - | KDE Plasma | X11 | AppIndicator | Menu | Conflict [2] | Use left-click |
+| Linux | - | KDE Plasma | Wayland | AppIndicator | Menu | Menu | |
+| Linux | - | XFCE | X11 | AppIndicator | Menu | Menu | wx may work [3] |
+| Linux | - | LXDE | X11 | AppIndicator | Menu | Menu | wx right-click broken [4] |
+| Linux | - | LXQt | X11 | AppIndicator | Menu | Menu | |
+| Linux | - | LXQt | Wayland | AppIndicator | Menu | Menu | |
+| Linux | - | MATE | X11 | AppIndicator | Menu | Menu | |
+| Linux | - | Cinnamon | X11 | AppIndicator | Menu | Menu | wx may work [3] |
 
 **Notes:**
 
@@ -160,8 +185,8 @@ system.
 
 | OS | Distro | Desktop | Session | wx.adv.TaskBarIcon | AppIndicator |
 |----|--------|---------|---------|-------------------|--------------|
-| Windows | — | — | — | Full support | N/A |
-| macOS | — | — | — | Full support | N/A |
+| Windows | - | - | - | Full support | N/A |
+| macOS | - | - | - | Full support | N/A |
 | Linux | Debian | LXDE | X11 | Left-click only | Full support |
 | Linux | Kubuntu | KDE Plasma | X11 | Left-click only | Left-click only (right conflict) |
 | Linux | Kubuntu | KDE Plasma | Wayland | N/A (no XEmbed) | Full support |
@@ -480,9 +505,15 @@ in `popup_taskbar_menu()` each time the menu is shown.
 
 ### Hide / Restore Toggle
 
-`MainWindowRestore` (in `uicommand.py`) is a state-aware UICommand:
-- When the window is visible: label is **"Hide"**, action calls `Iconize()`
-- When the window is hidden/iconized: label is **"Restore"**, action calls `restore()`
+`MainWindowRestore` (in `uicommand.py`, the wx menu on Windows, macOS
+and X11 desktops with a working wx tray) is a state-aware UICommand:
+- When the window is shown: label is **"Hide"**, action calls
+  `Iconize()`, which minimizes ([Minimize and Hide](#minimize-and-hide))
+- When the window is minimized: label is **"Restore"**, action calls
+  `restore()`
+
+The AppIndicator item calls `on_taskbar_click`, the controller's
+minimize or restore.
 
 The label is updated dynamically via `get_menu_text()`: `popup_taskbar_menu()`
 calls `item._command.get_menu_text()` and applies `SetItemLabel()` before

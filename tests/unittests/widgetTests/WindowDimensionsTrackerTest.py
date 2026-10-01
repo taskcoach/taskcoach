@@ -30,7 +30,6 @@ class WindowDimensionsTrackerTest(test.wxTestCase):
         self.settings = config.Settings(load=False)
         self.section = "window"
         self.settings.setvalue(self.section, "position", (50, 50))
-        self.settings.setvalue(self.section, "starticonized", "Never")
         # A frame per test: the shared one keeps earlier trackers bound
         self.window = wx.Frame(self.frame)
         if operating_system.isWindows():
@@ -420,33 +419,6 @@ class DirectPlacementTest(test.wxTestCase):
         self.assertEqual(
             [("size", (1000, 700)), ("maximize", None)], window.requests
         )
-
-    def test_started_minimized_is_maximized_when_restored(self):
-        self.settings.setvalue("window", "maximized", True)
-        self.settings.set("window", "starticonized", "Always")
-        window = FakeWindow()
-        tracker = gui.windowdimensionstracker.WindowDimensionsTracker(
-            window, self.settings
-        )
-        # wxMSW: minimizing a window not shown yet drops the maximize
-        window.maximized = False
-        tracker.cache_from_window()  # A resize while minimized
-        self.assertTrue(tracker.maximized)
-        window.requests = []
-        window.iconized = False
-        tracker._on_iconize(FakeIconizeEvent(iconized=False))
-        self.assertEqual([("maximize", None)], window.requests)
-
-
-class FakeIconizeEvent:
-    def __init__(self, iconized):
-        self.iconized = iconized
-
-    def IsIconized(self):
-        return self.iconized
-
-    def Skip(self):
-        pass
 
 
 class WaylandTest(test.wxTestCase):

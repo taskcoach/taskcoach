@@ -390,21 +390,16 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             self.manager.UnInit()
             event.Skip()
             return
-        if event.CanVeto() and self.settings.getboolean(
-            "window", "hidewhenclosed"
-        ):
-            event.Veto()
-            self.Iconize()
-        else:
-            if application.Application().quit_application():
-                # UnInit AUI manager before window destruction to avoid
-                # wxAssertionError about pushed event handlers
-                self.manager.UnInit()
-                event.Skip()
-                self.taskFile.stop()
-                self._idleController.stop()
-                if hasattr(self, "_masterScheduler"):
-                    self._masterScheduler.shutdown()
+        # Close quits (docs/SYSTEM_TRAY.md, Minimize and Hide)
+        if application.Application().quit_application():
+            # UnInit AUI manager before window destruction to avoid
+            # wxAssertionError about pushed event handlers
+            self.manager.UnInit()
+            event.Skip()
+            self.taskFile.stop()
+            self._idleController.stop()
+            if hasattr(self, "_masterScheduler"):
+                self._masterScheduler.shutdown()
 
     def restore(self, event):  # pylint: disable=W0613
         if self.settings.getboolean("window", "maximized"):
@@ -479,14 +474,9 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.manager.Update()
 
     def onIconify(self, event):
-        if event.IsIconized() and self.settings.getboolean(
-            "window", "hidewheniconized"
-        ):
-            self.Hide()
-        else:
-            if not event.IsIconized():
-                patterns.later.soon(self, self.viewer.focus_skipped_viewer)
-            event.Skip()
+        if not event.IsIconized():
+            patterns.later.soon(self, self.viewer.focus_skipped_viewer)
+        event.Skip()
 
     def onResize(self, event):
         current_toolbar = self.manager.GetPane("toolbar")

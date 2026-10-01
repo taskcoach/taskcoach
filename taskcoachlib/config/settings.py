@@ -187,7 +187,6 @@ class Settings(CachingConfigParser):
     def __beQuiet(self):
         noisySettings = [
             ("window", "tips", "False"),
-            ("window", "starticonized", "Always"),
         ]
         for section, setting, value in noisySettings:
             self.set(section, setting, value)
@@ -253,6 +252,10 @@ class Settings(CachingConfigParser):
         ("balloontips", "autosavehint"),
         ("view", "effortviewerintaskeditor"),
         ("window", "monitor_index"),
+        ("window", "iconized"),
+        ("window", "starticonized"),
+        ("window", "hidewheniconized"),
+        ("window", "hidewhenclosed"),
         ("export", "html_selectiononly"),
         ("export", "csv_selectiononly"),
         ("export", "ical_selectiononly"),

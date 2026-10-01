@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import ast
 import os
 import shutil
 import tempfile
@@ -142,9 +141,6 @@ class MainWindowMaximizeTestCase(MainWindowTestCase):
 
     def setSettings(self):
         self.settings.setboolean("window", "maximized", self.maximized)
-        # Not minimized, as tests start: a minimized window is
-        # maximized only once restored
-        self.settings.set("window", "starticonized", "Never")
 
 
 class MainWindowNotMaximizedTest(MainWindowMaximizeTestCase):
@@ -184,41 +180,4 @@ class MainWindowMaximizedTest(MainWindowMaximizeTestCase):
             self.mainwindow.IsMaximized(),
             "ready %s, phase %s, %s attempts"
             % (tracker.ready, tracker._phase, tracker._attempts),
-        )
-
-
-class MainWindowIconizedTest(MainWindowTestCase):
-    def setUp(self):
-        super().setUp()
-        if operating_system.isGTK():
-            wx.SafeYield()  # pragma: no cover
-
-    def setSettings(self):
-        self.settings.set("window", "starticonized", "Always")
-
-    def expectedHeight(self):
-        return 500
-
-    @test.skipOnPlatform(
-        "__WXGTK__"
-    )  # Test fails on Fedora, don't know why nor how to fix it
-    def testIsIconized(self):
-        self.assertTrue(self.mainwindow.IsIconized())  # pragma: no cover
-
-    def testWindowSize(self):
-        self.assertEqual(
-            (900, self.expectedHeight()),
-            ast.literal_eval(self.settings.get("window", "size")),
-        )
-
-    def testWindowSizeShouldnotChangeWhenReceivingChangeSizeEvent(self):
-        event = wx.SizeEvent((100, 20))
-        process = self.mainwindow.ProcessEvent
-        if operating_system.isWindows():
-            process(event)  # pragma: no cover
-        else:
-            wx.CallAfter(process, event)  # pragma: no cover
-        self.assertEqual(
-            (900, self.expectedHeight()),
-            ast.literal_eval(self.settings.get("window", "size")),
         )
