@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from xml.etree import ElementTree as ET
+from lxml import etree as ET
 import os
 
 
@@ -63,5 +63,5 @@ def anonymize(filename):
     anonymize_node(tree.getroot())
     name, ext = os.path.splitext(filename)
     anonymized_filename = name + ".anonymized" + ext
-    tree.write(anonymized_filename)
+    tree.write(anonymized_filename, xml_declaration=True, encoding="utf-8")
     return anonymized_filename

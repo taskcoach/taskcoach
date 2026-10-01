@@ -870,6 +870,10 @@ each with the recommended action, none ruled yet:
   the status bar keeps the old count ("1 selected") until the next
   selection change. The same on wxPython 4.2.3 and 4.2.5 (checked in
   the app 2026-10-01); once it showed 0.
+- P128. ~~Help > Anonymize wrote a file Task Coach cannot open~~:
+  fixed 2026-10-01, the same on master (an error there, a clear
+  refusal here): the standard library's ElementTree dropped the
+  `<?taskcoach?>` version line; lxml keeps it.
 
 ## Views on the Effective Styles
 
