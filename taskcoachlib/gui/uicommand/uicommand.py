@@ -58,6 +58,11 @@ from . import mixin_uicommand
 from . import settings_uicommand
 from functools import reduce
 
+# Text fields: the Edit commands act on their text instead of the
+# items, so the search box keeps its keys (docs/MENUS.md, Keyboard
+# Shortcuts)
+_TEXT_FIELDS = (wx.TextCtrl, wx.SearchCtrl)
+
 
 class Separator(base_uicommand.UICommand):
     """Toolbar/menu separator — renders as a visual divider."""
@@ -811,7 +816,7 @@ class EditUndo(base_uicommand.UICommand):
 
     def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
-        if isinstance(window_with_focus, wx.TextCtrl):
+        if isinstance(window_with_focus, _TEXT_FIELDS):
             window_with_focus.Undo()
         else:
             patterns.CommandHistory().undo()
@@ -820,9 +825,9 @@ class EditUndo(base_uicommand.UICommand):
         return self._undo_menu_text()
 
     def enabled(self, event):
-        window_with_focus = wx.Window.FindFocus()
-        if isinstance(window_with_focus, wx.TextCtrl):
-            return window_with_focus.CanUndo()
+        # From the history alone: a menu item disabled while a text
+        # field had focus would block its shortcut until the menu
+        # opens again (docs/MENUS.md, Keyboard Shortcuts)
         return bool(patterns.CommandHistory().has_history())
 
 
@@ -856,7 +861,7 @@ class EditRedo(base_uicommand.UICommand):
 
     def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
-        if isinstance(window_with_focus, wx.TextCtrl):
+        if isinstance(window_with_focus, _TEXT_FIELDS):
             window_with_focus.Redo()
         else:
             patterns.CommandHistory().redo()
@@ -865,9 +870,9 @@ class EditRedo(base_uicommand.UICommand):
         return self._redo_menu_text()
 
     def enabled(self, event):
-        window_with_focus = wx.Window.FindFocus()
-        if isinstance(window_with_focus, wx.TextCtrl):
-            return window_with_focus.CanRedo()
+        # From the history alone: a menu item disabled while a text
+        # field had focus would block its shortcut until the menu
+        # opens again (docs/MENUS.md, Keyboard Shortcuts)
         return bool(patterns.CommandHistory().has_future())
 
 
@@ -890,7 +895,7 @@ class EditCut(ViewerCommand):
 
     def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
-        if isinstance(window_with_focus, wx.TextCtrl):
+        if isinstance(window_with_focus, _TEXT_FIELDS):
             window_with_focus.Cut()
         else:
             cut_command = self.viewer.cutItemCommand()
@@ -919,7 +924,7 @@ class EditCopy(ViewerCommand):
 
     def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
-        if isinstance(window_with_focus, wx.TextCtrl):
+        if isinstance(window_with_focus, _TEXT_FIELDS):
             window_with_focus.Copy()
         else:
             copy_command = command.CopyCommand(
@@ -946,15 +951,15 @@ class EditPaste(ViewerCommand):
         )
 
     def do_command(self, event):
-        windowWithFocus = wx.Window.FindFocus()
-        if isinstance(windowWithFocus, wx.TextCtrl):
-            windowWithFocus.Paste()
+        window_with_focus = wx.Window.FindFocus()
+        if isinstance(window_with_focus, _TEXT_FIELDS):
+            window_with_focus.Paste()
         else:
             # Use viewer's pasteItemCommand if available
             viewer = self.viewer
             # If no viewer set, try to find one from the focused window hierarchy
             if viewer is None:
-                viewer = self._findViewerFromFocus(windowWithFocus)
+                viewer = self._findViewerFromFocus(window_with_focus)
             if viewer is not None:
                 pasteCommand = viewer.pasteItemCommand()
             else:
@@ -975,9 +980,9 @@ class EditPaste(ViewerCommand):
         return None
 
     def enabled(self, event):
-        windowWithFocus = wx.Window.FindFocus()
-        if isinstance(windowWithFocus, wx.TextCtrl):
-            return windowWithFocus.CanPaste()
+        window_with_focus = wx.Window.FindFocus()
+        if isinstance(window_with_focus, _TEXT_FIELDS):
+            return window_with_focus.CanPaste()
         else:
             clipboard = command.Clipboard()
             if not clipboard:
@@ -1152,7 +1157,7 @@ class SelectAll(ViewerCommand):
     @staticmethod
     def _is_text_ctrl(window):
         """Return whether the window is a text control."""
-        return isinstance(window, wx.TextCtrl) or isinstance(
+        return isinstance(window, _TEXT_FIELDS) or isinstance(
             window, hypertreelist.EditCtrl
         )
 
@@ -1834,7 +1839,7 @@ class Delete(ViewerCommand):
 
     @staticmethod
     def _window_is_text_ctrl(window):
-        return isinstance(window, wx.TextCtrl) or isinstance(
+        return isinstance(window, _TEXT_FIELDS) or isinstance(
             window, hypertreelist.EditCtrl
         )
 

@@ -880,12 +880,13 @@ each with the recommended action, none ruled yet:
   fixed 2026-10-01, the same on master (an error there, a clear
   refusal here): the standard library's ElementTree dropped the
   `<?taskcoach?>` version line; lxml keeps it.
-- P129. Ctrl+Z and Ctrl+Y in the search box undo and redo the last
-  task change: GTK's search field has no undo, so the menu shortcut
-  gets the key, and the Undo and Redo commands (like Cut, Copy, Paste
-  and Delete from the menu) treat only `wx.TextCtrl` as a text field.
-  The code is the same on master. Count the search box as a text
-  field (the keys then do nothing there), or leave?
+- P129. ~~Ctrl+Z and Ctrl+Y in the search box undid and redid the
+  last task change~~: fixed 2026-10-01, **ruled by designer** ("It's
+  a text box. Ignore all of these shortcuts and keys"): the Edit
+  commands count the search box as a text field, so Undo and Redo do
+  nothing there, from the keys or the menu, and Cut, Copy, Paste,
+  Delete and Select All act on its text
+  ([MENUS.md](MENUS.md#keyboard-shortcuts)).
 
 ## Views on the Effective Styles
 

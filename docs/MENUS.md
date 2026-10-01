@@ -218,7 +218,7 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 ### EditUndo / EditRedo
 
 - No `EVT_UPDATE_UI` polling
-- `enabled()`: command determines its own state (CommandHistory or focused TextCtrl)
+- `enabled()`: the CommandHistory alone, whatever has focus
 - `current_menu_text()`: dynamic text ("Undo *add task*", "Redo *delete*")
 - Toolbar: signal-driven via the `commandhistory.changed` Publisher event
 - Menu: updated via `_update_menu_state()` on menu open
@@ -271,6 +271,16 @@ are therefore on its list widget, not the viewer, whose toolbar holds
 the search box (`Viewer.createToolBarUICommands()`). The main
 window's table only adds numpad Enter to the menu's Enter shortcuts
 that have a modifier (`UICommand.accelerators()`).
+
+In a text field (`wx.TextCtrl` or `wx.SearchCtrl`, `_TEXT_FIELDS` in
+`uicommand.py`) the Edit menu's Undo, Redo, Cut, Copy, Paste, Delete
+and Select All act on its text, from the keyboard or the menu. The
+search box has no undo, so there Undo and Redo do nothing.
+
+GTK ignores the shortcut of a disabled menu item, and items are
+updated only when their menu opens, so an item disabled then stays
+disabled for its shortcut too. Undo and Redo are therefore enabled
+from the history alone, not the focused field.
 
 ---
 
