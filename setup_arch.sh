@@ -71,7 +71,6 @@ if command -v sudo &> /dev/null; then
     sudo pacman -S --needed --noconfirm \
         python \
         python-wxpython \
-        python-six \
         python-lxml \
         python-numpy \
         python-dateutil \

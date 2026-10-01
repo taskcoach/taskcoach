@@ -71,7 +71,6 @@ jobs:
             python-installer \
             python-wheel \
             python-wxpython \
-            python-six \
             python-lxml \
             python-numpy \
             python-dateutil \

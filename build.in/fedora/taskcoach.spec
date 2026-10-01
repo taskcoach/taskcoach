@@ -37,7 +37,6 @@ BuildRequires:  libappstream-glib
 # Runtime dependencies - from Fedora repos
 Requires:       python3 >= 3.8
 Requires:       python3-wxpython4 >= 4.2.0
-Requires:       python3-six
 Requires:       python3-watchdog
 Requires:       python3-chardet
 Requires:       python3-dateutil

@@ -79,7 +79,6 @@ jobs:
           # Install all TaskCoach dependencies
           echo "Installing TaskCoach dependencies..."
           python -m pip install \
-            "six>=1.16.0" \
             "watchdog>=3.0.0" \
             "chardet>=4.0.0,<5.2.0" \
             "python-dateutil>=2.9.0" \

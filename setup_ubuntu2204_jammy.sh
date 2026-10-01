@@ -67,7 +67,6 @@ if command -v sudo &> /dev/null; then
     sudo apt-get update -qq
     sudo apt-get install -y \
         python3-wxgtk4.0 \
-        python3-six \
         python3-lxml \
         python3-numpy \
         python3-dateutil \

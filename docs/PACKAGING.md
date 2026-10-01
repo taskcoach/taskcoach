@@ -47,7 +47,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | pyparsing | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | watchdog | **pip** | **pip** | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
-| six | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | lxml | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | numpy (<2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | ↳ version | 1.24.2 | 1.21.5 | 2.2.4 | 1.26.4 | 2.4.0 | 2.3.3 | 1.26.4 | 1.26.4 | 1.26.4 | 1.26.4 |

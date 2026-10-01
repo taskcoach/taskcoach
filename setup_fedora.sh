@@ -74,7 +74,6 @@ if command -v sudo &> /dev/null; then
         python3 \
         python3-virtualenv \
         python3-wxpython4 \
-        python3-six \
         python3-lxml \
         python3-numpy \
         python3-dateutil \

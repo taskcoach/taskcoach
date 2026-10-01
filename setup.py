@@ -87,7 +87,6 @@ except ImportError:
 # - squaremap: Hierarchic data visualization (not in Fedora/Arch repos)
 
 install_requires = [
-    "six",
     "watchdog>=3.0.0",  # File monitoring - Bookworm too old, needs pip
     "chardet",
     "python-dateutil",

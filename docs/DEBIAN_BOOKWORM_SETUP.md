@@ -134,7 +134,6 @@ sudo apt-get update
 # Install wxPython and available Python packages from Debian repos
 sudo apt-get install -y \
     python3-wxgtk4.0 \
-    python3-six \
     python3-lxml \
     python3-numpy \
     python3-dateutil \
@@ -277,7 +276,6 @@ Run from a terminal: the log goes to its output
 
 ### From Debian Repositories (apt):
 - ✅ python3-wxgtk4.0 (4.2.0)
-- ✅ python3-six (1.16.0)
 - ✅ python3-lxml (4.9.2)
 - ✅ python3-numpy (1.24.2)
 - ✅ python3-dateutil (2.8.2)

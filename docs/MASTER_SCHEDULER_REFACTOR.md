@@ -647,9 +647,9 @@ each with the recommended action, none ruled yet:
 - P67. `[version] python`, `wxpython`, `pythonfrozen`, `current`:
   written to the INI on every save, never read. Keep as diagnostics or
   drop?
-- P68. `six`: two uses, in the patched tree control (wxPython 4.2.3's
-  own uses `str`), declared in every package. Recommended: `str`, drop
-  `six`.
+- P68. ~~`six`~~: removed 2026-10-01: its last use went with the
+  bundled tree widget (P118); no package or setup script declares it
+  now, and the startup report no longer lists it.
 - P69. Python 2 style in bulk: `# -*- coding` in 29 files, 93
   `object` bases, about 28 2to3 `list()` wrappers, `codecs.open`,
   `UnicodeAwareConfigParser`, metaclass docstrings. Now, or deferred
