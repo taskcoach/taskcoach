@@ -537,9 +537,13 @@ each with the recommended action, none ruled yet:
 - P57. Norwegian locales get en_GB dates and times
   (`i18n._fixBrokenLocales()`, a wx 2.8 date picker crash of 2012;
   Linux has no such picker). Removing it changes released behaviour.
-- P58. `widgets/dialog.py` overrides `SetExtraStyle()` as a no-op
-  (2012, against `SizedDialog`, which no longer calls it). Remove after
-  a check of Preferences and the editors?
+- P58. ~~`widgets/dialog.py` overrode `SetExtraStyle()` as a no-op~~:
+  removed 2026-10-01, **ruled by designer**. Added in 2012 because
+  wxPython 2.8's sized dialog turned on recursive validation (7 s to
+  open a dialog); its constructor no longer does, and nothing called
+  the override (logged while opening Preferences and a task editor).
+  Checked in the app: Preferences, a task editor and the templates
+  open in 0.1 to 0.4 s.
 - P59. Deprecated or removed in Python 3.14: `ast.Num`/`ast.Str`
   (`xml/reader.py`, would raise), `codecs.open`, `utcfromtimestamp`
   (`ical.py` and its test), `sre_constants` (`filter.py`,

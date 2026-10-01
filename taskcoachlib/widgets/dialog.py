@@ -128,12 +128,6 @@ class Dialog(sized_controls.SizedDialog):
             # wrapped C/C++ object has been deleted
             pass
 
-    def SetExtraStyle(self, exstyle):
-        # SizedDialog's constructor calls this to set WS_EX_VALIDATE_RECURSIVELY. We don't need
-        # it, it makes the dialog appear in about 7 seconds, and it makes switching focus
-        # between two controls take up to 5 seconds.
-        pass
-
     def createInterior(self):
         raise NotImplementedError
 
