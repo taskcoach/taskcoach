@@ -89,6 +89,7 @@ In `hypertreelist.py`; the commit first making each change.
 | `EditCtrl.__init__` | the edit box as wide as the column | `4e096044d` |
 | `EditCtrl.CancelEditing`, `EditTextCtrl.OnChar`, `Delete`, `ResetEditControl` | Escape and the deletion of the item edited cancel; any other end keeps the typed value (`StopEditing()`, a click elsewhere comes before the focus moves) | `def3832cf`, `f2e9f63d1` |
 | `_OnDestroy` | the drag and find timers stopped when the window is destroyed | `def3832cf` |
+| `OnPaint`, `AdjustMyScrollbars` | a layout recalculated while painting sets the scrollbars after the paint: GTK does not show a scrollbar changed while painting (a column hidden left the old range) | To Do 67 |
 
 `treectrl.py` builds on these; it highlights the rows of the selection
 it restores after a rebuild through `SetItemHilight()`, which keeps the
@@ -138,8 +139,11 @@ macOS, AppImage and Flatpak builds copy the package as files.
    the selection kept across a sort, a filter, the tree/list switch
    and a new task; multi-selection with Ctrl and Shift; the keyboard;
    drag and drop; editing (Escape cancels, a click elsewhere keeps);
-   a column shown and hidden; a parent collapsed. Compare each with a
-   build of the previous bundle, screen by screen.
+   a column shown and hidden, the scrollbar following; a parent
+   collapsed; the editor's prerequisite and category trees; the export
+   dialog's field tree; a dark theme; a file of 2,000 tasks. Compare
+   each with a build of the previous bundle, screen by screen, the
+   cursor included.
 
 ## Known Issues
 
@@ -147,3 +151,6 @@ macOS, AppImage and Flatpak builds copy the package as files.
   wrong side: `ChopText()` in `customtreectrl.py`, now bundled, so it
   can be fixed here
   ([TODO.md](TODO.md#hypertreelist-text-truncation-bug-standard-wxpython-issue)).
+- A column shown or hidden moves each row's texts but not its icons,
+  which stay at their old column positions (P139 in
+  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).

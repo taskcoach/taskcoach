@@ -209,9 +209,13 @@ go at the end. Details live in the sections and documents linked.
 67. ~~Bring the bundled tree widget up to date (option C of P118)~~:
     done 2026-10-01, **asked by designer**: wxPython 4.3.1's pair with
     Task Coach's changes redone, merged against 4.3.1's selection set
-    and per-row caches. In the app every step of the bundle's checks
-    matches the previous bundle screen for screen, but for upstream's
-    fixed type-ahead; the catalog passes. Not run on Windows, macOS or
+    and per-row caches. After the designer's desktop test, a second
+    check found a scrollbar left at the old range when a column was
+    hidden (4.3.1 sets it while painting, which GTK does not show),
+    fixed. In the app every step of the bundle's checks matches the
+    previous bundle screen for screen, the cursor included, in a light
+    and a dark theme and with 2,050 tasks, but for upstream's fixed
+    type-ahead; the catalog passes. Not run on Windows, macOS or
     wxPython 4.0.7
     ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#updating-the-bundle)).
 
@@ -939,10 +943,13 @@ each with the recommended action, none ruled yet:
   (`sounds/__init__.py`): Python warns "subprocess is still running"
   (seen with warnings on) and reaps it later. Nothing is lost. Keep
   the object until it ends, or leave?
-- P136. "Hide this column" in a tree view's column header menu does
-  nothing, on master too (found 2026-10-01 in the To Do 67 checks): the
-  item is enabled, a click hides no column and logs nothing. Not traced
-  yet.
+- P136. "Hide this column" in a column header's menu refuses the click
+  when the menu item lies over another column or pane at that moment,
+  as for the rightmost column, whose menu opens over the next pane: it
+  reads the column under the pointer when clicked, not the one
+  right-clicked. The same on master (found 2026-10-01 in the To Do 67
+  checks; a click over the same column hides it). Take the column the
+  menu was opened on?
 - P137. After a drag and drop in a tree view the selection lands on
   the row above the dragged task's old place, not on the dragged task;
   the same on master (found 2026-10-01). The move reaches the viewer
@@ -955,6 +962,34 @@ each with the recommended action, none ruled yet:
   `AdjustMyScrollbars()` may no longer be needed
   ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#windows-scrollbar-adjustment-on-content-changes)).
   Check on Windows before removing them.
+- P139. A column shown or hidden in a tree view moves each row's texts
+  but not its icons, which stay at their old column positions: on
+  master the icons of the columns after it vanish (the Notes column
+  empties when Description is shown); here, since `38f5e094f`, the new
+  column shows the icon of the column that was there (an attachment
+  pencil under Description). Found 2026-10-01, the same before To Do
+  67. Shift the icons with the texts in the tree widget's column insert
+  and remove ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#known-issues))?
+- P140. Opening a file of 2,050 tasks (50 parents with 40 late
+  subtasks each) freezes the app for 64 s, the scheduler's first full
+  pass (`[SCHEDULER]` median 63,943 ms); master is busy 12 s, then
+  uses a quarter of a core while open. Found 2026-10-01 with a
+  generated file, the same before To Do 67. [Cost Before](#cost-before)
+  says the first loop runs as master's (15 s with 2,000 tasks of
+  `tools/generate_task_file.py`); not with this file. Not traced yet.
+- P141. A row's tooltip stays up after Expand all or Collapse all
+  moved another row under the pointer, and the hover outline returns
+  only after the pointer moves within the list again. Found
+  2026-10-01, the same before To Do 67.
+- P142. In a dark theme the tasks' and categories' light text is hard
+  to read on their light background colours. Found 2026-10-01, the
+  same before To Do 67.
+- P143. The "not possible" cursor (a drop refused, a column that
+  cannot be resized) is wx's no-entry cursor, which X draws as a skull
+  where the cursor theme has no picture for it: here the desktop asks
+  for DMZ-White, which is not installed, and Adwaita has none. The same
+  on master. Draw Task Coach's own, as for the link and home drop
+  cursors?
 
 ## Views on the Effective Styles
 

@@ -2402,6 +2402,7 @@ class TreeListMainWindow(CustomTreeCtrl):
         """
 
         self._buffered = False
+        self._painting = False
 
         CustomTreeCtrl.__init__(self, parent, id, pos, size, style, agwStyle, validator, name)
 
@@ -3158,6 +3159,10 @@ class TreeListMainWindow(CustomTreeCtrl):
             # Skip if frozen. Set dirty flag to adjust when thawed.
             self._dirty = True
             return
+        if self._painting:
+            # GTK does not show a scrollbar changed while painting
+            wx.CallAfter(self.AdjustMyScrollbars, tree_size)
+            return
         
         if self._anchor:
             if tree_size is not None:
@@ -3862,7 +3867,11 @@ class TreeListMainWindow(CustomTreeCtrl):
 
         # If the tree is dirty, recalculate it. Required for paint.
         if self._dirty is True:
-            self.CalculatePositions()
+            self._painting = True
+            try:
+                self.CalculatePositions()
+            finally:
+                self._painting = False
 
         # Paint the tree.
         x_maincol = self._x_maincol
