@@ -152,7 +152,8 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
         self.headers = None
 
         self.filename = filename
-        self.encoding = chardet.detect(open(filename, "rb").read())["encoding"]
+        with open(filename, "rb") as csv_file:
+            self.encoding = chardet.detect(csv_file.read())["encoding"]
         self.OnOptionChanged(None)
 
         self.delimiter.Bind(wx.EVT_CHOICE, self.OnOptionChanged)

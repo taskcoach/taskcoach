@@ -662,7 +662,8 @@ class Application(object, metaclass=patterns.Singleton):
                         if isinstance(template, bytes)
                         else template
                     )
-                    open(filename, "w", encoding="utf-8").write(template_str)
+                    with open(filename, "w", encoding="utf-8") as out:
+                        out.write(template_str)
 
     def init(self, load_settings=True, load_task_file=True):
         """Initialize the application. Needs to be called before

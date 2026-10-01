@@ -553,7 +553,7 @@ class IOController(object):
         templates = persistence.TemplateList(
             self.__settings.pathToTemplatesDir()
         )
-        templates.addTemplate(task)
+        templates.add_template(task)
         templates.save()
 
     def import_template(self, showerror=wx.MessageBox):
@@ -632,10 +632,10 @@ class IOController(object):
             fd = self.__open_file_for_writing(filename, openfile, showerror)
             if fd is None:
                 return False
-            count = writer_class(fd, filename).write(
-                viewer, self.__settings, selectionOnly, **kwargs
-            )
-            fd.close()
+            with fd:
+                count = writer_class(fd, filename).write(
+                    viewer, self.__settings, selectionOnly, **kwargs
+                )
             self.__message_callback(
                 _("Exported %(count)d items to " "%(filename)s")
                 % dict(count=count, filename=filename)

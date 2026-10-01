@@ -41,17 +41,19 @@ class CSVReader(object):
         return reader
 
     def read(self, **kwargs):
-        fp = open(kwargs["filename"], "r", encoding=kwargs["encoding"])
+        with open(kwargs["filename"], "r", encoding=kwargs["encoding"]) as fp:
+            rows = list(
+                self.createReader(fp, kwargs["dialect"], kwargs["hasHeaders"])
+            )
 
         rx1 = re.compile(r"^(\d+):(\d+)$")
         rx2 = re.compile(r"^(\d+):(\d+):(\d+)$")
 
-        reader = self.createReader(fp, kwargs["dialect"], kwargs["hasHeaders"])
         dayfirst = kwargs["dayfirst"]
         tasksById = dict()
         tasks = []
 
-        for index, line in enumerate(reader):
+        for index, line in enumerate(rows):
             if (
                 kwargs["importSelectedRowsOnly"]
                 and index not in kwargs["selectedRows"]

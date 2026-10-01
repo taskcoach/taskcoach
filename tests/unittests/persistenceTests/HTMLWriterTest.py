@@ -173,7 +173,7 @@ class TaskTestsMixin(CommonTestsMixin):
         def open(*args):  # pylint: disable=W0613,W0622
             raise IOError
 
-        self.writer._writeCSS(open=open)  # pylint: disable=W0212
+        self.writer._write_css(open=open)  # pylint: disable=W0212
 
 
 class TaskListTestsMixin(object):

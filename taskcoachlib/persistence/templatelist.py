@@ -30,7 +30,7 @@ class TemplateList(object):
 
     def _readTemplates(self, TemplateReader, openFile):
         templates = []
-        for filename in self._templateFilenames():
+        for filename in self._template_filenames():
             template = self._read_template(filename, TemplateReader, openFile)
             if template:
                 templates.append((template, filename))
@@ -68,7 +68,7 @@ class TemplateList(object):
             )
         return template
 
-    def _templateFilenames(self):
+    def _template_filenames(self):
         if not os.path.exists(self._path):
             return []
         filenames = [
@@ -77,42 +77,36 @@ class TemplateList(object):
             if name.endswith(".tsktmpl")
             and os.path.exists(os.path.join(self._path, name))
         ]
-        listName = os.path.join(self._path, "list.pickle")
-        if os.path.exists(listName):
+        list_name = os.path.join(self._path, "list.pickle")
+        if os.path.exists(list_name):
             try:
-                filenames = pickle.load(open(listName, "rb"))
+                with open(list_name, "rb") as list_file:
+                    filenames = pickle.load(list_file)
             except (OSError, pickle.UnpicklingError, EOFError):
                 pass
         return filenames
 
     def save(self):
-        pickle.dump(
-            [name for task, name in self._templates],
-            open(os.path.join(self._path, "list.pickle"), "wb"),
-        )
+        with open(os.path.join(self._path, "list.pickle"), "wb") as list_file:
+            pickle.dump([name for task, name in self._templates], list_file)
 
         for task, name in self._templates:
-            template_file = open(
+            with open(
                 os.path.join(self._path, name), "w", encoding="utf-8"
-            )
-            writer = TemplateXMLWriter(template_file)
-            writer.write(task)
-            template_file.close()
+            ) as template_file:
+                TemplateXMLWriter(template_file).write(task)
 
         for task, name in self._toDelete:
             os.remove(os.path.join(self._path, name))
         self._toDelete = []
 
-    def addTemplate(self, task):
+    def add_template(self, task):
         handle, filename = tempfile.mkstemp(".tsktmpl", dir=self._path)
         os.close(handle)
-        template_file = open(filename, "w", encoding="utf-8")
-        writer = TemplateXMLWriter(template_file)
-        writer.write(task.copy())
-        template_file.close()
-        the_task = TemplateXMLReader(
-            open(filename, "r", encoding="utf-8")
-        ).read()
+        with open(filename, "w", encoding="utf-8") as template_file:
+            TemplateXMLWriter(template_file).write(task.copy())
+        with open(filename, "r", encoding="utf-8") as template_file:
+            the_task = TemplateXMLReader(template_file).read()
         self._templates.append((the_task, os.path.split(filename)[-1]))
         return the_task
 

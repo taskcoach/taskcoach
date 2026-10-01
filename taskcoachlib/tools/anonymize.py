@@ -59,7 +59,7 @@ def anonymize(filename):
         if node.tag == "attachment" and "location" in node.attrib:
             node.attrib["location"] = anonymize_string(node.attrib["location"])
 
-    tree = ET.parse(open(filename, "rb"))
+    tree = ET.parse(filename)
     anonymize_node(tree.getroot())
     name, ext = os.path.splitext(filename)
     anonymized_filename = name + ".anonymized" + ext

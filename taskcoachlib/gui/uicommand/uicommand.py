@@ -52,6 +52,7 @@ from taskcoachlib.tools import anonymize, openfile
 
 import wx
 import operator
+import os
 from . import base_uicommand
 from . import mixin_uicommand
 from . import settings_uicommand
@@ -716,7 +717,7 @@ class FileImportCSV(IOCommand):
         while True:
             filename = wx.FileSelector(_("Import CSV"), wildcard="*.csv")
             if filename:
-                if len(open(filename, "rb").read()) == 0:
+                if os.path.getsize(filename) == 0:
                     wx.MessageBox(
                         _(
                             "The selected file is empty. "
@@ -1923,22 +1924,21 @@ class TaskNewFromTemplate(TaskNew):
     def __init__(self, filename, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__filename = filename
-        templateTask = self.__readTemplate()
-        self.menu_text = "&" + templateTask.subject().replace(
+        template_task = self.__read_template()
+        self.menu_text = "&" + template_task.subject().replace(
             "&", "&&"
         )  # pylint: disable=E1103
 
-    def __readTemplate(self):
-        return persistence.TemplateXMLReader(
-            open(self.__filename, "r", encoding="utf-8")
-        ).read()
+    def __read_template(self):
+        with open(self.__filename, "r", encoding="utf-8") as template_file:
+            return persistence.TemplateXMLReader(template_file).read()
 
     def do_command(self, event, show=True):  # pylint: disable=W0221
         # The task template is read every time because it's the
         # TemplateXMLReader that evaluates dynamic values (Now()
         # should be evaluated at task creation for instance).
-        templateTask = self.__readTemplate()
-        kwargs = templateTask.__getcopystate__()  # pylint: disable=E1103
+        template_task = self.__read_template()
+        kwargs = template_task.__getcopystate__()  # pylint: disable=E1103
         kwargs["categories"] = self.categoriesForTheNewTask()
         newTaskCommand = command.NewTaskCommand(self.taskList, **kwargs)
         newTaskCommand.do()

@@ -832,10 +832,13 @@ each with the recommended action, none ruled yet:
   Task Coach's changes redone, To Do 67
   ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md),
   [THIRD_PARTY_CODE.md](THIRD_PARTY_CODE.md)).
-- P119. Files left open: the template list (`templatelist.py` 64, 72,
-  92), the CSV import's encoding guess (`csvimport.py` 155), an empty
-  file check (`uicommand.py` 719), `anonymize.py` 62. Python warns at
-  garbage collection; nothing is lost.
+- P119. ~~Files left open~~: fixed 2026-10-01, the same on master:
+  every file the app opens is closed by a `with` block (the template
+  list, the template menu, the default templates' copy, the CSV
+  import, Anonymize, the exports, Thunderbird's preferences and
+  mailboxes), and the IMAP reader logs out. Checked in the app with
+  Python's unclosed-file warnings on; the IMAP path is not, for want
+  of a server.
 - P120. ~~Tests read the user's real templates folder~~: closed
   2026-10-01, **ruled by designer**: not a concern for the repo or
   this refactor; the designer handles the templates there.

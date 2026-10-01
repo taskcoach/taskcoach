@@ -55,7 +55,7 @@ class FileClassThatRaisesIOError(object):
 
 
 class TemplateListUnderTest(persistence.TemplateList):
-    def _templateFilenames(self):
+    def _template_filenames(self):
         return ["dummy.tsktmpl"]
 
 

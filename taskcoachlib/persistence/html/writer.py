@@ -119,7 +119,7 @@ class HTMLWriter(object):
         )
         self.__fd.write(htmlText)
         if separateCSS:
-            self._writeCSS()
+            self._write_css()
         return count
 
     def _createProxy(self, viewerType, columns, taskFile):
@@ -143,12 +143,11 @@ class HTMLWriter(object):
                 title = "Notes"
         return _ViewerProxy(items, columns or [], title, is_showing_tasks)
 
-    def _writeCSS(self, open=open):  # pylint: disable=W0622
+    def _write_css(self, open=open):  # pylint: disable=W0622
         if not self.__cssFilename or os.path.exists(self.__cssFilename):
             return
         try:
-            fd = open(self.__cssFilename, "wb")
-            fd.write((css % self.__filename).encode("utf-8"))
-            fd.close()
+            with open(self.__cssFilename, "wb") as fd:
+                fd.write((css % self.__filename).encode("utf-8"))
         except IOError:
             pass

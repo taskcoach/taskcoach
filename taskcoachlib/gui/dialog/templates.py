@@ -274,8 +274,8 @@ class TemplatesDialog(sized_controls.SizedDialog):
             "remindertmpl",
         ):
             setattr(template, name, None)
-        theTask = self._templates.addTemplate(template)
-        self.appendTemplate(self._root, theTask)
+        the_task = self._templates.add_template(template)
+        self.appendTemplate(self._root, the_task)
 
     def ok(self, event):
         self._templates.save()
