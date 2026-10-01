@@ -529,9 +529,11 @@ each with the recommended action, none ruled yet:
   task editor, and the masked control is removed. Checked in the app:
   both fee columns store what is typed, Escape cancels, a click
   elsewhere accepts.
-- P56. Opening an effort editor logs "SetSelection failed on
-  DateTimeComboCtrl" (`editor.py`): the focus helper calls a method the
-  control lacks. Recommended: fix.
+- P56. ~~Opening an editor from a cell logged "SetSelection failed" for
+  every field that is not a text box~~: fixed 2026-10-01, **asked by
+  designer**. One helper, not two copies, focuses the field and
+  selects the text of text boxes only; the others select their value
+  on focus or hold no text. Nothing changed on screen.
 - P57. Norwegian locales get en_GB dates and times
   (`i18n._fixBrokenLocales()`, a wx 2.8 date picker crash of 2012;
   Linux has no such picker). Removing it changes released behaviour.

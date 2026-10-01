@@ -116,6 +116,17 @@ def _end_subscriptions(page):
             patterns.Publisher().remove_observers_of(each)
 
 
+def _focus_and_select(the_entry):
+    """Focus an entry, its text selected so that typing replaces it.
+    Only text boxes need the selection: spin boxes and masked fields
+    select their value when focused, lists hold no text."""
+    the_entry.SetFocus()
+    if isinstance(the_entry, widgets.MultiLineTextCtrl):
+        if operating_system.isWindows():
+            the_entry.SetInsertionPoint(0)  # Scroll to the left first
+        the_entry.SelectAll()
+
+
 class Page(patterns.Observer, widgets.BookPage):
     columns = 2
 
@@ -148,25 +159,7 @@ class Page(patterns.Observer, widgets.BookPage):
             the_entry = self.entries().get("firstEntry")
             if the_entry is None:
                 return
-        self.__set_selection_and_focus(the_entry)
-
-    def __set_selection_and_focus(self, the_entry):
-        """If the entry has selectable text, select the text so that the user
-        can start typing over it immediately."""
-        the_entry.SetFocus()
-        try:
-            if operating_system.isWindows() and hasattr(
-                the_entry, "SetInsertionPoint"
-            ):
-                # Scroll to left before selecting
-                the_entry.SetInsertionPoint(0)
-            the_entry.SetSelection(-1, -1)  # Select all text
-        except (AttributeError, TypeError) as e:
-            log_step(
-                "SetSelection failed on %s: %s"
-                % (type(the_entry).__name__, e),
-                prefix="EDITOR",
-            )
+        _focus_and_select(the_entry)
 
     def __on_destroy(self, event):
         if event.GetEventObject() is self:
@@ -210,25 +203,7 @@ class ScrolledPage(patterns.Observer, widgets.ScrolledBookPage):
             the_entry = self.entries().get("firstEntry")
             if the_entry is None:
                 return
-        self.__set_selection_and_focus(the_entry)
-
-    def __set_selection_and_focus(self, the_entry):
-        """If the entry has selectable text, select the text so that the user
-        can start typing over it immediately."""
-        the_entry.SetFocus()
-        try:
-            if operating_system.isWindows() and hasattr(
-                the_entry, "SetInsertionPoint"
-            ):
-                # Scroll to left before selecting
-                the_entry.SetInsertionPoint(0)
-            the_entry.SetSelection(-1, -1)  # Select all text
-        except (AttributeError, TypeError) as e:
-            log_step(
-                "SetSelection failed on %s: %s"
-                % (type(the_entry).__name__, e),
-                prefix="EDITOR",
-            )
+        _focus_and_select(the_entry)
 
     def __on_destroy(self, event):
         if event.GetEventObject() is self:

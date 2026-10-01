@@ -413,7 +413,7 @@ class EditTaskWithEffortTest(TaskEditorTestCase):
 
 class FocusTest(TaskEditorTestCase):
     def createTasks(self):
-        self.task = task.Task("Task to edit")
+        self.task = task.Task("Task to edit", description="Some words")
         return [self.task]
 
     def getItems(self):
@@ -432,6 +432,18 @@ class FocusTest(TaskEditorTestCase):
         self.assertEqual(
             subject.GetValue(), subject._textCtrl.GetSelectedText()
         )
+
+    def test_a_field_without_text_opens_on_its_page(self):
+        book = self.editor._interior
+        book.setFocus("percentageComplete")
+        self.assertIn(
+            "percentageComplete", book[book.GetSelection()].entries()
+        )
+
+    def test_a_text_field_opens_with_its_text_selected(self):
+        self.editor._interior.setFocus("description")
+        description = self.editor._interior[0]._descriptionEntry
+        self.assertEqual("Some words", description._textCtrl.GetSelectedText())
 
 
 class ChangeFromElsewhereTest(TaskEditorTestCase):
