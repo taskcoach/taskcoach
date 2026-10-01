@@ -213,7 +213,8 @@ Key packages:
 - [PACKAGING.md](docs/PACKAGING.md) - Packaging across all platforms (deb, rpm, Arch, AppImage, Flatpak, Windows, macOS)
 - [APPIMAGE.md](docs/APPIMAGE.md) - AppImage build details
 - [FLATPAK.md](docs/FLATPAK.md) - Flatpak build details
-- [CRITICAL_WXPYTHON_PATCH.md](docs/CRITICAL_WXPYTHON_PATCH.md) - wxPython compatibility patch details
+- [BUNDLED_TREE_WIDGET.md](docs/BUNDLED_TREE_WIDGET.md) - Task Coach's copy of wxPython's tree widget
+- [THIRD_PARTY_CODE.md](docs/THIRD_PARTY_CODE.md) - All bundled, copied and runtime-patched third-party code
 
 ## Support
 

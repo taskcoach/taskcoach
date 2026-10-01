@@ -670,13 +670,13 @@ def onClose(self, event):
 
 ### wxPython 4.2.0 Issues
 
-See [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md) for details on the category row background coloring bug in wxPython 4.2.0 shipped with Debian Bookworm.
+See [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md) for details on the category row background coloring bug in wxPython 4.2.0 shipped with Debian Bookworm.
 
 ### Version Requirements
 
 - **Minimum:** wxPython 4.2.1-unicode
 - **Recommended:** wxPython 4.2.1 or higher
-- **Debian Bookworm:** Requires patch (see CRITICAL_WXPYTHON_PATCH.md)
+- **Debian Bookworm:** Requires patch (see BUNDLED_TREE_WIDGET.md)
 
 ---
 

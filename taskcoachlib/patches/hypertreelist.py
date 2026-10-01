@@ -1,14 +1,19 @@
 # --------------------------------------------------------------------------------- #
-# HYPERTREELIST wxPython IMPLEMENTATION (PATCHED VERSION for TaskCoach)
+# Bundled with Task Coach: wxPython 4.2.2's wx/lib/agw/hypertreelist.py
+# (4.2.0 to 4.2.2 are the same; the "Latest Revision" line below is
+# upstream's, unchanged since 2014) with Task Coach's changes, loaded in
+# place of the installed wxPython's on every version. It runs on the
+# bundled customtreectrl.py next to it, never the installed one: the two
+# files are one widget (docs/BUNDLED_TREE_WIDGET.md lists the changes).
+# - Issue #2081 (Roland171281): Fix TR_FULL_ROW_HIGHLIGHT background drawing
+# - Issue #1898 (Jorilx): Fix TR_FILL_WHOLE_COLUMN_BACKGROUND for right-aligned columns
+#   (both as in PR #2088 (cbeytas), wxPython 4.2.4)
+# --------------------------------------------------------------------------------- #
+# HYPERTREELIST wxPython IMPLEMENTATION
 # Inspired By And Heavily Based On wx.gizmos.TreeListCtrl in Classic.
 #
 # Andrea Gavana, @ 08 May 2006
 # Latest Revision: 30 Jul 2014, 21.00 GMT
-#
-# PATCHES APPLIED:
-# - Issue #2081 (Roland171281): Fix TR_FULL_ROW_HIGHLIGHT background drawing
-# - Issue #1898 (Jorilx): Fix TR_FILL_WHOLE_COLUMN_BACKGROUND for right-aligned columns
-# - PR #2088 (cbeytas): Merged fixes for both issues
 #
 # TODO List
 #
@@ -306,8 +311,6 @@ from wx.lib.agw.customtreectrl import DragImage, TreeEvent, GenericTreeItem, Cho
 from wx.lib.agw.customtreectrl import TreeEditTimer as TreeListEditTimer
 from wx.lib.agw.customtreectrl import EVT_TREE_ITEM_CHECKING, EVT_TREE_ITEM_CHECKED, EVT_TREE_ITEM_HYPERLINK
 
-# Python 2/3 compatibility helper
-import six
 
 # Version Info
 __version__ = "1.4"
@@ -466,7 +469,7 @@ class TreeListColumnInfo(object):
         :param `edit`: ``True`` to set the column as editable, ``False`` otherwise.
         """
 
-        if isinstance(input, six.string_types):
+        if isinstance(input, str):
             self._text = input
             self._width = width
             self._flag = flag
@@ -2108,7 +2111,7 @@ class EditCtrl(object):
     def CancelEditing(self):
         """Cancels the editing: Escape, or the item edited is deleted.
         Task Coach's editors keep the typed value when the editing stops
-        otherwise (docs/CRITICAL_WXPYTHON_PATCH.md)."""
+        otherwise (docs/BUNDLED_TREE_WIDGET.md)."""
 
         EditCtrl.StopEditing(self)
 
@@ -3863,7 +3866,7 @@ class TreeListMainWindow(CustomTreeCtrl):
         if self._curColumn == -1:
             self._curColumn = 0
 
-        self.SetItemText(self._editItem, six.text_type(value), self._curColumn)
+        self.SetItemText(self._editItem, str(value), self._curColumn)
 
 
     def OnCancelEdit(self):

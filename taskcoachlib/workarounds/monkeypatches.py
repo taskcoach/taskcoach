@@ -5,71 +5,66 @@ import os
 import weakref
 
 # =============================================================================
-# wxPython hypertreelist Import Hook
+# Bundled Tree Widget Import Hook
 # =============================================================================
-# This import hook redirects imports of wx.lib.agw.hypertreelist to
-# our bundled copy, on every wxPython version: it has the row
-# background fixes that wxPython < 4.2.4 lacks (TR_FULL_ROW_HIGHLIGHT,
-# TR_FILL_WHOLE_COLUMN_BACKGROUND) and Task Coach's own changes, such
-# as the macOS colour checks and column resizing.
+# Task Coach's tree views use its own copy of wxPython's tree widget,
+# loaded in place of the installed wxPython's on every version:
+# taskcoachlib/patches/hypertreelist.py, with Task Coach's changes, and
+# the customtreectrl.py it is built on. Both or neither: the installed
+# wxPython's customtreectrl changes between versions (4.2.4 changed
+# how it tracks the selection), and a copy of one file on top of the
+# other's installed version breaks with it (P118, GitHub #385).
 #
-# The patched file is bundled at: taskcoachlib/patches/hypertreelist.py
-# This works for all installation methods (pip, deb, rpm, Windows, macOS).
-#
-# For details, see: docs/CRITICAL_WXPYTHON_PATCH.md
+# For details, see: docs/BUNDLED_TREE_WIDGET.md
 # =============================================================================
 
 from importlib.abc import MetaPathFinder
 from importlib.util import spec_from_file_location
 
+_BUNDLED_MODULES = ("customtreectrl", "hypertreelist")
 
-def _find_patched_hypertreelist():
-    """Find the patched hypertreelist.py file.
 
-    Returns the path to the patched file, or None if not found.
-    The file is located relative to this module, so it works regardless
-    of installation method (pip, deb, rpm, source, etc.).
-    """
-    # Path relative to this file: workarounds/ -> taskcoachlib/ -> patches/
-    this_dir = os.path.dirname(os.path.abspath(__file__))
-    taskcoachlib_dir = os.path.dirname(this_dir)
-    patch_path = os.path.join(taskcoachlib_dir, "patches", "hypertreelist.py")
-
-    if os.path.exists(patch_path):
-        return patch_path
-
+def _bundled_tree_widget_paths():
+    """Return {module name: path} of the bundled tree widget, or None
+    when either file is missing. Found relative to this module, so it
+    works in every installation (pip, deb, rpm, Windows, macOS)."""
+    patches_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "patches",
+    )
+    paths = {
+        "wx.lib.agw." + name: os.path.join(patches_dir, name + ".py")
+        for name in _BUNDLED_MODULES
+    }
+    if all(os.path.exists(path) for path in paths.values()):
+        return paths
     return None
 
 
-class HyperTreeListPatchFinder(MetaPathFinder):
-    """Import hook to replace wx.lib.agw.hypertreelist with patched version."""
+class TreeWidgetFinder(MetaPathFinder):
+    """Import hook that loads the bundled tree widget modules in place
+    of the installed wxPython's."""
 
-    def __init__(self, patched_file_path):
-        self.patched_file_path = patched_file_path
+    def __init__(self, paths):
+        self.paths = paths
 
     def find_spec(self, fullname, path, target=None):
-        if fullname == "wx.lib.agw.hypertreelist":
-            return spec_from_file_location(fullname, self.patched_file_path)
+        if fullname in self.paths:
+            return spec_from_file_location(fullname, self.paths[fullname])
         return None
 
 
-def _install_hypertreelist_hook():
-    """Install the import hook if patched file is available and needed."""
-    patched_path = _find_patched_hypertreelist()
-    if patched_path is None:
-        return  # No patched file found, use system version
-
-    # Check if hook is already installed
-    for finder in sys.meta_path:
-        if isinstance(finder, HyperTreeListPatchFinder):
-            return  # Already installed
-
-    # Install the hook at position 0 (highest priority)
-    sys.meta_path.insert(0, HyperTreeListPatchFinder(patched_path))
+def _install_tree_widget_hook():
+    paths = _bundled_tree_widget_paths()
+    if paths is None:
+        return  # Not bundled: wxPython's own modules load
+    if any(isinstance(finder, TreeWidgetFinder) for finder in sys.meta_path):
+        return
+    sys.meta_path.insert(0, TreeWidgetFinder(paths))
 
 
 # Install the hook before wx is imported
-_install_hypertreelist_hook()
+_install_tree_widget_hook()
 
 # =============================================================================
 # Other Monkeypatches

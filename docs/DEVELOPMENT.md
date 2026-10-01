@@ -94,6 +94,11 @@ Canon decision by designer, 2026-09-28.
   place in the toplevel and the Python call that forced it. Call it
   from the code under investigation, remove the call once the cause is
   found.
+- **Third-party code** (bundled, copied or patched at runtime): start
+  from [THIRD_PARTY_CODE.md](THIRD_PARTY_CODE.md#before-analysing-it).
+  A copy's base comes from diffing it against upstream releases, never
+  from its header; a copy may still import the installed library, which
+  differs per build.
 
 ## Documentation
 

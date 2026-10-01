@@ -19,7 +19,7 @@ The crash guard system prevents these segfaults and logs diagnostic information 
 
 Since 2026-09-29 the app's own deferred calls go through `patterns.later`, which cannot reach a deleted window ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); the guards below remain for bundled and system library code (AUI, the tree list, the calendar), which still uses `wx.CallAfter` and `wx.Timer` directly.
 
-The crash guard is part of the runtime workarounds documented in [TODO.md: Monkeypatches and Workarounds](TODO.md#5-monkeypatches-and-workarounds).
+The crash guard is one of the runtime patches listed in [THIRD_PARTY_CODE.md](THIRD_PARTY_CODE.md#runtime-patches).
 
 ---
 

@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Bundled patches for third-party libraries.
+Task Coach's copy of wxPython's tree widget, loaded in place of the
+installed wxPython's on every version (workarounds/monkeypatches.py):
 
-This package contains patched versions of third-party library files that
-are needed to fix bugs not yet available in the versions shipped by
-various operating systems.
+- hypertreelist.py: wxPython 4.2.2's, with Task Coach's changes;
+- customtreectrl.py: wxPython 4.2.3's, the base it is built on.
 
-Currently included:
-- hypertreelist.py: wxPython's HyperTreeList with the fixes from PR
-  #2088 and Task Coach's own changes, used on every wxPython version
-  (docs/CRITICAL_WXPYTHON_PATCH.md)
+One widget: never one file over the installed wxPython's other
+(docs/BUNDLED_TREE_WIDGET.md).
 """

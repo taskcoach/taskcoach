@@ -557,7 +557,7 @@ if operating_system.isGTK():
 ### Resolved Issues
 
 - Widget resizing stuck at large sizes (November 2025)
-- wxPython 4.2.0 category background coloring (Documented in CRITICAL_WXPYTHON_PATCH.md)
+- wxPython 4.2.0 category background coloring (Documented in BUNDLED_TREE_WIDGET.md)
 - wx.Timer crash when closing Edit Task/Categories quickly (November 2025)
 - Hacky close delay patches removed after root cause fix (November 2025)
 - Ctrl+C crash with AUI event handler assertion (November 2025)

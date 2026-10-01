@@ -1,0 +1,145 @@
+# Bundled Tree Widget
+
+Task Coach's tree views (`taskcoachlib/widgets/treectrl.py`) are
+HyperTreeLists. Task Coach ships its own copy of that widget in
+`taskcoachlib/patches/` and loads it in place of the installed
+wxPython's on every wxPython version, so every build runs the same tree
+code: the code the certified test platform runs
+([TESTING.md](TESTING.md)).
+
+Listed with the other bundled and patched code in
+[THIRD_PARTY_CODE.md](THIRD_PARTY_CODE.md).
+
+## What Is Bundled
+
+| File | Upstream base | Changes |
+|------|---------------|---------|
+| `hypertreelist.py` | wxPython 4.2.2's `wx/lib/agw/hypertreelist.py` (4.2.0 to 4.2.2 are the same; 4.2.3 only adds type hints and drops `six`) | Task Coach's, [below](#task-coachs-changes); `six` dropped as in 4.2.3 |
+| `customtreectrl.py` | wxPython 4.2.3's `wx/lib/agw/customtreectrl.py` (Debian 13's file; 4.2.0 to 4.2.2 differ by an unused import) | one fix taken from 4.2.4: `GetNextExpanded()` recursed with an undefined name |
+
+The header dates inside the files are upstream's and say nothing of the
+copy's age: `hypertreelist.py` reads "Latest Revision: 30 Jul 2014" in
+every wxPython release up to 4.3.1. To find a copy's base, diff it
+against each release's file
+(`https://github.com/wxWidgets/Phoenix/tree/wxPython-X.Y.Z/wx/lib/agw`).
+
+## One Widget, Two Files
+
+`hypertreelist.py`'s main window (`TreeListMainWindow`) is a
+`CustomTreeCtrl` subclass and relies on its internals: how it tracks
+the selection, method signatures, helper functions. Upstream changes
+the two files together. So they are bundled and loaded together, both
+or neither, and updated together.
+
+Why this rule exists: the Python 3 migration dropped Task Coach's own
+`customtreectrl.py` for wxPython's and kept only the `hypertreelist.py`
+copy, which then ran on each build's installed `customtreectrl`: 4.0.7
+on Ubuntu 22.04 up to 4.3.1 on Windows, macOS and the Flatpak. wxPython
+4.2.4 ([PR #2088](https://github.com/wxWidgets/Phoenix/pull/2088),
+2025-10-28) made `CustomTreeCtrl` keep its selected rows in a set that
+`UnselectAll()` alone clears. The copy and `treectrl.py` highlight rows
+directly, outside that set, so on every build with 4.2.4 or later the
+tree views lost the selection at each rebuild (a sort, a filter or
+search, the tree/list switch, a new task) and, after a filter, selected
+the neighbouring task instead
+([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#restoring-the-selection-after-a-rebuild);
+GitHub #385; P118 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+The certified tests run on 4.2.3 and could not see it. Bundling the
+base fixed it, 2026-10-01.
+
+Nor can the copy follow upstream one file at a time: 4.2.4's
+`hypertreelist.py` does not import on an older `customtreectrl.py`
+(`EnsureText`, `BisectChildren`).
+
+## Why a Copy
+
+- **Row colours.** Before 4.2.4 wxPython's HyperTreeList colours only
+  the text of a row ([#2081](https://github.com/wxWidgets/Phoenix/issues/2081),
+  [#1898](https://github.com/wxWidgets/Phoenix/issues/1898)); Debian
+  and Ubuntu all ship older versions (Debian 13: 4.2.3). Category and
+  status colours fill whole rows only with the copy.
+- **Task Coach's changes** live inside the widget's drawing, mouse and
+  editing code and cannot be added from outside.
+- **One tree code everywhere**, tested once.
+
+## Task Coach's Changes
+
+In `hypertreelist.py`; the commit first making each change.
+
+| Where | Change | Commit |
+|-------|--------|--------|
+| `PaintItem` | the whole row's background before the column loop (#2081, #1898, as PR #2088 does) | `def3832cf` |
+| `PaintItem`, `OnPaint` | colours checked before making brushes: an invalid colour asserts in `wxMacCreateCGColor()` on macOS | `5342526c2` |
+| `PaintItem` | the dragged row drawn like a selected one | `6a7681e9d` |
+| `PaintItem`, `TreeListItem.SetImages()`/`GetImages()` | several icons in one column (the categories' icons) | `5ce0adef8` |
+| `SetImageList` | no greyed copy of the image list (3,000+ icons) | `1c6d5d3a7` |
+| `SetHoverItem`, `_refresh_hover_row`, `PaintLevel`, `OnMouse` | the two-tone hover outline (`settings2.window.hoverlinewidth`); mouse moves within a row do nothing | `78533ffab`, `a20c9164c` |
+| `OnMouse` | a drag starts after 3 pixels, without the timer; a fast double-click opens the row clicked | `a1dad34df` |
+| `OnMouse`, `OnPaint`, `SetDropHighlight`, `ClearDropHighlight`, `_DrawDropFeedback` | drag feedback by the cursor only; no target highlighted outside the window; the drag image hidden before a refresh | `def3832cf` |
+| `TreeListHeaderWindow.OnMouse`, `IsColumnResizable` | in auto-resize mode the resize column cannot be dragged (no-entry cursor) | `af844f2e6` |
+| `HyperTreeList.AddColumn`, `InsertColumn` and their `Info` forms, `RemoveColumn`, `_extend_item_texts_for_columns`, `TreeListItem.GetText` | every row keeps a text per column; a `[TREELIST]` log when not ([LOGGING_GUIDE.md](LOGGING_GUIDE.md#prefixes)) | `cd504cdf3` |
+| `EditCtrl.__init__` | the edit box as wide as the column | `4e096044d` |
+| `EditCtrl.CancelEditing`, `EditTextCtrl.OnChar`, `Delete`, `ResetEditControl` | Escape and the deletion of the item edited cancel; any other end keeps the typed value (`StopEditing()`, a click elsewhere comes before the focus moves) | `def3832cf`, `f2e9f63d1` |
+| `_OnDestroy` | the drag and find timers stopped when the window is destroyed | `def3832cf` |
+
+`treectrl.py` builds on these; it highlights the rows of the selection
+it restores after a rebuild
+([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#restoring-the-selection-after-a-rebuild)).
+
+## Loading
+
+`TreeWidgetFinder` in `taskcoachlib/workarounds/monkeypatches.py`
+answers for `wx.lib.agw.hypertreelist` and `wx.lib.agw.customtreectrl`
+with the two files, found next to each other relative to its own file,
+and is installed only when both exist. `taskcoach.py` and
+`tests/test.py` import it before anything imports a tree widget.
+`BundledTreeWidgetTest` checks that both load from
+`taskcoachlib/patches/` and that `UnselectAll()` clears every
+highlight. To see which file a Python process loads:
+
+```
+python3 -c "import taskcoachlib.workarounds.monkeypatches, wx.lib.agw.customtreectrl as c; print(c.__file__)"
+```
+
+The files ship inside `taskcoachlib` in every package: `setup.py`
+packages `taskcoachlib.*`, `MANIFEST.in` grafts it, and the Windows,
+macOS, AppImage and Flatpak builds copy the package as files.
+`debian/copyright` lists both under the wxWindows Library Licence.
+
+## Updating the Bundle
+
+1. Take both files from the same wxPython release.
+2. Redo [Task Coach's changes](#task-coachs-changes) on
+   `hypertreelist.py`; keep `customtreectrl.py` as released but for
+   fixes taken from a later release, named in its header.
+3. Keep both running on every supported Python: Ubuntu 22.04 has 3.10,
+   and upstream's 4.2.4+ `hypertreelist.py` imports `typing.Self`
+   (3.11) or `typing_extensions`.
+4. Keep the selection working: from 4.2.4 on, a row highlighted
+   without `SetItemHilight()` is not cleared by `UnselectAll()`.
+   `BundledTreeWidgetTest.test_unselect_all_clears_every_highlight`
+   fails on such a base on purpose; change it with the code.
+5. Check, besides the catalog: whole-row colours of a category with a
+   background colour, the date columns included; the hover outline;
+   the selection kept across a sort, a filter, the tree/list switch
+   and a new task; multi-selection with Ctrl and Shift; the keyboard;
+   drag and drop; editing (Escape cancels, a click elsewhere keeps);
+   a column shown and hidden; a parent collapsed.
+
+Planned: wxPython 4.3.1's pair, To Do 67 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do). 11
+of the 31 methods Task Coach changed were also rewritten upstream
+(`PaintItem`, `OnMouse`, `PaintLevel`, the header's `OnMouse`,
+`OnPaint`), so those need a merge; the rest carry over.
+
+## Known Issues
+
+- Truncated text in right-aligned and centred columns is cut on the
+  wrong side: `ChopText()` in `customtreectrl.py`, now bundled, so it
+  can be fixed here
+  ([TODO.md](TODO.md#hypertreelist-text-truncation-bug-standard-wxpython-issue)).
+- Upstream changed how `PaintItem` picks the default text colour
+  ([#1880](https://github.com/wxWidgets/Phoenix/issues/1880), dark
+  themes, 4.2.4); the copy keeps the older line. Not yet checked
+  whether Task Coach's own colours make it visible (To Do 67).

@@ -30,13 +30,12 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 |---------|-------------|--------------|---------------------------|
 | Python | >=3.8 | Type hints, f-strings, walrus operator | — |
 | wxPython | >=4.2.0 | HyperTreeList stability | — |
-| wxPython | >=4.2.4 | hypertreelist row background fix (PR #2088) | All current (Bookworm 4.2.0, Trixie 4.2.3) |
 | wxPython | >=4.3.0 | Native dark mode on Windows (optional, see [WINDOWS.md](WINDOWS.md#dark-mode)) | Windows builds pin 4.3.1 |
 | pyparsing | >=3.0.0 | pyparsing 3 API (`deltaTime.py`); 3.0.0 to 3.1.2 tested alike | none (Ubuntu 22.04 has 3.0.7) |
 | watchdog | >=3.0.0 | File monitoring API | Debian Bookworm (2.2.1) |
 | numpy | >=1.26,<2 | NumPy 2.4+ requires SSE4.2 (crashes old CPUs, see [NUMPY.md](NUMPY.md)) | — |
 
-**Note**: wxPython 4.2.4 was released October 28, 2025. Of the distros, only Arch (4.2.5) and Fedora 43 (4.2.4) ship it so far. The bundled copy in `taskcoachlib/patches/` is used on every wxPython version, since it also carries Task Coach changes (see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)).
+**Note**: the tree views run on Task Coach's own copy of wxPython's tree widget (`taskcoachlib/patches/`) on every wxPython version, so the installed wxPython's (4.0.7 to 4.3.1 across the builds) does not matter for them ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)).
 
 ## Install Overview by Build Target
 
@@ -59,7 +58,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | pyenchant | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | optional | — | — |
 | ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | bundled | — | — |
-| hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | bundled | **patch** | **patch** |
+| hypertreelist, customtreectrl | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** |
 | WMI | — | — | — | — | — | — | — | — | pip | — |
 | python3-dbus | optional | optional | optional | optional | optional | optional | — | bundled | — | — |
 | python3-pywayland | — | — | optional | — | optional | optional | — | — | — | — |
@@ -68,7 +67,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 - `distro` = Installed from distribution repos (required dependency)
 - `optional` = Optional feature support, exactly like the spell-check dictionaries: `Recommends:` on deb/rpm, `optdepends` on Arch. Never a hard dependency, never bundled, never pip-installed. Pulled in where the distro packages it, silently skipped (install still succeeds) where it does not.
 - `pip` = Bundled via pip in package build (version too old or not in repos)
-- `patch` = Bundled patch in `taskcoachlib/patches/` (wxPython hypertreelist fix)
+- `patch` = Task Coach's copy of wxPython's tree widget in `taskcoachlib/patches/` ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md))
 - `bundled` = Bundled in package (thirdparty/ for .deb/.rpm, inside the AppImage, or built into the Flatpak). For Flatpak this means pip-installed or built as a manifest module at build time; the base Python, GTK and PyGObject come from the GNOME runtime, not from these rows.
 - ~~`flatpak`~~ (struck through) = **Flathub release postponed** (2026); the Flatpak build still works for a direct `.flatpak` install but is not actively published — see [Flatpak Packaging](#flatpak-packaging).
 - `host` = Uses host system library (AppImage); install on host for Wayland tray support
@@ -246,19 +245,17 @@ dpkg-buildpackage -us -uc -S
 # - taskcoach_X.Y.Z-N.dsc (source description)
 ```
 
-### wxPython Patch Strategy
+### Bundled Tree Widget
 
-**Project files:** [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)
+**Project files:** [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)
 
-Task Coach carries its own copy of wxPython's `hypertreelist.py`
-(`taskcoachlib/patches/`), loaded in place of the installed one on
+Task Coach carries its own copy of wxPython's tree widget,
+`hypertreelist.py` and the `customtreectrl.py` it is built on
+(`taskcoachlib/patches/`), loaded in place of the installed ones on
 every wxPython version; packages cannot modify the system
-`python3-wxgtk4.0`.
-
-The copy has the row background fixes wxPython < 4.2.4 lacks and Task
-Coach's own changes, so it stays on every version. An import hook in
-`taskcoachlib/workarounds/monkeypatches.py` loads it; it ships inside
-`taskcoachlib`, so every package type has it.
+`python3-wxgtk4.0`. An import hook in
+`taskcoachlib/workarounds/monkeypatches.py` loads both; they ship
+inside `taskcoachlib`, so every package type has them.
 
 ### Dependencies
 
@@ -323,11 +320,11 @@ taskcoach (1.6.1-1~ppa1) noble; urgency=medium
 
 | Codename | Version | wxPython | Status |
 |----------|---------|----------|--------|
-| Jammy | 22.04 LTS | 4.0.7 (wxWidgets 3.0.5) | Patch required |
-| Noble | 24.04 LTS | 4.2.1 | Patch required |
-| Oracular | 24.10 | 4.2.1 | Patch required |
-| Plucky | 25.04 | 4.2.2 | Patch required |
-| Questing | 25.10 | 4.2.x | Patch required |
+| Jammy | 22.04 LTS | 4.0.7 (wxWidgets 3.0.5) | Bundled tree widget |
+| Noble | 24.04 LTS | 4.2.1 | Bundled tree widget |
+| Oracular | 24.10 | 4.2.1 | Bundled tree widget |
+| Plucky | 25.04 | 4.2.2 | Bundled tree widget |
+| Questing | 25.10 | 4.2.x | Bundled tree widget |
 
 ---
 

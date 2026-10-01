@@ -184,12 +184,12 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         """Select items whose PyData is in the selection list.
         Returns the first selected tree item (for scrolling).
 
-        Note: UnselectAll() is required before SelectItem() after a
-        tree rebuild. This appears to be a HyperTreeList quirk/bug -
-        SelectItem() silently fails without it, even though
-        DoSelectItem has unselect_others=True by default. See:
-        https://github.com/wxWidgets/Phoenix/issues/1164 for related
-        issues.
+        UnselectAll() first: in a multi-selection tree SelectItem()
+        toggles, and a rebuild has already highlighted the rows it
+        restores (_refresh_selection()). UnselectAll() clears every
+        highlight only with the bundled customtreectrl
+        (docs/BUNDLED_TREE_WIDGET.md); wxPython 4.2.4's clears only the
+        rows it selected itself.
         """
         first_selected_item = None
         self.UnselectAll()

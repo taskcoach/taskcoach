@@ -125,38 +125,9 @@ The backup/restore feature needs review - testing showed unexpected restore beha
 
 **Status:** Review periodically to determine if still needed
 
-This section documents workarounds and patches in the codebase that should be regularly reviewed to determine if they are still necessary. As wxPython, GTK, and other dependencies evolve, some of these may become obsolete.
-
-### Active Workarounds
-
-| Location | Workaround | Purpose | Review Notes |
-|----------|------------|---------|--------------|
-| `taskcoach.py` | `_set_wayland_app_id()` | Sets GLib program name for Wayland app ID matching | Required for proper Wayland dock integration |
-| `workarounds/monkeypatches.py` | hypertreelist import hook | Loads Task Coach's own copy of `wx.lib.agw.hypertreelist` | Permanent ([CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)) |
-| `workarounds/monkeypatches.py` | `Window.SetSize` clamp | A negative width or height becomes 0 (GTK asserts `height >= -1`) | Only the two- and four-number forms |
-| `workarounds/monkeypatches.py` | `wx.CallAfter` crash guard | Prevents segfaults from callbacks to destroyed C++ objects | Required for library code; the app's own deferred calls go through `patterns.later` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); see [CRASH_GUARD.md](CRASH_GUARD.md) |
-| `workarounds/monkeypatches.py` | `wx.Timer` owner guard | Stops timers still running when their owner window is destroyed, logs the start stack | Required for library code, as above; see [CRASH_GUARD.md](CRASH_GUARD.md) |
-| `workarounds/display.py` | `wx.Display` replacement (Windows) | Follows monitors plugged in or out | Possibly obsolete since wxWidgets 3.1; a check on Windows is deferred (D6 in MASTER_SCHEDULER_REFACTOR.md) |
-| `widgets/__init__.py` | `wx.Dialog.__init__` binds `EVT_SET_CURSOR` | Stops the main window's sash cursor showing through dialogs | Required |
-| `application.py` | `OnExceptionInMainLoop` | Catches unhandled exceptions during wx event dispatch | Required, see [CRASH_GUARD.md](CRASH_GUARD.md) |
-
-### Removed Legacy Hacks (January 2026)
-
-The following obsolete workarounds were removed from `taskcoach.py`:
-
-| Workaround | Age | Reason for Removal |
-|------------|-----|-------------------|
-| `XLIB_SKIP_ARGB_VISUALS=1` | 2010 | Ubuntu 10.10 bug workaround - **may resolve Issue #64 segfault** |
-| `mx.DateTime` import | 2012 | Ubuntu 12.04 console message - EOL 2017 |
-| `wxversion.select(["2.8-unicode", "3.0"])` | 2008 | Ancient wx 2.8/3.0 selection - obsolete since ~2013 |
-| `/usr/share/pyshared` path hack | 2012 | Ubuntu 12.04 Python path - EOL 2017 |
-
-**Note:** Removing `XLIB_SKIP_ARGB_VISUALS=1` may resolve Issue #64 - user testing required to confirm.
-
-Removed 2026-09: the `inspect.getargspec` shim (its one caller uses
-`getfullargspec()`), the `wx.FontFromNativeInfoString` replacement
-(`wxhelper.font_from_native_info()`), and the TEE module, disabled
-since January 2026.
+The list of bundled, copied and runtime-patched third-party code is
+[THIRD_PARTY_CODE.md](THIRD_PARTY_CODE.md); review it every 6 to 12
+months and whenever a dependency's version changes.
 
 ### HyperTreeList Text Truncation Bug (Standard wxPython Issue)
 
@@ -169,14 +140,12 @@ since January 2026.
 
 **Affected columns:** Due Date, completion dates, and other right-aligned date/time columns in task lists.
 
-**Root cause:** `ChopText()` function in `wx.lib.agw.customtreectrl` (standard wxPython, not our patch) always truncates from the right. Both standard and patched HyperTreeList use this function without considering column alignment.
-
-**Note:** This is a **standard wxPython bug**, not related to our local background-coloring patch. The local patch (`taskcoachlib/patches/hypertreelist.py`) is for Issue #2081/#1898 (row background colors), which is a separate issue.
+**Root cause:** `ChopText()` in `customtreectrl` always truncates from the right, and HyperTreeList calls it without the column's alignment. Upstream wxPython has the same bug; Task Coach's copy is the bundled `taskcoachlib/patches/customtreectrl.py`, so it can be fixed there ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)).
 
 **Fix options:**
 1. Report upstream to wxPython/AGW and wait for fix
-2. Modify local `hypertreelist.py` patch to use `wx.Control.Ellipsize(text, dc, wx.ELLIPSIZE_START, maxWidth)` for RIGHT-aligned columns
-3. Create alignment-aware `ChopText` wrapper function in local patch
+2. In the bundled `hypertreelist.py`, use `wx.Control.Ellipsize(text, dc, wx.ELLIPSIZE_START, maxWidth)` for RIGHT-aligned columns
+3. An alignment-aware `ChopText()` in the bundled `customtreectrl.py`
 
 **References:**
 - `wx.Control.Ellipsize()` supports `wx.ELLIPSIZE_START`, `wx.ELLIPSIZE_MIDDLE`, `wx.ELLIPSIZE_END`
@@ -187,10 +156,6 @@ since January 2026.
 **TODO:** Consider filing a new issue at [wxWidgets/Phoenix](https://github.com/wxWidgets/Phoenix/issues/new) with reproduction steps demonstrating the alignment-aware truncation bug.
 
 **Status:** No upstream issue exists - consider filing new issue, or implement local workaround
-
-### Recommendations
-
-1. **Regular review:** Check this section every 6-12 months to clean up obsolete workarounds.
 
 ---
 

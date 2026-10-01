@@ -822,36 +822,25 @@ each with the recommended action, none ruled yet:
   `Task.statusSortFunction()` sorts by the status sort priorities, as
   status first does, re-sorted after the loop's pass
   ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md)).
-- P118. With wxPython 4.2.4 and later the tree views lose the
-  selection whenever they rebuild: a sort, a filter or search, the
-  tree/list switch, a task added or renamed (GitHub #385, seen on
-  Windows). After a filter or search the viewer then selects the
-  neighbouring task instead. Cause: wxPython 4.2.4 (PR #2088) keeps
-  the selected items in a set and `UnselectAll()` clears only that
-  set; the rebuild highlights the selected rows with
-  `item.SetHilight()`, outside it, so `select()` toggles them off.
-  Every build on 4.2.4 or later: Windows and macOS (the latest
-  wxPython until 2026-09-23, 4.3.1 since), Flatpak and the AppImage,
-  Arch, Fedora 43; not Debian 12 and 13, Ubuntu 22.04 and 24.04.
-  Checked in the app on 4.2.5 and 4.2.3 (2026-10-01).
-  Root cause: half a copy. The copy is wxPython 4.2.2's
-  `hypertreelist.py` (its "2014" header line is upstream's, never
-  updated) with Task Coach's changes; its base class comes from the
-  installed wxPython's `customtreectrl.py` (4.0.7 to 4.3.1 across the
-  builds), which 4.2.4 changed. Upstream's 4.2.4+ `hypertreelist.py`
-  does not import on an older `customtreectrl.py` (`EnsureText`,
-  `BisectChildren`), so the copy could not follow it alone.
-  Options, each checked in a scratch copy (catalog on 4.2.3 and 4.2.5):
-  - A. Patch the copy for 4.2.4's selection set: all pass; the copy
-    still runs on whichever base each build has.
-  - B. Bundle 4.2.3's `customtreectrl.py` (the same 4.2.0 to 4.2.3)
-    with the copy: all pass, no other code change; every build runs
-    the certified platform's tree code.
-  - C. Bundle 4.3.1's pair and redo Task Coach's changes on it: the
-    pure pair runs on both; fails only where those changes are
-    missing (column text sync, the rebuild's highlight). 31 changed
-    methods, 11 also rewritten upstream (`PaintItem`, `OnMouse`,
-    `PaintLevel`).
+- P118. ~~With wxPython 4.2.4 and later the tree views lost the
+  selection at every rebuild~~: fixed 2026-10-01, **asked by
+  designer** (option B below). A sort, a filter or search, the
+  tree/list switch, a task added or renamed dropped the selection; after
+  a filter or search the viewer selected the neighbouring task instead
+  (GitHub #385, seen on Windows). Every build on 4.2.4 or later:
+  Windows and macOS (the latest wxPython until 2026-09-23, 4.3.1
+  since), Flatpak, the AppImage, Arch, Fedora 43. Cause: half a copy.
+  The HyperTreeList copy (wxPython 4.2.2's, not 2014's: that header
+  line is upstream's) ran on each build's installed `customtreectrl`,
+  and 4.2.4 made that one track the selection in a set the copy and
+  the rebuild bypass. Options, each checked with the catalog on 4.2.3
+  and 4.2.5 in a scratch copy: A, patch the copy for 4.2.4's set (left
+  each build on its own base); B, bundle 4.2.3's `customtreectrl.py`
+  with the copy (chosen: every build runs the certified platform's
+  tree code; the copy's `six` import went too); C, 4.3.1's pair with
+  Task Coach's changes redone, To Do 67
+  ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md),
+  [THIRD_PARTY_CODE.md](THIRD_PARTY_CODE.md)).
 - P119. Files left open: the template list (`templatelist.py` 64, 72,
   92), the CSV import's encoding guess (`csvimport.py` 155), an empty
   file check (`uicommand.py` 719), `anonymize.py` 62. Python warns at
@@ -875,6 +864,18 @@ each with the recommended action, none ruled yet:
   (neither the dragged task nor always the target), and the subject's
   in-place editor sometimes opens on it. The same on wxPython 4.2.3
   and 4.2.5 (checked in the app 2026-10-01).
+- P125. On Windows the `wx.Display` replacement
+  (`workarounds/display.py`, D6) has no `GetScaleFactor()`, so the
+  startup report logs no scale factors there (`application.py` skips
+  the line on the error).
+- P126. `tools/dot.py` has two regular expressions in plain strings
+  with `\(` and `\s`: invalid escape sequences, a `SyntaxWarning` on
+  Python 3.12 and later (flake8 prints it). The same on master.
+- P127. Collapsing a parent whose child is selected empties the
+  selection (the copy's `ChildrenClosing()`, no selection event), but
+  the status bar keeps the old count ("1 selected") until the next
+  selection change. The same on wxPython 4.2.3 and 4.2.5 (checked in
+  the app 2026-10-01); once it showed 0.
 
 ## Views on the Effective Styles
 

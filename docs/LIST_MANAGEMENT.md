@@ -7,18 +7,19 @@
 3. [Selection SSOT Principle](#selection-ssot-principle)
 4. [Multi-Window Architecture](#multi-window-architecture)
 5. [Select Next After Deletion](#select-next-after-deletion)
-6. [Status Bar Updates](#status-bar-updates)
-7. [Selection-Driven Button Enable/Disable](#selection-driven-button-enabledisable)
-8. [Tree Mode Button Enable/Disable](#tree-mode-button-enabledisable)
-9. [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views)
-10. [Stale Item Positions After Rebuild](#stale-item-positions-after-rebuild)
-11. [Windows: Scrollbar Adjustment on Content Changes](#windows-scrollbar-adjustment-on-content-changes)
-11. [Row Hover Outline](#row-hover-outline)
-10. [Mouse-Move Handler Inventory (Tree Views)](#mouse-move-handler-inventory-tree-views)
-11. [Vampire CPU Usage](#vampire-cpu-usage)
-12. [AUI Sash Resize Throttle](#aui-sash-resize-throttle)
-13. [AUI Repaint Cascade on GTK3](#aui-repaint-cascade-on-gtk3)
-14. [Key Files](#key-files)
+6. [Restoring the Selection After a Rebuild](#restoring-the-selection-after-a-rebuild)
+7. [Status Bar Updates](#status-bar-updates)
+8. [Selection-Driven Button Enable/Disable](#selection-driven-button-enabledisable)
+9. [Tree Mode Button Enable/Disable](#tree-mode-button-enabledisable)
+10. [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views)
+11. [Stale Item Positions After Rebuild](#stale-item-positions-after-rebuild)
+12. [Windows: Scrollbar Adjustment on Content Changes](#windows-scrollbar-adjustment-on-content-changes)
+13. [Row Hover Outline](#row-hover-outline)
+14. [Mouse-Move Handler Inventory (Tree Views)](#mouse-move-handler-inventory-tree-views)
+15. [Vampire CPU Usage](#vampire-cpu-usage)
+16. [AUI Sash Resize Throttle](#aui-sash-resize-throttle)
+17. [AUI Repaint Cascade on GTK3](#aui-repaint-cascade-on-gtk3)
+18. [Key Files](#key-files)
 
 ---
 
@@ -177,6 +178,32 @@ Restoring the viewport needs one extra step, though. See
 controls keep the selection at the same *index*, which lands on the row
 **below** the deleted one. Effort and attachment viewers therefore do
 not follow the rule above.
+
+---
+
+## Restoring the Selection After a Rebuild
+
+**Reference:** `treectrl.py:_do_full_rebuild()`, `_refresh_selection()`, `select()`
+
+A tree view rebuilds its rows when their order or set changes (a sort,
+a filter or search, the tree/list switch, an item added, removed or
+moved); otherwise it refreshes them in place and the selection stays.
+
+The rebuild saves the selected objects, deletes and re-adds every row,
+highlighting the saved ones as it adds them (`_refresh_selection()`),
+and after `Thaw()` (`SelectItem()` does nothing on a frozen tree)
+selects them with `select()`: `UnselectAll()`, then `SelectItem()` per
+row. In a multi-selection tree `SelectItem()` toggles, so
+`UnselectAll()` must first clear the rows the rebuild highlighted. The
+bundled `customtreectrl` clears every highlight; wxPython 4.2.4's clears
+only the rows it selected itself, and on the builds that used it every
+restored row toggled off (P118, GitHub #385;
+[BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#one-widget-two-files)).
+
+A selection that does not come back looks like a deletion to
+`on_presentation_changed()`, and [Select Next After
+Deletion](#select-next-after-deletion) selects a neighbour: a lost
+selection after a filter or search shows as another task selected.
 
 ---
 
@@ -1028,4 +1055,5 @@ the motion-only input filter is sufficient to prevent the cascade.
 | `taskcoachlib/widgets/tooltip.py` | Tooltip mixin with deferred data prep |
 | `taskcoachlib/widgets/frame.py` | AUI frame, `_RebuildInputFilter` (EventFilter), sash throttle |
 | `taskcoachlib/patches/hypertreelist.py` | Patched upstream widget — hover outline, drag highlight |
+| `taskcoachlib/patches/customtreectrl.py` | Its base, bundled with it ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)) |
 

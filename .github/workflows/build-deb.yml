@@ -297,7 +297,8 @@ jobs:
               # Check that key files exist
               echo "Checking installed files..."
               test -d /usr/lib/python3/dist-packages/taskcoachlib && echo "SUCCESS: taskcoachlib installed"
-              test -f /usr/lib/python3/dist-packages/taskcoachlib/patches/hypertreelist.py && echo "SUCCESS: Bundled patch installed"
+              test -f /usr/lib/python3/dist-packages/taskcoachlib/patches/hypertreelist.py && echo "SUCCESS: Bundled hypertreelist installed"
+              test -f /usr/lib/python3/dist-packages/taskcoachlib/patches/customtreectrl.py && echo "SUCCESS: Bundled customtreectrl installed"
 
               # Test that Python can import the module
               echo "Testing Python import..."

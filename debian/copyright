@@ -14,7 +14,17 @@ License: GPL-3+
 Files: taskcoachlib/patches/hypertreelist.py
 Copyright: 2006-2014 Andrea Gavana <andrea.gavana@gmail.com>
            2023 cbeytas (PR #2088 fixes)
+           2025-2026 Task Coach developers <developers@taskcoach.org>
 License: wxWindows
+Comment: wxPython 4.2.2's wx/lib/agw/hypertreelist.py with Task Coach's
+ changes; see docs/BUNDLED_TREE_WIDGET.md.
+
+Files: taskcoachlib/patches/customtreectrl.py
+Copyright: 2006-2018 Andrea Gavana <andrea.gavana@gmail.com>
+           2018 Helio Guilherme
+License: wxWindows
+Comment: wxPython 4.2.3's wx/lib/agw/customtreectrl.py, the base of
+ hypertreelist.py; see docs/BUNDLED_TREE_WIDGET.md.
 
 Files: taskcoachlib/thirdparty/wxScheduler/*
 Copyright: 2009-2013 Daniele Esposti <expo@expobrain.net>

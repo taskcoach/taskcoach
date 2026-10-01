@@ -24,7 +24,7 @@ That's it! The .deb package handles all dependencies and the wxPython patch auto
 ### What the .deb Package Includes
 
 - All Python dependencies from Debian repositories
-- Bundled wxPython patch for category row coloring (see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md))
+- Bundled copy of wxPython's tree widget, for category row colouring among others (see [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md))
 - Desktop integration (application menu entry, file associations)
 - Man page
 
@@ -63,9 +63,9 @@ For more details on the packaging system, see [PACKAGING.md](PACKAGING.md).
 
 This section is for developers who want to work on TaskCoach code. If you just want to use TaskCoach, install the .deb package above.
 
-Task Coach carries its own copy of wxPython's tree list, loaded in
+Task Coach carries its own copy of wxPython's tree widget, loaded in
 place of the installed one
-([CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)); nothing
+([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)); nothing
 to install.
 
 ### System Requirements
@@ -303,7 +303,7 @@ Run from a terminal: the log goes to its output
 ## Related Documentation
 
 - [PACKAGING.md](PACKAGING.md) - Debian packaging details and build process
-- [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md) - wxPython patch information
+- [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md) - Task Coach's copy of wxPython's tree widget
 
 ## Compatibility Notes
 

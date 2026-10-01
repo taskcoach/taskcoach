@@ -67,9 +67,10 @@ The following libraries were previously bundled but have been removed:
   systems have standardized file opening via xdg-open (Linux), open (macOS), or os.startfile (Windows).
   The KDE4-specific date formatting code (using PyKDE4/PyQt4) was also removed as dead code.
 - **aui/**: Now using wx.lib.agw.aui from wxPython directly
-- **customtreectrl.py**: Now using wx.lib.agw.customtreectrl from wxPython directly
-- **hypertreelist.py**: Task Coach's own copy lives at taskcoachlib/patches/hypertreelist.py,
-  loaded in place of wxPython's (docs/CRITICAL_WXPYTHON_PATCH.md)
+- **customtreectrl.py**, **hypertreelist.py**: the Python 3 migration kept only a copy of
+  hypertreelist.py and used wxPython's customtreectrl, which broke the copy when wxPython 4.2.4
+  changed it. Both are bundled again, together, in taskcoachlib/patches/ since 2026-10-01
+  (docs/BUNDLED_TREE_WIDGET.md)
 - **ntlm/**: Removed 2026-09. It could not run on Python 3, and IMAP login no longer offers NTLM.
 - **smartdatetimectrl.py**: Replaced with new MaskedDateTimeCtrl in widgets/maskedtimectrl.py
   (2026-01: Original control by Jerome Laheurte/Frank Niessink, replaced during date control refactor)
