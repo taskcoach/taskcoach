@@ -788,7 +788,10 @@ each with the recommended action, none ruled yet:
   `createButtons()` raised). Cause not known yet. Again 2026-10-01:
   the file ended without output (three reruns pass); the catalog now
   gives each file Python's crash report and unbuffered output, and
-  shows a failed file's exit status.
+  shows a failed file's exit status. Again 2026-10-01:
+  `TaskEditorTest.py` crashed (exit 139) after five tests in a
+  per-file run without the crash report; 25 reruns pass, and 20
+  without that day's change.
 - P114. ~~The task list's Budget cell ignored typing ("2:30" left it at
   0:00:00; Enter saved nothing)~~: fixed 2026-09-30, **asked by
   designer**; the same on master. The cell is the task editor's
