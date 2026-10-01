@@ -904,6 +904,15 @@ each with the recommended action, none ruled yet:
   field (as in P123); its Scintilla fields now count as text fields,
   and their undo covers only the typing
   ([MENUS.md](MENUS.md#keyboard-shortcuts)).
+- P133. Opening a task's editor records a "Change planned duration"
+  step and modifies the task when its stored planned duration differs
+  from due minus planned start (Welcome.tsk's "Try different views",
+  for one): the editor's sync on opening writes it
+  (DURATION_CALCULATIONS.md, Logic Flow 4.3.1.2). The same on master
+  (checked in the app). Fix?
+- P134. The search box and the list's in-place editor have no undo:
+  GTK 3's single-line fields have none (GTK 4 added it), so Ctrl+Z
+  does nothing there. Give them one, or leave?
 
 ## Views on the Effective Styles
 
