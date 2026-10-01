@@ -227,6 +227,21 @@ Numbered D1, D2, ...
   (`settings_uicommand.py`, `searchctrl.py`, `gui/menu.py`; was P51),
   **ruled by designer 2026-09-30**: deferred, each needs a behaviour
   check on the platforms they were for.
+- D8. What the 2026-09-30 audit found that cannot be tested here (no
+  Windows, macOS, Wayland, KDE or Flatpak), deferred by the
+  designer's standing rule of 2026-09-30 for users on those platforms:
+  the wlroots/COSMIC tray backend and the Background portal
+  ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)); the Wayland items of
+  [AUI_WAYLAND_ISSUES.md](AUI_WAYLAND_ISSUES.md) (a dock and float
+  menu, the switch to `wx.aui`, `GDK_BACKEND=x11`); popups placed by
+  the compositor on Wayland (DATETIME_CONTROLS.md says built, it was
+  not: `_PopupWindow` is always a `wx.Dialog`); idle without pywayland
+  on Wayland ([IDLE.md](IDLE.md)); macOS sleep and wake (a no-op),
+  signing and notarization, Tahoe, Intel builds
+  ([MACOS.md](MACOS.md)); the macOS mailto and notifier-focus TODOs;
+  the Windows and macOS Python 3.11 builds; the wxPython 4.2.0 floor
+  against Ubuntu 22.04's 4.1.1; the Flatpak's network and Secret
+  portal; the icon picker on Windows and macOS.
 
 ## Pre-existing Issues
 
@@ -486,6 +501,207 @@ In the app:
   with a copy labelled 2.0.2.25.
 - P50. Deferred: D6.
 - P51. Deferred: D7.
+
+Found by the audit of 2026-09-30, **asked by designer** (docs, dead
+code, vendored code and dependencies, tests and CI); all testable here,
+each with the recommended action, none ruled yet:
+
+- P52. Quit still stops the file watcher, idle polling and the
+  scheduler's subscriptions (`mainwindow.py` `onClose`), as on master;
+  lazy teardown names only bundled timers as an exception
+  ([DEFERRED_CALLS.md](DEFERRED_CALLS.md#end-of-life)). Recommended:
+  keep the ones quitting needs (the watcher thread), as documented
+  exceptions; drop the others.
+- P53. Docs stale on the scheduler: `TASK_STATUS.md` (the loop calls
+  `_process_task()`, "next tick", `status()`, plural icons, the
+  editor preview); `docs/scripts/scheduler_diffprobe.py` fails at its
+  state step (`__setstate__` is gone) and alone keeps
+  `CompositeCollection.allItemsSorted()` alive. Recommended: fix the
+  doc; retire the probe and that method (the unit test replaced it).
+- P54. "Undo do something" after changing % complete of several tasks:
+  `plurar_name` (`taskCommands.py`) and `plular_name` (Copy,
+  `command/base.py`) are misspelt. Recommended: fix.
+- P55. The fee columns' in-place editor is `AmountCtrl`
+  (`wx.lib.masked.NumCtrl`), which MONETARY_CONTROLS.md calls unusable
+  (crashes while typing). Recommended: test; if it fails, use
+  `CurrencyCtrl`, as the editor does.
+- P56. Opening an effort editor logs "SetSelection failed on
+  DateTimeComboCtrl" (`editor.py`): the focus helper calls a method the
+  control lacks. Recommended: fix.
+- P57. Norwegian locales get en_GB dates and times
+  (`i18n._fixBrokenLocales()`, a wx 2.8 date picker crash of 2012;
+  Linux has no such picker). Removing it changes released behaviour.
+- P58. `widgets/dialog.py` overrides `SetExtraStyle()` as a no-op
+  (2012, against `SizedDialog`, which no longer calls it). Remove after
+  a check of Preferences and the editors?
+- P59. Deprecated or removed in Python 3.14: `ast.Num`/`ast.Str`
+  (`xml/reader.py`, would raise), `codecs.open`, `utcfromtimestamp`
+  (`ical.py` and its test), `sre_constants` (`filter.py`,
+  `searchctrl.py`), `setDaemon` (`fs_poller.py`); `wx.NewId()`
+  (`menu.py`, `newid.py`, `searchctrl.py`) warns on every run.
+  Recommended: replace all.
+- P60. `.gitattributes`' `debian/ export-ignore` also drops
+  `build.in/debian/` from source tarballs, so `setup.py`, the PKGBUILD
+  and `debian/rules` miss the appdata file. Recommended: `/debian/`.
+- P61. The run-from-source scripts README points to fail: they check
+  the removed `desktop` module, install no pyenchant;
+  `test_taskcoach.sh` checks files that do not exist. Fix or retire?
+- P62. PyGObject (`python3-gi`) is used (AppIndicator, the first tray
+  choice on GTK) but declared in no package. Recommended: declare.
+- P63. The translation test's 106 coverage tests read
+  `i18n.in/messages.pot`, gitignored and from January (338 strings
+  missing); regenerated as TRANSLATIONS.md says, it takes 8,700 icon
+  hints and every language fails. Track the template or build it in
+  the test, and keep icon hints out?
+- P64. Dead code: `meta/gpl.py` `licenseText` (676 lines),
+  `BaseTextCtrl`, `TimeDeltaEntry`, `date.parseDate` (each with its
+  test), `po2dict` `make()`/`generateDict()` (broken),
+  `PIElementTree._write` (Python 2), the Windows and macOS time and
+  date renderers, `Translator.locale_ok`, `--skipstart`, 12
+  `wxevents` accessors, `AbstractNotifier.get()`,
+  `workarounds/encodings.py`, `dummy.MainWindow`, about 30 attributes
+  written and never read, unused `meta/data.py` values and the
+  buildbot `revision` block (with `MetaDataTest`, which should check
+  `version_full`). Recommended: remove.
+- P65. Code only tests use (`Task.dueSoon()`, `CompositeList`,
+  `getObjectById`, `Viewer.updateSelection`, `Menu.openMenu` and about
+  12 more). Remove with the tests, or keep as test helpers?
+- P66. `DurationCtrlVerbose` (130 lines): only the demo uses it;
+  DATETIME_CONTROLS.md documents it. Keep or remove?
+- P67. `[version] python`, `wxpython`, `pythonfrozen`, `current`:
+  written to the INI on every save, never read. Keep as diagnostics or
+  drop?
+- P68. `six`: two uses, in the patched tree control (wxPython 4.2.3's
+  own uses `str`), declared in every package. Recommended: `str`, drop
+  `six`.
+- P69. Python 2 style in bulk: `# -*- coding` in 29 files, 93
+  `object` bases, about 28 2to3 `list()` wrappers, `codecs.open`,
+  `UnicodeAwareConfigParser`, metaclass docstrings. Now, or deferred
+  like D1?
+- P70. Stale code comments: 8 TODO/FIXME/XXX/HACK no longer true
+  (`tasklist.py` rename, `autobackup.py` hack, `listctrl.py` font,
+  the "-1 column" questions, ...). Recommended: delete or reword.
+- P71. Pylint leftovers: `.pylintrc` (pylint 0.x), 746
+  `# pylint: disable`, 61 `# pragma: no cover`; no linter or coverage
+  uses them. Remove?
+- P72. `i18n.in/*.po`: 53 copies left by the move to
+  `taskcoachlib/i18n/locales/` (10 MB). Recommended: remove.
+- P73. `icons.in/`: `nuvola.zip` (16 MB), `splash.png`,
+  `splash_inno.bmp` unused, shipped by the Windows build, which copies
+  the whole directory; `gui/icons/ICON_SOURCES.json` and
+  `splash_legacy.png` unused. Recommended: remove; copy only the icon.
+- P74. Unused files: `thirdparty/README.txt` (root), `PUBLICITY.txt`,
+  `TaskCoach.entitlements`, `tools/dot.py`,
+  `tools/nuvola_duplicates.txt`, `docs/proto.rst` (iPhone sync);
+  `.gitignore` lines for retired tooling, none for `.profile` (the
+  profiler's output). Recommended: remove; ignore `.profile`.
+- P75. `bugs/`: 4 of the 6 issue notes are closed on GitHub.
+  Recommended: open ones into docs, the rest retired.
+- P76. `test-screenshots/` (13 MB) and `icon-ideas/` (8 MB) unused but
+  the README banner; `website.in/screenshots`: 26 of 28 unlinked (P45
+  kept them for the Flatpak metadata, which links 2). Retire?
+- P77. Three AppStream files (Debian's legacy one, the Flatpak's, the
+  AppImage's inline). Recommended: one metainfo.
+- P78. `distro` serves only `setup.py`'s Debian `data_files`, which
+  duplicate `debian/rules`. Recommended: remove both.
+- P79. `numpy` serves six status-filter icons; it costs a probe at each
+  start and pins (`<2` blocks Python 3.13 pip builds). Replace with
+  `wx.Image` and drop it?
+- P80. Python floor: the code needs 3.10, packaging says 3.8;
+  `setup.py` lists 3.8/3.9, `tests_require`, an iOS description and an
+  unused Windows branch. Recommended: 3.10, metadata cleaned.
+- P81. `watchdog>=3.0.0` has no recorded reason and forces bundling on
+  Bookworm and Jammy. Test 2.2.1 and lower it?
+- P82. `igraph` is declared nowhere, so the Dependency Graph viewer is
+  hidden in every package. Declare it or retire the viewer?
+- P83. `dbus-python` (3 call sites) could be Gio, already used.
+  Replace?
+- P84. Build inputs adrift: `scripts/build-*.sh` differ from CI; the
+  spec's `Source0` names a `main` branch; PKGBUILD leftovers; an
+  empty `debian/taskcoach.install`; `appimagetool` from AppImageKit.
+  Recommended: align.
+- P85. No CI job runs the tests. A `debian:trixie` job matches the
+  certified platform ([TESTING.md](TESTING.md)). Add it?
+- P86. CI install checks cannot fail (`&& echo SUCCESS` under
+  `set -e`, `|| true`, PowerShell's last exit code only); 7
+  `action-gh-release@v1`, `cache@v4`; `fedora:39`; `checks.yml` on
+  Python 3.11, the floor being 3.10. Recommended: fix.
+- P87. `AppTest.testAppProperties` skips unless the language is en_US,
+  and errors there (with 6 more tests). Recommended: rewrite.
+- P88. Tests that check nothing: GTK-only skips that run nowhere
+  (`testMaximize` twice, two popup tests), a `pass` override in
+  `RecurrenceTest`, two `assertTrue` of a literal, a Python 2 case in
+  `RenderTest`, `TreeListCtrlTest.testShowColumn`. Recommended: fix or
+  delete.
+- P89. `test.py --profile` runs the selection in one process and exits
+  0 on failures. Recommended: per file, with the exit status.
+- P90. A file now and then fails to start ("Can't create a
+  GtkStyleContext without a display connection", exit 133) when
+  another `xvfb-run -a` starts at the same moment. Document, or have
+  the catalog start its own display?
+- P91. Editors first open at 400x300, tabs scrolled, fields cut off
+  ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md), Left). Pick a first size?
+- P92. Fit editors and floating AUI panes to the monitors (planned in
+  WINDOW_GEOMETRY.md and AUI.md; the editors' part conflicts with
+  Decision 8). Do it, or strike it?
+- P93. The editor's layout is saved but not loaded (load disabled;
+  only the active tab is read back). Remove the saving, or fix the
+  load?
+- P94. Planned in TODO.md, not started: Preferences OK/Apply enabled
+  only after a change (10), a backup and restore review (4), speech
+  through pyttsx3 (6), autosave on losing focus (3). Keep, defer or
+  strike each?
+- P95. Right and centre aligned columns truncate on the wrong side
+  (the patched tree control). Fix?
+- P96. Toolbar icons on the right jitter while a sash is dragged
+  ("deferred to a separate branch", not ruled); its demo
+  `test_aui_toolbar_jitter.py` sits at the root. Fix or defer?
+- P97. `view.datestied` against the duration modes
+  ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) TODO 10), and
+  step 1.8.1.3 "remove step?" (the code numbers steps one ahead of the
+  spec from 1.7). Rule?
+- P98. Date and time refactors open in their docs: presets through
+  the attribute path ([DATETIME_PRESETS.md](DATETIME_PRESETS.md) 1),
+  the popup out of `MaskedFieldsCtrl`, one "N/A" painter
+  ([DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) 8, 9). Do or defer?
+- P99. "Paste as subitem" changes its label as the Edit menu opens
+  ([MENUS.md](MENUS.md)). Fix?
+- P100. Lists: a selection outline (LIST_MANAGEMENT.md 1); the effort
+  and attachment viewers select a different row after a delete (a
+  no-op override); two open questions on AUI repaints. Rule?
+- P101. Links in text fields are always `wx.BLUE`, poor on dark themes
+  ([SPELLCHECKING.md](SPELLCHECKING.md), planned). Use the system link
+  colour?
+- P102. Settings: replace `ConfigParser`, migrate the reads, refine the
+  refresh triggers ([SETTINGS.md](SETTINGS.md) 1, 5, 7, 8), viewer
+  instance 0 sharing the template section. Defer?
+- P103. TOOLBAR.md says the sentinel migration is done; 57 old
+  sentinels and the transition aliases remain. Finish, or defer with
+  D1?
+- P104. Long-term items in the migration docs: Blinker or psygnal for
+  the Publisher, gettext `.mo` files, the `SetSizerAndFit` review, an
+  "audit all string handling". Strike or defer?
+- P105. Symbolic icons ([ICON_LIBRARY.md](ICON_LIBRARY.md) 1) and the
+  empty `papirus-*` placeholders. Defer, and remove the placeholders?
+- P106. Window geometry left to check on LXDE: the "to test" rows, a
+  resize jitter (the toolbar resized at every `EVT_SIZE`), a
+  "Description" window seen once. Check?
+- P107. Changing the idle time at runtime logs no probe summary
+  ([IDLE.md](IDLE.md)). Leave?
+- P108. The colour picker's workaround for GNOME bug 761005 (fixed in
+  2016) was never rechecked. Check and remove?
+- P109. Code TODOs: the status bar's place after hiding and showing the
+  toolbar (`mainwindow.py`), editor shortcuts fixed against
+  translations (`editor.py`), relative due-date presets passed and
+  dropped (`inplace_editor.py`). Check each?
+- P110. Mail: IMAP OAuth2 and NTLM through `pyspnego` ("if wanted");
+  FLATPAK.md withholds network because IMAP was "likely dead" (fixed
+  in P41), yet the version check needs it. Rule?
+- P111. Issue #64 (`XLIB_SKIP_ARGB_VISUALS`) waits for a user's test
+  since 2025 (TODO.md). Close?
+- P112. Stale doc text the audit listed (TASK_STATUS, DATETIME
+  CONTROLS, the icon docs, LIST_MANAGEMENT, the Python 3 migration
+  docs, the packaging docs, README). Recommended: correct in one pass.
 
 ## Views on the Effective Styles
 
