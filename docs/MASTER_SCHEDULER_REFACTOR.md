@@ -804,6 +804,9 @@ each with the recommended action, none ruled yet:
   from the pool, so the floating panes' Ctrl+PgDn/Ctrl+PgUp
   accelerators (`container.on_page_floated()`) send ids nothing is
   bound to. The same in the original code. Not checked in the app.
+- P123. Enter in the search box also opens the editor of the selected
+  task (the Edit command's Return accelerator), even when the search
+  hides it. The same on master (checked in the app).
 
 ## Views on the Effective Styles
 
