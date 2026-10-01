@@ -887,6 +887,15 @@ each with the recommended action, none ruled yet:
   nothing there, from the keys or the menu, and Cut, Copy, Paste,
   Delete and Select All act on its text
   ([MENUS.md](MENUS.md#keyboard-shortcuts)).
+- P130. A menu shortcut does nothing while its item is disabled, and
+  items are updated only when their menu opens: open Actions with no
+  task selected, select one, and Ctrl+Return (Mark completed) does
+  nothing until the menu is opened again (checked in the app). The
+  on-open design is on master ([MENUS.md](MENUS.md)); Undo and Redo
+  avoid it since P129.
+- P131. Ctrl+Shift+A is both Edit > Deselect All and Actions > Add
+  attachment; the key opens the attachment dialog (checked in the
+  app). The same on master.
 
 ## Views on the Effective Styles
 
