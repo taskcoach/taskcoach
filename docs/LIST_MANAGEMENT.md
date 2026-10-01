@@ -264,7 +264,16 @@ EVT_TREE_SEL_CHANGED / EVT_LIST_ITEM_SELECTED / DESELECTED
             │   └── _SelectionSync._on_selection_changed(event)
             │       └── toolbar.EnableTool(id, command.enabled(None))
             └── patterns.later.soon(sendViewerStatusEvent)  [existing]
+
+EVT_TREE_ITEM_EXPANDED / COLLAPSED, the selection changed since
+EXPANDING / COLLAPSING (tree views)
+    └── viewer.onSelect()   (as above)
 ```
+
+Collapsing a parent drops its hidden children from the selection
+(`GetSelections()` skips collapsed branches) and expanding brings back
+those still marked, but the widget sends no selection event, so
+`TreeViewer` compares the selection before and after.
 
 ### Design
 

@@ -895,16 +895,35 @@ class ListViewer(Viewer):  # pylint: disable=W0223
 
 class TreeViewer(Viewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
+        self.__selection_before = None
         super().__init__(*args, **kwargs)
+        self.widget.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.__remember_selection)
+        self.widget.Bind(
+            wx.EVT_TREE_ITEM_COLLAPSING, self.__remember_selection
+        )
         self.widget.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.on_item_expanded)
         self.widget.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.on_item_collapsed)
 
+    def __remember_selection(self, event):
+        event.Skip()
+        self.__selection_before = self.widget.GetSelections()
+
+    def __announce_selection_change(self):
+        # Collapsing drops the hidden children from the selection and
+        # expanding brings them back, without a selection event: the
+        # status bar and the toolbar would keep the old selection
+        if self.widget.GetSelections() != self.__selection_before:
+            self.onSelect()
+        self.__selection_before = None
+
     def on_item_expanded(self, event):
         self.__handleExpandedOrCollapsedItem(event, expanded=True)
+        self.__announce_selection_change()
         self.widget._schedule_scrollbar_adjustment()
 
     def on_item_collapsed(self, event):
         self.__handleExpandedOrCollapsedItem(event, expanded=False)
+        self.__announce_selection_change()
         self.widget._schedule_scrollbar_adjustment()
 
     def __handleExpandedOrCollapsedItem(self, event, expanded):

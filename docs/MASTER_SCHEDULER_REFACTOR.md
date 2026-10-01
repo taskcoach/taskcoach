@@ -871,11 +871,12 @@ each with the recommended action, none ruled yet:
 - P126. `tools/dot.py` has two regular expressions in plain strings
   with `\(` and `\s`: invalid escape sequences, a `SyntaxWarning` on
   Python 3.12 and later (flake8 prints it). The same on master.
-- P127. Collapsing a parent whose child is selected empties the
-  selection (the copy's `ChildrenClosing()`, no selection event), but
-  the status bar keeps the old count ("1 selected") until the next
-  selection change. The same on wxPython 4.2.3 and 4.2.5 (checked in
-  the app 2026-10-01); once it showed 0.
+- P127. ~~Collapsing a parent whose child is selected left the status
+  bar at "1 selected" and the selection buttons enabled~~: fixed
+  2026-10-01, **ruled by designer** (option A), the same on master
+  (checked in the app). The tree views announce a selection that an
+  expand or collapse changed; the selection still empties as before
+  ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#signal-flow)).
 - P128. ~~Help > Anonymize wrote a file Task Coach cannot open~~:
   fixed 2026-10-01, the same on master (an error there, a clear
   refusal here): the standard library's ElementTree dropped the
