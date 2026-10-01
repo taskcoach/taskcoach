@@ -216,20 +216,32 @@ go at the end. Details live in the sections and documents linked.
     what it does not know goes (the mail's sender and date, effort
     dates, `stylePriority`), and notes on attachments lose their
     categories (P29, fixed here, not in the release).
-    Proposed, the designer's dual save as expand and contract, checked
-    in a prototype (the release opens the file, every membership in;
-    this branch reads its own files, the release's re-save and today's
-    version 38 files unchanged):
-    - the PI holds two numbers: `tskversion` 37, the version a reader
+    Proposed, the designer's dual save as expand and contract,
+    checked in a prototype with the code of 2.0.2.0 and of the release
+    (2.0.2.25). A file saved by either, opened and saved by this
+    branch, then saved again by it, equals its first save but for
+    sub-second parts of five dates, which it shows alike (whole
+    seconds, item 1). This branch reads its own files, the release's
+    re-saves and today's version 38 files unchanged.
+    - The PI holds two numbers: `tskversion` 37, the version a reader
       needs (what releases check), and `tskformat` 38, the format
-      written, by which this branch reads;
-    - both forms of membership: the items' `categories` and the
-      categories' `categorizables`, from the same data;
-    - a mail attachment written as a link (`type="uri"`) marked
-      `mail="True"`;
-    - after a window from 2.0.3.0's release (the designer's example:
-      three months), stop writing the old forms and write
-      `tskversion` 38. The policy goes in
+      written, by which this branch reads.
+    - Both forms of membership: the items' `categories` and the
+      categories' `categorizables`, from the same data.
+    - A mail attachment written as a link (`type="uri"`, its `mid:`
+      location), read back as a mail by that location, so a save by
+      the release loses only its sender and date. Not `mail2`: the
+      releases refuse a whole file with an attachment type they do not
+      know ("Unknown attachment type"), and with a mail whose `.eml`
+      file exists (P31).
+    - Kept for the releases: an item's `selectedIcon` as read, while
+      its icon is unchanged; a modification date the file stated, also
+      when equal to the creation date (otherwise left out, its
+      default).
+    - Older than 2.0.2.0 is out of scope: a file of the release already
+      needs it (icon names renamed then; earlier lookups fail on them).
+    - Later, by version, not by date: stop writing these forms and
+      write `tskversion` 38. The policy and this history go in
       [PERSISTENCE_XML.md](PERSISTENCE_XML.md).
 67. Bring the bundled tree widget up to date (option C of P118),
     **asked by designer 2026-10-01**: wxPython 4.3.1's
