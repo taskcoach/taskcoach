@@ -910,9 +910,14 @@ each with the recommended action, none ruled yet:
   for one): the editor's sync on opening writes it
   (DURATION_CALCULATIONS.md, Logic Flow 4.3.1.2). The same on master
   (checked in the app). Fix?
-- P134. The search box and the list's in-place editor have no undo:
-  GTK 3's single-line fields have none (GTK 4 added it), so Ctrl+Z
-  does nothing there. Give them one, or leave?
+- P134. ~~The search box and the list's in-place editor had no
+  undo~~: fixed 2026-10-01, **ruled by designer** ("the text boxes
+  should all behave the same ... limited to the platforms that don't
+  have it"). wxWidgets 3.2.8 leaves `Undo()` a stub on GTK (every
+  text field) and macOS (single-line ones); Windows has its own.
+  There Task Coach keeps each field's typing history: Ctrl+Z,
+  Ctrl+Y and Ctrl+Shift+Z, and the Edit menu, in every text field
+  ([MENUS.md](MENUS.md#keyboard-shortcuts)). Not checked on macOS.
 
 ## Views on the Effective Styles
 

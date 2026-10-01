@@ -275,10 +275,21 @@ that have a modifier (`UICommand.accelerators()`).
 In a text field (`wx.TextCtrl`, `wx.SearchCtrl` or the editors'
 Scintilla fields, `_TEXT_FIELDS` in `uicommand.py`) Undo, Redo, Cut,
 Copy, Paste, Delete and Select All act on its text, from the keyboard,
-the menu or an editor's Ctrl+Z and Ctrl+Y. A Scintilla field undoes
-the typing only: its undo history is emptied whenever the program sets
-its text. GTK 3's own single-line fields (the search box, the list's
-in-place editor) have no undo, so there Undo and Redo do nothing.
+the menu or an editor's Ctrl+Z and Ctrl+Y. Undo takes back the typing
+only, never text the program set:
+
+| Field | Undo from | Note |
+|-------|-----------|-------|
+| Scintilla (editor fields) | Scintilla, every platform | history emptied when the program sets the text |
+| `wx.TextCtrl`, `wx.SearchCtrl` on Windows | the native control | `EM_UNDO`, one level |
+| the same on GTK; single-line ones on macOS | Task Coach (`workarounds/textundo.py`) | wxWidgets 3.2.8 leaves `Undo()` unimplemented there; GTK 3's entries have none |
+
+`textundo` records each field's text before every key
+(`EVT_CHAR_HOOK` on the app, which comes before accelerator tables
+and the field), takes Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z, and starts a
+field's history over when the program sets its text (`SetValue`,
+`ChangeValue`, `Clear`). Typing on, and deleting on, join one step;
+password and read-only fields are left alone.
 
 GTK ignores the shortcut of a disabled menu item, and items are
 updated only when their menu opens, so an item disabled then stays

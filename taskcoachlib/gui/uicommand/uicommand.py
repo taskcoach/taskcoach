@@ -49,6 +49,7 @@ from taskcoachlib.thirdparty.wxScheduler import (
 )
 from taskcoachlib.gui.icons.icon_library import icon_catalog
 from taskcoachlib.tools import anonymize, openfile
+from taskcoachlib.workarounds import textundo
 
 import wx
 import wx.stc
@@ -820,7 +821,7 @@ class EditUndo(base_uicommand.UICommand):
     def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
         if isinstance(window_with_focus, _TEXT_FIELDS):
-            window_with_focus.Undo()
+            textundo.undo(window_with_focus)
         else:
             patterns.CommandHistory().undo()
 
@@ -870,7 +871,7 @@ class EditRedo(base_uicommand.UICommand):
     def do_command(self, event):
         window_with_focus = wx.Window.FindFocus()
         if isinstance(window_with_focus, _TEXT_FIELDS):
-            window_with_focus.Redo()
+            textundo.redo(window_with_focus)
         else:
             patterns.CommandHistory().redo()
 

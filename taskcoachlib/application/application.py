@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # This module works around bugs in third party modules, mostly by
 # monkey-patching so import it first
 from taskcoachlib import workarounds  # noqa: F401
+from taskcoachlib.workarounds import textundo
 from taskcoachlib import i18n, patterns, operating_system
 from taskcoachlib.i18n import _
 import datetime
@@ -558,6 +559,8 @@ class Application(object, metaclass=patterns.Singleton):
         )
         # Expose settings on wxApp so wx.GetApp().settings works everywhere
         self.__wx_app.settings = self.settings
+        # Undo in the text fields whose platform has none
+        textundo.install(self.__wx_app)
         # Before any window or dialog exists, and before settings2
         # computes theme_is_dark from the resulting appearance
         apply_native_appearance(
