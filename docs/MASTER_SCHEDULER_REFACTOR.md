@@ -943,10 +943,12 @@ each with the recommended action, none ruled yet:
   nothing, on master too (found 2026-10-01 in the To Do 67 checks): the
   item is enabled, a click hides no column and logs nothing. Not traced
   yet.
-- P137. A drag and drop in a tree view moves the selection to a
-  neighbour of the selected task; master keeps it (found 2026-10-01,
-  the same before To Do 67): a regression of this branch. Not traced
-  yet.
+- P137. After a drag and drop in a tree view the selection lands on
+  the row above the dragged task's old place, not on the dragged task;
+  the same on master (found 2026-10-01). The move reaches the viewer
+  as a removal, then an addition: the removal finds the selected task
+  gone and selects a neighbour (`on_presentation_changed()`). Keep the
+  dragged task selected?
 - P138. The tree widget bundled since To Do 67 adjusts its scrollbars
   in every `CalculatePositions()`, so the Windows deferred adjustment
   after content changes and the scroll methods' own
