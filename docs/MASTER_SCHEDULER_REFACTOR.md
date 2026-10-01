@@ -762,6 +762,21 @@ each with the recommended action, none ruled yet:
   `Task.statusSortFunction()` sorts by the status sort priorities, as
   status first does, re-sorted after the loop's pass
   ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md)).
+- P118. With wxPython 4.2.5 (wxWidgets 3.2.9: Arch, the AppImage;
+  Fedora 43 has 4.2.4) the selection is lost after a re-sort and when
+  a subtask is added: `TaskViewerTest.testGetSelection_AfterResort`,
+  `TreeCtrlTest` and `TreeListCtrlTest`
+  `testRetainSelectionWhenAddingSubTask*` fail on Python 3.13 and 3.14
+  alike (2026-10-01, scratch environments). Not checked in the app
+  yet.
+- P119. Files left open: the template list (`templatelist.py` 64, 72,
+  92), the CSV import's encoding guess (`csvimport.py` 155), an empty
+  file check (`uicommand.py` 719), `anonymize.py` 62. Python warns at
+  garbage collection; nothing is lost.
+- P120. Tests read the user's real templates folder
+  (`~/.local/share/Task Coach/templates`): five templates there,
+  saved together on 2026-09-25 ("New task template" three times,
+  "Subject - ", "Sujet"), look left by a test.
 
 ## Views on the Effective Styles
 
