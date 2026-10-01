@@ -637,35 +637,24 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
     """Control for selecting which fields to export in iCalendar format.
     Uses HyperTreeList with checkboxes."""
 
-    # Field definitions: (field_key, taskcoach_label, icalendar_field, required, formatting, for_tasks, for_efforts)
+    # Field definitions: (field_key, taskcoach_label, icalendar_field,
+    # required, formatting)
     TASK_FIELDS = [
-        ("uid", _("ID"), "UID", True, _("Internal identifier"), True, False),
+        ("uid", _("ID"), "UID", True, _("Internal identifier")),
         (
             "dtstamp",
             _("(auto-generated)"),
             "DTSTAMP",
             True,
             _("Current UTC timestamp"),
-            True,
-            False,
         ),
-        (
-            "summary",
-            _("Subject"),
-            "SUMMARY",
-            False,
-            _("Text, quoted"),
-            True,
-            False,
-        ),
+        ("summary", _("Subject"), "SUMMARY", False, _("Text, quoted")),
         (
             "description",
             _("Description"),
             "DESCRIPTION",
             False,
             _("Text, quoted"),
-            True,
-            False,
         ),
         (
             "dtstart",
@@ -673,18 +662,14 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             "DTSTART",
             False,
             _("UTC datetime"),
-            True,
-            False,
         ),
-        ("due", _("Due date"), "DUE", False, _("UTC datetime"), True, False),
+        ("due", _("Due date"), "DUE", False, _("UTC datetime")),
         (
             "completed",
             _("Completion date"),
             "COMPLETED",
             False,
             _("UTC datetime"),
-            True,
-            False,
         ),
         (
             "categories",
@@ -692,8 +677,6 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             "CATEGORIES",
             False,
             _("Comma-separated, recursive"),
-            True,
-            False,
         ),
         (
             "status",
@@ -701,8 +684,6 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             "STATUS",
             False,
             _("NEEDS-ACTION / IN-PROCESS / COMPLETED"),
-            True,
-            False,
         ),
         (
             "priority",
@@ -710,8 +691,6 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             "PRIORITY",
             False,
             _("Number, capped at 3"),
-            True,
-            False,
         ),
         (
             "percent",
@@ -719,68 +698,36 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             "PERCENT-COMPLETE",
             False,
             _("Integer 0-100"),
-            True,
-            False,
         ),
-        (
-            "created",
-            _("Creation date"),
-            "CREATED",
-            False,
-            _("UTC datetime"),
-            True,
-            False,
-        ),
+        ("created", _("Creation date"), "CREATED", False, _("UTC datetime")),
         (
             "lastmod",
             _("Modification date"),
             "LAST-MODIFIED",
             False,
             _("UTC datetime"),
-            True,
-            False,
         ),
     ]
 
     EFFORT_FIELDS = [
-        ("uid", _("ID"), "UID", True, _("Internal identifier"), False, True),
+        ("uid", _("ID"), "UID", True, _("Internal identifier")),
         (
             "dtstamp",
             _("(auto-generated)"),
             "DTSTAMP",
             True,
             _("Current UTC timestamp"),
-            False,
-            True,
         ),
-        (
-            "summary",
-            _("Subject"),
-            "SUMMARY",
-            False,
-            _("Task subject, quoted"),
-            False,
-            True,
-        ),
+        ("summary", _("Subject"), "SUMMARY", False, _("Task subject, quoted")),
         (
             "description",
             _("Description"),
             "DESCRIPTION",
             False,
             _("Task description, quoted"),
-            False,
-            True,
         ),
-        (
-            "dtstart",
-            _("Start"),
-            "DTSTART",
-            False,
-            _("UTC datetime"),
-            False,
-            True,
-        ),
-        ("dtend", _("End"), "DTEND", False, _("UTC datetime"), False, True),
+        ("dtstart", _("Start"), "DTSTART", False, _("UTC datetime")),
+        ("dtend", _("End"), "DTEND", False, _("UTC datetime")),
     ]
 
     def __init__(self, parent, forTasks=True):
@@ -833,8 +780,6 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             ical_field,
             required,
             formatting,
-            for_tasks,
-            for_efforts,
         ) in fields:
             item = self.tree.AppendItem(root, tc_label, ct_type=1)
             self.tree.SetItemText(item, ical_field, 1)

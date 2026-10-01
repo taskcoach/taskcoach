@@ -25,7 +25,6 @@ class NotifierBase(object):
 
         self._filename = None
         self._path = None
-        self._name = None
         self.stamp = None
         atexit.register(self.__stopWhenExit)
 
@@ -46,11 +45,11 @@ class NotifierBase(object):
         self._filename = filename
         self.stamp = None
         if filename:
-            self._path, self._name = os.path.split(filename)
+            self._path = os.path.dirname(filename)
             if os.path.exists(filename):
                 self.stamp = os.stat(filename).st_mtime
         else:
-            self._path, self._name = None, None
+            self._path = None
 
     def saved(self):
         if self._filename and os.path.exists(self._filename):

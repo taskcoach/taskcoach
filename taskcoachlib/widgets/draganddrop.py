@@ -480,7 +480,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             headerWin.Bind(wx.EVT_MOTION, self.OnDraggingOverHeader)
             headerWin.Bind(wx.EVT_LEFT_UP, self.OnDropOnHeader)
         self.SetCursorToDragging()
-        self._droppedOnHeader = False
 
     def StopDragging(self):
         self.GetMainWindow().Unbind(wx.EVT_MOTION)
@@ -569,7 +568,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         # Only the main column (first column, index 0) makes task a root
         # For other columns, we could add different behaviors later
         if column == 0:
-            self._droppedOnHeader = True
             # Make tasks root tasks by dropping on hidden root
             dropTarget = self.GetRootItem()
             self.OnDrop(dropTarget, self._dragItems, 0, 0)

@@ -445,15 +445,12 @@ class TaskSchedule(wxSchedule):
     def __init__(self, task):
         super().__init__()
 
-        self.__selected = False
-
         self.clientdata = task
         self.update()
 
     def SetSelected(self, selected):
         self.Freeze()
         try:
-            self.__selected = selected
             if selected:
                 self.color = wx.SystemSettings.GetColour(
                     wx.SYS_COLOUR_HIGHLIGHT

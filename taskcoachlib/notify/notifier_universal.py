@@ -257,8 +257,6 @@ class _NotificationCenter(wx.EvtHandler):
     The class that handles notification frames.
     """
 
-    framePool = []
-
     def __init__(self):
         super().__init__()
 

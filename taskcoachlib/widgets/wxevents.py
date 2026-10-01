@@ -170,52 +170,6 @@ class CalendarCanvas(wx.Panel):
 
     # Get/Set
 
-    def GetPrecision(self):
-        return self._precision
-
-    def SetPrecision(self, precision):
-        self._precision = precision
-        self._invalidate()
-        self.Refresh()
-
-    def GetEventHeight(self):
-        return self._eventHeight
-
-    def SetEventHeight(self, height):
-        self._eventHeight = height
-        self._invalidate()
-        self.Refresh()
-
-    def GetEventWidth(self):
-        return self._eventWidthMin
-
-    def SetEventWidth(self, width):
-        self._eventWidthMin = width
-        self._invalidate()
-        self.Refresh()
-
-    def GetMargin(self):
-        return self._margin
-
-    def SetMargin(self, margin):
-        self._margin = margin
-        self._invalidate()
-        self.Refresh()
-
-    def OutlineColorDark(self):
-        return self._outlineColorDark
-
-    def SetOutlineColorDark(self, color):
-        self._outlineColorDark = color
-        self.Refresh()
-
-    def OutlineColorLight(self):
-        return self._outlineColorLight
-
-    def SetOutlineColorLight(self, color):
-        self._outlineColorLight = color
-        self.Refresh()
-
     def TodayColor(self):
         return self._todayColor
 

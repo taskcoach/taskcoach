@@ -43,11 +43,6 @@ class AbstractNotifier(object):
             klass._notifier = notifier
 
     @classmethod
-    def get(klass):
-        """Get the universal notifier instance."""
-        return klass._notifier
-
-    @classmethod
     def getSimple(klass):
         """
         Returns a notifier suitable for simple notifications.

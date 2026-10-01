@@ -35,17 +35,10 @@ class Translator(metaclass=patterns.Singleton):
     def __init__(self, language):
         self.__locale = None
         self.__language = {}
-        self.__encoding = "UTF-8"
-        self._locale_ok = True  # Track if locale was set successfully
         _log_i18n(f"Initializing Translator with language: {language!r}")
 
         self._loadTranslation(language)
         self._setLocale(language)
-
-    @property
-    def locale_ok(self):
-        """Return True if the system locale was set successfully."""
-        return self._locale_ok
 
     def _loadTranslation(self, language):
         """Load translation from .po file in locales directory."""
@@ -68,9 +61,8 @@ class Translator(metaclass=patterns.Singleton):
     def _loadPoFile(self, poFilename):
         """Load translation directly from a .po file."""
         try:
-            translations, encoding = po2dict.parse(poFilename)
+            translations, _encoding = po2dict.parse(poFilename)
             self.__language = translations
-            self.__encoding = encoding
         except Exception as e:
             _log_i18n(f"Failed to load {poFilename}: {e}")
 
@@ -118,7 +110,6 @@ class Translator(metaclass=patterns.Singleton):
                         _log_i18n(
                             "wx.Locale created but IsOk() returned False"
                         )
-                        self._locale_ok = False
                     else:
                         _log_i18n(f"Created wx.Locale successfully")
 
@@ -144,7 +135,6 @@ class Translator(metaclass=patterns.Singleton):
             _log_i18n(
                 f"WARNING: Could not set wx.Locale for language '{language}'"
             )
-            self._locale_ok = False
 
         if operating_system.isGTK():
             try:

@@ -90,7 +90,3 @@ class TaskFile(persistence.TaskFile):
             raise self.raiseError  # pylint: disable=E0702
 
     merge = save = saveas = load
-
-
-class MainWindow:  # pylint: disable=W0232
-    showFindDialog = None

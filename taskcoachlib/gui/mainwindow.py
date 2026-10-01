@@ -99,7 +99,7 @@ class MainWindow(
         self.__register_for_window_component_changes()
 
         self._idleController = idlecontroller.IdleController(
-            self, self.settings, self.taskFile.efforts()
+            self.settings, self.taskFile.efforts()
         )
 
         # Follow system light/dark switches, see docs/SETTINGS.md

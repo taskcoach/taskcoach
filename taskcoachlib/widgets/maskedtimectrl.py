@@ -578,7 +578,6 @@ class _ChoicesPopup(_PopupWindow):
 
     def __init__(self, choices, value, minWidth, font, *args, **kwargs):
         self.__choices = choices
-        self.__originalValue = value  # Value when popup opened
         self.__highlightedValue = (
             value  # Currently highlighted (mouse or keys)
         )
@@ -605,7 +604,6 @@ class _ChoicesPopup(_PopupWindow):
             tw, th = dc.GetTextExtent(str(label))
             maxW = max(tw, maxW)
             totH += th + vPad * 2  # Add vertical padding per item
-        self.__itemHeight = None  # Will be set during paint
         return wx.Size(
             maxW + hPad * 2 + contentOffsetX * 2, totH + contentOffsetY * 2
         )
@@ -659,8 +657,6 @@ class _ChoicesPopup(_PopupWindow):
             dc.DrawText(label, textX, textY)
 
             y += itemH
-
-        self.__itemHeight = itemH if self.__choices else 0
 
     def __highlightedIndex(self):
         for idx, (label, value) in enumerate(self.__choices):
@@ -1975,15 +1971,12 @@ class _CalendarComboPopup(wx.ComboPopup):
         self._panel = None
         self._selection = datetime.date.today()
         self._highlightedDate = self._selection
-        self._originalDate = self._selection
         self._year = self._selection.year
         self._month = self._selection.month
         self._maxDim = None
         self._font = None
         self._days = []
         self._win = None
-        self._contentOffsetX = 0
-        self._contentOffsetY = 0
 
     def Create(self, parent):
         self._panel = wx.Panel(parent, style=wx.BORDER_NONE)
@@ -2042,7 +2035,6 @@ class _CalendarComboPopup(wx.ComboPopup):
                         self._selection = datetime.date.fromisoformat(text)
                     except (ValueError, AttributeError):
                         pass
-        self._originalDate = self._selection
         self._highlightedDate = self._selection
         self._year = self._selection.year
         self._month = self._selection.month
@@ -2152,8 +2144,6 @@ class _CalendarComboPopup(wx.ComboPopup):
         if self._font:
             dc.SetFont(self._font)
         self._win = win
-        self._contentOffsetX = contentOffsetX
-        self._contentOffsetY = contentOffsetY
 
         colours = getCalendarColours()
 

@@ -32,8 +32,6 @@ class _IconListCtrl(wx.ListCtrl):
     Data lives in _items; wx asks for visible rows via OnGetItem* callbacks.
     """
 
-    COL_ICON_ID = 4
-
     def __init__(self, parent):
         super().__init__(
             parent,
@@ -457,7 +455,6 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         self._current_icon_id = ""
         self._current_label = ""
         self._current_bmp = None
-        self._previous_icon_id = ""
 
         # Initialize button - GenBitmapButton requires a bitmap in constructor,
         # but we immediately clear it. For "no icon" state, bmpLabel stays None.
@@ -469,7 +466,6 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         self.SetUseFocusIndicator(True)
 
         self.SetValue(current_icon_id or "")
-        self._previous_icon_id = self._current_icon_id
 
         self.Bind(wx.EVT_BUTTON, self._on_click)
         self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
@@ -609,7 +605,6 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         if dialog.ShowModal() == wx.ID_OK:
             icon_id = dialog.GetSelectedIconId()
             if icon_id is not None:
-                self._previous_icon_id = self._current_icon_id
                 self.SetValue(icon_id)
                 evt = wx.CommandEvent(wx.wxEVT_COMBOBOX, self.GetId())
                 evt.SetEventObject(self)

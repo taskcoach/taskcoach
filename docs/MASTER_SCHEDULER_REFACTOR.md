@@ -552,16 +552,19 @@ each with the recommended action, none ruled yet:
   missing); regenerated as TRANSLATIONS.md says, it takes 8,700 icon
   hints and every language fails. Track the template or build it in
   the test, and keep icon hints out?
-- P64. Dead code: `meta/gpl.py` `licenseText` (676 lines),
-  `BaseTextCtrl`, `TimeDeltaEntry`, `date.parseDate` (each with its
-  test), `po2dict` `make()`/`generateDict()` (broken),
-  `PIElementTree._write` (Python 2), the Windows and macOS time and
-  date renderers, `Translator.locale_ok`, `--skipstart`, 12
-  `wxevents` accessors, `AbstractNotifier.get()`,
+- P64. ~~Dead code~~: removed 2026-09-30, **asked by designer**: the
+  plain-text GPL, `BaseTextCtrl`, `TimeDeltaEntry` (its tests now check
+  `TimeDeltaCtrl`, which the in-place editor uses), `date.parseDate`,
+  `po2dict`'s compile step, `PIElementTree._write`, the Windows and
+  macOS time and date renderers, `Translator.locale_ok`,
+  `--skipstart`, 12 calendar accessors, `AbstractNotifier.get()`,
   `workarounds/encodings.py`, `dummy.MainWindow`, about 30 attributes
-  written and never read, unused `meta/data.py` values and the
-  buildbot `revision` block (with `MetaDataTest`, which should check
-  `version_full`). Recommended: remove.
+  written and never read (with `IdleController`'s window argument and
+  two unread columns of the iCalendar field tables), and the unused
+  `meta/data.py` values with the buildbot `revision` block
+  (`MetaDataTest` checks `version_full`). Checked in the app: the
+  license, both iCalendar field lists, the templates dialog, a
+  reminder and an actual start set in the editor.
 - P65. Code only tests use (`Task.dueSoon()`, `CompositeList`,
   `getObjectById`, `Viewer.updateSelection`, `Menu.openMenu` and about
   12 more). Remove with the tests, or keep as test helpers?
@@ -701,6 +704,11 @@ each with the recommended action, none ruled yet:
 - P112. Stale doc text the audit listed (TASK_STATUS, DATETIME
   CONTROLS, the icon docs, LIST_MANAGEMENT, the Python 3 migration
   docs, the packaging docs, README). Recommended: correct in one pass.
+- P113. `UndoWithEditorsTest.test_snooze` failed once in its setUp
+  (2026-09-30, one catalog run of five; three reruns pass): the
+  editor's OK button was not found in its button sizer
+  (`wxhelper.getButtonFromStdDialogButtonSizer()` returned None, so
+  `createButtons()` raised). Cause not known yet.
 
 ## Views on the Effective Styles
 

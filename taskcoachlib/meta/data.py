@@ -18,7 +18,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import datetime
 import re
 
 # pylint: disable=C0103
@@ -63,13 +62,6 @@ release_status = "alpha"  # One of 'alpha', 'beta', 'stable'
 
 # No editing needed below this line for doing a release.
 
-try:
-    from taskcoachlib.meta.revision import (
-        revision,
-    )  # pylint: disable=F0401,W0611
-except ImportError:
-    revision = None
-
 months = [
     "January",
     "February",
@@ -85,57 +77,19 @@ months = [
     "December",
 ]
 
-if revision:  # Buildbot sets revision
-    # Decrement version because this version isn't released yet. This
-    # assumes that version components are < 100; 99 will actually mean
-    # pre-major release
-    # pylint: disable=W0141
-    major, inter, minor = list(map(int, version.split(".")))
-    numversion = major * 10000 + inter * 100 + minor
-    numversion -= 1
-    major = numversion // 10000
-    inter = (numversion // 100) % 100
-    minor = numversion % 100
-    version = ".".join(map(str, [major, inter, minor]))
-
-    now = datetime.datetime.today()
-    release_day = str(now.day)
-    release_month = months[now.month - 1]
-    release_year = str(now.year)
-    release_status = "beta"
-    version += "." + revision
-
 assert release_month in months  # Try to prevent typo's
-release_month_nr = "%02d" % (months.index(release_month) + 1)
-release_day_nr = "%02d" % int(release_day)
 date = release_month + " " + release_day + ", " + release_year
 
 name = "Task Coach"
 description = "Your friendly task manager"
-long_description = (
-    "%(name)s is a free open source todo manager. It grew "
-    "out of frustration about other programs not handling composite tasks "
-    "well. In addition to flexible composite tasks, %(name)s has grown to "
-    "include prerequisites, prioritizing, effort tracking, category tags, "
-    "budgets, notes, and many other features. However, users are not forced "
-    "to use all these features; %(name)s can be as simple or complex as you "
-    "need it to be. %(name)s is available for Windows, Mac OS X, and "
-    "GNU/Linux; and there is a companion iOS app." % dict(name=name)
-)
-keywords = "task manager, todo list, pim, time registration, track effort"
-author_first, author_last = "Frank", "Niessink"  # Needed for PAD file
+author_first, author_last = "Frank", "Niessink"
 author = "%s %s, Jerome Laheurte, Aaron Wolf, and Real Carbonneau" % (
-    author_first,
-    author_last,
-)
-author_unicode = "%s %s, Jérôme Laheurte, Aaron Wolf, and Réal Carbonneau" % (
     author_first,
     author_last,
 )
 author_email = "https://github.com/taskcoach/taskcoach/issues"
 
 filename = name.replace(" ", "")
-filename_lower = filename.lower()
 
 url = "https://github.com/taskcoach/taskcoach"  # Project homepage (GitHub)
 github_url = url  # Alias for backwards compatibility
@@ -152,11 +106,6 @@ latest_release_api_url = (
     "https://api.github.com/repos/taskcoach/taskcoach/releases/latest"
 )
 
-announcement_addresses = (
-    "taskcoach@yahoogroups.com, python-announce-list@python.org"
-)
-bcc_announcement_addresses = "johnhaller@portableapps.com"
-
 copyright = "Copyright (C) 2004-%s %s" % (
     release_year,
     author,
@@ -167,8 +116,6 @@ license_title_and_version = "%s version %s" % (license_title, license_version)
 license = (
     "%s or any later version" % license_title_and_version
 )  # pylint: disable=W0622
-license_title_and_version_abbrev = "GPLv%s" % license_version
-license_abbrev = "%s+" % license_title_and_version_abbrev
 license_notice = """%(name)s is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -190,11 +137,6 @@ license_notice_html = re.sub(
     r'<a href="http\1" target="_blank">http\1</a>',
     license_notice_html,
 )
-
-platform = "Any"
-pythonversion = "3.8"
-wxpythonversionnumber = "4.2.0"
-wxpythonversion = "%s-unicode" % wxpythonversionnumber
 
 languages = {
     "English (US)": (None, True),
@@ -252,7 +194,6 @@ languages = {
     "Ukranian": ("uk", False),
     "Vietnamese": ("vi", False),
 }
-languages_list = ",".join(list(languages.keys()))
 
 
 def __create_dict(locals_dict):

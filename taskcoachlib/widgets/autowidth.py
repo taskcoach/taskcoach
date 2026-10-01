@@ -43,7 +43,6 @@ class AutoColumnWidthMixin(object):
     def __init__(self, *args, **kwargs):
         self.__is_auto_resizing = False
         self.__header_window = None
-        self.__resize_cursor = wx.Cursor(wx.CURSOR_SIZEWE)
         self.__no_entry_cursor = wx.Cursor(wx.CURSOR_NO_ENTRY)
         self.__current_cursor = wx.STANDARD_CURSOR
         self.ResizeColumn = kwargs.pop("resizeableColumn", -1)

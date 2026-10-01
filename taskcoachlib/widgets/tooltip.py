@@ -37,7 +37,6 @@ class ToolTipMixin(object):
         self.__tip = None
         self.__position = (0, 0)
         self.__pending_xy = (0, 0)
-        self.__text = None
         self.__frozen = True
 
         self.GetMainWindow().Bind(wx.EVT_MOTION, self.__on_motion)

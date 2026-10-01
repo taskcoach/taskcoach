@@ -27,7 +27,6 @@ class TodoTxtWriter(object):
     def __init__(self, fd, filename):
         self.__fd = fd
         self.__filename = filename
-        self.__maxDateTime = date.DateTime()
 
     def write(self, viewer, settings, selectionOnly, taskFile=None, **kwargs):
         if isinstance(viewer, str) and viewer == self.ALL_TASKS:

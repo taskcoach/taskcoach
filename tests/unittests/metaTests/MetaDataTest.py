@@ -21,9 +21,16 @@ from taskcoachlib import meta
 
 
 class VersionNumberTest(test.TestCase):
-    def testVersionHasMajorMinorAndPatchLevel(self):
-        expectedParts = 4 if meta.data.revision else 3
-        self.assertEqual(expectedParts, len(meta.data.version.split(".")))
+    def test_version_has_major_minor_and_milestone(self):
+        self.assertEqual(3, len(meta.data.version.split(".")))
+
+    def test_full_version_adds_the_patch(self):
+        self.assertEqual(
+            "%s.%s" % (meta.data.version, meta.data.patch),
+            meta.data.version_full,
+        )
+        for component in meta.data.version_full.split("."):
+            self.assertEqual(component, str(int(component)))
 
     def testVersionComponentsAreIntegers(self):
         for component in meta.data.version.split("."):

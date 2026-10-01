@@ -104,10 +104,8 @@ class AppIndicatorIcon:
                 f"AppIndicator not available: {APPINDICATOR_ERROR}"
             )
 
-        self._app_id = app_id
         self._tooltip = tooltip
         self._menu = None
-        self._menu_items = {}
 
         # Determine category
         if category is None:

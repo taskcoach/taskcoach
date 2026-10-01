@@ -22,14 +22,6 @@ from unittest import mock
 from taskcoachlib import config, patterns, widgets
 
 
-class BaseTextCtrlTest(test.wxTestCase):
-    def testRemoveAnyControlCharactersEnteredByUser(self):
-        textctrl = widgets.textctrl.BaseTextCtrl(
-            self.frame, "T\x02\x01est\x09"
-        )
-        self.assertEqual("Test\t", textctrl.GetValue())
-
-
 class MultiLineTextCtrlTest(test.wxTestCase):
     def test_click_on_a_url_opens_it(self):
         textctrl = widgets.MultiLineTextCtrl(self.frame)

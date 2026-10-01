@@ -730,7 +730,6 @@ def _load_theme_parsed(theme):
 
     Returns dict with 'icons' and 'contexts' from the module.
     """
-    global _theme_parsed
     if theme not in _theme_parsed:
         module_name = f"taskcoachlib.gui.icons.{theme}.icons_parsed"
         try:

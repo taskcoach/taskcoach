@@ -39,52 +39,6 @@ class PIElementTree(ET.ElementTree):
         self.__pi = pi
         ET.ElementTree.__init__(self, *args, **kwargs)
 
-    def _write(self, file, node, encoding, namespaces):
-        if node == self._root:
-            # WTF? ElementTree does not write the encoding if it's ASCII or UTF-8...
-            if encoding in ["us-ascii", "utf-8", "unicode"]:
-                # Check if file is in binary mode or text mode
-                # Default to binary if mode cannot be determined (for wrapped file objects)
-                is_binary = not (
-                    hasattr(file, "mode") and "b" not in file.mode
-                )
-                if is_binary:
-                    # Binary mode: write bytes
-                    if encoding == "unicode":
-                        file.write(
-                            '<?xml version="1.0" encoding="utf-8"?>\n'.encode(
-                                "utf-8"
-                            )
-                        )
-                    else:
-                        file.write(
-                            (
-                                '<?xml version="1.0" encoding="%s"?>\n'
-                                % encoding
-                            ).encode(encoding)
-                        )
-                else:
-                    # Text mode: write strings
-                    if encoding == "unicode":
-                        file.write('<?xml version="1.0" encoding="utf-8"?>\n')
-                    else:
-                        file.write(
-                            '<?xml version="1.0" encoding="%s"?>\n' % encoding
-                        )
-            # Write processing instruction
-            is_binary = not (hasattr(file, "mode") and "b" not in file.mode)
-            if is_binary:
-                file.write(
-                    (self.__pi + "\n").encode(
-                        encoding if encoding != "unicode" else "utf-8"
-                    )
-                )
-            else:
-                file.write(self.__pi + "\n")
-        ET.ElementTree._write(
-            self, file, node, encoding, namespaces
-        )  # pylint: disable=E1101
-
     def write(self, file, encoding, *args, **kwargs):
         if encoding is None:
             encoding = "utf-8"

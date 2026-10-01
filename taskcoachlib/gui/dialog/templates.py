@@ -113,7 +113,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
         self._btnDown = self.createButton(
             panel, "nuvola_actions_go-down", self.OnDown, enable=False
         )
-        self._btnAdd = self.createButton(panel, "nuvola_actions_list-add", self.OnAdd)
+        self.createButton(panel, "nuvola_actions_list-add", self.OnAdd)
         panel.Fit()
 
     def createButton(self, parent, icon_id, handler, enable=True):
@@ -124,7 +124,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
         return button
 
     def createTemplateEntries(self, pane):
-        panel = self._editPanel = sized_controls.SizedPanel(pane)
+        panel = sized_controls.SizedPanel(pane)
         panel.SetSizerType("form")
         panel.SetSizerProps(expand=True)
         label = wx.StaticText(panel, label=_("Subject"))
@@ -244,9 +244,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
             )
             self._templateList.SetItemData(item, task)
         else:
-            item = self._templateList.PrependItem(
-                self._root, task.subject()
-            )
+            item = self._templateList.PrependItem(self._root, task.subject())
             self._templateList.SetItemData(item, task)
         for child in task.children():
             self.appendTemplate(item, child)
@@ -259,9 +257,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
         next = self._templateList.GetNextSibling(selection)
         task = self._templateList.GetItemData(selection)
         self._templateList.Delete(selection)
-        item = self._templateList.InsertItem(
-            self._root, next, task.subject()
-        )
+        item = self._templateList.InsertItem(self._root, next, task.subject())
         self._templateList.SetItemData(item, task)
         for child in task.children():
             self.appendTemplate(item, child)

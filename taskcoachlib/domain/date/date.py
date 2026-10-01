@@ -75,16 +75,6 @@ class InfiniteDate(datetime.date, metaclass=patterns.Singleton):
 # factories:
 
 
-def parseDate(dateString, default=None):
-    try:
-        return Date(*[int(part) for part in dateString.split("-")])
-    except ValueError:
-        if default:
-            return default
-        else:
-            return Date()
-
-
 def Date(year=infinite.year, month=infinite.month, day=infinite.day):
     if (year, month, day) == (infinite.year, infinite.month, infinite.day):
         return InfiniteDate()

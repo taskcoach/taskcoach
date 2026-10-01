@@ -98,8 +98,7 @@ class WakeFromIdleFrame(NotificationFrameBase):
 
 
 class IdleController(Observer, IdleNotifier):
-    def __init__(self, main_window, settings, effort_list):
-        self._main_window = main_window
+    def __init__(self, settings, effort_list):
         self._settings = settings
         self._effort_list = effort_list
         self._displayed = set()

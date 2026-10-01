@@ -32,7 +32,7 @@ class IdleControllerTest(test.wxTestCase):
         task.Task.settings = self.settings = config.Settings(load=False)
         self.task_file = persistence.TaskFile()
         self.controller = idlecontroller.IdleController(
-            self.frame, self.settings, self.task_file.efforts()
+            self.settings, self.task_file.efforts()
         )
         self.idle_seconds = 0
         self.controller.get_idle_seconds = lambda: self.idle_seconds

@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import test, time, datetime
+import test
+import datetime
 from taskcoachlib.domain import date
 
 
@@ -104,21 +105,3 @@ class DateTest(test.TestCase):
         self.assertEqual(
             date.DateTime(2, 5, 19, 0, 0, 0).strftime("%Y%m%d"), "20519"
         )
-
-
-class FactoriesTest(test.TestCase):
-    def testParseDate(self):
-        parsed = date.parseDate("2004-1-1")
-        self.assertEqual(date.Date(2004, 1, 1), parsed)
-
-    def testParseDate_WithNone(self):
-        parsed = date.parseDate("None")
-        self.assertEqual(date.Date(), parsed)
-
-    def testParseDate_WithNonsense(self):
-        parsed = date.parseDate("Yoyo-Yo")
-        self.assertEqual(date.Date(), parsed)
-
-    def testParseDate_WithDifferentDefaultDate(self):
-        parsed = date.parseDate("Yoyo-Yo", date.Date(2004, 2, 29))
-        self.assertEqual(date.Date(2004, 2, 29), parsed)

@@ -1355,7 +1355,6 @@ class DatesPage(ScrolledPage):
         self, theTask, parent, settings, items_are_new, *args, **kwargs
     ):
         self.__settings = settings
-        self._duration = None
         self.__items_are_new = items_are_new
         super().__init__(theTask, parent, *args, **kwargs)
 
@@ -1373,12 +1372,10 @@ class DatesPage(ScrolledPage):
 
     def __on_planned_start_changed(self, value, edited):
         """AttributeSync callback for planned start date changes."""
-        self._currentPlannedStartDateTime = value
         self.__task_field_changed("start", edited)
 
     def __on_due_date_changed(self, value, edited):
         """AttributeSync callback for due date changes."""
-        self._currentDueDateTime = value
         self.__task_field_changed("due", edited)
 
     def __task_field_changed(self, source_field, edited):
@@ -1527,7 +1524,6 @@ class DatesPage(ScrolledPage):
             if len(self.items) == 1
             else date.DateTime()
         )
-        self._currentPlannedStartDateTime = plannedStartDateTime
 
         # value=None means no date set, value=datetime means date exists
         value = (
@@ -1577,7 +1573,6 @@ class DatesPage(ScrolledPage):
             if len(self.items) == 1
             else date.DateTime()
         )
-        self._currentDueDateTime = dueDateTime
 
         # Row 2: Planned duration
         plannedDuration = (
@@ -1757,7 +1752,6 @@ class DatesPage(ScrolledPage):
             if len(self.items) == 1
             else date.DateTime()
         )
-        self._currentActualStartDateTime = actualStartDateTime
 
         # value=None means no date set, value=datetime means date exists
         value = (
@@ -1787,7 +1781,6 @@ class DatesPage(ScrolledPage):
             command.EditActualStartDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].actualStartDateTimeChangedEventType(),
-            callback=self.__on_actual_start_changed,
         )
 
         self.addEntry(
@@ -1795,10 +1788,6 @@ class DatesPage(ScrolledPage):
             self._actualStartDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
         )
-
-    def __on_actual_start_changed(self, value, edited):
-        """AttributeSync callback for actual start date changes."""
-        self._currentActualStartDateTime = value
 
     def _addCompletionDateEntry(self):
         """Add completion date entry using DateTimeComboCtrl with AttributeSync."""
@@ -2261,7 +2250,6 @@ class DatesPage(ScrolledPage):
             if len(self.items) == 1
             else date.DateTime()
         )
-        self._currentReminderDateTime = reminderDateTime
 
         # value=None means no date set, value=datetime means date exists
         value = (
@@ -2289,7 +2277,6 @@ class DatesPage(ScrolledPage):
             command.EditReminderDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
             self.items[0].reminderChangedEventType(),
-            callback=self.__on_reminder_changed,
         )
 
         self.addEntry(
@@ -2297,10 +2284,6 @@ class DatesPage(ScrolledPage):
             self._reminderDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
         )
-
-    def __on_reminder_changed(self, value, edited):
-        """AttributeSync callback for reminder date changes."""
-        self._currentReminderDateTime = value
 
     def add_recurrence_entry(self):
         # pylint: disable=W0201
@@ -2700,10 +2683,6 @@ class EffortPage(PageWithViewer):
 class LocalCategoryViewer(viewer.BaseCategoryViewer):  # pylint: disable=W0223
     def __init__(self, items, *args, **kwargs):
         self.__items = items
-        # Track original category state for each item to support tri-state "no change"
-        self.__originalCategories = {
-            item: set(item.categories()) for item in items
-        }
         super().__init__(*args, **kwargs)
         for item in self.domainObjectsToView():
             item.expand(context=self.settingsSection(), notify=False)

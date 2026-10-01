@@ -23,7 +23,6 @@ etc. """  # pylint: disable=W0105
 
 from taskcoachlib.domain import date as datemodule
 from taskcoachlib.i18n import _
-from taskcoachlib import operating_system
 import datetime
 import locale
 import re
@@ -221,52 +220,6 @@ def dateFunc(dt=None, human_readable=False):
         elif theDate == datemodule.Tomorrow().date():
             return _("Tomorrow")
     return rawDateFunc(dt)
-
-
-# OS-specific time formatting
-if operating_system.isWindows():
-    import pywintypes, win32api
-
-    def rawTimeFunc(dt, minutes=True, seconds=False):
-        if dt is None:
-            return win32api.GetTimeFormat(0x400, 0, None, None)
-        # Use strftime directly to avoid pywintypes.Time() timezone issues.
-        # pywintypes.Time() interprets naive datetimes as UTC and converts to
-        # local time, causing times like 07:00 to display as 06:00 in UTC+1.
-        if seconds:
-            fmt = timeWithSecondsFormat
-        elif minutes:
-            fmt = timeWithMinutesFormat
-        else:
-            fmt = timeFormat
-        return dt.strftime(fmt)
-
-    def rawDateFunc(dt):
-        if dt is None:
-            return win32api.GetDateFormat(0x400, 0, None, None)
-        # Use strftime directly to avoid pywintypes.Time() timezone issues.
-        # pywintypes.Time() interprets naive datetimes as UTC and converts to
-        # local time, which can shift dates when times are near midnight.
-        return dt.strftime(dateFormat)
-
-elif operating_system.isMac():
-    # Use simple strftime formatting on macOS
-    # PyObjC/Cocoa formatting was removed as it adds complexity and
-    # dependency issues without significant benefit for a task manager
-    def rawTimeFunc(dt, minutes=True, seconds=False):
-        if dt is None:
-            dt = datetime.datetime.now()
-        if seconds:
-            return dt.strftime(timeWithSecondsFormat)
-        elif minutes:
-            return dt.strftime(timeWithMinutesFormat)
-        else:
-            return dt.strftime(timeFormat)
-
-    def rawDateFunc(dt):
-        if dt is None:
-            dt = datetime.datetime.now()
-        return dt.strftime(dateFormat)
 
 
 def dateTimeFunc(dt=None, human_readable=False):

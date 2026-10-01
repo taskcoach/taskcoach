@@ -28,7 +28,6 @@ import re
 # Try to import enchant for spell checking
 try:
     import enchant
-    from enchant.checker import SpellChecker
 
     ENCHANT_AVAILABLE = True
 except ImportError:
@@ -64,108 +63,6 @@ class SpellCheckMixin:
         except Exception as e:
             log_step("enchant.list_languages() failed: %s" % e, prefix="SPELL")
             return []
-
-
-class BaseTextCtrl(wx.TextCtrl):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, -1, *args, **kwargs)
-        self.__data = None
-        if operating_system.isGTK() or operating_system.isMac():
-            if operating_system.isGTK():
-                self.Bind(wx.EVT_KEY_DOWN, self.__on_key_down)
-            self.Bind(wx.EVT_KILL_FOCUS, self.__on_kill_focus)
-            self.__initial_value = self.GetValue()
-            self.__undone_value = None
-
-    def GetValue(self, *args, **kwargs):
-        return tools_text.multi_line(super().GetValue(*args, **kwargs))
-
-    def SetValue(self, *args, **kwargs):
-        super().SetValue(*args, **kwargs)
-        if operating_system.isGTK() or operating_system.isMac():
-            self.__initial_value = self.GetValue()
-
-    def AppendText(self, *args, **kwargs):
-        super().AppendText(*args, **kwargs)
-        if operating_system.isGTK() or operating_system.isMac():
-            self.__initial_value = self.GetValue()
-
-    def SetData(self, data):
-        self.__data = data
-
-    def GetData(self):
-        return self.__data
-
-    def CanUndo(self):
-        if operating_system.isMac():
-            return self.__can_undo()
-        return super().CanUndo()
-
-    def Undo(self):
-        if operating_system.isMac():
-            self.__undo()
-        else:
-            super().Undo()
-
-    def CanRedo(self):
-        if operating_system.isMac():
-            return self.__can_redo()
-        return super().CanRedo()
-
-    def Redo(self):
-        if operating_system.isMac():
-            self.__redo()
-        else:
-            super().Redo()
-
-    def __on_key_down(self, event):
-        """Check whether the user pressed Ctrl-Z (or Ctrl-Y) and if so,
-        undo (or redo) the editing."""
-        if self.__ctrl_z_pressed(event) and self.__can_undo():
-            self.__undo()
-        elif self.__ctrl_y_pressed(event) and self.__can_redo():
-            self.__redo()
-        else:
-            event.Skip()
-
-    @staticmethod
-    def __ctrl_z_pressed(event):
-        """Did the user press Ctrl-Z (for undo)?"""
-        return event.GetKeyCode() == ord("Z") and event.ControlDown()
-
-    def __can_undo(self):
-        """Is there a change to be undone?"""
-        return self.GetValue() != self.__initial_value
-
-    def __undo(self):
-        """Undo the last change."""
-        insertion_point = self.GetInsertionPoint()
-        self.__undone_value = self.GetValue()
-        super().SetValue(self.__initial_value)
-        insertion_point = min(insertion_point, self.GetLastPosition())
-        self.SetInsertionPoint(insertion_point)
-
-    @staticmethod
-    def __ctrl_y_pressed(event):
-        """Did the user press Ctrl-Y (for redo)?"""
-        return event.GetKeyCode() == ord("Y") and event.ControlDown()
-
-    def __can_redo(self):
-        """Is there an undone change to be redone?"""
-        return self.__undone_value not in (self.GetValue(), None)
-
-    def __redo(self):
-        """Redo the last undone change."""
-        insertion_point = self.GetInsertionPoint()
-        super().SetValue(self.__undone_value)
-        self.__undone_value = None
-        insertion_point = min(insertion_point, self.GetLastPosition())
-        self.SetInsertionPoint(insertion_point)
-
-    def __on_kill_focus(self, event):
-        """Reset the edit history."""
-        self.__initial_value = self.GetValue()
-        self.__undone_value = None
 
 
 class _StyledTextCtrl(stc.StyledTextCtrl):

@@ -51,7 +51,6 @@ from taskcoachlib.gui.icons.icon_library import icon_catalog
 from taskcoachlib.tools import anonymize, openfile
 
 import wx
-import re
 import operator
 from . import base_uicommand
 from . import mixin_uicommand
@@ -2387,8 +2386,6 @@ class ToggleCategory(ViewerCommand):
 
 
 class Mail(ViewerCommand):
-    rx_attr = re.compile(r"(cc|to)=(.*)")
-
     def __init__(self, *args, **kwargs):
         menu_text = (
             _("&Mail...\tShift-Ctrl-M")

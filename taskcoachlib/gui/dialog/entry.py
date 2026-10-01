@@ -106,55 +106,6 @@ def get_suggested_second_choices(settings, override=None):
     return list(range(0, 60, interval))
 
 
-class TimeDeltaEntry(widgets.PanelWithBoxSizer):
-    # We can't inherit from widgets.masked.TextCtrl because that class expects
-    # GetValue to return a string and we want to return a TimeDelta.
-
-    defaultTimeDelta = date.TimeDelta()
-
-    def __init__(
-        self,
-        parent,
-        timeDelta=defaultTimeDelta,
-        readonly=False,
-        *args,
-        **kwargs
-    ):
-        super().__init__(parent, *args, **kwargs)
-        hours, minutes, seconds = timeDelta.hoursMinutesSeconds()
-        self._entry = widgets.masked.TimeDeltaCtrl(
-            self,
-            hours,
-            minutes,
-            seconds,
-            readonly,
-            timeDelta < self.defaultTimeDelta,
-        )
-        if readonly:
-            self._entry.Disable()
-            # Set grey background to clearly indicate non-editable
-            self._entry.SetBackgroundColour(
-                wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
-            )
-        self.add(self._entry, flag=wx.EXPAND | wx.ALL, proportion=1)
-        self.fit()
-
-    def NavigateBook(self, event):
-        self.GetParent().NavigateBook(not event.ShiftDown())
-        return True
-
-    def GetValue(self):
-        return date.parseTimeDelta(self._entry.GetValue())
-
-    def SetValue(self, newTimeDelta):
-        hours, minutes, seconds = newTimeDelta.hoursMinutesSeconds()
-        negative = newTimeDelta < self.defaultTimeDelta
-        self._entry.set_value(hours, minutes, seconds, negative)
-
-    def Bind(self, *args, **kwargs):  # pylint: disable=W0221
-        self._entry.Bind(*args, **kwargs)
-
-
 class AmountEntry(widgets.PanelWithBoxSizer):
     def __init__(self, parent, amount=0.0, readonly=False, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
@@ -359,7 +310,6 @@ class ColorEntry(widgets.PanelWithBoxSizer):
     def __init__(self, parent, current_color, default_color, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._defaultColor = default_color
         self._effectiveColor = (
             None  # Set via setEffectiveColor() after construction
         )
@@ -635,7 +585,6 @@ RecurrenceEntryEvent, EVT_RECURRENCEENTRY = newevent.NewEvent()
 
 class RecurrenceEntry(wx.Panel):
     horizontalSpace = (3, -1)
-    verticalSpace = (-1, 3)
 
     def __init__(self, parent, recurrence, settings, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
