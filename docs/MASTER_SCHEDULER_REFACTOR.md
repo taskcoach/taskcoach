@@ -967,8 +967,18 @@ each with the recommended action, none ruled yet:
   empties when Description is shown); here, since `38f5e094f`, the new
   column shows the icon of the column that was there (an attachment
   pencil under Description). Found 2026-10-01, the same before To Do
-  67. Shift the icons with the texts in the tree widget's column insert
-  and remove ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#known-issues))?
+  67. Showing a column inserts a real column, shared with the list
+  views, which cannot hide one; the tree widget's insert keeps no
+  per-row data in step, and the copy's own addition moves only the
+  texts. Options: move each row's column data (texts, icons,
+  background colours, windows, cached sizes, the category icons) with
+  the column in Task Coach's tree control (`treectrl.py`, which already
+  wraps the insert and delete), returning the copy's column methods to
+  upstream's; or use the widget's own hiding, which keeps hidden
+  columns (no cost: a rebuild of 2,050 tasks takes the same with 5 or
+  29 columns) but changes what a column position means in about 140
+  places across six modules, for the tree views only
+  ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#known-issues)).
 - P140. Opening a file of 2,050 tasks (50 parents with 40 late
   subtasks each) freezes the app for 64 s, the scheduler's first full
   pass (`[SCHEDULER]` median 63,943 ms); master is busy 12 s, then
@@ -976,6 +986,10 @@ each with the recommended action, none ruled yet:
   generated file, the same before To Do 67. [Cost Before](#cost-before)
   says the first loop runs as master's (15 s with 2,000 tasks of
   `tools/generate_task_file.py`); not with this file. Not traced yet.
+- P144. Rebuilding a tree view of 2,050 tasks (a sort, a filter, the
+  tree/list switch) takes 2.1 to 2.8 s, on master too and before To Do
+  67; the columns shown make no difference (5 or 29). Found 2026-10-01
+  with a generated file. Not traced yet.
 - P141. A row's tooltip stays up after Expand all or Collapse all
   moved another row under the pointer, and the hover outline returns
   only after the pointer moves within the list again. Found
