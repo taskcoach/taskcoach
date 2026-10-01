@@ -986,10 +986,6 @@ each with the recommended action, none ruled yet:
   generated file, the same before To Do 67. [Cost Before](#cost-before)
   says the first loop runs as master's (15 s with 2,000 tasks of
   `tools/generate_task_file.py`); not with this file. Not traced yet.
-- P144. Rebuilding a tree view of 2,050 tasks (a sort, a filter, the
-  tree/list switch) takes 2.1 to 2.8 s, on master too and before To Do
-  67; the columns shown make no difference (5 or 29). Found 2026-10-01
-  with a generated file. Not traced yet.
 - P141. A row's tooltip stays up after Expand all or Collapse all
   moved another row under the pointer, and the hover outline returns
   only after the pointer moves within the list again. Found
@@ -1005,6 +1001,10 @@ each with the recommended action, none ruled yet:
   border that cannot be dragged now show the "prohibited" sign from
   the bundled Noto emoji, made a cursor as the link and home drop
   cursors are ([ICON_DISPLAY.md](ICON_DISPLAY.md#synthetic-icons)).
+- P144. Rebuilding a tree view of 2,050 tasks (a sort, a filter, the
+  tree/list switch) takes 2.1 to 2.8 s, on master too and before To Do
+  67; the columns shown make no difference (5 or 29). Found 2026-10-01
+  with a generated file. Not traced yet.
 
 ## Views on the Effective Styles
 
