@@ -897,7 +897,11 @@ each with the recommended action, none ruled yet:
   avoid it since P129.
 - P131. Ctrl+Shift+A is both Edit > Deselect All and Actions > Add
   attachment; the key opens the attachment dialog (checked in the
-  app). The same on master.
+  app). The same on master and in 2.0.2.0. Add attachment has had it
+  since the original (the Help's shortcut table, ATTACHMENTS.md);
+  Deselect All got it in January 2026 (aaa2fe78d), and gets the key
+  only while Add attachment's menu item is disabled (P130). No
+  translation has that menu text yet.
 - P132. ~~Ctrl+Z and Ctrl+Y in an editor's text field undid and redid
   task changes, not the typing~~: fixed 2026-10-01, the code the same
   on master. The editor's shortcut table gets the keys before the
@@ -918,6 +922,11 @@ each with the recommended action, none ruled yet:
   There Task Coach keeps each field's typing history: Ctrl+Z,
   Ctrl+Y and Ctrl+Shift+Z, and the Edit menu, in every text field
   ([MENUS.md](MENUS.md#keyboard-shortcuts)). Not checked on macOS.
+- P135. The reminder sound's player (`paplay`, `afplay`) is started
+  and its process object dropped while it plays
+  (`sounds/__init__.py`): Python warns "subprocess is still running"
+  (seen with warnings on) and reaps it later. Nothing is lost. Keep
+  the object until it ends, or leave?
 
 ## Views on the Effective Styles
 
