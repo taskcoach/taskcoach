@@ -67,7 +67,10 @@ class Sorter(base.TreeSorter):
         self.__status_changed = True
 
     def __on_pass(self, event):  # pylint: disable=W0613
-        if self.__status_changed and self.__sort_by_task_status_first:
+        if self.__status_changed and (
+            self.__sort_by_task_status_first
+            or any(key.lstrip("-") == "status" for key in self.sort_keys())
+        ):
             self.reset()
 
     def reset(self, *args, **kwargs):  # pylint: disable=W0221

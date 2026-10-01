@@ -47,10 +47,13 @@ sort_key = [status.get_sort_priority(settings)] + [column_sort_key]   # descendi
 
 For ascending sort, priority is negated to maintain urgency-first ordering.
 
+The Status column sorts by the same key (`Task.statusSortFunction()`,
+since 2026-10-01: until then it sorted by subject).
+
 ### Re-sorting
 
-With "Sort by status first", an edit of a date, the completion or the
-prerequisites re-sorts at once. A status the clock changes (a planned
+With "Sort by status first", or sorted by the Status column, an edit
+of a date, the completion or the prerequisites re-sorts at once. A status the clock changes (a planned
 start or due time passing, the due soon hours changed) re-sorts once
 after the master loop's pass (`scheduler.pass`), not for each task
 ([SCHEDULERS.md](SCHEDULERS.md)).

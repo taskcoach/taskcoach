@@ -1230,6 +1230,15 @@ class Task(
         return "task.priority"
 
     @staticmethod
+    def statusSortFunction(**kwargs):  # pylint: disable=W0613
+        """The Status column's order: the sort priorities of
+        Preferences > Statuses, highest first, as sorting by status
+        first does (docs/TASK_STATUS_SORT.md)."""
+        return lambda task: -task.computedStatus().get_sort_priority(
+            task.settings
+        )
+
+    @staticmethod
     def prioritySortFunction(**kwargs):
         recursive = kwargs.get("tree_mode", False)
         return lambda task: task.priority(recursive=recursive)

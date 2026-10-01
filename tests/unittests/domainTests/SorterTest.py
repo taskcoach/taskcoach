@@ -410,6 +410,35 @@ class TaskSorterStatusChangeTest(test.TestCase):
         self.assertEqual([self.inactive, self.active], list(self.sorter))
 
 
+class TaskSorterStatusColumnTest(test.TestCase):
+    """The Status column sorts by the status sort priorities, the most
+    urgent first, without "Sort by status first"."""
+
+    def setUp(self):
+        task.Task.settings = config.Settings(load=False)
+        self.task_list = task.TaskList()
+        self.sorter = task.sorter.Sorter(self.task_list)
+        self.sorter.sort_by_task_status_first(False)
+        self.start = date.Now() + date.ONE_HOUR
+        self.inactive = task.Task(subject="A", plannedStartDateTime=self.start)
+        self.active = task.Task(
+            subject="B", actualStartDateTime=date.Now() - date.ONE_DAY
+        )
+        self.task_list.extend([self.inactive, self.active])
+        self.sorter.sort_by("status")
+
+    def test_most_urgent_first(self):
+        self.assertEqual([self.active, self.inactive], list(self.sorter))
+
+    def test_pass_resorts_a_status_the_clock_changed(self):
+        self.addCleanup(setattr, date, "Now", date.Now)
+        date.Now = lambda: self.start + date.ONE_SECOND
+        self.inactive.compute_stored_status()  # Late now
+        self.assertEqual([self.active, self.inactive], list(self.sorter))
+        patterns.Event("scheduler.pass", self).send()
+        self.assertEqual([self.inactive, self.active], list(self.sorter))
+
+
 class TaskSorterTreeModeTest(test.TestCase):
     def setUp(self):
         task.Task.settings = config.Settings(load=False)

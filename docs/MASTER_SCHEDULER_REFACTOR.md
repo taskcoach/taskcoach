@@ -738,9 +738,11 @@ each with the recommended action, none ruled yet:
   cell: Escape and the item's deletion cancel (`CancelEditing()`), any
   other end keeps the value. Checked in the app: % complete, priority,
   subject and a date picked from the calendar; Escape cancels.
-- P117. Sorting by the Status column sorts by subject: Task has no
-  `statusSortFunction` (logged "falling back to subject"; the same on
-  master).
+- P117. ~~Sorting by the Status column sorted by subject~~: fixed
+  2026-10-01, **asked by designer**; the same on master.
+  `Task.statusSortFunction()` sorts by the status sort priorities, as
+  status first does, re-sorted after the loop's pass
+  ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md)).
 
 ## Views on the Effective Styles
 
