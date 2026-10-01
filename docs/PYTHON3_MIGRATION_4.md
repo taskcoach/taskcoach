@@ -438,7 +438,8 @@ A minimal test app exists at `test_aui_toolbar_jitter.py` that reproduces the is
    - Review file I/O encoding
 
 4. ~~**Deprecated wxPython APIs**~~: done, no `wx.FONTSTYLE_*` use
-   left; `wx.NewId()` in wxScheduler replaced 2026-09.
+   left; `wx.NewId()` in wxScheduler replaced 2026-09, the rest
+   2026-10-01 (`wx.NewIdRef()`).
 
 5. **Internationalization Modernization**
    - Migrate from custom `po2dict.py` translation system to standard GNU gettext

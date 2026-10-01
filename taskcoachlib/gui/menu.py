@@ -451,8 +451,11 @@ class EditMenu(Menu):
         )
 
 
-activateNextViewerId = wx.NewId()
-activatePreviousViewerId = wx.NewId()
+# Kept, so that wx keeps the ids reserved
+_viewer_id_refs = wx.NewIdRef(count=2)
+activate_next_viewer_id, activate_previous_viewer_id = map(
+    int, _viewer_id_refs
+)
 
 
 class ViewMenu(Menu):
@@ -469,7 +472,7 @@ class ViewMenu(Menu):
             help_text=help.viewNextViewer,
             forward=True,
             icon_id="nuvola_actions_tab-duplicate",
-            id=activateNextViewerId,
+            id=activate_next_viewer_id,
         )
         activatePreviousViewer = uicommand.ActivateViewer(
             viewer=viewerContainer,
@@ -477,7 +480,7 @@ class ViewMenu(Menu):
             help_text=help.viewPreviousViewer,
             forward=False,
             icon_id="taskcoach_actions_tab-duplicate-left",
-            id=activatePreviousViewerId,
+            id=activate_previous_viewer_id,
         )
         self.appendUICommands(
             activateNextViewer,

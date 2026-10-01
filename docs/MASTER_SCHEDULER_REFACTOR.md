@@ -568,8 +568,12 @@ each with the recommended action, none ruled yet:
   - `utcfromtimestamp()`, `sre_constants`, `setDaemon()`, pyparsing's
     `parseString`: their current names. The iCalendar tests compare the
     exported times now (they asserted a string before).
-  - `wx.NewId()`: separate, the IDs must stay reserved
-    (`wx.NewIdRef()`).
+  - `wx.NewId()`: `wx.NewIdRef()`, its reference kept. The wxPython
+    wheels (Windows, macOS, the AppImage) free an id with its
+    reference; Debian's wx does not track ids (they count down and
+    wrap after a million). Checked in the app: menus, toolbar, right
+    click and tracking menus, recent searches, the editor's Ctrl+Tab,
+    Ctrl+Shift+Tab and Ctrl+E.
   Checked: the whole catalog on 3.13; the affected tests on 3.14 with
   wxPython 4.2.5 and pyparsing 3.3.3 (21 date expressions parse alike
   on pyparsing 3.1.2 and 3.3.3); in the app an invalid regular

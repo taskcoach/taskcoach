@@ -246,12 +246,12 @@ class ViewerContainer(object):
                 (
                     wx.ACCEL_CTRL,
                     wx.WXK_PAGEDOWN,
-                    taskcoachlib.gui.menu.activateNextViewerId,
+                    taskcoachlib.gui.menu.activate_next_viewer_id,
                 ),
                 (
                     wx.ACCEL_CTRL,
                     wx.WXK_PAGEUP,
-                    taskcoachlib.gui.menu.activatePreviousViewerId,
+                    taskcoachlib.gui.menu.activate_previous_viewer_id,
                 ),
             ]
         )

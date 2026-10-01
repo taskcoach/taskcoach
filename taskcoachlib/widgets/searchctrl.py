@@ -149,8 +149,13 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         # Precreate menu item ids for the recent searches and bind the event
         # handler for those menu item ids. It's no problem that the actual menu
         # items don't exist yet.
+        # Consecutive, for the range binding; the references keep them
+        # reserved
+        self.__recent_search_id_refs = wx.NewIdRef(
+            count=self.__maxRecentSearches
+        )
         self.__recentSearchMenuItemIds = [
-            wx.NewId() for dummy in range(self.__maxRecentSearches)
+            int(ref) for ref in self.__recent_search_id_refs
         ]
         self.Bind(
             wx.EVT_MENU_RANGE,
