@@ -590,8 +590,11 @@ each with the recommended action, none ruled yet:
 - P71. Pylint leftovers: `.pylintrc` (pylint 0.x), 746
   `# pylint: disable`, 61 `# pragma: no cover`; no linter or coverage
   uses them. Remove?
-- P72. `i18n.in/*.po`: 53 copies left by the move to
-  `taskcoachlib/i18n/locales/` (10 MB). Recommended: remove.
+- P72. ~~`i18n.in/*.po`: 53 copies left by the move to
+  `taskcoachlib/i18n/locales/` (11 MB)~~: removed 2026-09-30, **ruled by
+  designer**; #213 copied the files and never deleted these, and the
+  three English variants had already drifted. The template's folder is
+  made by the command in [TRANSLATIONS.md](TRANSLATIONS.md).
 - P73. `icons.in/`: `nuvola.zip` (16 MB), `splash.png`,
   `splash_inno.bmp` unused, shipped by the Windows build, which copies
   the whole directory; `gui/icons/ICON_SOURCES.json` and

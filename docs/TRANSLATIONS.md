@@ -22,7 +22,7 @@ Task Coach uses GNU gettext `.po` files for translations. The app loads these fi
 | File | Purpose |
 |------|---------|
 | `taskcoachlib/i18n/locales/*.po` | Translation files (53 languages) |
-| `i18n.in/messages.pot` | Template with all translatable strings |
+| `i18n.in/messages.pot` | Template with all translatable strings (generated, not in git) |
 | `taskcoachlib/i18n/po2dict.py` | Parser that loads .po files |
 | `taskcoachlib/i18n/__init__.py` | Translator class |
 
@@ -111,6 +111,7 @@ After adding new translatable strings, update the template:
 ```bash
 # Extract all _("string") calls
 find taskcoachlib -name "*.py" -not -path "*/i18n/locales/*" > /tmp/pyfiles.txt
+mkdir -p i18n.in
 xgettext --language=Python --keyword=_ --output=i18n.in/messages.pot \
     --from-code=UTF-8 --files-from=/tmp/pyfiles.txt
 ```
