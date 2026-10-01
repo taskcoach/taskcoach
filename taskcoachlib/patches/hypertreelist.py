@@ -3133,17 +3133,6 @@ class TreeListMainWindow(CustomTreeCtrl):
         rect = wx.Rect(x, y - pad, w, h + 2 * pad)
         self.Refresh(True, rect)
 
-    def SetDropHighlight(self, item=None, column=-1):
-        """
-        Sets the visual feedback for drag and drop operations.
-        Currently a no-op as visual feedback is handled by cursor changes only.
-        """
-        pass
-
-    def ClearDropHighlight(self):
-        """Clears all drop visual feedback."""
-        pass
-
 
 # ----------------------------------------------------------------------------
 # helpers
@@ -3880,19 +3869,6 @@ class TreeListMainWindow(CustomTreeCtrl):
         x_maincol = self._x_maincol
         y = 2
         y, x_maincol = self.PaintLevel(self._anchor, dc, 0, y, x_maincol)
-
-        # Draw drag and drop visual feedback
-        self._DrawDropFeedback(dc)
-
-
-    def _DrawDropFeedback(self, dc):
-        """
-        Draws the drag and drop visual feedback.
-
-        :param `dc`: an instance of :class:`wx.DC`.
-        """
-        # Visual feedback removed - cursor change is sufficient
-        pass
 
 
     def HitTest(self, point, flags=0):

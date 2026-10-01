@@ -48,7 +48,7 @@ reach only methods named `*SortFunction`.
 | `gui/icons/synthetic_icon_generator.py` | 55-65 | `if/elif` on `method_name` | None | **Fixed**: explicit if/elif |
 | `changes/monitor.py` | 59,112 | `getattr(klass, "%sChangedEventType" % name)()` | Low | **Removed** 2026-09-27 with the automatic merge ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)) |
 | `changes/sync.py` | 208+ | `getattr(memOwner, "add%s" % className)(obj)` | Low | **Removed** 2026-09-27 with the automatic merge |
-| `patches/hypertreelist.py` | 5854 | `getattr(self._main_win, method)(*a, **k)` | Low | Internal: widget method proxy |
+| `patches/hypertreelist.py` | 5830 | `getattr(self._main_win, method)(*a, **k)` | Low | Internal: widget method proxy |
 | `gui/viewer/task.py` | 720, 727 | `getattr(task.Task, "%sChangedEventType" % choice)()` | Low | Internal: a column name |
 | `gui/viewer/task.py` | 1487, 1660 | `getattr(self, "render%s" % name)` | Low | Internal: a column name |
 | `gui/dialog/editor.py` | 1016, 1023 | `"%sColor"`, `"Edit%sColorCommand"` | Low | Internal: `"fg"` or `"bg"` |

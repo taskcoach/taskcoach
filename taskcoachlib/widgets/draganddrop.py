@@ -445,11 +445,8 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
                 self.SetCursorToLink()
             else:
                 self.SetCursorToDragging()
-            # Update drop visual feedback
-            self._UpdateDropFeedback(item, flags, column, point)
         else:
             self.SetCursorToDroppingImpossible()
-            self._ClearDropFeedback()
         # Auto-expand collapsed items on hover (modern UX behavior)
         hover_expander(self).hover(item, flags)
         if self.GetSelections() != [item]:
@@ -457,26 +454,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             if item != self.GetRootItem():
                 self.SelectItem(item)
         event.Skip()
-
-    def _UpdateDropFeedback(self, item, flags, column, point):
-        """Update visual feedback during drag based on drop position."""
-        mainWin = self.GetMainWindow()
-
-        if not item or item == self.GetRootItem():
-            mainWin.ClearDropHighlight()
-            return
-
-        # Highlight cell if on prereq/dep column
-        try:
-            mainWin.SetDropHighlight(item, column)
-        except (AttributeError, RuntimeError):
-            mainWin.ClearDropHighlight()
-
-    def _ClearDropFeedback(self):
-        """Clear all drop visual feedback."""
-        mainWin = self.GetMainWindow()
-        if hasattr(mainWin, "ClearDropHighlight"):
-            mainWin.ClearDropHighlight()
 
     def StartDragging(self):
         self.GetMainWindow().Bind(wx.EVT_MOTION, self.OnDragging)
@@ -509,7 +486,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             mainWin._isDragging = False
         self.ResetCursor()
         self._ResetHeaderCursor()
-        self._ClearDropFeedback()
         self.selectDraggedItems()
         # Refresh to clear any visual artifacts
         mainWin.Refresh()
@@ -556,8 +532,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         headerWin = self.GetHeaderWindow()
         if headerWin:
             headerWin.SetCursor(_getHomeCursor(headerWin))
-        # Clear drop feedback in main window since we're over header
-        self._ClearDropFeedback()
         event.Skip()
 
     def OnDropOnHeader(self, event):

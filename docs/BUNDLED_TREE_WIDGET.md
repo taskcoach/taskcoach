@@ -83,7 +83,7 @@ In `hypertreelist.py`; the commit first making each change.
 | `SetImageList` | no greyed copy of the image list (3,000+ icons); otherwise upstream's, rows marked for recalculation | `1c6d5d3a7` |
 | `SetHoverItem`, `_refresh_hover_row`, `PaintLevel`, `OnMouse` | the two-tone hover outline (`settings2.window.hoverlinewidth`); mouse moves within a row do nothing | `78533ffab`, `a20c9164c` |
 | `OnMouse` | a drag starts after 3 pixels, without the timer; a fast double-click opens the row clicked | `a1dad34df` |
-| `OnMouse`, `OnPaint`, `SetDropHighlight`, `ClearDropHighlight`, `_DrawDropFeedback` | drag feedback by the cursor only; no target highlighted outside the window; the drag image hidden before a refresh | `def3832cf` |
+| `OnMouse` | no drop target highlighted outside the window; the drag image hidden before a refresh | `def3832cf` |
 | `TreeListHeaderWindow.OnMouse`, `IsColumnResizable` | in auto-resize mode the resize column cannot be dragged (Task Coach's not-allowed cursor) | `af844f2e6` |
 | `HyperTreeList.AddColumn`, `InsertColumn` and their `Info` forms, `RemoveColumn`, `_extend_item_texts_for_columns`, `TreeListItem.GetText` | every row keeps a text per column, its cached text sizes dropped when they move; a `[TREELIST]` log when not ([LOGGING_GUIDE.md](LOGGING_GUIDE.md#prefixes)) | `cd504cdf3` |
 | `EditCtrl.__init__` | the edit box as wide as the column | `4e096044d` |
@@ -95,6 +95,18 @@ In `hypertreelist.py`; the commit first making each change.
 it restores after a rebuild through `SetItemHilight()`, which keeps the
 tree's selection set
 ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#restoring-the-selection-after-a-rebuild)).
+
+## Changing the Copy
+
+**Ruled by designer 2026-10-01**: no regressions first, then a copy that
+stays close to upstream, so each release can be taken in. Change the
+copy only for behaviour Task Coach cannot add from its own code: the
+widget's methods and events, or an override in its own tree control
+(`TreeListCtrl` in `taskcoachlib/widgets/treectrl.py`, a `HyperTreeList`
+subclass). Drawing, mouse and editing behaviour in `TreeListMainWindow`
+and `TreeListHeaderWindow` can only change here, since the widget
+creates those windows itself. Each change gets a row in the table
+above, with its commit; a change goes once the widget does the same.
 
 ## Loading
 
