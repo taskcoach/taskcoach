@@ -78,7 +78,7 @@ Returns a dict with numeric formatting conventions. Key fields:
 | `thousands_sep` | Thousands separator | `","` | `"."` | Can be empty or non-ASCII |
 | `grouping` | Grouping pattern | `[3, 3, 0]` | `[3, 3, 0]` | — |
 
-- **Files:** `numericctrl.py`, `currencyctrl.py`, `masked.py`
+- **Files:** `numericctrl.py`, `currencyctrl.py`
 
 ### Environment variables + locale.getlocale() (language)
 

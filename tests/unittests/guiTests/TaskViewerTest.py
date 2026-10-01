@@ -1103,6 +1103,23 @@ class CommonTestsMixin(object):
         editor.AcceptChanges()
         self.assertEqual(12.5, self.task.hourlyFee())
 
+    def test_a_budget_entered_in_its_cell_is_stored(self):
+        self.showColumn("budget")
+        self.taskList.append(self.task)
+        main_window = self.viewer.widget.GetMainWindow()
+        main_window.EditLabel(self.firstItem(), 3)
+        editor = main_window._editCtrl
+        duration = [
+            child
+            for child in editor.GetChildren()
+            if isinstance(child, widgets.MaskedDurationCtrl)
+        ][0]
+        duration.SetDuration(date.TimeDelta(hours=2, minutes=30))
+        editor.AcceptChanges()
+        self.assertEqual(
+            date.TimeDelta(hours=2, minutes=30), self.task.budget()
+        )
+
     def testCollapsedCompositeTaskShowsRecursiveFixedFee(self):
         self.showColumn("fixedFee")
         self.taskList.extend([self.task, self.child])

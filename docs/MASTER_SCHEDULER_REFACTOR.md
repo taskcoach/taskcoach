@@ -719,11 +719,17 @@ each with the recommended action, none ruled yet:
   editor's OK button was not found in its button sizer
   (`wxhelper.getButtonFromStdDialogButtonSizer()` returned None, so
   `createButtons()` raised). Cause not known yet.
-- P114. The task list's Budget cell ignores typing: "2:30" leaves it
-  at 0:00:00 and Enter saves nothing (2026-09-30; the same on master).
-  It is the masked `TimeDeltaCtrl` (`inplace_editor.BudgetCtrl`).
-  Recommended: the task editor's duration field
-  (`MaskedDurationCtrl`), as P55 did for the fees.
+- P114. ~~The task list's Budget cell ignored typing ("2:30" left it at
+  0:00:00; Enter saved nothing)~~: fixed 2026-09-30, **asked by
+  designer**; the same on master. The cell is the task editor's
+  duration field (`MaskedDurationCtrl`: Right and Left arrows move
+  between days, hours, minutes and seconds); `widgets/masked.py`, its
+  last user gone, is removed. Checked in the app: 2:30 stored, Escape
+  cancels, a click elsewhere accepts.
+- P115. `TaskViewerTest` failed 21 tests in a catalog run that crossed
+  midnight (2026-10-01 00:00, "Today 00:00" expected "Today"), and
+  passes when rerun: tests that read the clock break just after
+  midnight. Recommended: give them a fixed time.
 
 ## Views on the Effective Styles
 

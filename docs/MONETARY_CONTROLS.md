@@ -33,7 +33,8 @@ Two previous implementations were abandoned:
 1. **`AmountCtrl`** (`masked.py`) — wrapped `wx.lib.masked.NumCtrl`. Crashed
    during normal typing due to unfixed Phoenix bugs (#2587, #1179). Unusable.
    The fee columns' in-place editor kept it until 2026-09-30 (each key filled
-   a place of "0.00": typing 12.5 stored 0.50); removed then.
+   a place of "0.00": typing 12.5 stored 0.50); removed then, with
+   `masked.py`.
 2. **`CurrencyCtrl` + `CurrencyValidator`** — `wx.TextCtrl` with per-keystroke
    `wx.Validator` filtering. Period keystrokes were silently blocked or
    corrupted input on GTK. Paste bypassed validation entirely. Not fit for

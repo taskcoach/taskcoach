@@ -156,22 +156,20 @@ class Panel(wx.Panel):
 class BudgetCtrl(
     EscapeKeyMixin, KillFocusAcceptsEditsMixin, hypertreelist.EditCtrl, Panel
 ):
-    """Masked inline text control for editing budgets:
-    <hours>:<minutes>:<seconds>."""
+    """Inline control for editing budgets: the task editor's duration
+    field, days, hours, minutes and seconds."""
 
     def __init__(self, parent, wxId, item, column, owner, value):
         super().__init__(parent, wxId, item, column, owner)
-        hours, minutes, seconds = value.hoursMinutesSeconds()
-        # Can't inherit from TimeDeltaCtrl because we need to override GetValue,
-        # so we use composition instead
-        self.__timeDeltaCtrl = widgets.masked.TimeDeltaCtrl(
-            self, hours, minutes, seconds
+        self.__durationCtrl = widgets.MaskedDurationCtrl(
+            self, show_seconds=True
         )
-        self.__timeDeltaCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-        self.makeSizer(self.__timeDeltaCtrl)
+        self.__durationCtrl.SetDuration(value)
+        self.__durationCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.makeSizer(self.__durationCtrl)
 
     def GetValue(self):
-        return date.parseTimeDelta(self.__timeDeltaCtrl.GetValue())
+        return self.__durationCtrl.GetDuration()
 
 
 class AmountCtrl(
