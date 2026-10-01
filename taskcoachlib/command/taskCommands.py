@@ -503,7 +503,7 @@ class EditRecurrenceCommand(base.BaseCommand):
 
 
 class EditPercentageCompleteCommand(EffortCommand):
-    plurar_name = "Change percentages complete"
+    plural_name = _("Change percentage complete")
     singular_name = _('Change percentage complete of "%s"')
 
     def __init__(self, *args, **kwargs):

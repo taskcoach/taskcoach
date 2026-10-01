@@ -612,6 +612,18 @@ class EditPercentageCompleteTest(TaskCommandTestCase):
             ),
         )
 
+    def test_name_for_one_task(self):
+        edit = command.EditPercentageCompleteCommand(
+            self.taskList, [self.task1], newValue=50
+        )
+        self.assertEqual('Change percentage complete of "task1"', str(edit))
+
+    def test_name_for_several_tasks(self):
+        edit = command.EditPercentageCompleteCommand(
+            self.taskList, [self.task1, self.task2], newValue=50
+        )
+        self.assertEqual("Change percentage complete", str(edit))
+
 
 class MarkActiveCommandTest(TaskCommandTestCase):
     def testMarkInactiveTaskActive(self):

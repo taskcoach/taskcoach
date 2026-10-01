@@ -107,7 +107,7 @@ class NewSubItemCommand(NewItemCommand):
 
 
 class CopyCommand(BaseCommand):
-    plular_name = _("Copy")
+    plural_name = _("Copy")
     singular_name = _('Copy "%s"')
 
     def do_command(self):

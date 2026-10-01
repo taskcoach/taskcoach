@@ -517,9 +517,11 @@ each with the recommended action, none ruled yet:
   updates, `_compute_task()`, notes' sources, type icons, the
   migration path); `scheduler_diffprobe.py` retired for the unit
   test, with `allItemsSorted()`, which only it used.
-- P54. "Undo do something" after changing % complete of several tasks:
-  `plurar_name` (`taskCommands.py`) and `plular_name` (Copy,
-  `command/base.py`) are misspelt. Recommended: fix.
+- P54. ~~"Undo do something" after changing % complete of several
+  tasks~~: fixed 2026-09-30, **asked by designer**; the same on master
+  since 2024. `plurar_name` and Copy's `plular_name` were misspelt;
+  the label for several tasks is "Change percentage complete", worded
+  without a count ([TRANSLATIONS.md](TRANSLATIONS.md#counts)).
 - P55. The fee columns' in-place editor is `AmountCtrl`
   (`wx.lib.masked.NumCtrl`), which MONETARY_CONTROLS.md calls unusable
   (crashes while typing). Recommended: test; if it fails, use

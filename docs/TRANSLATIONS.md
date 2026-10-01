@@ -90,6 +90,20 @@ message = _("This text will be translated")
 error = _("File not found: %(filename)s") % {"filename": path}
 ```
 
+### Counts
+
+Wording never depends on a number, **ruled by designer 2026-09-30**:
+an action names no count ("Change percentage complete", for any
+number of tasks), and a count follows its label ("Tasks saved: 3").
+The loader has no plural forms (gettext's `ngettext`), and "task(s)"
+cannot be translated into languages with several plural forms
+(Polish, Russian, Czech); style guides advise against it too.
+
+The English text is the key of every translation: changing it drops
+the message's translations until translators add the new text. So
+existing messages keep their wording until they change for another
+reason.
+
 ### Extracting New Strings
 
 After adding new translatable strings, update the template:
