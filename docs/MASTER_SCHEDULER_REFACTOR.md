@@ -208,11 +208,20 @@ go at the end. Details live in the sections and documents linked.
     problem."
 67. Bring the bundled tree widget up to date (option C of P118),
     **asked by designer 2026-10-01**: wxPython 4.3.1's
-    `customtreectrl.py` and `hypertreelist.py` as the bundled pair,
-    with Task Coach's changes redone on them: 31 methods, 11 of them
-    also rewritten upstream (`PaintItem`, `OnMouse`, `PaintLevel`);
-    the `Self` annotation dropped for Python 3.10; upstream's #1880
-    dark-theme text change checked in the views
+    `customtreectrl.py` as released (it has the `GetNextExpanded()`
+    fix) and its `hypertreelist.py` with Task Coach's changes redone:
+    31 methods, 11 also rewritten upstream; a three-way merge from
+    4.2.2 leaves 13 conflicts. 4.3.1 also keeps the selection in a set
+    and caches each row's size and text widths, which no conflict
+    shows: `treectrl.py`'s `_refresh_selection()` highlights through
+    `SetItemHilight()` (with `BundledTreeWidgetTest`); the copy's
+    `SetImageList()` and column insert and remove mark the rows for
+    recalculation, as upstream's setters do; the colour checks go on
+    upstream's new brushes; Escape keeps Task Coach's cancel, whose
+    destroy is already deferred (upstream's GTK crash, #1938); `Self`
+    dropped for Python 3.10. #1880's dark-theme change is the text
+    colour of rows with a background, already in the copy. Every wx
+    call new in 4.3.1's files exists in 4.0.7
     ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)).
 
 ## Deferred or Will Not Do

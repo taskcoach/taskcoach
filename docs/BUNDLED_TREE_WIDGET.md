@@ -139,7 +139,3 @@ of the 31 methods Task Coach changed were also rewritten upstream
   wrong side: `ChopText()` in `customtreectrl.py`, now bundled, so it
   can be fixed here
   ([TODO.md](TODO.md#hypertreelist-text-truncation-bug-standard-wxpython-issue)).
-- Upstream changed how `PaintItem` picks the default text colour
-  ([#1880](https://github.com/wxWidgets/Phoenix/issues/1880), dark
-  themes, 4.2.4); the copy keeps the older line. Not yet checked
-  whether Task Coach's own colours make it visible (To Do 67).
