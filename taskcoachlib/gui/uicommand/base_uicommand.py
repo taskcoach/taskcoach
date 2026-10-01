@@ -23,7 +23,6 @@ from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.meta.debug import log_step
 
-
 """ User interface commands (subclasses of UICommand) are actions that can
     be invoked by the user via the user interface (menu's, toolbar, etc.).
     See the Taskmaster pattern described here:
@@ -46,8 +45,10 @@ class MenuItem(wx.MenuItem):
             try:
                 self.SetItemLabel(new_text)
             except Exception as e:
-                log_step("MenuItem.update_state: dead menu item: %s" % e,
-                         prefix="DEAD-OBJ")
+                log_step(
+                    "MenuItem.update_state: dead menu item: %s" % e,
+                    prefix="DEAD-OBJ",
+                )
         if enabled and self.IsCheckable():
             check = self._command.checked()
             if check is not None:
@@ -118,13 +119,22 @@ class UICommand(patterns.Observer):
                     flags |= dict(Shift=wx.ACCEL_SHIFT, Alt=wx.ACCEL_ALT)[key]
                 else:
                     assert key in ["ENTER", "RETURN"], key
+            if flags == wx.ACCEL_NORMAL:
+                # Plain Enter is the list's (Viewer's accelerator
+                # table): text fields keep it
+                return []
             return [(flags, wx.WXK_NUMPAD_ENTER, self.id)]
         return []
 
     def add_to_menu(self, menu, window, position=None, sub_menu=None):
         menu_item = MenuItem(
-            self, menu, self.id, self.menu_text, self.help_text, self.kind,
-            subMenu=sub_menu
+            self,
+            menu,
+            self.id,
+            self.menu_text,
+            self.help_text,
+            self.kind,
+            subMenu=sub_menu,
         )
         self.menu_items.append(menu_item)
         self.add_bitmap_to_menu_item(menu_item)
@@ -151,8 +161,11 @@ class UICommand(patterns.Observer):
             bitmap = icon_catalog.get_bitmap(self.icon_id, LIST_ICON_SIZE)
             if not bitmap.IsOk():
                 # TRAP: icon_id given but invalid - this is an error
-                log_step("ERROR: invalid icon '%s' for menu item '%s'" %
-                         (self.icon_id, menu_item.GetItemLabelText()), prefix="ICON")
+                log_step(
+                    "ERROR: invalid icon '%s' for menu item '%s'"
+                    % (self.icon_id, menu_item.GetItemLabelText()),
+                    prefix="ICON",
+                )
                 return
 
             menu_item.SetBitmap(bitmap)
@@ -239,8 +252,10 @@ class UICommand(patterns.Observer):
             try:
                 menu_item.SetItemLabel(menu_text)
             except Exception as e:
-                log_step("update_menu_text: dead menu item: %s" % e,
-                         prefix="DEAD-OBJ")
+                log_step(
+                    "update_menu_text: dead menu item: %s" % e,
+                    prefix="DEAD-OBJ",
+                )
 
     def main_window(self):
         return wx.GetApp().TopWindow
@@ -250,4 +265,3 @@ class UICommand(patterns.Observer):
 
     def get_help_text(self):
         return self.help_text
-

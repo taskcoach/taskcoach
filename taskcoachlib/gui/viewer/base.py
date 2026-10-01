@@ -633,16 +633,20 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def createToolBarUICommands(self):
         """UI commands to put on the toolbar of this viewer."""
+        # On the list, not the viewer: an accelerator table takes its
+        # keys from every child first, so the toolbar's search box
+        # would lose Enter and its clipboard keys
         table = wx.AcceleratorTable(
             [
                 (wx.ACCEL_CMD, ord("X"), wx.ID_CUT),
                 (wx.ACCEL_CMD, ord("C"), wx.ID_COPY),
                 (wx.ACCEL_CMD, ord("V"), wx.ID_PASTE),
                 (wx.ACCEL_NORMAL, wx.WXK_RETURN, wx.ID_EDIT),
+                (wx.ACCEL_NORMAL, wx.WXK_NUMPAD_ENTER, wx.ID_EDIT),
                 (wx.ACCEL_CTRL, wx.WXK_DELETE, wx.ID_DELETE),
             ]
         )
-        self.SetAcceleratorTable(table)
+        self.widget.SetAcceleratorTable(table)
 
         clipboardToolBarUICommands = self.createClipboardToolBarUICommands()
         creationToolBarUICommands = self.createCreationToolBarUICommands()

@@ -9,7 +9,8 @@
 5. [Menu State Update Flow](#menu-state-update-flow)
 6. [Toolbar vs Menu Strategy](#toolbar-vs-menu-strategy)
 7. [Migrated Commands](#migrated-commands)
-8. [Key Files](#key-files)
+8. [Keyboard Shortcuts](#keyboard-shortcuts)
+9. [Key Files](#key-files)
 
 ---
 
@@ -252,6 +253,24 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
   `viewer.order_by`, `do_command()` calls `viewer.set_order_by()`
 - Entry point: `SquareTaskViewer.set_order_by()` — writes settings, applies
   change, fires signal
+
+---
+
+## Keyboard Shortcuts
+
+Two kinds, reaching keys in opposite order on GTK:
+
+- **Menu shortcuts** (after `\t` in a command's menu text): the
+  focused control gets the key first, the menu only what it leaves.
+- **Accelerator tables** (`SetAcceleratorTable()`): wxGTK checks the
+  tables of the focused window and its parents before the window
+  gets the key, so a table takes its keys from every child.
+
+A viewer's plain keys (Return, numpad Enter, Ctrl+X/C/V, Ctrl+Del)
+are therefore on its list widget, not the viewer, whose toolbar holds
+the search box (`Viewer.createToolBarUICommands()`). The main
+window's table only adds numpad Enter to the menu's Enter shortcuts
+that have a modifier (`UICommand.accelerators()`).
 
 ---
 

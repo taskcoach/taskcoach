@@ -851,9 +851,12 @@ each with the recommended action, none ruled yet:
   from the pool, so the floating panes' Ctrl+PgDn/Ctrl+PgUp
   accelerators (`container.on_page_floated()`) send ids nothing is
   bound to. The same in the original code. Not checked in the app.
-- P123. Enter in the search box also opens the editor of the selected
-  task (the Edit command's Return accelerator), even when the search
-  hides it. The same on master (checked in the app).
+- P123. ~~Enter in the search box also opened the editor of the
+  selected task~~: fixed 2026-10-01, the same on master. The viewer's
+  accelerator table (Return, Ctrl+X/C/V, Ctrl+Del) took those keys
+  from its toolbar's search box too, so Ctrl+C there copied the task;
+  it is now on the list ([MENUS.md](MENUS.md#keyboard-shortcuts)).
+  Enter and numpad Enter in the search box search at once.
 - P124. After a drag and drop the selection lands on another task
   (neither the dragged task nor always the target), and the subject's
   in-place editor sometimes opens on it. The same on wxPython 4.2.3
@@ -874,6 +877,12 @@ each with the recommended action, none ruled yet:
   fixed 2026-10-01, the same on master (an error there, a clear
   refusal here): the standard library's ElementTree dropped the
   `<?taskcoach?>` version line; lxml keeps it.
+- P129. Ctrl+Z and Ctrl+Y in the search box undo and redo the last
+  task change: GTK's search field has no undo, so the menu shortcut
+  gets the key, and the Undo and Redo commands (like Cut, Copy, Paste
+  and Delete from the menu) treat only `wx.TextCtrl` as a text field.
+  The code is the same on master. Count the search box as a text
+  field (the keys then do nothing there), or leave?
 
 ## Views on the Effective Styles
 
