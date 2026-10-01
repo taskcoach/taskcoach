@@ -961,24 +961,18 @@ each with the recommended action, none ruled yet:
   `AdjustMyScrollbars()` may no longer be needed
   ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#windows-scrollbar-adjustment-on-content-changes)).
   Check on Windows before removing them.
-- P139. A column shown or hidden in a tree view moves each row's texts
-  but not its icons, which stay at their old column positions: on
-  master the icons of the columns after it vanish (the Notes column
-  empties when Description is shown); here, since `38f5e094f`, the new
-  column shows the icon of the column that was there (an attachment
-  pencil under Description). Found 2026-10-01, the same before To Do
-  67. Showing a column inserts a real column, shared with the list
-  views, which cannot hide one; the tree widget's insert keeps no
-  per-row data in step, and the copy's own addition moves only the
-  texts. Options: move each row's column data (texts, icons,
-  background colours, windows, cached sizes, the category icons) with
-  the column in Task Coach's tree control (`treectrl.py`, which already
-  wraps the insert and delete), returning the copy's column methods to
-  upstream's; or use the widget's own hiding, which keeps hidden
-  columns (no cost: a rebuild of 2,050 tasks takes the same with 5 or
-  29 columns) but changes what a column position means in about 140
-  places across six modules, for the tree views only
-  ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#known-issues)).
+- P139. ~~A column shown or hidden left each row's icons at their old
+  column positions~~: fixed 2026-10-01, **asked by designer**; on
+  master the Notes column emptied when Description was shown, here
+  Description showed an attachment's icon. The tree widget inserts or
+  removes only the header; Task Coach's tree control now moves each
+  row's per-column values with the column, and the copy's own column
+  code went back to upstream's. After each of eight shows and hides,
+  the ordering column included, the view matches a fresh start with
+  the same columns pixel for pixel. Considered: rebuilding the rows
+  instead (twice the time: 2 s against 1 s with 2,050 tasks); the
+  widget's own hiding (changes what a column position means in about
+  140 places) ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#updating-the-bundle)).
 - P140. Opening a file of 2,050 tasks (50 parents with 40 late
   subtasks each) freezes the app for 64 s, the scheduler's first full
   pass (`[SCHEDULER]` median 63,943 ms); master is busy 12 s, then

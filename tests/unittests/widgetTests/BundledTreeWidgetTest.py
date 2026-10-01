@@ -57,11 +57,3 @@ class BundledTreeWidgetTest(test.wxTestCase):
         tree.GetMainWindow().SetItemHilight(item, True)
         tree.UnselectAll()
         self.assertFalse(item.IsSelected())
-
-    def test_inserting_a_column_moves_the_texts_and_drops_their_sizes(self):
-        # The rows cache their texts' sizes per column
-        tree, item = self.tree_with_one_item()
-        item.GetExtents(wx.ClientDC(tree.GetMainWindow()))
-        tree.InsertColumn(0, "Before")
-        self.assertEqual(("", "item"), (item.GetText(0), item.GetText(1)))
-        self.assertFalse(item.HasExtents(0))

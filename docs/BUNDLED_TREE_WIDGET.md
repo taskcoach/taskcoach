@@ -85,7 +85,6 @@ In `hypertreelist.py`; the commit first making each change.
 | `OnMouse` | a drag starts after 3 pixels, without the timer; a fast double-click opens the row clicked | `a1dad34df` |
 | `OnMouse` | no drop target highlighted outside the window; the drag image hidden before a refresh | `def3832cf` |
 | `TreeListHeaderWindow.OnMouse`, `IsColumnResizable` | in auto-resize mode the resize column cannot be dragged (Task Coach's not-allowed cursor) | `af844f2e6` |
-| `HyperTreeList.AddColumn`, `InsertColumn` and their `Info` forms, `RemoveColumn`, `_extend_item_texts_for_columns`, `TreeListItem.GetText` | every row keeps a text per column, its cached text sizes dropped when they move; a `[TREELIST]` log when not ([LOGGING_GUIDE.md](LOGGING_GUIDE.md#prefixes)) | `cd504cdf3` |
 | `EditCtrl.__init__` | the edit box as wide as the column | `4e096044d` |
 | `EditCtrl.CancelEditing`, `EditTextCtrl.OnChar`, `Delete`, `ResetEditControl` | Escape and the deletion of the item edited cancel; any other end keeps the typed value (`StopEditing()`, a click elsewhere comes before the focus moves) | `def3832cf`, `f2e9f63d1` |
 | `_OnDestroy` | the drag and find timers stopped when the window is destroyed | `def3832cf` |
@@ -144,9 +143,15 @@ macOS, AppImage and Flatpak builds copy the package as files.
    (`BundledTreeWidgetTest`).
 5. Keep the rows' cached sizes right: from 4.2.4 on each row caches its
    size and its texts' sizes, which upstream's setters mark for
-   recalculation; the copy's own setters do the same (`SetImageList()`,
-   column insert and remove).
-6. Check, besides the catalog: whole-row colours of a category with a
+   recalculation; the copy's own `SetImageList()` does the same.
+6. Keep each row's values with their column. The widget inserts or
+   removes only a column's header, so Task Coach's tree control
+   (`TreeListCtrl.InsertColumn()` and `DeleteColumn()` in
+   `treectrl.py`) moves each row's per-column values itself:
+   `TreeListItem`'s `_text`, `_col_images`, `_wnd` and `_bgColour`,
+   its cached text sizes, and the copy's `_multiImages`. Check that a
+   new release keeps these (`TreeListCtrlColumnsTest`).
+7. Check, besides the catalog: whole-row colours of a category with a
    background colour, the date columns included; the hover outline;
    the selection kept across a sort, a filter, the tree/list switch
    and a new task; multi-selection with Ctrl and Shift; the keyboard;
@@ -163,6 +168,3 @@ macOS, AppImage and Flatpak builds copy the package as files.
   wrong side: `ChopText()` in `customtreectrl.py`, now bundled, so it
   can be fixed here
   ([TODO.md](TODO.md#hypertreelist-text-truncation-bug-standard-wxpython-issue)).
-- A column shown or hidden moves each row's texts but not its icons,
-  which stay at their old column positions (P139 in
-  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).

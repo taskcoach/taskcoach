@@ -73,7 +73,7 @@ Guards and errors:
 - `[DEAD-OBJ]`, `[OBSERVER]`: a call reaching a destroyed window, an
   observer that raised
   ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md)).
-- `[APPEARANCE-BUG]`, `[TREELIST]`: a broken invariant; each is a bug.
+- `[APPEARANCE-BUG]`: a broken invariant; each is a bug.
 
 The other prefixes name their module and mostly log errors and
 fallbacks: `[ICON]`, `[SPELL]`, `[EDITOR]`, `[SYNC]`, `[DURATION]`,

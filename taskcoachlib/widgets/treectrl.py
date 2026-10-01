@@ -898,6 +898,7 @@ class TreeListCtrl(
 
     def DeleteColumn(self, column_index):
         self.RemoveColumn(column_index)
+        self.__move_row_columns(column_index, inserted=False)
 
     def InsertColumn(self, column_index, column_header, *args, **kwargs):
         alignment = self.alignment_map[
@@ -907,10 +908,45 @@ class TreeListCtrl(
             self.AddColumn(column_header, *args, **kwargs)
         else:
             super().InsertColumn(column_index, column_header, *args, **kwargs)
+        self.__move_row_columns(column_index, inserted=True)
         self.SetColumnAlignment(column_index, alignment)
         self.SetColumnEditable(
             column_index, self._getColumn(column_index).isEditable()
         )
+
+    def __move_row_columns(self, column_index, inserted):
+        """Keep each row's values with their column. The widget inserts
+        or removes only the header; a row keeps its texts, icons,
+        windows and background colours by column position, and would
+        draw them under the wrong columns (docs/BUNDLED_TREE_WIDGET.md,
+        Changing the Copy)."""
+        # pylint: disable=W0212
+        root_item = self.GetRootItem()
+        pending = [root_item] if root_item else []
+        while pending:
+            item = pending.pop()
+            for values, empty in (
+                (item._text, ""),
+                (item._col_images, hypertreelist._NO_IMAGE),
+                (item._wnd, None),
+                (item._bgColour, None),
+            ):
+                if inserted and column_index <= len(values):
+                    values.insert(column_index, empty)
+                elif not inserted and column_index < len(values):
+                    del values[column_index]
+            moved_images = {}
+            for column, images in getattr(item, "_multiImages", {}).items():
+                if column < column_index:
+                    moved_images[column] = images
+                elif inserted:
+                    moved_images[column + 1] = images
+                elif column > column_index:
+                    moved_images[column - 1] = images
+            item._multiImages = moved_images
+            # Its text sizes are cached by column too
+            item.SetDirty(True, clear_extents=True)
+            pending.extend(item.GetChildren())
 
     def showColumn(self, *args, **kwargs):
         """Stop editing before we hide or show a column to prevent problems
