@@ -669,11 +669,13 @@ each with the recommended action, none ruled yet:
   `splash_inno.bmp` unused, shipped by the Windows build, which copies
   the whole directory; `gui/icons/ICON_SOURCES.json` and
   `splash_legacy.png` unused. Recommended: remove; copy only the icon.
-- P74. Unused files: `thirdparty/README.txt` (root), `PUBLICITY.txt`,
-  `TaskCoach.entitlements`, `tools/dot.py`,
-  `tools/nuvola_duplicates.txt`, `docs/proto.rst` (iPhone sync);
-  `.gitignore` lines for retired tooling, none for `.profile` (the
-  profiler's output). Recommended: remove; ignore `.profile`.
+- P74. ~~Unused files~~: removed 2026-10-01, **ruled by designer**:
+  the root `thirdparty/` (a README pointing elsewhere),
+  `TaskCoach.entitlements` (no build signs the app), `tools/dot.py`,
+  `tools/nuvola_duplicates.txt` (the output of a script removed in
+  February), `docs/proto.rst` (iPhone sync, removed in January), and
+  13 `.gitignore` lines for files nothing makes; `.profile` is
+  ignored. `PUBLICITY.txt` stays: a contributor keeps it.
 - P75. `bugs/`: 4 of the 6 issue notes are closed on GitHub.
   Recommended: open ones into docs, the rest retired.
 - P76. `test-screenshots/` (13 MB) and `icon-ideas/` (8 MB) unused but
@@ -868,9 +870,8 @@ each with the recommended action, none ruled yet:
   (`workarounds/display.py`, D6) has no `GetScaleFactor()`, so the
   startup report logs no scale factors there (`application.py` skips
   the line on the error).
-- P126. `tools/dot.py` has two regular expressions in plain strings
-  with `\(` and `\s`: invalid escape sequences, a `SyntaxWarning` on
-  Python 3.12 and later (flake8 prints it). The same on master.
+- P126. ~~`tools/dot.py`'s invalid escape sequences~~: the file is
+  gone (P74).
 - P127. ~~Collapsing a parent whose child is selected left the status
   bar at "1 selected" and the selection buttons enabled~~: fixed
   2026-10-01, **ruled by designer** (option A), the same on master
