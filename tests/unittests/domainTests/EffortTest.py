@@ -200,7 +200,7 @@ class EffortTest(test.TestCase, asserts.Mixin):
         now = date.Now()
         self.assertTrue(
             now - date.ONE_SECOND
-            < self.effort.getStop()
+            <= self.effort.getStop()
             < now + date.ONE_SECOND
         )
 

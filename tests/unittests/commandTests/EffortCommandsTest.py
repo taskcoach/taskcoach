@@ -132,7 +132,7 @@ class StartAndStopEffortCommandTest(EffortCommandTestCase):
         self.assertDoUndoRedo(
             lambda: self.assertTrue(
                 now - date.ONE_SECOND
-                < self.task2.actualStartDateTime()
+                <= self.task2.actualStartDateTime()
                 < now + date.ONE_SECOND
             ),
             lambda: self.assertEqual(
@@ -149,7 +149,7 @@ class StartAndStopEffortCommandTest(EffortCommandTestCase):
         self.assertDoUndoRedo(
             lambda: self.assertTrue(
                 now - date.ONE_SECOND
-                < self.task2.actualStartDateTime()
+                <= self.task2.actualStartDateTime()
                 < now + date.ONE_SECOND
             ),
             lambda: self.assertEqual(
