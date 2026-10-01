@@ -506,18 +506,17 @@ Found by the audit of 2026-09-30, **asked by designer** (docs, dead
 code, vendored code and dependencies, tests and CI); all testable here,
 each with the recommended action, none ruled yet:
 
-- P52. Quit still stops the file watcher, idle polling and the
-  scheduler's subscriptions (`mainwindow.py` `onClose`), as on master;
-  lazy teardown names only bundled timers as an exception
-  ([DEFERRED_CALLS.md](DEFERRED_CALLS.md#end-of-life)). Recommended:
-  keep the ones quitting needs (the watcher thread), as documented
-  exceptions; drop the others.
-- P53. Docs stale on the scheduler: `TASK_STATUS.md` (the loop calls
-  `_process_task()`, "next tick", `status()`, plural icons, the
-  editor preview); `docs/scripts/scheduler_diffprobe.py` fails at its
-  state step (`__setstate__` is gone) and alone keeps
-  `CompositeCollection.allItemsSorted()` alive. Recommended: fix the
-  doc; retire the probe and that method (the unit test replaced it).
+- P52. ~~Quit still stopped the file watcher, idle polling and the
+  scheduler's subscriptions~~: removed 2026-09-30, **asked by
+  designer**: closing the file already stops its watcher (both are
+  daemon threads), and the per-second tick ends with the main window.
+  Checked in the app: closing the window and Ctrl+Q while tracking,
+  with either watcher, end in about a second with a clean log.
+- P53. ~~Docs stale on the scheduler; a probe that no longer ran~~:
+  fixed 2026-09-30, **asked by designer**: TASK_STATUS.md (immediate
+  updates, `_compute_task()`, notes' sources, type icons, the
+  migration path); `scheduler_diffprobe.py` retired for the unit
+  test, with `allItemsSorted()`, which only it used.
 - P54. "Undo do something" after changing % complete of several tasks:
   `plurar_name` (`taskCommands.py`) and `plular_name` (Copy,
   `command/base.py`) are misspelt. Recommended: fix.
@@ -1072,8 +1071,8 @@ changes.
   back into its cause. Today's loop settled after a file opened in
   two passes: the third changed nothing (the prototype's trace,
   2026-09-27, 200 tasks).
-- **Fewer passes**: the loop visits parents first (`allItemsSorted()`;
-  today it visits tasks and categories in set order, so a child seen
+- **Fewer passes**: the loop visits parents first (by depth,
+  `_order()` in `gui/scheduler.py`; today it visits tasks and categories in set order, so a child seen
   before its parent took the parent's old style), so most cascades
   settle in the first pass and the second only finds nothing.
 
@@ -1234,10 +1233,9 @@ from run to run failed a test that expected a whole subtree). It found
 one fault while built: the full loop's own order (Design, 4). The check mode in the
 app: [Cost After](#cost-after).
 
-The analysis before it was built:
-`docs/scripts/scheduler_diffprobe.py` (arguments: seed, steps, member
-lookup, outside events; run it from the repository root with
-`PYTHONPATH=.` under `xvfb-run`): 16 kinds of random change; after each,
+The analysis before it was built, with a differential probe
+(`docs/scripts/scheduler_diffprobe.py`, retired 2026-09-30 for the
+unit test; in git history): 16 kinds of random change; after each,
 an emulated incremental pass, then the real full loop. With the rules:
 0 misses on seeds 1 to 7 (300 to 400 steps, 167 to 714 objects), 0
 out of order, 0 twice, 5 to 13 objects per change. Dropping a rule:

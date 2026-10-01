@@ -723,7 +723,8 @@ class MasterScheduler:
         return False
 
     def shutdown(self):
-        """Cleanup on application close."""
+        """Stop following events: for tests, whose schedulers outlive
+        them. The app's ends with the process (lazy teardown)."""
         publisher = patterns.Publisher()
         for handler in (
             self._on_second,

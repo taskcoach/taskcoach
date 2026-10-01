@@ -151,8 +151,12 @@ Python. Subscriptions made with `patterns.Observer.registerObserver`
 are removed by `removeInstance()`; editor pages call it on
 `EVT_WINDOW_DESTROY`, so a subscription cannot outlive its page even
 when it is made after the close handler ran. `MasterScheduler`,
-`ViewFilter` and `IdleNotifier` register on the Publisher directly and
-unsubscribe in `shutdown()`, `detach()` and `pause()`.
+`ViewFilter` and `IdleNotifier` register on the Publisher directly; a
+filter unsubscribes when its viewer closes (`detach()`), the idle
+notifier when tracking stops (`pause()`). Nothing unsubscribes at quit
+([DEFERRED_CALLS.md](DEFERRED_CALLS.md), lazy teardown): the
+per-second tick ends with the main window. `MasterScheduler.shutdown()`
+serves tests, whose schedulers outlive them.
 
 A handler that raises is logged and stays subscribed, so the next tick
 runs it again; only handlers of deleted wx objects, or whose own code

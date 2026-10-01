@@ -396,10 +396,9 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             # wxAssertionError about pushed event handlers
             self.manager.UnInit()
             event.Skip()
-            self.taskFile.stop()
-            self._idleController.stop()
-            if hasattr(self, "_masterScheduler"):
-                self._masterScheduler.shutdown()
+            # Nothing else stops: closing the file stopped its watcher,
+            # and the per-second tick ends with this window
+            # (docs/DEFERRED_CALLS.md, lazy teardown)
 
     def restore(self, event):  # pylint: disable=W0613
         if self.settings.getboolean("window", "maximized"):

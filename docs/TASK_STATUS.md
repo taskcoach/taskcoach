@@ -55,7 +55,7 @@
 
 ### Why This Matters
 
-`computedStatus()` is stored and only updated by the master loop, at the next tick after a change ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#master-design)). During event handlers, it may be **stale**.
+`computedStatus()` is stored, for display: a change of a field it reads updates it at once ([Immediate Updates](#immediate-updates-date-setters)), the clock alone at the loop's timer seconds ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#master-design)). Action logic reads the fields, which never lag.
 
 ```python
 # BAD - uses stale cache during event handler:
@@ -69,7 +69,7 @@ def completed(self):
 
 ### Example: Cascade Bug
 
-When child task is completed, `_on_completion_date_time_changed` fires. At that moment:
+The bug behind the rule, from before the immediate updates: when a child task was completed, `_on_completion_date_time_changed` fires. At that moment:
 - Child's `completionDateTime` is set (accurate)
 - Child's `computedStatus()` is stale (not yet recomputed)
 - Parent calls `allChildrenCompleted()` → `child.completed()` → returns False!
@@ -114,14 +114,14 @@ Higher priority wins. Default is 0.
 |-------------|--------------|--------------|----------------|
 | **Task** | Categories → Parent task → Status | `effectiveXxx()` | Yes |
 | **Category** | Parent category → System Theme | `effectiveXxx()` | Yes |
-| **Note** | Parent note → System Theme | `effectiveXxx()` | Yes |
+| **Note** | Categories → Parent note → System Theme | `effectiveXxx()` | Yes |
 | **Attachment** | System Theme only (no inheritance) | `effectiveXxx()` | Yes |
 | **Effort** | Task (always) | None | **No** - uses task's appearance |
 
 **Key points:**
 - All object types with appearance tabs have SSOT `effectiveXxx()` and `derivedXxx()` methods
 - Complexity varies: Tasks have most sources, Attachments have fewest (just override or system theme)
-- Notes inherit from parent notes only (do NOT inherit from attached task)
+- Notes inherit from their categories, then their parent note (never from their owner)
 - Efforts have no appearance tab; they always display using their task's appearance
 
 **"Nothing Set" Convention:**
@@ -134,7 +134,7 @@ Higher priority wins. Default is 0.
 - `base.SYSTEM_BG_COLOR` = "SYS_COLOUR_WINDOW"
 - `base.SYSTEM_FONT` = "SYS_DEFAULT_GUI_FONT"
 - `base.SYSTEM_THEME_SOURCE` = "System Theme"
-- **Icons have no system theme** — use `""` when no value, UI shows "N/A"
+- **Icons:** `""` when nothing is set; notes and attachments then show their type's icon (`TYPE_DEFAULT_ICONS`, source "System Theme"), a category shows "N/A"
 
 **SSOT Method Contract:**
 
@@ -302,7 +302,8 @@ Called from:
 - `Task.__init__()` — Initial population on task creation/load
 - `_update_status()`: at once after a change of what it reads (dates,
   completion, prerequisites, subtasks added or removed)
-- `MasterScheduler._process_task()`: at each pass, before `computeStyles()`
+- `MasterScheduler._compute_task()`: when the loop processes the task, at
+  that second, before `computeStyles()`
 
 ### Event: statusChangedEventType
 
@@ -322,8 +323,9 @@ Status is recomputed in three scenarios:
    removed call `_update_status()`, which calls `compute_stored_status()`,
    so the status updates at once; the styles follow at the loop's next
    pass.
-3. **Each pass of the master loop:** `MasterScheduler._process_task()` calls
-   `compute_stored_status()` for each task, before `computeStyles()`.
+3. **When the loop processes the task** (a timer second of it lands, a
+   change marks it, or a full loop runs): `MasterScheduler._compute_task()`
+   calls `compute_stored_status()` at that second, then `computeStyles()`.
 
 ### Timer-Driven Updates (ComputeStyles)
 
@@ -383,14 +385,13 @@ All subscribe to `statusChangedEventType` for refresh.
 | Location | File | Source of Truth | What It Does |
 |----------|------|-----------------|--------------|
 | Core calculation | `domain/task/task.py` | Dates + now + dueSoonHours | Computes and caches status |
-| ComputeStyles | `domain/base/appearance.py` | Calls `compute_stored_status()` per task | Computes status then derived/effective appearance per object |
-| Editor live preview | `gui/dialog/editor.py` | **Duplicates date logic** | Computes status from form field values |
+| Master loop | `gui/scheduler.py` | `_compute_task()` | Stores the status at the tick's second, then `computeStyles()` computes the derived and effective appearance |
 
 ### Consumers (read computedStatus())
 
 | Consumer | File | Purpose |
 |----------|------|---------|
-| Status helper methods | `domain/task/task.py` | `completed()`, `overdue()`, `active()`, etc. |
+| Status helper methods | `domain/task/task.py` | `overdue()`, `active()`, etc.; `completed()` reads the completion date ([Rule](#rule)) |
 | Status styles | `domain/task/task.py` | `statusFgColor()`, `statusBgColor()`, `statusFont()`, `status_icon_id()`, read by `computeDerived()` |
 | ViewFilter | `domain/task/filter.py` | Hide tasks by status |
 | Status bar | `gui/viewer/task.py` | Task count per status |
@@ -403,12 +404,12 @@ All subscribe to `statusChangedEventType` for refresh.
 
 | Setting | File | Effect |
 |---------|------|--------|
-| `hideinactivetasks` | `domain/task/filter.py` | Hides tasks where `status() == inactive` |
-| `hidelatetasks` | `domain/task/filter.py` | Hides tasks where `status() == late` |
-| `hideactivetasks` | `domain/task/filter.py` | Hides tasks where `status() == active` |
-| `hideduesoontasks` | `domain/task/filter.py` | Hides tasks where `status() == duesoon` |
-| `hideoverduetasks` | `domain/task/filter.py` | Hides tasks where `status() == overdue` |
-| `hidecompletedtasks` | `domain/task/filter.py` | Hides tasks where `status() == completed` |
+| `hideinactivetasks` | `domain/task/filter.py` | Hides tasks where `computedStatus() == inactive` |
+| `hidelatetasks` | `domain/task/filter.py` | Hides tasks where `computedStatus() == late` |
+| `hideactivetasks` | `domain/task/filter.py` | Hides tasks where `computedStatus() == active` |
+| `hideduesoontasks` | `domain/task/filter.py` | Hides tasks where `computedStatus() == duesoon` |
+| `hideoverduetasks` | `domain/task/filter.py` | Hides tasks where `computedStatus() == overdue` |
+| `hidecompletedtasks` | `domain/task/filter.py` | Hides tasks where `computedStatus() == completed` |
 
 These are per-viewer settings (taskviewer, taskstatsviewer, taskinterdepsviewer, squaretaskviewer, timelineviewer, calendarviewer, hierarchicalcalendarviewer).
 
@@ -438,7 +439,7 @@ The status calculation now exists in **one place only**:
 
 All other code calls this method:
 - **`task.compute_stored_status()`**: instance method that calls `compute_status()` and stores results
-- **`MasterScheduler._process_task()`**: calls `task.compute_stored_status()` for each task at each pass
+- **`MasterScheduler._compute_task()`**: calls `task.compute_stored_status()` for each task the loop processes
 
 The `compute_status()` method returns `(TaskStatus, source_string)` tuple, providing both the status and an explanation of why the task has that status.
 
@@ -452,7 +453,7 @@ a proxy, listen to it since the views moved to the effective styles
 
 ### 3. StatusChecker Duplicates Logic — RESOLVED
 
-StatusChecker has been merged into the scheduler. `MasterScheduler._process_task()`
+StatusChecker has been merged into the scheduler. `MasterScheduler._compute_task()`
 calls each task's `compute_stored_status()` immediately before `computeStyles()`. This
 eliminates the duplicated date logic and guarantees correct ordering: status is always
 fresh when appearance values are computed.
@@ -517,17 +518,16 @@ every consumer to potentially trigger computation. The new pattern separates wri
 
 ### Migration Path
 
-1. **Current state:** `compute_status()` runs in parallel alongside legacy code.
-   New columns read `statusText()` / `status_icon_id()`. Legacy consumers still
-   use `status()` / `statusFgColor()` / etc.
+1. **Before:** `compute_status()` ran alongside the legacy code; the
+   legacy consumers used `status()`.
 
-2. **In progress:** Public accessor `computedStatus()` added. Migrating legacy
-   consumers one by one to use `computedStatus()` instead of `status()`:
+2. **Done:** the public accessor `computedStatus()`; the consumers moved
+   to it one by one:
 
    | Consumer | File | Status |
    |----------|------|--------|
    | ViewFilter.filterTask() | filter.py | ✓ Done |
-   | completed() | task.py | ✓ Done |
+   | completed() | task.py | ✓ Reads the completion date ([Rule](#rule)) |
    | overdue() | task.py | ✓ Done |
    | inactive() | task.py | ✓ Done |
    | active() | task.py | ✓ Done |
@@ -600,8 +600,8 @@ Each viewer that shows tasks has `hideXtasks` boolean settings (all default to `
 
 The task icon every view shows, `shown_icon_id()`, is the effective
 icon the master loop computes (`computeDerived()`, `computeEffective()`)
-from the following priority sequence. The first match wins, and the
-result is transformed based on whether the task has children.
+from the following priority sequence. The first match wins; a task
+with subtasks shows the same icon (no plural icons since To Do 58).
 
 ### Priority Order
 
@@ -678,14 +678,14 @@ Font          [picker]           System Theme
 - Override rows: 2 controls (label, control) → label=1 col, control=2 cols
 
 **Source column** (gray text) shows where each value comes from:
-- `[Category] Name` — from a category
-- `[Task] Name` — from parent task
-- `[Note] Name` — from parent note
-- `[Status] StatusName` — from task status (e.g., Inactive, Active, Overdue)
-- `[Tracking]` — task is being tracked (effort in progress), icon only
-- `[Override]` — user set this value
-- `System Theme` — no value set, using system default (colors/fonts only)
-- `N/A` — no derived value (icons only - there is no "system theme" for icons)
+- `[Category] Name`: from a category
+- `[Task] Name`: from parent task
+- `[Note] Name`: from parent note
+- `[Status] StatusName`: from task status (e.g., Inactive, Active, Overdue)
+- `[Tracking]`: task is being tracked (effort in progress), icon only
+- `[Override]`: user set this value
+- `System Theme`: no value set: the system's colours and fonts, the type's icon for notes and attachments
+- `N/A`: no icon (a category without one)
 
 ### Task Appearance
 

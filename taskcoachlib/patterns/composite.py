@@ -65,9 +65,6 @@ class Composite(object):
         self.__parent.set(parent)
 
     def children(self, recursive=False):
-        # Warning: this must satisfy the same condition as
-        # allItemsSorted() below.
-
         if recursive:
             result = self.__children.get()[:]
             for child in self.__children.get():
@@ -214,17 +211,6 @@ class CompositeCollection(object):
             for composite in self
             if composite.parent() is None or composite.parent() not in self
         ]
-
-    def allItemsSorted(self):
-        """Returns a list of items and their children, so that if B is
-        a child, direct or not, of A, then A will come first in the
-        list."""
-
-        result = []
-        for item in self.rootItems():
-            result.append(item)
-            result.extend(item.children(recursive=True))
-        return result
 
 
 class CompositeSet(CompositeCollection, observer.ObservableSet):
