@@ -206,23 +206,14 @@ go at the end. Details live in the sections and documents linked.
     That's from the main, that's the released, publicly released
     version, and it can no longer open my files. And this is a
     problem."
-67. Bring the bundled tree widget up to date (option C of P118),
-    **asked by designer 2026-10-01**: wxPython 4.3.1's
-    `customtreectrl.py` as released (it has the `GetNextExpanded()`
-    fix) and its `hypertreelist.py` with Task Coach's changes redone:
-    31 methods, 11 also rewritten upstream; a three-way merge from
-    4.2.2 leaves 13 conflicts. 4.3.1 also keeps the selection in a set
-    and caches each row's size and text widths, which no conflict
-    shows: `treectrl.py`'s `_refresh_selection()` highlights through
-    `SetItemHilight()` (with `BundledTreeWidgetTest`); the copy's
-    `SetImageList()` and column insert and remove mark the rows for
-    recalculation, as upstream's setters do; the colour checks go on
-    upstream's new brushes; Escape keeps Task Coach's cancel, whose
-    destroy is already deferred (upstream's GTK crash, #1938); `Self`
-    dropped for Python 3.10. #1880's dark-theme change is the text
-    colour of rows with a background, already in the copy. Every wx
-    call new in 4.3.1's files exists in 4.0.7
-    ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)).
+67. ~~Bring the bundled tree widget up to date (option C of P118)~~:
+    done 2026-10-01, **asked by designer**: wxPython 4.3.1's pair with
+    Task Coach's changes redone, merged against 4.3.1's selection set
+    and per-row caches. In the app every step of the bundle's checks
+    matches the previous bundle screen for screen, but for upstream's
+    fixed type-ahead; the catalog passes. Not run on Windows, macOS or
+    wxPython 4.0.7
+    ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#updating-the-bundle)).
 
 ## Deferred or Will Not Do
 
@@ -948,6 +939,20 @@ each with the recommended action, none ruled yet:
   (`sounds/__init__.py`): Python warns "subprocess is still running"
   (seen with warnings on) and reaps it later. Nothing is lost. Keep
   the object until it ends, or leave?
+- P136. "Hide this column" in a tree view's column header menu does
+  nothing, on master too (found 2026-10-01 in the To Do 67 checks): the
+  item is enabled, a click hides no column and logs nothing. Not traced
+  yet.
+- P137. A drag and drop in a tree view moves the selection to a
+  neighbour of the selected task; master keeps it (found 2026-10-01,
+  the same before To Do 67): a regression of this branch. Not traced
+  yet.
+- P138. The tree widget bundled since To Do 67 adjusts its scrollbars
+  in every `CalculatePositions()`, so the Windows deferred adjustment
+  after content changes and the scroll methods' own
+  `AdjustMyScrollbars()` may no longer be needed
+  ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#windows-scrollbar-adjustment-on-content-changes)).
+  Check on Windows before removing them.
 
 ## Views on the Effective Styles
 

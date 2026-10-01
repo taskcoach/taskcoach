@@ -186,10 +186,9 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
 
         UnselectAll() first: in a multi-selection tree SelectItem()
         toggles, and a rebuild has already highlighted the rows it
-        restores (_refresh_selection()). UnselectAll() clears every
-        highlight only with the bundled customtreectrl
-        (docs/BUNDLED_TREE_WIDGET.md); wxPython 4.2.4's clears only the
-        rows it selected itself.
+        restores (_refresh_selection()). UnselectAll() clears only the
+        rows in the tree's selection set, which SetItemHilight() keeps
+        (docs/BUNDLED_TREE_WIDGET.md).
         """
         first_selected_item = None
         self.UnselectAll()
@@ -213,17 +212,10 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
     def _recalculated_main_window(self):
         """Return the main window with item positions up to date.
 
-        Item positions drive both the scrollbar range and GetY(), but
-        AdjustMyScrollbars() never recalculates them; only ScrollTo()
-        does, guarded on the _dirty flag. Both it and CalculatePositions()
-        also return early while the window is frozen, so after a
-        freeze/thaw rebuild the positions are still stale and anything
-        reading them silently works off the old layout.
-
-        The flag is deliberately left set, exactly as upstream ScrollTo()
-        leaves it: customtreectrl only ever sets _dirty, it never clears
-        it, so clearing it here would suppress recalculations upstream
-        still expects to happen.
+        Positions drive the scrollbar range and GetY() but are
+        recalculated lazily, when the window paints or scrolls to an
+        item, and not while it is frozen: after a freeze/thaw rebuild
+        they are stale until then.
         """
         main = self.GetMainWindow()
         if getattr(main, "_dirty", False):
@@ -711,9 +703,9 @@ class TreeListCtrl(
     def _refresh_selection(self, item, domain_object, check=False):
         select = domain_object in self.__selection
         if not check or (check and select != item.IsSelected()):
-            # Use SetHilight for visual highlighting during tree construction.
-            # Actual selection is done via select() after tree is fully built.
-            item.SetHilight(select)
+            # Highlighted while the tree is built, selected by select()
+            # once it is; through the tree, so UnselectAll() clears it
+            self.GetMainWindow().SetItemHilight(item, select)
 
     # Event handlers
 

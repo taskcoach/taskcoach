@@ -195,10 +195,11 @@ highlighting the saved ones as it adds them (`_refresh_selection()`),
 and after `Thaw()` (`SelectItem()` does nothing on a frozen tree)
 selects them with `select()`: `UnselectAll()`, then `SelectItem()` per
 row. In a multi-selection tree `SelectItem()` toggles, so
-`UnselectAll()` must first clear the rows the rebuild highlighted. The
-bundled `customtreectrl` clears every highlight; wxPython 4.2.4's clears
-only the rows it selected itself, and on the builds that used it every
-restored row toggled off (P118, GitHub #385;
+`UnselectAll()` must first clear the rows the rebuild highlighted. It
+clears only the rows in the tree's selection set, so the rebuild
+highlights through `SetItemHilight()`, which keeps that set. When it
+highlighted rows on their own, every restored row toggled off on the
+builds running wxPython 4.2.4 or later (P118, GitHub #385;
 [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#one-widget-two-files)).
 
 A selection that does not come back looks like a deletion to
@@ -365,7 +366,7 @@ After filter changes, search clears, or category toggles, the selected item scro
 
 HyperTreeList's `ScrollTo()` (upstream, in `hypertreelist.py`) calls `CalculatePositions()` when `_dirty` but never calls `AdjustMyScrollbars()`. During normal use (click, keyboard), scrollbars are already current. But after a freeze/thaw rebuild cycle (`RefreshAllItems` in `treectrl.py`), the scrollbar range is stale. `Scroll()` gets clamped to the old range and silently does nothing.
 
-This is an upstream design limitation (same in wxPython 4.2.0 and current master), not a bug in our code.
+This is an upstream design limitation (same in wxPython 4.2.0 and current master), not a bug in our code. The bundled widget since To Do 67 (wxPython 4.3.1's) adjusts the scrollbars at the end of `CalculatePositions()`, so `ScrollTo()` on a dirty tree now gets the range right; the explicit adjustment below stays until checked on Windows (P138).
 
 **Does NOT affect list views** — `VirtualListCtrl` uses native wx scrollbar management.
 
@@ -501,10 +502,8 @@ in `_do_full_rebuild()` and by `stable_viewport()`, both of which call
 `AdjustMyScrollbars()` + `Scroll()` on a freshly rebuilt tree, and by
 `selection_neighbours()`, which orders the selected rows by `GetY()`.
 
-It deliberately leaves `_dirty` set, exactly as upstream `ScrollTo()`
-does. `customtreectrl` only ever *sets* that flag - nothing but
-`__init__` clears it - so clearing it here would suppress
-recalculations upstream still expects to perform.
+`CalculatePositions()` clears `_dirty` and adjusts the scrollbars
+itself (the bundled wxPython 4.3.1 widget).
 
 ### Known Implicit Dependency
 
@@ -525,7 +524,7 @@ On Windows, tree/list viewer scrollbars do not update when expanding/collapsing/
 
 ### Root Cause
 
-The scrollbar range is only ever recomputed by `AdjustMyScrollbars()`, and that recompute is gated. On the expand path it runs only through the upstream `RefreshSubtree()`, which returns early when the tree is marked dirty or frozen. `AdjustMyScrollbars()` itself becomes a no-op (it just sets the dirty flag) while frozen, and the dirty flag is cleared only by the upstream `OnInternalIdle()`. On a settled GTK tree the recompute fires synchronously, which is why Linux is unaffected. On Windows the recompute is missed when content changes while the tree is dirty or frozen, or before idle runs, and a synchronous `AdjustMyScrollbars()` does not reliably take effect until after the layout cycle. Deferring the call (see below) lets it run after that dirty/frozen state has cleared.
+The scrollbar range is only ever recomputed by `AdjustMyScrollbars()`, and that recompute is gated. On the expand path it runs only through the upstream `RefreshSubtree()`, which returns early when the tree is marked dirty or frozen. `AdjustMyScrollbars()` itself becomes a no-op (it just sets the dirty flag) while frozen, and the dirty flag is cleared only by the upstream `OnInternalIdle()`. On a settled GTK tree the recompute fires synchronously, which is why Linux is unaffected. On Windows the recompute is missed when content changes while the tree is dirty or frozen, or before idle runs, and a synchronous `AdjustMyScrollbars()` does not reliably take effect until after the layout cycle. Deferring the call (see below) lets it run after that dirty/frozen state has cleared. This describes the tree widget before To Do 67: wxPython 4.3.1's, bundled since, adjusts the scrollbars in every `CalculatePositions()` (on expand, paint, `ScrollTo()` and idle), so the deferred call may no longer be needed; it stays until checked on Windows (P138).
 
 ### Fix: Deferred Scrollbar Adjustment
 

@@ -14,14 +14,22 @@ Listed with the other bundled and patched code in
 
 | File | Upstream base | Changes |
 |------|---------------|---------|
-| `hypertreelist.py` | wxPython 4.2.2's `wx/lib/agw/hypertreelist.py` (4.2.0 to 4.2.2 are the same; 4.2.3 only adds type hints and drops `six`) | Task Coach's, [below](#task-coachs-changes); `six` dropped as in 4.2.3 |
-| `customtreectrl.py` | wxPython 4.2.3's `wx/lib/agw/customtreectrl.py` (Debian 13's file; 4.2.0 to 4.2.2 differ by an unused import) | one fix taken from 4.2.4: `GetNextExpanded()` recursed with an undefined name |
+| `hypertreelist.py` | wxPython 4.3.1's `wx/lib/agw/hypertreelist.py` (4.2.4 to 4.3.1 differ by one line) | Task Coach's, [below](#task-coachs-changes); the `Self` annotations dropped for Python 3.10 |
+| `customtreectrl.py` | wxPython 4.3.1's `wx/lib/agw/customtreectrl.py` (the same since 4.2.4) | none |
 
 The header dates inside the files are upstream's and say nothing of the
 copy's age: `hypertreelist.py` reads "Latest Revision: 30 Jul 2014" in
 every wxPython release up to 4.3.1. To find a copy's base, diff it
 against each release's file
 (`https://github.com/wxWidgets/Phoenix/tree/wxPython-X.Y.Z/wx/lib/agw`).
+
+Moving from 4.2.2's and 4.2.3's files to 4.3.1's (To Do 67) brought
+upstream's fixes from [PR #2088](https://github.com/wxWidgets/Phoenix/pull/2088)
+that users see: large trees are faster (rows are laid out when needed
+and only visible rows painted); typing in a tree view jumps to the next
+task starting with the letters typed, where it toggled rows in and out
+of the selection; a quick click on a column border no longer nudges
+the column's width.
 
 ## One Widget, Two Files
 
@@ -37,9 +45,9 @@ copy, which then ran on each build's installed `customtreectrl`: 4.0.7
 on Ubuntu 22.04 up to 4.3.1 on Windows, macOS and the Flatpak. wxPython
 4.2.4 ([PR #2088](https://github.com/wxWidgets/Phoenix/pull/2088),
 2025-10-28) made `CustomTreeCtrl` keep its selected rows in a set that
-`UnselectAll()` alone clears. The copy and `treectrl.py` highlight rows
-directly, outside that set, so on every build with 4.2.4 or later the
-tree views lost the selection at each rebuild (a sort, a filter or
+`UnselectAll()` alone clears. The copy and `treectrl.py` then
+highlighted rows directly, outside that set, so on every build with
+4.2.4 or later the tree views lost the selection at each rebuild (a sort, a filter or
 search, the tree/list switch, a new task) and, after a filter, selected
 the neighbouring task instead
 ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#restoring-the-selection-after-a-rebuild);
@@ -69,22 +77,22 @@ In `hypertreelist.py`; the commit first making each change.
 
 | Where | Change | Commit |
 |-------|--------|--------|
-| `PaintItem` | the whole row's background before the column loop (#2081, #1898, as PR #2088 does) | `def3832cf` |
 | `PaintItem`, `OnPaint` | colours checked before making brushes: an invalid colour asserts in `wxMacCreateCGColor()` on macOS | `5342526c2` |
 | `PaintItem` | the dragged row drawn like a selected one | `6a7681e9d` |
 | `PaintItem`, `TreeListItem.SetImages()`/`GetImages()` | several icons in one column (the categories' icons) | `5ce0adef8` |
-| `SetImageList` | no greyed copy of the image list (3,000+ icons) | `1c6d5d3a7` |
+| `SetImageList` | no greyed copy of the image list (3,000+ icons); otherwise upstream's, rows marked for recalculation | `1c6d5d3a7` |
 | `SetHoverItem`, `_refresh_hover_row`, `PaintLevel`, `OnMouse` | the two-tone hover outline (`settings2.window.hoverlinewidth`); mouse moves within a row do nothing | `78533ffab`, `a20c9164c` |
 | `OnMouse` | a drag starts after 3 pixels, without the timer; a fast double-click opens the row clicked | `a1dad34df` |
 | `OnMouse`, `OnPaint`, `SetDropHighlight`, `ClearDropHighlight`, `_DrawDropFeedback` | drag feedback by the cursor only; no target highlighted outside the window; the drag image hidden before a refresh | `def3832cf` |
 | `TreeListHeaderWindow.OnMouse`, `IsColumnResizable` | in auto-resize mode the resize column cannot be dragged (no-entry cursor) | `af844f2e6` |
-| `HyperTreeList.AddColumn`, `InsertColumn` and their `Info` forms, `RemoveColumn`, `_extend_item_texts_for_columns`, `TreeListItem.GetText` | every row keeps a text per column; a `[TREELIST]` log when not ([LOGGING_GUIDE.md](LOGGING_GUIDE.md#prefixes)) | `cd504cdf3` |
+| `HyperTreeList.AddColumn`, `InsertColumn` and their `Info` forms, `RemoveColumn`, `_extend_item_texts_for_columns`, `TreeListItem.GetText` | every row keeps a text per column, its cached text sizes dropped when they move; a `[TREELIST]` log when not ([LOGGING_GUIDE.md](LOGGING_GUIDE.md#prefixes)) | `cd504cdf3` |
 | `EditCtrl.__init__` | the edit box as wide as the column | `4e096044d` |
 | `EditCtrl.CancelEditing`, `EditTextCtrl.OnChar`, `Delete`, `ResetEditControl` | Escape and the deletion of the item edited cancel; any other end keeps the typed value (`StopEditing()`, a click elsewhere comes before the focus moves) | `def3832cf`, `f2e9f63d1` |
 | `_OnDestroy` | the drag and find timers stopped when the window is destroyed | `def3832cf` |
 
 `treectrl.py` builds on these; it highlights the rows of the selection
-it restores after a rebuild
+it restores after a rebuild through `SetItemHilight()`, which keeps the
+tree's selection set
 ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#restoring-the-selection-after-a-rebuild)).
 
 ## Loading
@@ -115,23 +123,23 @@ macOS, AppImage and Flatpak builds copy the package as files.
    fixes taken from a later release, named in its header.
 3. Keep both running on every supported Python: Ubuntu 22.04 has 3.10,
    and upstream's 4.2.4+ `hypertreelist.py` imports `typing.Self`
-   (3.11) or `typing_extensions`.
-4. Keep the selection working: from 4.2.4 on, a row highlighted
-   without `SetItemHilight()` is not cleared by `UnselectAll()`.
-   `BundledTreeWidgetTest.test_unselect_all_clears_every_highlight`
-   fails on such a base on purpose; change it with the code.
-5. Check, besides the catalog: whole-row colours of a category with a
+   (3.11) or `typing_extensions` (the copy drops it). Every wx call in
+   the files must exist in 4.0.7 (Ubuntu 22.04).
+4. Keep the selection working: a row highlighted without
+   `SetItemHilight()` is not cleared by `UnselectAll()`, so
+   `treectrl.py` and the copy highlight through it
+   (`BundledTreeWidgetTest`).
+5. Keep the rows' cached sizes right: from 4.2.4 on each row caches its
+   size and its texts' sizes, which upstream's setters mark for
+   recalculation; the copy's own setters do the same (`SetImageList()`,
+   column insert and remove).
+6. Check, besides the catalog: whole-row colours of a category with a
    background colour, the date columns included; the hover outline;
    the selection kept across a sort, a filter, the tree/list switch
    and a new task; multi-selection with Ctrl and Shift; the keyboard;
    drag and drop; editing (Escape cancels, a click elsewhere keeps);
-   a column shown and hidden; a parent collapsed.
-
-Planned: wxPython 4.3.1's pair, To Do 67 in
-[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do). 11
-of the 31 methods Task Coach changed were also rewritten upstream
-(`PaintItem`, `OnMouse`, `PaintLevel`, the header's `OnMouse`,
-`OnPaint`), so those need a merge; the rest carry over.
+   a column shown and hidden; a parent collapsed. Compare each with a
+   build of the previous bundle, screen by screen.
 
 ## Known Issues
 

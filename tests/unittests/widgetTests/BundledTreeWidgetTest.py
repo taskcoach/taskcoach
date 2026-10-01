@@ -40,17 +40,28 @@ class BundledTreeWidgetTest(test.wxTestCase):
             customtreectrl.CustomTreeCtrl, hypertreelist.CustomTreeCtrl
         )
 
-    def test_unselect_all_clears_every_highlight(self):
-        # What restoring the selection after a rebuild relies on
-        # (treectrl.select()); wxPython 4.2.4's leaves these
+    def tree_with_one_item(self):
         tree = hypertreelist.HyperTreeList(
             self.frame,
             agwStyle=wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS,
         )
         tree.AddColumn("Subject")
         root = tree.AddRoot("root")
-        item = tree.AppendItem(root, "item")
-        item.SetHilight(True)
+        return tree, tree.AppendItem(root, "item")
+
+    def test_unselect_all_clears_rows_highlighted_through_the_tree(self):
+        # What restoring the selection after a rebuild relies on
+        # (treectrl.select()): UnselectAll() clears the selection set
+        # SetItemHilight() keeps, not rows highlighted on their own
+        tree, item = self.tree_with_one_item()
+        tree.GetMainWindow().SetItemHilight(item, True)
         tree.UnselectAll()
         self.assertFalse(item.IsSelected())
-        tree.Destroy()
+
+    def test_inserting_a_column_moves_the_texts_and_drops_their_sizes(self):
+        # The rows cache their texts' sizes per column
+        tree, item = self.tree_with_one_item()
+        item.GetExtents(wx.ClientDC(tree.GetMainWindow()))
+        tree.InsertColumn(0, "Before")
+        self.assertEqual(("", "item"), (item.GetText(0), item.GetText(1)))
+        self.assertFalse(item.HasExtents(0))
