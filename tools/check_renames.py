@@ -77,9 +77,6 @@ ALLOWED = {
     ("taskcoachlib/gui/dialog/editor.py", "R4", "effectiveIconDefault"): (
         "optional domain method, not defined yet"
     ),
-    ("taskcoachlib/widgets/masked.py", "R3", "_OnKeyDown"): (
-        "wx.lib.masked override"
-    ),
     ("tests/test.py", "R2", "add_option"): "optparse method",
     ("tests/test.py", "R2", "get_default"): "Gdk.Display method",
     ("tests/unittests/ConfigTest.py", "R2", "read_file"): (
