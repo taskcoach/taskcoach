@@ -416,7 +416,7 @@ if __name__ == "__main__":
 
     for t in tests:
         print(t, "(relative to %s)" % datetime.now())
-        res = time_expression.parseString(t)
+        res = time_expression.parse_string(t)
         if "calculatedTime" in res:
             print(res.calculatedTime)
         else:

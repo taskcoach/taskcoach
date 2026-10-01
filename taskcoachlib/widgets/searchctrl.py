@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import wx, re, sre_constants
+import re
+import wx
 from taskcoachlib import patterns
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.widgets import tooltip
@@ -178,7 +179,7 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         if self.__regularExpression:
             try:
                 re.compile(self.GetValue())
-            except sre_constants.error:
+            except re.error:
                 return False
         return True
 

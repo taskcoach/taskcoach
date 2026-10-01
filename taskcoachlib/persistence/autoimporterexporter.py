@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import codecs, os
+import os
 from taskcoachlib import patterns
 from . import todotxt
 
@@ -78,8 +78,8 @@ class AutoImporterExporter(object):
     @classmethod
     def exportTodoTxt(cls, taskFile):
         filename = cls.todoTxtFilename(taskFile)
-        with codecs.open(filename, "w", "utf-8") as todoFile:
-            todotxt.TodoTxtWriter(todoFile, filename).writeTasks(
+        with open(filename, "w", encoding="utf-8", newline="") as todo_file:
+            todotxt.TodoTxtWriter(todo_file, filename).writeTasks(
                 taskFile.tasks()
             )
 

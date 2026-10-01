@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import re
-import sre_constants
 from taskcoachlib import patterns
 
 
@@ -229,7 +228,7 @@ class SearchFilter(Filter):
         if regularExpression:
             try:
                 rx = re.compile(searchString, flag)
-            except sre_constants.error:
+            except re.error:
                 if matchCase:
                     return lambda x: x.find(searchString) != -1
                 else:

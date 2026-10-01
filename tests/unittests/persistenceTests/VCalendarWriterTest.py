@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test, io, time
+import datetime
 from taskcoachlib import persistence, gui, config, meta
 from taskcoachlib.domain import task, effort, date
 
@@ -112,34 +113,38 @@ class VCalEffortCommonTestsMixin(VCalendarCommonTestsMixin):
 
     def testEffortStart(self):
         startLocal = date.DateTime(2000, 1, 1, 1, 1, 1)
-        startUTC = startLocal.utcfromtimestamp(
-            time.mktime(startLocal.timetuple())
+        start_utc = datetime.datetime.fromtimestamp(
+            time.mktime(startLocal.timetuple()), datetime.timezone.utc
         )
-        self.assertTrue(
+        self.assertIn(
             "DTSTART:%04d%02d%02dT%02d%02d%02dZ"
             % (
-                startUTC.year,
-                startUTC.month,
-                startUTC.day,
-                startUTC.hour,
-                startUTC.minute,
-                startUTC.second,
-            )
+                start_utc.year,
+                start_utc.month,
+                start_utc.day,
+                start_utc.hour,
+                start_utc.minute,
+                start_utc.second,
+            ),
+            self.vcalFile,
         )
 
     def testEffortEnd(self):
         endLocal = date.DateTime(2000, 2, 2, 2, 2, 2)
-        endUTC = endLocal.utcfromtimestamp(time.mktime(endLocal.timetuple()))
-        self.assertTrue(
+        end_utc = datetime.datetime.fromtimestamp(
+            time.mktime(endLocal.timetuple()), datetime.timezone.utc
+        )
+        self.assertIn(
             "DTEND:%04d%02d%02dT%02d%02d%02dZ"
             % (
-                endUTC.year,
-                endUTC.month,
-                endUTC.day,
-                endUTC.hour,
-                endUTC.minute,
-                endUTC.second,
-            )
+                end_utc.year,
+                end_utc.month,
+                end_utc.day,
+                end_utc.hour,
+                end_utc.minute,
+                end_utc.second,
+            ),
+            self.vcalFile,
         )
 
     def testEffortId(self):

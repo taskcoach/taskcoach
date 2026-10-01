@@ -107,7 +107,7 @@ backends.
 | [Ubuntu 24.04 Noble](#debianubuntu-packaging) | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
 | [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
-| [Fedora 43](#fedora-packaging) | fedora43 | 3.13 | 4.2.4 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap |
+| [Fedora 43](#fedora-packaging) | fedora43 | 3.14 | 4.2.4 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap |
 | [**AppImage**](#appimage-packaging) | appimage | **3.11** | **4.2.5** | — | `build-appimage.yml` | Bundles Python + all deps |
 | [~~**Flatpak**~~](#flatpak-packaging) | flatpak | runtime | **4.3.1 (source)** | `scripts/build-flatpak.sh` | `build-flatpak.yml` | **Flathub release postponed**; GNOME runtime; wxPython from sdist (builds its own bundled wxWidgets) |
 | [**Windows**](#windows-packaging) | windows | **3.11** | **4.3.1** | — | `build-windows.yml` | Python embed + Inno Setup |

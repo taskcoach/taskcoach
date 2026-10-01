@@ -29,7 +29,6 @@ import os
 import re
 import gc
 import sys
-import codecs
 import traceback
 
 # The duplicate IDs listed after opening a file; the log has them all
@@ -62,6 +61,12 @@ def copy_name(path, file_exists=os.path.exists):
         if name != basename and not file_exists(os.path.join(folder, name)):
             return name
         number += 1
+
+
+def open_text(filename, mode, encoding):
+    """A text file written as is, without newline translation: the
+    iCalendar and CSV exports write their own CRLF line ends."""
+    return open(filename, mode, encoding=encoding, newline="")
 
 
 class IOController(object):
@@ -611,7 +616,7 @@ class IOController(object):
         writer_class,
         viewer,
         selectionOnly,
-        openfile=codecs.open,
+        openfile=open_text,
         showerror=wx.MessageBox,
         filename=None,
         file_exists=os.path.exists,
@@ -645,7 +650,7 @@ class IOController(object):
         selectionOnly=False,
         separateCSS=False,
         columns=None,
-        openfile=codecs.open,
+        openfile=open_text,
         showerror=wx.MessageBox,
         filename=None,
         file_exists=os.path.exists,

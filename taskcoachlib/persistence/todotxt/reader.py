@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import re, os, codecs
+import os
+import re
 from taskcoachlib.domain import task, category, date
 from taskcoachlib import patterns
 
@@ -37,7 +38,7 @@ class TodoTxtReader(object):
         if os.path.exists(metaName):
             todoTxtRE = self.compileTodoTxtRE()
             keyValueRE = self.compileKeyValueRE()
-            with codecs.open(metaName, "r", "utf-8") as fp:
+            with open(metaName, "r", encoding="utf-8") as fp:
                 match = re.match(r"VERSION: (\d+)", fp.readline().strip())
                 if match:
                     self.__version = int(match.group(1))
@@ -64,7 +65,7 @@ class TodoTxtReader(object):
                     metaLines[
                         "->".join(subjects) if self.__version == 0 else taskId
                     ] = line
-        with codecs.open(filename, "r", "utf-8") as fp:
+        with open(filename, "r", encoding="utf-8") as fp:
             self.readFile(fp, metaLines=metaLines)
 
     @patterns.eventSource

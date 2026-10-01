@@ -554,12 +554,26 @@ each with the recommended action, none ruled yet:
   the override (logged while opening Preferences and a task editor).
   Checked in the app: Preferences, a task editor and the templates
   open in 0.1 to 0.4 s.
-- P59. Deprecated or removed in Python 3.14: `ast.Num`/`ast.Str`
-  (`xml/reader.py`, would raise), `codecs.open`, `utcfromtimestamp`
-  (`ical.py` and its test), `sre_constants` (`filter.py`,
-  `searchctrl.py`), `setDaemon` (`fs_poller.py`); `wx.NewId()`
-  (`menu.py`, `newid.py`, `searchctrl.py`) warns on every run.
-  Recommended: replace all.
+- P59. ~~Calls Python 3.14 removed or deprecates~~: replaced
+  2026-10-01, **ruled by designer**; every replacement exists in every
+  Python, pyparsing and wxPython released (Python 3.10, pyparsing
+  3.0.7 and wxPython 4.0.7 on Ubuntu 22.04 the oldest).
+  - `ast.Num`/`ast.Str`, removed in 3.14 (Arch 3.14.7, Fedora 43): old
+    template dates (file format before 32) failed to convert; five
+    `XMLReaderTest` tests failed on 3.14 and pass now.
+  - `codecs.open()`: `open(..., newline="")` for writing, which keeps
+    the iCalendar and CSV exports' own CRLF line ends byte for byte
+    (plain text mode would make them CR CR LF on Windows); plain
+    `open()` for reading todo.txt.
+  - `utcfromtimestamp()`, `sre_constants`, `setDaemon()`, pyparsing's
+    `parseString`: their current names. The iCalendar tests compare the
+    exported times now (they asserted a string before).
+  - `wx.NewId()`: separate, the IDs must stay reserved
+    (`wx.NewIdRef()`).
+  Checked: the whole catalog on 3.13; the affected tests on 3.14 with
+  wxPython 4.2.5 and pyparsing 3.3.3 (21 date expressions parse alike
+  on pyparsing 3.1.2 and 3.3.3); in the app an invalid regular
+  expression search and an iCalendar export (CRLF lines).
 - P60. ~~Source tarballs dropped `build.in/debian/` (the appdata
   file)~~: fixed 2026-09-30, **asked by designer**: `/debian/
   export-ignore` excludes only the top-level folder. No build uses

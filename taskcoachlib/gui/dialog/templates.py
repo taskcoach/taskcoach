@@ -39,7 +39,7 @@ class TimeExpressionEntry(wx.TextCtrl):
     def isValid(value):
         if value:
             try:
-                res = nlTimeExpression.parseString(value)
+                res = nlTimeExpression.parse_string(value)
             except Exception:
                 return False  # Parsing failed
             return "calculatedTime" in res

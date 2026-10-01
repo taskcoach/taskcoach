@@ -117,10 +117,6 @@ def safe_eval_date_expr(expr, context):
             return eval_node(node.body)
         elif isinstance(node, ast.Constant):
             return node.value
-        elif isinstance(node, ast.Num):  # Python 3.7 compatibility
-            return node.n
-        elif isinstance(node, ast.Str):  # Python 3.7 compatibility
-            return node.s
         elif isinstance(node, ast.Name):
             name = node.id
             if name in context:
@@ -910,7 +906,7 @@ class TemplateXMLReader(XMLReader):
                     value = task_node.attrib[template_name]
                 attrs[new_name] = value
                 task_node.attrib[new_name] = str(
-                    nlTimeExpression.parseString(value).calculatedTime
+                    nlTimeExpression.parse_string(value).calculatedTime
                 )
             elif new_name not in attrs:
                 attrs[new_name] = None
