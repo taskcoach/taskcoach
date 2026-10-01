@@ -177,16 +177,17 @@ class BudgetCtrl(
 class AmountCtrl(
     EscapeKeyMixin, KillFocusAcceptsEditsMixin, hypertreelist.EditCtrl, Panel
 ):
-    """Masked inline text control for editing amounts (floats >= 0)."""
+    """Inline control for editing amounts, typed freely: the task
+    editor's CurrencyCtrl (docs/MONETARY_CONTROLS.md)."""
 
     def __init__(self, parent, wxId, item, column, owner, value):
         super().__init__(parent, wxId, item, column, owner)
-        self.__floatCtrl = widgets.masked.AmountCtrl(self, value)
-        self.__floatCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-        self.makeSizer(self.__floatCtrl)
+        self.__amountCtrl = widgets.CurrencyCtrl(self, value)
+        self.__amountCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.makeSizer(self.__amountCtrl)
 
     def GetValue(self):
-        return self.__floatCtrl.GetValue()
+        return self.__amountCtrl.GetValue()
 
 
 class DateTimeCtrl(

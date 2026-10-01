@@ -32,6 +32,8 @@ Two previous implementations were abandoned:
 
 1. **`AmountCtrl`** (`masked.py`) — wrapped `wx.lib.masked.NumCtrl`. Crashed
    during normal typing due to unfixed Phoenix bugs (#2587, #1179). Unusable.
+   The fee columns' in-place editor kept it until 2026-09-30 (each key filled
+   a place of "0.00": typing 12.5 stored 0.50); removed then.
 2. **`CurrencyCtrl` + `CurrencyValidator`** — `wx.TextCtrl` with per-keystroke
    `wx.Validator` filtering. Period keystrokes were silently blocked or
    corrupted input on GTK. Paste bypassed validation entirely. Not fit for
@@ -84,6 +86,7 @@ already used by `DurationCtrl` and `DateTimeComboCtrl`.
 | `taskcoachlib/gui/dialog/editor.py` | `AmountEntry` → `CurrencyCtrl` | Hourly fee | Yes |
 | `taskcoachlib/gui/dialog/editor.py` | `AmountEntry` → `CurrencyCtrl` | Fixed fee | Yes |
 | `taskcoachlib/gui/dialog/editor.py` | `AmountEntry` → `CurrencyCtrl` | Revenue | No (read-only) |
+| `taskcoachlib/gui/viewer/inplace_editor.py` | `AmountCtrl` → `CurrencyCtrl` | Hourly and fixed fee columns of the task list | Yes |
 
 ---
 
@@ -95,7 +98,7 @@ already used by `DurationCtrl` and `DateTimeComboCtrl`.
 | `taskcoachlib/widgets/currencyctrl.py` | `CurrencyCtrl(NumericCtrl)` subclass |
 | `taskcoachlib/gui/dialog/entry.py` | `AmountEntry` wrapper (panel + read-only support) |
 | `taskcoachlib/gui/dialog/editor.py` | Budget tab uses `AmountEntry` for fee/revenue fields |
-| `taskcoachlib/widgets/masked.py` | Legacy `AmountCtrl` — no longer used |
+| `taskcoachlib/gui/viewer/inplace_editor.py` | The fee columns' in-place editor |
 
 ---
 

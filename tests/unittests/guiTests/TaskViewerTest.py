@@ -25,6 +25,7 @@ from taskcoachlib import (
     patterns,
     render,
     operating_system,
+    widgets,
 )
 from taskcoachlib.gui import viewer  # noqa: F401 - make gui.viewer accessible
 from taskcoachlib.gui.icons import image_list_cache
@@ -1086,6 +1087,21 @@ class CommonTestsMixin(object):
         self.taskList.append(self.task)
         self.task.set_fixed_fee(200)
         self.assertEqual(render.monetaryAmount(200.0), self.getItemText(0, 3))
+
+    def test_a_fee_typed_in_its_cell_is_stored_as_typed(self):
+        self.showColumn("hourlyFee")
+        self.taskList.append(self.task)
+        main_window = self.viewer.widget.GetMainWindow()
+        main_window.EditLabel(self.firstItem(), 3)
+        editor = main_window._editCtrl
+        amount = [
+            child
+            for child in editor.GetChildren()
+            if isinstance(child, widgets.CurrencyCtrl)
+        ][0]
+        amount.ChangeValue("12.5")
+        editor.AcceptChanges()
+        self.assertEqual(12.5, self.task.hourlyFee())
 
     def testCollapsedCompositeTaskShowsRecursiveFixedFee(self):
         self.showColumn("fixedFee")

@@ -522,10 +522,13 @@ each with the recommended action, none ruled yet:
   since 2024. `plurar_name` and Copy's `plular_name` were misspelt;
   the label for several tasks is "Change percentage complete", worded
   without a count ([TRANSLATIONS.md](TRANSLATIONS.md#counts)).
-- P55. The fee columns' in-place editor is `AmountCtrl`
-  (`wx.lib.masked.NumCtrl`), which MONETARY_CONTROLS.md calls unusable
-  (crashes while typing). Recommended: test; if it fails, use
-  `CurrencyCtrl`, as the editor does.
+- P55. ~~A fee typed in the task list was stored wrong ("12.5" saved as
+  0.50)~~: fixed 2026-09-30, **asked by designer**; the same on master.
+  The fee columns' in-place editor was the masked `AmountCtrl` (each
+  key filled a place of "0.00"); it is `CurrencyCtrl` now, as in the
+  task editor, and the masked control is removed. Checked in the app:
+  both fee columns store what is typed, Escape cancels, a click
+  elsewhere accepts.
 - P56. Opening an effort editor logs "SetSelection failed on
   DateTimeComboCtrl" (`editor.py`): the focus helper calls a method the
   control lacks. Recommended: fix.
@@ -716,6 +719,11 @@ each with the recommended action, none ruled yet:
   editor's OK button was not found in its button sizer
   (`wxhelper.getButtonFromStdDialogButtonSizer()` returned None, so
   `createButtons()` raised). Cause not known yet.
+- P114. The task list's Budget cell ignores typing: "2:30" leaves it
+  at 0:00:00 and Enter saves nothing (2026-09-30; the same on master).
+  It is the masked `TimeDeltaCtrl` (`inplace_editor.BudgetCtrl`).
+  Recommended: the task editor's duration field
+  (`MaskedDurationCtrl`), as P55 did for the fees.
 
 ## Views on the Effective Styles
 
