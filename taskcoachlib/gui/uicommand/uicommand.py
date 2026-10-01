@@ -1335,7 +1335,7 @@ class ActivateViewer(ViewerCommand):
         super().__init__(*args, **kwargs)
 
     def do_command(self, event):
-        self.viewer.containerWidget.advance_selection(self.direction)
+        self.viewer.advance_selection(self.direction)
 
     def enabled(self, event):
         return self.viewer.containerWidget.viewerCount() > 1

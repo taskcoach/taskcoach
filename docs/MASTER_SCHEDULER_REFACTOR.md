@@ -795,6 +795,15 @@ each with the recommended action, none ruled yet:
   (`~/.local/share/Task Coach/templates`): five templates there,
   saved together on 2026-09-25 ("New task template" three times,
   "Subject - ", "Sujet"), look left by a test.
+- P121. ~~View > Activate next/previous viewer raised
+  `AttributeError`~~: fixed 2026-10-01, the same on master. c0527e9d0
+  removed `MainWindow.advanceSelection()` as unused, but the PEP 8
+  rename had already changed its one caller; the command now calls the
+  viewer container directly.
+- P122. `UICommand` ignores its `id` argument and always takes one
+  from the pool, so the floating panes' Ctrl+PgDn/Ctrl+PgUp
+  accelerators (`container.on_page_floated()`) send ids nothing is
+  bound to. The same in the original code. Not checked in the app.
 
 ## Views on the Effective Styles
 

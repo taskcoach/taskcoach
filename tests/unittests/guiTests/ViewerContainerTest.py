@@ -141,3 +141,9 @@ class ViewerContainerTest(test.wxTestCase):
         )
         self.container.close_viewer(self.viewer2)
         self.assertTrue(self.events > 0)
+
+    def test_activate_next_viewer(self):
+        gui.uicommand.ActivateViewer(
+            viewer=self.container, forward=True
+        ).do_command(None)
+        self.assertEqual(self.viewer2, self.container.active_viewer())
