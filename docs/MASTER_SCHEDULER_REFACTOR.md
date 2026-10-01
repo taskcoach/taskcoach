@@ -221,6 +221,12 @@ Numbered D1, D2, ...
   (`settings_uicommand.py`, `searchctrl.py`, `gui/menu.py`; was P51),
   **ruled by designer 2026-09-30**: deferred, each needs a behaviour
   check on the platforms they were for.
+- D8. The tray's Hide minimizes on Wayland without a desktop protocol
+  (GNOME, wlroots, COSMIC), deferred 2026-09-30 for users on those
+  desktops to test (no compositor here): `Iconize()` asks for the
+  minimize, a restore unmaps and remaps the window. Today it hides, so
+  the window leaves the taskbar, overview and Alt+Tab until restored
+  from the tray ([SYSTEM_TRAY.md](SYSTEM_TRAY.md#minimize-and-hide)).
 
 ## Pre-existing Issues
 

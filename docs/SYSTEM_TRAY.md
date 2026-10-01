@@ -58,7 +58,7 @@ old settings files lose them on load.
 | Windows, X11 (any desktop) | Minimizes (`Iconize()`) | Kept | Yes |
 | macOS | Menu: minimizes to the Dock; double click: raises only | Kept | Yes |
 | KDE Plasma, Wayland | Minimizes through `org_kde_plasma_window_management` if KWin offers it to Task Coach, else hides; untested (D5) | Kept, or lost when hidden | Yes |
-| Other Wayland (GNOME; wlroots and COSMIC until their backend exists) | **Hides** (`Hide()`) | **Lost** until restored | Yes, the only way back |
+| Other Wayland (GNOME, wlroots, COSMIC) | **Hides** (`Hide()`); minimizing is deferred (D8) | **Lost** until restored | Yes, the only way back |
 
 Wayland is the one exception: it gives an app no minimize it can undo
 ([Window Show/Hide on Wayland](#window-showhide-on-wayland)), so
@@ -432,11 +432,13 @@ session type explicitly.
 The last row is the single irreducible dead end: the user has a
 taskbar, but Mutter exposes no client window-management protocol and
 its extension taskbars are driven by GNOME Shell's internal JS APIs
-that an external app cannot reach (and GTK3 `Iconize()` is a no-op on
-Wayland anyway). It cannot be solved from application code; it is
-documented here as a known limitation. On that configuration the tray
-"Hide" is unavoidably tray-only, by Mutter's design - not a Task
-Coach defect.
+that an external app cannot reach. GTK3 `Iconize()` does ask for the
+minimize (`xdg_toplevel_set_minimized`, `gdk_wayland_window_iconify()`
+in GTK 3.24.38), but nothing lets the app undo it or learn that the
+user did; only unmapping and remapping the window (`Hide()`, `Show()`)
+brings it back. Until that is tried (D8 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-or-will-not-do)),
+the tray "Hide" is tray-only on that configuration.
 
 Consequence for implementation: a single "out-of-band toplevel
 manager" abstraction with two protocol backends
