@@ -223,10 +223,20 @@ Numbered D1, D2, ...
   Windows for monitors plugged in or out (was P50), **ruled by
   designer 2026-09-30**: deferred, for Windows users to test whether
   wxWidgets 3.1+ makes it unneeded.
-- D7. The wxPython 2.8 workarounds still running
-  (`settings_uicommand.py`, `searchctrl.py`, `gui/menu.py`; was P51),
-  **ruled by designer 2026-09-30**: deferred, each needs a behaviour
-  check on the platforms they were for.
+- D7. ~~The wxPython 2.8 workarounds still running~~ (was P51):
+  removed 2026-10-01, **ruled by designer**, once the wxWidgets source
+  of every version released showed their bugs fixed (3.0.5, oldest on
+  Ubuntu 22.04, to 3.3.1 on Windows, macOS and the Flatpak):
+  - The checked state read from the menu item (`settings_uicommand.py`,
+    `searchctrl.py`): wxMSW 2.8.3 inverted the state it sent after
+    toggling the item; every version sends the new state, popup menus
+    included. `event.IsChecked()` now.
+  - A submenu's entry found by label (`gui/menu.py`): wx 2.8.6 on GTK
+    compared labels with their shortcuts. The menu now asks for the
+    entry whose submenu it is: no label (`FindItem()` would also
+    search inside the submenus).
+  Checked in the app: the View menu toggles, Rounding greyed out for
+  the task list, the column header's menu, the search options.
 - D8. What the 2026-09-30 audit found that cannot be tested here (no
   Windows, macOS, Wayland, KDE or Flatpak), deferred by the
   designer's standing rule of 2026-09-30 for users on those platforms:
@@ -240,7 +250,7 @@ Numbered D1, D2, ...
   signing and notarization, Tahoe, Intel builds
   ([MACOS.md](MACOS.md)); the macOS mailto and notifier-focus TODOs;
   the Windows and macOS Python 3.11 builds; the wxPython 4.2.0 floor
-  against Ubuntu 22.04's 4.1.1; the Flatpak's network and Secret
+  against Ubuntu 22.04's 4.0.7 (wxWidgets 3.0.5; PACKAGING.md said 4.1.1); the Flatpak's network and Secret
   portal; the icon picker on Windows and macOS.
 
 ## Pre-existing Issues

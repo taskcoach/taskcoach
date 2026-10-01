@@ -251,7 +251,7 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         event.Skip()
 
     def onMatchCaseMenuItem(self, event):
-        self.__matchCase = self._isMenuItemChecked(event)
+        self.__matchCase = event.IsChecked()
         self.onFind(event)
         # XXXFIXME: when skipping on OS X, we receive several events with different
         # IsChecked(), the last one being False. I can't reproduce this in a unit
@@ -259,15 +259,15 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         # hand)
 
     def onIncludeSubItemsMenuItem(self, event):
-        self.__includeSubItems = self._isMenuItemChecked(event)
+        self.__includeSubItems = event.IsChecked()
         self.onFind(event)
 
     def onSearchDescriptionMenuItem(self, event):
-        self.__searchDescription = self._isMenuItemChecked(event)
+        self.__searchDescription = event.IsChecked()
         self.onFind(event)
 
     def onRegularExpressionMenuItem(self, event):
-        self.__regularExpression = self._isMenuItemChecked(event)
+        self.__regularExpression = event.IsChecked()
         self.onFind(event)
 
     def onRecentSearchMenuItem(self, event):
@@ -313,20 +313,6 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         super().Enable(enable)
         self.ShowCancelButton(enable and bool(self.GetValue()))
         self.ShowSearchButton(enable)
-
-    def _isMenuItemChecked(self, event):
-        # There's a bug in wxPython 2.8.3 on Windows XP that causes
-        # event.IsChecked() to return the wrong value in the context menu.
-        # The menu on the main window works fine. So we first try to access the
-        # context menu to get the checked state from the menu item itself.
-        # This will fail if the event is coming from the window, but in that
-        # case we can event.IsChecked() expect to work so we use that.
-        try:
-            return (
-                event.GetEventObject().FindItemById(event.GetId()).IsChecked()
-            )
-        except AttributeError:
-            return event.IsChecked()
 
     def OnBeforeShowToolTip(self, x, y):
         return None

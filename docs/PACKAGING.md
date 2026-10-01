@@ -103,7 +103,7 @@ backends.
 |--------|:--:|:------:|:--------:|--------------|-----------------|-------|
 | [Debian 12 Bookworm](#debianubuntu-packaging) | debian12 | 3.11 | 4.2.0 | `setup_debian12_bookworm.sh` | `build-deb.yml` | pip: watchdog |
 | [Debian 13 Trixie](#debianubuntu-packaging) | debian13 | 3.12 | 4.2.3 | `setup_debian13_trixie.sh` | `build-deb.yml` | Distro deps sufficient |
-| [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.1.1 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | pip: watchdog |
+| [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.0.7 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | pip: watchdog |
 | [Ubuntu 24.04 Noble](#debianubuntu-packaging) | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
 | [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
@@ -323,7 +323,7 @@ taskcoach (1.6.1-1~ppa1) noble; urgency=medium
 
 | Codename | Version | wxPython | Status |
 |----------|---------|----------|--------|
-| Jammy | 22.04 LTS | 4.1.1 | Patch required |
+| Jammy | 22.04 LTS | 4.0.7 (wxWidgets 3.0.5) | Patch required |
 | Noble | 24.04 LTS | 4.2.1 | Patch required |
 | Oracular | 24.10 | 4.2.1 | Patch required |
 | Plucky | 25.04 | 4.2.2 | Patch required |

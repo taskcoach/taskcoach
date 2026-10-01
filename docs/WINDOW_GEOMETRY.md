@@ -325,7 +325,7 @@ own way, and Wayland, which has no positions
 - wxWidgets 3.3 renames it `GeometryStore`, and wxPython 4.3 binds it
   as abstract (`etg/toplevel.py`), so a Python subclass backed by the
   settings should work (untested). The Windows and macOS builds use
-  4.3.1; the Linux packages use their distribution's 4.1.1 to 4.2.5
+  4.3.1; the Linux packages use their distribution's 4.0.7 to 4.2.5
   ([PACKAGING.md](PACKAGING.md)), so Linux has to do without it for
   years.
 - What it would replace here: the minimum-size step and sending the

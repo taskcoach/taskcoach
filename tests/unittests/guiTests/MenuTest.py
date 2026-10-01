@@ -265,7 +265,7 @@ class ViewMenuTestCase(test.wxTestCase):
 
     def createMenu(self):
         self.frame.viewer = self.viewerContainer
-        menu = gui.menu.SortMenu(self.frame, self.parentMenu, "menu")
+        menu = gui.menu.SortMenu(self.frame, self.parentMenu)
         menu.updateMenu()
         return menu
 
@@ -446,6 +446,33 @@ class ToggleCategoryMenuTest(test.wxTestCase):
         self.assertFalse(checked_items)
 
 
+class DynamicMenuEntryTest(test.wxTestCase):
+    """A dynamic menu enables or disables its entry in its parent menu,
+    found as the entry whose submenu it is: not by its label, which may
+    carry a mnemonic and a shortcut, and an item inside the menu may
+    have the same label."""
+
+    def test_entry_follows_whether_the_menu_is_enabled(self):
+        state = dict(enabled=False)
+
+        class Menu(gui.menu.DynamicMenu):
+            def registerForMenuUpdate(self):
+                pass
+
+            def enabled(self):
+                return state["enabled"]
+
+        parent = wx.Menu()
+        menu = Menu(self.frame, parent)
+        menu.Append(wx.ID_ANY, "Menu")
+        entry = parent.AppendSubMenu(menu, "&Menu\tCtrl+M")
+        menu.updateMenu()
+        self.assertFalse(entry.IsEnabled())
+        state["enabled"] = True
+        menu.updateMenu()
+        self.assertTrue(entry.IsEnabled())
+
+
 class TaskTemplateMenuTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
@@ -465,7 +492,7 @@ class TaskTemplateMenuTest(test.wxTestCase):
     def test_menu_is_refilled_when_its_parent_opens(self):
         parent = wx.Menu()
         menu = self.menu_class(
-            self.frame, task.TaskList(), self.settings, parent, "Templates"
+            self.frame, task.TaskList(), self.settings, parent
         )
         parent.AppendSubMenu(menu, "Templates")
         self.uicommands.append(Separator())  # A template was added
@@ -475,7 +502,7 @@ class TaskTemplateMenuTest(test.wxTestCase):
     def test_menu_is_not_refilled_when_another_menu_opens(self):
         parent = wx.Menu()
         menu = self.menu_class(
-            self.frame, task.TaskList(), self.settings, parent, "Templates"
+            self.frame, task.TaskList(), self.settings, parent
         )
         self.uicommands.append(Separator())
         self.open_menu(wx.Menu())

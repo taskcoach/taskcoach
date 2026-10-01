@@ -116,12 +116,11 @@ class DynamicMenu(Menu):
     """A menu that registers for events and then updates itself whenever the
     event is fired."""
 
-    def __init__(self, window, parentMenu=None, labelInParentMenu=""):
-        """Initialize the menu. labelInParentMenu is needed to be able to
-        find this menu in its parentMenu."""
+    def __init__(self, window, parent_menu=None):
+        """Initialize the menu. With a parent menu, the menu enables or
+        disables its entry there."""
         super().__init__(window)
-        self._parentMenu = parentMenu
-        self._labelInParentMenu = self.__GetLabelText(labelInParentMenu)
+        self._parentMenu = parent_menu
         self.registerForMenuUpdate()
         self.updateMenu()
 
@@ -157,23 +156,16 @@ class DynamicMenu(Menu):
         """Enable or disable the menu item in the parent menu, depending on
         what enabled() returns."""
         if self._parentMenu:
-            myId = self.myId()
-            if myId != wx.NOT_FOUND:
-                self._parentMenu.Enable(myId, self.enabled())
+            my_id = self.my_id()
+            if my_id != wx.NOT_FOUND:
+                self._parentMenu.Enable(my_id, self.enabled())
 
-    def myId(self):
-        """Return the id of our menu item in the parent menu."""
-        # I'd rather use wx.Menu.FindItem, but it seems that that
-        # method currently does not work for menu items with accelerators
-        # (wxPython 2.8.6 on Ubuntu). When that is fixed replace the 7
-        # lines below with this one:
-        # myId = self._parentMenu.FindItem(self._labelInParentMenu)
-        for item in self._parentMenu.MenuItems:
-            if (
-                self.__GetLabelText(item.GetItemLabel())
-                == self._labelInParentMenu
-            ):
-                return item.Id
+    def my_id(self):
+        """The id of this menu's entry in its parent menu: the entry
+        whose submenu it is."""
+        for item in self._parentMenu.GetMenuItems():
+            if item.GetSubMenu() is self:
+                return item.GetId()
         return wx.NOT_FOUND
 
     def updateMenuItems(self):
@@ -187,20 +179,11 @@ class DynamicMenu(Menu):
         in a subclass as needed."""
         return True
 
-    @staticmethod
-    def __GetLabelText(menu_text):
-        """Remove accelerators from the menu_text. This is necessary because on
-        some platforms '&' is changed into '_' so menu_texts would compare
-        different even though they are really the same."""
-        return menu_text.replace("&", "").replace("_", "")
-
 
 class DynamicMenuThatGetsUICommandsFromViewer(DynamicMenu):
-    def __init__(
-        self, viewer, parentMenu=None, labelInParentMenu=""
-    ):  # pylint: disable=W0621
+    def __init__(self, viewer, parent_menu=None):  # pylint: disable=W0621
         self._uiCommands = None
-        super().__init__(viewer, parentMenu, labelInParentMenu)
+        super().__init__(viewer, parent_menu)
 
     def registerForMenuUpdate(self):
         # Refill the menu whenever the menu is opened, because the menu might
@@ -415,11 +398,10 @@ class TaskTemplateMenu(DynamicMenu):
         task_list,
         settings,
         parent_menu=None,
-        label_in_parent_menu="",
     ):
         self.settings = settings
         self.taskList = task_list
-        super().__init__(mainwindow, parent_menu, label_in_parent_menu)
+        super().__init__(mainwindow, parent_menu)
 
     def registerForMenuUpdate(self):
         if self._parentMenu is not None:
@@ -503,17 +485,11 @@ class ViewMenu(Menu):
             uicommand.RenameViewer(viewer=viewerContainer),
             None,
         )
-        self.appendMenu(_("&Mode"), ModeMenu(mainwindow, self, _("&Mode")))
-        self.appendMenu(
-            _("&Filter"), FilterMenu(mainwindow, self, _("&Filter"))
-        )
-        self.appendMenu(_("&Sort"), SortMenu(mainwindow, self, _("&Sort")))
-        self.appendMenu(
-            _("&Columns"), ColumnMenu(mainwindow, self, _("&Columns"))
-        )
-        self.appendMenu(
-            _("&Rounding"), RoundingMenu(mainwindow, self, _("&Rounding"))
-        )
+        self.appendMenu(_("&Mode"), ModeMenu(mainwindow, self))
+        self.appendMenu(_("&Filter"), FilterMenu(mainwindow, self))
+        self.appendMenu(_("&Sort"), SortMenu(mainwindow, self))
+        self.appendMenu(_("&Columns"), ColumnMenu(mainwindow, self))
+        self.appendMenu(_("&Rounding"), RoundingMenu(mainwindow, self))
         self.appendUICommands(
             None,
             uicommand.ViewExpandAll(viewer=viewerContainer),
@@ -751,7 +727,6 @@ class NewMenu(Menu):
                 task_list=tasks,
                 settings=settings,
                 parent_menu=self,
-                label_in_parent_menu=label,
             ),
             "taskcoach_actions_newtmpl",
         )
@@ -888,7 +863,7 @@ class TaskBarMenu(Menu):
         label = _("&Start tracking effort")
         self.appendMenu(
             label,
-            StartEffortForTaskMenu(taskBarIcon, tasks, self, label),
+            StartEffortForTaskMenu(taskBarIcon, tasks, self),
             "nuvola_apps_clock",
         )
         self.appendUICommands(
@@ -979,11 +954,9 @@ class StartEffortForTaskMenu(DynamicMenu):
     line under it with its subtasks. The tray's GTK menu shows the same
     tree (AppIndicatorTaskBarIcon)."""
 
-    def __init__(
-        self, taskBarIcon, tasks, parentMenu=None, labelInParentMenu=""
-    ):
+    def __init__(self, task_bar_icon, tasks, parent_menu=None):
         self.tasks = tasks
-        super().__init__(taskBarIcon, parentMenu, labelInParentMenu)
+        super().__init__(task_bar_icon, parent_menu)
 
     def registerForMenuUpdate(self):
         # Refilled before it shows (tray, toolbar button): following

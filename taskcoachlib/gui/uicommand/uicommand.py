@@ -1377,9 +1377,7 @@ class ViewColumn(ViewerCommand, settings_uicommand.UICheckCommand):
         return self.viewer.isVisibleColumnByName(self.setting)
 
     def do_command(self, event):
-        self.viewer.showColumnByName(
-            self.setting, self._isMenuItemChecked(event)
-        )
+        self.viewer.showColumnByName(self.setting, event.IsChecked())
 
 
 class ViewColumns(ViewerCommand, settings_uicommand.UICheckCommand):
@@ -1391,7 +1389,7 @@ class ViewColumns(ViewerCommand, settings_uicommand.UICheckCommand):
         return True
 
     def do_command(self, event):
-        show = self._isMenuItemChecked(event)
+        show = event.IsChecked()
         for columnName in self.setting:
             self.viewer.showColumnByName(columnName, show)
 
@@ -1498,7 +1496,7 @@ class ViewerSortOrderCommand(ViewerCommand, settings_uicommand.UICheckCommand):
         return self.viewer.isSortOrderAscending()
 
     def do_command(self, event):
-        self.viewer.setSortOrderAscending(self._isMenuItemChecked(event))
+        self.viewer.setSortOrderAscending(event.IsChecked())
 
 
 class ViewerSortCaseSensitive(
@@ -1519,7 +1517,7 @@ class ViewerSortCaseSensitive(
         return self.viewer.isSortCaseSensitive()
 
     def do_command(self, event):
-        self.viewer.setSortCaseSensitive(self._isMenuItemChecked(event))
+        self.viewer.setSortCaseSensitive(event.IsChecked())
 
 
 class ViewerSortByTaskStatusFirst(
@@ -1539,7 +1537,7 @@ class ViewerSortByTaskStatusFirst(
         return self.viewer.isSortByTaskStatusFirst()
 
     def do_command(self, event):
-        self.viewer.setSortByTaskStatusFirst(self._isMenuItemChecked(event))
+        self.viewer.setSortByTaskStatusFirst(event.IsChecked())
 
 
 class ViewerHideTasks(ViewerCommand, settings_uicommand.UICheckCommand):
@@ -1575,9 +1573,7 @@ class ViewerHideTasks(ViewerCommand, settings_uicommand.UICheckCommand):
         if wx.GetKeyState(wx.WXK_SHIFT):
             self.viewer.show_only_task_status(self.__taskStatus)
         else:
-            self.viewer.hide_task_status(
-                self.__taskStatus, self._isMenuItemChecked(event)
-            )
+            self.viewer.hide_task_status(self.__taskStatus, event.IsChecked())
 
 
 class ViewerHideCompositeTasks(
@@ -1595,7 +1591,7 @@ class ViewerHideCompositeTasks(
         return self.viewer.is_hiding_composite_tasks()
 
     def do_command(self, event):
-        self.viewer.hide_composite_tasks(self._isMenuItemChecked(event))
+        self.viewer.hide_composite_tasks(event.IsChecked())
 
     def enabled(self, event):
         return not self.viewer.is_tree_viewer()
@@ -3679,7 +3675,7 @@ class CategoryViewerFilterChoice(
 
     def do_command(self, event):
         self.settings.setboolean(
-            "view", "categoryfiltermatchall", self._isMenuItemChecked(event)
+            "view", "categoryfiltermatchall", event.IsChecked()
         )
 
     def on_setting_changed(self, event):  # pylint: disable=W0613
@@ -3878,7 +3874,7 @@ class ToggleAutoColumnResizing(
         self.settings.set(
             self.viewer.settingsSection(),
             "columnautoresizing",
-            str(self._isMenuItemChecked(event)),
+            str(event.IsChecked()),
         )
         self.updateWidget()
 
@@ -3993,7 +3989,7 @@ class AlwaysRoundUp(settings_uicommand.UICheckCommand, ViewerCommand):
         self.setSetting(event.IsChecked())
 
     def do_command(self, event):
-        self.setSetting(self._isMenuItemChecked(event))
+        self.setSetting(event.IsChecked())
 
     def setSetting(self, alwaysRoundUp):
         self.settings.setboolean(
@@ -4042,10 +4038,10 @@ class ConsolidateEffortsPerTask(
         )
 
     def onCheck(self, event):
-        self.setSetting(self._isMenuItemChecked(event))
+        self.setSetting(event.IsChecked())
 
     def do_command(self, event):
-        self.setSetting(self._isMenuItemChecked(event))
+        self.setSetting(event.IsChecked())
 
     def setSetting(self, consolidateEffortsPerTask):
         self.settings.setboolean(
