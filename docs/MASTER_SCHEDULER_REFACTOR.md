@@ -1011,8 +1011,11 @@ Rules the first sketch lacked, each needed by the probe:
 The built pass, 2026-09-30: `SchedulerIncrementalTest` runs 150
 random changes of the 16 kinds below on a random file, each followed
 by a real tick, then the full loop, which must change nothing; with
-400 changes on seeds 1 to 7, nothing either. It found one fault while
-built: the full loop's own order (Design, 4). The check mode in the
+400 changes on seeds 1 to 7, nothing either. A seed replays its run:
+IDs count up and each pick follows them, since the file's collections
+are sets in memory order (made so 2026-09-30, when a pick that varied
+from run to run failed a test that expected a whole subtree). It found
+one fault while built: the full loop's own order (Design, 4). The check mode in the
 app: [Cost After](#cost-after).
 
 The analysis before it was built:

@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import itertools
 import random
 from unittest import mock
 
@@ -23,6 +24,7 @@ import test
 import wx
 from taskcoachlib import config, patterns, persistence
 from taskcoachlib.domain import attachment, base, category, date, effort
+from taskcoachlib.domain.base import object as base_object
 from taskcoachlib.domain import note, task
 from taskcoachlib.gui import scheduler
 from taskcoachlib.patterns.snapshot import Snapshot, Step
@@ -36,7 +38,9 @@ class IncrementalPassTest(test.wxTestCase):
     loop to change: it reached every object the change reaches
     (docs/MASTER_SCHEDULER_REFACTOR.md, Incremental Pass, Verification).
     Random changes of every kind on a random file, seeded, with a
-    simulated clock."""
+    simulated clock. IDs count up and every pick is made in their
+    order, so a seed replays a run: the task file's collections are
+    sets, ordered by memory address."""
 
     SEED = 1
     STEPS = 150
@@ -48,6 +52,12 @@ class IncrementalPassTest(test.wxTestCase):
         clock = mock.patch.object(date, "Now", lambda: self.now)
         clock.start()
         self.addCleanup(clock.stop)
+        numbers = itertools.count()
+        ids = mock.patch.object(
+            base_object, "new_id", lambda: "%08d" % next(numbers)
+        )
+        ids.start()
+        self.addCleanup(ids.stop)
         self.random = random.Random(self.SEED)
         self.task_file = persistence.TaskFile()
         self.master = scheduler.MasterScheduler(self.task_file)
@@ -170,7 +180,7 @@ class IncrementalPassTest(test.wxTestCase):
     def add_owned(self, owner):
         owned = note.Note(subject="owned by %s" % owner.subject())
         if self.random.random() < 0.5:
-            owned.addCategory(self.random.choice(list(self.categories())))
+            owned.addCategory(self.random.choice(self.categories()))
         owned.addChild(note.Note(subject="under %s" % owned.subject()))
         if hasattr(owner, "addNote"):
             owner.addNote(owned)
@@ -179,11 +189,15 @@ class IncrementalPassTest(test.wxTestCase):
             file.addNote(note.Note(subject="attachment note"))
             owner.addAttachment(file)
 
+    @staticmethod
+    def ordered(items):
+        return sorted(items, key=lambda each: each.id())
+
     def categories(self):
-        return self.task_file.categories()
+        return self.ordered(self.task_file.categories())
 
     def tasks(self):
-        return list(self.task_file.tasks())
+        return self.ordered(self.task_file.tasks())
 
     def live(self, *kinds):
         found = []
@@ -195,7 +209,9 @@ class IncrementalPassTest(test.wxTestCase):
             for each in collection:
                 found.append(each)
                 found.extend(scheduler._owned(each))
-        return [each for each in found if not kinds or isinstance(each, kinds)]
+        return self.ordered(
+            each for each in found if not kinds or isinstance(each, kinds)
+        )
 
     # The changes, each returning what it did
 
@@ -216,7 +232,7 @@ class IncrementalPassTest(test.wxTestCase):
 
     def link(self):
         item = self.random.choice(self.live(task.Task, note.Note))
-        linked = self.random.choice(list(self.categories()))
+        linked = self.random.choice(self.categories())
         if linked in item.categories():
             item.removeCategory(linked)
             return "unlink %s" % item.subject()
@@ -224,7 +240,7 @@ class IncrementalPassTest(test.wxTestCase):
         return "link %s" % item.subject()
 
     def priority(self):
-        changed = self.random.choice(list(self.categories()))
+        changed = self.random.choice(self.categories())
         changed.setStylePriority(self.random.randint(0, 3))
         return "priority of %s" % changed.subject()
 
@@ -249,7 +265,7 @@ class IncrementalPassTest(test.wxTestCase):
         return "move %s" % moved.subject()
 
     def move_category(self):
-        moved = self.random.choice(list(self.categories()))
+        moved = self.random.choice(self.categories())
         under = [
             each
             for each in self.categories()
@@ -308,7 +324,7 @@ class IncrementalPassTest(test.wxTestCase):
         parent = self.random.choice(self.tasks() + [None])
         added = task.Task("new", parent=parent)
         if self.random.random() < 0.5:
-            added.addCategory(self.random.choice(list(self.categories())))
+            added.addCategory(self.random.choice(self.categories()))
         self.add_owned(added)
         self.task_file.tasks().extend([added])
         return "new task"
@@ -329,7 +345,7 @@ class IncrementalPassTest(test.wxTestCase):
         parent = self.random.choice(self.live(note.Note))
         added = note.Note(subject="late")
         if self.random.random() < 0.5:
-            added.addCategory(self.random.choice(list(self.categories())))
+            added.addCategory(self.random.choice(self.categories()))
         if parent in self.task_file.notes():
             added.set_parent(parent)
             self.task_file.notes().extend([added])
@@ -403,18 +419,28 @@ class IncrementalPassTest(test.wxTestCase):
         self.assertEqual([], missed)
 
     def test_the_pass_processes_only_what_the_change_reaches(self):
-        # A task's colour: the task and its subtasks, not the file
-        processed = []
-        run = self.master._run_incremental
-
-        def record(timestamp, marked):
-            count = run(timestamp, marked)
-            processed.append(count)
-            return count
-
-        self.master._run_incremental = record
-        changed = self.tasks()[0]
-        changed.setForegroundColor(COLOURS[0])
+        # A task's colour: the task and its subtasks, up to a subtask
+        # with a colour of its own, not the file
+        parent = task.Task("parent")
+        inheriting = task.Task("inheriting", parent=parent)
+        own_colour = task.Task("own colour", parent=parent)
+        own_colour.setForegroundColor(COLOURS[1])
+        below = task.Task("below own colour", parent=own_colour)
+        parent.addChild(inheriting)
+        parent.addChild(own_colour)
+        own_colour.addChild(below)
+        self.task_file.tasks().extend([parent])
         self.tick()
-        reached = 1 + len(changed.children(recursive=True))
-        self.assertEqual([reached], processed)
+        processed = []
+        process = self.master._process
+
+        def record(item, timestamp):
+            processed.append(item.subject())
+            process(item, timestamp)
+
+        self.master._process = record
+        parent.setForegroundColor(COLOURS[0])
+        self.tick()
+        self.assertEqual(
+            ["inheriting", "own colour", "parent"], sorted(processed)
+        )
