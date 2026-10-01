@@ -19,6 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import sys, unittest, os, time, wx, logging
+import platform
+import re
+import subprocess
 
 projectRoot = os.path.abspath("..")
 if projectRoot not in sys.path:
@@ -28,6 +31,68 @@ if projectRoot not in sys.path:
 import taskcoachlib.workarounds.monkeypatches  # noqa: F401,E402
 
 from taskcoachlib.notify import AbstractNotifier
+
+# The platform this suite is certified on (docs/TESTING.md); a run
+# stops anywhere else. Change a version here, on purpose, once the
+# full suite passes on it.
+CERTIFIED = {
+    "OS": "Linux",
+    "Display": "X11",
+    "Python": "3.13.5",
+    "wxPython": "4.2.3",
+    "wxWidgets": "3.2.8",
+    "GTK": "3.24.49",
+}
+
+
+def platform_in_use():
+    """The certified components as found on this machine."""
+    library = wx.GetLibraryVersionInfo()
+    in_use = {
+        "OS": platform.system(),
+        "Display": "none",
+        "Python": platform.python_version(),
+        "wxPython": wx.__version__,
+        "wxWidgets": "%d.%d.%d"
+        % (library.GetMajor(), library.GetMinor(), library.GetMicro()),
+        "GTK": "none",
+    }
+    try:
+        import gi
+
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gdk, Gtk
+    except (ImportError, ValueError):
+        return in_use
+    in_use["GTK"] = "%d.%d.%d" % (
+        Gtk.get_major_version(),
+        Gtk.get_minor_version(),
+        Gtk.get_micro_version(),
+    )
+    display = Gdk.Display.get_default()
+    if display is not None:
+        in_use["Display"] = type(display).__name__.replace("Display", "")
+    return in_use
+
+
+def check_platform():
+    """Stop unless this is the certified platform."""
+    in_use = platform_in_use()
+    differences = [
+        "  %s %s, certified %s" % (name, in_use[name], version)
+        for name, version in CERTIFIED.items()
+        if in_use[name] != version
+    ]
+    if differences:
+        sys.exit(
+            "Not the certified test platform (docs/TESTING.md):\n"
+            + "\n".join(differences)
+        )
+    print(
+        "Certified platform: "
+        + ", ".join("%s %s" % item for item in CERTIFIED.items()),
+        file=sys.stderr,
+    )
 
 
 def skipOnPlatform(*platforms):
@@ -258,14 +323,7 @@ class AllTests(unittest.TestSuite):
 
     def loadAllTests(self, testFiles):
         testloader = unittest.TestLoader()
-        if not testFiles:
-            if self._options.unittests:
-                testFiles.extend(self.getTestFilesFromDir("unittests"))
-            if self._options.integrationtests:
-                testFiles.extend(self.getTestFilesFromDir("integrationtests"))
-            if self._options.languagetests:
-                testFiles.extend(self.getTestFilesFromDir("languagetests"))
-        for filename in testFiles:
+        for filename in testFiles or catalog(self._options):
             moduleName = self.filenameToModuleName(filename)
             # Importing the module is not strictly necessary because
             # loadTestsFromName will do that too as a side effect. But if the
@@ -302,6 +360,61 @@ class AllTests(unittest.TestSuite):
                 ]
             )
         return result
+
+
+def catalog(options):
+    """The test files of the selected parts of the catalog: the shared
+    tests, which run on every platform (docs/TESTING.md)."""
+    parts = [
+        ("unittests", options.unittests),
+        ("integrationtests", options.integrationtests),
+        ("languagetests", options.languagetests),
+    ]
+    return sorted(
+        filename
+        for directory, selected in parts
+        if selected
+        for filename in AllTests.getTestFilesFromDir(directory)
+    )
+
+
+def run_catalog(options, test_files):
+    """Run each test file in its own process, as a file is run alone;
+    report each file and the failures. Return the exit status."""
+    files = test_files or catalog(options)
+    options_given = [arg for arg in sys.argv[1:] if arg not in test_files]
+    failed, tests_run = [], 0
+    for filename in files:
+        result = subprocess.run(
+            [sys.executable, sys.argv[0], *options_given, filename],
+            capture_output=True,
+            text=True,
+        )
+        output = result.stdout + result.stderr
+        ran = re.search(r"^Ran (\d+) tests?", output, re.MULTILINE)
+        count = int(ran.group(1)) if ran else 0
+        tests_run += count
+        print(
+            "%-6s %5d  %s"
+            % ("FAILED" if result.returncode else "ok", count, filename),
+            flush=True,
+        )
+        if result.returncode:
+            failed.append(filename)
+            report = output.find("=" * 70)
+            lines = output[report:] if report >= 0 else output
+            print("\n".join(lines.splitlines()[-60:]) + "\n", flush=True)
+    print(
+        "%d files, %d tests: %s"
+        % (
+            len(files),
+            tests_run,
+            "%d failed" % len(failed) if failed else "all passed",
+        )
+    )
+    for filename in failed:
+        print("FAILED " + filename)
+    return 1 if failed else 0
 
 
 from taskcoachlib import config
@@ -514,10 +627,11 @@ class TestProfiler:
 if __name__ == "__main__":
     logging.basicConfig()
     theOptions, theTestFiles = TestOptionParser().parse_args()
-    allTests = AllTests(theOptions, theTestFiles)
+    check_platform()
     if theOptions.profile:
-        TestProfiler(theOptions).run(allTests)
-    else:
-        theResult = allTests.runTests()
-        if not theResult.wasSuccessful():
+        TestProfiler(theOptions).run(AllTests(theOptions, theTestFiles))
+    elif len(theTestFiles) == 1:
+        if not AllTests(theOptions, theTestFiles).runTests().wasSuccessful():
             sys.exit(1)
+    else:
+        sys.exit(run_catalog(theOptions, theTestFiles))

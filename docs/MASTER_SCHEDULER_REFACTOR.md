@@ -179,6 +179,12 @@ go at the end. Details live in the sections and documents linked.
     without a complaint, and the window's Close quits, Minimize
     minimizes ([SYSTEM_TRAY.md](SYSTEM_TRAY.md#minimize-and-hide)).
     The keys are dropped from old INI files on load.
+65. ~~The test catalog, certified for one platform~~: done 2026-09-30,
+    **asked by designer**: `tests/test.py` runs every test file in its
+    own process, after checking the versions it is certified on (it
+    stops on any other); tests for one platform only will form that
+    platform's part of the catalog when work is done there
+    ([TESTING.md](TESTING.md)).
 
 ## Deferred or Will Not Do
 

@@ -77,15 +77,8 @@ Canon decision by designer, 2026-09-28.
   change by hand.
 - **Use the built-in debug logging** to see what the app is doing while
   you test: see [LOGGING_GUIDE.md](LOGGING_GUIDE.md).
-- **Unit tests are a regression net**, not the verification. Run a file
-  from `tests/`, under `xvfb-run` so no windows open on your desktop:
-
-  ```
-  xvfb-run -a ../.venv/bin/python test.py unittests/domainTests/TaskTest.py
-  ```
-
-  A test that no longer matches the app and needs a rewrite is marked
-  `@test.stale("reason")`; `grep -rn "test.stale" tests` lists them.
+- **Unit tests are a regression net**, not the verification,
+  certified for one platform: [TESTING.md](TESTING.md).
 
 ## Diagnosing
 
