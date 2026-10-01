@@ -904,8 +904,19 @@ each with the recommended action, none ruled yet:
   2.0.2.2) replaced the menu items' `EVT_UPDATE_UI` handlers with an
   update on menu open, along with the toolbar buttons' idle polling
   it was removing, so the check before a shortcut lost its answer.
-  Fix: answer `EVT_UPDATE_UI` for menu items again (the command's
-  `enabled()`); toolbar buttons stay signal-driven.
+  Prototyped 2026-10-01 in a scratch copy: menu items answer it
+  (enabled and checked only; labels keep their Publisher updates and
+  timing, so the GTK3 sizing rule of PUBLISHER_OBSERVER.md holds), the
+  own on-open and popup updaters go, `SetUpdateInterval(-1)` stops
+  wx's idle pass, and the toolbar skips AGW's own idle loop over its
+  tools (`AuiToolBar.DoIdleUpdate`, every idle cycle). Measured: idle,
+  about 37 unanswered update events a second before, none after;
+  Ctrl+S, Ctrl+Return, Ctrl+Shift+A and Ctrl+I work after their menu
+  was viewed disabled; first-open menus identical to the current
+  code; a menu open costs 1 to 11 ms (View: 110 checks), the task
+  right-click menu 84 checks; no handlers left behind by refilled
+  submenus; the test catalog passes. Not checked: Windows, macOS, a
+  global menu bar (which never gets menu-open events, as today).
 - P131. ~~Ctrl+Shift+A was both Edit > Deselect All and Actions > Add
   attachment~~: fixed 2026-10-01, **ruled by designer**: the standard
   pattern wins ("if someone asks for an attachment shortcut, we will
