@@ -34,6 +34,12 @@ class MultiLineTextCtrlTest(test.wxTestCase):
         inner._onLeftClick(mock.Mock(GetPosition=lambda: point))
         self.assertEqual(["http://test.com/"], opened)
 
+    def test_undo_keeps_the_text_loaded(self):
+        textctrl = widgets.MultiLineTextCtrl(self.frame, text="Loaded")
+        self.assertFalse(textctrl.CanUndo())
+        textctrl.SetValue("Set by the program")
+        self.assertFalse(textctrl.CanUndo())
+
     def testSetInsertionPointAtStart(self):
         textctrl = widgets.MultiLineTextCtrl(self.frame, text="Hiya")
         self.assertEqual(0, textctrl.GetInsertionPoint())
