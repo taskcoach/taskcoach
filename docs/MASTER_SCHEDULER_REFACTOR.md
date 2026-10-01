@@ -780,21 +780,29 @@ each with the recommended action, none ruled yet:
   `Task.statusSortFunction()` sorts by the status sort priorities, as
   status first does, re-sorted after the loop's pass
   ([TASK_STATUS_SORT.md](TASK_STATUS_SORT.md)).
-- P118. With wxPython 4.2.5 (wxWidgets 3.2.9: Arch, the AppImage;
-  Fedora 43 has 4.2.4) the selection is lost after a re-sort and when
-  a subtask is added: `TaskViewerTest.testGetSelection_AfterResort`,
-  `TreeCtrlTest` and `TreeListCtrlTest`
-  `testRetainSelectionWhenAddingSubTask*` fail on Python 3.13 and 3.14
-  alike (2026-10-01, scratch environments). Not checked in the app
-  yet.
+- P118. With wxPython 4.2.4 and later the tree views lose the
+  selection whenever they rebuild: a sort, a filter or search, the
+  tree/list switch, a task added or renamed (GitHub #385, seen on
+  Windows). After a filter or search the viewer then selects the
+  neighbouring task instead. Cause: wxPython 4.2.4 (PR #2088) keeps
+  the selected items in a set and `UnselectAll()` clears only that
+  set; the rebuild highlights the selected rows with
+  `item.SetHilight()`, outside it, so `select()` toggles them off.
+  Every build on 4.2.4 or later: Windows and macOS (the latest
+  wxPython until 2026-09-23, 4.3.1 since), Flatpak and the AppImage,
+  Arch, Fedora 43; not Debian 12 and 13, Ubuntu 22.04 and 24.04.
+  Checked in the app on 4.2.5 and 4.2.3 (2026-10-01). Proposed fix,
+  checked in a scratch copy: all highlighting through one
+  `SetItemHilight()` in the HyperTreeList copy, which keeps the set
+  where wxPython has it, as wxPython's own HyperTreeList does since
+  4.2.4.
 - P119. Files left open: the template list (`templatelist.py` 64, 72,
   92), the CSV import's encoding guess (`csvimport.py` 155), an empty
   file check (`uicommand.py` 719), `anonymize.py` 62. Python warns at
   garbage collection; nothing is lost.
-- P120. Tests read the user's real templates folder
-  (`~/.local/share/Task Coach/templates`): five templates there,
-  saved together on 2026-09-25 ("New task template" three times,
-  "Subject - ", "Sujet"), look left by a test.
+- P120. ~~Tests read the user's real templates folder~~: closed
+  2026-10-01, **ruled by designer**: not a concern for the repo or
+  this refactor; the designer handles the templates there.
 - P121. ~~View > Activate next/previous viewer raised
   `AttributeError`~~: fixed 2026-10-01, the same on master. c0527e9d0
   removed `MainWindow.advanceSelection()` as unused, but the PEP 8
@@ -807,6 +815,10 @@ each with the recommended action, none ruled yet:
 - P123. Enter in the search box also opens the editor of the selected
   task (the Edit command's Return accelerator), even when the search
   hides it. The same on master (checked in the app).
+- P124. After a drag and drop the selection lands on another task
+  (neither the dragged task nor always the target), and the subject's
+  in-place editor sometimes opens on it. The same on wxPython 4.2.3
+  and 4.2.5 (checked in the app 2026-10-01).
 
 ## Views on the Effective Styles
 
