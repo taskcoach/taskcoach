@@ -185,6 +185,48 @@ go at the end. Details live in the sections and documents linked.
     stops on any other); tests for one platform only will form that
     platform's part of the catalog when work is done there
     ([TESTING.md](TESTING.md)).
+66. **Next, the most important open item (designer, 2026-10-01).**
+    Files this branch saves must open in the released versions.
+    The designer, verbatim: "Additionally, I have a slight problem with
+    the prior work that we did in changing the file version. So what
+    happens now is that if someone opens their file with the newest
+    version of TaskCoach, they can't go back. So if uh, there's a bug
+    in the newer version, then if they open it in older version, it
+    doesn't work. Is there a way where we can keep the changes uh,
+    duplicating data so that it still works in prior versions. I'm
+    thinking of the way that the categorizable or the categories are
+    stored. Maybe that needs to be saved as a dual, uh, only on save,
+    but for legacy reasons, especially during the transition. So I
+    just tried opening the Task Coach now on with my current version.
+    That's from the main, that's the released, publicly released
+    version, and it can no longer open my files. And this is a
+    problem."
+    Known so far:
+    - This branch writes tskversion 38 (`20473627e`, item 60): a
+      task's or note's `categories` attribute holds its categories;
+      the category node lists no members (`categorizables`). Master
+      and the releases write 37.
+    - Every release since 0.72.9 refuses a file with a higher
+      tskversion (`XMLReaderTooNewException`: "created by a newer
+      version"). So writing both forms is not enough on its own: the
+      file must also keep a version the releases accept.
+    - To check against the released reader, every other change to
+      what this branch writes: defaults left out (item 61), the GUID
+      dropped (`c3302d095`), dropped mails kept as subject, sender,
+      date and link (`ed5a1d9c8`), stored text keeping only tab and
+      line breaks (`1848f1fbf`), IDs (`05b57d4c9`).
+    - Check: a file saved by this branch opens in master (2.0.2.25)
+      with every task, note, category and membership; the designer's
+      files once saved again.
+    - To decide: how long the legacy form is written.
+67. Bring the bundled tree widget up to date (option C of P118),
+    **asked by designer 2026-10-01**: wxPython 4.3.1's
+    `customtreectrl.py` and `hypertreelist.py` as the bundled pair,
+    with Task Coach's changes redone on them: 31 methods, 11 of them
+    also rewritten upstream (`PaintItem`, `OnMouse`, `PaintLevel`);
+    the `Self` annotation dropped for Python 3.10; upstream's #1880
+    dark-theme text change checked in the views
+    ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)).
 
 ## Deferred or Will Not Do
 
