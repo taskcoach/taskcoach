@@ -88,6 +88,9 @@ ALLOWED = {
     ("taskcoachlib/persistence/xml/defaults.py", "R6", "fromAddress"): (
         "task file attribute"
     ),
+    ("taskcoachlib/persistence/xml/writer.py", "R6", "selectedIcon"): (
+        "task file attribute"
+    ),
 }
 
 MIXED = re.compile(r"^_{0,2}[a-z][a-z0-9]*[A-Z]\w*$")

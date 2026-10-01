@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os, pickle, tempfile, shutil
+from taskcoachlib import meta
 from taskcoachlib.meta.debug import log_step
 from .xml import TemplateXMLWriter, TemplateXMLReader
 
@@ -30,24 +31,42 @@ class TemplateList(object):
     def _readTemplates(self, TemplateReader, openFile):
         templates = []
         for filename in self._templateFilenames():
-            template = self._readTemplate(filename, TemplateReader, openFile)
+            template = self._read_template(filename, TemplateReader, openFile)
             if template:
                 templates.append((template, filename))
         return templates
 
-    def _readTemplate(self, filename, TemplateReader, openFile):
+    def _read_template(self, filename, template_reader, open_file):
+        path = os.path.join(self._path, filename)
         try:
-            fd = openFile(os.path.join(self._path, filename), "r", encoding="utf-8")
+            fd = open_file(path, "r", encoding="utf-8")
         except IOError:
-            return
+            return None
         try:
-            return TemplateReader(fd).read()
+            reader = template_reader(fd)
+            template = reader.read()
         except Exception as e:
-            log_step(f"ERROR! Reading template {filename}: {e}", prefix="TEMPLATE")
+            log_step(
+                f"ERROR! Reading template {filename}: {e}", prefix="TEMPLATE"
+            )
             import traceback
+
             traceback.print_exc()
+            return None
         finally:
             fd.close()
+        if reader.version_needed() > meta.data.tskversion:
+            # Saved by this release before it wrote the forms older
+            # releases read, which skip it: saved again in them
+            # (docs/PERSISTENCE_XML.md, Versions and Compatibility)
+            with open(path, "w", encoding="utf-8") as out:
+                TemplateXMLWriter(out).write(template)
+            log_step(
+                "template %s saved again so that releases reading "
+                "tskversion %d read it" % (filename, meta.data.tskversion),
+                prefix="TEMPLATE",
+            )
+        return template
 
     def _templateFilenames(self):
         if not os.path.exists(self._path):
@@ -73,10 +92,12 @@ class TemplateList(object):
         )
 
         for task, name in self._templates:
-            templateFile = open(os.path.join(self._path, name), "w", encoding="utf-8")
-            writer = TemplateXMLWriter(templateFile)
+            template_file = open(
+                os.path.join(self._path, name), "w", encoding="utf-8"
+            )
+            writer = TemplateXMLWriter(template_file)
             writer.write(task)
-            templateFile.close()
+            template_file.close()
 
         for task, name in self._toDelete:
             os.remove(os.path.join(self._path, name))
@@ -85,13 +106,15 @@ class TemplateList(object):
     def addTemplate(self, task):
         handle, filename = tempfile.mkstemp(".tsktmpl", dir=self._path)
         os.close(handle)
-        templateFile = open(filename, "w", encoding="utf-8")
-        writer = TemplateXMLWriter(templateFile)
+        template_file = open(filename, "w", encoding="utf-8")
+        writer = TemplateXMLWriter(template_file)
         writer.write(task.copy())
-        templateFile.close()
-        theTask = TemplateXMLReader(open(filename, "r", encoding="utf-8")).read()
-        self._templates.append((theTask, os.path.split(filename)[-1]))
-        return theTask
+        template_file.close()
+        the_task = TemplateXMLReader(
+            open(filename, "r", encoding="utf-8")
+        ).read()
+        self._templates.append((the_task, os.path.split(filename)[-1]))
+        return the_task
 
     def deleteTemplate(self, idx):
         self._toDelete.append(self._templates[idx])

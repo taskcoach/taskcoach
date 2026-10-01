@@ -31,6 +31,7 @@ from taskcoachlib.domain import (
     attachment,
 )
 from taskcoachlib.i18n import translate
+from . import legacy
 from .defaults import read
 from taskcoachlib.thirdparty.deltaTime import nlTimeExpression
 from taskcoachlib.tools import wxhelper
@@ -201,18 +202,24 @@ class XMLReader(object):
         self.__prerequisites = {}
         # A task's or note's ID -> its categories' IDs
         self.__categories_of = {}
-        # Before tskversion 38: a category's ID -> its members' IDs
+        # Before format 38: a category's ID -> its members' IDs
         self.__members_of = {}
+        # An item's ID -> what its node held for older releases
+        self.__for_older_releases = {}
         # Track all IDs and their locations for duplicate detection
         # Maps ID -> list of (object_type, hierarchical_path) tuples
         self.__id_registry = {}
         self.__current_path = []  # Stack for tracking hierarchical location
 
     def tskversion(self):
-        """Return the version of the current task file. Note that this is not
-        the version of the application. The task file has its own version
-        numbering (a number that is increasing on every change)."""
+        """The format the file is written in, which says how to read
+        it: its tskformat, or before 2.0.3.0 its tskversion
+        (docs/PERSISTENCE_XML.md, Versions and Compatibility)."""
         return self.__tskversion
+
+    def version_needed(self):
+        """The format a reader needs for the file: its tskversion."""
+        return self.__version_needed
 
     def __register_id(self, obj_id, obj_type, subject):
         """Register an object's ID and return the ID it gets: the first
@@ -247,14 +254,18 @@ class XMLReader(object):
         # reads the PIs
         root = ET.parse(io.BytesIO(content.encode("utf-8"))).getroot()
         versions = [
-            pi.attrib.get("tskversion")
+            pi.attrib
             for pi in root.xpath("//processing-instruction()")
             if pi.target == "taskcoach"
         ]
-        if not versions or versions[0] is None:
+        if not versions or versions[0].get("tskversion") is None:
             raise ValueError("no Task Coach file version (tskversion)")
-        self.__tskversion = int(versions[0])  # pylint: disable=W0201
-        if self.__tskversion > meta.data.tskversion:
+        # pylint: disable=W0201
+        self.__version_needed = int(versions[0]["tskversion"])
+        self.__tskversion = int(
+            versions[0].get("tskformat", self.__version_needed)
+        )
+        if self.__version_needed > meta.data.tskformat:
             # Version number of task file is too high
             raise XMLReaderTooNewException
         tasks = self.__parse_task_nodes(root)
@@ -351,7 +362,7 @@ class XMLReader(object):
         resolve_ids(tasks)
 
     def __resolve_categories(self, categories, tasks, notes):
-        """Link each task and note to its categories. Before tskversion
+        """Link each task and note to its categories. Before format
         38 the file stored the links on the category, as its members:
         they are turned into the items' own, where the next save writes
         them (docs/PERSISTENCE_XML.md, Category Membership)."""
@@ -443,7 +454,7 @@ class XMLReader(object):
                 self.__members_of.setdefault(theCategory.id(), []).extend(
                     members.split()
                 )
-            return self.__save_modification_datetime(theCategory)
+            return self.__keep_as_read(theCategory)
         finally:
             self.__current_path.pop()
 
@@ -550,15 +561,15 @@ class XMLReader(object):
             self.__parse_categories(task_node, kwargs["id"])
             if self.__tskversion > 20:
                 kwargs["attachments"] = self.__parse_attachments(task_node)
-            return self.__save_modification_datetime(
+            return self.__keep_as_read(
                 task.Task(**kwargs)
             )  # pylint: disable=W0142
         finally:
             self.__current_path.pop()
 
     def __parse_categories(self, node, item_id):
-        """A task's or note's categories, stored on it since tskversion
-        38; linked once the categories are read."""
+        """A task's or note's categories, stored on it since format 38;
+        linked once the categories are read."""
         if self.__tskversion >= 38:
             self.__categories_of[item_id] = list(
                 self.__value(node, "categories", str.split)
@@ -623,7 +634,7 @@ class XMLReader(object):
             self.__parse_categories(note_node, obj_id)
             if self.__tskversion > 20:
                 kwargs["attachments"] = self.__parse_attachments(note_node)
-            return self.__save_modification_datetime(
+            return self.__keep_as_read(
                 note.Note(**kwargs)
             )  # pylint: disable=W0142
         finally:
@@ -649,6 +660,21 @@ class XMLReader(object):
             ordering=value(node, "ordering", int),
             **self.__parse_dates(node),
         )
+        # Written back for older releases (legacy.py): the selected
+        # icon, and a stated modification date equal to the creation
+        # date, which this release leaves out
+        selected_icon = node.attrib.get("selectedIcon", "")
+        stated_modification = (
+            "modificationDateTime" in node.attrib
+            and attributes["modificationDateTime"]
+            == attributes["creationDateTime"]
+        )
+        if selected_icon or stated_modification:
+            self.__for_older_releases[attributes["id"]] = (
+                attributes["icon"],
+                selected_icon,
+                stated_modification,
+            )
 
         if self.__tskversion <= 20:
             attributes["attachments"] = (
@@ -715,7 +741,7 @@ class XMLReader(object):
         # task by the task itself. This way no events are sent for changing the
         # effort owner, which is good.
         # pylint: disable=W0142
-        return self.__save_modification_datetime(
+        return self.__keep_as_read(
             effort.Effort(
                 task=None,
                 start=date.parseDateTime(start),
@@ -774,7 +800,12 @@ class XMLReader(object):
                     prefix="FILE",
                 )
                 location = f"(embedded {ext} - data not migrated)"
-        if node.attrib["type"] == "mail":
+        type_ = node.attrib["type"]
+        # A mail is written as its mid: link for older releases, which
+        # keep it a link (legacy.attachment_type())
+        if type_ == "uri" and location.startswith("mid:"):
+            type_ = "mail"
+        if type_ == "mail":
             kwargs.update(
                 from_name=self.__value(node, "fromName"),
                 from_address=self.__value(node, "fromAddress"),
@@ -783,10 +814,10 @@ class XMLReader(object):
                 ),
             )
 
-        return self.__save_modification_datetime(
+        return self.__keep_as_read(
             attachment.AttachmentFactory(
                 location,  # pylint: disable=W0142
-                node.attrib["type"],
+                type_,
                 **kwargs,
             )
         )
@@ -875,9 +906,13 @@ class XMLReader(object):
         except SyntaxError as error:
             raise ValueError(str(error))
 
-    def __save_modification_datetime(self, item):
-        """Save the modification date time of the item for later restore."""
+    def __keep_as_read(self, item):
+        """Keep what the item's node held: its modification date,
+        restored once the file is read, and what is written back for
+        older releases (legacy.py)."""
         self.__modification_datetimes[item] = item.modificationDateTime()
+        if item.id() in self.__for_older_releases:
+            legacy.keep(item, *self.__for_older_releases[item.id()])
         return item
 
 

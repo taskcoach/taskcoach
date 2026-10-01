@@ -185,8 +185,13 @@ go at the end. Details live in the sections and documents linked.
     stops on any other); tests for one platform only will form that
     platform's part of the catalog when work is done there
     ([TESTING.md](TESTING.md)).
-66. **Next, the most important open item (designer, 2026-10-01).**
-    Files this branch saves must open in the released versions.
+66. ~~Files this branch saves open in the released versions~~: done
+    2026-10-01, **asked by designer**: expand and contract with two
+    numbers in the file, `tskversion` 37 (needed) and `tskformat` 38
+    (written); files saved as 38 only are healed on open; checked
+    against 2.0.2.0 and 2.0.2.25
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#versions-and-compatibility)).
+    Retiring the old forms: D9.
     The designer, verbatim: "Additionally, I have a slight problem with
     the prior work that we did in changing the file version. So what
     happens now is that if someone opens their file with the newest
@@ -201,48 +206,6 @@ go at the end. Details live in the sections and documents linked.
     That's from the main, that's the released, publicly released
     version, and it can no longer open my files. And this is a
     problem."
-    Analysis 2026-10-01 (a file with every field, saved by this
-    branch, read by master's code; then in both apps): the release
-    reads everything but three, all else being ignored attributes or
-    the defaults it uses too:
-    - tskversion 38: refused ("created by a newer version"); templates
-      too, which it then skips;
-    - membership only on the items: every category comes out empty;
-    - mail attachments (a `mid:` link since `ed5a1d9c8`): dropped on
-      load, as it reads the mail file at once; lost at its next save.
-    Not a problem: `status`, `selectedIcon`, the `<guid>` left out
-    (its defaults, the normal icon), new attributes (ignored),
-    whole-second dates, the INI file. Through a save by the release:
-    what it does not know goes (the mail's sender and date, effort
-    dates, `stylePriority`), and notes on attachments lose their
-    categories (P29, fixed here, not in the release).
-    Proposed, the designer's dual save as expand and contract,
-    checked in a prototype with the code of 2.0.2.0 and of the release
-    (2.0.2.25). A file saved by either, opened and saved by this
-    branch, then saved again by it, equals its first save but for
-    sub-second parts of five dates, which it shows alike (whole
-    seconds, item 1). This branch reads its own files, the release's
-    re-saves and today's version 38 files unchanged.
-    - The PI holds two numbers: `tskversion` 37, the version a reader
-      needs (what releases check), and `tskformat` 38, the format
-      written, by which this branch reads.
-    - Both forms of membership: the items' `categories` and the
-      categories' `categorizables`, from the same data.
-    - A mail attachment written as a link (`type="uri"`, its `mid:`
-      location), read back as a mail by that location, so a save by
-      the release loses only its sender and date. Not `mail2`: the
-      releases refuse a whole file with an attachment type they do not
-      know ("Unknown attachment type"), and with a mail whose `.eml`
-      file exists (P31).
-    - Kept for the releases: an item's `selectedIcon` as read, while
-      its icon is unchanged; a modification date the file stated, also
-      when equal to the creation date (otherwise left out, its
-      default).
-    - Older than 2.0.2.0 is out of scope: a file of the release already
-      needs it (icon names renamed then; earlier lookups fail on them).
-    - Later, by version, not by date: stop writing these forms and
-      write `tskversion` 38. The policy and this history go in
-      [PERSISTENCE_XML.md](PERSISTENCE_XML.md).
 67. Bring the bundled tree widget up to date (option C of P118),
     **asked by designer 2026-10-01**: wxPython 4.3.1's
     `customtreectrl.py` and `hypertreelist.py` as the bundled pair,
@@ -318,6 +281,10 @@ Numbered D1, D2, ...
   the Windows and macOS Python 3.11 builds; the wxPython 4.2.0 floor
   against Ubuntu 22.04's 4.0.7 (wxWidgets 3.0.5; PACKAGING.md said 4.1.1); the Flatpak's network and Secret
   portal; the icon picker on Windows and macOS.
+- D9. Retire the forms written for releases reading `tskversion` 37
+  (`persistence/xml/legacy.py`), **asked by designer 2026-10-01**: in
+  place since 2.0.3.0, 2026-10-01; review between January and April
+  2027 ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#to-do-retire-the-old-forms)).
 
 ## Pre-existing Issues
 

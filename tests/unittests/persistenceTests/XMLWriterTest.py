@@ -244,7 +244,7 @@ class XMLWriterTest(test.TestCase):
 
     def expect_categories(self, item, *categories):
         """The item's node lists its categories, sorted by ID
-        (tskversion 38)."""
+        (format 38)."""
         category_ids = " ".join(sorted(each.id() for each in categories))
         self.expect_in_xml_without_dates(
             'categories="%s" id="%s"' % (category_ids, item.id())
@@ -260,9 +260,21 @@ class XMLWriterTest(test.TestCase):
         self.categoryContainer.extend(cats)
         self.expect_categories(self.task, *cats)
 
-    def test_category_lists_no_members(self):
-        self.categoryContainer.append(category.Category("test", [self.task]))
+    def test_category_lists_its_members_for_older_releases(self):
+        self.categoryContainer.append(
+            category.Category("test", [self.task, self.note])
+        )
+        members = " ".join(sorted([self.task.id(), self.note.id()]))
+        self.expect_in_xml('categorizables="%s"' % members)
+
+    def test_members_outside_the_file_are_not_listed(self):
+        self.categoryContainer.append(category.Category("test", [task.Task()]))
         self.expect_not_in_xml("categorizables")
+
+    def test_both_format_versions(self):
+        # tskversion: what a reader needs, which older releases check;
+        # tskformat: the format written
+        self.expect_in_xml('tskversion="37" tskformat="38"')
 
     def test_subtask_with_category(self):
         child = task.Task()
@@ -621,7 +633,17 @@ class XMLWriterTest(test.TestCase):
         self.expect_in_xml_without_dates(
             '<attachment fromAddress="alice@example.com" fromName="Alice" '
             'id="foo" location="mid:1@example.com" '
-            'sentDateTime="2026-09-29 14:05:00" subject="Quote" type="mail"'
+            'sentDateTime="2026-09-29 14:05:00" subject="Quote" type="uri"'
+        )
+
+    def test_a_mail_file_stays_a_mail(self):
+        # Older releases read a mail from its file, not from a link
+        self.task.addAttachments(
+            attachment.MailAttachment("mail.eml", id="foo", subject="Mail")
+        )
+        self.expect_in_xml_without_dates(
+            '<attachment id="foo" location="mail.eml" subject="Mail" '
+            'type="mail"'
         )
 
     def test_empty_mail_fields_are_not_written(self):
@@ -921,6 +943,12 @@ class XMLWriterTest(test.TestCase):
             date.Timestamp(2013, 1, 1, 0, 0, 0, 123456)
         )
         self.expect_in_xml('modificationDateTime="2013-01-01 00:00:00.123456"')
+
+    def test_a_modification_date_equal_to_the_creation_date_is_left_out(
+        self,
+    ):
+        self.task.set_modification_datetime(self.task.creationDateTime())
+        self.expect_not_in_xml("modificationDateTime")
 
     def testDoNotWriteUnknownModificationDateTime(self):
         task_with_unknown_modification_datetime = task.Task(

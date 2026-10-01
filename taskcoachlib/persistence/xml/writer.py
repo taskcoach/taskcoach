@@ -20,7 +20,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from xml.etree import ElementTree as ET
 from taskcoachlib import meta
-from taskcoachlib.domain import category, date, note, task
+from taskcoachlib.domain import categorizable, category, date, note, task
+from . import legacy
 from .defaults import NOT_SET, UNKNOWN, is_default
 
 
@@ -74,15 +75,21 @@ def sortedById(objects):
 
 
 class XMLWriter(object):
-    def __init__(self, fd, versionnr=meta.data.tskversion):
+    def __init__(self, fd):
         self.__fd = fd
-        self.__versionnr = versionnr
         self.__categories = set()
+        self.__ids_in_file = set()
 
     def write(self, task_list, category_container, note_container):
         root = ET.Element("tasks")
         # The categories an item may link to (a template has none)
         self.__categories = set(category_container)
+        self.__ids_in_file = {
+            each.id()
+            for each in categorizable.categorizables_in(
+                task_list, note_container, category_container
+            )
+        }
 
         for root_task in sortedById(task_list.rootItems()):
             self.task_node(root, root_task)
@@ -95,8 +102,8 @@ class XMLWriter(object):
 
         flatten(root)
         PIElementTree(
-            '<?taskcoach release="%s" tskversion="%d"?>\n'
-            % (meta.data.version, self.__versionnr),
+            '<?taskcoach release="%s" tskversion="%d" tskformat="%d"?>\n'
+            % (meta.data.version, meta.data.tskversion, meta.data.tskformat),
             root,
         ).write(self.__fd, "utf-8")
 
@@ -195,6 +202,9 @@ class XMLWriter(object):
             category.hasExclusiveSubcategories(),
         )
         self.__attribute(node, "stylePriority", category.stylePriority())
+        members = legacy.members(category, self.__ids_in_file)
+        if members:
+            node.attrib["categorizables"] = members
         for eachNote in sortedById(category.notes()):
             self.note_node(node, eachNote)
         for attachment in sortedById(category.attachments()):
@@ -211,7 +221,7 @@ class XMLWriter(object):
         return node
 
     def __categories_attribute(self, node, item):
-        """The item's categories, stored on the item (tskversion 38,
+        """The item's categories, stored on the item (format 38,
         docs/PERSISTENCE_XML.md, Category Membership)."""
         self.__attribute(
             node,
@@ -233,12 +243,16 @@ class XMLWriter(object):
 
     def __dates(self, node, item):
         self.__attribute(node, "creationDateTime", item.creationDateTime())
-        # Written when known; a missing one is the creation date
+        # A missing one is the creation date
         modification = item.modificationDateTime()
+        unwritten = modification == UNKNOWN or (
+            modification == item.creationDateTime()
+            and not legacy.stated_modification(item)
+        )
         self.__attribute(
             node,
             "modificationDateTime",
-            None if modification == UNKNOWN else modification,
+            None if unwritten else modification,
         )
 
     @staticmethod
@@ -268,6 +282,9 @@ class XMLWriter(object):
             lambda font: font.GetNativeFontInfoDesc(),
         )
         self.__attribute(node, "icon", item.icon_id())
+        selected_icon = legacy.selected_icon(item)
+        if selected_icon:
+            node.attrib["selectedIcon"] = selected_icon
         self.__attribute(node, "ordering", item.ordering())
 
     def base_node(self, parent_node, item, node_name):
@@ -302,7 +319,7 @@ class XMLWriter(object):
 
     def attachment_node(self, parent_node, attachment):
         node = self.base_node(parent_node, attachment, "attachment")
-        node.attrib["type"] = attachment.type_
+        node.attrib["type"] = legacy.attachment_type(attachment)
         node.attrib["location"] = attachment.location()
         if attachment.type_ == "mail":
             self.__attribute(node, "fromName", attachment.from_name())

@@ -279,6 +279,39 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.taskFile.load()
         self.assertFalse(self.taskFile.need_save())
 
+    def write_file(self, versions):
+        with open(self.filename, "w", encoding="utf-8") as fd:
+            fd.write(
+                '<?taskcoach release="2.0.3" %s?>\n'
+                '<tasks><task id="t1" subject="Task" categories="c1"/>'
+                '<category id="c1" subject="Category"/></tasks>' % versions
+            )
+
+    def test_a_file_older_releases_cannot_open_is_saved_again(self):
+        # Saved by 2.0.3.0 before it wrote the forms older releases read
+        # (docs/PERSISTENCE_XML.md, Versions and Compatibility)
+        self.write_file('tskversion="38"')
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.load()
+        need_save = self.taskFile.need_save()
+        self.taskFile.save()
+        with open(self.filename, encoding="utf-8") as fd:
+            written = fd.read()
+        self.assertEqual(
+            (True, True, True),
+            (
+                need_save,
+                'tskversion="37" tskformat="38"' in written,
+                'categorizables="t1"' in written,
+            ),
+        )
+
+    def test_a_file_older_releases_open_needs_no_save(self):
+        self.write_file('tskversion="37" tskformat="38"')
+        self.taskFile.setFilename(self.filename)
+        self.taskFile.load()
+        self.assertFalse(self.taskFile.need_save())
+
     def test_duplicate_ids_are_corrected_and_need_save_after_load(self):
         with open(self.filename, "w", encoding="utf-8") as fd:
             fd.write(

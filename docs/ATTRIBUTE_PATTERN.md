@@ -319,8 +319,9 @@ their index, kept by the items alone, and hold every item that claims
 it, in the file or not (a copy, a deleted item kept for undo)
 (2026-09-29, P29 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
-The file stores it on the items too since tskversion 38; older
-files, which stored it on the category, are converted when read
+The file stores it on the items too since format 38 (and on the
+category too, for older releases); older files, which stored it only
+on the category, are converted when read
 ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#category-membership)).
 Building an item with its children (a copy, a read) links them and
 sets no date: nothing changed.

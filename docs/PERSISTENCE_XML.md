@@ -12,6 +12,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 - [Category Membership](#category-membership)
 - [IDs](#ids)
 - [Duplicate IDs](#duplicate-ids)
+- [Versions and Compatibility](#versions-and-compatibility)
 - [Related Documentation](#related-documentation)
 
 ---
@@ -24,6 +25,10 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
    2026-09-29, one list ([Defaults](#defaults)).
 3. ~~`plannedDurationMode` documented as "automatic"~~: resolved, the
    default is `"implicit"`.
+4. Retire the forms written for older releases (`legacy.py`): in
+   place since 2.0.3.0, 2026-10-01; review between January and April
+   2027 ([To Do: Retire the Old
+   Forms](#to-do-retire-the-old-forms)).
 
 ---
 
@@ -72,13 +77,14 @@ as the default.
 | Empty | `subject`, `description`, `icon`, a recurrence's `unit`, a mail attachment's `fromName` and `fromAddress` ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#fields)); `expandedContexts`, `prerequisites`, `categories`, `weekdays` | empty |
 | False | `filtered`, `exclusiveSubcategories`, `sameWeekday`, `recurBasedOnCompletion` | False |
 | Named | `plannedDurationMode`, an effort's `entryMode`, a recurrence's `amount` | `implicit`, `standard` (`""` reads as either), 1 |
-| Another field | `reminderBeforeSnooze` (written while snoozed), `modificationDateTime` (written when known) | the reminder, the creation date |
+| Another field | `reminderBeforeSnooze` (written while snoozed), `modificationDateTime` (written when it differs from the creation date, or the file stated it: [Versions and Compatibility](#versions-and-compatibility)) | the reminder, the creation date |
 | Unknown | `creationDateTime` | a date from before they were kept (`DateTime.min`) |
 
 Always written, with no default: `id`, an attachment's `type` and
 `location`, an effort's `start`. A task without a `recurrence` node
 does not recur. `selectedIcon` (the open folder icon, removed
-2026-09-28) is not read: an old file's value is dropped.
+2026-09-28) is not used: it is written back as read, for older
+releases ([Versions and Compatibility](#versions-and-compatibility)).
 
 ---
 
@@ -193,18 +199,19 @@ only for the merge; the same ID in both is the same item.
 
 **Asked by designer, 2026-09-29:** stored the same way in memory, in
 the file and in the code: on the item that points, like a task's
-prerequisites. Since tskversion 38 (release 2.0.3.0) a task's or
+prerequisites. In format 38 (release 2.0.3.0) a task's or
 note's `categories` attribute lists its categories' IDs, sorted; a
 note of a task, a category, an attachment or a note included. Only
 categories in the file are written, so a template has none, as
-before. The category node lists no members.
+before. The category node also lists its members in the file
+(`categorizables`), for older releases ([Versions and
+Compatibility](#versions-and-compatibility)).
 
 Older files stored it on the category: its `categorizables` attribute
 (`tasks` before tskversion 19; before 14, category nodes inside the
 task nodes). The reader turns those into the items' categories, and
-the next save writes the new form. A release before 2.0.3.0 refuses a
-version 38 file as too new (a check since 0.72.9) rather than losing
-its categories.
+the next save writes the new form, next to the old one while older
+releases are supported.
 
 ## IDs
 
@@ -247,6 +254,109 @@ the correction is saved at once and the file as it was can be restored
 with File > Manage backups. The log lists them all.
 
 ---
+
+## Versions and Compatibility
+
+**Asked by designer, 2026-10-01:** a file this release saves opens,
+as they left it, in the releases back to 2.0.2.0; a format change
+reaches older releases within a window set by version, not date.
+
+- **Backward compatibility**, older files in this release: always,
+  back to the first format; the reader converts them.
+- **Forward compatibility**, this release's files in older releases:
+  within the window, now back to 2.0.2.0.
+
+### Two Numbers
+
+The `<?taskcoach?>` processing instruction holds:
+
+- `tskversion`: the format a reader needs, like ZIP's "version needed
+  to extract". Every release since 0.72.9 refuses a file whose
+  `tskversion` is above its own ("created by a newer version"), so it
+  goes up only when older releases would misread the file.
+- `tskformat` (since 2.0.3.0): the format written, which says how to
+  read it. Without it, `tskversion` is both.
+
+`meta.data.tskformat` is the format this release writes and the newest
+it reads; `meta.data.tskversion` the version it writes as needed. The
+reader refuses a file needing more than `tskformat` and reads by the
+file's `tskformat`.
+
+### Changing the Format
+
+- A field older releases ignore and whose absence is its default
+  ([Defaults](#defaults)): written at once; `tskformat` goes up, so a
+  file says what it holds.
+- A change older releases would misread (data moved, a new meaning, a
+  value they cannot take): **expand and contract**, also called
+  parallel change. Expand: write the new form and keep writing the old
+  one; `tskformat` goes up, `tskversion` stays. Contract, once the
+  window has passed: stop writing the old form, raise `tskversion`.
+  The reader keeps reading the old form, for the files saved meanwhile.
+- An older release rewrites the whole file and keeps no attribute it
+  does not know, so no stale new form outlives its save.
+- Before a release that changes the format, and before a contract, run
+  `docs/scripts/format_compat_check.py` against the oldest release in
+  the window: its own file must come back unchanged from this release.
+
+### Format 38 (2.0.3.0)
+
+Written as `tskversion` 37, `tskformat` 38 since 2026-10-01. What is
+written only for releases reading 37 is in
+`persistence/xml/legacy.py`:
+
+| Format 38 | Also written for releases reading 37 |
+|---|---|
+| A task's or note's `categories` ([Category Membership](#category-membership)) | A category's `categorizables`: its members in the file |
+| A mail attachment: `type="mail"`, its `mid:` link as `location` ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md)) | `type="uri"`; read back as a mail by its `mid:` link. Not a new type: the releases refuse a whole file with a type they do not know, and read a mail from its `.eml` file |
+| No selected icon (removed 2026-09-28) | `selectedIcon` as read, while the item's icon is unchanged |
+| A modification date equal to the creation date left out | Written when the file stated it |
+
+Checked 2026-10-01 against 2.0.2.0 and 2.0.2.25 with the script: their
+file, saved by 2.0.3.0 and by them again, equals their first save but
+for sub-second parts of dates (2.0.3.0 keeps whole seconds; they show
+them alike). Saved by them, a 2.0.3.0 file loses what they do not
+know: a mail's sender and sent date, an effort's creation and
+modification dates, a category's style priority; and, by their own
+bug, the categories of notes on attachments (P29, fixed in 2.0.3.0).
+
+Development builds saved files as `tskversion` 38 only from 2026-09-29
+to 10-01. Opening one marks it unsaved and logs it (`[FILE]`); autosave,
+on by default, saves it in both forms at once. A template saved so is
+saved again when the template list reads it (`[TEMPLATE]`).
+
+### To Do: Retire the Old Forms
+
+Since 2.0.3.0, 2026-10-01. **Review between January and April 2027**
+(three to six months), and retire them once the designer rules that
+2.0.2.x need not open new files:
+
+1. Delete `persistence/xml/legacy.py` and its calls in the writer and
+   the reader.
+2. Write `tskversion` 38: `meta.data.tskversion` equal to `tskformat`.
+3. Keep reading the old forms: a category's `categorizables` before
+   format 38, a `mid:` link as a mail.
+4. Drop the healing of `tskversion` 38 files (`TaskFile._read()`,
+   `TemplateList._read_template()`), which no file then needs.
+5. Update this section, the tests and the check script.
+
+2.0.2.x then show "created by a newer version" for new files and lose
+nothing.
+
+### How Far Back a File Opens
+
+Format 37 dates from Task Coach 1.3.23 (2013-02-07); 1.3.22 and older
+refuse it. The format changed in 2026 without a new number, so a file
+of 2.0.2.25 opens fully only back to 2.0.2.0 (2026-02-18):
+
+- before 2.0.1.52 (2026-01-25), an icon chosen for an item raises an
+  error when drawn: 2.0.2.0 renamed the icons, and older lookups fail
+  on names they do not know;
+- before 2.0.1.36 to 2.0.1.42 (2026-01-18 to 20), a weekly
+  recurrence's weekdays, the planned duration and its mode, and an
+  effort's entry mode are ignored, and dropped on their save.
+
+`tskformat` makes such changes visible from now on.
 
 ## Related Documentation
 

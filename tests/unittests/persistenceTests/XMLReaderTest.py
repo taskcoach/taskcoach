@@ -27,7 +27,7 @@ import base64
 import sys
 import test
 from taskcoachlib import persistence, config, operating_system
-from taskcoachlib.domain import category, date, note, task
+from taskcoachlib.domain import attachment, category, date, note, task
 from taskcoachlib.patterns.field import fields
 
 
@@ -1877,8 +1877,9 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
         self.assertEqual(set([tasks[0]]), set(categories[0].members()))
         self.assertEqual(["Kept note"], [each.subject() for each in notes])
 
-    def test_members_are_saved_as_the_items_categories(self):
-        # Converted when read: the next save writes the new form
+    def test_members_are_saved_on_the_items_and_the_category(self):
+        # Converted when read: the next save writes the new form, and
+        # the old one for older releases (legacy.py)
         tasks, categories, notes = self.writeAndReadTasksAndCategoriesAndNotes(
             """
         <tasks>
@@ -1895,8 +1896,11 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
         )
         written = fd.getvalue().decode("utf-8")
         self.assertEqual(
-            (2, False),
-            (written.count('categories="c1"'), "categorizables" in written),
+            (2, True),
+            (
+                written.count('categories="c1"'),
+                'categorizables="n1 t1"' in written,
+            ),
         )
 
     def test_categories_are_resolved_in_one_event(self):
@@ -2261,4 +2265,117 @@ class XMLReaderVersion38Test(XMLReaderTestCase):
         )
         self.assertEqual(
             ("ab", "cde\tf"), (tasks[0].subject(), tasks[0].description())
+        )
+
+
+class XMLReaderVersionsTest(XMLReaderTestCase):
+    """Since 2.0.3.0 the PI holds two numbers: tskversion, the format a
+    reader needs, and tskformat, the format written, which says how to
+    read (docs/PERSISTENCE_XML.md, Versions and Compatibility)."""
+
+    def read(self, versions, xml_contents):
+        fd = io.StringIO(
+            '<?taskcoach release="whatever" %s?>\n' % versions + xml_contents
+        )
+        fd.name = "testfile.tsk"
+        self.reader = persistence.XMLReader(fd)
+        return self.reader.read()
+
+    @staticmethod
+    def write(tasks, categories=(), notes=()):
+        fd = io.BytesIO()
+        persistence.XMLWriter(fd).write(
+            task.TaskList(tasks),
+            category.CategoryList(categories),
+            note.NoteContainer(notes),
+        )
+        return fd.getvalue().decode("utf-8")
+
+    def test_the_format_written_says_how_to_read(self):
+        # Both forms of membership: the items' own is read
+        tasks, categories, _ = self.read(
+            'tskversion="37" tskformat="38"',
+            """
+        <tasks>
+            <task id="t1" categories="c1"/>
+            <task id="t2"/>
+            <category id="c1" categorizables="t2"/>
+        </tasks>""",
+        )
+        self.assertEqual(
+            [{categories[0]}, set()], [each.categories() for each in tasks]
+        )
+
+    def test_versions_read(self):
+        self.read('tskversion="37" tskformat="38"', "<tasks/>")
+        self.assertEqual(
+            (37, 38), (self.reader.version_needed(), self.reader.tskversion())
+        )
+
+    def test_one_number_is_both(self):
+        self.read('tskversion="38"', "<tasks/>")
+        self.assertEqual(
+            (38, 38), (self.reader.version_needed(), self.reader.tskversion())
+        )
+
+    def test_a_file_needing_a_newer_reader_is_refused(self):
+        self.assertRaises(
+            persistence.xml.reader.XMLReaderTooNewException,
+            self.read,
+            'tskversion="39"',
+            "<tasks/>",
+        )
+
+    def test_a_newer_format_needing_no_newer_reader_is_read(self):
+        tasks, _, _ = self.read(
+            'tskversion="37" tskformat="39"',
+            '<tasks><task id="t1" subject="Task"/></tasks>',
+        )
+        self.assertEqual("Task", tasks[0].subject())
+
+    def test_a_mail_link_is_read_as_a_mail(self):
+        # How older releases keep a mail: a link
+        tasks, _, _ = self.read(
+            'tskversion="37"',
+            """
+        <tasks><task id="t1">
+            <attachment id="a1" type="uri" location="mid:1@example.com"/>
+        </task></tasks>""",
+        )
+        self.assertIsInstance(
+            tasks[0].attachments()[0], attachment.MailAttachment
+        )
+
+    def test_a_selected_icon_is_written_back_while_the_icon_is_unchanged(
+        self,
+    ):
+        tasks, _, _ = self.read(
+            'tskversion="37"',
+            '<tasks><task id="t1" icon="nuvola_apps_clock" '
+            'selectedIcon="nuvola_actions_go-next"/></tasks>',
+        )
+        written = self.write(tasks)
+        tasks[0].set_icon_id("nuvola_actions_go-next")
+        self.assertEqual(
+            (True, False),
+            (
+                'selectedIcon="nuvola_actions_go-next"' in written,
+                "selectedIcon" in self.write(tasks),
+            ),
+        )
+
+    def test_a_stated_modification_date_is_written_back(self):
+        # Also when equal to the creation date, which is left out
+        # otherwise
+        tasks, _, _ = self.read(
+            'tskversion="37"',
+            """
+        <tasks>
+            <task id="t1" creationDateTime="2026-01-01 10:00:00"
+                modificationDateTime="2026-01-01 10:00:00"/>
+            <task id="t2" creationDateTime="2026-01-01 10:00:00"/>
+        </tasks>""",
+        )
+        self.assertEqual(
+            1, self.write(tasks).count('modificationDateTime="2026-01-01')
         )

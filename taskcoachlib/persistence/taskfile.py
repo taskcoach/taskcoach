@@ -23,7 +23,7 @@ import shutil
 import stat
 from . import xml
 from .merge import merge_into
-from taskcoachlib import patterns
+from taskcoachlib import meta, patterns
 from taskcoachlib.domain import attachment, categorizable, category, effort
 from taskcoachlib.domain import note, task
 from taskcoachlib.i18n import _
@@ -474,6 +474,11 @@ class TaskFile(patterns.Observer):
         reader = xml.XMLReader(fd)
         result = reader.read()
         duplicate_ids = reader.get_duplicate_ids()
+        # Saved by this release before it wrote the forms older releases
+        # read: saved again in them (docs/PERSISTENCE_XML.md, Versions
+        # and Compatibility)
+        needed = reader.version_needed()
+        self.__rewrite = needed if needed > meta.data.tskversion else 0
         return result, duplicate_ids
 
     def _log_duplicate_ids(self, duplicate_ids):
@@ -515,6 +520,7 @@ class TaskFile(patterns.Observer):
         stat = self.__disk_stat()
         duplicate_ids = None
         self.__corrected_ids = {}
+        self.__rewrite = 0
         try:
             if self.exists():
                 fd = self._openForRead()
@@ -542,6 +548,14 @@ class TaskFile(patterns.Observer):
             self.mark_clean()
             if duplicate_ids:
                 # Corrected while reading: saving keeps the new IDs
+                self.mark_dirty()
+            if self.__rewrite and not self.__read_only:
+                log_step(
+                    "%s needs tskversion %d: saved again so that releases "
+                    "reading %d open it"
+                    % (self.__filename, self.__rewrite, meta.data.tskversion),
+                    prefix="FILE",
+                )
                 self.mark_dirty()
             self.__changedOnDisk = False
             self.__saved_stat = stat

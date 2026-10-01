@@ -55,9 +55,14 @@ release_year = "2026"  # Year of the release
 # =============================================================================
 
 
-# Task file format version (38 since release 2.0.3.0: categories
-# stored on the items).
-tskversion = 38
+# Task file format versions (docs/PERSISTENCE_XML.md, Versions and
+# Compatibility). The format this release writes and the newest it
+# reads (38 since 2.0.3.0: categories stored on the items):
+tskformat = 38
+# The format a reader needs for this release's files, which releases
+# before 2.0.3.0 check: 37 while the files also hold the forms 2.0.2.0
+# and later read (persistence/xml/legacy.py).
+tskversion = 37
 release_status = "alpha"  # One of 'alpha', 'beta', 'stable'
 
 # No editing needed below this line for doing a release.

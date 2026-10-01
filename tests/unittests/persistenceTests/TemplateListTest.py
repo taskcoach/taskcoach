@@ -16,8 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
+import shutil
+import tempfile
 import test, xml
-from taskcoachlib import persistence
+from taskcoachlib import config, persistence
+from taskcoachlib.domain import task
 
 
 class Fake(object):
@@ -83,3 +87,43 @@ class TemplateListTestCase(test.TestCase):
             ".", TemplateReaderThatThrowsParseError, FakeFileClass
         )
         self.assertEqual([], templateList.tasks())
+
+
+class TemplateSavedForOlderReleasesTest(test.TestCase):
+    """A template saved by 2.0.3.0 before it wrote the forms older
+    releases read, which skip it, is saved again in them when read
+    (docs/PERSISTENCE_XML.md, Versions and Compatibility)."""
+
+    def setUp(self):
+        super().setUp()
+        task.Task.settings = config.Settings(load=False)
+        self.path = tempfile.mkdtemp()
+        self.filename = os.path.join(self.path, "template.tsktmpl")
+
+    def tearDown(self):
+        shutil.rmtree(self.path)
+        super().tearDown()
+
+    def read_template_written_with(self, versions):
+        with open(self.filename, "w", encoding="utf-8") as fd:
+            fd.write(
+                '<?xml version="1.0" encoding="utf-8"?>\n'
+                '<?taskcoach release="2.0.3" %s?>\n'
+                '<tasks><task id="t1" subject="Template"/></tasks>\n'
+                % versions
+            )
+        template_list = persistence.TemplateList(self.path)
+        with open(self.filename, encoding="utf-8") as fd:
+            subjects = [each.subject() for each in template_list.tasks()]
+            return subjects, fd.read()
+
+    def test_a_template_older_releases_skip_is_saved_again(self):
+        subjects, written = self.read_template_written_with('tskversion="38"')
+        self.assertEqual(
+            (["Template"], True),
+            (subjects, 'tskversion="37" tskformat="38"' in written),
+        )
+
+    def test_a_template_older_releases_read_is_left_alone(self):
+        _, written = self.read_template_written_with('tskversion="37"')
+        self.assertIn('release="2.0.3" tskversion="37"?>', written)

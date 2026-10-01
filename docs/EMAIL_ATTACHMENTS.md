@@ -40,7 +40,11 @@ and opened. Attachments in general: [ATTACHMENTS.md](ATTACHMENTS.md).
 | Sent | `sentDateTime` | `Date`, in local time, whole seconds; not set when missing or unreadable |
 | Location | `location` | `mid:` and the `Message-ID` without its angle brackets, escaped as a URL (RFC 2392); empty when there is none |
 
-`type="mail"`. A missing attribute is empty or not set
+`type="mail"`; while releases before 2.0.3.0 are supported it is
+written as `type="uri"`, the link they keep, and read back as a mail
+by its `mid:` link. A mail without a link stays `type="mail"`, which
+they drop ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#versions-and-compatibility)).
+A missing attribute is empty or not set
 ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#defaults)). The model:
 `MailAttachment` (`domain/attachment/attachment.py`); every attachment
 answers `from_name()`, `from_address()` and `sent_datetime()`, empty
