@@ -539,9 +539,11 @@ each with the recommended action, none ruled yet:
   `searchctrl.py`), `setDaemon` (`fs_poller.py`); `wx.NewId()`
   (`menu.py`, `newid.py`, `searchctrl.py`) warns on every run.
   Recommended: replace all.
-- P60. `.gitattributes`' `debian/ export-ignore` also drops
-  `build.in/debian/` from source tarballs, so `setup.py`, the PKGBUILD
-  and `debian/rules` miss the appdata file. Recommended: `/debian/`.
+- P60. ~~Source tarballs dropped `build.in/debian/` (the appdata
+  file)~~: fixed 2026-09-30, **asked by designer**: `/debian/
+  export-ignore` excludes only the top-level folder. No build uses
+  `git archive` or GitHub's archives: the Arch and RPM workflows tar
+  their checkout.
 - P61. The run-from-source scripts README points to fail: they check
   the removed `desktop` module, install no pyenchant;
   `test_taskcoach.sh` checks files that do not exist. Fix or retire?
