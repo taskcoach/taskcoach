@@ -92,8 +92,8 @@ Decided with the maintainer, 2026-09-27:
 ## Current Behaviour
 
 `WindowGeometryTracker` (`taskcoachlib/gui/windowdimensionstracker.py`)
-handles both window kinds; `WindowDimensionsTracker` adds start
-minimized for the main window.
+handles both window kinds; `WindowDimensionsTracker` is the main
+window's (section `window`).
 
 ### Main Window
 
@@ -163,10 +163,10 @@ minimized, to hide the window when minimized and to minimize it when
 closed were removed 2026-09-30, **ruled by designer**
 ([SYSTEM_TRAY.md](SYSTEM_TRAY.md#minimize-and-hide)). A window the
 user minimizes during placement is maximized, if saved so, once
-restored ([Main Window](#main-window) step 6). While it is minimized, `ViewerContainer` does not
-focus the active viewer: focusing a control of a minimized window
-makes the X11 window manager activate, and so restore, it. The skipped
-focus is given on the restore.
+restored ([Main Window](#main-window) step 6). While it is minimized,
+`ViewerContainer` does not focus the active viewer: focusing a control
+of a minimized window makes the X11 window manager activate, and so
+restore, it. The skipped focus is given on the restore.
 
 ### Editors
 

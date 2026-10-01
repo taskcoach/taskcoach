@@ -3,7 +3,7 @@
 Plan to replace the full scan `MasterScheduler` runs every second.
 [SCHEDULERS.md](SCHEDULERS.md) describes the scheduler as it is.
 
-**Status:** every item done or decided but 34, 42 and 43, 2026-09-30
+**Status:** every item done or decided but 42 and 43, 2026-09-30
 ([Cost After](#cost-after)); what is left: [To Do](#to-do).
 
 ## To Do

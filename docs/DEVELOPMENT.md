@@ -121,5 +121,5 @@ docstrings, docs and log messages.
 - Title: what the change does, imperative, short. No version numbers
   and no issue references (issue links are added to the PR).
 - Body: a sentence or two of why, then short bullets of what changed.
-- Squash work-in-progress commits into one concise commit before
-  pushing a branch.
+- Squash a branch's commits into one concise commit when its pull
+  request is ready; pushes before that keep the full history.
