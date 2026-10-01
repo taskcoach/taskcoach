@@ -890,11 +890,19 @@ each with the recommended action, none ruled yet:
   Delete and Select All act on its text
   ([MENUS.md](MENUS.md#keyboard-shortcuts)).
 - P130. A menu shortcut does nothing while its item is disabled, and
-  items are updated only when their menu opens: open Actions with no
-  task selected, select one, and Ctrl+Return (Mark completed) does
-  nothing until the menu is opened again (checked in the app). The
-  on-open design is on master ([MENUS.md](MENUS.md)); Undo and Redo
-  avoid it since P129.
+  items are updated only when their menu opens, so an item disabled
+  then blocks its shortcut until the menu opens again. Checked in the
+  app, the same on master: view the File menu with nothing to save,
+  change a task, and Ctrl+S does not save (the title keeps its "*");
+  open Actions with no task selected, select one, and Ctrl+Return
+  (Mark completed) does nothing. Every menu-only shortcut can be hit
+  (Ctrl+S, Ctrl+Shift+A, the Mark, priority, tracking, note and mail
+  keys); Undo and Redo avoid it since P129, and the viewer's own
+  table serves Return, Ctrl+X/C/V and Ctrl+Del. A probe confirmed
+  GTK skips a disabled item's shortcut, and that a menubar menu's
+  close event comes. Fix: enable a menu's items again when it closes;
+  each command already runs only when it is enabled
+  (`UICommand.on_command_activate()`).
 - P131. ~~Ctrl+Shift+A was both Edit > Deselect All and Actions > Add
   attachment~~: fixed 2026-10-01, **ruled by designer**: the standard
   pattern wins ("if someone asks for an attachment shortcut, we will
