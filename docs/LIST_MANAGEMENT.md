@@ -33,9 +33,10 @@
    infrastructure (`_hoverItem`, `PaintLevel`, `_refresh_hover_row`) could be
    reused or extended to also draw around selected items using a different
    color pair (e.g. `SYS_COLOUR_HIGHLIGHT` / `SYS_COLOUR_HIGHLIGHTTEXT`).
-2. ~~**Eliminate UpdateUI polling entirely**~~: **Done.** All `EVT_UPDATE_UI`
-   bindings removed from UICommand. Replaced by signal-driven `_SelectionSync`
-   and `_ViewSettingsSync` classes. See [Vampire CPU Usage](#vampire-cpu-usage)
+2. ~~**Eliminate UpdateUI polling entirely**~~: **Done.** Toolbar buttons
+   follow signals (`_SelectionSync`, `_ViewSettingsSync`); menu items answer
+   `EVT_UPDATE_UI`, which wx sends only on demand ([MENUS.md](MENUS.md));
+   no update events in idle time. See [Vampire CPU Usage](#vampire-cpu-usage)
    for background.
 
 ---
@@ -241,8 +242,8 @@ StatusBar displays status
 
 ## Selection-Driven Button Enable/Disable
 
-See [MENUS.md](MENUS.md) for the menu-side architecture (MenuItem subclass,
-`_update_menu_state()`, menu-level state methods).
+See [MENUS.md](MENUS.md) for the menu-side architecture (menu items answer
+wx's `EVT_UPDATE_UI` when a menu opens and before a shortcut).
 
 Toolbar and menu commands that depend on selection state (Edit, Delete, Cut,
 Copy, etc.) update their enabled state via Publisher signal — not polling.
@@ -287,10 +288,10 @@ that subscribes to the viewer's selection signal via `registerObserver`
 and calls `command.enabled()` → `toolbar.EnableTool()` on change. Each
 command creates one in its `append_to_toolbar`.
 
-**Commands**: Each selection-dependent command overrides `onUpdateUI` as
-a no-op, creates a `_SelectionSync` in `append_to_toolbar`, and owns its
-`enabled()` check. Signal handlers and menu open both call
-`command.enabled()` — one source of truth.
+**Commands**: Each selection-dependent command creates a `_SelectionSync`
+in `append_to_toolbar` and owns its `enabled()` check. Toolbar signals and
+the menus' update events both call `command.enabled()`: one source of
+truth.
 
 ### Key Files
 
@@ -338,8 +339,8 @@ the viewer's settings event via `registerObserver`. On change, calls
 `command.enabled()` → `toolbar.EnableTool()`.
 
 **Commands**: `ViewExpandAll` and `ViewCollapseAll` each create a
-`_ViewSettingsSync` in `append_to_toolbar` and override `onUpdateUI`
-as a no-op (these buttons are fully signal-driven).
+`_ViewSettingsSync` in `append_to_toolbar` (these buttons are fully
+signal-driven).
 
 **Dropdown**: `TaskViewerTreeOrListChoice` subscribes to the same signal
 and reads the current treemode value from settings on change.
@@ -845,17 +846,20 @@ continuous polling overhead.
 | `on_idle` | `taskbaricon.py:155` | Compares tooltip text + icon strings |
 | `_on_idle` | `windowdimensionstracker.py:469` | Checks ready flag (cheap early return) |
 
-### The Fix: SetUpdateInterval
+### The Fix: No Update Events in Idle Time
 
-`wx.UpdateUIEvent.SetUpdateInterval(200)` in `application.py:OnInit` throttles
-UpdateUI processing to fire at most every 200ms instead of on every idle cycle.
-This is wx's official recommended API for this exact problem.
+First `SetUpdateInterval(200)` throttled the polling, then the toolbar
+buttons moved to signals. Measured 2026-10-01, idle, with nothing left
+to answer them, about 37 update events a second still went out: wx's
+idle pass over every window (about 10), and AGW's `AuiToolBar` sending
+one per tool in every idle cycle, on its own (about 27).
 
-**Before:** ~30 `enabled()` calls on every idle cycle (hundreds/sec during
-mouse motion, ~2/sec when idle via timer ticks).
-
-**After:** ~30 `enabled()` calls at most every 200ms (~5 batches/sec max),
-regardless of how many idle cycles occur.
+Now `wx.UpdateUIEvent.SetUpdateInterval(-1)` in `application.py:OnInit`
+turns wx's idle updates off (the documented switch), and
+`_Toolbar.DoIdleUpdate()` (`gui/toolbar.py`) skips AGW's loop: none in
+idle time. Menus are not idle-driven: wx asks their items when a menu
+opens, before a popup menu shows and before a shortcut acts
+([MENUS.md](MENUS.md)).
 
 ### Why only toolbar items, not menu items?
 
@@ -880,7 +884,7 @@ then removed. Re-add any of them to trace a specific path:
 | OnMouse new-row | `hypertreelist.py:OnMouse` fast-path | `OnMouse` | Mouse crossing to a new row (triggers HitTest) |
 | OnMouse fallthrough | `hypertreelist.py:OnMouse` after fast-path | `OnMouse` | Non-motion events (clicks, drag) entering full handler |
 | Tooltip motion | `tooltip.py:__on_motion` | `TOOLTIP` | Debounced call restart on every mouse move |
-| UpdateUI poll | `base_uicommand.py:onUpdateUI` | `UpdateUI` | Each toolbar button's enabled() poll |
+| Menu item asked | `base_uicommand.py:on_menu_update_ui` | `UpdateUI` | Each menu item's enabled() when wx asks |
 | Taskbar idle | `taskbaricon.py:on_idle` | `EVT_IDLE` | Tray icon tooltip/icon string comparison |
 | Window dims idle | `windowdimensionstracker.py:_on_idle` | `EVT_IDLE` | Window position/size readiness check |
 | Autosaver idle | `autosaver.py:on_idle` | `EVT_IDLE` | Dirty-file save during idle |

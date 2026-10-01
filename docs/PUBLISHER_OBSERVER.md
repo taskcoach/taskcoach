@@ -315,7 +315,7 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
    |---|---|
    | A delayed call reaching a window closed meanwhile | `patterns.later` skips it when its owner is gone ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); the older `__safe*()` wrappers in the widgets and viewers, the in-place editors, `Editor._deferred_destroy()`, and the viewer container's focus remain as a second check; the `not self or IsBeingDeleted()` checks also skip a window being deleted, which the service still runs |
    | wx events while a window's children are being destroyed | `TaskEntry._onDestroy()`, `Viewer.SetFocus()`, `AttributeSync`'s callback, the tree and list `curselection()`, the column sort |
-   | Menu items that outlive their menu, wx assertions | `update_menu_text()`, `MenuItem.update_state()`, `on_update_menu()` |
+   | Menu items that outlive their menu, wx assertions | `update_menu_text()`, `on_update_menu()`; `Menu.DestroyItem()` and `UICommand.remove_from_menu()` unbind an item's update handler |
    | Shutdown | `Application.display_message()` |
 
    The app-wide `wx.CallAfter` guard (`workarounds/monkeypatches.py`)

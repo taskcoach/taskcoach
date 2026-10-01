@@ -61,6 +61,33 @@ class UICommandTest(test.wxTestCase):
         self.activate(self.frame.GetToolBar(), menuId)
         self.assertTrue(self.uicommand.activated)
 
+    def ask(self, item_id):
+        """What wx asks when a menu opens or before a shortcut: the
+        commands asked."""
+        asked = []
+        self.uicommand.enabled = lambda event: asked.append(event) or True
+        self.frame.ProcessEvent(wx.UpdateUIEvent(item_id))
+        return asked
+
+    def test_a_menu_item_takes_its_state_from_its_command(self):
+        menu_id = self.uicommand.add_to_menu(self.menu, self.frame)
+        self.uicommand.enabled = lambda event: False
+        self.menu.UpdateUI(self.frame)
+        self.assertFalse(self.menu.IsEnabled(menu_id))
+        self.uicommand.enabled = lambda event: True
+        self.menu.UpdateUI(self.frame)
+        self.assertTrue(self.menu.IsEnabled(menu_id))
+
+    def test_a_menu_item_is_asked_until_removed(self):
+        menu_id = self.uicommand.add_to_menu(self.menu, self.frame)
+        self.assertEqual(1, len(self.ask(menu_id)))
+        self.uicommand.remove_from_menu(self.menu, self.frame)
+        self.assertEqual([], self.ask(menu_id))
+
+    def test_a_toolbar_button_is_not_asked(self):
+        tool_id = self.uicommand.append_to_toolbar(self.frame.GetToolBar())
+        self.assertEqual([], self.ask(tool_id))
+
 
 class wxTestCaseWithFrameAsTopLevelWindow(test.wxTestCase):
     def setUp(self):

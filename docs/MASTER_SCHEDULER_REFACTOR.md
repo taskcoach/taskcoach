@@ -889,34 +889,21 @@ each with the recommended action, none ruled yet:
   nothing there, from the keys or the menu, and Cut, Copy, Paste,
   Delete and Select All act on its text
   ([MENUS.md](MENUS.md#keyboard-shortcuts)).
-- P130. A menu shortcut does nothing while its item is disabled, and
-  since 2.0.2.2 items are updated only when their menu opens, so an
-  item disabled then blocks its shortcut until the menu opens again.
-  Checked in the app on this branch and master: view the File menu
-  with nothing to save, change a task, and Ctrl+S does not save (the
-  title keeps its "*"); the same with Ctrl+Return after Actions was
-  opened with nothing selected. In 2.0.2.1 that Ctrl+S saves. Every
-  platform asks the application for an item's state just before its
-  shortcut acts: Windows sends WM_INITMENUPOPUP, macOS validates the
-  item, and wxWidgets turns both, and GTK's can-activate-accel, into
-  `EVT_UPDATE_UI` for the item (on GTK and Windows only on menu open
-  and before a shortcut, never in idle time). a20c9164c (2026-02-21,
-  2.0.2.2) replaced the menu items' `EVT_UPDATE_UI` handlers with an
-  update on menu open, along with the toolbar buttons' idle polling
-  it was removing, so the check before a shortcut lost its answer.
-  Prototyped 2026-10-01 in a scratch copy: menu items answer it
-  (enabled and checked only; labels keep their Publisher updates and
-  timing, so the GTK3 sizing rule of PUBLISHER_OBSERVER.md holds), the
-  own on-open and popup updaters go, `SetUpdateInterval(-1)` stops
-  wx's idle pass, and the toolbar skips AGW's own idle loop over its
-  tools (`AuiToolBar.DoIdleUpdate`, every idle cycle). Measured: idle,
-  about 37 unanswered update events a second before, none after;
-  Ctrl+S, Ctrl+Return, Ctrl+Shift+A and Ctrl+I work after their menu
-  was viewed disabled; first-open menus identical to the current
-  code; a menu open costs 1 to 11 ms (View: 110 checks), the task
-  right-click menu 84 checks; no handlers left behind by refilled
-  submenus; the test catalog passes. Not checked: Windows, macOS, a
-  global menu bar (which never gets menu-open events, as today).
+- P130. ~~A menu item disabled when its menu last opened blocked its
+  shortcut until the menu opened again~~ (Ctrl+S did not save after the
+  File menu was viewed with nothing to save): fixed 2026-10-01,
+  **ruled by designer** ("this should be brought back to standard"),
+  the same on master since 2.0.2.2 (a20c9164c replaced the menu items'
+  update events with an update on menu open). Menu items answer wx's
+  `EVT_UPDATE_UI` again, which every platform has wx send when a menu
+  opens, before a popup menu and before a shortcut; enabled and checked
+  only, labels as before (GTK3 sizing). No update events in idle time
+  any more: `SetUpdateInterval(-1)` and the toolbar skipping AGW's own
+  loop; idle, about 37 a second before, none after (measured). Checked
+  in the app: the four shortcuts, menus identical on first open, no
+  handlers left by refilled submenus ([MENUS.md](MENUS.md),
+  [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#vampire-cpu-usage)). Not
+  checked: Windows, macOS, a global menu bar.
 - P131. ~~Ctrl+Shift+A was both Edit > Deselect All and Actions > Add
   attachment~~: fixed 2026-10-01, **ruled by designer**: the standard
   pattern wins ("if someone asks for an attachment shortcut, we will

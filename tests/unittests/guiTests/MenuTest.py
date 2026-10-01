@@ -270,8 +270,8 @@ class ViewMenuTestCase(test.wxTestCase):
         return menu
 
     def open_menu(self):
-        # What MainMenu does on EVT_MENU_OPEN
-        self.menu._update_menu_state()
+        # What wx does when the menu opens
+        self.menu.UpdateUI()
 
     def testSortOrderAscending(self):
         self.viewerContainer.setSortOrderAscending(True)

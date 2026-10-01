@@ -50,6 +50,7 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
             # Its own subscriptions end with it, like a window's
             patterns.Publisher().remove_observers_of(submenu)
         self._window.Unbind(wx.EVT_MENU, id=menuItem.GetId())
+        self._window.Unbind(wx.EVT_UPDATE_UI, id=menuItem.GetId())
         super().DestroyItem(menuItem)
 
     def Destroy(self):
@@ -77,12 +78,6 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
 
     # Keep old name as alias
     appendUICommand = append_ui_command
-
-    def _update_menu_state(self):
-        """Update enabled and text state of all menu items. Called on menu open."""
-        for item in self.GetMenuItems():
-            if hasattr(item, "update_state"):
-                item.update_state()
 
     def appendMenu(self, text, subMenu, icon_id=None):
         subMenuItem = wx.MenuItem(
@@ -240,13 +235,6 @@ class MainMenu(wx.MenuBar):
             self.Append(menu, text)
             accels.extend(menu.accelerators())
         mainwindow.SetAcceleratorTable(wx.AcceleratorTable(accels))
-        mainwindow.Bind(wx.EVT_MENU_OPEN, self._on_menu_open)
-
-    def _on_menu_open(self, event):
-        event.Skip()
-        menu = event.GetMenu()
-        if menu and hasattr(menu, "_update_menu_state"):
-            menu._update_menu_state()
 
 
 class FileMenu(Menu, patterns.Observer):

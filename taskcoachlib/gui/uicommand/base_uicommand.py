@@ -31,28 +31,12 @@ from taskcoachlib.meta.debug import log_step
 
 
 class MenuItem(wx.MenuItem):
-    """Menu item that knows its command and can update its own enabled state."""
+    """Menu item that knows its command; the command answers wx's
+    EVT_UPDATE_UI for it (UICommand.on_menu_update_ui())."""
 
     def __init__(self, command, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._command = command
-
-    def update_state(self):
-        enabled = bool(self._command.enabled(None))
-        self.Enable(enabled)
-        new_text = self._command.current_menu_text()
-        if new_text is not None:
-            try:
-                self.SetItemLabel(new_text)
-            except Exception as e:
-                log_step(
-                    "MenuItem.update_state: dead menu item: %s" % e,
-                    prefix="DEAD-OBJ",
-                )
-        if enabled and self.IsCheckable():
-            check = self._command.checked()
-            if check is not None:
-                self.Check(check)
 
 
 class UICommand(patterns.Observer):
@@ -143,7 +127,27 @@ class UICommand(patterns.Observer):
         else:
             menu.Insert(position, menu_item)
         self.bind(window, self.id)
+        # Menu items only: toolbar buttons follow signals, not update
+        # events (docs/MENUS.md)
+        window.Bind(wx.EVT_UPDATE_UI, self.on_menu_update_ui, id=self.id)
         return self.id
+
+    def on_menu_update_ui(self, event):
+        """wx asks a menu item's state when its menu opens, before a
+        popup menu shows and before the item's shortcut acts, which
+        GTK ignores while the item is disabled (docs/MENUS.md)."""
+        # Enabled and checked change no menu geometry; a label set here
+        # is set as the menu opens (docs/PUBLISHER_OBSERVER.md, GTK3
+        # Dynamic Menu Item Sizing)
+        enabled = bool(self.enabled(None))
+        event.Enable(enabled)
+        new_text = self.current_menu_text()
+        if new_text is not None:
+            event.SetText(new_text)
+        if enabled and event.IsCheckable():
+            check = self.checked()
+            if check is not None:
+                event.Check(check)
 
     def add_bitmap_to_menu_item(self, menu_item):
         if (
@@ -180,6 +184,7 @@ class UICommand(patterns.Observer):
                 break
         if menu_id is not None:
             self.unbind(window, menu_id)
+            window.Unbind(wx.EVT_UPDATE_UI, id=menu_id)
 
     def append_to_toolbar(self, toolbar):
         self.toolbar = toolbar

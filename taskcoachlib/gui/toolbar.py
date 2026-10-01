@@ -34,6 +34,10 @@ class _Toolbar(aui.AuiToolBar):
     def __init__(self, parent, style):
         super().__init__(parent, agwStyle=aui.AUI_TB_NO_AUTORESIZE)
 
+    def DoIdleUpdate(self):
+        """AuiToolBar sends an update event for every tool in every
+        idle cycle; the tools follow signals instead (docs/MENUS.md)."""
+
     def AddLabelTool(self, id, label, bitmap1, bitmap2, kind, **kwargs):
         long_help_string = kwargs.pop("longHelp", "")
         short_help_string = kwargs.pop("shortHelp", "")

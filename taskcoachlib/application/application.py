@@ -490,10 +490,9 @@ class WxApp(wx.App):
         self.reopen_callback()
 
     def OnInit(self):
-        # Throttle UpdateUI processing to every 200ms instead of every idle
-        # cycle.  Without this, wx fires 20+ UpdateUI handlers on EVERY idle
-        # event (including between mouse-move events), causing measurable CPU.
-        wx.UpdateUIEvent.SetUpdateInterval(200)
+        # No update events in idle time: menus get theirs when they open
+        # and before a shortcut, toolbars follow signals (docs/MENUS.md)
+        wx.UpdateUIEvent.SetUpdateInterval(-1)
         if operating_system.isWindows():
             self.Bind(wx.EVT_QUERY_END_SESSION, self.on_query_end_session)
         return True

@@ -113,16 +113,10 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         if not self._itemIsOk(item):
             # Clicked on empty space - clear selection and show popup
             self.clear_selection()
-            self._updateMenuUI()
             self.PopupMenu(self._itemPopupMenu)
         else:
             # Clicked on an item - let normal event handling take over
             event.Skip()
-
-    def _updateMenuUI(self):
-        """Update enabled state of menu items based on current selection."""
-        if hasattr(self._itemPopupMenu, "_update_menu_state"):
-            self._itemPopupMenu._update_menu_state()
 
     def on_item_popup_menu(self, event):
         """Handle popup menu for tree controls (EVT_TREE_ITEM_RIGHT_CLICK, EVT_CONTEXT_MENU)."""
@@ -149,14 +143,12 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
                 # Clicked on empty space - clear selection so menu items
                 # properly reflect no selection
                 self.clear_selection()
-                self._updateMenuUI()
                 self.PopupMenu(self._itemPopupMenu)
                 return
             if not self.IsSelected(item):
                 self.clear_selection()
                 self.SelectItem(item)
-        # Update menu item enabled states and show popup
-        self._updateMenuUI()
+        # PopupMenu() asks the items' states first (EVT_UPDATE_UI)
         self.PopupMenu(self._itemPopupMenu)
 
     def on_list_item_right_click(self, event):
@@ -173,8 +165,7 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         if not self.IsSelected(item_index):
             self.clear_selection()
             self.Select(item_index, True)
-        # Update menu and show popup
-        self._updateMenuUI()
+        # PopupMenu() asks the items' states first (EVT_UPDATE_UI)
         self.PopupMenu(self._itemPopupMenu)
 
     def on_list_context_menu(self, event):
@@ -194,8 +185,7 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
                 return
             # Click on empty space - clear selection
             self.clear_selection()
-        # Update menu and show popup
-        self._updateMenuUI()
+        # PopupMenu() asks the items' states first (EVT_UPDATE_UI)
         self.PopupMenu(self._itemPopupMenu)
 
 
