@@ -791,11 +791,25 @@ each with the recommended action, none ruled yet:
   Every build on 4.2.4 or later: Windows and macOS (the latest
   wxPython until 2026-09-23, 4.3.1 since), Flatpak and the AppImage,
   Arch, Fedora 43; not Debian 12 and 13, Ubuntu 22.04 and 24.04.
-  Checked in the app on 4.2.5 and 4.2.3 (2026-10-01). Proposed fix,
-  checked in a scratch copy: all highlighting through one
-  `SetItemHilight()` in the HyperTreeList copy, which keeps the set
-  where wxPython has it, as wxPython's own HyperTreeList does since
-  4.2.4.
+  Checked in the app on 4.2.5 and 4.2.3 (2026-10-01).
+  Root cause: half a copy. The copy is wxPython 4.2.2's
+  `hypertreelist.py` (its "2014" header line is upstream's, never
+  updated) with Task Coach's changes; its base class comes from the
+  installed wxPython's `customtreectrl.py` (4.0.7 to 4.3.1 across the
+  builds), which 4.2.4 changed. Upstream's 4.2.4+ `hypertreelist.py`
+  does not import on an older `customtreectrl.py` (`EnsureText`,
+  `BisectChildren`), so the copy could not follow it alone.
+  Options, each checked in a scratch copy (catalog on 4.2.3 and 4.2.5):
+  - A. Patch the copy for 4.2.4's selection set: all pass; the copy
+    still runs on whichever base each build has.
+  - B. Bundle 4.2.3's `customtreectrl.py` (the same 4.2.0 to 4.2.3)
+    with the copy: all pass, no other code change; every build runs
+    the certified platform's tree code.
+  - C. Bundle 4.3.1's pair and redo Task Coach's changes on it: the
+    pure pair runs on both; fails only where those changes are
+    missing (column text sync, the rebuild's highlight). 31 changed
+    methods, 11 also rewritten upstream (`PaintItem`, `OnMouse`,
+    `PaintLevel`).
 - P119. Files left open: the template list (`templatelist.py` 64, 72,
   92), the CSV import's encoding guess (`csvimport.py` 155), an empty
   file check (`uicommand.py` 719), `anonymize.py` 62. Python warns at
