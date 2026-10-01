@@ -1360,7 +1360,11 @@ class ActivateViewer(ViewerCommand):
 
 
 class HideCurrentColumn(ViewerCommand):
+    """Hide the column whose header was right-clicked: the column menu
+    records it when it opens, before the pointer moves onto the menu."""
+
     def __init__(self, *args, **kwargs):
+        self.__menu = kwargs.pop("menu")
         super().__init__(
             menu_text=_("&Hide this column"),
             help_text=_("Hide the selected column"),
@@ -1369,24 +1373,10 @@ class HideCurrentColumn(ViewerCommand):
         )
 
     def do_command(self, event):
-        columnPopupMenu = event.GetEventObject()
-        self.viewer.hide_column(columnPopupMenu.columnIndex)
+        self.viewer.hide_column(self.__menu.columnIndex)
 
     def enabled(self, event):
-        # Unfortunately the event (an UpdateUIEvent) does not give us any
-        # information to determine the current column, so we have to find
-        # the column ourselves. We use the current mouse position to do so.
-        widget = (
-            self.viewer.getWidget()
-        )  # Must use method to make sure viewer dispatch works!
-        x, y = widget.ScreenToClient(wx.GetMousePosition())
-        # Use wx.Point because CustomTreeCtrl assumes a wx.Point instance:
-        columnIndex = widget.HitTest(wx.Point(x, y))[2]
-        # The TreeListCtrl returns -1 for the first column sometimes,
-        # don't understand why. Work around as follows:
-        if columnIndex == -1:
-            columnIndex = 0
-        return self.viewer.is_hideable_column(columnIndex)
+        return self.viewer.is_hideable_column(self.__menu.columnIndex)
 
 
 class ViewColumn(ViewerCommand, settings_uicommand.UICheckCommand):

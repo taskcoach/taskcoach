@@ -1177,7 +1177,7 @@ class ColumnPopupMenuMixin(object):
         ):  # Prevent PyDeadObject exception when running tests
             return []
         return [
-            uicommand.HideCurrentColumn(viewer=self._window),
+            uicommand.HideCurrentColumn(viewer=self._window, menu=self),
             None,
         ] + self._window.getColumnUICommands()
 

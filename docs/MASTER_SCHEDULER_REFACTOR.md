@@ -943,13 +943,12 @@ each with the recommended action, none ruled yet:
   (`sounds/__init__.py`): Python warns "subprocess is still running"
   (seen with warnings on) and reaps it later. Nothing is lost. Keep
   the object until it ends, or leave?
-- P136. "Hide this column" in a column header's menu refuses the click
-  when the menu item lies over another column or pane at that moment,
-  as for the rightmost column, whose menu opens over the next pane: it
-  reads the column under the pointer when clicked, not the one
-  right-clicked. The same on master (found 2026-10-01 in the To Do 67
-  checks; a click over the same column hides it). Take the column the
-  menu was opened on?
+- P136. ~~"Hide this column" refused the click when its menu item lay
+  over another column or pane~~: fixed 2026-10-01, **ruled by
+  designer** ("whatever is under the pointer point, if I right click
+  and I hide, that gets hidden"), the same on master. The command
+  checked the column under the pointer when the item was clicked; it
+  now takes the column the menu was opened on, as the hide always did.
 - P137. After a drag and drop in a tree view the selection lands on
   the row above the dragged task's old place, not on the dragged task;
   the same on master (found 2026-10-01). The move reaches the viewer

@@ -991,6 +991,25 @@ class CommonTestsMixin(object):
         ]
         self.assertEqual(1, len(received))
 
+    def hide_this_column(self, column_name):
+        # The menu records the right-clicked column when it opens;
+        # where the pointer is at the click does not matter
+        menu = gui.menu.ColumnPopupMenu(self.viewer)
+        names = [column.name() for column in self.viewer.visibleColumns()]
+        menu.columnIndex = names.index(column_name)
+        return gui.uicommand.HideCurrentColumn(viewer=self.viewer, menu=menu)
+
+    def test_hide_this_column_hides_the_column_right_clicked(self):
+        self.showColumn("priority")
+        hide = self.hide_this_column("priority")
+        self.assertTrue(hide.enabled(None))
+        hide.do_command(None)
+        names = [column.name() for column in self.viewer.visibleColumns()]
+        self.assertNotIn("priority", names)
+
+    def test_hide_this_column_is_off_for_a_column_always_shown(self):
+        self.assertFalse(self.hide_this_column("subject").enabled(None))
+
     def test_hiding_a_column_keeps_what_the_viewer_observes(self):
         # The viewer observes prerequisites for every row, the
         # prerequisites column too; hiding it drops only its own
