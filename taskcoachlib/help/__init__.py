@@ -552,7 +552,7 @@ shortcuts are not configurable at the moment.""") % meta.metaDict),
     p(
         table(
             tr(_("Ctrl-A"), editSelectAll),
-            tr(_("Shift-Ctrl-A"), addAttachment),
+            tr(_("Shift-Ctrl-A"), edit_deselect_all),
             tr(_("Ctrl-B"), addNote),
             tr(_("Shift-Ctrl-B"), openAllNotes),
             tr(_("Ctrl-C"), editCopy),

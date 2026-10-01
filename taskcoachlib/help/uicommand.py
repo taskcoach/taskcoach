@@ -30,6 +30,7 @@ addNote = _("Add a note to the selected item(s)")
 categoryNew = _("Insert a new category")
 editCut = _("Cut the selected item(s) to the clipboard")
 editCopy = _("Copy the selected item(s) to the clipboard")
+edit_deselect_all = _("Deselect all items")
 editPaste = _("Paste item(s) from the clipboard")
 editPasteAsSubitem = _(
     "Paste item(s) from the clipboard as subitem of the selected item"

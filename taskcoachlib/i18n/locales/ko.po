@@ -3391,7 +3391,7 @@ msgid "Insert a new note with the selected categories checked"
 msgstr "체크한 선택한 분류에 새 노트 삽입"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1936
-msgid "&Add attachment...\tShift-Ctrl-A"
+msgid "&Add attachment..."
 msgstr ""
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1960

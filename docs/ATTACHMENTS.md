@@ -48,7 +48,7 @@ be shared between computers.
   holds them, named after the first. The drop target
   (`DropTarget`, `widgets/draganddrop.py`) tells the kinds apart
   ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#the-drop) for mails).
-- **Add attachment...** (Shift+Ctrl+A) picks a file
+- **Add attachment...** picks a file
   (`uicommand.AddAttachment`); an editor's attachment tab has New.
 - A drop opens the owner's editor on its attachment tab and an editor
   for the new attachments.

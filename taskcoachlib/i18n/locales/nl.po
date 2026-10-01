@@ -3539,8 +3539,8 @@ msgstr ""
 "Een nieuwe notitie invoegen met de geselecteerde categoriën aangevinkt"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1936
-msgid "&Add attachment...\tShift-Ctrl-A"
-msgstr "&Bijlage toevoegen...\tShift-Ctrl-A"
+msgid "&Add attachment..."
+msgstr "&Bijlage toevoegen..."
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1960
 msgid "Error opening attachment"

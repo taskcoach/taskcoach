@@ -895,13 +895,16 @@ each with the recommended action, none ruled yet:
   nothing until the menu is opened again (checked in the app). The
   on-open design is on master ([MENUS.md](MENUS.md)); Undo and Redo
   avoid it since P129.
-- P131. Ctrl+Shift+A is both Edit > Deselect All and Actions > Add
-  attachment; the key opens the attachment dialog (checked in the
-  app). The same on master and in 2.0.2.0. Add attachment has had it
-  since the original (the Help's shortcut table, ATTACHMENTS.md);
-  Deselect All got it in January 2026 (aaa2fe78d), and gets the key
-  only while Add attachment's menu item is disabled (P130). No
-  translation has that menu text yet.
+- P131. ~~Ctrl+Shift+A was both Edit > Deselect All and Actions > Add
+  attachment~~: fixed 2026-10-01, **ruled by designer**: the standard
+  pattern wins ("if someone asks for an attachment shortcut, we will
+  add it and figure out something that doesn't conflict"). Deselect
+  All keeps it: Shift+Ctrl+A in GNOME's guidelines and KDE's standard
+  shortcuts. Windows and macOS have no deselect standard; Windows
+  reserves no Ctrl+Shift+A, and macOS lists Shift-Command-A (Apps,
+  Launchpad before Tahoe) among its Finder and system shortcuts,
+  likely the Finder's only (not checked on a Mac). Add attachment has
+  none; its translations and the Help's shortcut table follow.
 - P132. ~~Ctrl+Z and Ctrl+Y in an editor's text field undid and redid
   task changes, not the typing~~: fixed 2026-10-01, the code the same
   on master. The editor's shortcut table gets the keys before the

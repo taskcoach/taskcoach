@@ -3540,8 +3540,8 @@ msgstr ""
 "Neue Notiz hinzufügen, der die ausgewählten Kategorien zugeordnet sind"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1936
-msgid "&Add attachment...\tShift-Ctrl-A"
-msgstr "&Datei anfügen...\tShift-Ctrl-A"
+msgid "&Add attachment..."
+msgstr "&Datei anfügen..."
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1960
 msgid "Error opening attachment"

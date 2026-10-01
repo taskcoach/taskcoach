@@ -1180,7 +1180,7 @@ class ClearSelection(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             menu_text=_("&Deselect All\tCtrl+Shift+A"),
-            help_text=_("Deselect all items"),
+            help_text=help.edit_deselect_all,
             icon_id="taskcoach_actions_uncheckall",
             *args,
             **kwargs
@@ -3071,7 +3071,7 @@ class AttachmentNew(
 class AddAttachment(ViewerCommand, settings_uicommand.SettingsCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menu_text=_("&Add attachment...\tShift-Ctrl-A"),
+            menu_text=_("&Add attachment..."),
             help_text=help.addAttachment,
             icon_id="nuvola_status_mail-attachment",
             *args,
