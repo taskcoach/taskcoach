@@ -898,6 +898,12 @@ each with the recommended action, none ruled yet:
 - P131. Ctrl+Shift+A is both Edit > Deselect All and Actions > Add
   attachment; the key opens the attachment dialog (checked in the
   app). The same on master.
+- P132. ~~Ctrl+Z and Ctrl+Y in an editor's text field undid and redid
+  task changes, not the typing~~: fixed 2026-10-01, the code the same
+  on master. The editor's shortcut table gets the keys before the
+  field (as in P123); its Scintilla fields now count as text fields,
+  and their undo covers only the typing
+  ([MENUS.md](MENUS.md#keyboard-shortcuts)).
 
 ## Views on the Effective Styles
 

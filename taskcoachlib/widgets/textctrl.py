@@ -124,6 +124,8 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             self.SetText(text)
             self.SetCurrentPos(0)
             self.SetAnchor(0)
+        # Undo takes back the user's typing, not the text loaded
+        self.EmptyUndoBuffer()
 
         # Initialize spell checking
         self._init_spell_check()
@@ -573,6 +575,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
     def SetValue(self, value):
         """Set the text value (TextCtrl compatibility)."""
         self.SetText(value)
+        self.EmptyUndoBuffer()
         patterns.later.soon(self, self._performHighlighting)
 
     def AppendText(self, text):

@@ -218,7 +218,7 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 ### EditUndo / EditRedo
 
 - No `EVT_UPDATE_UI` polling
-- `enabled()`: the CommandHistory alone, whatever has focus
+- `enabled()`: true in a text field (it takes the key for its own undo), else the CommandHistory; the toolbar button follows the CommandHistory alone
 - `current_menu_text()`: dynamic text ("Undo *add task*", "Redo *delete*")
 - Toolbar: signal-driven via the `commandhistory.changed` Publisher event
 - Menu: updated via `_update_menu_state()` on menu open
@@ -272,15 +272,18 @@ the search box (`Viewer.createToolBarUICommands()`). The main
 window's table only adds numpad Enter to the menu's Enter shortcuts
 that have a modifier (`UICommand.accelerators()`).
 
-In a text field (`wx.TextCtrl` or `wx.SearchCtrl`, `_TEXT_FIELDS` in
-`uicommand.py`) the Edit menu's Undo, Redo, Cut, Copy, Paste, Delete
-and Select All act on its text, from the keyboard or the menu. The
-search box has no undo, so there Undo and Redo do nothing.
+In a text field (`wx.TextCtrl`, `wx.SearchCtrl` or the editors'
+Scintilla fields, `_TEXT_FIELDS` in `uicommand.py`) Undo, Redo, Cut,
+Copy, Paste, Delete and Select All act on its text, from the keyboard,
+the menu or an editor's Ctrl+Z and Ctrl+Y. A Scintilla field undoes
+the typing only: its undo history is emptied whenever the program sets
+its text. GTK 3's own single-line fields (the search box, the list's
+in-place editor) have no undo, so there Undo and Redo do nothing.
 
 GTK ignores the shortcut of a disabled menu item, and items are
 updated only when their menu opens, so an item disabled then stays
 disabled for its shortcut too. Undo and Redo are therefore enabled
-from the history alone, not the focused field.
+whenever a text field has focus or the history has a step.
 
 ---
 

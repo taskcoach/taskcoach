@@ -51,6 +51,7 @@ from taskcoachlib.gui.icons.icon_library import icon_catalog
 from taskcoachlib.tools import anonymize, openfile
 
 import wx
+import wx.stc
 import operator
 import os
 from . import base_uicommand
@@ -59,9 +60,9 @@ from . import settings_uicommand
 from functools import reduce
 
 # Text fields: the Edit commands act on their text instead of the
-# items, so the search box keeps its keys (docs/MENUS.md, Keyboard
-# Shortcuts)
-_TEXT_FIELDS = (wx.TextCtrl, wx.SearchCtrl)
+# items, so the search box and the editors' fields keep their keys
+# (docs/MENUS.md, Keyboard Shortcuts)
+_TEXT_FIELDS = (wx.TextCtrl, wx.SearchCtrl, wx.stc.StyledTextCtrl)
 
 
 class Separator(base_uicommand.UICommand):
@@ -811,7 +812,9 @@ class EditUndo(base_uicommand.UICommand):
     def _on_history_changed(self, event=None):  # pylint: disable=W0613
         self.update_menu_text(self._undo_menu_text())
         if self.toolbar:
-            self.toolbar.EnableTool(self.id, self.enabled(None))
+            self.toolbar.EnableTool(
+                self.id, bool(patterns.CommandHistory().has_history())
+            )
             self.toolbar.Refresh(False)
 
     def do_command(self, event):
@@ -825,9 +828,12 @@ class EditUndo(base_uicommand.UICommand):
         return self._undo_menu_text()
 
     def enabled(self, event):
-        # From the history alone: a menu item disabled while a text
-        # field had focus would block its shortcut until the menu
-        # opens again (docs/MENUS.md, Keyboard Shortcuts)
+        # A text field takes the key for its own history; never
+        # disabled by one, as a disabled menu item blocks its shortcut
+        # until the menu opens again (docs/MENUS.md, Keyboard
+        # Shortcuts)
+        if isinstance(wx.Window.FindFocus(), _TEXT_FIELDS):
+            return True
         return bool(patterns.CommandHistory().has_history())
 
 
@@ -856,7 +862,9 @@ class EditRedo(base_uicommand.UICommand):
     def _on_history_changed(self, event=None):  # pylint: disable=W0613
         self.update_menu_text(self._redo_menu_text())
         if self.toolbar:
-            self.toolbar.EnableTool(self.id, self.enabled(None))
+            self.toolbar.EnableTool(
+                self.id, bool(patterns.CommandHistory().has_future())
+            )
             self.toolbar.Refresh(False)
 
     def do_command(self, event):
@@ -870,9 +878,12 @@ class EditRedo(base_uicommand.UICommand):
         return self._redo_menu_text()
 
     def enabled(self, event):
-        # From the history alone: a menu item disabled while a text
-        # field had focus would block its shortcut until the menu
-        # opens again (docs/MENUS.md, Keyboard Shortcuts)
+        # A text field takes the key for its own history; never
+        # disabled by one, as a disabled menu item blocks its shortcut
+        # until the menu opens again (docs/MENUS.md, Keyboard
+        # Shortcuts)
+        if isinstance(wx.Window.FindFocus(), _TEXT_FIELDS):
+            return True
         return bool(patterns.CommandHistory().has_future())
 
 
