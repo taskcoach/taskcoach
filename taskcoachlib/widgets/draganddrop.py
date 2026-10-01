@@ -38,6 +38,14 @@ def _getHomeCursor(window=None):
     return icon_catalog.get_cursor("synthetic_dnd_cursor_home", window)
 
 
+def not_allowed_cursor(window=None):
+    """Task Coach's own "not allowed" cursor: wx's no-entry cursor is
+    a skull where the cursor theme has no picture for it."""
+    from taskcoachlib.gui.icons.icon_library import icon_catalog
+
+    return icon_catalog.get_cursor("synthetic_cursor_not_allowed", window)
+
+
 class FileDropTarget(wx.FileDropTarget):
     def __init__(self, onDropCallback=None, onDragOverCallback=None):
         wx.FileDropTarget.__init__(self)
@@ -526,7 +534,9 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         self.GetMainWindow().SetCursor(_getHomeCursor(self.GetMainWindow()))
 
     def SetCursorToDroppingImpossible(self):
-        self.GetMainWindow().SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
+        self.GetMainWindow().SetCursor(
+            not_allowed_cursor(self.GetMainWindow())
+        )
 
     def ResetCursor(self):
         self.GetMainWindow().SetCursor(wx.NullCursor)

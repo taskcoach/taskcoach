@@ -731,7 +731,10 @@ class TreeListHeaderWindow(wx.Window):
         self._owner = owner
         self._currentCursor = wx.Cursor(wx.CURSOR_DEFAULT)
         self._resizeCursor = wx.Cursor(wx.CURSOR_SIZEWE)
-        self._noEntryCursor = wx.Cursor(wx.CURSOR_NO_ENTRY)
+        # Task Coach's "not allowed" cursor, not wx's no-entry one, which
+        # is a skull where the cursor theme has no picture for it
+        from taskcoachlib.widgets.draganddrop import not_allowed_cursor
+        self._noEntryCursor = not_allowed_cursor(self)
         self._isDragging = False
         self._dragStart = 0
         self._dirty = False

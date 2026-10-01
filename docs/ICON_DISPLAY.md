@@ -320,6 +320,10 @@ the same way for all icons.
   toolbar buttons for hiding tasks by status, icon constructed as `"synthetic_hide_%s" % status_string`
 - **DnD cursors** (`synthetic_dnd_cursor_*`): `taskcoachlib/widgets/draganddrop.py:29,35` —
   `_getLinkCursor()` and `_getHomeCursor()` call `get_cursor()` from `synthetic_icon_generator.py`
+- **Not-allowed cursor** (`synthetic_cursor_not_allowed`): `not_allowed_cursor()` in
+  `taskcoachlib/widgets/draganddrop.py`, for a refused drop and for a column border that cannot
+  be dragged (`widgets/autowidth.py`, the bundled `hypertreelist.py` header). wx's no-entry
+  cursor is X's skull wherever the cursor theme has no picture for it
 - **Routing table SSOT**: `taskcoachlib/gui/icons/synthetic_icon_generator.py:23-33`
 - **Icon registration**: `taskcoachlib/gui/icons/icon_library.py` `_load_synthetic_icons()` — creates `Icon` +
   `SyntheticIconGenerator` instances from `get_icon_defs()`
@@ -368,6 +372,7 @@ Each entry is `{icon_id: {"method": method_name, ...}}` with method-specific key
 |---------|--------|-----|-------|
 | `synthetic_dnd_cursor_home` | `_dnd_cursor_overlay` | `icon_id` | `nuvola_places_user-home` |
 | `synthetic_dnd_cursor_link` | `_dnd_cursor_overlay` | `icon_id` | `taskcoach_actions_link_icon` |
+| `synthetic_cursor_not_allowed` | `_dnd_cursor_overlay` | `icon_id` | `noto-emoji_symbols_u1f6ab` |
 | `synthetic_hide_active` | `_status_filter_overlay` | `option_id` | `activetasks` |
 | `synthetic_hide_completed` | `_status_filter_overlay` | `option_id` | `completedtasks` |
 | `synthetic_hide_duesoon` | `_status_filter_overlay` | `option_id` | `duesoontasks` |

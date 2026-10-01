@@ -983,12 +983,14 @@ each with the recommended action, none ruled yet:
 - P142. In a dark theme the tasks' and categories' light text is hard
   to read on their light background colours. Found 2026-10-01, the
   same before To Do 67.
-- P143. The "not possible" cursor (a drop refused, a column that
-  cannot be resized) is wx's no-entry cursor, which X draws as a skull
-  where the cursor theme has no picture for it: here the desktop asks
-  for DMZ-White, which is not installed, and Adwaita has none. The same
-  on master. Draw Task Coach's own, as for the link and home drop
-  cursors?
+- P143. ~~The "not possible" cursor was X's skull~~: fixed 2026-10-01,
+  **ruled by designer** (Task Coach's own cursor from the icons it
+  ships), the same on master. wx's no-entry cursor is X's skull where
+  the cursor theme has no picture for it (here DMZ-White is asked for
+  but not installed; Adwaita has none). A refused drop and a column
+  border that cannot be dragged now show the "prohibited" sign from
+  the bundled Noto emoji, made a cursor as the link and home drop
+  cursors are ([ICON_DISPLAY.md](ICON_DISPLAY.md#synthetic-icons)).
 
 ## Views on the Effective Styles
 

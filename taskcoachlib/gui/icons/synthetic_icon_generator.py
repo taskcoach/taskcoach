@@ -23,6 +23,9 @@ _ROUTES = {
     # Cursor: icon_id is the catalog icon to convert to a cursor.
     "synthetic_dnd_cursor_link": {"method": "_dnd_cursor_overlay", "icon_id": "taskcoach_actions_link_icon"},
     "synthetic_dnd_cursor_home": {"method": "_dnd_cursor_overlay", "icon_id": "nuvola_places_user-home"},
+    # A refused drop, a column that cannot be resized: the "prohibited"
+    # sign, from Task Coach's icons, not the cursor theme's
+    "synthetic_cursor_not_allowed": {"method": "_dnd_cursor_overlay", "icon_id": "noto-emoji_symbols_u1f6ab"},
     # Status filter overlay: option is the settings key for the base icon.
     # Base icon ID read from settings.get("icon", option) at runtime.
     "synthetic_hide_inactive":   {"method": "_status_filter_overlay", "option_id": "inactivetasks"},

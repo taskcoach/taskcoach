@@ -84,7 +84,7 @@ In `hypertreelist.py`; the commit first making each change.
 | `SetHoverItem`, `_refresh_hover_row`, `PaintLevel`, `OnMouse` | the two-tone hover outline (`settings2.window.hoverlinewidth`); mouse moves within a row do nothing | `78533ffab`, `a20c9164c` |
 | `OnMouse` | a drag starts after 3 pixels, without the timer; a fast double-click opens the row clicked | `a1dad34df` |
 | `OnMouse`, `OnPaint`, `SetDropHighlight`, `ClearDropHighlight`, `_DrawDropFeedback` | drag feedback by the cursor only; no target highlighted outside the window; the drag image hidden before a refresh | `def3832cf` |
-| `TreeListHeaderWindow.OnMouse`, `IsColumnResizable` | in auto-resize mode the resize column cannot be dragged (no-entry cursor) | `af844f2e6` |
+| `TreeListHeaderWindow.OnMouse`, `IsColumnResizable` | in auto-resize mode the resize column cannot be dragged (Task Coach's not-allowed cursor) | `af844f2e6` |
 | `HyperTreeList.AddColumn`, `InsertColumn` and their `Info` forms, `RemoveColumn`, `_extend_item_texts_for_columns`, `TreeListItem.GetText` | every row keeps a text per column, its cached text sizes dropped when they move; a `[TREELIST]` log when not ([LOGGING_GUIDE.md](LOGGING_GUIDE.md#prefixes)) | `cd504cdf3` |
 | `EditCtrl.__init__` | the edit box as wide as the column | `4e096044d` |
 | `EditCtrl.CancelEditing`, `EditTextCtrl.OnChar`, `Delete`, `ResetEditControl` | Escape and the deletion of the item edited cancel; any other end keeps the typed value (`StopEditing()`, a click elsewhere comes before the focus moves) | `def3832cf`, `f2e9f63d1` |

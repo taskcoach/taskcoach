@@ -43,7 +43,9 @@ class AutoColumnWidthMixin(object):
     def __init__(self, *args, **kwargs):
         self.__is_auto_resizing = False
         self.__header_window = None
-        self.__no_entry_cursor = wx.Cursor(wx.CURSOR_NO_ENTRY)
+        from taskcoachlib.widgets.draganddrop import not_allowed_cursor
+
+        self.__no_entry_cursor = not_allowed_cursor()
         self.__current_cursor = wx.STANDARD_CURSOR
         self.ResizeColumn = kwargs.pop("resizeableColumn", -1)
         self.ResizeColumnMinWidth = kwargs.pop("resizeableColumnMinWidth", 50)

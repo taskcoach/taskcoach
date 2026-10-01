@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test, wx
-from taskcoachlib.widgets import treectrl
+from taskcoachlib.widgets import draganddrop, treectrl
 
 
 class DummyEvent(object):
@@ -75,3 +75,16 @@ class TreeCtrlDragAndDropMixinTest(test.wxTestCase):
         self.treeCtrl._dragStartPos = wx.Point(0, 0)
         self.treeCtrl.OnBeginDrag(event)
         self.assertEventIsAllowed(event)
+
+
+class NotAllowedCursorTest(test.wxTestCase):
+    def test_the_not_allowed_cursor_comes_from_task_coachs_icons(self):
+        # Not wx's no-entry cursor: X draws that as a skull where the
+        # cursor theme has no picture for it
+        from taskcoachlib.gui.icons.icon_library import icon_catalog
+
+        cursor = draganddrop.not_allowed_cursor()
+        self.assertTrue(cursor.IsOk())
+        self.assertIs(
+            icon_catalog.get_cursor("synthetic_cursor_not_allowed"), cursor
+        )
