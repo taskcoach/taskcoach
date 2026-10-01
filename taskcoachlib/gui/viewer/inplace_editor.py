@@ -30,45 +30,18 @@ from taskcoachlib import patterns
 
 
 class KillFocusAcceptsEditsMixin(object):
-    """Mixin class to let in place editors accept changes whenever the user
-    clicks outside the edit control instead of cancelling the changes."""
+    """In-place editors keep the typed value however the editing stops
+    (a click elsewhere, another cell's edit, a refresh), but on Escape
+    or when the item edited is deleted, which call CancelEditing(). The
+    tree stops the editing before the focus moves, so the focus cannot
+    tell the two apart."""
 
     def StopEditing(self):
         try:
-            if self.__has_focus():
-                # User hit Escape
-                super().StopEditing()
-            else:
-                # User clicked outside edit window
-                self.AcceptChanges()
-                self.Finish()
+            self.AcceptChanges()
+            self.Finish()
         except RuntimeError:
             pass
-
-    def __has_focus(self):
-        """Return whether this control has the focus.
-
-        Also returns True if a popup (calendar or dropdown) is open from any
-        child control, since the user is still interacting with the editor.
-        """
-
-        def window_and_all_children(window):
-            window_and_children = [window]
-            for child in window.GetChildren():
-                window_and_children.extend(window_and_all_children(child))
-            return window_and_children
-
-        if wx.Window.FindFocus() in window_and_all_children(self):
-            return True
-
-        # Check if any DateTimeComboCtrl has an open popup
-        if (
-            hasattr(self, "_dateTimeCombo")
-            and self._dateTimeCombo.HasOpenPopup()
-        ):
-            return True
-
-        return False
 
 
 class SubjectCtrl(KillFocusAcceptsEditsMixin, hypertreelist.EditTextCtrl):
@@ -93,7 +66,7 @@ class EscapeKeyMixin(object):
     def OnKeyDown(self, event):
         keyCode = event.GetKeyCode()
         if keyCode == wx.WXK_ESCAPE:
-            self.StopEditing()
+            self.CancelEditing()
         elif (
             keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER)
             and not event.ShiftDown()
@@ -246,7 +219,7 @@ class DateTimeCtrl(
             # Navigate within the editor's controls, don't let it escape
             self._navigateTab(event.ShiftDown())
         elif keyCode == wx.WXK_ESCAPE:
-            self.StopEditing()
+            self.CancelEditing()
         elif (
             keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER)
             and not event.ShiftDown()

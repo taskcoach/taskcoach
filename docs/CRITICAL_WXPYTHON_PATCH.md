@@ -36,7 +36,11 @@ Coach's own changes, among them
 - column resizing: in auto-resize mode the resize column cannot be
   dragged, and shows a no-entry cursor;
 - a `[TREELIST]` log when an item's texts and the columns disagree
-  ([LOGGING_GUIDE.md](LOGGING_GUIDE.md#prefixes)).
+  ([LOGGING_GUIDE.md](LOGGING_GUIDE.md#prefixes));
+- `EditCtrl.CancelEditing()`, which Escape and the deletion of the item
+  edited call: Task Coach's in-place editors keep the typed value when
+  `StopEditing()` ends the editing otherwise (a click elsewhere, which
+  comes before the focus moves).
 
 ## Loading
 

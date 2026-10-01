@@ -730,6 +730,17 @@ each with the recommended action, none ruled yet:
   midnight (2026-10-01 00:00, "Today 00:00" expected "Today"), and
   passes when rerun: tests that read the clock break just after
   midnight. Recommended: give them a fixed time.
+- P116. ~~A value typed in the task list's % complete or Priority cell
+  was lost on a click elsewhere; Enter kept it~~: fixed 2026-10-01,
+  **found and asked by designer**; the code was the same on master.
+  The tree ends the edit at the click, before the focus moves, and the
+  editors read focus inside them as Escape. Now one rule for every
+  cell: Escape and the item's deletion cancel (`CancelEditing()`), any
+  other end keeps the value. Checked in the app: % complete, priority,
+  subject and a date picked from the calendar; Escape cancels.
+- P117. Sorting by the Status column sorts by subject: Task has no
+  `statusSortFunction` (logged "falling back to subject"; the same on
+  master).
 
 ## Views on the Effective Styles
 

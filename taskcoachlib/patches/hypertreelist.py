@@ -2105,6 +2105,14 @@ class EditCtrl(object):
         self.Finish()
 
 
+    def CancelEditing(self):
+        """Cancels the editing: Escape, or the item edited is deleted.
+        Task Coach's editors keep the typed value when the editing stops
+        otherwise (docs/CRITICAL_WXPYTHON_PATCH.md)."""
+
+        EditCtrl.StopEditing(self)
+
+
     def Finish(self):
         """Finish editing."""
 
@@ -2198,7 +2206,7 @@ class EditTextCtrl(EditCtrl, wx.TextCtrl):
             wx.CallAfter(self.Finish)
 
         elif keycode == wx.WXK_ESCAPE:
-            self.StopEditing()
+            self.CancelEditing()
 
         else:
             event.Skip()
@@ -2712,7 +2720,7 @@ class TreeListMainWindow(CustomTreeCtrl):
 
         if self._editCtrl is not None and self.IsDescendantOf(item, self._editCtrl.item()):
             # can't delete the item being edited, cancel editing it first
-            self._editCtrl.StopEditing()
+            self._editCtrl.CancelEditing()
 
         # don't stay with invalid self._shiftItem or we will crash in the next call to OnChar()
         changeKeyCurrent = False

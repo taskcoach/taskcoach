@@ -173,6 +173,21 @@ class TaskViewerTestCase(test.wxTestCase):
         )
 
 
+class EscapeKey:
+    """A key event for Escape."""
+
+    @staticmethod
+    def GetKeyCode():
+        return wx.WXK_ESCAPE
+
+    @staticmethod
+    def ShiftDown():
+        return False
+
+    def Skip(self):
+        pass
+
+
 class CommonTestsMixin(object):
     def testCreate(self):
         self.assertItems()
@@ -1102,6 +1117,25 @@ class CommonTestsMixin(object):
         amount.ChangeValue("12.5")
         editor.AcceptChanges()
         self.assertEqual(12.5, self.task.hourlyFee())
+
+    def edit_percentage_in_its_cell(self, percentage):
+        self.showColumn("percentageComplete")
+        self.taskList.append(self.task)
+        main_window = self.viewer.widget.GetMainWindow()
+        main_window.EditLabel(self.firstItem(), 3)
+        editor = main_window._editCtrl
+        editor.SetValue(percentage)
+        return editor
+
+    def test_a_cell_keeps_its_value_when_the_editing_stops(self):
+        # The tree stops the editing at a click elsewhere
+        self.edit_percentage_in_its_cell(60).StopEditing()
+        self.assertEqual(60, self.task.percentageComplete())
+
+    def test_escape_in_a_cell_cancels(self):
+        editor = self.edit_percentage_in_its_cell(60)
+        editor.OnKeyDown(EscapeKey())
+        self.assertEqual(0, self.task.percentageComplete())
 
     def test_a_budget_entered_in_its_cell_is_stored(self):
         self.showColumn("budget")
