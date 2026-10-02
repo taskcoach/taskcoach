@@ -6,8 +6,9 @@
 2. [The Problem](#the-problem)
 3. [Guards](#guards)
 4. [Log Output](#log-output)
-5. [Debugging a Segfault](#debugging-a-segfault)
-6. [Key Files](#key-files)
+5. [Stale Wrappers of wx's Own Windows](#stale-wrappers-of-wxs-own-windows)
+6. [Debugging a Segfault](#debugging-a-segfault)
+7. [Key Files](#key-files)
 
 ---
 
@@ -127,6 +128,26 @@ RuntimeError: wrapped C/C++ object of type TreeListMainWindow has been deleted
 ```
 
 ---
+
+## Stale Wrappers of wx's Own Windows
+
+A window Task Coach creates is a Python object wxPython knows: once wx
+destroys it, a call through it raises "wrapped C/C++ object ... has
+been deleted". A window wx creates itself (a `wx.ListCtrl`'s header and
+rows windows on GTK) gets a plain `wx.Window` wrapper the first time
+Python asks for it, and wxPython is not told when wx destroys it. Kept
+in an attribute, that wrapper outlives the window: wxPython then hands
+it out for whatever wx creates at the same address, and a call through
+it crashes the process (P113 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+Seen in the unit tests, which open and destroy hundreds of editors in
+one process: a new dialog's OK button came back as a `wx.Window` (the
+lookup by type missed it), and two crashes, one creating a panel under
+such a parent, one calling `GetName()` through it. The source was the
+auto-width code keeping the list's header window; it now looks it up
+each time, and the dialogs find their buttons by id
+(`wxhelper.get_dialog_button()`). Rule:
+[DEVELOPMENT.md](DEVELOPMENT.md#design).
 
 ## Debugging a Segfault
 

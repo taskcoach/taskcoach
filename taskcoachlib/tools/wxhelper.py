@@ -60,16 +60,17 @@ def font_from_native_info(text):
     return None
 
 
-def getButtonFromStdDialogButtonSizer(
-    sizer: wx.StdDialogButtonSizer, buttonId: int
-) -> Union[wx.Button, None]:
+def get_dialog_button(
+    sizer: wx.StdDialogButtonSizer, button_id: int
+) -> Union[wx.Window, None]:
+    """The sizer's button with that id, found by the id alone: wxPython
+    can give a button as a plain wx.Window, reusing the stale wrapper of
+    a destroyed window at the same address, and a lookup by type then
+    left the dialog without its buttons (P113)."""
     for child in sizer.GetChildren():
-        if (
-            isinstance(child.GetWindow(), wx.Button)
-            and child.GetWindow().GetId() == buttonId
-        ):
-            return child.GetWindow()
-
+        window = child.GetWindow()
+        if window is not None and window.GetId() == button_id:
+            return window
     return None
 
 

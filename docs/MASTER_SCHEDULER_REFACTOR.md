@@ -806,18 +806,24 @@ each with the recommended action, none ruled yet:
 - P112. Stale doc text the audit listed (TASK_STATUS, DATETIME
   CONTROLS, the icon docs, LIST_MANAGEMENT, the Python 3 migration
   docs, the packaging docs, README). Recommended: correct in one pass.
-- P113. `UndoWithEditorsTest.test_snooze` failed once in its setUp
-  (2026-09-30, one catalog run of five; three reruns pass): the
-  editor's OK button was not found in its button sizer
-  (`wxhelper.getButtonFromStdDialogButtonSizer()` returned None, so
-  `createButtons()` raised). Cause not known yet. Again 2026-10-01:
-  the file ended without output (three reruns pass); the catalog now
-  gives each file Python's crash report and unbuffered output, and
-  shows a failed file's exit status. Again 2026-10-01:
-  `TaskEditorTest.py` crashed (exit 139) after five tests in a
-  per-file run without the crash report; 25 reruns pass, and 20
-  without that day's change. Again 2026-10-01: `test_efforts`, the
-  same setUp error in a catalog run (five reruns pass).
+- P113. ~~Editor tests failed now and then: a dialog's OK button not
+  found, or the test process crashed~~: traced and fixed 2026-10-02,
+  **asked by designer**. The list views' auto-width code kept the
+  `wx.ListCtrl`'s header window, which wx creates itself: wxPython is
+  not told when wx destroys it, so the kept wrapper outlived it and was
+  handed out for what wx later created at its address. Caught with a
+  trace in a scratch copy: an OK button came back as a plain
+  `wx.Window` (`class=wxButton`, the lookup by type missed it), and two
+  crashes under gdb, one creating a panel under such a parent, one
+  calling `GetName()` through it. The header is now looked up each
+  time, and the dialogs find their buttons by id
+  (`wxhelper.get_dialog_button()`)
+  ([CRASH_GUARD.md](CRASH_GUARD.md#stale-wrappers-of-wxs-own-windows)).
+  `UndoWithEditorsTest` 80 times in a row: no failure, no crash
+  (before, about three in 80). The app has the same list views in
+  every editor's Effort and Attachments tabs and in the Effort and
+  Attachments views; whether a closed editor's list outlived it there,
+  as in the tests (P149), was not checked.
 - P114. ~~The task list's Budget cell ignored typing ("2:30" left it at
   0:00:00; Enter saved nothing)~~: fixed 2026-09-30, **asked by
   designer**; the same on master. The cell is the task editor's
@@ -1123,6 +1129,11 @@ each with the recommended action, none ruled yet:
   ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#row-hover-outline)).
   Checked in the app, Effort view with 6,000 efforts: the wheel and End
   leave the outline on the row under the pointer; at rest it stays.
+- P149. In the unit tests the viewers and list controls of destroyed
+  editors stay in memory, about 14 windows' objects a test, held
+  through their tooltip's debounced call (found 2026-10-02 while
+  tracing P113). Harmless since P113's fix, but it grows. Not checked
+  in the app.
 
 ## Views on the Effective Styles
 

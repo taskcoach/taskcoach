@@ -34,6 +34,13 @@ Canon decision by designer, 2026-09-28.
   reach a deleted window. Lazy teardown: nothing is stopped when a
   window closes or the app quits; a call whose owner is gone is
   skipped when due ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+- **Never keep a window wx creates:** a window wx makes inside another
+  (a list's header or rows, a dialog's buttons) is looked up when
+  needed, never stored in an attribute. wxPython does not learn when
+  wx destroys it, so a kept wrapper outlives it and is handed out for
+  whatever wx creates at its address next: a button comes back as a
+  plain `wx.Window`, and calls through it crash
+  ([CRASH_GUARD.md](CRASH_GUARD.md#stale-wrappers-of-wxs-own-windows)).
 
 ## Code style
 

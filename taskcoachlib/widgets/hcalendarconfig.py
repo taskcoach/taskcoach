@@ -36,7 +36,7 @@ class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
         self.SetButtonSizer(buttonSizer)
         self.Fit()
         self.SetMinSize(self.GetSize())
-        wxhelper.getButtonFromStdDialogButtonSizer(buttonSizer, wx.ID_OK).Bind(
+        wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.ok
         )
 

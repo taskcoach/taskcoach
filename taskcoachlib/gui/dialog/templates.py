@@ -68,9 +68,9 @@ class TemplatesDialog(sized_controls.SizedDialog):
         self.SetButtonSizer(self._buttonSizer)
         self.Fit()
         self.SetMinSize(self.GetSize())  # Current size is min size
-        wxhelper.getButtonFromStdDialogButtonSizer(
-            self._buttonSizer, wx.ID_OK
-        ).Bind(wx.EVT_BUTTON, self.ok)
+        wxhelper.get_dialog_button(self._buttonSizer, wx.ID_OK).Bind(
+            wx.EVT_BUTTON, self.ok
+        )
         self.CentreOnParent()
 
     def createInterior(self, pane):

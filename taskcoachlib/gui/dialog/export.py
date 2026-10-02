@@ -47,7 +47,7 @@ class ExportDialog(sized_controls.SizedDialog):
         self.components = self.createInterior(pane)
         buttonSizer = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
         self.SetButtonSizer(buttonSizer)
-        wxhelper.getButtonFromStdDialogButtonSizer(buttonSizer, wx.ID_OK).Bind(
+        wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.onOk
         )
         self.Fit()

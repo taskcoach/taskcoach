@@ -130,6 +130,26 @@ class VirtualListCtrlTestCase(test.wxTestCase):
         self.assertEqual(0, self.listctrl.GetFocusedItem())
 
 
+class WxOwnWindowsTest(test.wxTestCase):
+    """The list keeps no wrapper of a window wx creates inside it (its
+    header): wxPython would hand that stale wrapper out for whatever wx
+    creates at its address after the list is destroyed (P113)."""
+
+    onSelect = VirtualListCtrlTestCase.onSelect
+
+    def test_the_header_window_is_not_kept(self):
+        self.columns = VirtualListCtrlTestCase.createColumns(self, 3)
+        listctrl = VirtualListCtrlTestCase.createListCtrl(self)
+        listctrl.ToggleAutoResizing(False)
+        listctrl.ToggleAutoResizing(True)  # Binds the header's motion
+        kept = [
+            name
+            for name, value in vars(listctrl).items()
+            if type(value) is wx.Window  # pylint: disable=C0123
+        ]
+        self.assertEqual([], kept)
+
+
 class VirtualListCtrlPointerTest(test.wxTestCase):
     """Rows moving under a pointer at rest hide the tooltip and move the
     hover outline to the row now under it (P148)."""

@@ -44,8 +44,7 @@ class CalendarConfigDialog(sized_controls.SizedDialog):
     def __init__(self, settings, settingsSection, *args, **kwargs):
         self._settings = settings
         self._settingsSection = settingsSection
-        kwargs.setdefault(
-            "style", wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+        kwargs.setdefault("style", wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         super().__init__(*args, **kwargs)
         pane = self.GetContentsPane()
         pane.SetSizerType("form")
@@ -54,7 +53,7 @@ class CalendarConfigDialog(sized_controls.SizedDialog):
         self.SetButtonSizer(buttonSizer)
         self.Fit()
         self.SetMinSize(self.GetSize())
-        wxhelper.getButtonFromStdDialogButtonSizer(buttonSizer, wx.ID_OK).Bind(
+        wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.ok
         )
 

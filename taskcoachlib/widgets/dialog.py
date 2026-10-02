@@ -142,21 +142,21 @@ class Dialog(sized_controls.SizedDialog):
             buttonTypes
         )  # type: wx.StdDialogButtonSizer
         if self._buttonTypes & wx.OK or self._buttonTypes & wx.ID_CLOSE:
-            wxhelper.getButtonFromStdDialogButtonSizer(
-                buttonSizer, wx.ID_OK
-            ).Bind(wx.EVT_BUTTON, self.ok)
+            wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
+                wx.EVT_BUTTON, self.ok
+            )
         if self._buttonTypes & wx.CANCEL:
-            wxhelper.getButtonFromStdDialogButtonSizer(
-                buttonSizer, wx.ID_CANCEL
-            ).Bind(wx.EVT_BUTTON, self.cancel)
+            wxhelper.get_dialog_button(buttonSizer, wx.ID_CANCEL).Bind(
+                wx.EVT_BUTTON, self.cancel
+            )
         if self._buttonTypes & wx.APPLY:
-            wxhelper.getButtonFromStdDialogButtonSizer(
-                buttonSizer, wx.ID_APPLY
-            ).Bind(wx.EVT_BUTTON, self.apply)
+            wxhelper.get_dialog_button(buttonSizer, wx.ID_APPLY).Bind(
+                wx.EVT_BUTTON, self.apply
+            )
         if self._buttonTypes == wx.ID_CLOSE:
-            wxhelper.getButtonFromStdDialogButtonSizer(
-                buttonSizer, wx.ID_OK
-            ).SetLabel(_("Close"))
+            wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).SetLabel(
+                _("Close")
+            )
         self.SetButtonSizer(buttonSizer)
         return buttonSizer
 

@@ -42,7 +42,6 @@ class AutoColumnWidthMixin(object):
 
     def __init__(self, *args, **kwargs):
         self.__is_auto_resizing = False
-        self.__header_window = None
         from taskcoachlib.widgets.draganddrop import not_allowed_cursor
 
         self.__no_entry_cursor = not_allowed_cursor()
@@ -93,15 +92,18 @@ class AutoColumnWidthMixin(object):
 
         For wx.ListCtrl, the header is a child window named 'wxlistctrlcolumntitles'.
         For HyperTreeList, header cursor is handled by TreeListHeaderWindow.
+
+        Looked up each time, never kept: wx creates it, so wxPython
+        does not learn when it is destroyed, and a kept wrapper outlives
+        it. wxPython then gives that stale wrapper for whatever wx
+        creates at its address (a dialog's button, a parent window),
+        and calls through it crash (P113).
         """
-        if self.__header_window is not None:
-            return self.__header_window
         # Only look for header in wx.ListCtrl, not HyperTreeList
         if isinstance(self, hypertreelist.HyperTreeList):
             return None
         for child in self.GetChildren():
             if child.GetName() == "wxlistctrlcolumntitles":
-                self.__header_window = child
                 return child
         return None
 
