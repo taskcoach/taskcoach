@@ -905,15 +905,28 @@ each with the recommended action, none ruled yet:
   removed `MainWindow.advanceSelection()` as unused, but the PEP 8
   rename had already changed its one caller; the command now calls the
   viewer container directly.
-- P122. Ctrl+PgDn and Ctrl+PgUp (View > Activate next/previous
-  viewer) switch viewers only when the focus is in a text box such as
-  the search box; the menu items work. Checked in the app 2026-10-02,
-  the same on master: with the focus in a task or category list the
-  list takes them as Page Down and Page Up (the selection moves a
-  page), and in a floating pane nothing happens: `UICommand` ignores
-  its `id` argument and takes one from the pool, so the pane's own
-  accelerators (`container.on_page_floated()`) send ids nothing is
-  bound to.
+- P122. Ctrl+PgDn and Ctrl+PgUp (View > Activate next and previous
+  viewer, also in Help) work in few places. Checked in the app
+  2026-10-02 on master and this branch, by where the focus is:
+  - task and category trees, docked or as tabs: taken as Page Down and
+    Page Up, the selection moves a page; neither the view nor the tab
+    changes.
+  - the Effort list, docked or floating: nothing. A floating pane's
+    own shortcuts send ids nothing is bound to (`UICommand` ignores
+    its `id` argument).
+  - the search box: nothing on master; on this branch the next view
+    becomes active. An in-place edit box: nothing on master; on this
+    branch the next view becomes active and the edit box stays open,
+    unfocused.
+  - calendar, hierarchical calendar, timeline, square map and
+    statistics views: a click does not make them the active view, and
+    a floating one does not take the focus, so the keys move the task
+    view's selection a page.
+  - task editor, effort editor, Preferences: nothing; Ctrl+Tab and
+    Ctrl+Shift+Tab switch the tabs.
+  The View menu items work: they cycle the views in the order they
+  were opened, docked, tabbed and floating. A rule is proposed, not
+  ruled.
 - P123. ~~Enter in the search box also opened the editor of the
   selected task~~: fixed 2026-10-01, the same on master. The viewer's
   accelerator table (Return, Ctrl+X/C/V, Ctrl+Del) took those keys
