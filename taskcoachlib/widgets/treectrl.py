@@ -339,7 +339,7 @@ class TreeListCtrl(
         **kwargs,
     ):
         self.__adapter = parent
-        self.__selection = []
+        self.__selection = set()  # What a refresh keeps selected
         self.__user_double_clicked = False
         self.__columns_with_images = []
         self.__default_font = wx.NORMAL_FONT
@@ -454,7 +454,7 @@ class TreeListCtrl(
             if current and current == desired:
                 # Structure unchanged - refresh items in place, keeping
                 # the current selection (as RefreshItems does)
-                self.__selection = self.curselection()
+                self.__selection = set(self.curselection())
                 self._refresh_all_items_in_place(root_item)
                 return
 
@@ -495,7 +495,7 @@ class TreeListCtrl(
         self.__refreshing = True
         self.Freeze()
         self.StopEditing()
-        self.__selection = self.curselection()
+        self.__selection = set(self.curselection())
         self.DeleteAllItems()
         root_item = self.GetRootItem()
         if not root_item:
@@ -574,16 +574,16 @@ class TreeListCtrl(
             main.Scroll(x_pos, center_y // y_unit if y_unit > 0 else 0)
 
     def RefreshItems(self, *objects):
-        self.__selection = self.curselection()
-        self._refresh_target_objects(self.GetRootItem(), *objects)
+        self.__selection = set(self.curselection())
+        self._refresh_target_objects(self.GetRootItem(), set(objects))
 
-    def _refresh_target_objects(self, parent_item, *target_objects):
+    def _refresh_target_objects(self, parent_item, target_objects):
         child_item, cookie = self.GetFirstChild(parent_item)
         while child_item:
             item_object = self.GetItemPyData(child_item)
             if item_object in target_objects:
                 self._refresh_object_completely(child_item, item_object)
-            self._refresh_target_objects(child_item, *target_objects)
+            self._refresh_target_objects(child_item, target_objects)
             child_item, cookie = self.GetNextChild(parent_item, cookie)
 
     def _refresh_object_completely(self, item, *args):

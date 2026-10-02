@@ -973,13 +973,25 @@ each with the recommended action, none ruled yet:
   instead (twice the time: 2 s against 1 s with 2,050 tasks); the
   widget's own hiding (changes what a column position means in about
   140 places) ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#updating-the-bundle)).
-- P140. Opening a file of 2,050 tasks (50 parents with 40 late
-  subtasks each) freezes the app for 64 s, the scheduler's first full
-  pass (`[SCHEDULER]` median 63,943 ms); master is busy 12 s, then
-  uses a quarter of a core while open. Found 2026-10-01 with a
-  generated file, the same before To Do 67. [Cost Before](#cost-before)
-  says the first loop runs as master's (15 s with 2,000 tasks of
-  `tools/generate_task_file.py`); not with this file. Not traced yet.
+- P140. ~~Opening a file of 2,050 tasks (50 parents with 40 late
+  subtasks each) froze the app for 64 s~~: fixed 2026-10-01, **asked
+  by designer**. The first pass's 16,400 style events each made the
+  tree views walk all their rows (`RefreshItems()`), and the Effort
+  view look up each task's effort rows. The viewers now gather a
+  pass's changes and refresh their rows once after it, as after a
+  bulk command (`scheduler.aboutToPass`, `scheduler.pass`;
+  [SCHEDULERS.md](SCHEDULERS.md#event-subscribers)); the tree finds
+  the rows to refresh, and which are selected, through sets. Measured
+  on the virtual display, from the window shown: idle after 3 s, 64 s
+  before (master: 3 s, then a quarter of a core while open); the first
+  pass 1.7 s with the refresh. With the Effort view and 6,000 efforts:
+  3 s, a first pass of 228 s before (master 15 s). Marking all 2,050
+  tasks completed: busy 6.5 s, 83 s before (master 15 s). After each
+  the screen matches the build before pixel for pixel. Also fixed:
+  after a bulk command (marking tasks completed, active or inactive)
+  the Task statistics view logged an error (`PieCtrl` has no
+  `RefreshItems()`); it now redraws once, after the command or the
+  pass.
 - P141. A row's tooltip stays up after Expand all or Collapse all
   moved another row under the pointer, and the hover outline returns
   only after the pointer moves within the list again. Found
@@ -1409,7 +1421,8 @@ scrolling and window resizing stutter.
 
 The first full loop after a file is opened is slower (15 s with 2000
 tasks, 57 s with 5000); the refactor runs it the same way, so it is
-not part of this plan.
+not part of this plan. The viewers' refresh after it: P140
+([Pre-existing Issues](#pre-existing-issues)).
 
 The earlier profile (a scratch copy under Xvfb, 2000 tasks):
 `computeStyles` 69%, `compute_stored_status` 17%,

@@ -2273,14 +2273,12 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
             eventType="%s.piechartangle" % self.settingsSection(),
             eventSource=self.settings,
         )
-        # The pie counts the statuses; the clock changes them too
+        # The pie counts the statuses; the clock changes them too, in
+        # its passes, after which the pie is redrawn once
         self.registerObserver(
-            self._on_task_status_changed,
+            self.on_attribute_changed,
             eventType=task.Task.statusChangedEventType(),
         )
-
-    def _on_task_status_changed(self, event):  # pylint: disable=W0613
-        self.refresh()
 
     def createWidget(self):
         widget = wx.lib.agw.piectrl.PieCtrl(self)

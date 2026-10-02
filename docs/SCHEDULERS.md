@@ -67,7 +67,7 @@ MasterScheduler subscribes to `timer.second` for data processing.
   as Publisher events (`patterns.Event`, source is the GlobalTimer, value is
   the tick timestamp). See
   [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md).
-- `MasterScheduler`: Subscribes to `timer.second`; after its processing, sends the Publisher events `scheduler.pass` (after a pass), `scheduler.date` and `scheduler.minute`
+- `MasterScheduler`: Subscribes to `timer.second`; sends the Publisher events `scheduler.aboutToPass` and `scheduler.pass` around a pass, then `scheduler.date` and `scheduler.minute`
 
 ### Event Flow
 
@@ -85,6 +85,7 @@ Every 1 second (_on_tick):
 |-------|------------|---------|
 | `timer.second` | `MasterScheduler` | The master timer list check; a pass when an entry is due or an object marked |
 | `scheduler.pass` | Task `Sorter`, `ViewFilter` | Re-sort and refilter once by the statuses the pass changed |
+| `scheduler.aboutToPass`, `scheduler.pass` | Viewers (`Viewer`) | Gather the items the pass changes, refresh their rows once after it, as after a bulk command ([P140](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)) |
 | `scheduler.date` | `ViewFilter` | Re-filter tasks at midnight, with the new day's statuses |
 | `scheduler.date` | `CalendarViewer`, `HierarchicalCalendarViewer` | Move to the new day |
 | `scheduler.date` | Viewers with columns (`ViewerWithColumns`) | Redraw relative dates ("Today", "Yesterday") |
@@ -185,7 +186,8 @@ Every second (_on_second):
   Detect minute changes
 
   The entries up to now (past ones and this second's) mark their
-  tasks and leave the list. Then one pass:
+  tasks and leave the list. Then one pass, after
+  'scheduler.aboutToPass':
     The full loop, if due: every object
     Otherwise: the marked objects and what reads a style they change
       (a category's subcategories and members, a parent's children)
@@ -197,7 +199,7 @@ Every second (_on_second):
       computeStyles(task)
     A category, note or attachment:
       computeStyles(item)
-  send 'scheduler.pass' if a pass ran
+  send 'scheduler.pass' if a pass ran, also after a failed one
 
   if dateChanged:
     send 'scheduler.date'
@@ -222,9 +224,9 @@ What marks, and what runs the full loop:
 `TASKCOACH_SCHEDULER_CHECK=1` runs the full loop after every tick's
 pass and logs each change it still makes (`[SCHEDULER] missed at
 ...`). Once a minute, if passes ran, a `[SCHEDULER]` line gives the
-ticks, the passes (how many full), their cost, the objects processed
-and the timer entries: fewer than 60 ticks means the UI thread was
-held.
+ticks, the passes (how many full), their cost (with the viewers'
+refresh after each), the objects processed and the timer entries:
+fewer than 60 ticks means the UI thread was held.
 
 Each object, and each of the events, runs
 isolated (`_run_isolated`): these steps notify listeners (viewers,

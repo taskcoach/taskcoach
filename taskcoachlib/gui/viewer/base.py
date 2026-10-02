@@ -52,7 +52,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.settings = settings
         self.__settingsSection = kwargs.pop("settingsSection")
         self.__freezeCount = 0
-        # Track items changed during bulk operations
+        self.__in_pass = False
+        # Items changed during a bulk operation or a scheduler pass
         self.__pendingRefreshItems = set()
         # The how maniest of this viewer type are we? Used for settings
         self.__instanceNumber = kwargs.pop("instanceNumber")
@@ -111,6 +112,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.registerObserver(
             self.on_end_bulk_operation, eventType="command.justBulkModified"
         )
+        # Also refreshed once after a scheduler pass: its first, after a
+        # file opens, changes every row
+        self.registerObserver(
+            self.on_begin_pass, eventType="scheduler.aboutToPass"
+        )
+        self.registerObserver(self.on_end_pass, eventType="scheduler.pass")
 
         patterns.later.soon(self, self.__DisplayBalloon)
 
@@ -154,16 +161,21 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         """Thaw viewer and presentation after bulk operation, refresh only changed items."""
         self.__freezeCount -= 1
         self.__presentation.thaw()
-        if self.__freezeCount == 0 and self.__pendingRefreshItems:
-            # Refresh only items that changed during the bulk operation
-            items = [
-                item
-                for item in self.__pendingRefreshItems
-                if item in self.presentation()
-            ]
-            self.__pendingRefreshItems.clear()
-            if items:
-                self.widget.RefreshItems(*items)
+        self.__refresh_pending_items()
+
+    def on_begin_pass(self, event):  # pylint: disable=W0613
+        self.__in_pass = True
+
+    def on_end_pass(self, event):  # pylint: disable=W0613
+        self.__in_pass = False
+        self.__refresh_pending_items()
+
+    def __refresh_pending_items(self):
+        if self.__freezeCount or self.__in_pass:
+            return
+        items, self.__pendingRefreshItems = self.__pendingRefreshItems, set()
+        if items:
+            self.refresh_changed_items(items)
 
     def activate(self):
         pass
@@ -243,6 +255,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.on_end_io,
             self.on_begin_bulk_operation,
             self.on_end_bulk_operation,
+            self.on_begin_pass,
+            self.on_end_pass,
         ):
             self.removeObserver(handler)
 
@@ -361,11 +375,16 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         return collection
 
     def on_attribute_changed(self, event):
-        if self.__freezeCount:
-            # During bulk operation, collect items to refresh later
+        if self.__freezeCount or self.__in_pass:
+            # Refreshed once, after the bulk operation or the pass
             self.__pendingRefreshItems.update(event.sources())
         else:
-            self.refreshItems(*event.sources())
+            self.refresh_changed_items(event.sources())
+
+    def refresh_changed_items(self, items):
+        """Refresh the rows of the changed items. A viewer whose rows
+        show other items' values refreshes those rows instead."""
+        self.refreshItems(*items)
 
     def on_new_item(self, event):
         self.select(
@@ -487,7 +506,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def refreshItems(self, *items):
         if not self.__freezeCount:
-            items = [item for item in items if item in self.presentation()]
+            shown = set(self.presentation())
+            items = [item for item in items if item in shown]
             self.widget.RefreshItems(*items)  # pylint: disable=W0142
 
     def select(self, items):

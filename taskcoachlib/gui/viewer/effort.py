@@ -69,7 +69,9 @@ class EffortViewer(
             domain.task.Task.categoryRemovedEventType(),
             domain.task.Task.categorySubjectChangedEventType(),
         ):
-            self.registerObserver(self.on_task_changed, eventType=event_type)
+            self.registerObserver(
+                self.on_attribute_changed, eventType=event_type
+            )
         # Start and stop change an effort's period and time spent
         for event_type in (
             effort.Effort.startChangedEventType(),
@@ -185,17 +187,18 @@ class EffortViewer(
         # Fall back to generic paste when no specific target task
         return super().pasteItemCommand()
 
-    def on_task_changed(self, event):
-        """Refresh the rows of the tasks the event names."""
-        tasks = [each for each in event.sources() if hasattr(each, "efforts")]
+    def refresh_changed_items(self, items):
+        """Refresh the rows of the changed efforts and of the changed
+        tasks' efforts."""
+        tasks = {each for each in items if hasattr(each, "efforts")}
+        rows = [each for each in items if each not in tasks]
         if self.aggregation == "details":
-            items = [each for task in tasks for each in task.efforts()]
-        else:
-            task_set = set(tasks)
-            items = [
-                each for each in self.presentation() if each.task() in task_set
-            ]
-        self.refreshItems(*items)
+            rows.extend(each for task in tasks for each in task.efforts())
+        elif tasks:
+            rows.extend(
+                each for each in self.presentation() if each.task() in tasks
+            )
+        super().refresh_changed_items(rows)
 
     def set_aggregation(self, aggregation):
         """Change the aggregation mode. Can be one of 'details', 'day', 'week'

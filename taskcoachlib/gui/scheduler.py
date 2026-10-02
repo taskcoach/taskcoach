@@ -528,11 +528,6 @@ class MasterScheduler:
         self._pop_due(timestamp)
         if self._full or self._marks or _CHECK:
             self._run_pass(timestamp)
-            # Once per pass, e.g. to re-sort by the new statuses
-            self._run_isolated(
-                "scheduler.pass",
-                patterns.Event("scheduler.pass", self, timestamp).send,
-            )
 
         # Publisher events, so each subscriber (viewers, filters) runs
         # isolated from the others' failures. The date event is for a
@@ -551,17 +546,30 @@ class MasterScheduler:
 
     def _run_pass(self, timestamp):
         """The tick's pass: the full loop when due, else the marked
-        objects and what reads them."""
+        objects and what reads them. Its cost includes its end event,
+        after which the viewers refresh what it changed."""
         started = time.perf_counter()
         marked, self._marks = self._marks, {}
-        if self._full:
-            self._full = False
-            self._full_passes += 1
-            items = self._run_full(timestamp)
-        else:
-            items = self._run_incremental(timestamp, marked.values())
-            if _CHECK:
-                self._check(timestamp)
+        # The viewers gather the pass's changes until its end
+        self._run_isolated(
+            "scheduler.aboutToPass",
+            patterns.Event("scheduler.aboutToPass", self, timestamp).send,
+        )
+        try:
+            if self._full:
+                self._full = False
+                self._full_passes += 1
+                items = self._run_full(timestamp)
+            else:
+                items = self._run_incremental(timestamp, marked.values())
+                if _CHECK:
+                    self._check(timestamp)
+        finally:
+            # Once per pass, e.g. to re-sort by the new statuses
+            self._run_isolated(
+                "scheduler.pass",
+                patterns.Event("scheduler.pass", self, timestamp).send,
+            )
         self._pass_costs.append(
             ((time.perf_counter() - started) * 1000, items)
         )

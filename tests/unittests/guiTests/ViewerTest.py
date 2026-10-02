@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import ast
 import test
-from taskcoachlib import gui, config, widgets, persistence
+from taskcoachlib import gui, config, widgets, patterns, persistence
 from taskcoachlib.config import settings2
 from taskcoachlib.domain import task, date
 from wx.lib.agw import hypertreelist
@@ -73,6 +73,39 @@ class ViewerTest(test.wxTestCase):
         settings2.refresh_now()  # Another setting changed
         self.set_decimal_time(True)
         self.assertEqual([True], redraws)
+
+    def record_row_refreshes(self):
+        refreshed = []
+        self.viewer.widget.RefreshItems = lambda *items: refreshed.append(
+            set(items)
+        )
+        return refreshed
+
+    def send_style_changes(self):
+        for event_type in task.Task.effective_style_event_types():
+            patterns.Event(event_type, self.task, None).send()
+
+    def test_a_change_refreshes_its_row_at_once(self):
+        refreshed = self.record_row_refreshes()
+        self.send_style_changes()
+        self.assertEqual(4, len(refreshed))
+
+    def test_a_scheduler_pass_refreshes_its_rows_once_after_it(self):
+        # Its first, after a file opens, changes every row
+        refreshed = self.record_row_refreshes()
+        patterns.Event("scheduler.aboutToPass", self).send()
+        self.send_style_changes()
+        self.assertEqual([], refreshed)
+        patterns.Event("scheduler.pass", self).send()
+        self.assertEqual([{self.task}], refreshed)
+
+    def test_a_bulk_change_refreshes_its_rows_once_after_it(self):
+        refreshed = self.record_row_refreshes()
+        patterns.Event("command.aboutToBulkModify", self).send()
+        self.send_style_changes()
+        self.assertEqual([], refreshed)
+        patterns.Event("command.justBulkModified", self).send()
+        self.assertEqual([{self.task}], refreshed)
 
     def testSelectAllViaWidget(self):
         self.viewer.widget.select_all()

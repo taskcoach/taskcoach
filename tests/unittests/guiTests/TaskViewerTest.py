@@ -1534,10 +1534,45 @@ class TaskTimelineViewerTest(test.wxTestCase):
 
 
 class TaskStatisticsViewerTest(test.wxTestCase):
-    def testCreate(self):
+    def create_viewer(self):
         task.Task.settings = settings = config.Settings(load=False)
         self.taskFile = persistence.TaskFile()
-        gui.viewer.task.TaskStatsViewer(self.frame, self.taskFile, settings)
+        return gui.viewer.task.TaskStatsViewer(
+            self.frame, self.taskFile, settings
+        )
+
+    def test_create(self):
+        self.create_viewer()
+
+    def record_redraws(self):
+        stats_viewer = self.create_viewer()
+        self.task = task.Task("task")
+        self.taskFile.tasks().append(self.task)
+        redraws = []
+        stats_viewer.refresh = lambda: redraws.append(True)
+        return redraws
+
+    def test_the_pie_is_redrawn_once_after_a_pass(self):
+        redraws = self.record_redraws()
+        patterns.Event("scheduler.aboutToPass", self).send()
+        for event_type in (
+            task.Task.statusChangedEventType(),
+            task.Task.effectiveFgColorChangedEventType(),
+        ):
+            patterns.Event(event_type, self.task, None).send()
+        self.assertEqual([], redraws)
+        patterns.Event("scheduler.pass", self).send()
+        self.assertEqual([True], redraws)
+
+    def test_the_pie_is_redrawn_after_a_bulk_change(self):
+        # The pie has no rows to refresh: the viewer redraws it
+        redraws = self.record_redraws()
+        patterns.Event("command.aboutToBulkModify", self).send()
+        patterns.Event(
+            task.Task.effectiveFgColorChangedEventType(), self.task, None
+        ).send()
+        patterns.Event("command.justBulkModified", self).send()
+        self.assertEqual([True], redraws)
 
     def tearDown(self):
         super().tearDown()

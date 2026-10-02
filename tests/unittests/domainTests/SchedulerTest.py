@@ -167,6 +167,29 @@ class MasterSchedulerEventTest(test.wxTestCase):
         self.second(self.today_at(10, 0, 30))
         self.assertEqual([], self.events)
 
+    def test_a_pass_comes_between_its_two_events(self):
+        # Viewers refresh the pass's changes once, after it
+        for event_type in ("scheduler.aboutToPass", "scheduler.pass"):
+            self.registerObserver(event_type)
+        self.second(self.today_at(10))  # The first tick's full loop
+        self.assertEqual(
+            ["scheduler.aboutToPass", "scheduler.pass"],
+            [event.type() for event in self.events],
+        )
+
+    def test_a_failed_pass_still_sends_its_end(self):
+        # Or the viewers would wait for it to refresh their rows
+        self.registerObserver("scheduler.pass")
+
+        def failing_loop(timestamp):
+            raise ValueError("loop bug")
+
+        self.master._run_full = failing_loop  # The first tick's
+        self.second(self.today_at(10))
+        self.assertEqual(
+            ["scheduler.pass"], [event.type() for event in self.events]
+        )
+
     def test_failing_subscriber_does_not_stop_the_others(self):
         # Both fail: whichever runs first, the other still runs
         self.failed = []

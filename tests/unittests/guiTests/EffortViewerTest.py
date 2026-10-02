@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import gui, config, persistence, render
+from taskcoachlib import gui, config, patterns, persistence, render
 from taskcoachlib.domain import category, task, effort, date
 from unittests import dummy
 import test
@@ -233,6 +233,18 @@ class EffortViewerTest(test.wxTestCase):
         refreshed = self.record_refreshes()
         self.task.addCategory(category.Category("category"))
         self.assertIn(self.effort1, refreshed)
+
+    def test_a_pass_refreshes_its_tasks_effort_rows_once_after_it(self):
+        self.task.addEffort(self.effort1)
+        self.task.addEffort(self.effort2)
+        refreshes = []
+        self.viewer.refreshItems = lambda *items: refreshes.append(set(items))
+        patterns.Event("scheduler.aboutToPass", self).send()
+        for event_type in task.Task.effective_style_event_types():
+            patterns.Event(event_type, self.task, None).send()
+        self.assertEqual([], refreshes)
+        patterns.Event("scheduler.pass", self).send()
+        self.assertEqual([{self.effort1, self.effort2}], refreshes)
 
     def testSearch(self):
         self.task.addEffort(self.effort1)
