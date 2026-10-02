@@ -1098,15 +1098,21 @@ reminder, progress, budget, priority and fees. An edit box opens:
 
 - with F2, on the Subject of the first selected row
   (`TreeListCtrl.on_key_down()`);
-- with a click on the current, selected row in an editable column,
-  when no second click follows within 250 ms (`_EDIT_TIMER_TICKS` in
-  the bundled `taskcoachlib/patches/hypertreelist.py`). A double-click
-  opens the editor dialog instead, as Enter does.
+- with a slow double click: a click on the row clicked last in that
+  list (however long ago), in an editable column, when no second
+  click follows within 250 ms (`_EDIT_TIMER_TICKS` in the bundled
+  `taskcoachlib/patches/hypertreelist.py`). A row reached with the
+  arrow keys does not count. A double-click opens the editor dialog
+  instead, as Enter does.
 
-The click opens edit boxes nobody asked for when a click lands on the
-selected row, as the release of a drag did (P124 in
+Checked in the app 2026-10-02, master the same: the click that comes
+back into the list from another view, on its selected row, also opens
+an edit box, which file managers never do; so did the release of a
+drag (P124 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
-Two Preferences options are planned, To Do 68 and 69 in
+The right-click knows its cell: the list records the column clicked.
+The list shows no current cell, only rows. Two Preferences options are
+planned, To Do 68 and 69 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)
 ([SETTINGS.md](SETTINGS.md#planned-in-place-editing-options)):
 editing with the click, off by default, which leaves F2; and editing

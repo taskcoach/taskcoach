@@ -218,13 +218,21 @@ go at the end. Details live in the sections and documents linked.
     type-ahead; the catalog passes. Not run on Windows, macOS or
     wxPython 4.0.7
     ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#updating-the-bundle)).
-68. A Preferences option for editing in place with a click on the
-    selected row, off by default: F2 alone then opens the edit box.
-    **Asked by designer 2026-10-02.** Today a click on the current,
-    selected row opens one unasked when no second click follows (as
-    after a drag, P124). F2 is the rename and edit-cell key of Windows
-    and the Linux desktops; macOS uses Return, which here opens the
-    editor, so F2 serves everywhere
+68. A Preferences option for editing in place with a slow double
+    click, off by default: F2 alone then opens the edit box.
+    **Asked by designer 2026-10-02.** The slow double click is the
+    usual one, a second click on the row clicked last; but here the
+    click that comes back into the list from another view also opens
+    an edit box (on master too), which file managers never do: only
+    the second click of a list that has the focus should. **Asked by
+    designer the same day:** an "Edit in place" item in the right-click
+    menu, for the cell clicked (the list records its column), shown
+    only while editing in place is on; none in the Edit menu, as the
+    list shows no current cell (rows only). To decide: F2 keeps
+    editing the Subject, or edits the column clicked last, so that the
+    right-click item can show it. F2 is the rename and edit-cell key of
+    Windows and the Linux desktops; macOS uses Return, which here opens
+    the editor, so F2 serves everywhere
     ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing),
     [SETTINGS.md](SETTINGS.md#planned-in-place-editing-options)).
 69. A Preferences option to turn editing in place off altogether, F2
