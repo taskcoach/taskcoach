@@ -326,4 +326,4 @@ degrade silently when absent. See
 ## See Also
 
 - [LOGGING_GUIDE.md](LOGGING_GUIDE.md) - general logging conventions and prefix list.
-- [AUI_WAYLAND_ISSUES.md](AUI_WAYLAND_ISSUES.md) - other Wayland-related platform notes.
+- [WAYLAND_ISSUES.md](WAYLAND_ISSUES.md) - other Wayland-related platform notes.

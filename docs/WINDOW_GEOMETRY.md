@@ -8,7 +8,7 @@ Related:
 - Panel layout, including floating panes, is AUI's own saving and
   restoring: [AUI.md](AUI.md).
 - Minimize and hide from the tray: [SYSTEM_TRAY.md](SYSTEM_TRAY.md).
-- Wayland limits: [AUI_WAYLAND_ISSUES.md](AUI_WAYLAND_ISSUES.md).
+- Wayland limits: [WAYLAND_ISSUES.md](WAYLAND_ISSUES.md).
 
 ## Index
 
@@ -266,7 +266,7 @@ Researched 2026-09-27; "measured" means seen on the real desktop,
 | X11, Xfwm4 (Xfce), Marco (MATE), others | Unknown | Unknown | Yes | Both | All | Untested |
 | X11 tiling (i3 and the like) | Ignored for tiled windows | Ignored for tiled windows | Tiled windows get the tile's size | Depends | All | Untested |
 | Wayland (Mutter, KWin, wlroots/Sway) | Impossible: no protocol for it | Impossible; `GetPosition()` is (0, 0) | Yes: the app picks its size unless maximized, tiled or full screen | Requests only | Maximized, full screen, focus; never minimized (GTK3 `IsIconized()` is always False) | Source (xdg-shell); see [SYSTEM_TRAY.md](SYSTEM_TRAY.md) |
-| XWayland (`GDK_BACKEND=x11` under Wayland) | As X11 with the compositor's X11 rules | As X11 | Yes | Both | All | Not a supported mode ([AUI_WAYLAND_ISSUES.md](AUI_WAYLAND_ISSUES.md)) |
+| XWayland (`GDK_BACKEND=x11` under Wayland) | As X11 with the compositor's X11 rules | As X11 | Yes | Both | All | Not a supported mode ([WAYLAND_ISSUES.md](WAYLAND_ISSUES.md)) |
 
 Consequences for the design:
 

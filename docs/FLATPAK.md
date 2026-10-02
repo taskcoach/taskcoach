@@ -48,7 +48,7 @@ Flathub review:
 
 | Grant | Why |
 |-------|-----|
-| `--socket=x11`, `--share=ipc`, `--device=dri`, `--env=GDK_BACKEND=x11` | Display and rendering. X11-only: wxPython's AUI docking is unusable on native Wayland ([AUI_WAYLAND_ISSUES.md](AUI_WAYLAND_ISSUES.md)), so Task Coach declares as an X11 app and runs via XWayland on Wayland sessions. Per Flathub, an app without native Wayland support uses `--socket=x11`; also granting `--socket=wayland` is a lint error (`finish-args-contains-both-x11-and-wayland`) and would not provide X11 on Wayland anyway. |
+| `--socket=x11`, `--share=ipc`, `--device=dri`, `--env=GDK_BACKEND=x11` | Display and rendering. X11-only: wxPython's AUI docking is unusable on native Wayland ([WAYLAND_ISSUES.md](WAYLAND_ISSUES.md#aui-docking)), so Task Coach declares as an X11 app and runs via XWayland on Wayland sessions. Per Flathub, an app without native Wayland support uses `--socket=x11`; also granting `--socket=wayland` is a lint error (`finish-args-contains-both-x11-and-wayland`) and would not provide X11 on Wayland anyway. |
 | `--filesystem=home` | Read/write `.tsk` files (plus attachments and HTML/CSV/iCal exports) at arbitrary paths; wx 3.2.x's file dialogs don't use the XDG portal. Migrating to the portal to drop this is a **postponed** TODO — see [File access and the file-chooser portal](#file-access-and-the-file-chooser-portal). |
 | `--talk-name=org.kde.StatusNotifierWatcher` | System-tray icon |
 | `--talk-name=org.freedesktop.ScreenSaver`, `--talk-name=org.gnome.Mutter.IdleMonitor` | Optional idle detection ([IDLE.md](IDLE.md)) |

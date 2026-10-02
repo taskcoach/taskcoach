@@ -345,7 +345,7 @@ Numbered D1, D2, ...
   designer's standing rule of 2026-09-30 for users on those platforms:
   the wlroots/COSMIC tray backend and the Background portal
   ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)); the Wayland items of
-  [AUI_WAYLAND_ISSUES.md](AUI_WAYLAND_ISSUES.md) (a dock and float
+  [WAYLAND_ISSUES.md](WAYLAND_ISSUES.md) (a dock and float
   menu, the switch to `wx.aui`, `GDK_BACKEND=x11`); popups placed by
   the compositor on Wayland (DATETIME_CONTROLS.md says built, it was
   not: `_PopupWindow` is always a `wx.Dialog`); idle without pywayland
@@ -772,8 +772,17 @@ each with the recommended action, none ruled yet:
   February), `docs/proto.rst` (iPhone sync, removed in January), and
   13 `.gitignore` lines for files nothing makes; `.profile` is
   ignored. `PUBLICITY.txt` stays: a contributor keeps it.
-- P75. `bugs/`: 4 of the 6 issue notes are closed on GitHub.
-  Recommended: open ones into docs, the rest retired.
+- P75. ~~`bugs/`: 4 of the 6 issue notes were closed on GitHub~~:
+  done 2026-10-02, **ruled by designer**. Checked on GitHub: #64,
+  #98, #143 and #159 closed; #161 and #173 open, upstream. The closed
+  notes and #159's test app are retired (git keeps them); #159's fix
+  (the search box's drop-down placed from a panel fitting it) is in
+  [PYTHON3_MIGRATION_3.md](PYTHON3_MIGRATION_3.md#search-drop-down-position-on-wayland);
+  #161 and #173 are in the Popups section of the Wayland document,
+  renamed from `AUI_WAYLAND_ISSUES.md` to
+  [WAYLAND_ISSUES.md](WAYLAND_ISSUES.md#popups) (the only Wayland
+  document; its links updated), with #161's test app in
+  `docs/scripts/choice_dropdown_wayland_demo.py`. `bugs/` is gone.
 - P76. `test-screenshots/` (13 MB) and `icon-ideas/` (8 MB) unused but
   the README banner; `website.in/screenshots`: 26 of 28 unlinked (P45
   kept them for the Flatpak metadata, which links 2). Retire?
@@ -902,8 +911,10 @@ each with the recommended action, none ruled yet:
 - P110. Mail: IMAP OAuth2 and NTLM through `pyspnego` ("if wanted");
   FLATPAK.md withholds network because IMAP was "likely dead" (fixed
   in P41), yet the version check needs it. Rule?
-- P111. Issue #64 (`XLIB_SKIP_ARGB_VISUALS`) waits for a user's test
-  since 2025 (TODO.md). Close?
+- P111. ~~Issue #64 (`XLIB_SKIP_ARGB_VISUALS`) waited for a user's
+  test~~: closed 2026-10-02: the issue is closed on GitHub and the
+  TODO.md entry was gone; `THIRD_PARTY_CODE.md` no longer asks for the
+  test (with P75).
 - P112. Stale doc text the audit listed (TASK_STATUS, DATETIME
   CONTROLS, the icon docs, LIST_MANAGEMENT, the Python 3 migration
   docs, the packaging docs, README). Recommended: correct in one pass.

@@ -113,7 +113,8 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         the Panel as the transient parent. Position arguments are irrelevant -
         Wayland's compositor handles placement.
 
-        See bugs/ISSUE_159_SEARCH_DROPDOWN_POSITION.md for details.
+        See docs/PYTHON3_MIGRATION_3.md, Search Drop-down Position on
+        Wayland.
         """
         self.HideTip()
         menu = self.GetMenu()
@@ -332,7 +333,8 @@ class SearchCtrl(wx.Panel):
     on the Panel, we establish the correct transient parent relationship.
 
     This is the modern best practice for Wayland-compatible popup positioning.
-    See bugs/ISSUE_159_SEARCH_DROPDOWN_POSITION.md for details.
+    See docs/PYTHON3_MIGRATION_3.md, Search Drop-down Position on
+    Wayland.
     """
 
     def __init__(self, parent, *args, **kwargs):

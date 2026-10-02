@@ -42,7 +42,7 @@ def isWayland():
     """Detect if running on Wayland display server.
 
     Note: AUI floating windows are broken on Wayland due to protocol
-    limitations. See docs/AUI_WAYLAND_ISSUES.md for details.
+    limitations. See docs/WAYLAND_ISSUES.md#aui-docking for details.
     """
     return (
         os.environ.get("XDG_SESSION_TYPE") == "wayland"

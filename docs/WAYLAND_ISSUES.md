@@ -1,12 +1,18 @@
-# AUI Docking Issues on Wayland
+# Wayland Issues
 
-This document describes known issues with wxPython/wxWidgets AUI (Advanced User Interface) docking functionality when running on Wayland display servers.
+Known issues of wxPython and wxWidgets on Wayland display servers, and
+what Task Coach does about them: [AUI Docking](#aui-docking) and
+[Popups](#popups).
 
-## Problem Summary
+## AUI Docking
+
+Known issues with wxPython/wxWidgets AUI (Advanced User Interface) docking functionality when running on Wayland display servers.
+
+### Problem Summary
 
 AUI docking is unusable on Wayland because users cannot see where panes will dock when dragging. The docking hints (visual preview) don't display due to Wayland's security model.
 
-### What Works on Wayland
+#### What Works on Wayland
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -14,7 +20,7 @@ AUI docking is unusable on Wayland because users cannot see where panes will doc
 | Resize panes via sash/dividers | ✅ Works | Dividers work normally |
 | Drag floating window around | ✅ Works | Compositor handles movement |
 
-### What's Broken on Wayland
+#### What's Broken on Wayland
 
 | Feature | Status | Notes |
 |---------|--------|-------|
@@ -22,11 +28,11 @@ AUI docking is unusable on Wayland because users cannot see where panes will doc
 | Drag pane to rearrange docked layout | ❌ Unusable | Works but no visual feedback |
 | Drag floating window to re-dock | ❌ Broken | App can't detect dock zones |
 
-## Technical Root Cause
+### Technical Root Cause
 
 On Wayland, `gdk_window_get_origin()` always returns `(0, 0)` and `gtk_window_move()` does nothing because Wayland intentionally hides global screen coordinates from applications for security. AUI's docking hints use separate overlay windows that require global coordinates to position, so they appear broken or squashed at origin. Same-window operations like sash resizing work because mouse coordinates are relative to that window.
 
-## Target Behavior: GIMP-like Docking
+### Target Behavior: GIMP-like Docking
 
 GIMP provides a working docking model on Wayland that we should emulate:
 
@@ -36,7 +42,7 @@ GIMP provides a working docking model on Wayland that we should emulate:
 
 This pattern accepts Wayland's limitations while preserving useful functionality.
 
-## Upstream Bug Reports
+### Upstream Bug Reports
 
 | Issue | Status | Description |
 |-------|--------|-------------|
@@ -45,7 +51,7 @@ This pattern accepts Wayland's limitations while preserving useful functionality
 | [wxWidgets #18372](https://github.com/wxWidgets/wxWidgets/issues/18372) | Closed (dup) | Floating panes cannot be dragged |
 | [wxWidgets #18669](https://github.com/wxWidgets/wxWidgets/issues/18669) | Open | KDE/KWin specific issues |
 
-## Upstream Fix: wxOverlay (Not Yet Available)
+### Upstream Fix: wxOverlay (Not Yet Available)
 
 wxWidgets C++ fixed docking hints for Wayland in [commit 29c8bfc](https://github.com/wxWidgets/wxWidgets/commit/29c8bfc) (February 9, 2024):
 
@@ -62,7 +68,7 @@ Related commits:
 
 **Monitoring**: When wxPython AGW AUI is updated with the wxOverlay approach, or when we can switch to wx.aui with a newer wxWidgets, docking hints should work.
 
-## Task Coach Implementation
+### Task Coach Implementation
 
 **Implemented**:
 - `operating_system.isWayland()` detection in `taskcoachlib/operating_system.py`
@@ -72,7 +78,7 @@ Related commits:
   - Clears saved perspective
   - Recreates viewers with default layout (TaskViewer in center, CategoryViewer on right)
 
-### Reset Implementation Details
+#### Reset Implementation Details
 
 The reset must handle tabbed/notebook configurations where multiple viewers are stacked. Simply closing viewers leaves orphaned AUI notebook controls that break the center pane detection.
 
@@ -92,7 +98,7 @@ The explicit CENTER positioning is critical: without a center pane, AUI docking 
 - Menu option to toggle a window between docked and floating state
 - This provides explicit control since drag-based docking is unusable on Wayland
 
-## GDK_BACKEND=x11 Is Not a Viable Solution
+### GDK_BACKEND=x11 Is Not a Viable Solution
 
 While `GDK_BACKEND=x11` forces the application onto XWayland where positioning works, this is **NOT** a viable or sustainable solution:
 
@@ -103,7 +109,7 @@ While `GDK_BACKEND=x11` forces the application onto XWayland where positioning w
 
 Each Wayland positioning issue must be solved with a proper Wayland-compatible approach (modal dialogs, xdg_popup windows, compositor-managed positioning).
 
-## Workaround: Run Under XWayland (AUI Docking Only)
+### Workaround: Run Under XWayland (AUI Docking Only)
 
 > **Note:** This workaround only addresses AUI docking hints. It is not a general solution for Wayland positioning issues — see section above.
 
@@ -118,6 +124,34 @@ GDK_BACKEND=x11 python3 taskcoach.py
 ```
 
 This forces the application to use the X11 backend via XWayland, where AUI docking works correctly.
+
+## Popups
+
+Positioned by the compositor relative to their parent window, as
+Wayland has no global coordinates.
+
+| Issue | State | What the user sees | Task Coach |
+|-------|-------|--------------------|------------|
+| [#159](https://github.com/taskcoach/taskcoach/issues/159) | Fixed, closed | The search box's drop-down opened at the far left of the pane | The search box sits in a panel that fits it tightly, and the drop-down pops up from that panel ([PYTHON3_MIGRATION_3.md](PYTHON3_MIGRATION_3.md#search-drop-down-position-on-wayland)) |
+| [#161](https://github.com/taskcoach/taskcoach/issues/161) | Open, upstream | On KDE Plasma, every `wx.Choice` drop-down shows tiny scrollbars, even with two items; `wx.ComboBox` does not | None: no setting changes it (item count, sizing, parent all tried) |
+| [#173](https://github.com/taskcoach/taskcoach/issues/173) | Open, upstream | A popup menu near a screen edge jumps to the other side of its control instead of sliding just enough to fit | None possible from Python |
+
+Related reports for #161: [Mozilla #1718507](https://bugzilla.mozilla.org/show_bug.cgi?id=1718507)
+(popup menus small on KDE Wayland),
+[wxWidgets #24473](https://github.com/wxWidgets/wxWidgets/issues/24473)
+(drop-downs half a screen away). `docs/scripts/choice_dropdown_wayland_demo.py`
+shows `wx.Choice` and `wx.ComboBox` side by side in the setups tried.
+
+Why #173 happens: GTK3 menus prefer flipping (`GDK_ANCHOR_FLIP_X`) over
+sliding (`GDK_ANCHOR_SLIDE_X`) unless the menu's
+[`anchor-hints`](https://docs.gtk.org/gtk3/property.Menu.anchor-hints.html)
+say otherwise, and wxWidgets never sets them. Tried in January 2026,
+none works, so not to be tried again: patching `Gtk.Menu` through
+PyGObject (wx calls GTK's C functions directly), reaching the menu's
+GTK object from `wx.Menu` (not exposed), handing `wx.SearchCtrl` a GTK
+menu (it takes a `wx.Menu` only), a system setting (none exists), an
+`LD_PRELOAD` library (fragile, not for a desktop application). Waits
+for wxWidgets to set the hints or expose them.
 
 ## References
 

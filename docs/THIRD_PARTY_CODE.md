@@ -50,8 +50,8 @@ Code that changes a library's behaviour for the whole process.
 - Bundled libraries removed in the Python 3 migration and since:
   `taskcoachlib/thirdparty/README.txt`.
 - January 2026, from `taskcoach.py`: `XLIB_SKIP_ARGB_VISUALS=1` (an
-  Ubuntu 10.10 workaround; its removal may resolve GitHub #64, user
-  testing needed), the `mx.DateTime` import (Ubuntu 12.04), the
+  Ubuntu 10.10 workaround, suspected in the segfault of GitHub #64,
+  since closed), the `mx.DateTime` import (Ubuntu 12.04), the
   `wxversion.select()` call (wx 2.8/3.0), the `/usr/share/pyshared`
   path (Ubuntu 12.04).
 - 2026-09: the `inspect.getargspec` shim, the

@@ -338,7 +338,7 @@ Found with the geometry trace ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing)).
 
 ## Related Documentation
 
-- **[AUI Wayland Issues](AUI_WAYLAND_ISSUES.md)** - Docking problems on Wayland display servers
+- **[Wayland Issues](WAYLAND_ISSUES.md#aui-docking)** - Docking problems on Wayland display servers
 - **[Window Geometry](WINDOW_GEOMETRY.md)** - Size and position of the main window and editors
 
 ## External References

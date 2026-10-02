@@ -12,10 +12,10 @@ Tested on Kubuntu 24 with KDE Plasma + Wayland:
 - wx.Choice: ALL variations show unwanted scrollbars
 - wx.ComboBox: Does NOT have this issue
 
-See bugs/ISSUE_161_CHOICE_DROPDOWN_SCROLLBARS.md for full details.
+See docs/WAYLAND_ISSUES.md#popups for full details.
 
 Usage:
-    python3 bugs/issue_161_test_choice_dropdown.py
+    python3 docs/scripts/choice_dropdown_wayland_demo.py
 """
 
 import wx
