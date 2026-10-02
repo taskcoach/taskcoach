@@ -502,6 +502,21 @@ class TaskSorterTreeModeTest(test.TestCase):
             < list(self.sorter).index(self.parent1)
         )
 
+    def test_children_of_follows_the_lists_order(self):
+        # Looked up by their places in the sorted list
+        other = task.Task(subject="another child")
+        self.parent1.addChild(other)
+        self.taskList.append(other)
+        self.assertEqual(
+            [other, self.child1], self.sorter.children_of(self.parent1)
+        )
+        self.sorter.sort_ascending(False)
+        self.assertEqual(
+            [self.child1, other], self.sorter.children_of(self.parent1)
+        )
+        self.taskList.remove(other)
+        self.assertEqual([self.child1], self.sorter.children_of(self.parent1))
+
     def test_undoing_a_move_sorts_again_once(self):
         # Undo puts the links back alone, with no list change: the
         # sorter forgets its root items and tells the views, once

@@ -178,6 +178,7 @@ class Sorter(patterns.ListDecorator):
 class TreeSorter(Sorter):
     def __init__(self, *args, **kwargs):
         self.__rootItems = None  # Cached root items
+        self.__positions = None  # Cached {item: its place in the list}
         self.__restored = set()  # What the values put back changed
         super().__init__(*args, **kwargs)
         for event_type in (
@@ -223,19 +224,19 @@ class TreeSorter(Sorter):
         )
 
     def reset(self, *args, **kwargs):  # pylint: disable=W0221
-        self.__invalidateRootItemCache()
+        self.__forget_cached()
         return super().reset(*args, **kwargs)
 
     @patterns.eventSource
     def extendSelf(self, items, event=None):
-        self.__invalidateRootItemCache()
+        self.__forget_cached()
         if is_restoring():
             self.__note_restored("listed")
         return super().extendSelf(items, event=event)
 
     @patterns.eventSource
     def removeItemsFromSelf(self, items_to_remove, event=None):
-        self.__invalidateRootItemCache()
+        self.__forget_cached()
         if is_restoring():
             self.__note_restored("listed")
         # FIXME: Why is it necessary to remove all children explicitly?
@@ -252,5 +253,18 @@ class TreeSorter(Sorter):
             self.__rootItems = [item for item in self if item.parent() is None]
         return self.__rootItems
 
-    def __invalidateRootItemCache(self):
+    def children_of(self, parent):
+        """The parent's own subitems that this list holds, in its order:
+        their places are looked up, the list is not searched."""
+        if self.__positions is None:
+            self.__positions = {item: place for place, item in enumerate(self)}
+        positions = self.__positions
+        return sorted(
+            (child for child in parent.children() if child in positions),
+            key=positions.__getitem__,
+        )
+
+    def __forget_cached(self):
+        # The list changes only here: items added, removed or sorted
         self.__rootItems = None
+        self.__positions = None

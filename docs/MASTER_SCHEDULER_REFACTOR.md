@@ -1028,11 +1028,15 @@ each with the recommended action, none ruled yet:
   opening). It now looks each task up in a set. Busy time after the
   action, on the virtual display: a sort 3.5 s before, 0.6 s after;
   the tree/list switch 1.3 and 0.7 s; a search 1.1 and 0.85 s; the
-  screens match the build before. What is left is drawing the rows'
-  texts. The view is still scanned once per parent: with 1,000
-  parents of 2 subtasks each (3,000 tasks) a sort takes 2.0 s (3.6 s
-  before); a map of the view's positions, kept while a refresh runs,
-  would make it linear.
+  screens match the build before. That still scanned the view once
+  per parent: with 1,000 parents of 2 subtasks each (3,000 tasks) a
+  sort took 2.2 s of processor time (3.6 s before). **Asked by
+  designer** ("each parent should always know its subtask"): the tree
+  sorter now keeps each item's place in the sorted list, built once
+  after the list changes (`TreeSorter.children_of()`), and a parent's
+  own subitems are put in that order, without searching the list. A
+  sort: 0.5 s on the 3,000-task file, 0.2 to 0.3 s on the 2,050 one;
+  the screens match. What is left is building the rows themselves.
 - P145. ~~A bulk command or a pass that changes many statuses updated
   the tray icon's tool tip once per task, each update counting every
   task's status~~: fixed 2026-10-01, **asked by designer**; master
