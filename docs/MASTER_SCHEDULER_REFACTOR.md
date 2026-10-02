@@ -889,10 +889,15 @@ each with the recommended action, none ruled yet:
   removed `MainWindow.advanceSelection()` as unused, but the PEP 8
   rename had already changed its one caller; the command now calls the
   viewer container directly.
-- P122. `UICommand` ignores its `id` argument and always takes one
-  from the pool, so the floating panes' Ctrl+PgDn/Ctrl+PgUp
+- P122. Ctrl+PgDn and Ctrl+PgUp (View > Activate next/previous
+  viewer) switch viewers only when the focus is in a text box such as
+  the search box; the menu items work. Checked in the app 2026-10-02,
+  the same on master: with the focus in a task or category list the
+  list takes them as Page Down and Page Up (the selection moves a
+  page), and in a floating pane nothing happens: `UICommand` ignores
+  its `id` argument and takes one from the pool, so the pane's own
   accelerators (`container.on_page_floated()`) send ids nothing is
-  bound to. The same in the original code. Not checked in the app.
+  bound to.
 - P123. ~~Enter in the search box also opened the editor of the
   selected task~~: fixed 2026-10-01, the same on master. The viewer's
   accelerator table (Return, Ctrl+X/C/V, Ctrl+Del) took those keys
@@ -1134,6 +1139,15 @@ each with the recommended action, none ruled yet:
   through their tooltip's debounced call (found 2026-10-02 while
   tracing P113). Harmless since P113's fix, but it grows. Not checked
   in the app.
+- P150. In the Adjust due date mode, a due date changed in the task
+  list keeps the stored duration, and changing the start in the editor
+  afterwards moves the due date to the start plus that duration,
+  dropping the list's change. Checked in the app 2026-10-02 on a
+  Welcome.tsk copy, the same on master: due set to 2026-03-04 in the
+  list, the editor shows start 2026-01-30 09:00, duration 5d 08:00 and
+  that due; the start moved a day, the due becomes 2026-02-05. The
+  Adjust start date mode mirrors it. Part of DURATION_CALCULATIONS.md
+  To Do 10 (the list's old "dates tied" setting).
 
 ## Views on the Effective Styles
 
