@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import time
+from unittest import mock
 
 import test
 from taskcoachlib import config, patterns, persistence
@@ -60,6 +61,24 @@ class IdleControllerTest(test.wxTestCase):
     def power(self, event_type):
         # As the main window sends it when the computer sleeps or wakes
         patterns.Event(event_type, self).send()
+
+    def logged_summaries(self, act):
+        """The backend summaries act logs."""
+        with mock.patch.object(idlecontroller, "log_step") as log:
+            act()
+        return [
+            call
+            for call in log.call_args_list
+            if call.args[0].startswith("Probing idle backend")
+        ]
+
+    def test_turned_on_later_logs_the_backend_once(self):
+        # As at startup when it is on then (docs/IDLE.md)
+        self.assertEqual(1, len(self.logged_summaries(self.enable)))
+        self.assertEqual([], self.logged_summaries(lambda: self.enable(2)))
+
+    def test_turned_off_logs_nothing(self):
+        self.assertEqual([], self.logged_summaries(lambda: self.enable(0)))
 
     def test_disabled_does_not_poll(self):
         self.track()

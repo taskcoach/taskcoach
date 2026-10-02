@@ -885,8 +885,14 @@ each with the recommended action, none ruled yet:
 - P106. Window geometry left to check on LXDE: the "to test" rows, a
   resize jitter (the toolbar resized at every `EVT_SIZE`), a
   "Description" window seen once. Check?
-- P107. Changing the idle time at runtime logs no probe summary
-  ([IDLE.md](IDLE.md)). Leave?
+- P107. ~~Turning the idle notice on during a session logged no
+  backend summary~~: fixed 2026-10-02, **asked by designer**; the same
+  on master. The summary (backend chosen, a test query) is now logged
+  the first time the feature is on, at startup or later
+  ([IDLE.md](IDLE.md#setting-changes-during-a-session)). Checked in
+  the app: Idle time notice 0 to 1 in Preferences, OK: the summary
+  (`x11_mit_screensaver` selected) at once; tracking a task then logs
+  "Polling started; threshold=60s".
 - P108. ~~The colour picker's workaround for GNOME bug 761005 was
   never rechecked~~: checked 2026-10-02, kept. With the workaround
   switched off in a copy, Preferences > Statuses > Late's foreground

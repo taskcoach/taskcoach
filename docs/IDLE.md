@@ -191,7 +191,8 @@ GlobalTimer `timer.second` tick (see [SCHEDULERS.md](SCHEDULERS.md)).
 ## Startup Logging
 
 When the feature is enabled (`minidletime > 0`), `IdleController` logs a
-one-shot summary at startup using the standard `log_step` utility with
+one-shot summary at startup (or when it is first turned on) using the
+standard `log_step` utility with
 prefix `[IDLE]`. The log proves which backend was selected and that a
 real query returned a sensible value. At runtime it logs
 `Polling started; threshold=<n>s` and `Polling stopped`,
@@ -278,11 +279,12 @@ GNOME Mutter does not implement `ext-idle-notify-v1` as of early
 
 ### Setting changes during a session
 
-The startup probe runs once at `IdleController.__init__`. If the user
-toggles `minidletime` from `0` to non-zero at runtime via
-Preferences, the probe summary is not logged; the backend is selected
-silently on the first poll. Not currently considered a bug; a restart
-re-runs the probe.
+The summary is logged once, the first time the feature is on: at
+startup, or when Preferences turns `minidletime` from `0` to a
+threshold during the session. Later threshold changes log only
+`Polling started; threshold=<n>s`. Before 2026-10-02 a feature turned
+on during the session logged no summary until a restart (P107 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
 
 ---
 
