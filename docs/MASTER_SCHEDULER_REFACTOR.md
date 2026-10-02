@@ -822,7 +822,10 @@ each with the recommended action, none ruled yet:
   the popup out of `MaskedFieldsCtrl`, one "N/A" painter
   ([DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) 8, 9). Do or defer?
 - P99. "Paste as subitem" changes its label as the Edit menu opens
-  ([MENUS.md](MENUS.md)). Fix?
+  ([MENUS.md](MENUS.md)). Fix? Checked in the app 2026-10-02, master
+  the same: after a click in Categories, the first Edit menu shows
+  "Paste as subcategory" without its Shift+Ctrl+V (GTK sized the menu
+  for the old label); the second shows it.
 - P100. Lists: a selection outline (LIST_MANAGEMENT.md 1); the effort
   and attachment viewers select a different row after a delete (a
   no-op override); two open questions on AUI repaints. Rule?
@@ -949,19 +952,20 @@ each with the recommended action, none ruled yet:
   - the Effort list, docked or floating: nothing. A floating pane's
     own shortcuts send ids nothing is bound to (`UICommand` ignores
     its `id` argument).
-  - the search box: nothing on master; on this branch the next view
-    becomes active. An in-place edit box: nothing on master; on this
-    branch the next view becomes active and the edit box stays open,
-    unfocused.
+  - the search box: nothing on master, where the command itself
+    failed (`AttributeError`, fixed here by 56eb732e8); on this branch
+    the next view becomes active. An in-place edit box: nothing on
+    master; on this branch the next view becomes active and the edit
+    box stays open, unfocused (P154).
   - calendar, hierarchical calendar, timeline, square map and
     statistics views: a click does not make them the active view, and
     a floating one does not take the focus, so the keys move the task
     view's selection a page.
   - task editor, effort editor, Preferences: nothing; Ctrl+Tab and
     Ctrl+Shift+Tab switch the tabs.
-  The View menu items work: they cycle the views in the order they
-  were opened, docked, tabbed and floating. A rule is proposed, not
-  ruled.
+  On this branch the View menu items work (on master they fail the
+  same way): they cycle the views in the order they were opened,
+  docked, tabbed and floating. A rule is proposed, not ruled.
 - P123. ~~Enter in the search box also opened the editor of the
   selected task~~: fixed 2026-10-01, the same on master. The viewer's
   accelerator table (Return, Ctrl+X/C/V, Ctrl+Del) took those keys
@@ -1256,6 +1260,19 @@ each with the recommended action, none ruled yet:
   shows 75,00 (master: 75.00 until a restart). First step of To Do
   70.
 - P153. Moved to To Do 71.
+- P154. An in-place edit box stays open, what was typed unsaved, when
+  another view becomes active: by a click in it (master too) or, on
+  this branch, Ctrl+PgDn (P122). The date and time box already ends
+  then, keeping the typed value (`DateTimeCtrl._maybeAcceptAndClose()`);
+  the text, number and amount boxes end only at a click in their own
+  list. Checked in the app 2026-10-02: F2 on a subject, type, click in
+  Categories: the box stays with the text, on master too.
+- P155. The test runner keeps every test it has run
+  (`TestResultWithTimings` keys its timings by the test object), so
+  whatever a test keeps in its attributes stays for the whole run:
+  `UndoWithEditorsTest` ends with 239 views alive, 12 more each test;
+  its editors are also destroyed without being closed (P149). Keyed by
+  the test's name, they stay at 13 (measured in a copy).
 
 ## Views on the Effective Styles
 
