@@ -30,8 +30,10 @@ from taskcoachlib import (
 from taskcoachlib.gui import viewer  # noqa: F401 - make gui.viewer accessible
 from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.domain import task, date, effort, category, attachment
+from taskcoachlib.domain.date import dateandtime
 from taskcoachlib.i18n import _
 from taskcoachlib.thirdparty import wxScheduler
+from unittest import mock
 import locale
 import os
 import test
@@ -189,6 +191,18 @@ class EscapeKey:
 
 
 class CommonTestsMixin(object):
+    def fix_the_clock(self):
+        """Noon today, for the test and the rendering alike: neither a
+        run crossing midnight nor a test at 00:00 or 23:59, which render
+        without the time, changes what "Today" shows (P115)."""
+        noon = date.DateTime.now().replace(
+            hour=12, minute=0, second=0, microsecond=0
+        )
+        for module in (date, dateandtime):
+            patcher = mock.patch.object(module, "Now", lambda: noon)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
     def testCreate(self):
         self.assertItems()
 
@@ -1227,6 +1241,7 @@ class CommonTestsMixin(object):
         self.assertEqual("new", self.getItemText(0, 1))
 
     def testPlannedStartDateTimeToday(self):
+        self.fix_the_clock()
         today = date.Now()
         self.task.set_planned_start_date_time(today)
         self.taskList.append(self.task)
@@ -1236,6 +1251,7 @@ class CommonTestsMixin(object):
         )
 
     def testPlannedStartDateTimeYesterday(self):
+        self.fix_the_clock()
         yesterday = date.Yesterday()
         self.task.set_planned_start_date_time(yesterday)
         self.taskList.append(self.task)
@@ -1246,6 +1262,7 @@ class CommonTestsMixin(object):
         )
 
     def testPlannedStartDateTimeTomorrow(self):
+        self.fix_the_clock()
         tomorrow = date.Tomorrow()
         self.task.set_planned_start_date_time(tomorrow)
         self.taskList.append(self.task)
@@ -1256,6 +1273,7 @@ class CommonTestsMixin(object):
         )
 
     def testPlannedStartDateToday(self):
+        self.fix_the_clock()
         today = date.Now().startOfDay()
         self.task.set_planned_start_date_time(today)
         self.taskList.append(self.task)
@@ -1263,6 +1281,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Today"), self.getItemText(0, 1))
 
     def testPlannedStartDateYesterday(self):
+        self.fix_the_clock()
         yesterday = date.Yesterday().startOfDay()
         self.task.set_planned_start_date_time(yesterday)
         self.taskList.append(self.task)
@@ -1270,6 +1289,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Yesterday"), self.getItemText(0, 1))
 
     def testPlannedStartDateTomorrow(self):
+        self.fix_the_clock()
         tomorrow = date.Tomorrow().startOfDay()
         self.task.set_planned_start_date_time(tomorrow)
         self.taskList.append(self.task)
@@ -1277,6 +1297,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Tomorrow"), self.getItemText(0, 1))
 
     def testDueDateTimeToday(self):
+        self.fix_the_clock()
         today = date.Now()
         self.task.set_due_date_time(today)
         self.taskList.append(self.task)
@@ -1286,6 +1307,7 @@ class CommonTestsMixin(object):
         )
 
     def testDueDateTimeYesterday(self):
+        self.fix_the_clock()
         yesterday = date.Yesterday()
         self.task.set_due_date_time(yesterday)
         self.taskList.append(self.task)
@@ -1296,6 +1318,7 @@ class CommonTestsMixin(object):
         )
 
     def testDueDateTimeTomorrow(self):
+        self.fix_the_clock()
         tomorrow = date.Tomorrow()
         self.task.set_due_date_time(tomorrow)
         self.taskList.append(self.task)
@@ -1306,6 +1329,7 @@ class CommonTestsMixin(object):
         )
 
     def testDueDateToday(self):
+        self.fix_the_clock()
         today = date.Now().startOfDay()
         self.task.set_due_date_time(today)
         self.taskList.append(self.task)
@@ -1313,6 +1337,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Today"), self.getItemText(0, 2))
 
     def testDueDateYesterday(self):
+        self.fix_the_clock()
         yesterday = date.Yesterday().startOfDay()
         self.task.set_due_date_time(yesterday)
         self.taskList.append(self.task)
@@ -1320,6 +1345,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Yesterday"), self.getItemText(0, 2))
 
     def testDueDateTomorrow(self):
+        self.fix_the_clock()
         tomorrow = date.Tomorrow().startOfDay()
         self.task.set_due_date_time(tomorrow)
         self.taskList.append(self.task)
@@ -1327,6 +1353,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Tomorrow"), self.getItemText(0, 2))
 
     def testActualStartDateTimeToday(self):
+        self.fix_the_clock()
         today = date.Now()
         self.task.set_actual_start_date_time(today)
         self.taskList.append(self.task)
@@ -1336,6 +1363,7 @@ class CommonTestsMixin(object):
         )
 
     def testActualStartDateTimeYesterday(self):
+        self.fix_the_clock()
         yesterday = date.Yesterday()
         self.task.set_actual_start_date_time(yesterday)
         self.taskList.append(self.task)
@@ -1346,6 +1374,7 @@ class CommonTestsMixin(object):
         )
 
     def testActualStartDateTimeTomorrow(self):
+        self.fix_the_clock()
         tomorrow = date.Tomorrow()
         self.task.set_actual_start_date_time(tomorrow)
         self.taskList.append(self.task)
@@ -1356,6 +1385,7 @@ class CommonTestsMixin(object):
         )
 
     def testActualStartDateToday(self):
+        self.fix_the_clock()
         today = date.Now().startOfDay()
         self.task.set_actual_start_date_time(today)
         self.taskList.append(self.task)
@@ -1363,6 +1393,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Today"), self.getItemText(0, 3))
 
     def testActualStartDateYesterday(self):
+        self.fix_the_clock()
         yesterday = date.Yesterday().startOfDay()
         self.task.set_actual_start_date_time(yesterday)
         self.taskList.append(self.task)
@@ -1370,6 +1401,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Yesterday"), self.getItemText(0, 3))
 
     def testActualStartDateTomorrow(self):
+        self.fix_the_clock()
         tomorrow = date.Tomorrow().startOfDay()
         self.task.set_actual_start_date_time(tomorrow)
         self.taskList.append(self.task)
@@ -1377,6 +1409,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Tomorrow"), self.getItemText(0, 3))
 
     def testCompletionDateTimeToday(self):
+        self.fix_the_clock()
         today = date.Now()
         self.task.set_completion_date_time(today)
         self.taskList.append(self.task)
@@ -1386,6 +1419,7 @@ class CommonTestsMixin(object):
         )
 
     def testCompletionDateTimeYesterday(self):
+        self.fix_the_clock()
         yesterday = date.Yesterday()
         self.task.set_completion_date_time(yesterday)
         self.taskList.append(self.task)
@@ -1396,6 +1430,7 @@ class CommonTestsMixin(object):
         )
 
     def testCompletionDateTimeTomorrow(self):
+        self.fix_the_clock()
         tomorrow = date.Tomorrow()
         self.task.set_completion_date_time(tomorrow)
         self.taskList.append(self.task)
@@ -1406,6 +1441,7 @@ class CommonTestsMixin(object):
         )
 
     def testCompletionDateToday(self):
+        self.fix_the_clock()
         today = date.Now().startOfDay()
         self.task.set_completion_date_time(today)
         self.taskList.append(self.task)
@@ -1413,6 +1449,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Today"), self.getItemText(0, 3))
 
     def testCompletionDateYesterday(self):
+        self.fix_the_clock()
         yesterday = date.Yesterday().startOfDay()
         self.task.set_completion_date_time(yesterday)
         self.taskList.append(self.task)
@@ -1420,6 +1457,7 @@ class CommonTestsMixin(object):
         self.assertEqual(_("Yesterday"), self.getItemText(0, 3))
 
     def testCompletionDateTomorrow(self):
+        self.fix_the_clock()
         tomorrow = date.Tomorrow().startOfDay()
         self.task.set_completion_date_time(tomorrow)
         self.taskList.append(self.task)

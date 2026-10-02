@@ -819,10 +819,17 @@ each with the recommended action, none ruled yet:
   between days, hours, minutes and seconds); `widgets/masked.py`, its
   last user gone, is removed. Checked in the app: 2:30 stored, Escape
   cancels, a click elsewhere accepts.
-- P115. `TaskViewerTest` failed 21 tests in a catalog run that crossed
-  midnight (2026-10-01 00:00, "Today 00:00" expected "Today"), and
-  passes when rerun: tests that read the clock break just after
-  midnight. Recommended: give them a fixed time.
+- P115. ~~`TaskViewerTest` failed 21 tests in a catalog run that
+  crossed midnight~~: fixed 2026-10-02, **asked by designer**; tests
+  only. The 24 tests of "Today", "Yesterday" and "Tomorrow" in the date
+  columns took the time from the clock: at 00:00 or 23:59 the date
+  renders without the time ("Today" for "Today 00:00"), and a run
+  crossing midnight changes the day between the test and the
+  rendering. They now fix the clock at noon of the day
+  (`CommonTestsMixin.fix_the_clock()`). Checked with the clock function
+  moved to 00:00:30 and 23:59:30 in a scratch copy: 24 failures each
+  before, none after (two tests that need the clock to advance fail
+  with any stopped clock, at either time).
 - P116. ~~A value typed in the task list's % complete or Priority cell
   was lost on a click elsewhere; Enter kept it~~: fixed 2026-10-01,
   **found and asked by designer**; the code was the same on master.
