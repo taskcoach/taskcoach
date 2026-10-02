@@ -1204,6 +1204,26 @@ each with the recommended action, none ruled yet:
   (pypubsub held its listeners weakly). A change of the setting now
   calls its handler directly. Checked in the app, 20 editors with
   their pages shown: 9 MB, master 11 MB; the rest is P149.
+- P152. The date, time and amount controls and the lists' dates
+  ignore a settings file given with `--ini` and read the one at the
+  default place: found 2026-10-02 while analysing P151, the same on
+  master. Each control makes a `Settings` object of its own, which
+  reads the default file from disk; the dates' format is read once at
+  start the same way. Checked in the app: with `dateformat = DMY/` in
+  the `--ini` file the task list and the editor show 2026-01-15; the
+  same file also at the default place gives 15/01/2026. Proposed: read
+  the application's settings through the read-only shim
+  ([SETTINGS.md](SETTINGS.md#read-only-shim)), which also ends the
+  copies behind P151.
+- P153. The Publisher keeps a subscription's source alive, and drops a
+  freed subscriber only when an event of its type and source is sent:
+  found 2026-10-02 while analysing P151, the same on master. An object
+  that subscribes to its own events, or to a short-lived source, stays
+  until the subscription is removed by hand (P151). Proposed: hold the
+  source weakly and drop a subscription as soon as its source or its
+  subscriber is freed, so the Publisher cleans up after itself, the
+  target in
+  [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup).
 
 ## Views on the Effective Styles
 

@@ -116,9 +116,10 @@ not iteration over all observers. Every signal uses it: domain fields,
 collections, the task file, settings, commands and viewers. The
 observer is held weakly, its source strongly, as part of the key,
 until the subscription is removed: an object that subscribes to its
-own events is never freed
+own events is never freed, and a freed subscriber is dropped only
+when an event of its type and source is sent
 ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues),
-P151).
+P151, P153).
 
 Note: the Publisher is a **Singleton** (one global registry), not true
 per-instance signals (where the signal object lives on the instance itself,
