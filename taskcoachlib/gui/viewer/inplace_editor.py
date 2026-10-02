@@ -53,13 +53,20 @@ class KillFocusAcceptsEditsMixin(object):
             pass
 
     def Finish(self):
-        focus = wx.Window.FindFocus()
-        if self._finished or focus is None or self.__holds(focus):
-            super().Finish()
+        if self._finished:
             return
-        # Finish() would take the focus back from the view it went to
-        self._finished = True
-        self._owner.ResetEditControl()
+        focus = wx.Window.FindFocus()
+        if focus is not None and not self.__holds(focus):
+            # Finish() would take the focus back from where it went
+            self._finished = True
+            self._owner.ResetEditControl()
+            return
+        super().Finish()
+        # Given again once the editor is destroyed: wx makes a window
+        # with a focusable child unfocusable in GTK, so Finish() handed
+        # the focus to the editor, which takes it along
+        owner = self._owner
+        patterns.later.soon(owner, owner.SetFocusIgnoringChildren)
 
     def has_open_popup(self):
         """Whether a popup of the editor's own is shown."""

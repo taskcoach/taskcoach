@@ -1281,7 +1281,7 @@ each with the recommended action, none ruled yet:
   hourly fee: a click in Categories saves and Down then moves the
   category selection; Ctrl+PgDn saves and Categories takes the keys; a
   right-click inside saves as the task's menu opens (P157); the focus
-  going to another application saves (back, P158); Escape cancels,
+  going to another application saves; Escape cancels,
   Enter saves; Edit > Paste from the menu bar pastes into the box,
   which stays.
 - P155. ~~The test runner kept every test it had run~~: fixed
@@ -1312,18 +1312,21 @@ each with the recommended action, none ruled yet:
   keeps the event from the list; GTK's text menu (Cut, Copy, Paste,
   Delete, Select All, Insert Emoji) opens, the box stays open, and
   Select All, Copy and Paste act on the text. Fix?
-- P158. After Enter or Escape in an in-place edit box, the row shows
-  as selected without the focus (grey) and Down moves nothing until a
-  click in the list; the same on coming back from another application
-  the box was left for (P154). Checked in the app 2026-10-02, master
-  the same (there a second Down turns the row blue, still without
-  moving). wx makes a window holding a focusable child unfocusable in
-  GTK (its container code), so the list's `SetFocusIgnoringChildren()`
-  while the box exists goes to its children, finds the box again, and
-  the focus goes with the box; `FindFocus()` still names the list.
-  Prototyped: the list takes the focus once the box is destroyed; Down
-  then moves the selection after Enter, Escape and a return from
-  another application. Fix?
+- P158. ~~After Enter or Escape in an in-place edit box the list took
+  no keys~~: fixed 2026-10-02, **asked by designer**; the same on
+  master. The row showed grey and Down moved nothing until a click in
+  the list, also on coming back from another application the box was
+  left for (P154). wx makes a window holding a focusable child
+  unfocusable in GTK (its container code), so the list's
+  `SetFocusIgnoringChildren()` while the box existed went to its
+  children, found the box again, and the focus went with the box;
+  `FindFocus()` still named the list. The list is now given the focus
+  once the box is destroyed
+  ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing)). Checked
+  in the app: Down moves the selection after Enter, Escape, a date
+  box's Enter and a return from another application; after a click in
+  Categories or Ctrl+PgDn while editing, Down still moves the category
+  selection.
 
 ## Views on the Effective Styles
 

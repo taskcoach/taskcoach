@@ -1130,13 +1130,19 @@ and its parts (the date's fields, calendar and time choices included)
 for anything else: a click in another view, Ctrl+PgDn, a right-click
 inside it (the item's menu takes the focus), a dialog, another
 application. The focus stays where it went; the list takes it back
-when it went to another application, as at Escape and Enter (but see
-P158). Escape cancels, Enter keeps; a menu of the
-menu bar leaves the box open, so Edit > Paste pastes into it
-(`KillFocusAcceptsEditsMixin` in `inplace_editor.py`). Before (master
-the same), only the date box ended so, and it took the focus back from
-the view clicked, leaving the keyboard nowhere; the others stayed open,
-the typed text unsaved, until the next click in their list (P154).
+when it went to another application, as at Escape and Enter. Escape
+cancels, Enter keeps; a menu of the menu bar leaves the box open, so
+Edit > Paste pastes into it (`KillFocusAcceptsEditsMixin` in
+`inplace_editor.py`). Before (master the same), only the date box
+ended so, and it took the focus back from the view clicked, leaving
+the keyboard nowhere; the others stayed open, the typed text unsaved,
+until the next click in their list (P154).
+
+The list is given the focus once the box is destroyed. While the box
+exists, wx makes the list unfocusable in GTK (a window with a
+focusable child passes the focus on to it), so the focus went to the
+box and was lost with it: after Enter or Escape the row showed grey
+and the keys did nothing until a click (P158, master the same).
 
 Editing a cell leaves its row the only one selected, as a tree view's
 cursor does in GTK. Every edit passes `TreeListCtrl.on_begin_edit()`,

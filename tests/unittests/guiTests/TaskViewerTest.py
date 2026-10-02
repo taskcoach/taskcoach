@@ -178,9 +178,10 @@ class TaskViewerTestCase(test.wxTestCase):
 class EscapeKey:
     """A key event for Escape."""
 
-    @staticmethod
-    def GetKeyCode():
-        return wx.WXK_ESCAPE
+    code = wx.WXK_ESCAPE
+
+    def GetKeyCode(self):
+        return self.code
 
     @staticmethod
     def ShiftDown():
@@ -188,6 +189,12 @@ class EscapeKey:
 
     def Skip(self):
         pass
+
+
+class EnterKey(EscapeKey):
+    """A key event for Enter."""
+
+    code = wx.WXK_RETURN
 
 
 class CommonTestsMixin(object):
@@ -1253,16 +1260,52 @@ class CommonTestsMixin(object):
         self.assertFalse(self.editor_open())
         take.assert_not_called()
 
+    def focus_given_to_the_list(self, editor, act):
+        """For each time act gives the list the focus: whether the
+        editor was gone by then."""
+        main_window = self.viewer.widget.GetMainWindow()
+        given = []
+        with mock.patch.object(
+            main_window,
+            "SetFocusIgnoringChildren",
+            side_effect=lambda: given.append(not editor),
+        ):
+            act()
+            test.settle()
+        return given
+
     def test_the_list_keeps_the_focus_for_a_return_from_elsewhere(self):
         # Another application took it
         editor = self.edit_percentage_in_its_cell(60)
-        main_window = self.viewer.widget.GetMainWindow()
-        with mock.patch.object(
-            main_window, "SetFocusIgnoringChildren"
-        ) as take:
-            self.move_focus(editor._textCtrl, None)
-        take.assert_called_once_with()
+        given = self.focus_given_to_the_list(
+            editor, lambda: self.move_focus(editor._textCtrl, None)
+        )
+        self.assertTrue(given[-1])
         self.assertEqual(60, self.task.percentageComplete())
+
+    def end_with_key(self, key):
+        """The editor ends at the key, the focus in it."""
+        editor = self.edit_percentage_in_its_cell(60)
+
+        def act():
+            # The text field has the focus while the editor lives
+            with mock.patch.object(
+                wx.Window,
+                "FindFocus",
+                lambda: editor._textCtrl if editor else None,
+            ):
+                editor.OnKeyDown(key)
+                test.settle()
+
+        return self.focus_given_to_the_list(editor, act)
+
+    def test_the_list_takes_the_focus_after_escape(self):
+        # Once the editor is gone: before, GTK handed it to the editor,
+        # which took it along
+        self.assertTrue(self.end_with_key(EscapeKey())[-1])
+
+    def test_the_list_takes_the_focus_after_enter(self):
+        self.assertTrue(self.end_with_key(EnterKey())[-1])
 
     def test_escape_stands_when_the_focus_leaves_after_it(self):
         editor = self.edit_percentage_in_its_cell(60)
