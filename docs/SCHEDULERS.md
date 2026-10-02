@@ -86,6 +86,7 @@ Every 1 second (_on_tick):
 | `timer.second` | `MasterScheduler` | The master timer list check; a pass when an entry is due or an object marked |
 | `scheduler.pass` | Task `Sorter`, `ViewFilter` | Re-sort and refilter once by the statuses the pass changed |
 | `scheduler.aboutToPass`, `scheduler.pass` | Viewers (`Viewer`) | Gather the items the pass changes, refresh their rows once after it, as after a bulk command ([P140](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)) |
+| `scheduler.aboutToPass`, `scheduler.pass` | Tray icon (`_OnceAfterBursts`) | Count the statuses for the tool tip once after the pass, as after a bulk command ([P145](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)) |
 | `scheduler.date` | `ViewFilter` | Re-filter tasks at midnight, with the new day's statuses |
 | `scheduler.date` | `CalendarViewer`, `HierarchicalCalendarViewer` | Move to the new day |
 | `scheduler.date` | Viewers with columns (`ViewerWithColumns`) | Redraw relative dates ("Today", "Yesterday") |

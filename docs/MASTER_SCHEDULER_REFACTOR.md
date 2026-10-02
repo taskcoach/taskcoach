@@ -1023,12 +1023,20 @@ each with the recommended action, none ruled yet:
   parents of 2 subtasks each (3,000 tasks) a sort takes 2.0 s (3.6 s
   before); a map of the view's positions, kept while a refresh runs,
   would make it linear.
-- P145. A bulk command or a pass that changes many statuses (marking
-  tasks completed, waking from sleep, the due soon hours changed)
-  updates the tray icon's tooltip once per task, each update counting
-  every task's status: of the 6.5 s marking 2,050 tasks completed
-  takes, 4.5 s (found 2026-10-01; master updated it per appearance
-  change). Update it once after the command or pass?
+- P145. ~~A bulk command or a pass that changes many statuses updated
+  the tray icon's tool tip once per task, each update counting every
+  task's status~~: fixed 2026-10-01, **asked by designer**; master
+  did the same per appearance change. The tool tip is now counted at
+  once outside a burst, and once after a bulk command or a scheduler
+  pass, the rule the viewers follow (P140; `_OnceAfterBursts` in
+  `gui/taskbaricon.py`, for both tray classes). Marking all 2,050
+  tasks completed: busy 2.8 s, 7.6 s before; the screen matches the
+  build before. Checked in the app over D-Bus: the tool tip read "10
+  tasks overdue" on a Welcome.tsk copy, nothing once all were marked
+  completed, "10 tasks overdue" again after undo. Not covered: a
+  change of the due soon hours in Preferences, where each task
+  recomputes its status in its own observer of the setting, outside
+  a pass.
 - P146. With the Task statistics view open the app uses most of a
   core while idle (70 to 100%; master too, found 2026-10-01): wx's
   pie chart refreshes its legend on every paint (`PieCtrl.Draw()`,

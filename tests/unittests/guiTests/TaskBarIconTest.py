@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import meta, config, gui, operating_system
+from taskcoachlib import meta, config, gui, operating_system, patterns
 from taskcoachlib.domain import task, effort, date
 import test
 
@@ -138,6 +138,27 @@ class TaskBarIconTooltipTest(TaskBarIconTooltipTestCase):
         self.taskList.append(overdueTask)
         self.taskList.remove(overdueTask)
         self.assertTooltip("")
+
+    def assert_counted_once_after(self, begin, end):
+        # The tool tip counts every task: once for a burst of changes
+        tasks = [task.Task(), task.Task()]
+        self.taskList.extend(tasks)
+        patterns.Event(begin, self).send()
+        for each in tasks:
+            each.set_due_date_time(date.Yesterday())
+        self.assertTooltip("")
+        patterns.Event(end, self).send()
+        self.assertTooltip("2 tasks overdue")
+
+    def test_counted_once_after_a_bulk_command(self):
+        self.assert_counted_once_after(
+            "command.aboutToBulkModify", "command.justBulkModified"
+        )
+
+    def test_counted_once_after_a_scheduler_pass(self):
+        self.assert_counted_once_after(
+            "scheduler.aboutToPass", "scheduler.pass"
+        )
 
 
 class TaskBarIconTooltipWithTrackedTaskTest(TaskBarIconTooltipTestCase):

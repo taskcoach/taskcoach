@@ -614,7 +614,7 @@ The tables below compare them.
 | `on_task_list_changed` | Tooltip + start/stop ticking |
 | `on_tracking_changed` | Register/remove subject observer, tooltip, start/stop |
 | `on_change_subject` | Tooltip update |
-| `on_change_due_date_time` | Tooltip update |
+| `on_change_due_date_time` | Tooltip update; during a bulk command or a scheduler pass once, after it (`_OnceAfterBursts`, shared) |
 | `on_every_second` | Blink setting check, toggle icon, set icon |
 | `tool_tip_messages` | Status message templates |
 | `__set_tooltip_text` | Build tooltip from tracked tasks / status counts |

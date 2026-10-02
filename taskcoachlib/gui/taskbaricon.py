@@ -66,6 +66,43 @@ if operating_system.isGTK():
         )
 
 
+class _OnceAfterBursts:
+    """Calls back at once, or once after the bulk command or the
+    scheduler pass under way, as the viewers refresh their rows
+    (docs/SCHEDULERS.md): the tool tip counts every task, and a burst
+    changes many."""
+
+    _BURSTS = (
+        ("command.aboutToBulkModify", "command.justBulkModified"),
+        ("scheduler.aboutToPass", "scheduler.pass"),
+    )
+
+    def __init__(self, observer, callback):
+        self.__callback = callback
+        self.__under_way = set()  # The begin events of the bursts
+        self.__due = False
+        for begin, end in self._BURSTS:
+            observer.registerObserver(self.__on_begin, eventType=begin)
+            observer.registerObserver(self.__on_end, eventType=end)
+
+    def __call__(self):
+        if self.__under_way:
+            self.__due = True
+        else:
+            self.__callback()
+
+    def __on_begin(self, event):
+        self.__under_way.update(event.types())
+
+    def __on_end(self, event):
+        for begin, end in self._BURSTS:
+            if end in event.types():
+                self.__under_way.discard(begin)
+        if self.__due and not self.__under_way:
+            self.__due = False
+            self.__callback()
+
+
 class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def __init__(
         self,
@@ -92,6 +129,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         self.__current_text = self.__tooltip_text
         self.__tick_icon_id = tick_icon_id
         self.__tack_icon_id = tack_icon_id
+        self.__update_tooltip = _OnceAfterBursts(self, self.__set_tooltip_text)
         self.registerObserver(
             self.on_task_list_changed,
             eventType=taskList.addItemEventType(),
@@ -187,7 +225,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         self.__set_tooltip_text()
 
     def on_change_due_date_time(self, event):  # pylint: disable=W0613
-        self.__set_tooltip_text()
+        self.__update_tooltip()
 
     def on_every_second(self):
         if self.__settings.getboolean(
@@ -408,6 +446,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             default_tray_icon_id
         )
         self.__tooltip_text = ""
+        self.__update_tooltip = _OnceAfterBursts(self, self.__set_tooltip_text)
         self.__tick_tray_icon_id = tick_tray_icon_id
         self.__tack_tray_icon_id = tack_tray_icon_id
         self.__popupmenu = None
@@ -498,7 +537,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self._rebuild_gtk_menu()  # Update menu with new task subject
 
     def on_change_due_date_time(self, event):  # pylint: disable=W0613
-        self.__set_tooltip_text()
+        self.__update_tooltip()
 
     def on_every_second(self):
         if self.__settings.getboolean(
