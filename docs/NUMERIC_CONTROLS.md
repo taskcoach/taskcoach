@@ -127,7 +127,7 @@ calling `float()`.
 
 ```
 explicit decimal_char param
-  → settings.Settings().get("view", "decimal_separator")
+  → settings2.get("view", "decimal_separator")
     → locale.localeconv()["decimal_point"]
       → "."
 ```

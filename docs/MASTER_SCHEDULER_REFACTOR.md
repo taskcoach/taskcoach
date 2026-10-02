@@ -234,6 +234,22 @@ go at the end. Details live in the sections and documents linked.
     reliable. Tests run under their own settings, never the
     designer's: the edit boxes keep their tests with the options on,
     and with each off no edit box opens (same links as 68).
+70. One settings object, read directly (was P102). **Asked by
+    designer 2026-10-02**: "There's supposed to be one global settings
+    object ... I was creating a virtual layer over it ... we should
+    make a new task to completely refactor this." Done first: no
+    module but the application makes a `Settings` object (P152).
+    Left: move the reads that take the object through constructors to
+    `settings2`, replace `ConfigParser`, refine the refresh triggers,
+    and stop viewer instance 0 sharing the template section
+    ([SETTINGS.md](SETTINGS.md#todo) 1, 5, 7, 8).
+71. The Publisher cleans up after itself (was P153). **Asked by
+    designer 2026-10-02.** It kept a subscription's source alive, and
+    dropped a freed subscriber only when an event of its type and
+    source was sent: an object subscribed to its own events stayed
+    (P151). Hold the source weakly and drop a subscription as soon as
+    its source or its subscriber is freed
+    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup)).
 
 ## Deferred or Will Not Do
 
@@ -792,9 +808,7 @@ each with the recommended action, none ruled yet:
 - P101. Links in text fields are always `wx.BLUE`, poor on dark themes
   ([SPELLCHECKING.md](SPELLCHECKING.md), planned). Use the system link
   colour?
-- P102. Settings: replace `ConfigParser`, migrate the reads, refine the
-  refresh triggers ([SETTINGS.md](SETTINGS.md) 1, 5, 7, 8), viewer
-  instance 0 sharing the template section. Defer?
+- P102. Moved to To Do 70.
 - P103. TOOLBAR.md says the sentinel migration is done; 57 old
   sentinels and the transition aliases remain. Finish, or defer with
   D1?
@@ -1204,26 +1218,23 @@ each with the recommended action, none ruled yet:
   (pypubsub held its listeners weakly). A change of the setting now
   calls its handler directly. Checked in the app, 20 editors with
   their pages shown: 9 MB, master 11 MB; the rest is P149.
-- P152. The date, time and amount controls and the lists' dates
-  ignore a settings file given with `--ini` and read the one at the
-  default place: found 2026-10-02 while analysing P151, the same on
-  master. Each control makes a `Settings` object of its own, which
-  reads the default file from disk; the dates' format is read once at
-  start the same way. Checked in the app: with `dateformat = DMY/` in
-  the `--ini` file the task list and the editor show 2026-01-15; the
-  same file also at the default place gives 15/01/2026. Proposed: read
-  the application's settings through the read-only shim
-  ([SETTINGS.md](SETTINGS.md#read-only-shim)), which also ends the
-  copies behind P151.
-- P153. The Publisher keeps a subscription's source alive, and drops a
-  freed subscriber only when an event of its type and source is sent:
-  found 2026-10-02 while analysing P151, the same on master. An object
-  that subscribes to its own events, or to a short-lived source, stays
-  until the subscription is removed by hand (P151). Proposed: hold the
-  source weakly and drop a subscription as soon as its source or its
-  subscriber is freed, so the Publisher cleans up after itself, the
-  target in
-  [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup).
+- P152. ~~The date, time and amount controls and the lists' dates
+  ignored a settings file given with `--ini`~~: fixed 2026-10-02,
+  **asked by designer**; the same on master. Each control made a
+  `Settings` object of its own, which read the default file from disk
+  (written only when the application quits): a file given with
+  `--ini` was ignored, a Preferences change reached them only after a
+  restart, and each copy stayed in memory (P151). They now read the
+  application's one settings object through `settings2.get()`
+  ([SETTINGS.md](SETTINGS.md#reading-from-any-module)); the date and
+  time formats as at start, as the lists, which Preferences says need
+  a restart. A test fails if any module but the application makes a
+  `Settings` object. Checked in the app: `dateformat = DMY/` in the
+  `--ini` file shows 15/01/2026 in the list and the editor (master:
+  2026-01-15); after Decimal separator: Comma and OK, the next editor
+  shows 75,00 (master: 75.00 until a restart). First step of To Do
+  70.
+- P153. Moved to To Do 71.
 
 ## Views on the Effective Styles
 

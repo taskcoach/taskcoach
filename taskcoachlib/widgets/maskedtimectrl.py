@@ -75,6 +75,7 @@ import time
 import calendar
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings2
 from taskcoachlib.i18n import _
 from taskcoachlib.tools import wxhelper
 from taskcoachlib.domain import date
@@ -189,17 +190,24 @@ def getDetectedLocaleDateFormat():
     return getLocaleDateFormat(override=None)
 
 
+# The date and time formats as the application started with them, as
+# the lists show dates (render.py): a change applies after a restart,
+# as Preferences says
+_formats_at_start = {}
+
+
+def _format_at_start(option):
+    if option not in _formats_at_start:
+        _formats_at_start[option] = settings2.get("view", option)
+    return _formats_at_start[option]
+
+
 def getDateFormatFromSettings():
     """Get the date format override from user settings.
 
     Returns the format string (e.g., "YMD-", "MDY/") or empty string for automatic.
     """
-    try:
-        from taskcoachlib.config import settings
-
-        return settings.Settings().get("view", "dateformat")
-    except Exception:
-        return ""
+    return _format_at_start("dateformat")
 
 
 def getEffectiveDateFormat():
@@ -240,12 +248,7 @@ def getTimeFormatFromSettings():
 
     Returns "24", "12", or "" for automatic.
     """
-    try:
-        from taskcoachlib.config import settings
-
-        return settings.Settings().get("view", "timeformat")
-    except Exception:
-        return ""
+    return _format_at_start("timeformat")
 
 
 def getEffectiveTimeFormat():
@@ -281,15 +284,10 @@ def get_default_hour_choices(time_format=None):
     if time_format == "12":
         return list(range(1, 13))
     # 24-hour mode: use working hours from settings
-    try:
-        from taskcoachlib.config import settings
-
-        start = settings.Settings().getint("view", "efforthourstart")
-        end = settings.Settings().getint("view", "efforthourend")
-        # Cap at 23 to handle legacy settings that may have sentinel value 24
-        return list(range(start, min(end + 1, 24)))
-    except Exception:
-        return list(range(8, 18))  # Fallback: 8 AM to 5 PM
+    start = settings2.get("view", "efforthourstart")
+    end = settings2.get("view", "efforthourend")
+    # Cap at 23 for legacy settings that may hold the sentinel value 24
+    return list(range(start, min(end + 1, 24)))
 
 
 def getDefaultMinuteChoices():
@@ -300,13 +298,8 @@ def getDefaultMinuteChoices():
     Returns:
         list of minute values for dropdown
     """
-    try:
-        from taskcoachlib.config import settings
-
-        interval = settings.Settings().getint("view", "effortminuteinterval")
-        return list(range(0, 60, interval))
-    except Exception:
-        return [0, 15, 30, 45]  # Fallback: 15-minute intervals
+    interval = settings2.get("view", "effortminuteinterval")
+    return list(range(0, 60, interval))
 
 
 def getDefaultSecondChoices():
@@ -317,13 +310,8 @@ def getDefaultSecondChoices():
     Returns:
         list of second values for dropdown
     """
-    try:
-        from taskcoachlib.config import settings
-
-        interval = settings.Settings().getint("view", "effortsecondinterval")
-        return list(range(0, 60, interval))
-    except Exception:
-        return [0, 15, 30, 45]  # Fallback: 15-second intervals
+    interval = settings2.get("view", "effortsecondinterval")
+    return list(range(0, 60, interval))
 
 
 def getDefaultDayChoices():
@@ -357,14 +345,9 @@ def getCalendarColours():
     try:
         import ast
 
-        app = wx.GetApp()
-        s = getattr(app, "settings", None)
-        if s is None:
-            from taskcoachlib.config import settings as settings_mod
-
-            s = settings_mod.Settings()
-        from taskcoachlib.config import settings2
-
+        # The application's settings at once: settings2 refreshes a
+        # second after a change, and the popup repaints on it
+        s = wx.GetApp().settings
         section = (
             "calendar_dark"
             if settings2.window.theme_is_dark

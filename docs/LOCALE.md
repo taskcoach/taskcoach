@@ -25,10 +25,16 @@ All locale concerns follow the same three-layer access pattern:
 3. **Effective function** — combines both: setting → detection → default.
    This is what controls and renderers call.
 
+The settings functions read the application's one settings object
+through `settings2` ([SETTINGS.md](SETTINGS.md#reading-from-any-module)):
+the date and time formats as the application started with them, as the
+lists show dates (a change applies after a restart, as Preferences
+says), the other options as they are now.
+
 Example (date format):
 ```
 getDetectedLocaleDateFormat()     # Layer 1: strftime("%x") probe
-getDateFormatFromSettings()       # Layer 2: settings.Settings().get("view", "dateformat")
+getDateFormatFromSettings()       # Layer 2: settings2.get("view", "dateformat"), as at start
 getEffectiveDateFormat()          # Layer 3: setting → detection → ISO default
 ```
 

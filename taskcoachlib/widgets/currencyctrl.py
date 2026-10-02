@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import locale
+from taskcoachlib.config import settings2
 from taskcoachlib.widgets.numericctrl import NumericCtrl
 
 
@@ -25,13 +26,9 @@ def _get_configured_currency_decimal_places():
 
     Fallback chain: configured pref -> locale frac_digits -> 2
     """
-    try:
-        from taskcoachlib.config import settings
-        val = settings.Settings().get("view", "currency_decimal_places")
-        if val:
-            return int(val)
-    except Exception:
-        pass
+    val = settings2.get("view", "currency_decimal_places")
+    if val:
+        return int(val)
     frac = locale.localeconv().get("frac_digits", 2)
     if frac == 127:  # CHAR_MAX = not available
         frac = 2

@@ -380,6 +380,18 @@ No constructor injection. No getter lambdas. No change subscriptions for
 read-only config lookups. See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#settings)
 for the hover/tooltip flow that uses these two settings.
 
+### Reading from any module
+
+`settings2.get(section, option)` returns the value the application has
+now, typed as `_TYPES_MAP` says, or the default before `init()` (for a
+module that reads while loading). Only the application makes a
+`Settings` object; `Settings2Test` fails on any other. The date, time
+and amount controls once each made their own, which read the default
+settings file from disk: a file given with `--ini` was ignored, a
+Preferences change reached them only after a restart, and each copy
+stayed in memory (P151, P152 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+
 ### Existing code — unchanged
 
 The shim is additive. Existing `self.settings.getboolean(...)` calls

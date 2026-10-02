@@ -40,6 +40,10 @@ _TYPES_MAP = {
     ("feature", "decimal_time"): bool,
     ("view", "descriptionpopups"): bool,
     ("window", "hoverlinewidth"): int,
+    ("view", "efforthourstart"): int,
+    ("view", "efforthourend"): int,
+    ("view", "effortminuteinterval"): int,
+    ("view", "effortsecondinterval"): int,
     ("icon", "legacystatusicons"): bool,
     ("iconpicker", "theme_nuvola"): bool,
     ("iconpicker", "theme_oxygen"): bool,
@@ -222,6 +226,14 @@ _instance = _Settings2()
 def __getattr__(name):
     """Module-level attribute access delegates to singleton (PEP 562)."""
     return getattr(_instance, name)
+
+
+def get(section, option):
+    """The value the application has now; the default before init(),
+    for a module that reads it while loading."""
+    if not _instance._initialized:
+        return _instance._get_default(section, option)
+    return getattr(getattr(_instance, section), option)
 
 
 def init(settings):
