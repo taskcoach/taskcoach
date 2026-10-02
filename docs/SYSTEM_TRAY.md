@@ -525,21 +525,27 @@ as a static label (GTK menus don't support per-show label changes as easily).
 
 ### Linux
 
-AppIndicator requires GObject Introspection bindings:
+AppIndicator requires GObject Introspection bindings, and PyGObject
+to load them from Python; the .deb, .rpm and Arch packages declare
+both. Without PyGObject the log says "No working tray backend
+available" and Task Coach runs without a tray icon where the desktop
+needs AppIndicator (P62 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+The Flatpak's GNOME runtime has it; the AppImage bundles neither.
 
 **Debian/Ubuntu:**
 ```bash
-sudo apt install gir1.2-ayatanaappindicator3-0.1
+sudo apt install python3-gi gir1.2-ayatanaappindicator3-0.1
 ```
 
 **Fedora:**
 ```bash
-sudo dnf install libayatana-appindicator-gtk3
+sudo dnf install python3-gobject libayatana-appindicator-gtk3
 ```
 
 **Arch Linux:**
 ```bash
-sudo pacman -S libayatana-appindicator
+sudo pacman -S python-gobject libayatana-appindicator
 ```
 
 ### GNOME Shell Note

@@ -46,6 +46,7 @@ Requires:       python3-pyxdg
 Requires:       python3-keyring
 Requires:       python3-numpy
 Requires:       python3-enchant
+Requires:       python3-gobject
 Requires:       libayatana-appindicator-gtk3
 Requires:       libXScrnSaver
 Requires:       xdg-utils

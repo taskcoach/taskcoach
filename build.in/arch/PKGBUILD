@@ -20,6 +20,7 @@ depends=(
     'python-keyring'
     'python-numpy'
     'python-pyenchant'
+    'python-gobject'
     'libayatana-appindicator'
     'libxss'
     'xdg-utils'

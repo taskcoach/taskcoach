@@ -730,15 +730,18 @@ each with the recommended action, none ruled yet:
 - P61. The run-from-source scripts README points to fail: they check
   the removed `desktop` module, install no pyenchant;
   `test_taskcoach.sh` checks files that do not exist. Fix or retire?
-- P62. PyGObject (`python3-gi`) is used (AppIndicator, the first tray
-  choice on GTK) but declared in no package. Recommended: declare.
-  Analysed 2026-10-02: Debian, Arch and Fedora declare the
-  AppIndicator library but not PyGObject, and no declared package
-  pulls it in (Debian's dependency tree checked); the Flatpak's GNOME
-  runtime has it. Started without it: "No working tray backend
-  available ... running without a tray icon" (with it: AppIndicator).
-  Fix: `python3-gi` (Debian), `python-gobject` (Arch),
-  `python3-gobject` (Fedora).
+- P62. ~~PyGObject (`python3-gi`) was declared in no package~~: fixed
+  2026-10-02, **asked by designer**. Debian, Arch and Fedora declared
+  the AppIndicator library but not PyGObject, which loads it, and no
+  declared package pulled it in (Debian's dependency tree checked).
+  Started without it: "No working tray backend available ... running
+  without a tray icon" (with it: AppIndicator). Now declared:
+  `python3-gi` (Debian), `python-gobject` (Arch), `python3-gobject`
+  (Fedora); the install notes in README.md and SYSTEM_TRAY.md list it.
+  The Flatpak's GNOME runtime has it. The AppImage bundles its own
+  Python with neither PyGObject nor the AppIndicator library, so it
+  has no AppIndicator tray: bundling them is a change of its own
+  (P159).
 - P63. The translation test's 106 coverage tests read
   `i18n.in/messages.pot`, gitignored and from January (338 strings
   missing); regenerated as TRANSLATIONS.md says, it takes 8,700 icon
@@ -1446,6 +1449,11 @@ each with the recommended action, none ruled yet:
   box's Enter and a return from another application; after a click in
   Categories or Ctrl+PgDn while editing, Down still moves the category
   selection.
+- P159. The AppImage has no AppIndicator tray: its bundled Python has
+  neither PyGObject nor the AppIndicator library (found with P62,
+  2026-10-02). Where the desktop needs AppIndicator (GNOME, KDE on
+  Wayland) it runs without a tray icon. Bundle them (GObject
+  introspection and the typelibs), or document the limit?
 
 ## Views on the Effective Styles
 

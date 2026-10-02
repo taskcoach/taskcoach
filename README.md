@@ -127,13 +127,13 @@ The package is installed automatically with the .deb/.rpm packages. For manual i
 
 ```bash
 # Debian/Ubuntu
-sudo apt install gir1.2-ayatanaappindicator3-0.1
+sudo apt install python3-gi gir1.2-ayatanaappindicator3-0.1
 
 # Fedora
-sudo dnf install libayatana-appindicator-gtk3
+sudo dnf install python3-gobject libayatana-appindicator-gtk3
 
 # Arch Linux
-sudo pacman -S libayatana-appindicator
+sudo pacman -S python-gobject libayatana-appindicator
 ```
 
 **Note:** GNOME Shell removed built-in system tray support. GNOME users need the [AppIndicator Support](https://extensions.gnome.org/extension/615/appindicator-support/) extension to see tray icons. Ubuntu pre-installs this extension.
