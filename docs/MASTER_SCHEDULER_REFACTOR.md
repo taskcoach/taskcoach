@@ -956,7 +956,7 @@ each with the recommended action, none ruled yet:
     failed (`AttributeError`, fixed here by 56eb732e8); on this branch
     the next view becomes active. An in-place edit box: nothing on
     master; on this branch the next view becomes active and the edit
-    box stays open, unfocused (P154).
+    box ends, keeping the typed text (P154).
   - calendar, hierarchical calendar, timeline, square map and
     statistics views: a click does not make them the active view, and
     a floating one does not take the focus, so the keys move the task
@@ -1260,13 +1260,22 @@ each with the recommended action, none ruled yet:
   shows 75,00 (master: 75.00 until a restart). First step of To Do
   70.
 - P153. Moved to To Do 71.
-- P154. An in-place edit box stays open, what was typed unsaved, when
-  another view becomes active: by a click in it (master too) or, on
-  this branch, Ctrl+PgDn (P122). The date and time box already ends
-  then, keeping the typed value (`DateTimeCtrl._maybeAcceptAndClose()`);
-  the text, number and amount boxes end only at a click in their own
-  list. Checked in the app 2026-10-02: F2 on a subject, type, click in
-  Categories: the box stays with the text, on master too.
+- P154. ~~An in-place edit box stayed open, what was typed unsaved,
+  when another view became active~~: fixed 2026-10-02, the same on
+  master. By a click in it (master too) or, on this branch, Ctrl+PgDn
+  (P122). Only the date box ended then, and it took the focus back
+  from the view clicked: on master Down then moved nothing in either
+  view. Every edit box now ends, keeping the typed value, once the
+  focus has left it and its parts, and the focus stays where it went
+  ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing)). Checked
+  in the app on the subject, description, date (Tab inside, the
+  calendar, the hour choices open), progress, priority, budget and
+  hourly fee: a click in Categories saves and Down then moves the
+  category selection; Ctrl+PgDn saves and Categories takes the keys; a
+  right-click inside saves as the task's menu opens (P157); the focus
+  going to another application saves (back, P158); Escape cancels,
+  Enter saves; Edit > Paste from the menu bar pastes into the box,
+  which stays.
 - P155. The test runner keeps every test it has run
   (`TestResultWithTimings` keys its timings by the test object), so
   whatever a test keeps in its attributes stays for the whole run:
@@ -1279,6 +1288,21 @@ each with the recommended action, none ruled yet:
   field's value, a number for the amount fields (the hourly and fixed
   fee in the list and the task editor), and their history broke; it
   now reads the text ([MENUS.md](MENUS.md#keyboard-shortcuts)).
+- P157. A right-click inside an in-place edit box opens the item's
+  menu, not the text's: its Cut, Copy, Paste and Delete act on the
+  task, not the typed text. Checked in the app 2026-10-02, master the
+  same: F2 on a subject, type, right-click in the box: the task menu
+  opens (master: the box stays behind it; this branch: the box ends,
+  keeping the text, P154). The box's context menu event goes up to the
+  list, which shows its menu. Fix?
+- P158. After Enter or Escape in an in-place edit box, the row shows
+  as selected without the focus (grey) and Down moves nothing until a
+  click in the list; the same on coming back from another application
+  the box was left for (P154). Checked in the app 2026-10-02 on Xvfb,
+  master the same (there a second Down turns the row blue, still
+  without moving). wx reports the list focused 100 ms and 600 ms
+  after the box ends (`FindFocus()`); not traced further. To confirm
+  on the desktop.
 
 ## Views on the Effective Styles
 

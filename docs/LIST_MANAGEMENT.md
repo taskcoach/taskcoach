@@ -1125,6 +1125,19 @@ place is not on the right-click menu. An edit box then opens:
   slow double click, edited 400 ms later; more than 2 s apart, two
   clicks.
 
+An edit box ends, keeping what was typed, once the focus has left it
+and its parts (the date's fields, calendar and time choices included)
+for anything else: a click in another view, Ctrl+PgDn, a right-click
+inside it (the item's menu takes the focus), a dialog, another
+application. The focus stays where it went; the list takes it back
+when it went to another application, as at Escape and Enter (but see
+P158). Escape cancels, Enter keeps; a menu of the
+menu bar leaves the box open, so Edit > Paste pastes into it
+(`KillFocusAcceptsEditsMixin` in `inplace_editor.py`). Before (master
+the same), only the date box ended so, and it took the focus back from
+the view clicked, leaving the keyboard nowhere; the others stayed open,
+the typed text unsaved, until the next click in their list (P154).
+
 Editing a cell leaves its row the only one selected, as a tree view's
 cursor does in GTK. Every edit passes `TreeListCtrl.on_begin_edit()`,
 which refuses the tree's own timer unless the clicks made a slow double

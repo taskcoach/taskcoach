@@ -34,7 +34,16 @@ class KillFocusAcceptsEditsMixin(object):
     (a click elsewhere, another cell's edit, a refresh), but on Escape
     or when the item edited is deleted, which call CancelEditing(). The
     tree stops the editing before the focus moves, so the focus cannot
-    tell the two apart."""
+    tell the two apart.
+
+    The editing also stops once the focus has left the editor and its
+    parts for anything else: another view, a menu, a dialog, another
+    application. Its own popups keep it
+    (docs/LIST_MANAGEMENT.md#in-place-editing)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.Bind(wx.EVT_CHILD_FOCUS, self.__on_focus_entered)
 
     def StopEditing(self):
         try:
@@ -42,6 +51,51 @@ class KillFocusAcceptsEditsMixin(object):
             self.Finish()
         except RuntimeError:
             pass
+
+    def Finish(self):
+        focus = wx.Window.FindFocus()
+        if self._finished or focus is None or self.__holds(focus):
+            super().Finish()
+            return
+        # Finish() would take the focus back from the view it went to
+        self._finished = True
+        self._owner.ResetEditControl()
+
+    def has_open_popup(self):
+        """Whether a popup of the editor's own is shown."""
+        return False
+
+    def __on_focus_entered(self, event):
+        # The editor itself or one of its parts: a composite editor's
+        # focus moves between its fields
+        event.Skip()
+        part = wx.Window.FindFocus()
+        if part is not None:
+            # On the part itself: the date's combo control forwards
+            # Bind(), not Unbind(), to its date fields
+            wx.EvtHandler.Unbind(
+                part, wx.EVT_KILL_FOCUS, handler=self.__on_focus_left
+            )
+            wx.EvtHandler.Bind(part, wx.EVT_KILL_FOCUS, self.__on_focus_left)
+
+    def __on_focus_left(self, event):
+        event.Skip()
+        # Once settled: Tab moves it to another part
+        patterns.later.soon(self, self.__stop_unless_focused)
+
+    def __stop_unless_focused(self):
+        if self._finished or self.has_open_popup():
+            return
+        if not self.__holds(wx.Window.FindFocus()):
+            self.StopEditing()
+
+    def __holds(self, window):
+        # A popup is a top-level window, its parent one of the parts
+        while window is not None:
+            if window is self:
+                return True
+            window = window.GetParent()
+        return False
 
 
 class SubjectCtrl(KillFocusAcceptsEditsMixin, hypertreelist.EditTextCtrl):
@@ -207,11 +261,6 @@ class DateTimeCtrl(
         self._dateCtrl.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
         self._timeCtrl.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
 
-        # Bind focus loss events to detect click-away (save on click outside)
-        self._checkbox.Bind(wx.EVT_KILL_FOCUS, self._onChildKillFocus)
-        self._dateCtrl.Bind(wx.EVT_KILL_FOCUS, self._onChildKillFocus)
-        self._timeCtrl.Bind(wx.EVT_KILL_FOCUS, self._onChildKillFocus)
-
     def _onKeyDown(self, event):
         """Handle key events, including Tab for internal navigation."""
         keyCode = event.GetKeyCode()
@@ -249,35 +298,8 @@ class DateTimeCtrl(
 
         self._tabOrder[idx].SetFocus()
 
-    def _onChildKillFocus(self, event):
-        """Handle focus loss from child controls."""
-        event.Skip()  # Allow default processing
-        # Check focus after it settles (allows tab between children)
-        patterns.later.soon(self, self._maybeAcceptAndClose)
-
-    def _maybeAcceptAndClose(self):
-        """Accept changes and close if focus has left the control entirely."""
-        try:
-            if not self._hasFocusOrPopup():
-                self.AcceptChanges()
-                self.Finish()
-        except RuntimeError:
-            pass  # Control may be destroyed
-
-    def _hasFocusOrPopup(self):
-        """Check if focus is in this control or a popup is open."""
-
-        def window_and_all_children(window):
-            result = [window]
-            for child in window.GetChildren():
-                result.extend(window_and_all_children(child))
-            return result
-
-        if wx.Window.FindFocus() in window_and_all_children(self):
-            return True
-        if self._dateTimeCombo.HasOpenPopup():
-            return True
-        return False
+    def has_open_popup(self):
+        return self._dateTimeCombo.HasOpenPopup()
 
     def GetValue(self):
         value = self._dateTimeCombo.GetValue()

@@ -1170,6 +1170,107 @@ class CommonTestsMixin(object):
         editor.OnKeyDown(EscapeKey())
         self.assertEqual(0, self.task.percentageComplete())
 
+    @staticmethod
+    def focus_enters(part):
+        with mock.patch.object(wx.Window, "FindFocus", lambda: part):
+            part.GetEventHandler().ProcessEvent(wx.ChildFocusEvent(part))
+
+    @staticmethod
+    def focus_leaves(part, to):
+        with mock.patch.object(wx.Window, "FindFocus", lambda: to):
+            part.GetEventHandler().ProcessEvent(
+                wx.FocusEvent(wx.wxEVT_KILL_FOCUS)
+            )
+            test.settle()
+
+    def move_focus(self, part, to):
+        """As wx does: the part takes the focus, then gives it to the
+        window to (None: another application)."""
+        self.focus_enters(part)
+        self.focus_leaves(part, to)
+
+    def another_view(self):
+        # Destroyed with the frame's children at the tearDown()
+        return wx.TextCtrl(self.frame)
+
+    def editor_open(self):
+        return self.viewer.widget.GetMainWindow()._editCtrl is not None
+
+    def test_a_cell_keeps_its_value_when_the_focus_leaves_it(self):
+        # As at a click in another view
+        editor = self.edit_percentage_in_its_cell(60)
+        self.move_focus(editor._textCtrl, self.another_view())
+        self.assertEqual(60, self.task.percentageComplete())
+        self.assertFalse(self.editor_open())
+
+    def test_a_subject_typed_is_kept_when_the_focus_leaves_it(self):
+        self.taskList.append(self.task)
+        self.viewer.widget.edit_cell_in_place(self.firstItem(), 0)
+        editor = self.viewer.widget.GetMainWindow()._editCtrl
+        editor.SetValue("Typed")
+        self.move_focus(editor, self.another_view())
+        self.assertEqual("Typed", self.task.subject())
+
+    def test_the_editing_goes_on_while_the_focus_moves_within_it(self):
+        editor = self.edit_percentage_in_its_cell(60)
+        self.move_focus(editor._textCtrl, editor._spinButton)
+        self.assertTrue(self.editor_open())
+        self.assertEqual(0, self.task.percentageComplete())
+
+    def edit_planned_start_in_its_cell(self):
+        self.showColumn("plannedStartDateTime")
+        self.taskList.append(self.task)
+        columns = [column.name() for column in self.viewer.visibleColumns()]
+        self.viewer.widget.edit_cell_in_place(
+            self.firstItem(), columns.index("plannedStartDateTime")
+        )
+        # The focus goes to the date fields inside the combo control
+        return self.viewer.widget.GetMainWindow()._editCtrl
+
+    def test_its_own_popup_keeps_it(self):
+        editor = self.edit_planned_start_in_its_cell()
+        editor._dateTimeCombo.HasOpenPopup = lambda: True
+        self.move_focus(editor._dateCtrl._dateCtrl, None)
+        self.assertTrue(self.editor_open())
+
+    def test_a_part_the_focus_enters_again_is_checked_once(self):
+        # The date's combo control passes the focus to its date fields
+        editor = self.edit_planned_start_in_its_cell()
+        combo, fields = editor._dateCtrl, editor._dateCtrl._dateCtrl
+        for part in combo, fields, combo, fields:
+            self.focus_enters(part)
+        with mock.patch.object(editor, "StopEditing") as stop:
+            self.focus_leaves(fields, self.another_view())
+        stop.assert_called_once_with()
+
+    def test_the_focus_stays_where_it_went(self):
+        editor = self.edit_planned_start_in_its_cell()
+        main_window = self.viewer.widget.GetMainWindow()
+        with mock.patch.object(
+            main_window, "SetFocusIgnoringChildren"
+        ) as take:
+            self.move_focus(editor._dateCtrl._dateCtrl, self.another_view())
+        self.assertFalse(self.editor_open())
+        take.assert_not_called()
+
+    def test_the_list_keeps_the_focus_for_a_return_from_elsewhere(self):
+        # Another application took it
+        editor = self.edit_percentage_in_its_cell(60)
+        main_window = self.viewer.widget.GetMainWindow()
+        with mock.patch.object(
+            main_window, "SetFocusIgnoringChildren"
+        ) as take:
+            self.move_focus(editor._textCtrl, None)
+        take.assert_called_once_with()
+        self.assertEqual(60, self.task.percentageComplete())
+
+    def test_escape_stands_when_the_focus_leaves_after_it(self):
+        editor = self.edit_percentage_in_its_cell(60)
+        part = editor._textCtrl
+        editor.OnKeyDown(EscapeKey())
+        self.move_focus(part, self.another_view())
+        self.assertEqual(0, self.task.percentageComplete())
+
     def test_a_budget_entered_in_its_cell_is_stored(self):
         self.showColumn("budget")
         self.taskList.append(self.task)
