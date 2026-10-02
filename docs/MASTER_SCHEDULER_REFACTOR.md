@@ -1037,8 +1037,8 @@ each with the recommended action, none ruled yet:
   ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#row-hover-outline)); the
   bundled widget is unchanged. Checked in the app: the five cases
   before and after; a tooltip still shows when the pointer moves to
-  another row; drag and drop and the Welcome.tsk steps unchanged. Not
-  checked: the list views (Effort, Attachments).
+  another row; drag and drop and the Welcome.tsk steps unchanged. The
+  list views have their own: P148.
 - P142. Will not do: D11.
 - P143. ~~The "not possible" cursor was X's skull~~: fixed 2026-10-01,
   **ruled by designer** (Task Coach's own cursor from the icons it
@@ -1097,6 +1097,13 @@ each with the recommended action, none ruled yet:
   Checked in the app: drop, undo and redo each show the task in its
   place, still selected; a merge of changes on disk moving 40
   subtasks takes as long as before and shows the same.
+- P148. In the list views (Effort, Attachments) a scroll by the wheel
+  with the pointer resting on a row moves the hover outline onto the
+  column header instead of the row now under the pointer; the same on
+  master (found 2026-10-01, checked on a file with 6,000 efforts). The
+  list draws the outline itself after painting, by row number
+  (`VirtualListCtrl`), and nothing moves it when the rows scroll. The
+  tree views' rule (P141) would cover it.
 
 ## Views on the Effective Styles
 
