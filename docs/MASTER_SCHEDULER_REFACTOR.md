@@ -255,7 +255,14 @@ go at the end. Details live in the sections and documents linked.
     Left: move the reads that take the object through constructors to
     `settings2`, replace `ConfigParser`, refine the refresh triggers,
     and stop viewer instance 0 sharing the template section
-    ([SETTINGS.md](SETTINGS.md#todo) 1, 5, 7, 8).
+    ([SETTINGS.md](SETTINGS.md#todo) 1, 5, 7, 8). Not started beyond
+    P152: on 2026-10-02 15 reads go through `settings2.get()`, about 185
+    through the object passed down. Open before continuing: in this
+    branch or one of its own after the merge; the target (the read-only
+    shim as the one way to read, or a typed settings class replacing
+    `ConfigParser`, the INI format kept for users' files); all at once
+    or module by module; the refresh signal once `ConfigParser` goes;
+    how viewer instance 0 stops sharing the template section.
 71. ~~The Publisher cleans up after itself (was P153)~~: done
     2026-10-02, **asked by designer**. It held a subscription's
     source strongly and dropped a freed subscriber only when an event
@@ -288,6 +295,13 @@ go at the end. Details live in the sections and documents linked.
     half a second opens both; three double-clicks on one row within a
     second open one editor, one more 4.5 s later a second (a second
     editor of the same task stays, ruled); the same in the calendar.
+
+73. Release notes for the next release. **Found 2026-10-02**: releases
+    are made by CI from a tag with no notes, and no changelog is kept
+    (`changes.in/` retired, P45). Open: where to collect them (a
+    section here, a `CHANGELOG.md`, the pull request). First entry:
+    editing cells in place is off by default, after an upgrade too;
+    Preferences > Features > Edit cells in place turns it on (To Do 69).
 
 ## Deferred or Will Not Do
 
@@ -673,6 +687,10 @@ each with the recommended action, none ruled yet:
 - P57. Norwegian locales get en_GB dates and times
   (`i18n._fixBrokenLocales()`, a wx 2.8 date picker crash of 2012;
   Linux has no such picker). Removing it changes released behaviour.
+  2026-10-02: it first sets the time locale to the user's default,
+  likely Norwegian again, so whether it changes anything on Linux
+  needs a Norwegian locale to check (none installed here); the wx
+  date picker is used on Windows only (`_NativeDateCtrl`).
 - P58. ~~`widgets/dialog.py` overrode `SetExtraStyle()` as a no-op~~:
   removed 2026-10-01, **ruled by designer**. Added in 2012 because
   wxPython 2.8's sized dialog turned on recursive validation (7 s to
@@ -714,6 +732,13 @@ each with the recommended action, none ruled yet:
   `test_taskcoach.sh` checks files that do not exist. Fix or retire?
 - P62. PyGObject (`python3-gi`) is used (AppIndicator, the first tray
   choice on GTK) but declared in no package. Recommended: declare.
+  Analysed 2026-10-02: Debian, Arch and Fedora declare the
+  AppIndicator library but not PyGObject, and no declared package
+  pulls it in (Debian's dependency tree checked); the Flatpak's GNOME
+  runtime has it. Started without it: "No working tray backend
+  available ... running without a tray icon" (with it: AppIndicator).
+  Fix: `python3-gi` (Debian), `python-gobject` (Arch),
+  `python3-gobject` (Fedora).
 - P63. The translation test's 106 coverage tests read
   `i18n.in/messages.pot`, gitignored and from January (338 strings
   missing); regenerated as TRANSLATIONS.md says, it takes 8,700 icon
@@ -754,6 +779,9 @@ each with the recommended action, none ruled yet:
 - P70. Stale code comments: 8 TODO/FIXME/XXX/HACK no longer true
   (`tasklist.py` rename, `autobackup.py` hack, `listctrl.py` font,
   the "-1 column" questions, ...). Recommended: delete or reword.
+  2026-10-02: 15 such comments remain in Task Coach's own code (with
+  P109's three); several can only be judged by trying their case in
+  the app (the status bar after hiding the toolbar, mail on macOS).
 - P71. Pylint leftovers: `.pylintrc` (pylint 0.x), 746
   `# pylint: disable`, 61 `# pragma: no cover`; no linter or coverage
   uses them. Remove?
@@ -766,6 +794,12 @@ each with the recommended action, none ruled yet:
   `splash_inno.bmp` unused, shipped by the Windows build, which copies
   the whole directory; `gui/icons/ICON_SOURCES.json` and
   `splash_legacy.png` unused. Recommended: remove; copy only the icon.
+  Analysed 2026-10-02: nothing in the application, tools, packaging or
+  docs reads them; the Windows installer takes its icon from its own
+  copy of `taskcoach.ico`; icons are imported from downloads outside
+  the repository ([ICON_LIBRARY.md](ICON_LIBRARY.md)), not from the
+  zip; `ICON_SOURCES.json` repeats `ICON_THEME_CATALOG.json` (the
+  documented provenance) with older addresses.
 - P74. ~~Unused files~~: removed 2026-10-01, **ruled by designer**:
   the root `thirdparty/` (a README pointing elsewhere),
   `TaskCoach.entitlements` (no build signs the app), `tools/dot.py`,
@@ -787,6 +821,8 @@ each with the recommended action, none ruled yet:
 - P76. `test-screenshots/` (13 MB) and `icon-ideas/` (8 MB) unused but
   the README banner; `website.in/screenshots`: 26 of 28 unlinked (P45
   kept them for the Flatpak metadata, which links 2). Retire?
+  2026-10-02: the designer's design material and bug screenshots; the
+  README banner is `icon-ideas/splash-modernize/splash_new3a.jpg`.
 - P77. Three AppStream files (Debian's legacy one, the Flatpak's, the
   AppImage's inline). Recommended: one metainfo.
 - P78. `distro` serves only `setup.py`'s Debian `data_files`, which
@@ -829,6 +865,9 @@ each with the recommended action, none ruled yet:
   listed were gone already.
 - P89. `test.py --profile` runs the selection in one process and exits
   0 on failures. Recommended: per file, with the exit status.
+  Analysed 2026-10-02: on a failure the profiler deletes its data and
+  returns nothing, and `test.py` exits 0 with no report. One process
+  is what a combined profile needs; the exit status is the fault.
 - P90. ~~A file now and then failed to start ("Can't create a
   GtkStyleContext without a display connection", exit 133) when
   another `xvfb-run -a` started at the same moment~~: closed
@@ -836,6 +875,11 @@ each with the recommended action, none ruled yet:
   time under `xvfb-run -a` all started. Reopen with a failing run.
 - P91. Editors first open at 400x300, tabs scrolled, fields cut off
   ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md), Left). Pick a first size?
+  2026-10-02: the editor's fitted size is 226x297 because its pages
+  stopped reporting a best size in the Python 3 migration
+  ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#editors) 2); the 400x300 is
+  the minimum. Fixing the cause (pages reporting their size) is the
+  technical fix Decision 9 allows; to investigate on its own.
 - P92. Fit editors and floating AUI panes to the monitors (planned in
   WINDOW_GEOMETRY.md and AUI.md; the editors' part conflicts with
   Decision 8). Do it, or strike it?
@@ -1028,6 +1072,18 @@ each with the recommended action, none ruled yet:
   On this branch the View menu items work (on master they fail the
   same way): they cycle the views in the order they were opened,
   docked, tabbed and floating. A rule is proposed, not ruled.
+  Proposed 2026-10-02: the keys go to the next or previous page of the
+  window the focus is in, whatever control has it. In the main window
+  and floating views: the next or previous view, tabs and floating
+  views included, brought to the front with the focus. In tabbed
+  dialogs (editors, Preferences): the next or previous tab, with
+  Ctrl+Tab. Lists and text fields no longer take the keys as Page Down
+  and Page Up. The calendar, timeline, square map and statistics views
+  become the active view, with the focus, on a click. Floating views'
+  shortcuts reach the commands. Practice elsewhere: browsers,
+  spreadsheets and editors switch tabs with Ctrl+PgDn and Ctrl+PgUp;
+  Windows and GTK cycle panes with F6 and Shift+F6. Open: apply it,
+  and add F6 and Shift+F6?
 - P123. ~~Enter in the search box also opened the editor of the
   selected task~~: fixed 2026-10-01, the same on master. The viewer's
   accelerator table (Return, Ctrl+X/C/V, Ctrl+Del) took those keys
