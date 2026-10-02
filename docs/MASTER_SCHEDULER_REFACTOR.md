@@ -302,6 +302,12 @@ Numbered D1, D2, ...
   2026-10-01**: the dark theme was tuned by the people who use it; no
   change to it unless the designer asks for one ("If there's issues, I
   will specifically tell you what to do with dark theme").
+- D12. The reminder sound's player process (P135), **deferred by
+  designer 2026-10-02**: `paplay` or `afplay` is started and Task
+  Coach drops its process object while it plays
+  (`sounds/__init__.py`); Python warns "subprocess is still running"
+  only with developer warnings on, and the sound plays. Keeping the
+  object until the player ends would silence it.
 
 ## Pre-existing Issues
 
@@ -988,11 +994,7 @@ each with the recommended action, none ruled yet:
   There Task Coach keeps each field's typing history: Ctrl+Z,
   Ctrl+Y and Ctrl+Shift+Z, and the Edit menu, in every text field
   ([MENUS.md](MENUS.md#keyboard-shortcuts)). Not checked on macOS.
-- P135. The reminder sound's player (`paplay`, `afplay`) is started
-  and its process object dropped while it plays
-  (`sounds/__init__.py`): Python warns "subprocess is still running"
-  (seen with warnings on) and reaps it later. Nothing is lost. Keep
-  the object until it ends, or leave?
+- P135. Deferred: D12.
 - P136. ~~"Hide this column" refused the click when its menu item lay
   over another column or pane~~: fixed 2026-10-01, **ruled by
   designer** ("whatever is under the pointer point, if I right click
