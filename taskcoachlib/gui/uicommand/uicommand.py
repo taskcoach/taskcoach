@@ -179,6 +179,16 @@ class ViewerCommand(base_uicommand.UICommand):  # pylint: disable=W0223
         self.viewer = kwargs.pop("viewer", None)
         super().__init__(*args, **kwargs)
 
+    def same_window_key(self):
+        # Another item's editor is another window
+        items = self.viewer.curselection() if self.viewer else []
+        return super().same_window_key() + tuple(map(_item_key, items))
+
+
+def _item_key(item):
+    # Its own id, never reused; an aggregated effort has none
+    return item.id() if isinstance(item, base.Object) else id(item)
+
     def __eq__(self, other):
         return (
             super().__eq__(other)

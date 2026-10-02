@@ -61,6 +61,9 @@ Changes:
 - `[FILE]`, `[LOCK]`, `[XML]`, `[TEMPLATE]`, `[SETTINGS]`: autosave,
   file locks, reading task files and templates, the INI settings.
 - `[THEME]`: how the system theme was found, and its changes.
+- `[COMMAND]`: a command held back because it opened the same window
+  under a second ago, once per opening
+  ([MENUS.md](MENUS.md#the-same-window-once-a-second)).
 
 Guards and errors:
 

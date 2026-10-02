@@ -271,59 +271,22 @@ go at the end. Details live in the sections and documents linked.
     editors the registry stays at 625 subscriptions, where before dead
     ones piled up (438 to 647); editors, Preferences, floating, docked
     again, tabs, quit and relaunch: no traceback.
-72. A held key opens one editor and types nothing into it. **Asked by
-    designer 2026-10-02**, next to work on. Holding Enter or Space on a
-    selected item in a list (Space held by mistake, say, for voice
-    input in another program) opens a whole series of editor windows
-    on the designer's desktop, and the key's repeats are typed into
-    the editor that opens. Wanted:
-    - one editor per press, however long the key is held;
-    - repeats of a held key that reach no text field are dropped;
-    - a window that opens while the key is still held gets none of
-      its characters.
-
-    Checked in the app 2026-10-02 (test display, key repeat after
-    660 ms, then 25 a second; key held 1.5 s):
-    - this branch: Enter on "Bread" opens one editor whose Description
-      gets about 20 empty lines, saved; Space on "Milk and eggs" opens
-      one editor whose Subject (selected as the editor opens) becomes
-      spaces, saved: the row shows no subject. Ctrl+Z restores both.
-    - master: Enter, one editor; Space on a fresh start, two editors
-      for "Milk and eggs".
-
-    Space, Enter and keypad Enter activate the selected item, which
-    opens its editor (the tree widget's key handling, the same in the
-    copy bundled here and in wxPython's). Each repeat that reaches the
-    list before the editor takes the focus opens another editor; the
-    later ones go to the editor's focused field. Research before
-    proposing: how GTK, Qt, Windows and macOS lists treat a held
-    activation key; whether wxPython 4.2.3 tells a repeat from a press
-    (`wxKeyEvent::IsAutoRepeat()`); dropping a held key's repeats in a
-    window it did not start in, until its release.
-
-    Research 2026-10-02, a proposal to the designer pending:
-    - `IsAutoRepeat()` works on Windows, macOS and Qt only (wx docs);
-      logged in the app on GTK, it is always false. A held key sends
-      presses without releases (X11's detectable auto-repeat), so a
-      press of a key already down is a repeat. Windows marks repeats
-      in `WM_KEYDOWN` (bit 30) and Qt with `isAutoRepeat()`, both for
-      acting on the first press only; GTK buttons act on Space at its
-      release.
-    - Logged in the app: the first Space reaches the list and opens
-      the editor; from the first repeat (0.66 s) on, every repeat goes
-      to the editor's Subject.
-    - Prototyped in a copy: one event filter, ahead of every window,
-      drops a repeat once the focus is in another window than the
-      key's first press, and repeats of Enter, keypad Enter and Space
-      outside a text field. Held Space or Enter on a task opened one
-      editor and changed nothing (22 repeats dropped in it); a held
-      Down still moved down the list, a held letter still typed in a
-      text field.
-    - Open: a release the application never sees (the key let go in a
-      native dialog, say) leaves the key marked down, so its next press
-      would count as a repeat; limited by forgetting held keys when
-      the application loses the focus and counting a press as a repeat
-      only within a short time of the key's last press.
+72. ~~A held key opens a pile of editor windows~~: done 2026-10-02,
+    **ruled by designer**: a command opens the same window at most
+    once a second, and the keys are left as they are
+    ([MENUS.md](MENUS.md#the-same-window-once-a-second), with the
+    reason). Holding Enter or Space on a task, or presses queued while
+    the system is busy, opened one editor per press (master too);
+    under heavy load hundreds. A filter dropping a held key's repeats
+    was prototyped and set aside: the designer chose not to touch the
+    key stream, so a held key's characters still reach the editor
+    that opens (Space replaces the selected subject). wx tells no
+    repeat from a press on GTK (`IsAutoRepeat()` works on Windows,
+    macOS and Qt only), so the rule does without one. Checked in the
+    app: Enter held 2 s while the application was paused opened 14
+    editors of one task, now one or two; Enter on two tasks within
+    half a second opens both; three double-clicks on one row within a
+    second open one editor, one more 4.5 s later a second.
 
 ## Deferred or Will Not Do
 

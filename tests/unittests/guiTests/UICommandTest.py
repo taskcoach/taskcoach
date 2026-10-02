@@ -25,6 +25,7 @@ from taskcoachlib import gui, config, persistence
 from taskcoachlib.domain import attachment, category, date, effort, note
 from taskcoachlib.domain import task
 from taskcoachlib.gui.dialog.editor import NoteEditor, TaskEditor
+from taskcoachlib.gui.uicommand import base_uicommand
 from taskcoachlib.tools import openfile
 
 
@@ -797,3 +798,107 @@ class CategoryInUseTextTest(wxTestCaseWithFrameAsTopLevelWindow):
                 tools, self.taskFile.owner_chains()
             ),
         )
+
+
+class Selection:
+    """A viewer, as far as a viewer command asks it what it acts on."""
+
+    def __init__(self, *items):
+        self.items = list(items)
+
+    def curselection(self):
+        return self.items
+
+
+class OpenWindow(gui.uicommand.ViewerCommand):
+    """Opens a window for the selected items, as Edit does."""
+
+    def __init__(self, *args, **kwargs):
+        self.windows = []
+        super().__init__(menu_text="open", *args, **kwargs)
+
+    def do_command(self, event):
+        window = wx.Frame(None)
+        self.windows.append(window)
+
+
+class Count(gui.uicommand.ViewerCommand):
+    """Opens no window, as a priority + button."""
+
+    def __init__(self, *args, **kwargs):
+        self.runs = 0
+        super().__init__(menu_text="count", *args, **kwargs)
+
+    def do_command(self, event):
+        self.runs += 1
+
+
+class SameWindowThrottleTest(test.wxTestCase):
+    """The same window opens at most once a second: a held key, or
+    presses queued while the system is busy, would open one per press
+    (docs/MENUS.md#the-same-window-once-a-second)."""
+
+    def setUp(self):
+        super().setUp()
+        throttle = mock.patch.object(
+            base_uicommand,
+            "_same_window",
+            base_uicommand._SameWindowThrottle(),
+        )
+        throttle.start()
+        self.addCleanup(throttle.stop)
+        self.now = 100.0
+        clock = mock.patch.object(
+            base_uicommand, "time", mock.Mock(monotonic=lambda: self.now)
+        )
+        clock.start()
+        self.addCleanup(clock.stop)
+        self.task = task.Task()
+
+    def open_window(self, *items):
+        command = OpenWindow(viewer=Selection(*items))
+        self.addCleanup(
+            lambda: [window.Destroy() for window in command.windows]
+        )
+        return command
+
+    def test_the_same_window_opens_once(self):
+        command = self.open_window(self.task)
+        for _ in range(5):
+            command(None)
+        self.assertEqual(1, len(command.windows))
+
+    def test_the_same_window_opens_again_a_second_later(self):
+        command = self.open_window(self.task)
+        command(None)
+        self.now += 1.0
+        command(None)
+        self.assertEqual(2, len(command.windows))
+
+    def test_within_the_second_it_stays_held_back(self):
+        command = self.open_window(self.task)
+        command(None)
+        self.now += 0.9
+        command(None)
+        self.assertEqual(1, len(command.windows))
+
+    def test_another_items_window_opens(self):
+        command = self.open_window(self.task)
+        command(None)
+        command.viewer.items = [task.Task()]
+        command(None)
+        self.assertEqual(2, len(command.windows))
+
+    def test_another_commands_window_opens(self):
+        # As a calendar slot's New task, made with that slot's dates
+        first = self.open_window(self.task)
+        second = self.open_window(self.task)
+        first(None)
+        second(None)
+        self.assertEqual(1, len(second.windows))
+
+    def test_a_command_opening_no_window_is_not_held_back(self):
+        command = Count(viewer=Selection(self.task))
+        for _ in range(5):
+            command(None)
+        self.assertEqual(5, command.runs)

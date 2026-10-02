@@ -17,6 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import itertools
+import time
+
 import wx
 from taskcoachlib import operating_system, patterns
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
@@ -28,6 +31,53 @@ from taskcoachlib.meta.debug import log_step
     See the Taskmaster pattern described here:
     http://www.objectmentor.com/resources/articles/taskmast.pdf
 """  # pylint: disable=W0105
+
+
+# A window a command opened opens again at most once a second
+_SAME_WINDOW_INTERVAL = 1.0
+
+
+class _SameWindowThrottle:
+    """Keeps a command from opening the same window again within
+    _SAME_WINDOW_INTERVAL of its opening: a held key, or presses queued
+    while the system is busy, would open one per press
+    (docs/MENUS.md#the-same-window-once-a-second). Other windows, and
+    commands that open none, are not held back."""
+
+    def __init__(self):
+        # same_window_key() -> [when that window was open, skip logged]
+        self.__opened = {}
+
+    def too_soon(self, key):
+        entry = self.__opened.get(key)
+        if entry is None:
+            return False
+        since = time.monotonic() - entry[0]
+        if since >= _SAME_WINDOW_INTERVAL:
+            return False
+        if not entry[1]:
+            entry[1] = True
+            log_step(
+                "%s: the same window opened %.2f s ago; skipped for a"
+                " second" % (key[0].__name__, since),
+                prefix="COMMAND",
+            )
+        return True
+
+    def opened(self, key):
+        now = time.monotonic()
+        for old in [
+            each
+            for each, (when, _) in self.__opened.items()
+            if now - when >= _SAME_WINDOW_INTERVAL
+        ]:
+            del self.__opened[old]
+        self.__opened[key] = [now, False]
+
+
+_same_window = _SameWindowThrottle()
+# A command's own number for same_window_key(): an id() is reused
+_serials = itertools.count()
 
 
 class MenuItem(wx.MenuItem):
@@ -67,6 +117,7 @@ class UICommand(patterns.Observer):
         self.id = IdProvider.get()
         self.toolbar = None
         self.menu_items = []  # uiCommands can be used in multiple menu's
+        self.__serial = next(_serials)
 
     def __del__(self):
         IdProvider.put(self.id)
@@ -211,8 +262,23 @@ class UICommand(patterns.Observer):
         the command is possible even when not enabled, so we need an
         explicit check here. Otherwise hitting return on an empty
         selection in the ListCtrl would bring up the TaskEditor."""
-        if self.enabled(event):
-            return self.do_command(event, *args, **kwargs)
+        if not self.enabled(event):
+            return None
+        key = self.same_window_key()
+        if _same_window.too_soon(key):
+            return None
+        windows = len(wx.GetTopLevelWindows())
+        result = self.do_command(event, *args, **kwargs)
+        if len(wx.GetTopLevelWindows()) > windows:
+            _same_window.opened(key)
+        return result
+
+    def same_window_key(self):
+        """What makes a window this command opens the same as the last
+        one: the command itself (each menu item, button, list or
+        calendar slot has its own), and for a viewer command the items
+        it acts on."""
+        return (type(self), self.__serial)
 
     def __call__(self, *args, **kwargs):
         return self.on_command_activate(*args, **kwargs)
