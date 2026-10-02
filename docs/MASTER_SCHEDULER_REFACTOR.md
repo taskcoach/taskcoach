@@ -797,7 +797,8 @@ each with the recommended action, none ruled yet:
   shows a failed file's exit status. Again 2026-10-01:
   `TaskEditorTest.py` crashed (exit 139) after five tests in a
   per-file run without the crash report; 25 reruns pass, and 20
-  without that day's change.
+  without that day's change. Again 2026-10-01: `test_efforts`, the
+  same setUp error in a catalog run (five reruns pass).
 - P114. ~~The task list's Budget cell ignored typing ("2:30" left it at
   0:00:00; Enter saved nothing)~~: fixed 2026-09-30, **asked by
   designer**; the same on master. The cell is the task editor's
@@ -869,7 +870,11 @@ each with the recommended action, none ruled yet:
 - P124. After a drag and drop the selection lands on another task
   (neither the dragged task nor always the target), and the subject's
   in-place editor sometimes opens on it. The same on wxPython 4.2.3
-  and 4.2.5 (checked in the app 2026-10-01).
+  and 4.2.5 (checked in the app 2026-10-01), and on master. In a tree
+  view it is the row above the dragged task's old place: the move
+  reaches the viewer as a removal, then an addition, and the removal
+  finds the selected task gone and selects a neighbour
+  (`on_presentation_changed()`). Keep the dragged task selected?
 - P125. On Windows the `wx.Display` replacement
   (`workarounds/display.py`, D6) has no `GetScaleFactor()`, so the
   startup report logs no scale factors there (`application.py` skips
@@ -949,12 +954,7 @@ each with the recommended action, none ruled yet:
   and I hide, that gets hidden"), the same on master. The command
   checked the column under the pointer when the item was clicked; it
   now takes the column the menu was opened on, as the hide always did.
-- P137. After a drag and drop in a tree view the selection lands on
-  the row above the dragged task's old place, not on the dragged task;
-  the same on master (found 2026-10-01). The move reaches the viewer
-  as a removal, then an addition: the removal finds the selected task
-  gone and selects a neighbour (`on_presentation_changed()`). Keep the
-  dragged task selected?
+- P137. Merged into P124 (the same issue).
 - P138. The tree widget bundled since To Do 67 adjusts its scrollbars
   in every `CalculatePositions()`, so the Windows deferred adjustment
   after content changes and the scroll methods' own
