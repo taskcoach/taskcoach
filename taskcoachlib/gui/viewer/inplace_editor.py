@@ -38,12 +38,20 @@ class KillFocusAcceptsEditsMixin(object):
 
     The editing also stops once the focus has left the editor and its
     parts for anything else: another view, a menu, a dialog, another
-    application. Its own popups keep it
+    application. Its own popups and a text field's own menu keep it
     (docs/LIST_MANAGEMENT.md#in-place-editing)."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.Bind(wx.EVT_CHILD_FOCUS, self.__on_focus_entered)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.__on_context_menu)
+
+    @staticmethod
+    def __on_context_menu(event):
+        # The text field's own menu opens (Cut, Copy, Paste), not the
+        # list's item menu, which took the row below for the one clicked
+        event.StopPropagation()
+        event.Skip()
 
     def StopEditing(self):
         try:

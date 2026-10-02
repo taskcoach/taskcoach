@@ -139,7 +139,9 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         elif hasattr(event, "GetPosition"):
             pos = event.GetPosition()
             if pos != wx.DefaultPosition:
-                point = self.ScreenToClient(pos)
+                # In the rows' window, as HitTest() takes it: the
+                # control's own coordinates count the column header
+                point = self.GetMainWindow().ScreenToClient(pos)
         if point is not None:
             # Make sure the item under the mouse is selected because that
             # is what users expect and what is most user-friendly. Not all

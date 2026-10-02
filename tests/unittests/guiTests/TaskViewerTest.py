@@ -1224,6 +1224,47 @@ class CommonTestsMixin(object):
         self.assertTrue(self.editor_open())
         self.assertEqual(0, self.task.percentageComplete())
 
+    def test_a_right_click_in_an_editor_stays_out_of_the_list(self):
+        # The text field's own menu opens; the list's item menu took the
+        # row below for the one being edited
+        self.taskList.extend([self.task, task.Task(subject="below")])
+        self.viewer.widget.edit_cell_in_place(self.firstItem(), 0)
+        editor = self.viewer.widget.GetMainWindow()._editCtrl
+        selected = self.viewer.curselection()
+        event = wx.ContextMenuEvent(
+            wx.wxEVT_CONTEXT_MENU,
+            editor.GetId(),
+            editor.ClientToScreen(wx.Point(5, 5)),
+        )
+        event.SetEventObject(editor)
+        with mock.patch.object(self.viewer.widget, "_popup_item_menu") as menu:
+            editor.GetEventHandler().ProcessEvent(event)
+        menu.assert_not_called()
+        self.assertEqual(selected, self.viewer.curselection())
+
+    def test_a_context_menu_at_a_position_selects_the_row_there(self):
+        # A context menu event carrying the pointer, not a tree event
+        below = task.Task(subject="below")
+        self.taskList.extend([self.task, below])
+        widget = self.viewer.widget
+        # Room for the rows: the test frame is not shown
+        widget.SetSize((400, 300))
+        test.settle()
+        first = self.firstItem()
+        x, y, _, height = widget.GetMainWindow().GetBoundingRect(first)
+        position = widget.GetMainWindow().ClientToScreen(
+            wx.Point(x + 5, y + height // 2)
+        )
+        event = wx.ContextMenuEvent(
+            wx.wxEVT_CONTEXT_MENU, widget.GetId(), position
+        )
+        event.SetEventObject(widget)
+        with mock.patch.object(widget, "_popup_item_menu"):
+            widget.GetEventHandler().ProcessEvent(event)
+        self.assertEqual(
+            [widget.GetItemPyData(first)], self.viewer.curselection()
+        )
+
     def edit_planned_start_in_its_cell(self):
         self.showColumn("plannedStartDateTime")
         self.taskList.append(self.task)

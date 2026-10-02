@@ -1318,7 +1318,7 @@ each with the recommended action, none ruled yet:
   calendar, the hour choices open), progress, priority, budget and
   hourly fee: a click in Categories saves and Down then moves the
   category selection; Ctrl+PgDn saves and Categories takes the keys; a
-  right-click inside saves as the task's menu opens (P157); the focus
+  right-click inside opens the text field's own menu (P157); the focus
   going to another application saves; Escape cancels,
   Enter saves; Edit > Paste from the menu bar pastes into the box,
   which stays.
@@ -1339,23 +1339,26 @@ each with the recommended action, none ruled yet:
   field's value, a number for the amount fields (the hourly and fixed
   fee in the list and the task editor), and their history broke; it
   now reads the text ([MENUS.md](MENUS.md#keyboard-shortcuts)).
-- P157. A right-click inside an in-place edit box opens the list's
-  menu for the row below it, not the text's: its Cut, Copy, Paste and
-  Delete act on that other task. Checked in the app 2026-10-02, master
-  the same: F2 on "Return library books", type, right-click in the
-  box, Delete: "Schedule dentist appointment" is deleted (Undo brings
-  it back). The box's context menu event goes up to the list, whose
-  hit test converts the screen position with the outer widget's
-  coordinates, the header's height too high. Rechecked from the app's
-  own logs: the pointer at (160, 332), inside the box (y 320 to 343)
-  on "Return library books"; converted with the outer widget it lands
-  on "Schedule dentist appointment", which is selected, with the
-  list's own window on the edited row. A right-click on a row with no
-  box open uses the tree event's own point and is right. Prototyped:
-  the box
-  keeps the event from the list; GTK's text menu (Cut, Copy, Paste,
-  Delete, Select All, Insert Emoji) opens, the box stays open, and
-  Select All, Copy and Paste act on the text. Fix?
+- P157. ~~A right-click inside an in-place edit box acted on the row
+  below~~: fixed 2026-10-02, **asked by designer**; the same on master.
+  F2 on "Return library books", right-click on the name in its edit
+  box: the list's item menu opened and "Schedule dentist appointment",
+  the row below, was selected, so Delete deleted it. The right-click
+  went up to the list, which read the pointer in its outer frame's
+  coordinates, the column header's height (26 px) lower; logged from
+  the app: the pointer at (160, 332) inside the box (y 320 to 343).
+  The box now keeps it: its text field's own menu opens and the box
+  stays ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing)).
+  Checked in the app: the subject, progress and hourly fee boxes open
+  GTK's text menu (Cut, Copy, Paste, Delete, Select All, Insert
+  Emoji), the selection stays and Escape returns to the box; Select
+  All, Copy and Paste act on the text; the date box opens nothing and
+  stays; a right-click on a row with no box open still opens the
+  task's menu for that row, and Shift+F10 the menu for the selected
+  row. The list now also reads a context menu's pointer in its rows'
+  window (a test fails on the old reading, which picked the row below):
+  on GTK no such event reaches it any more; Windows, which sends one
+  when the right button is released, could not be checked here.
 - P158. ~~After Enter or Escape in an in-place edit box the list took
   no keys~~: fixed 2026-10-02, **asked by designer**; the same on
   master. The row showed grey and Down moved nothing until a click in

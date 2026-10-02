@@ -1127,16 +1127,24 @@ place is not on the right-click menu. An edit box then opens:
 
 An edit box ends, keeping what was typed, once the focus has left it
 and its parts (the date's fields, calendar and time choices included)
-for anything else: a click in another view, Ctrl+PgDn, a right-click
-inside it (the item's menu takes the focus), a dialog, another
-application. The focus stays where it went; the list takes it back
-when it went to another application, as at Escape and Enter. Escape
-cancels, Enter keeps; a menu of the menu bar leaves the box open, so
-Edit > Paste pastes into it (`KillFocusAcceptsEditsMixin` in
+for anything else: a click in another view, Ctrl+PgDn, a dialog,
+another application. The focus stays where it went; the list takes it
+back when it went to another application, as at Escape and Enter.
+Escape cancels, Enter keeps; a menu of the menu bar leaves the box
+open, so Edit > Paste pastes into it (`KillFocusAcceptsEditsMixin` in
 `inplace_editor.py`). Before (master the same), only the date box
 ended so, and it took the focus back from the view clicked, leaving
 the keyboard nowhere; the others stayed open, the typed text unsaved,
 until the next click in their list (P154).
+
+A right-click inside an edit box opens its text field's own menu (on
+GTK Cut, Copy, Paste, Delete, Select All, Insert Emoji), and the box
+stays open; in the date, time and budget fields, drawn by Task Coach,
+it opens nothing. The list never sees it. Before (master the same),
+the list's item menu opened, for the row below the one edited (the
+list read the pointer in its outer frame's coordinates, the column
+header's height lower), so Delete in it deleted that other task
+(P157). It now reads the pointer in its rows' window.
 
 The list is given the focus once the box is destroyed. While the box
 exists, wx makes the list unfocusable in GTK (a window with a
