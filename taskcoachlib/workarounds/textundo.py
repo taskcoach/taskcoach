@@ -122,10 +122,21 @@ class TextHistory:
         return self.__text, self.__point
 
 
+def _text_class(field):
+    """The wx class of the field, whose GetValue() and SetValue() are
+    its text: a subclass may make them another value (NumericCtrl, an
+    amount)."""
+    return wx.SearchCtrl if isinstance(field, wx.SearchCtrl) else wx.TextCtrl
+
+
+def _text(field):
+    return _text_class(field).GetValue(field)
+
+
 def _history(field):
     history = getattr(field, _HISTORY, None)
     if history is None:
-        history = TextHistory(field.GetValue(), field.GetInsertionPoint())
+        history = TextHistory(_text(field), field.GetInsertionPoint())
         setattr(field, _HISTORY, history)
     return history
 
@@ -133,7 +144,7 @@ def _history(field):
 def _go(field, direction):
     history = _history(field)
     state = getattr(history, direction)(
-        field.GetValue(), field.GetInsertionPoint()
+        _text(field), field.GetInsertionPoint()
     )
     if state is None:
         return
@@ -141,7 +152,7 @@ def _go(field, direction):
     history.applying = True
     try:
         # SetValue, not ChangeValue: the field's handlers see the text
-        field.SetValue(text)
+        _text_class(field).SetValue(field, text)
     finally:
         history.applying = False
     field.SetInsertionPoint(point)
@@ -171,7 +182,7 @@ def _on_char_hook(event):
     field = event.GetEventObject()
     if not needs_own_undo(field):
         return
-    _history(field).record(field.GetValue(), field.GetInsertionPoint())
+    _history(field).record(_text(field), field.GetInsertionPoint())
     if not event.CmdDown() or event.AltDown():
         return
     key = event.GetKeyCode()
@@ -191,12 +202,12 @@ def _resetting(method):
     was there before."""
 
     def set_text(self, *args, **kwargs):
-        before = self.GetValue()
+        before = _text(self)
         result = method(self, *args, **kwargs)
         history = getattr(self, _HISTORY, None)
         if history is not None and not history.applying:
-            if self.GetValue() != before:
-                history.reset(self.GetValue(), self.GetInsertionPoint())
+            if _text(self) != before:
+                history.reset(_text(self), self.GetInsertionPoint())
         return result
 
     return set_text

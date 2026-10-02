@@ -1273,6 +1273,12 @@ each with the recommended action, none ruled yet:
   `UndoWithEditorsTest` ends with 239 views alive, 12 more each test;
   its editors are also destroyed without being closed (P149). Keyed by
   the test's name, they stay at 13 (measured in a copy).
+- P156. ~~Typing in an amount field printed a traceback
+  (`TypeError: object of type 'float' has no len()`)~~: fixed
+  2026-10-02, this branch only (04157cc82). The text undo read the
+  field's value, a number for the amount fields (the hourly and fixed
+  fee in the list and the task editor), and their history broke; it
+  now reads the text ([MENUS.md](MENUS.md#keyboard-shortcuts)).
 
 ## Views on the Effective Styles
 

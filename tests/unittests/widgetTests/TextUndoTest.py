@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import test
 import wx
 from unittest import mock
+from taskcoachlib.widgets import numericctrl
 from taskcoachlib.workarounds import textundo
 
 
@@ -172,3 +173,16 @@ class TextFieldUndoTest(test.wxTestCase):
         self.assertEqual("", self.field.GetValue())
         textundo.redo(self.field)
         self.assertEqual("ab", self.field.GetValue())
+
+    def test_an_amount_field_undoes_its_text(self):
+        # Its GetValue() is the amount, a number
+        self.field = numericctrl.NumericCtrl(self.frame, value=0)
+        if not textundo.needs_own_undo(self.field):
+            return
+        textundo.install(wx.GetApp())
+        self.field.SetValue(12)
+        before = wx.TextCtrl.GetValue(self.field)
+        self.field.SetInsertionPointEnd()
+        self.type("5")
+        textundo.undo(self.field)
+        self.assertEqual(before, wx.TextCtrl.GetValue(self.field))

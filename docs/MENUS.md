@@ -305,7 +305,9 @@ only, never text the program set:
 and the field), takes Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z, and starts a
 field's history over when the program sets its text (`SetValue`,
 `ChangeValue`, `Clear`). Typing on, and deleting on, join one step;
-password and read-only fields are left alone.
+password and read-only fields are left alone. It reads and sets the
+text through the wx class's own `GetValue()` and `SetValue()`: an
+amount field's (`NumericCtrl`) give the amount.
 
 Undo and Redo are enabled whenever a text field has focus (it takes the
 key for its own history) or the task history has a step.
