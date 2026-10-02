@@ -289,6 +289,19 @@ Numbered D1, D2, ...
   (`persistence/xml/legacy.py`), **asked by designer 2026-10-01**: in
   place since 2.0.3.0, 2026-10-01; review between January and April
   2027 ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#to-do-retire-the-old-forms)).
+- D10. The Task statistics view keeps most of a core busy while open
+  (P146), **deferred by designer 2026-10-01** ("I don't use it. I
+  don't know anyone that uses it. No one's complained"). Found: wx's
+  pie chart refreshes its legend on every paint (`PieCtrl.Draw()`,
+  `RecreateBackground()`, `Refresh()`), and on GTK 3 that repaints the
+  pie, about 100 times a second; master too. Tried in a scratch copy,
+  not kept: the view turning that refresh off (its legend is opaque)
+  and refreshing the legend when the counts change: idle 0%, the pie
+  and legend unchanged, the legend following a change.
+- D11. The colours in a dark theme (P142), **ruled by designer
+  2026-10-01**: the dark theme was tuned by the people who use it; no
+  change to it unless the designer asks for one ("If there's issues, I
+  will specifically tell you what to do with dark theme").
 
 ## Pre-existing Issues
 
@@ -876,9 +889,13 @@ each with the recommended action, none ruled yet:
   row: the button's release counted as a second click on it and
   started the editor's timer, which then opened the editor on the row
   current by then, the neighbour (traced in the app, the Categories
-  tree too). A drag cancelled with Escape or refused left nothing
-  selected: the dragged rows were passed where `select()` takes their
-  tasks. Now the dragged items stay selected however the drag ends,
+  tree too). That needs the press to start on the current row: it
+  happens when the task dragged was already selected (click it, then
+  drag it), not when the drag starts on another task; checked with
+  both ways on master, the branch before To Do 67, before this fix and
+  after. A drag cancelled with Escape or refused left no row
+  highlighted while the status bar counted one selected (master too):
+  the dragged rows were passed where `select()` takes their tasks. Now the dragged items stay selected however the drag ends,
   where they landed, and no editor opens
   ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#select-next-after-deletion)).
   Checked in the app against the build before: one task onto another
@@ -944,7 +961,12 @@ each with the recommended action, none ruled yet:
   from due minus planned start (Welcome.tsk's "Try different views",
   for one): the editor's sync on opening writes it
   (DURATION_CALCULATIONS.md, Logic Flow 4.3.1.2). The same on master
-  (checked in the app). Fix?
+  (checked in the app). Checked again 2026-10-01 on a Welcome.tsk
+  copy: once corrected and saved, opening the editor again changes
+  nothing; but a due date changed in the task list's date cell leaves
+  the stored duration as it was, and after saving, opening that task's
+  editor without touching anything marks the file modified again
+  ("Change planned duration"). Fix?
 - P134. ~~The search box and the list's in-place editor had no
   undo~~: fixed 2026-10-01, **ruled by designer** ("the text boxes
   should all behave the same ... limited to the platforms that don't
@@ -1006,9 +1028,7 @@ each with the recommended action, none ruled yet:
   moved another row under the pointer, and the hover outline returns
   only after the pointer moves within the list again. Found
   2026-10-01, the same before To Do 67.
-- P142. In a dark theme the tasks' and categories' light text is hard
-  to read on their light background colours. Found 2026-10-01, the
-  same before To Do 67.
+- P142. Will not do: D11.
 - P143. ~~The "not possible" cursor was X's skull~~: fixed 2026-10-01,
   **ruled by designer** (Task Coach's own cursor from the icons it
   ships), the same on master. wx's no-entry cursor is X's skull where
@@ -1051,11 +1071,7 @@ each with the recommended action, none ruled yet:
   change of the due soon hours in Preferences, where each task
   recomputes its status in its own observer of the setting, outside
   a pass.
-- P146. With the Task statistics view open the app uses most of a
-  core while idle (70 to 100%; master too, found 2026-10-01): wx's
-  pie chart refreshes its legend on every paint (`PieCtrl.Draw()`,
-  `RecreateBackground()`, `Refresh()`) and keeps repainting, about
-  100 times a second. Fix?
+- P146. Deferred: D10.
 - P147. ~~Undoing a drag and drop left the tree showing the task under
   its new parent~~: found and fixed 2026-10-01, while fixing P124; on
   this branch only, since the undo log (To Do 34). A drag tells the
