@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from taskcoachlib import gui, config, persistence
-from taskcoachlib.domain import task
+from taskcoachlib.domain import date, task
 
 
 class TreeViewerTest(test.wxTestCase):
@@ -46,6 +46,19 @@ class TreeViewerTest(test.wxTestCase):
     def firstItem(self):
         root = self.widget.GetRootItem()
         return self.widget.GetFirstChild(root)[0]
+
+    def test_children_in_the_views_order_without_hidden_ones(self):
+        other = task.Task("another child")
+        self.parent.addChild(other)
+        other.set_parent(self.parent)
+        self.taskFile.tasks().append(other)
+        self.viewer.sortBy("subject")
+        self.assertEqual(
+            [other, self.child], self.viewer.children(self.parent)
+        )
+        self.viewer.hide_task_status(task.status.completed)
+        other.set_completion_date_time(date.Now())
+        self.assertEqual([self.child], self.viewer.children(self.parent))
 
     def testWidgetDoesNotDisplayChildItemBeforeItsParentIsExpanded(self):
         self.assertEqual(1, self.viewer.widget.GetItemCount())

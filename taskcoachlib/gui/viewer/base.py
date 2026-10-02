@@ -1088,7 +1088,8 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
 
     def children(self, parent=None):
         if parent:
-            children = parent.children()
+            # A set: every item in the view is looked up in it
+            children = set(parent.children())
             if children:
                 return [
                     child for child in self.presentation() if child in children

@@ -1007,16 +1007,22 @@ each with the recommended action, none ruled yet:
   border that cannot be dragged now show the "prohibited" sign from
   the bundled Noto emoji, made a cursor as the link and home drop
   cursors are ([ICON_DISPLAY.md](ICON_DISPLAY.md#synthetic-icons)).
-- P144. Rebuilding a tree view of 2,050 tasks (a sort, a filter, the
-  tree/list switch) takes 2.1 to 2.8 s, on master too and before To Do
-  67; the columns shown make no difference (5 or 29). Found 2026-10-01
-  with a generated file. Traced in part (profile, 2026-10-01): most
-  of it is the check `RefreshAllItems()` makes before rebuilding,
-  whether the rows still match the view (`_snapshot_adapter()`). It
-  asks the task viewer for each parent's children, and the viewer
-  compares every task in the view with them (Python `__eq__`). In six
-  refreshes the check took 12 of 19 s profiled, the rebuilds 5 s, 4
-  of them in the same lookup.
+- P144. ~~Rebuilding a tree view of 2,050 tasks (a sort, a filter,
+  the tree/list switch) took 2.1 to 2.8 s~~: fixed 2026-10-01,
+  **asked by designer**; the same on master and before To Do 67. Most
+  of it was the check `RefreshAllItems()` makes before rebuilding,
+  whether the rows still match the view (`_snapshot_adapter()`), and
+  the rebuild's own lookups: the viewer listed a parent's children by
+  comparing every task in the view with a list of them (Python
+  `__eq__`, 32 million calls profiled for two sorts and the file's
+  opening). It now looks each task up in a set. Busy time after the
+  action, on the virtual display: a sort 3.5 s before, 0.6 s after;
+  the tree/list switch 1.3 and 0.7 s; a search 1.1 and 0.85 s; the
+  screens match the build before. What is left is drawing the rows'
+  texts. The view is still scanned once per parent: with 1,000
+  parents of 2 subtasks each (3,000 tasks) a sort takes 2.0 s (3.6 s
+  before); a map of the view's positions, kept while a refresh runs,
+  would make it linear.
 - P145. A bulk command or a pass that changes many statuses (marking
   tasks completed, waking from sleep, the due soon hours changed)
   updates the tray icon's tooltip once per task, each update counting
