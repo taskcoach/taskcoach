@@ -1052,6 +1052,21 @@ each with the recommended action, none ruled yet:
   pie chart refreshes its legend on every paint (`PieCtrl.Draw()`,
   `RecreateBackground()`, `Refresh()`) and keeps repainting, about
   100 times a second. Fix?
+- P147. ~~Undoing a drag and drop left the tree showing the task under
+  its new parent~~: found and fixed 2026-10-01, while fixing P124; on
+  this branch only, since the undo log (To Do 34). A drag tells the
+  views by taking the moved items out of the list and back; undo and
+  redo put the links back alone, so the tree views neither rebuilt nor
+  forgot their cached root items (a task made a root by the drop
+  stayed one); master undid the drag with the list changes. A tree
+  sorter now notes a change of subitems while values are put back
+  and, once they all are, sorts again and tells the views, unless a
+  list change told them (`after_restoring()`,
+  [UNDO_REDO.md](UNDO_REDO.md#architecture-snapshot-and-diff)).
+  Checked in the app: drop, undo and redo each show the task in its
+  place, still selected; a merge of changes on disk moving 40
+  subtasks takes as long as before and shows the same.
+
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**

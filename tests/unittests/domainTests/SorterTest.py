@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from taskcoachlib import config, patterns
+from taskcoachlib.patterns.snapshot import register_collection
 from taskcoachlib.domain import attachment, base, task, effort, date
 from taskcoachlib.domain import category
 
@@ -500,6 +501,32 @@ class TaskSorterTreeModeTest(test.TestCase):
             list(self.sorter).index(self.parent2)
             < list(self.sorter).index(self.parent1)
         )
+
+    def test_undoing_a_move_sorts_again_once(self):
+        # Undo puts the links back alone, with no list change: the
+        # sorter forgets its root items and tells the views, once
+        history = patterns.CommandHistory()
+        with history.action("Move"):
+            self.taskList.removeItems([self.child2])
+            self.child2.set_parent(None)
+            self.taskList.extend([self.child2])
+        self.assertIn(self.child2, self.sorter.rootItems())
+        self.registerObserver(self.sorter.sort_event_type())
+        history.undo()
+        self.assertNotIn(self.child2, self.sorter.rootItems())
+        self.assertEqual(1, len(self.events))
+
+    def test_undoing_a_removal_is_told_by_the_list_alone(self):
+        # Its subitem comes back too, but the list change tells it
+        register_collection(self.taskList)
+        history = patterns.CommandHistory()
+        with history.action("Delete"):
+            self.taskList.removeItems([self.child2])
+        self.registerObserver(self.sorter.sort_event_type())
+        history.undo()
+        self.assertIn(self.child2, self.sorter)
+        self.assertNotIn(self.child2, self.sorter.rootItems())
+        self.assertEqual([], self.events)  # Not sorted again
 
     def testSetSorterToListMode(self):
         self.sorter.set_tree_mode(False)

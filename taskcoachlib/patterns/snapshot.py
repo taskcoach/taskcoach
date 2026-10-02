@@ -32,6 +32,7 @@ _items = weakref.WeakValueDictionary()
 _collections = weakref.WeakValueDictionary()
 
 _restoring = 0
+_after_restoring = []  # Called once the values being put back all are
 
 
 def register_item(item):
@@ -57,10 +58,21 @@ def restoring():
         yield
     finally:
         _restoring -= 1
+    if not _restoring:
+        callbacks, _after_restoring[:] = _after_restoring[:], []
+        for callback in callbacks:
+            callback()
 
 
 def is_restoring():
     return _restoring > 0
+
+
+def after_restoring(callback):
+    """Call callback once the values being put back all are, once
+    however often asked meanwhile: what the values tell together."""
+    if callback not in _after_restoring:
+        _after_restoring.append(callback)
 
 
 def is_held(item):

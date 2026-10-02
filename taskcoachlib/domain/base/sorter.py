@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import date
+from taskcoachlib.patterns.snapshot import after_restoring, is_restoring
 
 
 def _tie_break_key(item):
@@ -177,7 +178,35 @@ class Sorter(patterns.ListDecorator):
 class TreeSorter(Sorter):
     def __init__(self, *args, **kwargs):
         self.__rootItems = None  # Cached root items
+        self.__restored = set()  # What the values put back changed
         super().__init__(*args, **kwargs)
+        for event_type in (
+            self.DomainObjectClass.addChildEventType(),
+            self.DomainObjectClass.removeChildEventType(),
+        ):
+            self.registerObserver(
+                self.__on_children_changed, eventType=event_type
+            )
+
+    def detach(self):
+        super().detach()
+        self.removeObserver(self.__on_children_changed)
+
+    def __on_children_changed(self, event):  # pylint: disable=W0613
+        if is_restoring():
+            self.__note_restored("moved")
+
+    def __note_restored(self, change):
+        self.__restored.add(change)
+        after_restoring(self.__on_restored)
+
+    def __on_restored(self):
+        # An action moves items out of the list and back, which tells
+        # the views. Undo and redo put a move's links back alone
+        # (docs/UNDO_REDO.md): then sort again and tell them, once
+        restored, self.__restored = self.__restored, set()
+        if restored == {"moved"}:
+            self.reset(force_event=True)
 
     def tree_mode(self):
         return True
@@ -200,11 +229,15 @@ class TreeSorter(Sorter):
     @patterns.eventSource
     def extendSelf(self, items, event=None):
         self.__invalidateRootItemCache()
+        if is_restoring():
+            self.__note_restored("listed")
         return super().extendSelf(items, event=event)
 
     @patterns.eventSource
     def removeItemsFromSelf(self, items_to_remove, event=None):
         self.__invalidateRootItemCache()
+        if is_restoring():
+            self.__note_restored("listed")
         # FIXME: Why is it necessary to remove all children explicitly?
         items_to_remove = set(items_to_remove)
         if self.tree_mode():

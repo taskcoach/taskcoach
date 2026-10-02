@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 import wx
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import gui, config, patterns, persistence
 from taskcoachlib.domain import date, task
 
 
@@ -83,6 +83,17 @@ class TreeViewerTest(test.wxTestCase):
         self.widget.OnDrop(self.row(other), [self.row(self.child)], 0, 0)
         wx.Yield()  # The drop runs later
         self.assertEqual(other, self.child.parent())
+        self.assertEqual([self.child], self.viewer.curselection())
+
+    def test_undoing_a_drop_puts_the_row_back(self):
+        other = task.Task("other")
+        self.taskFile.tasks().append(other)
+        self.start_dragging(self.child)
+        self.widget.OnDrop(self.row(other), [self.row(self.child)], 0, 0)
+        wx.Yield()  # The drop runs later
+        patterns.CommandHistory().undo()
+        row_parent = self.widget.GetItemParent(self.row(self.child))
+        self.assertIs(self.parent, self.widget.GetItemPyData(row_parent))
         self.assertEqual([self.child], self.viewer.curselection())
 
     def test_a_cancelled_drag_keeps_the_dragged_task_selected(self):

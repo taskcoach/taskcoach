@@ -77,6 +77,13 @@ in memory, compared before and after each action.
   subcategories' filter; their effects are in the step), no command
   does anything, no item is dated, and the views are told in one
   batch. **Redo** writes the values after.
+- **A move** (a drag and drop) changes no list's items: the action
+  told the views by taking the items out of the list and back, undo
+  and redo put back only the links. The tree sorters note the change
+  of subitems and, once every value is back (`after_restoring()` in
+  `patterns/snapshot.py`), sort again and tell the views, unless a
+  list change told them already (P147 in
+  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
 
 ## Actions
 
