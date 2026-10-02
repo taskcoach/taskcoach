@@ -301,6 +301,30 @@ go at the end. Details live in the sections and documents linked.
     (`wxKeyEvent::IsAutoRepeat()`); dropping a held key's repeats in a
     window it did not start in, until its release.
 
+    Research 2026-10-02, a proposal to the designer pending:
+    - `IsAutoRepeat()` works on Windows, macOS and Qt only (wx docs);
+      logged in the app on GTK, it is always false. A held key sends
+      presses without releases (X11's detectable auto-repeat), so a
+      press of a key already down is a repeat. Windows marks repeats
+      in `WM_KEYDOWN` (bit 30) and Qt with `isAutoRepeat()`, both for
+      acting on the first press only; GTK buttons act on Space at its
+      release.
+    - Logged in the app: the first Space reaches the list and opens
+      the editor; from the first repeat (0.66 s) on, every repeat goes
+      to the editor's Subject.
+    - Prototyped in a copy: one event filter, ahead of every window,
+      drops a repeat once the focus is in another window than the
+      key's first press, and repeats of Enter, keypad Enter and Space
+      outside a text field. Held Space or Enter on a task opened one
+      editor and changed nothing (22 repeats dropped in it); a held
+      Down still moved down the list, a held letter still typed in a
+      text field.
+    - Open: a release the application never sees (the key let go in a
+      native dialog, say) leaves the key marked down, so its next press
+      would count as a repeat; limited by forgetting held keys when
+      the application loses the focus and counting a press as a repeat
+      only within a short time of the key's last press.
+
 ## Deferred or Will Not Do
 
 Moved out of the To Do list, **ruled by designer 2026-09-29**: pushed
