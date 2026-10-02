@@ -1301,21 +1301,29 @@ each with the recommended action, none ruled yet:
   field's value, a number for the amount fields (the hourly and fixed
   fee in the list and the task editor), and their history broke; it
   now reads the text ([MENUS.md](MENUS.md#keyboard-shortcuts)).
-- P157. A right-click inside an in-place edit box opens the item's
-  menu, not the text's: its Cut, Copy, Paste and Delete act on the
-  task, not the typed text. Checked in the app 2026-10-02, master the
-  same: F2 on a subject, type, right-click in the box: the task menu
-  opens (master: the box stays behind it; this branch: the box ends,
-  keeping the text, P154). The box's context menu event goes up to the
-  list, which shows its menu. Fix?
+- P157. A right-click inside an in-place edit box opens the list's
+  menu for the row below it, not the text's: its Cut, Copy, Paste and
+  Delete act on that other task. Checked in the app 2026-10-02, master
+  the same: F2 on "Return library books", type, right-click in the
+  box, Delete: "Schedule dentist appointment" is deleted (Undo brings
+  it back). The box's context menu event goes up to the list, whose
+  hit test converts the screen position with the outer widget's
+  coordinates, the header's height too high. Prototyped: the box
+  keeps the event from the list; GTK's text menu (Cut, Copy, Paste,
+  Delete, Select All, Insert Emoji) opens, the box stays open, and
+  Select All, Copy and Paste act on the text. Fix?
 - P158. After Enter or Escape in an in-place edit box, the row shows
   as selected without the focus (grey) and Down moves nothing until a
   click in the list; the same on coming back from another application
-  the box was left for (P154). Checked in the app 2026-10-02 on Xvfb,
-  master the same (there a second Down turns the row blue, still
-  without moving). wx reports the list focused 100 ms and 600 ms
-  after the box ends (`FindFocus()`); not traced further. To confirm
-  on the desktop.
+  the box was left for (P154). Checked in the app 2026-10-02, master
+  the same (there a second Down turns the row blue, still without
+  moving). wx makes a window holding a focusable child unfocusable in
+  GTK (its container code), so the list's `SetFocusIgnoringChildren()`
+  while the box exists goes to its children, finds the box again, and
+  the focus goes with the box; `FindFocus()` still names the list.
+  Prototyped: the list takes the focus once the box is destroyed; Down
+  then moves the selection after Enter, Escape and a return from
+  another application. Fix?
 
 ## Views on the Effective Styles
 
