@@ -19,7 +19,8 @@
 15. [Vampire CPU Usage](#vampire-cpu-usage)
 16. [AUI Sash Resize Throttle](#aui-sash-resize-throttle)
 17. [AUI Repaint Cascade on GTK3](#aui-repaint-cascade-on-gtk3)
-18. [Key Files](#key-files)
+18. [In-Place Editing](#in-place-editing)
+19. [Key Files](#key-files)
 
 ---
 
@@ -1086,6 +1087,32 @@ the motion-only input filter is sufficient to prevent the cascade.
 | `taskcoachlib/meta/debug.py` | `log_step()` - timestamped debug logging |
 
 ---
+
+
+## In-Place Editing
+
+The tree views (Tasks, in tree and list mode, Categories, Notes) edit a
+cell in place; the list views (Effort, Attachments) do not. Editable:
+the subject and description, and in the Tasks view the dates, the
+reminder, progress, budget, priority and fees. An edit box opens:
+
+- with F2, on the Subject of the first selected row
+  (`TreeListCtrl.on_key_down()`);
+- with a click on the current, selected row in an editable column,
+  when no second click follows within 250 ms (`_EDIT_TIMER_TICKS` in
+  the bundled `taskcoachlib/patches/hypertreelist.py`). A double-click
+  opens the editor dialog instead, as Enter does.
+
+The click opens edit boxes nobody asked for when a click lands on the
+selected row, as the release of a drag did (P124 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+Two Preferences options are planned, To Do 68 and 69 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)
+([SETTINGS.md](SETTINGS.md#planned-in-place-editing-options)):
+editing with the click, off by default, which leaves F2; and editing
+in place at all. F2 is the rename and edit-cell key of Windows and the
+Linux desktops (file managers, spreadsheets); macOS uses Return, which
+in Task Coach opens the editor dialog, so F2 stays the key everywhere.
 
 ## Key Files
 

@@ -11,7 +11,8 @@
 7. [Initialization](#initialization)
 8. [Usage](#usage)
 9. [Writes Stay on the Existing API](#writes-stay-on-the-existing-api)
-10. [Key Files](#key-files)
+10. [Planned: In-Place Editing Options](#planned-in-place-editing-options)
+11. [Key Files](#key-files)
 
 ---
 
@@ -412,6 +413,21 @@ persistence. `Settings.set()` also calls `settings2.schedule_refresh()`
 to trigger a debounced shim refresh (see [Refresh triggers](#refresh-triggers)).
 
 ---
+
+
+## Planned: In-Place Editing Options
+
+**Asked by designer 2026-10-02**, To Do 68 and 69 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do);
+what they change: [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing).
+On the Features page, by Hoverover popups:
+
+| Option | Default | Off |
+|--------|---------|-----|
+| Edit in place with a click on the selected row | Off | Only F2 opens an edit box |
+| Edit in place in the lists | Off, to confirm (To Do 69) | No edit box opens, F2 included |
+
+The first applies only while the second is on.
 
 ## Key Files
 

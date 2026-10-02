@@ -218,6 +218,22 @@ go at the end. Details live in the sections and documents linked.
     type-ahead; the catalog passes. Not run on Windows, macOS or
     wxPython 4.0.7
     ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#updating-the-bundle)).
+68. A Preferences option for editing in place with a click on the
+    selected row, off by default: F2 alone then opens the edit box.
+    **Asked by designer 2026-10-02.** Today a click on the current,
+    selected row opens one unasked when no second click follows (as
+    after a drag, P124). F2 is the rename and edit-cell key of Windows
+    and the Linux desktops; macOS uses Return, which here opens the
+    editor, so F2 serves everywhere
+    ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing),
+    [SETTINGS.md](SETTINGS.md#planned-in-place-editing-options)).
+69. A Preferences option to turn editing in place off altogether, F2
+    included; off by default as the designer leans, to confirm for
+    those who upgrade. **Asked by designer 2026-10-02**: some edit
+    faster this way, the designer never does and finds it less
+    reliable. Tests run under their own settings, never the
+    designer's: the edit boxes keep their tests with the options on,
+    and with each off no edit box opens (same links as 68).
 
 ## Deferred or Will Not Do
 
