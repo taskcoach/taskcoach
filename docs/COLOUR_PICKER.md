@@ -17,6 +17,8 @@ On GTK3, wxPython historically had two different colour picker dialogs:
 
 This was reported as [GNOME Bug #761005](https://bugzilla.gnome.org/show_bug.cgi?id=761005) and fixed in GTK commit `526fd89` (Jan 2016, by Sebastien Lafargue) in `gtkcolorchooserwidget.c`. The fix checks if the editor is visible and propagates the colour directly: `gtk_color_chooser_set_rgba(GTK_COLOR_CHOOSER(cc->priv->editor), &color)`. However, this fix may not be present in all GTK3 distributions, and a similar regression was reported for GTK4 in [PyGObject #561](https://gitlab.gnome.org/GNOME/pygobject/-/issues/561).
 
+Checked 2026-10-02 on GTK 3.24.49 (Debian 13): the chooser selects the current colour, but its "+" still opens the editor at #BF4040, so the workaround stays (P108 in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+
 `wx.ColourDialog` (which uses the older `GtkColorSelectionDialog` on GTK3) does not have this bug — it correctly pre-selects the current colour on all platforms. On Windows and macOS, `wx.ColourDialog` and the native picker are effectively the same system dialog, so this issue is GTK3-specific.
 
 ### The Fix

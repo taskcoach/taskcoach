@@ -795,10 +795,11 @@ each with the recommended action, none ruled yet:
   delete.
 - P89. `test.py --profile` runs the selection in one process and exits
   0 on failures. Recommended: per file, with the exit status.
-- P90. A file now and then fails to start ("Can't create a
+- P90. ~~A file now and then failed to start ("Can't create a
   GtkStyleContext without a display connection", exit 133) when
-  another `xvfb-run -a` starts at the same moment. Document, or have
-  the catalog start its own display?
+  another `xvfb-run -a` started at the same moment~~: closed
+  2026-10-02, not reproduced: 42 wx applications started six at a
+  time under `xvfb-run -a` all started. Reopen with a failing run.
 - P91. Editors first open at 400x300, tabs scrolled, fields cut off
   ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md), Left). Pick a first size?
 - P92. Fit editors and floating AUI panes to the monitors (planned in
@@ -857,8 +858,13 @@ each with the recommended action, none ruled yet:
   "Description" window seen once. Check?
 - P107. Changing the idle time at runtime logs no probe summary
   ([IDLE.md](IDLE.md)). Leave?
-- P108. The colour picker's workaround for GNOME bug 761005 (fixed in
-  2016) was never rechecked. Check and remove?
+- P108. ~~The colour picker's workaround for GNOME bug 761005 was
+  never rechecked~~: checked 2026-10-02, kept. With the workaround
+  switched off in a copy, Preferences > Statuses > Late's foreground
+  (purple) opens GTK's chooser with the purple selected, but its "+"
+  opens the editor at #BF4040, not the purple, on GTK 3.24.49: the
+  workaround's cause is still there
+  ([COLOUR_PICKER.md](COLOUR_PICKER.md#the-bug--set_rgba-ignored-in-editor-mode)).
 - P109. Code TODOs: the status bar's place after hiding and showing the
   toolbar (`mainwindow.py`), editor shortcuts fixed against
   translations (`editor.py`), relative due-date presets passed and
@@ -1311,7 +1317,13 @@ each with the recommended action, none ruled yet:
   box, Delete: "Schedule dentist appointment" is deleted (Undo brings
   it back). The box's context menu event goes up to the list, whose
   hit test converts the screen position with the outer widget's
-  coordinates, the header's height too high. Prototyped: the box
+  coordinates, the header's height too high. Rechecked from the app's
+  own logs: the pointer at (160, 332), inside the box (y 320 to 343)
+  on "Return library books"; converted with the outer widget it lands
+  on "Schedule dentist appointment", which is selected, with the
+  list's own window on the edited row. A right-click on a row with no
+  box open uses the tree event's own point and is right. Prototyped:
+  the box
   keeps the event from the list; GTK's text menu (Cut, Copy, Paste,
   Delete, Select All, Insert Emoji) opens, the box stays open, and
   Select All, Copy and Paste act on the text. Fix?
