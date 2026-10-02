@@ -394,9 +394,9 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             dropTarget = hitItem
 
         if self.IsValidDropTarget(dropTarget):
-            self.UnselectAll()
-            if dropTarget != self.GetRootItem():
-                self.SelectItem(dropTarget)
+            # The drop target is not selected: as the current row it
+            # would take the button's release for a second click on it,
+            # which opens the editor of the row current by then
             part = 0
             if flags & wx.TREE_HITTEST_ONITEMUPPERPART:
                 part = -1
@@ -413,7 +413,9 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             # want, so clear the selection later, after
             # HyperTreeList did its (wrong) thing and reselect the previously
             # dragged item.
-            patterns.later.soon(self, self.__safeSelect, self._dragItems)
+            patterns.later.soon(
+                self, self.__safeSelect, self.__dragged_objects()
+            )
         self._dragItems = []
 
     def __safeSelect(self, items):
@@ -425,8 +427,12 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             # wrapped C/C++ object has been deleted
             pass
 
-    def selectDraggedItems(self):
-        self.select(reversed(self._dragItems))
+    def select_dragged_items(self):
+        self.select(self.__dragged_objects())
+
+    def __dragged_objects(self):
+        """The dragged rows' objects, which select() takes."""
+        return [self.GetItemPyData(item) for item in self._dragItems]
 
     def OnDragging(self, event):
         if not event.Dragging():
@@ -486,7 +492,7 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             mainWin._isDragging = False
         self.ResetCursor()
         self._ResetHeaderCursor()
-        self.selectDraggedItems()
+        self.select_dragged_items()
         # Refresh to clear any visual artifacts
         mainWin.Refresh()
 

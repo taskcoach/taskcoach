@@ -152,6 +152,19 @@ whether the row is scrolled on screen and would skip off-screen rows.
 - The parent is not in the presentation, so it is skipped like any other
   removed row and the walk continues outward
 
+**Moved by drag and drop:**
+- A move reaches the viewer as a removal, then an addition, so the
+  removal selects a neighbour. The tree control then selects the
+  dragged items where they landed (`TreeListCtrl.__select_dropped()`),
+  the view following them when auto-scroll is on. However a drag ends,
+  dropped, refused or cancelled with Escape, the dragged items stay
+  selected (`select_dragged_items()` in `widgets/draganddrop.py`).
+  The end of a drag does not select the drop target: as the tree's
+  current row it would take the button's release for a second click on
+  it and start the in-place editor, on whatever row is current when its
+  timer fires (P124 in
+  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+
 **Widgets without a row order** (timeline, calendar, square map):
 - These have no `selection_neighbours()`; they keep the older
   parent-plus-index capture, where "next" means `min(len(siblings) - 1,

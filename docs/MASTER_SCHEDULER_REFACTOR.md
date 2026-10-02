@@ -867,14 +867,24 @@ each with the recommended action, none ruled yet:
   from its toolbar's search box too, so Ctrl+C there copied the task;
   it is now on the list ([MENUS.md](MENUS.md#keyboard-shortcuts)).
   Enter and numpad Enter in the search box search at once.
-- P124. After a drag and drop the selection lands on another task
-  (neither the dragged task nor always the target), and the subject's
-  in-place editor sometimes opens on it. The same on wxPython 4.2.3
-  and 4.2.5 (checked in the app 2026-10-01), and on master. In a tree
-  view it is the row above the dragged task's old place: the move
+- P124. ~~After a drag and drop the selection landed on another task,
+  and the subject's in-place editor sometimes opened on it~~: fixed
+  2026-10-01, **asked by designer**; the same on master. The move
   reaches the viewer as a removal, then an addition, and the removal
-  finds the selected task gone and selects a neighbour
-  (`on_presentation_changed()`). Keep the dragged task selected?
+  selected the row above the dragged task's old place. The end of the
+  drag also selected the drop target, making it the tree's current
+  row: the button's release counted as a second click on it and
+  started the editor's timer, which then opened the editor on the row
+  current by then, the neighbour (traced in the app, the Categories
+  tree too). A drag cancelled with Escape or refused left nothing
+  selected: the dragged rows were passed where `select()` takes their
+  tasks. Now the dragged items stay selected however the drag ends,
+  where they landed, and no editor opens
+  ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#select-next-after-deletion)).
+  Checked in the app against the build before: one task onto another
+  parent, two tasks at once, onto a collapsed parent, onto the header
+  (made a root task), a parent onto its own child (refused), Escape,
+  and a category onto another.
 - P125. On Windows the `wx.Display` replacement
   (`workarounds/display.py`, D6) has no `GetScaleFactor()`, so the
   startup report logs no scale factors there (`application.py` skips
@@ -954,7 +964,7 @@ each with the recommended action, none ruled yet:
   and I hide, that gets hidden"), the same on master. The command
   checked the column under the pointer when the item was clicked; it
   now takes the column the menu was opened on, as the hide always did.
-- P137. Merged into P124 (the same issue).
+- P137. Merged into P124 (the same issue), fixed.
 - P138. The tree widget bundled since To Do 67 adjusts its scrollbars
   in every `CalculatePositions()`, so the Windows deferred adjustment
   after content changes and the scroll methods' own
@@ -1042,7 +1052,6 @@ each with the recommended action, none ruled yet:
   pie chart refreshes its legend on every paint (`PieCtrl.Draw()`,
   `RecreateBackground()`, `Refresh()`) and keeps repainting, about
   100 times a second. Fix?
-
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**

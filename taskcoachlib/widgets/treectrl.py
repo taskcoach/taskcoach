@@ -773,6 +773,7 @@ class TreeListCtrl(
                 # Expand the drop target if items were dropped on it
                 if drop_item is not None:
                     self._expand_drop_target(drop_item)
+                self.__select_dropped(drag_items)
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             from taskcoachlib.meta.debug import log_step
@@ -781,6 +782,17 @@ class TreeListCtrl(
                 "dragAndDropCommand failed - widget already destroyed",
                 prefix="DEAD-OBJ",
             )
+
+    def __select_dropped(self, drag_items):
+        """The dragged items stay selected where they landed: a move
+        removes them first, and the viewer selects a neighbour then."""
+        dropped = set(drag_items)
+        if any(
+            self.GetItemPyData(item) in dropped
+            for item in self.GetItemChildren(recursively=True)
+        ):
+            self.select(dropped)
+            self.scroll_to_selection_centered()
 
     def _expand_drop_target(self, drop_item):
         """Expand the drop target item so the dropped children are visible."""
