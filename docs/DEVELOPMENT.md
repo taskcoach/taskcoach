@@ -5,6 +5,43 @@ and land changes. Deep-dive rationale for specific subsystems lives in
 dedicated `docs/*.md` files (grep `docs/` before changing pins, flags,
 or config defaults; non-obvious decisions are documented there).
 
+## Working plan
+
+Asked by the decider, 2026-10-02: the cycle every worker follows, a
+person or an AI. The **decider** rules on proposals (the "designer" of
+the records); the worker analyses, proposes and does the work.
+
+1. **Analyse before proposing.** Read the docs and the code together:
+   grep `docs/` and the git history for rulings, rationale and earlier
+   attempts; follow the code one step out (callers, other views, other
+   platforms, what else uses it). Reproduce in the full app with debug
+   logging, on the branch and on master, with the exact user steps and
+   what triggers it. Read the cause from logs ([Diagnosing](#diagnosing)):
+   when a finding depends on where the pointer or the focus is, log
+   that position and the target from the app itself. Research outside
+   when it applies (upstream code, platform docs, other applications'
+   conventions). When the size of a fix is unclear, prototype it in a
+   scratch copy.
+2. **Propose fully analysed options.** Each item as the steps a user
+   takes and what appears, checked on master and the branch; its
+   cause; the fix and what it changes for the user; risks and how they
+   will be checked; effort; a recommendation. Questions are numbered.
+   Rulings already given are applied, not asked again: they are in
+   `docs/`, cited by the proposal. In a list of what is outstanding,
+   the work's objective comes first and finishing steps (desktop test,
+   squash) last.
+3. **Do the work with its tests.** New behaviour gets tests that fail
+   on the code before (run in a scratch copy) and pass after; run the
+   related test files, then the full suite ([TESTING.md](TESTING.md)).
+   Check in the full app ([Verifying changes](#verifying-changes)) with
+   the proposal's steps, on master too for comparison. Check in scratch
+   copies only, never the decider's own files or settings. Lint, update
+   the feature's doc and the work's record in the same commit, and push
+   each finished piece.
+4. **Report back** what was done as user steps and results, what was
+   found on the way (a new issue numbered with its steps; a regression
+   of the branch fixed), then the next proposals.
+
 ## Design
 
 Canon decision by designer, 2026-09-28.
