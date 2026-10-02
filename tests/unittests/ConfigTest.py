@@ -19,7 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import ast
+import gc
 import test, sys, os, configparser, io
+import weakref
 from taskcoachlib import config, meta
 
 
@@ -267,7 +269,7 @@ class SettingsFileLocationTest(SettingsTestCase):
 
     def test_setting_save_ini_file_in_program_dir_to_false_is_heard(self):
         class SettingsUnderTest(config.Settings):
-            def on_settings_file_location_changed(self, event):
+            def on_settings_file_location_changed(self):
                 # pylint: disable=W0201
                 self.in_program_dir = self.getboolean(
                     "file", "saveinifileinprogramdir"
@@ -277,6 +279,15 @@ class SettingsFileLocationTest(SettingsTestCase):
         settings.setboolean("file", "saveinifileinprogramdir", True)
         settings.setboolean("file", "saveinifileinprogramdir", False)
         self.assertFalse(settings.in_program_dir)
+
+
+class SettingsLifetimeTest(test.TestCase):
+    def test_settings_read_and_dropped_are_freed(self):
+        # Date, time and amount controls each read a Settings object
+        # of their own and drop it
+        reference = weakref.ref(config.Settings(load=False))
+        gc.collect()
+        self.assertIsNone(reference())
 
 
 class MinimumSettingsTest(SettingsTestCase):

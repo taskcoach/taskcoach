@@ -117,11 +117,6 @@ class Settings(CachingConfigParser):
             # Assume that if the settings are not to be loaded, we also
             # should be quiet (i.e. we are probably in test mode):
             self.__beQuiet()
-        patterns.Publisher().registerObserver(
-            self.on_settings_file_location_changed,
-            eventType="file.saveinifileinprogramdir",
-            eventSource=self,
-        )
 
     def acquire_ini_lock(self):
         """Lock the ini file so only one Task Coach uses it. Shows an
@@ -163,8 +158,7 @@ class Settings(CachingConfigParser):
             self.__ini_lock.release()
             self.__ini_lock = None
 
-    def on_settings_file_location_changed(self, event):
-        # pylint: disable=W0613
+    def on_settings_file_location_changed(self):
         if not self.getboolean("file", "saveinifileinprogramdir"):
             try:
                 os.remove(self.generatedIniFilename(forceProgramDir=True))
@@ -362,6 +356,10 @@ class Settings(CachingConfigParser):
                 # window.theme_is_dark right away
                 settings2.refresh_now()
             self.send_changed(section, option)
+            # Called, not subscribed: the Publisher would keep every
+            # Settings object, also the ones controls read and drop
+            if (section, option) == ("file", "saveinifileinprogramdir"):
+                self.on_settings_file_location_changed()
             settings2.schedule_refresh()
             return True
         else:

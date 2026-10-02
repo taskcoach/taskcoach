@@ -1153,6 +1153,15 @@ each with the recommended action, none ruled yet:
   2026-03-04 the editor shows a duration of 33d 08:00, and the start
   moved a day takes the due date to 2026-03-05. The calendar views
   were checked by tests only.
+- P151. ~~Each task editor opened and closed kept about 6 MB in
+  memory (118 MB after 20)~~: found and fixed 2026-10-02, while
+  analysing P149; on this branch only, since pypubsub was removed (To
+  Do 18). The date, time and amount controls each read a `Settings`
+  object of their own (on master too), and each subscribed itself to
+  the Publisher, which holds a subscription's source: none was freed
+  (pypubsub held its listeners weakly). A change of the setting now
+  calls its handler directly. Checked in the app, 20 editors with
+  their pages shown: 9 MB, master 11 MB; the rest is P149.
 
 ## Views on the Effective Styles
 

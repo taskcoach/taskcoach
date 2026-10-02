@@ -113,7 +113,12 @@ Subscriber registers for a `(eventType, eventSource)` pair; dispatch does
 a dict lookup on that key and delivers only to matching observers.
 Observers registered for other senders are never touched — O(1) lookup,
 not iteration over all observers. Every signal uses it: domain fields,
-collections, the task file, settings, commands and viewers.
+collections, the task file, settings, commands and viewers. The
+observer is held weakly, its source strongly, as part of the key,
+until the subscription is removed: an object that subscribes to its
+own events is never freed
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues),
+P151).
 
 Note: the Publisher is a **Singleton** (one global registry), not true
 per-instance signals (where the signal object lives on the instance itself,
@@ -434,7 +439,10 @@ appearance sections, whose options are the statuses). Listeners read
 typed values from the settings (`getint()`, `getboolean()`), not from
 the event. `Settings.send_changed()` sends the same event without a
 change: the main window uses it when the system theme changes while
-the theme follows it.
+the theme follows it. The settings act on their own change of the ini
+file's location by a call in `set()`, not a subscription: controls
+read short-lived `Settings` objects, which a subscription to
+themselves would keep.
 
 ---
 
