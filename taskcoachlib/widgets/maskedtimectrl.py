@@ -1552,6 +1552,10 @@ class DurationCtrl(MaskedFieldsCtrl):
 class DurationCtrlVerbose(MaskedFieldsCtrl):
     """Duration control with full word suffixes: 000 days 00 hours 00 mins [00 secs].
 
+    Not used by the application: a test playground, shown in the demo,
+    kept for an option with worded durations
+    (docs/DATETIME_CONTROLS.md#durationctrlverbose).
+
     Args:
         parent: Parent window
         days, hours, minutes, seconds: Initial values

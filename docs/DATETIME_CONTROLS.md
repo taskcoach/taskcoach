@@ -364,6 +364,13 @@ ctrl.SetDuration(date.TimeDelta(hours=-1, minutes=-30))
 ### DurationCtrlVerbose
 Duration with full word suffixes: `1 days 02 hours 30 mins` or with seconds: `1 days 02 hours 30 mins 15 secs`
 
+**A test playground, not used by the application:** it is shown in the
+demo (`docs/scripts/datetime_controls_demo.py`, row 1.7). Leave both in
+place: they are the starting point if an option for longer, worded
+durations is ever wanted or asked for (P66 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues),
+ruled 2026-10-02). An audit that finds it unused should not remove it.
+
 **Constructor:**
 ```python
 DurationCtrlVerbose(parent, days=0, hours=0, minutes=0, seconds=0,

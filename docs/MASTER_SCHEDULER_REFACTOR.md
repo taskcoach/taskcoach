@@ -718,8 +718,11 @@ each with the recommended action, none ruled yet:
 - P65. Code only tests use (`Task.dueSoon()`, `CompositeList`,
   `getObjectById`, `Viewer.updateSelection`, `Menu.openMenu` and about
   12 more). Remove with the tests, or keep as test helpers?
-- P66. `DurationCtrlVerbose` (130 lines): only the demo uses it;
-  DATETIME_CONTROLS.md documents it. Keep or remove?
+- P66. ~~`DurationCtrlVerbose` (130 lines): only the demo uses it~~:
+  kept 2026-10-02, **ruled by designer**: a test playground, kept with
+  its demo for an option with longer, worded durations if one is ever
+  asked for. Its doc section and docstring say so
+  ([DATETIME_CONTROLS.md](DATETIME_CONTROLS.md#durationctrlverbose)).
 - P67. `[version] python`, `wxpython`, `pythonfrozen`, `current`:
   written to the INI on every save, never read. Keep as diagnostics or
   drop?
