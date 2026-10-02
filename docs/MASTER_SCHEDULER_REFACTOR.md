@@ -243,13 +243,21 @@ go at the end. Details live in the sections and documents linked.
     `settings2`, replace `ConfigParser`, refine the refresh triggers,
     and stop viewer instance 0 sharing the template section
     ([SETTINGS.md](SETTINGS.md#todo) 1, 5, 7, 8).
-71. The Publisher cleans up after itself (was P153). **Asked by
-    designer 2026-10-02.** It kept a subscription's source alive, and
-    dropped a freed subscriber only when an event of its type and
-    source was sent: an object subscribed to its own events stayed
-    (P151). Hold the source weakly and drop a subscription as soon as
-    its source or its subscriber is freed
-    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup)).
+71. ~~The Publisher cleans up after itself (was P153)~~: done
+    2026-10-02, **asked by designer**. It held a subscription's
+    source strongly and dropped a freed subscriber only when an event
+    of its type and source came: an object subscribed to its own
+    events stayed (P151). It now holds sources weakly too and drops a
+    subscription at its next call once its source or subscriber is
+    freed; sources that compare equal still share their subscriptions,
+    as domain objects compare by id
+    ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#current-state)). In
+    the whole test catalog no event matched a subscription by equality
+    alone. Checked in the app: marking 2,050 tasks completed costs the
+    same (CPU median 2.48 s, 2.49 s before, five runs each); over 20
+    editors the registry stays at 625 subscriptions, where before dead
+    ones piled up (438 to 647); editors, Preferences, floating, docked
+    again, tabs, quit and relaunch: no traceback.
 
 ## Deferred or Will Not Do
 

@@ -195,10 +195,14 @@ class WeakMethodProxy:
     not exist in Python 3).
     """
 
-    __slots__ = ("_ref", "_hash")
+    __slots__ = ("_ref", "_hash", "_on_freed", "_subscription")
 
     def __init__(self, method):
-        self._ref = weakref.WeakMethod(method)
+        self._ref = weakref.WeakMethod(method, self._freed)
+        # Set by the Publisher once registered: told when the
+        # subscriber is freed, and the (type, source) it is in
+        self._on_freed = None
+        self._subscription = None
         # Cache hash — must survive after referent dies, because
         # set.discard() needs it during cleanup.
         self._hash = hash(
@@ -211,6 +215,10 @@ class WeakMethodProxy:
 
     def alive(self):
         return self._ref() is not None
+
+    def _freed(self, ref):  # pylint: disable=W0613
+        if self._on_freed is not None:
+            self._on_freed(self)
 
     def __call__(self, *args, **kwargs):
         method = self._ref()
@@ -347,6 +355,45 @@ def unwrapObservers(decorated_method):
     return decorator
 
 
+class _Value:
+    """Holds a source that cannot be held weakly, such as a str: a
+    value, never freed. Called, it returns it, as a weak reference."""
+
+    __slots__ = ("_value",)
+
+    def __init__(self, value):
+        self._value = value
+
+    def __call__(self):
+        return self._value
+
+    def __hash__(self):
+        return hash(self._value)
+
+    def __eq__(self, other):
+        return isinstance(other, _Value) and self._value == other._value
+
+
+def _reference(source, callback=None):
+    try:
+        return weakref.ref(source, callback)
+    except TypeError:
+        return _Value(source)
+
+
+class _Source:
+    """An event source of subscriptions, held weakly. Objects that
+    compare equal share one, as they always matched each other's
+    subscriptions."""
+
+    __slots__ = ("ref", "holders", "keys")
+
+    def __init__(self, ref):
+        self.ref = ref  # Part of its subscriptions' keys
+        self.holders = []  # Each object subscribed as it, weakly
+        self.keys = set()
+
+
 class Publisher(object, metaclass=singleton.Singleton):
     """Publisher is used to register for event notifications. It supports
     the publisher/subscribe pattern, also known as the observer pattern.
@@ -367,8 +414,72 @@ class Publisher(object, metaclass=singleton.Singleton):
 
     def clear(self):
         """Clear the registry of observers. Mainly for testing purposes."""
-        # observers = {(eventType, eventSource): set(callbacks)}
-        self.__observers = {}  # pylint: disable=W0201
+        # pylint: disable=W0201
+        # {(eventType, source ref or None): set of WeakMethodProxy}
+        self.__observers = {}
+        # {source ref: _Source}: a source is held weakly, so its
+        # subscriptions go when it is freed
+        self.__sources = {}
+        # Subscribers and sources freed since the last call, dropped at
+        # the next: never while a dispatch walks the registry
+        self.__freed = []
+
+    def __purge(self):
+        while self.__freed:
+            freed = self.__freed.pop()
+            if isinstance(freed, WeakMethodProxy):
+                event_type, source = freed._subscription
+                self.__remove(
+                    (event_type, None if source is None else source.ref),
+                    freed,
+                )
+            else:
+                self.__source_freed(freed)
+
+    def __source_freed(self, ref):
+        source = self.__sources.pop(ref, None)
+        if source is None:
+            return
+        live = None
+        for holder in source.holders:
+            live = holder()
+            if live is not None:
+                break
+        keys, source.keys = source.keys, set()
+        if live is not None:
+            # An equal object subscribed too: its subscriptions stay
+            source.ref = _reference(live, self.__freed.append)
+            source.holders = [
+                each for each in source.holders if each() is not None
+            ]
+            self.__sources[source.ref] = source
+        for key in keys:
+            observers = self.__observers.pop(key, None)
+            if observers and live is not None:
+                new_key = (key[0], source.ref)
+                self.__observers.setdefault(new_key, set()).update(observers)
+                source.keys.add(new_key)
+
+    def __known(self, source):
+        """The _Source an object is subscribed as, or None."""
+        try:
+            return self.__sources.get(_reference(source))
+        except TypeError:
+            return None  # Not hashable: never a subscription's source
+
+    def __remove(self, key, observer):
+        observers = self.__observers.get(key)
+        if observers is None:
+            return
+        observers.discard(observer)
+        if observers:
+            return
+        del self.__observers[key]
+        source = self.__sources.get(key[1]) if key[1] is not None else None
+        if source is not None:
+            source.keys.discard(key)
+            if not source.keys:
+                self.__sources.pop(source.ref, None)
 
     @wrapObserver
     def registerObserver(self, observer, eventType, eventSource=None):
@@ -378,10 +489,26 @@ class Publisher(object, metaclass=singleton.Singleton):
         passing a specific eventSource, the observer is only called when the
         event originates from the specified eventSource."""
 
-        observers = self.__observers.setdefault(
-            (eventType, eventSource), set()
-        )
-        observers.add(observer)
+        self.__purge()
+        source = None
+        if eventSource is not None:
+            source = self.__known(eventSource)
+            if source is None:
+                source = _Source(_reference(eventSource, self.__freed.append))
+                self.__sources[source.ref] = source
+            if not any(each() is eventSource for each in source.holders):
+                source.holders = [
+                    each for each in source.holders if each() is not None
+                ]
+                source.holders.append(_reference(eventSource))
+        key = (eventType, None if source is None else source.ref)
+        observers = self.__observers.setdefault(key, set())
+        if source is not None:
+            source.keys.add(key)
+        if observer not in observers:
+            observer._subscription = (eventType, source)
+            observer._on_freed = self.__freed.append
+            observers.add(observer)
         import wx
 
         if isinstance(observer.__self__, wx.Window):
@@ -390,13 +517,11 @@ class Publisher(object, metaclass=singleton.Singleton):
     def remove_observers_of(self, owner):
         """Remove every subscription of the owner's methods, however
         they were registered."""
+        self.__purge()
         for key in list(self.__observers):
-            observers = self.__observers[key]
-            observers.difference_update(
-                [each for each in observers if each.__self__ is owner]
-            )
-            if not observers:
-                del self.__observers[key]
+            for each in list(self.__observers.get(key, ())):
+                if each.__self__ is owner:
+                    self.__remove(key, each)
 
     @wrapObserver
     def removeObserver(self, observer, eventType=None, eventSource=None):
@@ -411,70 +536,60 @@ class Publisher(object, metaclass=singleton.Singleton):
 
         # pylint: disable=W0613
 
+        self.__purge()
         # First, create a match function that will select the combination of
         # event source and event type we're looking for:
 
         # None means any: an empty collection is a source, not "any"
-        if eventType is not None and eventSource is not None:
+        source_ref = None
+        if eventSource is not None:
+            source = self.__known(eventSource)
+            if source is None:
+                return  # Never subscribed to as a source
+            source_ref = source.ref
 
-            def match(type, source):
-                return type == eventType and source == eventSource
-
-        elif eventType is not None:
-
-            def match(type, source):
-                return type == eventType
-
-        elif eventSource is not None:
-
-            def match(type, source):
-                return source == eventSource
-
-        else:
-
-            def match(type, source):
-                return True
+        def match(key):
+            return (eventType is None or key[0] == eventType) and (
+                eventSource is None or key[1] is source_ref
+            )
 
         # Next, remove observers that are registered for the event source and
         # event type we're looking for, i.e. that match:
-        matching_keys = [key for key in self.__observers if match(*key)]
-        for key in matching_keys:
-            self.__observers[key].discard(observer)
-            if not self.__observers[key]:
-                del self.__observers[key]
+        for key in [key for key in list(self.__observers) if match(key)]:
+            self.__remove(key, observer)
 
     def notifyObservers(self, event):
         """Notify observers of the event. The event type and sources are
         extracted from the event."""
         if not event.sources():
             return
-        # Collect observers *and* the types and sources they are registered for
-        observers = dict()  # {observer: set([(type, source), ...])}
+        self.__purge()
+        # Collect observers *and* the types and sources they are
+        # registered for: {observer: {(type, source): its key, ...}}
+        observers = dict()
         types = event.types()
         # Include observers not registered for a specific event source:
-        sources = event.sources() | set([None])
-        types_and_sources = [
-            (type, source) for source in sources for type in types
-        ]
-        dead_entries = []
-        for type_and_source in types_and_sources:
-            for observer in self.__observers.get(type_and_source, set()):
-                if observer.alive():
-                    observers.setdefault(observer, set()).add(type_and_source)
-                else:
-                    dead_entries.append((type_and_source, observer))
-        # Prune dead weak references
-        for key, dead_proxy in dead_entries:
-            self.__observers.get(key, set()).discard(dead_proxy)
-            if key in self.__observers and not self.__observers[key]:
-                del self.__observers[key]
+        for source in event.sources() | set([None]):
+            source_ref = None
+            if source is not None:
+                known = self.__known(source)
+                if known is None:
+                    continue  # No subscription to this source
+                source_ref = known.ref
+            for type in types:
+                key = (type, source_ref)
+                for observer in tuple(self.__observers.get(key, ())):
+                    if observer.alive():
+                        observers.setdefault(observer, {})[
+                            (type, source)
+                        ] = key
         import wx
 
         if wx.GetApp() and getattr(wx.GetApp(), "quitting", False):
             return
         failed_entries = []
         for observer, types_and_sources in observers.items():
-            sub_event = event.subEvent(*types_and_sources)
+            sub_event = event.subEvent(*types_and_sources.keys())
             if sub_event.types():
                 try:
                     observer(sub_event)
@@ -484,20 +599,19 @@ class Publisher(object, metaclass=singleton.Singleton):
                         observer, sub_event.types(), exc, dead
                     )
                     if dead:
-                        for key in types_and_sources:
+                        for key in types_and_sources.values():
                             failed_entries.append((key, observer))
         # Prune observers whose wx object was destroyed. Any other
         # failure keeps the observer, so one bad tick cannot silently
         # stop, e.g., the per-second scheduler.
         for key, failed_proxy in failed_entries:
-            self.__observers.get(key, set()).discard(failed_proxy)
-            if key in self.__observers and not self.__observers[key]:
-                del self.__observers[key]
+            self.__remove(key, failed_proxy)
 
     @unwrapObservers
     def observers(self, eventType=None):
         """Get the currently registered observers. Optionally specify
         a specific event type to get observers for that event type only."""
+        self.__purge()
         if eventType:
             return self.__observers.get((eventType, None), set())
         else:

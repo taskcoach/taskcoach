@@ -16,6 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import gc
+import weakref
+
 import test
 import wx
 from taskcoachlib import patterns
@@ -798,3 +801,109 @@ class PublisherTest(test.TestCase):
         )
         patterns.Event("eventType1", "observable2").send()
         self.assertTrue(self.events)
+
+
+class Source:
+    """An event source that compares equal to another with its key, as
+    domain objects compare by their id."""
+
+    def __init__(self, key="source"):
+        self.key = key
+
+    def __eq__(self, other):
+        return isinstance(other, Source) and self.key == other.key
+
+    def __hash__(self):
+        return hash(self.key)
+
+
+class SubscribedToItself:
+    def __init__(self):
+        patterns.Publisher().registerObserver(
+            self.on_event, eventType="eventType", eventSource=self
+        )
+
+    def on_event(self, event):
+        pass
+
+
+class Listener:
+    def __init__(self):
+        self.events = []
+
+    def on_event(self, event):
+        self.events.append(event)
+
+
+class PublisherCleanupTest(test.TestCase):
+    """The Publisher cleans up after itself: it keeps no source or
+    subscriber alive, and drops a subscription once either is freed
+    (To Do 71)."""
+
+    def setUp(self):
+        super().setUp()
+        self.publisher = patterns.Publisher()
+        self.listener = Listener()
+
+    def subscribe(self, source, listener=None):
+        self.publisher.registerObserver(
+            (listener or self.listener).on_event,
+            eventType="eventType",
+            eventSource=source,
+        )
+
+    def test_a_source_is_not_kept(self):
+        source = Source()
+        self.subscribe(source)
+        source = weakref.ref(source)
+        gc.collect()
+        self.assertIsNone(source())
+
+    def test_an_object_subscribed_to_its_own_events_is_freed(self):
+        # As the settings were (P151)
+        subscribed = weakref.ref(SubscribedToItself())
+        gc.collect()
+        self.assertIsNone(subscribed())
+
+    def test_a_freed_sources_subscriptions_go(self):
+        source = Source()
+        self.subscribe(source)
+        del source
+        gc.collect()
+        self.assertEqual([], self.publisher.observers())
+
+    def test_a_freed_subscriber_goes_without_an_event(self):
+        source = Source()
+        self.subscribe(source)
+        self.listener = None
+        gc.collect()
+        self.publisher.observers()  # Any call
+        # pylint: disable=W0212
+        self.assertEqual({}, self.publisher._Publisher__observers)
+
+    def test_a_kept_source_still_reaches_its_subscriber(self):
+        source = Source()
+        self.subscribe(source)
+        gc.collect()
+        patterns.Event("eventType", source).send()
+        self.assertEqual(1, len(self.listener.events))
+
+    def test_an_equal_source_keeps_the_subscriptions_of_the_first(self):
+        # Equal sources always shared their subscriptions
+        first, second = Source(), Source()
+        other = Listener()
+        self.subscribe(first)
+        self.subscribe(second, other)
+        del first
+        gc.collect()
+        patterns.Event("eventType", second).send()
+        self.assertEqual(
+            (1, 1), (len(self.listener.events), len(other.events))
+        )
+
+    def test_a_value_source_stays(self):
+        # A str cannot be held weakly and is never freed
+        self.subscribe("source")
+        gc.collect()
+        patterns.Event("eventType", "source").send()
+        self.assertEqual(1, len(self.listener.events))

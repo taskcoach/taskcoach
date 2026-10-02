@@ -65,8 +65,9 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    for the full plan and current band-aids.
    **Done:** `MethodProxy` (strong references) replaced with
    `WeakMethodProxy` (`weakref.WeakMethod`). Publisher no longer prevents
-   GC of destroyed wx widgets. Dead subscribers are detected and pruned
-   automatically during `notifyObservers()` dispatch.
+   GC of destroyed wx widgets. **Done 2026-10-02:** sources are held
+   weakly too, and a subscription goes at the Publisher's next call once
+   its source or subscriber is freed ([Current state](#current-state)).
    Editor pages (`Page`, `ScrolledPage` in `gui/dialog/editor.py`) call
    `removeInstance()` on their own `EVT_WINDOW_DESTROY`, so their
    subscriptions are removed however the page is destroyed (close
@@ -113,13 +114,19 @@ Subscriber registers for a `(eventType, eventSource)` pair; dispatch does
 a dict lookup on that key and delivers only to matching observers.
 Observers registered for other senders are never touched — O(1) lookup,
 not iteration over all observers. Every signal uses it: domain fields,
-collections, the task file, settings, commands and viewers. The
-observer is held weakly, its source strongly, as part of the key,
-until the subscription is removed: an object that subscribes to its
-own events is never freed, and a freed subscriber is dropped only
-when an event of its type and source is sent
-([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues),
-P151, P153).
+collections, the task file, settings, commands and viewers.
+
+The Publisher keeps nothing alive: it holds the observer and its
+source weakly, and once either is freed the subscription goes at its
+next call (a registration, a removal, an event, a query), never in the
+middle of a dispatch. Sources that compare equal share their
+subscriptions, as they always matched each other's (domain objects
+compare by id); when the first is freed, an equal one subscribed keeps
+them. A source that cannot be held weakly (a str, a number) is a value
+and stays. Until 2026-10-02 it held sources strongly: an object
+subscribed to its own events was never freed, and a freed subscriber
+went only when an event of its type and source came (P151, To Do 71
+in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
 
 Note: the Publisher is a **Singleton** (one global registry), not true
 per-instance signals (where the signal object lives on the instance itself,
@@ -441,9 +448,7 @@ typed values from the settings (`getint()`, `getboolean()`), not from
 the event. `Settings.send_changed()` sends the same event without a
 change: the main window uses it when the system theme changes while
 the theme follows it. The settings act on their own change of the ini
-file's location by a call in `set()`, not a subscription: controls
-read short-lived `Settings` objects, which a subscription to
-themselves would keep.
+file's location by a call in `set()`.
 
 ---
 
