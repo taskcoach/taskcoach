@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from unittest import mock
 import wx
 from . import TreeCtrlTest
 from unittests import dummy
@@ -60,6 +61,65 @@ class TreeListCtrlTestCase(TreeCtrlTest.TreeCtrlTestCase):
 
 class TreeListCtrlTest(TreeListCtrlTestCase, TreeCtrlTest.CommonTestsMixin):
     pass
+
+
+class TreeListCtrlPointerTest(TreeListCtrlTestCase):
+    """Rows moving under a pointer at rest hide the tooltip and move the
+    hover outline to the row now under it."""
+
+    def setUp(self):
+        super().setUp()
+        self.treeCtrl.SetSize(400, 300)
+        self.children[None] = [self.item0, self.item1]
+        self.treeCtrl.RefreshAllItems(2)
+        self.main = self.treeCtrl.GetMainWindow()
+        self.main.CalculatePositions()
+        self.tips_cancelled = []
+        self.treeCtrl.cancel_tip = lambda: self.tips_cancelled.append(True)
+
+    def rows(self):
+        return self.treeCtrl.GetItemChildren(recursively=True)
+
+    def pointer_on(self, row):
+        # Where the pointer rests: on the row's label
+        rect = self.treeCtrl.GetBoundingRect(row, textOnly=True)
+        point = self.main.ClientToScreen(
+            rect.GetPosition() + wx.Point(2, rect.height // 2)
+        )
+        patcher = mock.patch("wx.GetMousePosition", return_value=point)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_after_a_rebuild_the_outline_is_on_the_row_under_the_pointer(
+        self,
+    ):
+        self.pointer_on(self.rows()[0])
+        self.main.SetHoverItem(self.rows()[0])
+        self.children[None] = [self.item1, self.item0]  # Sorted again
+        self.treeCtrl.RefreshAllItems(2)
+        wx.Yield()  # Once the change settles
+        hovered = self.treeCtrl.GetItemPyData(self.main._hoverItem)
+        self.assertIs(self.item1, hovered)
+        self.assertEqual([True], self.tips_cancelled)
+
+    def test_a_collapse_moves_the_outline_off_the_rows_gone(self):
+        self.children[self.item0] = [self.item0_0]
+        self.treeCtrl.RefreshAllItems(3)
+        self.main.CalculatePositions()
+        self.pointer_on(self.rows()[1])  # item 0.0
+        self.main.SetHoverItem(self.rows()[1])
+        self.treeCtrl.Collapse(self.rows()[0])
+        wx.Yield()
+        hovered = self.treeCtrl.GetItemPyData(self.main._hoverItem)
+        self.assertIs(self.item1, hovered)
+        self.assertEqual([True], self.tips_cancelled)
+
+    def test_once_for_several_changes(self):
+        self.pointer_on(self.rows()[0])
+        self.treeCtrl.follow_pointer()
+        self.treeCtrl.follow_pointer()
+        wx.Yield()
+        self.assertEqual([True], self.tips_cancelled)
 
 
 class TreeListCtrlColumnsTest(TreeListCtrlTestCase):

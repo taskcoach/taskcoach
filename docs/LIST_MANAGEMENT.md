@@ -634,6 +634,17 @@ Skipped for drag items.
 
 **Cleanup:** `EVT_LEAVE_WINDOW` → `SetHoverItem(None)`.
 
+**Rows moving under a pointer at rest** (a rebuild such as Expand all
+or a sort, a parent expanded or collapsed, a scroll by the wheel or
+the scrollbar, a key that scrolls such as End): no mouse event comes,
+so `TreeListCtrl.follow_pointer()` (`treectrl.py`) hides the tooltip,
+about the row that was there, and gives the outline to the row now
+under the pointer, once after the change settles; not during a drag.
+A rebuild deletes the rows, the hovered one included, so without it
+the outline stayed on a gone row until the pointer left that row's
+old place (P141 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+
 **Ghosting prevention:** `_refresh_hover_row()` inflates the invalidation rect by
 3px (1px inner + 1px outer + safety) so the full two-tone outline is erased on
 repaint.

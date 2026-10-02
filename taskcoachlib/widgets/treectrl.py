@@ -344,6 +344,7 @@ class TreeListCtrl(
         self.__columns_with_images = []
         self.__default_font = wx.NORMAL_FONT
         self.__refreshing = False
+        self.__following_pointer = False
         kwargs.setdefault("resizeableColumn", 0)
         super().__init__(
             parent,
@@ -359,6 +360,13 @@ class TreeListCtrl(
             selectCommand, editCommand, dragAndDropCommand
         )
         self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self._on_hover_leave)
+        # Rows move under a pointer at rest
+        for event_type in (
+            wx.EVT_TREE_ITEM_EXPANDED,
+            wx.EVT_TREE_ITEM_COLLAPSED,
+        ):
+            self.Bind(event_type, self.__on_rows_moved)
+        self.GetMainWindow().Bind(wx.EVT_SCROLLWIN, self.__on_rows_moved)
 
     def bind_event_handlers(
         self, selectCommand, editCommand, dragAndDropCommand
@@ -387,6 +395,31 @@ class TreeListCtrl(
     def _on_hover_leave(self, event):
         self.GetMainWindow().SetHoverItem(None)
         event.Skip()
+
+    def __on_rows_moved(self, event):
+        event.Skip()
+        self.follow_pointer()
+
+    def follow_pointer(self):
+        """Rows moved under a pointer at rest (a rebuild, a parent
+        expanded or collapsed, a scroll, a key): the tooltip, about the
+        row that was there, hides, and the hover outline goes to the row
+        under the pointer now. Once, after the change settles."""
+        if not self.__following_pointer:
+            self.__following_pointer = True
+            patterns.later.soon(self, self.__follow_pointer)
+
+    def __follow_pointer(self):
+        self.__following_pointer = False
+        main = self._recalculated_main_window()
+        if main._isDragging:  # pylint: disable=W0212
+            return  # The drag shows its drop target instead
+        self.cancel_tip()
+        point = main.ScreenToClient(wx.GetMousePosition())
+        item = None
+        if main.GetClientRect().Contains(point):
+            item = main.HitTest(point)[0]
+        main.SetHoverItem(item)
 
     def getItemTooltipData(self, item):
         return self.__adapter.getItemTooltipData(item)
@@ -518,6 +551,7 @@ class TreeListCtrl(
         # Immediate repaint - no blank screen
         self.GetMainWindow().Refresh(eraseBackground=False)
         _input_filter.release()
+        self.follow_pointer()
 
     def _auto_scroll_enabled(self):
         """Whether the view may scroll by itself to follow the
@@ -734,6 +768,9 @@ class TreeListCtrl(
             )
 
     def on_key_down(self, event):
+        # A key may scroll the view (End, the arrows), without a scroll
+        # event
+        self.follow_pointer()
         # Only a plain Enter edits: Ctrl+Enter is the menu's Mark
         # completed, reached when the event is skipped
         plain = not event.GetKeyEvent().HasAnyModifiers()

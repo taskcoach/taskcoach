@@ -1024,10 +1024,21 @@ each with the recommended action, none ruled yet:
   the Task statistics view logged an error (`PieCtrl` has no
   `RefreshItems()`); it now redraws once, after the command or the
   pass.
-- P141. A row's tooltip stays up after Expand all or Collapse all
-  moved another row under the pointer, and the hover outline returns
-  only after the pointer moves within the list again. Found
-  2026-10-01, the same before To Do 67.
+- P141. ~~A row's tooltip stayed up after Expand all or Collapse all
+  moved another row under the pointer, and the hover outline came
+  back only after the pointer moved within the list again~~: fixed
+  2026-10-01, **asked by designer**; the same on master. Rows moving
+  under a pointer at rest send no mouse event, which the tooltip and
+  the outline follow. The same with a parent collapsed or expanded by
+  the keyboard, the wheel, and a key that scrolls (End): the tooltip
+  stayed, and the outline stayed on the row that moved away. Task
+  Coach's tree control now hides the tooltip and moves the outline to
+  the row under the pointer after each of these
+  ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#row-hover-outline)); the
+  bundled widget is unchanged. Checked in the app: the five cases
+  before and after; a tooltip still shows when the pointer moves to
+  another row; drag and drop and the Welcome.tsk steps unchanged. Not
+  checked: the list views (Effort, Attachments).
 - P142. Will not do: D11.
 - P143. ~~The "not possible" cursor was X's skull~~: fixed 2026-10-01,
   **ruled by designer** (Task Coach's own cursor from the icons it
