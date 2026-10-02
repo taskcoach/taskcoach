@@ -821,11 +821,19 @@ each with the recommended action, none ruled yet:
   the attribute path ([DATETIME_PRESETS.md](DATETIME_PRESETS.md) 1),
   the popup out of `MaskedFieldsCtrl`, one "N/A" painter
   ([DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) 8, 9). Do or defer?
-- P99. "Paste as subitem" changes its label as the Edit menu opens
-  ([MENUS.md](MENUS.md)). Fix? Checked in the app 2026-10-02, master
-  the same: after a click in Categories, the first Edit menu shows
-  "Paste as subcategory" without its Shift+Ctrl+V (GTK sized the menu
-  for the old label); the second shows it.
+- P99. ~~"Paste as subitem" changed its label as the Edit menu
+  opened~~: fixed 2026-10-02, the same on master. After a click in
+  Categories, the first Edit menu showed "Paste as subcategory" without
+  its Shift+Ctrl+V (GTK sized the menu for the old label). It and New
+  subitem now change their label when another view becomes active,
+  while the menus are closed, and no label is set as a menu opens
+  ([MENUS.md](MENUS.md#menu-state-update-flow)). Checked in the app:
+  the first Edit menu after a click in Categories shows "Paste as
+  subcategory  Shift+Ctrl+V", the New menu "New subcategory...", after
+  a click in Tasks "Paste as subtask"; the right-click menu in
+  Categories "Paste as subcategory"; quit clean. A view's toolbar
+  button now says "New subtask..." (or subnote, subcategory) in its
+  tooltip, not "New subitem...".
 - P100. Lists: a selection outline (LIST_MANAGEMENT.md 1); the effort
   and attachment viewers select a different row after a delete (a
   no-op override); two open questions on AUI repaints. Rule?

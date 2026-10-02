@@ -136,14 +136,11 @@ class UICommand(patterns.Observer):
         """wx asks a menu item's state when its menu opens, before a
         popup menu shows and before the item's shortcut acts, which
         GTK ignores while the item is disabled (docs/MENUS.md)."""
-        # Enabled and checked change no menu geometry; a label set here
-        # is set as the menu opens (docs/PUBLISHER_OBSERVER.md, GTK3
+        # Enabled and checked change no menu geometry; labels change
+        # while the menu is closed (docs/PUBLISHER_OBSERVER.md, GTK3
         # Dynamic Menu Item Sizing)
         enabled = bool(self.enabled(None))
         event.Enable(enabled)
-        new_text = self.current_menu_text()
-        if new_text is not None:
-            event.SetText(new_text)
         if enabled and event.IsCheckable():
             check = self.checked()
             if check is not None:
@@ -226,12 +223,6 @@ class UICommand(patterns.Observer):
     def enabled(self, event):  # pylint: disable=W0613
         """Can be overridden in a subclass."""
         return True
-
-    def current_menu_text(self):
-        """Return updated menu text, or None to keep current. Override in
-        subclasses whose menu text changes based on context (e.g. selection
-        type)."""
-        return None
 
     def checked(self):
         """Return True/False for checkable items, or None to skip.

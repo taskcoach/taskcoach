@@ -186,6 +186,44 @@ class ViewerCommand(base_uicommand.UICommand):  # pylint: disable=W0223
         )
 
 
+class _KindLabelMixin:
+    """For a viewer command whose label names its viewer's kind of
+    item, "Paste as subtask" say: kind_labels by the viewer's
+    coreObjectType, default_menu_text for any other. The label changes
+    while the menus are closed, when another viewer becomes active: GTK
+    sizes a menu before its EVT_MENU_OPEN, so a label changed then is
+    cut off (docs/PUBLISHER_OBSERVER.md#gtk3-dynamic-menu-item-sizing).
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.menu_text = self.__label()
+        if self.__follows_active_viewer():
+            self.registerObserver(
+                self.__on_viewer_status,
+                eventType=self.viewer.status_event_type(),
+                eventSource=self.viewer,
+            )
+
+    def __follows_active_viewer(self):
+        # The main menus' commands get the viewer container, the popup
+        # menus' their own viewer
+        return hasattr(type(self.viewer), "active_viewer")
+
+    def __label(self):
+        viewer = self.viewer
+        if self.__follows_active_viewer():
+            viewer = viewer.active_viewer()
+        kind = getattr(viewer, "coreObjectType", None)
+        return self.kind_labels.get(kind, self.default_menu_text)
+
+    def __on_viewer_status(self, event):  # pylint: disable=W0613
+        # Another viewer became active, or the active one changed
+        label = self.__label()
+        if label != self.menu_text:
+            self.update_menu_text(label)
+
+
 # Commands:
 
 
@@ -826,9 +864,6 @@ class EditUndo(base_uicommand.UICommand):
         else:
             patterns.CommandHistory().undo()
 
-    def current_menu_text(self):
-        return self._undo_menu_text()
-
     def enabled(self, event):
         # A text field takes the key for its own history; never
         # disabled by one, as a disabled menu item blocks its shortcut
@@ -875,9 +910,6 @@ class EditRedo(base_uicommand.UICommand):
             textundo.redo(window_with_focus)
         else:
             patterns.CommandHistory().redo()
-
-    def current_menu_text(self):
-        return self._redo_menu_text()
 
     def enabled(self, event):
         # A text field takes the key for its own history; never
@@ -1013,12 +1045,17 @@ class EditPaste(ViewerCommand):
             return True
 
 
-class EditPasteAsSubItem(ViewerCommand):
+class EditPasteAsSubItem(_KindLabelMixin, ViewerCommand):
     """Action for pasting the item(s) in the clipboard into the current
     taskfile, as a subitem of the currently selected item."""
 
     shortcut = "\tShift+Ctrl+V"
     default_menu_text = _("P&aste as subitem") + shortcut
+    kind_labels = {
+        "tasks": _("P&aste as subtask") + shortcut,
+        "notes": _("P&aste as subnote") + shortcut,
+        "categories": _("P&aste as subcategory") + shortcut,
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(
@@ -1028,16 +1065,6 @@ class EditPasteAsSubItem(ViewerCommand):
             *args,
             **kwargs
         )
-
-    def current_menu_text(self):
-        v = self.viewer
-        if v.is_task:
-            return _("P&aste as subtask") + self.shortcut
-        elif v.is_note:
-            return _("P&aste as subnote") + self.shortcut
-        elif v.is_category:
-            return _("P&aste as subcategory") + self.shortcut
-        return self.default_menu_text
 
     def do_command(self, event):
         viewer = self.viewer
@@ -2062,15 +2089,20 @@ class NewTaskWithSelectedTasksAsDependencies(TaskNew, ViewerCommand):
         return self.viewer.curselection()
 
 
-class NewSubItem(ViewerCommand):
+class NewSubItem(_KindLabelMixin, ViewerCommand):
     shortcut = (
         "\tCtrl+INS" if operating_system.isWindows() else "\tShift+Ctrl+N"
     )
-    defaultMenuText = _("New &subitem...") + shortcut
+    default_menu_text = _("New &subitem...") + shortcut
+    kind_labels = {
+        "tasks": _("New &subtask...") + shortcut,
+        "notes": _("New &subnote...") + shortcut,
+        "categories": _("New &subcategory...") + shortcut,
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(
-            menu_text=self.defaultMenuText,
+            menu_text=self.default_menu_text,
             help_text=_("Insert a new subitem of the selected item"),
             icon_id="taskcoach_actions_newsub",
             *args,
@@ -2087,16 +2119,6 @@ class NewSubItem(ViewerCommand):
     def enabled(self, event):
         v = self.viewer
         return v.has_selection and (v.is_task or v.is_note or v.is_category)
-
-    def current_menu_text(self):
-        v = self.viewer
-        if v.is_task:
-            return _("New &subtask...") + self.shortcut
-        elif v.is_note:
-            return _("New &subnote...") + self.shortcut
-        elif v.is_category:
-            return _("New &subcategory...") + self.shortcut
-        return self.defaultMenuText
 
 
 class TaskMarkActive(

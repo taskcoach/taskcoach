@@ -404,8 +404,10 @@ an `EVT_MENU_OPEN` handler. This manifests in two ways:
    open sizes correctly because GTK caches the updated count.
 2. **Menu too narrow for new label text.** `SetItemLabel()` during
    `EVT_MENU_OPEN` changes label width but GTK does not widen the popup.
-   Text is clipped on first open; second open recalculates. This affects
-   EditUndo/EditRedo and EditPasteAsSubItem (see [MENUS.md TODO #2](MENUS.md#todo)).
+   Text is clipped on first open; second open recalculates. This
+   affected EditUndo/EditRedo and EditPasteAsSubItem (see
+   [MENUS.md TODO #2](MENUS.md#todo)); no label changes then since
+   2026-10-02.
 
 **Pattern:** change items only while the menu is closed, so GTK always
 sees the correct geometry at popup time. Without messaging where possible:
@@ -426,8 +428,13 @@ sees the correct geometry at popup time. Without messaging where possible:
 - **EditMenu** — undo/redo labels were updated via `current_menu_text()`
   during `EVT_MENU_OPEN`. **Fixed** — `CommandHistory` now fires a Publisher
   event; `EditUndo`/`EditRedo` subscribe and call `update_menu_text()`
-  proactively. `current_menu_text()` returns `None` to skip `SetItemLabel`
-  during popup.
+  proactively.
+- **EditMenu, NewMenu**: "Paste as subitem" and "New subitem" name the
+  active viewer's kind of item ("Paste as subcategory"); set as the menu
+  opened, the first open cut off the shortcut. **Fixed** 2026-10-02:
+  they follow the viewer container's `viewer.status` event
+  (`_KindLabelMixin`). `current_menu_text()` is gone: no label is set
+  as a menu opens.
 
 **References:**
 - [PYTHON3_MIGRATION_3.md — GTK3 Menu Size Allocation Bug](PYTHON3_MIGRATION_3.md#gtk3-menu-size-allocation-bug)

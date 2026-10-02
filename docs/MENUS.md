@@ -18,11 +18,11 @@
 
 1. ~~PEP 8 renames (separate commit): `append_to_toolbar`, `add_to_menu`, etc.~~ — **DONE.** All UICommand methods and constructor kwargs renamed to snake_case.
 2. ~~GTK menu width not recalculated on first open after `SetItemLabel()` changes
-   text during `EVT_MENU_OPEN`. Second open sizes correctly.~~ — **Partially fixed.**
-   EditUndo/EditRedo now update labels proactively via Publisher event from
-   `CommandHistory`; `current_menu_text()` returns `None` so `SetItemLabel` is
-   skipped during `EVT_MENU_OPEN`. **Remaining:** EditPasteAsSubItem still
-   changes label during `EVT_MENU_OPEN`.
+   text during `EVT_MENU_OPEN`. Second open sizes correctly.~~ **Done**
+   2026-10-02: no label changes as a menu opens. Undo and Redo follow the
+   `CommandHistory` event; Paste as subitem and New subitem follow the
+   active viewer (`_KindLabelMixin`), P99 in
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues).
    See [PUBLISHER_OBSERVER.md — GTK3 Dynamic Menu Item Sizing](PUBLISHER_OBSERVER.md#gtk3-dynamic-menu-item-sizing)
    for the full pattern.
 
@@ -60,8 +60,7 @@ A menu opens, a popup menu shows, or an item's shortcut is pressed
     └── wx: menu.UpdateUI()
         └── EVT_UPDATE_UI for each item, submenus included
             └── UICommand.on_menu_update_ui(event)
-                └── event.Enable(enabled()), Check(checked()),
-                    SetText(current_menu_text())
+                └── event.Enable(enabled()), Check(checked())
 ```
 
 Every platform asks for an item's state just before its shortcut acts,
@@ -93,10 +92,12 @@ unbind it.
   then, by `Menu.show_visible_items()`, and left out while it says no;
   it is not asked while the menu is built, when what it reads (a view's
   list) may not exist yet.
-- **Labels** that follow data (Undo/Redo, recent files) change when the
-  data changes (Publisher). Others set in `on_menu_update_ui()` change as
-  the menu opens, as before; enabled and checked states change no menu
-  geometry ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#gtk3-dynamic-menu-item-sizing)).
+- **Labels** change only while the menu is closed, when what they show
+  changes (Publisher): Undo/Redo the history, recent files the list,
+  Paste as subitem and New subitem the active viewer (the container's
+  `viewer.status` event; a popup menu's are its viewer's from the
+  start). Enabled and checked states, set as the menu opens, change no
+  menu geometry ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#gtk3-dynamic-menu-item-sizing)).
 - **A global menu bar** (Unity-style) gets no menu-open events; with idle
   updates off its displayed states are not refreshed, as before, but
   shortcuts are still checked.
@@ -170,7 +171,7 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: selection + clipboard non-empty + type compatibility
 - Menu-only (no toolbar): `EVT_UPDATE_UI` (menu open, before its shortcut)
-- `current_menu_text()`: dynamically returns "Paste as subtask/subnote/subcategory"
+- Label: "Paste as subtask/subnote/subcategory" by the active viewer, set when it becomes active (`_KindLabelMixin`)
 
 ### ResetFilter
 
@@ -235,7 +236,7 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: true in a text field (it takes the key for its own undo), else the CommandHistory; the toolbar button follows the CommandHistory alone
-- `current_menu_text()`: dynamic text ("Undo *add task*", "Redo *delete*")
+- Label: "Undo *add task*", "Redo *delete*", set at the `commandhistory.changed` event
 - Toolbar: signal-driven via the `commandhistory.changed` Publisher event
 - Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 

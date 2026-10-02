@@ -17,8 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
+import wx
 from unittests import dummy
 from taskcoachlib import gui, config, persistence, widgets
+from taskcoachlib.i18n import _
 from taskcoachlib.domain import task
 from taskcoachlib import patterns
 
@@ -117,6 +119,47 @@ class ViewerContainerTest(test.wxTestCase):
     def testChangePage_ChangesActiveViewer(self):
         self.container.activate_viewer(self.viewer2)
         self.assertEqual(self.viewer2, self.container.active_viewer())
+
+    def paste_as_subitem(self, viewer):
+        # The tasks and the categories viewers
+        self.viewer1.coreObjectType = "tasks"
+        self.viewer2.coreObjectType = "categories"
+        command = gui.uicommand.EditPasteAsSubItem(viewer=viewer)
+        # Its menu goes with the test
+        self.addCleanup(command.removeInstance)
+        return command
+
+    def in_a_menu(self, command):
+        # Kept as the main window keeps its menus: a freed menu's items
+        # are gone
+        self.menu = wx.Menu()
+        command.add_to_menu(self.menu, self.mainWindow)
+        return self.menu.FindItemById(command.id)
+
+    def test_paste_as_subitem_names_the_items_of_the_active_viewer(self):
+        command = self.paste_as_subitem(self.container)
+        item = self.in_a_menu(command)
+        self.container.activate_viewer(self.viewer2)
+        # Before the menu opens: GTK sizes it for the label it has
+        self.assertEqual(
+            _("P&aste as subcategory") + "\tShift+Ctrl+V",
+            item.GetItemLabel(),
+        )
+
+    def test_its_label_is_not_set_as_the_menu_opens(self):
+        command = self.paste_as_subitem(self.container)
+        self.in_a_menu(command)
+        self.container.activate_viewer(self.viewer2)
+        event = wx.UpdateUIEvent(command.id)
+        command.on_menu_update_ui(event)
+        self.assertFalse(event.GetSetText())
+
+    def test_a_popup_menus_paste_as_subitem_names_its_viewers_items(self):
+        command = self.paste_as_subitem(self.viewer2)
+        self.container.activate_viewer(self.viewer1)
+        self.assertEqual(
+            _("P&aste as subcategory") + "\tShift+Ctrl+V", command.menu_text
+        )
 
     def test_change_page_notifies_observers_about_new_active_viewer(self):
         patterns.Publisher().registerObserver(
