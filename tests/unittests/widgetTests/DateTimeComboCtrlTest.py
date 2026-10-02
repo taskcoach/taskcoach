@@ -21,6 +21,7 @@ import datetime
 
 import test
 import wx
+from wx import siplib
 from taskcoachlib.widgets import maskedtimectrl
 
 
@@ -49,3 +50,10 @@ class DateTimeComboCtrlTest(test.wxTestCase):
         self.ctrl.NotifyValueChanged()
         wx.Yield()
         self.assertEqual([], self.changes)
+
+    def test_it_goes_with_its_widgets(self):
+        # Not a window, and the handlers bound on it hold it: nothing
+        # else would free it, nor its editor's page
+        self.panel.Destroy()
+        test.settle()
+        self.assertTrue(siplib.isdeleted(self.ctrl))

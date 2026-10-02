@@ -4,6 +4,8 @@ from typing import Union
 import wx
 import numpy as np
 
+from taskcoachlib import patterns
+
 
 def centerOnAppMonitor(window):
     """Center a window on the application's monitor.
@@ -72,6 +74,32 @@ def get_dialog_button(
         if window is not None and window.GetId() == button_id:
             return window
     return None
+
+
+def delete_with_window(handler, window, release=None):
+    """Delete handler, a wx.EvtHandler made in Python that is not a
+    window, once window is destroyed: the handlers bound on it keep it
+    through wx, so nothing else frees it, nor what it holds
+    (docs/CRASH_GUARD.md#event-handlers-that-are-not-windows).
+    release(handler) runs first. Returns the destroy handler."""
+
+    def on_destroy(event):
+        event.Skip()
+        # Children's destroy events come up too. A top-level window's
+        # comes last, from wx, once its wrapper is already deleted.
+        if patterns.deferred.is_gone(window) or (
+            event.GetEventObject() is window
+        ):
+            patterns.later.soon(handler, _delete, handler, release)
+
+    window.Bind(wx.EVT_WINDOW_DESTROY, on_destroy)
+    return on_destroy
+
+
+def _delete(handler, release):
+    if release is not None:
+        release(handler)
+    handler.Destroy()
 
 
 def getAlphaDataFromImage(image: wx.Image):

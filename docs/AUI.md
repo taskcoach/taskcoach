@@ -11,8 +11,9 @@ This document covers AUI-related topics for Task Coach, which uses wxPython's AG
 2. [Sash Cursor Seep-Through Fix](#sash-cursor-seep-through-fix)
 3. [System Colour Change Event](#system-colour-change-event)
 4. [Destroy Event](#destroy-event)
-5. [Page Painted Over the Tabs](#page-painted-over-the-tabs)
-6. [Related Documentation](#related-documentation)
+5. [Managers Never Freed](#managers-never-freed)
+6. [Page Painted Over the Tabs](#page-painted-over-the-tabs)
+7. [Related Documentation](#related-documentation)
 
 ---
 
@@ -255,6 +256,42 @@ unsubscribe on destroy covers a notebook: a timer it owns ticks into
 freed memory once it is gone. The app's calls go through
 `patterns.later`, which checks the owner when each call is due
 ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+
+---
+
+## Managers Never Freed
+
+An `AuiManager` binds its handlers to itself, so nothing frees it
+([CRASH_GUARD.md](CRASH_GUARD.md#event-handlers-that-are-not-windows)),
+nor what it holds. Besides the main window's, Task Coach has one in
+each floating view's frame, in each notebook AUI makes for views
+dropped onto one another, and in the notebook of every editor and of
+Preferences. Each one closed stayed in memory with its window's
+objects: a closed floating view, a closed editor's or Preferences'
+pages. On master too: 11 MB after opening and closing 20 task
+editors.
+
+`free_with_window()` (`taskcoachlib/widgets/frame.py`) deletes a
+manager once its window is destroyed. `_AuiManager` applies it in
+AUI's factory methods, `CreateFloatingFrame()` and
+`CreateNotebook()`; `widgets.Notebook` applies it to itself. While
+pushed onto its window, the manager receives the window's destroy
+event, and ends it; once removed, the window does. A top-level
+window's event comes after its wrapper is deleted.
+
+`_AuiManager.ClosePane()` also:
+
+- removes a floating pane's frame manager from the frame before AUI
+  destroys it, as AUI's `DetachPane()` does. Reset window layout with
+  a floating view logged `wxAssertionError ... any pushed event
+  handlers must have been removed`.
+- clears AUI's drag state (`_action_window`, `_action_pane`) when it
+  holds the closed pane: the pane whose caption was clicked last stays
+  there until the next click.
+
+A pane docked by dragging leaves a copy of its pane info in the drag
+state, with its old floating frame, until the next caption click or
+until the pane closes.
 
 ---
 

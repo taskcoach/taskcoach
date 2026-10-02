@@ -1163,11 +1163,24 @@ each with the recommended action, none ruled yet:
   ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#row-hover-outline)).
   Checked in the app, Effort view with 6,000 efforts: the wheel and End
   leave the outline on the row under the pointer; at rest it stays.
-- P149. In the unit tests the viewers and list controls of destroyed
-  editors stay in memory, about 14 windows' objects a test, held
-  through their tooltip's debounced call (found 2026-10-02 while
-  tracing P113). Harmless since P113's fix, but it grows. Not checked
-  in the app.
+- P149. ~~Closed editors, Preferences and floating views stayed in
+  memory~~: fixed 2026-10-02; the same on master (11 MB after opening
+  and closing 20 task editors). An AUI manager (in a floating view's
+  window, in each tab notebook) and the editors' date and time control
+  are event handlers made in Python that bind handlers to themselves:
+  wx holds those, so neither was freed, nor what it held (a closed
+  view with its menus, an editor's or Preferences' pages). Each is now
+  deleted once its window is destroyed (`wxhelper.delete_with_window()`,
+  [AUI.md](AUI.md#managers-never-freed),
+  [CRASH_GUARD.md](CRASH_GUARD.md#event-handlers-that-are-not-windows)).
+  Closing a floating pane also removes its window's manager first:
+  Reset window layout with a floating view logged a wx assertion.
+  Checked in the app: 20 editors 5 MB, live objects flat; editors,
+  Preferences, a floating view closed, docked again, views as tabs,
+  Reset window layout, quit and relaunch with a floating view: no
+  traceback or assertion. Not changed: in the unit tests, where it was
+  found, editors are destroyed without being closed, so their popup
+  menus still keep their viewers.
 - P150. ~~In the Adjust due date mode a due date changed in the task
   list was lost when the start then changed in the editor~~: fixed
   2026-10-02, **asked by designer** (option A); the same on master.

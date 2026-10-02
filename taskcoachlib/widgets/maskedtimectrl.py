@@ -76,6 +76,7 @@ import calendar
 
 from taskcoachlib import patterns
 from taskcoachlib.i18n import _
+from taskcoachlib.tools import wxhelper
 from taskcoachlib.domain import date
 
 # =============================================================================
@@ -3065,6 +3066,8 @@ class DateTimeComboCtrl(wx.EvtHandler):
         self._checkbox = wx.CheckBox(parent)
         self._checkbox.SetValue(checked)
         self._checkbox.Bind(wx.EVT_CHECKBOX, self._onCheckboxChanged)
+        # Not a window: it goes with its widgets
+        wxhelper.delete_with_window(self, self._checkbox)
 
         self._dateCtrl = DateComboRouterCtrl(
             parent,

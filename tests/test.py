@@ -109,6 +109,17 @@ def skipOnPlatform(*platforms):
     return wrapper
 
 
+def settle():
+    """Run what wx leaves for idle time: deferred calls and the
+    destroys of top-level windows."""
+    import gc
+
+    for _ in range(3):
+        wx.WakeUpIdle()
+        wx.Yield()
+    gc.collect()
+
+
 def stale(reason):
     """Skip a test that no longer matches the application and needs a
     rewrite. List them with: grep -rn "test.stale" tests"""

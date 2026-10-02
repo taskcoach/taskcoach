@@ -195,7 +195,10 @@ external code binds `EVT_VALUE_CHANGED` on the DTC itself, not on sub-controls.
 The event is sent once the current event is done, through
 `patterns.later.soon()` with the checkbox as owner: DTC is no window,
 so it outlives its widgets, and a change still due when its editor
-closes is dropped ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+closes is dropped ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)). The
+handlers bound on it would keep it, and its editor's page, forever:
+it is deleted once its checkbox is destroyed
+([CRASH_GUARD.md](CRASH_GUARD.md#event-handlers-that-are-not-windows)).
 
 **Sub-control `EVT_VALUE_CHANGED` is trapped and dropped.** DTC binds a handler
 on sub-control `EVT_VALUE_CHANGED` that explicitly consumes the event without

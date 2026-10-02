@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 import wx.lib.agw.aui as aui
 from taskcoachlib import operating_system, patterns
+from taskcoachlib.tools import wxhelper
 
 # --- Rebuild guard: block motion events during list/tree rebuilds ---
 
@@ -122,7 +123,52 @@ def _install_sash_resize_optimization(manager):
     manager.OnMotion = throttled_on_motion
 
 
+def free_with_window(window, manager):
+    """Free an AGW AUI manager once its window is destroyed: it binds
+    its handlers to itself, so it never goes, keeping its window's
+    objects (a closed view, an editor's pages) in memory
+    (docs/AUI.md#managers-never-freed)."""
+    on_destroy = wxhelper.delete_with_window(manager, window, _release)
+    # Pushed onto the window, the manager sees the event first and
+    # ends it; once removed, the window sees it
+    manager.Bind(wx.EVT_WINDOW_DESTROY, on_destroy)
+
+
+def _release(manager):
+    manager.UnInit()
+    # Its own timers notify it, so they stop with it
+    manager._hint_fadetimer.Stop()
+    manager._preview_timer.Stop()
+
+
 class _AuiManager(aui.AuiManager):
+    def CreateFloatingFrame(self, parent, pane_info):
+        frame = super().CreateFloatingFrame(parent, pane_info)
+        # The frame's own manager, which AUI reaches the same way
+        free_with_window(frame, frame._mgr)
+        return frame
+
+    def CreateNotebook(self):
+        notebook = super().CreateNotebook()
+        free_with_window(notebook, notebook.GetAuiManager())
+        return notebook
+
+    def ClosePane(self, pane_info):
+        window = pane_info.window
+        if pane_info.frame:
+            # Removed from the floating frame before AUI destroys it, as
+            # its DetachPane() does: wx asserts on a destroyed window
+            # with a handler still pushed
+            pane_info.frame._mgr.UnInit()
+        super().ClosePane(pane_info)
+        # The pane whose caption was clicked last stays in the drag
+        # state until the next click, holding a closed window
+        if self._action_window is window:
+            self._action_window = None
+        pane = getattr(self, "_action_pane", None)  # Set at a click
+        if pane is not None and pane.window is window:
+            self._action_pane = None
+
     def OnSysColourChanged(self, event):
         # The manager is pushed onto the frame's event handler stack;
         # without Skip() the frame and its children never see the event.

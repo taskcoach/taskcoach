@@ -7,8 +7,9 @@
 3. [Guards](#guards)
 4. [Log Output](#log-output)
 5. [Stale Wrappers of wx's Own Windows](#stale-wrappers-of-wxs-own-windows)
-6. [Debugging a Segfault](#debugging-a-segfault)
-7. [Key Files](#key-files)
+6. [Event Handlers That Are Not Windows](#event-handlers-that-are-not-windows)
+7. [Debugging a Segfault](#debugging-a-segfault)
+8. [Key Files](#key-files)
 
 ---
 
@@ -149,6 +150,24 @@ each time, and the dialogs find their buttons by id
 (`wxhelper.get_dialog_button()`). Rule:
 [DEVELOPMENT.md](DEVELOPMENT.md#design).
 
+## Event Handlers That Are Not Windows
+
+A `wx.EvtHandler` made in Python that is not a window (an AGW AUI
+manager, the date and time control `DateTimeComboCtrl`) is never
+freed: wx holds the handlers bound on it, and each holds it, a cycle
+through C++ that Python's collector cannot see. All it holds stays
+too: a closed view, a closed editor's pages, and their menu items'
+wrappers, which wxPython was not told are gone (the hazard above; P149
+in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+`wxhelper.delete_with_window(handler, window)` deletes such a handler
+once its window is destroyed, as wx's C++ classes delete theirs with
+their window. An AUI manager first stops its own timers, which the
+timer guard above passes through (their owner is not a window). Uses:
+[AUI.md](AUI.md#managers-never-freed), and a `DateTimeComboCtrl` goes
+with its checkbox. `DeleteWithWindowTest` fails once wx frees such a
+handler itself: the helper can then go.
+
 ## Debugging a Segfault
 
 If a segfault still occurs (the guards don't catch everything: direct event handlers on dead widgets bypass `CallAfter`, and the timer guard only covers timers owned by a `wx.Window` whose destroy event arrives, not an `AuiNotebook`: [AUI.md](AUI.md#destroy-event)):
@@ -174,6 +193,7 @@ If `CRASH_GUARD` messages appear during normal use, they indicate code paths tha
 | File | Component |
 |------|-----------|
 | `taskcoachlib/workarounds/monkeypatches.py` | `wx.CallAfter` wrapper, `wx.Timer` owner guard |
+| `taskcoachlib/tools/wxhelper.py` | `delete_with_window()`, for event handlers that are not windows |
 | `taskcoachlib/patterns/deferred.py` | The app's deferred calls, which need no guard ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)) |
 | `taskcoachlib/application/application.py` | `wxApp.OnExceptionInMainLoop` |
 | `taskcoach.py` | `faulthandler.enable()` setup |

@@ -20,6 +20,7 @@ import wx
 import wx.lib.agw.aui as aui
 import wx.lib.scrolledpanel as scrolledpanel
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
+from taskcoachlib.widgets.frame import free_with_window
 
 
 class GridCursor:
@@ -311,6 +312,7 @@ class Notebook(BookMixin, aui.AuiNotebook):
             & ~aui.AUI_NB_MIDDLE_CLICK_CLOSE
         )
         super().__init__(*args, **kwargs)
+        free_with_window(self, self.GetAuiManager())
         # Bind mouse wheel directly on the tab control for tab scrolling
         tabCtrl = self.GetActiveTabCtrl()
         if tabCtrl:
