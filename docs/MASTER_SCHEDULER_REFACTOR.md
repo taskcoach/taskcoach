@@ -1217,9 +1217,9 @@ each with the recommended action, none ruled yet:
   Checked in the app: 20 editors 5 MB, live objects flat; editors,
   Preferences, a floating view closed, docked again, views as tabs,
   Reset window layout, quit and relaunch with a floating view: no
-  traceback or assertion. Not changed: in the unit tests, where it was
-  found, editors are destroyed without being closed, so their popup
-  menus still keep their viewers.
+  traceback or assertion. In the unit tests, where it was found,
+  editors were destroyed without being closed, so their popup menus
+  kept their viewers: closed since, with P155.
 - P150. ~~In the Adjust due date mode a due date changed in the task
   list was lost when the start then changed in the editor~~: fixed
   2026-10-02, **asked by designer** (option A); the same on master.
@@ -1276,12 +1276,17 @@ each with the recommended action, none ruled yet:
   going to another application saves (back, P158); Escape cancels,
   Enter saves; Edit > Paste from the menu bar pastes into the box,
   which stays.
-- P155. The test runner keeps every test it has run
-  (`TestResultWithTimings` keys its timings by the test object), so
-  whatever a test keeps in its attributes stays for the whole run:
-  `UndoWithEditorsTest` ends with 239 views alive, 12 more each test;
-  its editors are also destroyed without being closed (P149). Keyed by
-  the test's name, they stay at 13 (measured in a copy).
+- P155. ~~The test runner kept every test it had run~~: fixed
+  2026-10-02. `TestResultWithTimings` keyed its timings by the test
+  object, so whatever a test kept in its attributes stayed for the
+  whole run; `UndoWithEditorsTest` also destroyed its editors without
+  closing them (P149). The timings are now keyed by the test's name,
+  and the editors closed as the user closes them. Measured in that
+  file: views alive after each test 39 rising to 239 before, 3 to 5
+  now; dead wx wrappers 2,660 rising to 16,868, now about 800. The
+  full suite passes; wx's exit-time assertions
+  ("pushed event handlers must have been removed") in
+  `UICommandTest`, from frames kept until exit, are gone.
 - P156. ~~Typing in an amount field printed a traceback
   (`TypeError: object of type 'float' has no len()`)~~: fixed
   2026-10-02, this branch only (04157cc82). The text undo read the

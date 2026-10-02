@@ -284,13 +284,15 @@ class TestResultWithTimings(unittest.TextTestResult):
         super().__init__(*args, **kwargs)
         self._timings = {}
 
+    # Keyed by name: a test object kept as key would keep all it holds
+    # (an editor, its views) for the rest of the run
     def startTest(self, test):
         super().startTest(test)
-        self._timings[test] = time.time()
+        self._timings[str(test)] = time.time()
 
     def stopTest(self, test):
         super().stopTest(test)
-        self._timings[test] = time.time() - self._timings[test]
+        self._timings[str(test)] = time.time() - self._timings[str(test)]
 
 
 class TextTestRunnerWithTimings(unittest.TextTestRunner):

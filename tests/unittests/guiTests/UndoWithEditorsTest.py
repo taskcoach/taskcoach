@@ -75,8 +75,9 @@ class UndoWithEditorsTest(UndoTest.UndoTest, test.wxTestCase):
     def tearDown(self):
         for each in self.editors:
             if each:  # Not closed by itself (docs/UNDO_REDO.md, Windows)
-                each.Destroy()
-        self.settle()
+                # As the user closes it: its subscriptions end first
+                each.Close()
+        test.settle()
         super().tearDown()
 
     def settle(self):
