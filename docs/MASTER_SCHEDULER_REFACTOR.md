@@ -1010,7 +1010,24 @@ each with the recommended action, none ruled yet:
 - P144. Rebuilding a tree view of 2,050 tasks (a sort, a filter, the
   tree/list switch) takes 2.1 to 2.8 s, on master too and before To Do
   67; the columns shown make no difference (5 or 29). Found 2026-10-01
-  with a generated file. Not traced yet.
+  with a generated file. Traced in part (profile, 2026-10-01): most
+  of it is the check `RefreshAllItems()` makes before rebuilding,
+  whether the rows still match the view (`_snapshot_adapter()`). It
+  asks the task viewer for each parent's children, and the viewer
+  compares every task in the view with them (Python `__eq__`). In six
+  refreshes the check took 12 of 19 s profiled, the rebuilds 5 s, 4
+  of them in the same lookup.
+- P145. A bulk command or a pass that changes many statuses (marking
+  tasks completed, waking from sleep, the due soon hours changed)
+  updates the tray icon's tooltip once per task, each update counting
+  every task's status: of the 6.5 s marking 2,050 tasks completed
+  takes, 4.5 s (found 2026-10-01; master updated it per appearance
+  change). Update it once after the command or pass?
+- P146. With the Task statistics view open the app uses most of a
+  core while idle (70 to 100%; master too, found 2026-10-01): wx's
+  pie chart refreshes its legend on every paint (`PieCtrl.Draw()`,
+  `RecreateBackground()`, `Refresh()`) and keeps repainting, about
+  100 times a second. Fix?
 
 ## Views on the Effective Styles
 
