@@ -1140,7 +1140,7 @@ class CommonTestsMixin(object):
         self.showColumn("hourlyFee")
         self.taskList.append(self.task)
         main_window = self.viewer.widget.GetMainWindow()
-        main_window.EditLabel(self.firstItem(), 3)
+        self.viewer.widget.edit_cell_in_place(self.firstItem(), 3)
         editor = main_window._editCtrl
         amount = [
             child
@@ -1155,7 +1155,7 @@ class CommonTestsMixin(object):
         self.showColumn("percentageComplete")
         self.taskList.append(self.task)
         main_window = self.viewer.widget.GetMainWindow()
-        main_window.EditLabel(self.firstItem(), 3)
+        self.viewer.widget.edit_cell_in_place(self.firstItem(), 3)
         editor = main_window._editCtrl
         editor.SetValue(percentage)
         return editor
@@ -1174,7 +1174,7 @@ class CommonTestsMixin(object):
         self.showColumn("budget")
         self.taskList.append(self.task)
         main_window = self.viewer.widget.GetMainWindow()
-        main_window.EditLabel(self.firstItem(), 3)
+        self.viewer.widget.edit_cell_in_place(self.firstItem(), 3)
         editor = main_window._editCtrl
         duration = [
             child

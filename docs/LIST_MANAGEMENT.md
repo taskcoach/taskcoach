@@ -1091,34 +1091,52 @@ the motion-only input filter is sufficient to prevent the cascade.
 
 ## In-Place Editing
 
-The tree views (Tasks, in tree and list mode, Categories, Notes) edit a
-cell in place; the list views (Effort, Attachments) do not. Editable:
-the subject and description, and in the Tasks view the dates, the
-reminder, progress, budget, priority and fees. An edit box opens:
+**Ruled by designer 2026-10-02**: editing a cell in place is an
+explicit, recent action on that cell; nothing from a disconnected
+sequence of clicks or keys may open an edit box. The tree views (Tasks,
+in tree and list mode, Categories, Notes) edit a cell in place; the
+list views (Effort, Attachments) do not. Editable: the subject and
+description, and in the Tasks view the dates, the reminder, progress,
+budget, priority and fees.
 
-- with F2, on the Subject of the first selected row
-  (`TreeListCtrl.on_key_down()`);
-- with a slow double click: a click on the row clicked last in that
-  list (however long ago), in an editable column, when no second
-  click follows within 250 ms (`_EDIT_TIMER_TICKS` in the bundled
-  `taskcoachlib/patches/hypertreelist.py`). A row reached with the
-  arrow keys does not count. A double-click opens the editor dialog
-  instead, as Enter does.
+Two options on Preferences > Features, both off by default
+([SETTINGS.md](SETTINGS.md#in-place-editing-options)): "Edit cells in
+place" turns it on; "Edit in place with a slow double click" adds the
+slow double click. With the first off no edit box opens and Edit in
+place is not on the right-click menu. An edit box then opens:
 
-Checked in the app 2026-10-02, master the same: the click that comes
-back into the list from another view, on its selected row, also opens
-an edit box, which file managers never do; so did the release of a
-drag (P124 in
-[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
-The right-click knows its cell: the list records the column clicked.
-The list shows no current cell, only rows. Two Preferences options are
-planned, To Do 68 and 69 in
-[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)
-([SETTINGS.md](SETTINGS.md#planned-in-place-editing-options)):
-editing with the click, off by default, which leaves F2; and editing
-in place at all. F2 is the rename and edit-cell key of Windows and the
-Linux desktops (file managers, spreadsheets); macOS uses Return, which
-in Task Coach opens the editor dialog, so F2 stays the key everywhere.
+- **Right-click menu, Edit in place**: on the cell right-clicked,
+  beside the subject's text too (the tree gives no column there). The
+  item is greyed on a cell that cannot be edited.
+- **F2**: on the cell just clicked or right-clicked, while the list
+  keeps the focus. Any other key, a click elsewhere, a modifier click
+  or the focus leaving the list (to another view, window or dialog)
+  ends it: F2 then does nothing. A row reached with the arrow keys has
+  no cell. F2 is the rename and edit-cell key of Windows and the Linux
+  desktops; macOS uses Return, which here opens the editor dialog.
+- **Slow double click**: a second click on the same cell's text, from
+  the double-click time to 2 s after the first (`double_click_ms()`,
+  `SLOW_DOUBLE_CLICK_MAX_MS`), with no click, key, wheel turn or focus
+  change between them. The edit box opens the double-click time after
+  the second click, unless a third click makes a double click, which
+  opens the editor dialog (as Windows does: no other click within the
+  double-click time before or after). With the system's 400 ms here:
+  two clicks within 400 ms are a double click; 400 ms to 2 s apart, a
+  slow double click, edited 400 ms later; more than 2 s apart, two
+  clicks.
+
+Editing a cell leaves its row the only one selected, as a tree view's
+cursor does in GTK. Every edit passes `TreeListCtrl.on_begin_edit()`,
+which refuses the tree's own timer unless the clicks made a slow double
+click; the timer waits the double-click time
+([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#task-coachs-changes)).
+
+Before (master the same): a click on the row clicked last, however long
+ago, opened an edit box 250 ms later, also the click coming back into
+the list from another view and the release of a drag (P124 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)),
+and F2 edited the subject of the first selected row. To Do 68 and 69 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do).
 
 ## Key Files
 

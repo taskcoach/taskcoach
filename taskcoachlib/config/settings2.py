@@ -38,6 +38,8 @@ _SETTING_SECTIONS = {
 # Settings not listed here are returned as raw strings.
 _TYPES_MAP = {
     ("feature", "decimal_time"): bool,
+    ("feature", "in_place_editing"): bool,
+    ("feature", "in_place_slow_double_click"): bool,
     ("view", "descriptionpopups"): bool,
     ("window", "hoverlinewidth"): int,
     ("view", "efforthourstart"): int,

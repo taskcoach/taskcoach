@@ -11,7 +11,7 @@
 7. [Initialization](#initialization)
 8. [Usage](#usage)
 9. [Writes Stay on the Existing API](#writes-stay-on-the-existing-api)
-10. [Planned: In-Place Editing Options](#planned-in-place-editing-options)
+10. [In-Place Editing Options](#in-place-editing-options)
 11. [Key Files](#key-files)
 
 ---
@@ -427,19 +427,17 @@ to trigger a debounced shim refresh (see [Refresh triggers](#refresh-triggers)).
 ---
 
 
-## Planned: In-Place Editing Options
+## In-Place Editing Options
 
 **Asked by designer 2026-10-02**, To Do 68 and 69 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do);
 what they change: [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing).
-On the Features page, by Hoverover popups:
+On the Features page, by Hoverover popups, read through `settings2`:
 
-| Option | Default | Off |
-|--------|---------|-----|
-| Edit in place with a click on the selected row | Off | Only F2 opens an edit box |
-| Edit in place in the lists | Off, to confirm (To Do 69) | No edit box opens, F2 included |
-
-The first applies only while the second is on.
+| Option | Setting | Default | On |
+|--------|---------|---------|----|
+| Edit cells in place | `feature.in_place_editing` | Off | F2 on the cell just clicked, Edit in place on the right-click menu |
+| Edit in place with a slow double click | `feature.in_place_slow_double_click` | Off | Also a slow double click, while the first is on |
 
 ## Key Files
 

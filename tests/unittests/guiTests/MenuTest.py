@@ -103,6 +103,57 @@ class MenuTest(MenuTestCase):
         self.assertEqual(1, len(self.menu))
 
 
+class SometimesShown(uicommand.base_uicommand.UICommand):
+    """A command shown only while visible() says so, as Edit in
+    place."""
+
+    shown = False
+
+    def visible(self):
+        return self.shown
+
+    def do_command(self, event):  # pragma: no cover
+        pass
+
+
+class MenuWithOptionalItemsTest(MenuTestCase):
+    """A command with visible() is in the menu only while it is
+    visible, in its place."""
+
+    def setUp(self):
+        super().setUp()
+        self.first = uicommand.base_uicommand.UICommand(menu_text="first")
+        self.optional = SometimesShown(menu_text="optional")
+        self.last = uicommand.base_uicommand.UICommand(menu_text="last")
+        self.menu.appendUICommands(self.first, self.optional, self.last)
+
+    def labels(self):
+        return [item.GetItemLabelText() for item in self.menu.GetMenuItems()]
+
+    def test_hidden_while_not_visible(self):
+        self.assertEqual(["first", "last"], self.labels())
+
+    def test_not_asked_while_the_menu_is_built(self):
+        # What visible() reads (a view's list) may not exist yet
+        class NotYet(SometimesShown):
+            def visible(self):
+                raise AttributeError("no widget yet")
+
+        gui.menu.Menu(self.frame).appendUICommands(NotYet(menu_text="x"))
+
+    def test_shown_in_its_place_once_visible(self):
+        self.optional.shown = True
+        self.menu.show_visible_items()
+        self.assertEqual(["first", "optional", "last"], self.labels())
+
+    def test_hidden_again(self):
+        self.optional.shown = True
+        self.menu.show_visible_items()
+        self.optional.shown = False
+        self.menu.show_visible_items()
+        self.assertEqual(["first", "last"], self.labels())
+
+
 class MenuWithBooleanMenuItemsTestCase(MenuTestCase):
     def setUp(self):
         super().setUp()

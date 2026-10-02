@@ -69,6 +69,12 @@ class _CtrlWithPopupMenuMixin(_CtrlWithItemsMixin):
 class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
     """Popupmenu's on items."""
 
+    def _popup_item_menu(self):
+        # Items shown only in some states (Edit in place) first
+        self._itemPopupMenu.show_visible_items()
+        # PopupMenu() asks the items' states first (EVT_UPDATE_UI)
+        self.PopupMenu(self._itemPopupMenu)
+
     def __init__(self, *args, **kwargs):
         self._itemPopupMenu = kwargs.pop("itemPopupMenu")
         super().__init__(*args, **kwargs)
@@ -113,7 +119,7 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         if not self._itemIsOk(item):
             # Clicked on empty space - clear selection and show popup
             self.clear_selection()
-            self.PopupMenu(self._itemPopupMenu)
+            self._popup_item_menu()
         else:
             # Clicked on an item - let normal event handling take over
             event.Skip()
@@ -143,13 +149,12 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
                 # Clicked on empty space - clear selection so menu items
                 # properly reflect no selection
                 self.clear_selection()
-                self.PopupMenu(self._itemPopupMenu)
+                self._popup_item_menu()
                 return
             if not self.IsSelected(item):
                 self.clear_selection()
                 self.SelectItem(item)
-        # PopupMenu() asks the items' states first (EVT_UPDATE_UI)
-        self.PopupMenu(self._itemPopupMenu)
+        self._popup_item_menu()
 
     def on_list_item_right_click(self, event):
         """Handle EVT_LIST_ITEM_RIGHT_CLICK for ListCtrl controls.
@@ -165,8 +170,7 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         if not self.IsSelected(item_index):
             self.clear_selection()
             self.Select(item_index, True)
-        # PopupMenu() asks the items' states first (EVT_UPDATE_UI)
-        self.PopupMenu(self._itemPopupMenu)
+        self._popup_item_menu()
 
     def on_list_context_menu(self, event):
         """Handle EVT_CONTEXT_MENU for ListCtrl controls.
@@ -185,8 +189,7 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
                 return
             # Click on empty space - clear selection
             self.clear_selection()
-        # PopupMenu() asks the items' states first (EVT_UPDATE_UI)
-        self.PopupMenu(self._itemPopupMenu)
+        self._popup_item_menu()
 
 
 class _CtrlWithColumnPopupMenuMixin(_CtrlWithPopupMenuMixin):

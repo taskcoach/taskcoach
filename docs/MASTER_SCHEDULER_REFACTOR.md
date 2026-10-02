@@ -218,30 +218,35 @@ go at the end. Details live in the sections and documents linked.
     type-ahead; the catalog passes. Not run on Windows, macOS or
     wxPython 4.0.7
     ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#updating-the-bundle)).
-68. A Preferences option for editing in place with a slow double
-    click, off by default: F2 alone then opens the edit box.
-    **Asked by designer 2026-10-02.** The slow double click is the
-    usual one, a second click on the row clicked last; but here the
-    click that comes back into the list from another view also opens
-    an edit box (on master too), which file managers never do: only
-    the second click of a list that has the focus should. **Asked by
-    designer the same day:** an "Edit in place" item in the right-click
-    menu, for the cell clicked (the list records its column), shown
-    only while editing in place is on; none in the Edit menu, as the
-    list shows no current cell (rows only). To decide: F2 keeps
-    editing the Subject, or edits the column clicked last, so that the
-    right-click item can show it. F2 is the rename and edit-cell key of
-    Windows and the Linux desktops; macOS uses Return, which here opens
-    the editor, so F2 serves everywhere
+68. ~~A Preferences option for editing in place with a slow double
+    click~~: done 2026-10-02, **asked by designer**: "only a slow
+    double click within specific timing parameters will open the edit.
+    If not, it will be the F2 or the right click", the right-click
+    item greyed on a cell that cannot be edited, F2 "only ... if we
+    have a selection of a cell that's currently active" in the focused
+    list, and editing leaves only its row selected. A slow double
+    click is a second click on the same cell from the double-click
+    time (400 ms here) to 2 s after the first, with nothing between;
+    the edit box opens a double-click time later unless a third click
+    makes a double click. Before (master too), a click on the row
+    clicked last, however long ago, opened one after 250 ms, and F2
+    edited the first selected row's subject. No Edit menu item: the
+    list shows no current cell
     ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing),
-    [SETTINGS.md](SETTINGS.md#planned-in-place-editing-options)).
-69. A Preferences option to turn editing in place off altogether, F2
-    included; off by default as the designer leans, to confirm for
-    those who upgrade. **Asked by designer 2026-10-02**: some edit
-    faster this way, the designer never does and finds it less
-    reliable. Tests run under their own settings, never the
-    designer's: the edit boxes keep their tests with the options on,
-    and with each off no edit box opens (same links as 68).
+    [SETTINGS.md](SETTINGS.md#in-place-editing-options)). Checked in
+    the app, both options on: a second click 1 s later edits, 3 s
+    later or after a click in Categories does not; F2 after a click on
+    the subject or the planned start edits that cell, after the Down
+    key nothing; the right-click item edits a subject (beside its text
+    too), is greyed on an icon column, and leaves one of two selected
+    rows selected; both off: no edit box and no menu item.
+69. ~~A Preferences option to turn editing in place off
+    altogether~~: done 2026-10-02, **asked by designer**: "Edit cells
+    in place", off by default for everyone, upgrades included (the
+    designer's lean; for the release notes): F2, the right-click item
+    and the slow double click then do nothing. The designer, verbatim:
+    "I don't use list editing ever but some people do because it goes
+    faster I find it's less reliable".
 70. One settings object, read directly (was P102). **Asked by
     designer 2026-10-02**: "There's supposed to be one global settings
     object ... I was creating a virtual layer over it ... we should

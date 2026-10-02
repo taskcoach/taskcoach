@@ -20,8 +20,33 @@ from taskcoachlib import operating_system
 from wx.lib.agw import customtreectrl as customtree, hypertreelist
 from taskcoachlib.widgets import itemctrl, draganddrop
 import contextlib
+import time
 import wx
 from taskcoachlib import patterns
+from taskcoachlib.config import settings2
+
+# A slow double click: a second click on the same cell, after the
+# system's double-click time and within this time of the first
+# (docs/LIST_MANAGEMENT.md#in-place-editing)
+SLOW_DOUBLE_CLICK_MAX_MS = 2000
+_clock = time.monotonic  # Seconds; tests replace it
+
+
+def double_click_ms():
+    """The system's double-click time; Windows' default where the
+    platform gives none."""
+    milliseconds = wx.SystemSettings.GetMetric(wx.SYS_DCLICK_MSEC)
+    return milliseconds if milliseconds > 0 else 500
+
+
+_MODIFIER_KEYS = {
+    wx.WXK_SHIFT,
+    wx.WXK_CONTROL,
+    wx.WXK_RAW_CONTROL,
+    wx.WXK_ALT,
+    wx.WXK_WINDOWS_LEFT,
+    wx.WXK_WINDOWS_RIGHT,
+}
 
 # pylint: disable=E1101,E1103
 
@@ -341,6 +366,15 @@ class TreeListCtrl(
         self.__adapter = parent
         self.__selection = set()  # What a refresh keeps selected
         self.__user_double_clicked = False
+        # In-place editing (docs/LIST_MANAGEMENT.md#in-place-editing):
+        # the cell clicked last while the list keeps the focus, the
+        # first click of a possible slow double click, and how the edit
+        # about to start was asked for
+        self.__focused_cell = None
+        self.__popup_cell = None
+        self.__first_click = None
+        self.__slow_double_click = False
+        self.__explicit_edit = False
         self.__columns_with_images = []
         self.__default_font = wx.NORMAL_FONT
         self.__refreshing = False
@@ -367,6 +401,11 @@ class TreeListCtrl(
         ):
             self.Bind(event_type, self.__on_rows_moved)
         self.GetMainWindow().Bind(wx.EVT_SCROLLWIN, self.__on_rows_moved)
+        main = self.GetMainWindow()
+        main.Bind(wx.EVT_LEFT_DOWN, self.__on_left_down)
+        main.Bind(wx.EVT_RIGHT_DOWN, self.__on_right_down)
+        main.Bind(wx.EVT_MOUSEWHEEL, self.__on_wheel)
+        main.Bind(wx.EVT_KILL_FOCUS, self.__on_kill_focus)
 
     def bind_event_handlers(
         self, selectCommand, editCommand, dragAndDropCommand
@@ -774,10 +813,18 @@ class TreeListCtrl(
         # Only a plain Enter edits: Ctrl+Enter is the menu's Mark
         # completed, reached when the event is skipped
         plain = not event.GetKeyEvent().HasAnyModifiers()
+        if event.GetKeyCode() == wx.WXK_F2 and plain:
+            self.__first_click = None
+            self.__slow_double_click = False
+            if self.__can_edit(self.__focused_cell):
+                self.__edit(self.__focused_cell)
+            return
+        if event.GetKeyCode() not in _MODIFIER_KEYS:
+            # Any other key ends the cell's focus and a slow double
+            # click
+            self.__forget_clicks()
         if event.GetKeyCode() == wx.WXK_RETURN and plain:
             self.editCommand(event)
-        elif event.GetKeyCode() == wx.WXK_F2 and self.GetSelections():
-            self.EditLabel(self.GetSelections()[0], column=0)
         else:
             event.Skip()
 
@@ -853,6 +900,9 @@ class TreeListCtrl(
 
     def on_double_click(self, event):
         self.__user_double_clicked = True
+        # A double click is not a slow one
+        self.__first_click = None
+        self.__slow_double_click = False
         if self.is_clickable_part_of_node_clicked(event):
             event.Skip(False)
         else:
@@ -880,7 +930,114 @@ class TreeListCtrl(
         else:
             return -1
 
-    # Inline editing
+    # Inline editing (docs/LIST_MANAGEMENT.md#in-place-editing)
+
+    def can_edit_clicked_cell(self):
+        """Whether Edit in place on the right-click menu has a cell."""
+        return self.__can_edit(self.__popup_cell)
+
+    def edit_clicked_cell(self):
+        if self.can_edit_clicked_cell():
+            self.__edit(self.__popup_cell)
+
+    def edit_cell_in_place(self, item, column):
+        """Edit a cell in place as F2 and the right-click menu do."""
+        self.__edit((item, column))
+
+    def __edit(self, cell):
+        item = cell[0]
+        if self.GetSelections() != [item]:
+            # A cell is edited for its row alone: the other rows are no
+            # longer selected
+            self.UnselectAll()
+            self.SelectItem(item, True)
+            self.selectCommand()
+        self.__explicit_edit = True
+        try:
+            self.GetMainWindow().EditLabel(*cell)
+        finally:
+            self.__explicit_edit = False
+
+    def __can_edit(self, cell):
+        """Editing in place is on, the cell's row is still selected, and
+        its column can be edited."""
+        if cell is None or not settings2.get("feature", "in_place_editing"):
+            return False
+        item, column = cell
+        try:
+            if item not in self.GetSelections():
+                return False
+        except RuntimeError:
+            return False  # The list is gone
+        return self.IsColumnEditable(column)
+
+    def __cell_at(self, position):
+        item, _, column = self.HitTest(position)
+        if not item:
+            return None
+        if column < 0:
+            # Left or right of the subject's text: still its cell
+            column = self.GetMainWindow().GetMainColumn()
+            left = sum(
+                self.GetColumnWidth(index)
+                for index in range(column)
+                if self.IsColumnShown(index)
+            )
+            x = self.GetMainWindow().CalcUnscrolledPosition(position).x
+            if not left <= x < left + self.GetColumnWidth(column):
+                return None
+        return item, column
+
+    def __forget_clicks(self):
+        self.__focused_cell = None
+        self.__first_click = None
+        self.__slow_double_click = False
+
+    def __on_left_down(self, event):
+        event.Skip()
+        self.__popup_cell = None
+        cell = self.__cell_at(event.GetPosition())
+        first, self.__first_click = self.__first_click, None
+        self.__slow_double_click = False
+        if cell is None or event.HasAnyModifiers():
+            self.__focused_cell = None
+            return
+        self.__focused_cell = cell
+        now = _clock()
+        if first is not None and self.__same_cell(first[0], cell):
+            elapsed = (now - first[1]) * 1000
+            if double_click_ms() <= elapsed <= SLOW_DOUBLE_CLICK_MAX_MS:
+                self.__slow_double_click = True
+                return
+        self.__first_click = (cell, now)
+
+    def __on_right_down(self, event):
+        event.Skip()
+        self.__forget_clicks()
+        # Edit in place on the right-click menu edits this cell; the
+        # menu may take the focus, which ends the focused cell
+        self.__popup_cell = None
+        if not event.HasAnyModifiers():
+            self.__popup_cell = self.__cell_at(event.GetPosition())
+            self.__focused_cell = self.__popup_cell
+
+    def __on_wheel(self, event):
+        event.Skip()
+        self.__first_click = None
+        self.__slow_double_click = False
+
+    def __on_kill_focus(self, event):
+        event.Skip()
+        window = event.GetWindow()
+        while window is not None:
+            if window is self.GetMainWindow():
+                return  # Its own edit box took the focus
+            window = window.GetParent()
+        self.__forget_clicks()
+
+    @staticmethod
+    def __same_cell(cell, other):
+        return cell[0] is other[0] and cell[1] == other[1]
 
     def on_begin_edit(self, event):
         if self.__user_double_clicked:
@@ -890,8 +1047,23 @@ class TreeListCtrl(
             # Don't start editing another label when the user is still editing
             # a label. This prevents left-over text controls in the tree.
             event.Veto()
-        else:
+        elif self.__explicit_edit or self.__slow_double_click_edit(event):
             event.Skip()
+        else:
+            # The tree's own timer after a click: only a slow double
+            # click edits, with both options on
+            event.Veto()
+
+    def __slow_double_click_edit(self, event):
+        slow, self.__slow_double_click = self.__slow_double_click, False
+        return (
+            slow
+            and settings2.get("feature", "in_place_slow_double_click")
+            and self.__can_edit(self.__focused_cell)
+            and self.__same_cell(
+                self.__focused_cell, (event.GetItem(), event.GetInt())
+            )
+        )
 
     def on_end_edit(self, event):
         if event._editCancelled:  # pylint: disable=W0212

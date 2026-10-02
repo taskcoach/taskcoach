@@ -632,6 +632,11 @@ defaults = {
         "effort_duration_presets": "300,900,1800,3600,7200",  # Seconds: 5m, 15m, 30m, 1h, 2h
         # New settings should use snake_case naming convention (PEP 8)
         "decimal_time": "False",  # Render effort as decimal hours (1.25) instead of 1:15
+        # Edit a list's cells in place: F2 on the cell just clicked, the
+        # right-click menu, and with the second option a slow double
+        # click
+        "in_place_editing": "False",
+        "in_place_slow_double_click": "False",
     },
     "printer": {
         "margin_left": "0",

@@ -21,6 +21,9 @@ import wx
 from . import TreeCtrlTest
 from unittests import dummy
 from taskcoachlib import widgets
+from taskcoachlib.config import settings2
+from taskcoachlib.widgets import treectrl
+from taskcoachlib.widgets.treectrl import customtree
 
 
 class TreeListCtrlTestCase(TreeCtrlTest.TreeCtrlTestCase):
@@ -202,3 +205,190 @@ class TreeListCtrlColumnsTest(TreeListCtrlTestCase):
     def testShowColumn(self):
         self.showColumn("column2", False)
         self.showColumn("column2", True)
+
+
+class TreeListCtrlInPlaceEditTest(TreeListCtrlTestCase):
+    """A cell is edited in place only at an explicit request: a slow
+    double click, F2 on the cell just clicked, or the right-click menu
+    (docs/LIST_MANAGEMENT.md#in-place-editing)."""
+
+    def setUp(self):
+        super().setUp()
+        self.treeCtrl.selectCommand = lambda: None
+        self.treeCtrl.SetSize(400, 300)
+        self.children[None] = [self.item0, self.item1]
+        self.treeCtrl.RefreshAllItems(2)
+        self.main = self.treeCtrl.GetMainWindow()
+        self.main.CalculatePositions()
+        for column in (0, 1):
+            self.treeCtrl.SetColumnEditable(column, True)
+        self.treeCtrl.SetColumnEditable(2, False)
+        self.set_option("in_place_editing", True)
+        self.set_option("in_place_slow_double_click", True)
+        self.now = 0.0
+        patcher = mock.patch.object(treectrl, "_clock", lambda: self.now)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.edits = []
+        self.main.EditLabel = lambda item, column: self.edits.append(
+            (self.treeCtrl.GetItemPyData(item), column)
+        )
+
+    def set_option(self, option, value):
+        settings = settings2._instance._settings
+        old = settings.getboolean("feature", option)
+        settings.setboolean("feature", option, value)
+        settings2.refresh_now()
+        self.addCleanup(self.restore_option, option, old)
+
+    @staticmethod
+    def restore_option(option, value):
+        settings2._instance._settings.setboolean("feature", option, value)
+        settings2.refresh_now()
+
+    def rows(self):
+        return self.treeCtrl.GetItemChildren(recursively=True)
+
+    def point(self, row, column):
+        rect = self.treeCtrl.GetBoundingRect(self.rows()[row], textOnly=True)
+        x = rect.x + 2
+        if column > 0:
+            x = sum(self.treeCtrl.GetColumnWidth(i) for i in range(column))
+            x += 5
+        return wx.Point(x, rect.y + rect.height // 2)
+
+    def press(self, row, column, at, event_type=wx.wxEVT_LEFT_DOWN):
+        self.now = at
+        event = wx.MouseEvent(event_type)
+        event.SetPosition(self.point(row, column))
+        event.SetEventObject(self.main)
+        self.main.GetEventHandler().ProcessEvent(event)
+
+    def key(self, key_code):
+        event = wx.KeyEvent(wx.wxEVT_KEY_DOWN)
+        event.SetKeyCode(key_code)
+        event.SetEventObject(self.main)
+        self.main.GetEventHandler().ProcessEvent(event)
+
+    def leave(self):
+        event = wx.FocusEvent(wx.wxEVT_KILL_FOCUS)
+        event.SetWindow(None)
+        event.SetEventObject(self.main)
+        self.main.GetEventHandler().ProcessEvent(event)
+
+    def timer_edit_allowed(self, row=0, column=0):
+        """Whether the tree's own timer, which starts the edit after a
+        click, gets to edit the cell."""
+        event = customtree.TreeEvent(
+            wx.wxEVT_COMMAND_TREE_BEGIN_LABEL_EDIT, self.treeCtrl.GetId()
+        )
+        event.SetItem(self.rows()[row])
+        event.SetInt(column)
+        self.treeCtrl.on_begin_edit(event)
+        return event.IsAllowed()
+
+    def test_a_slow_double_click_edits(self):
+        self.press(0, 0, at=0.0)
+        self.press(0, 0, at=1.0)
+        self.assertTrue(self.timer_edit_allowed())
+
+    def test_two_quick_clicks_do_not(self):
+        # Within the double-click time: a double click
+        self.press(0, 0, at=0.0)
+        self.press(0, 0, at=0.1)
+        self.assertFalse(self.timer_edit_allowed())
+
+    def test_two_clicks_too_far_apart_do_not(self):
+        self.press(0, 0, at=0.0)
+        self.press(0, 0, at=3.0)
+        self.assertFalse(self.timer_edit_allowed())
+
+    def test_a_click_elsewhere_in_between_ends_it(self):
+        self.press(0, 0, at=0.0)
+        self.press(1, 0, at=0.5)
+        self.press(0, 0, at=1.0)
+        self.assertFalse(self.timer_edit_allowed())
+
+    def test_a_key_in_between_ends_it(self):
+        self.press(0, 0, at=0.0)
+        self.key(wx.WXK_DOWN)
+        self.press(0, 0, at=1.0)
+        self.assertFalse(self.timer_edit_allowed())
+
+    def test_leaving_the_list_in_between_ends_it(self):
+        self.press(0, 0, at=0.0)
+        self.leave()
+        self.press(0, 0, at=1.0)
+        self.assertFalse(self.timer_edit_allowed())
+
+    def test_only_with_its_option_on(self):
+        self.set_option("in_place_slow_double_click", False)
+        self.press(0, 0, at=0.0)
+        self.press(0, 0, at=1.0)
+        self.assertFalse(self.timer_edit_allowed())
+
+    def test_only_with_editing_in_place_on(self):
+        self.set_option("in_place_editing", False)
+        self.press(0, 0, at=0.0)
+        self.press(0, 0, at=1.0)
+        self.assertFalse(self.timer_edit_allowed())
+
+    def test_f2_edits_the_cell_just_clicked(self):
+        self.press(1, 1, at=0.0)
+        self.key(wx.WXK_F2)
+        self.assertEqual([(self.item1, 1)], self.edits)
+
+    def test_f2_after_a_key_edits_nothing(self):
+        self.press(0, 0, at=0.0)
+        self.key(wx.WXK_DOWN)
+        self.key(wx.WXK_F2)
+        self.assertEqual([], self.edits)
+
+    def test_f2_after_leaving_the_list_edits_nothing(self):
+        self.press(0, 0, at=0.0)
+        self.leave()
+        self.key(wx.WXK_F2)
+        self.assertEqual([], self.edits)
+
+    def test_f2_on_a_cell_that_cannot_be_edited_edits_nothing(self):
+        self.press(0, 2, at=0.0)
+        self.key(wx.WXK_F2)
+        self.assertEqual([], self.edits)
+
+    def test_f2_with_editing_in_place_off_edits_nothing(self):
+        self.set_option("in_place_editing", False)
+        self.press(0, 0, at=0.0)
+        self.key(wx.WXK_F2)
+        self.assertEqual([], self.edits)
+
+    def test_the_right_click_menu_edits_the_cell_clicked(self):
+        self.press(1, 1, at=0.0, event_type=wx.wxEVT_RIGHT_DOWN)
+        self.assertTrue(self.treeCtrl.can_edit_clicked_cell())
+        self.treeCtrl.edit_clicked_cell()
+        self.assertEqual([(self.item1, 1)], self.edits)
+
+    def test_the_right_click_menu_cannot_edit_a_fixed_cell(self):
+        self.press(1, 2, at=0.0, event_type=wx.wxEVT_RIGHT_DOWN)
+        self.assertFalse(self.treeCtrl.can_edit_clicked_cell())
+
+    def test_editing_leaves_only_the_cells_row_selected(self):
+        self.treeCtrl.select([self.item0, self.item1])
+        self.press(1, 1, at=0.0, event_type=wx.wxEVT_RIGHT_DOWN)
+        self.treeCtrl.edit_clicked_cell()
+        selected = [
+            self.treeCtrl.GetItemPyData(item)
+            for item in self.treeCtrl.GetSelections()
+        ]
+        self.assertEqual([self.item1], selected)
+
+    def test_beside_the_subjects_text_is_its_cell(self):
+        # The tree reports no column there
+        right_of_text = wx.Point(
+            self.treeCtrl.GetColumnWidth(0) - 3, self.point(1, 0).y
+        )
+        self.assertEqual(-1, self.treeCtrl.HitTest(right_of_text)[2])
+        event = wx.MouseEvent(wx.wxEVT_RIGHT_DOWN)
+        event.SetPosition(right_of_text)
+        self.main.GetEventHandler().ProcessEvent(event)
+        self.treeCtrl.edit_clicked_cell()
+        self.assertEqual([(self.item1, 0)], self.edits)

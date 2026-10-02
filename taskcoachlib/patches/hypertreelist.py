@@ -4322,7 +4322,11 @@ class TreeListMainWindow(CustomTreeCtrl):
                     self._owner.GetHeaderWindow().IsColumnEditable(self._curColumn) and
                     flags & (wx.TREE_HITTEST_ONITEMLABEL | TREE_HITTEST_ONITEMCOLUMN) and
                     ((self._editCtrl is not None and column != self._editCtrl.column()) or self._editCtrl is None)):
-                    self._editTimer.Start(_EDIT_TIMER_TICKS, wx.TIMER_ONE_SHOT)
+                    # Task Coach: wait the double-click time, so that a
+                    # third click makes a double click, not an edit
+                    self._editTimer.Start(
+                        max(_EDIT_TIMER_TICKS, wx.SystemSettings.GetMetric(wx.SYS_DCLICK_MSEC)),
+                        wx.TIMER_ONE_SHOT)
 
                 self._lastOnSame = False
 

@@ -89,6 +89,10 @@ unbind it.
 - **Main menus**: wx's frame sends the update events when a menu opens,
   and before an item's shortcut acts.
 - **Popup menus**: `PopupMenu()` sends them before showing the menu.
+  A command with a `visible()` method (Edit in place) is placed only
+  then, by `Menu.show_visible_items()`, and left out while it says no;
+  it is not asked while the menu is built, when what it reads (a view's
+  list) may not exist yet.
 - **Labels** that follow data (Undo/Redo, recent files) change when the
   data changes (Publisher). Others set in `on_menu_update_ui()` change as
   the menu opens, as before; enabled and checked states change no menu

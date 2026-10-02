@@ -89,6 +89,7 @@ In `hypertreelist.py`; the commit first making each change.
 | `EditCtrl.CancelEditing`, `EditTextCtrl.OnChar`, `Delete`, `ResetEditControl` | Escape and the deletion of the item edited cancel; any other end keeps the typed value (`StopEditing()`, a click elsewhere comes before the focus moves) | `def3832cf`, `f2e9f63d1` |
 | `_OnDestroy` | the drag and find timers stopped when the window is destroyed | `def3832cf` |
 | `OnPaint`, `AdjustMyScrollbars` | a layout recalculated while painting sets the scrollbars after the paint: GTK does not show a scrollbar changed while painting (a column hidden left the old range) | To Do 67 |
+| `OnMouse` | the edit timer after a click waits the system's double-click time, not 250 ms: a third click within it makes a double click ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing)) | To Do 68 |
 
 `treectrl.py` builds on these; it highlights the rows of the selection
 it restores after a rebuild through `SetItemHilight()`, which keeps the

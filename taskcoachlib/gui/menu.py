@@ -39,6 +39,9 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
         self._window = window
         self._accels = list()
         self._observers = list()
+        # Commands shown only while their visible() says so, with the
+        # place they take: [(command, position)]
+        self._optional = list()
 
     def __len__(self):
         return self.GetMenuItemCount()
@@ -68,7 +71,29 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
     def accelerators(self):
         return self._accels
 
+    def show_visible_items(self):
+        """Add or remove the commands shown only while visible() says
+        so; called before the menu pops up."""
+        hidden = 0
+        for ui_command, position in self._optional:
+            shown = any(
+                item.GetMenu() == self for item in ui_command.menu_items
+            )
+            visible = ui_command.visible()
+            if visible and not shown:
+                ui_command.add_to_menu(self, self._window, position - hidden)
+            elif shown and not visible:
+                ui_command.remove_from_menu(self, self._window)
+            if not visible:
+                hidden += 1
+
     def append_ui_command(self, ui_command):
+        if hasattr(ui_command, "visible"):
+            # Placed when the menu pops up (show_visible_items()):
+            # what it depends on may not exist yet
+            self._optional.append((ui_command, self.GetMenuItemCount()))
+            ui_command.menu = self
+            return None
         cmd = ui_command.add_to_menu(self, self._window)
         ui_command.menu = self
         self._accels.extend(ui_command.accelerators())
@@ -996,6 +1021,7 @@ class TaskPopupMenu(Menu):
             uicommand.EditPasteAsSubItem(viewer=taskViewer),
             None,
             uicommand.Edit(viewer=taskViewer),
+            uicommand.EditInPlace(viewer=taskViewer),
             uicommand.Delete(viewer=taskViewer),
             None,
             uicommand.AddAttachment(viewer=taskViewer, settings=settings),
@@ -1085,6 +1111,7 @@ class CategoryPopupMenu(Menu):
             uicommand.EditPasteAsSubItem(viewer=categoryViewer),
             None,
             uicommand.Edit(viewer=categoryViewer),
+            uicommand.EditInPlace(viewer=categoryViewer),
             uicommand.Delete(viewer=categoryViewer),
             None,
             uicommand.AddAttachment(viewer=categoryViewer, settings=settings),
@@ -1132,6 +1159,7 @@ class NotePopupMenu(Menu):
             uicommand.EditPasteAsSubItem(viewer=noteViewer),
             None,
             uicommand.Edit(viewer=noteViewer),
+            uicommand.EditInPlace(viewer=noteViewer),
             uicommand.Delete(viewer=noteViewer),
             None,
             uicommand.AddAttachment(viewer=noteViewer, settings=settings),

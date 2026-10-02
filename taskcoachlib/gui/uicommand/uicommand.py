@@ -39,6 +39,7 @@ from taskcoachlib.domain import (
 )
 from taskcoachlib.gui import dialog, printer
 from taskcoachlib.gui.wizard import CSVImportWizard
+from taskcoachlib.config import settings2
 from taskcoachlib.i18n import _
 from taskcoachlib.mailer import sendMail
 from wx.lib.agw import hypertreelist
@@ -1636,6 +1637,31 @@ class ToggleAutoScroll(settings_uicommand.UICheckCommand):
     def _on_setting_change(self, event=None):
         self.toolbar.ToggleTool(self.id, self.checked())
         self.toolbar.Refresh(False)
+
+
+class EditInPlace(ViewerCommand):
+    """Edit the right-clicked cell in the list itself; shown while
+    editing in place is on
+    (docs/LIST_MANAGEMENT.md#in-place-editing)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            menu_text=_("Edit in &place\tF2"),
+            help_text=_("Edit this cell in the list itself"),
+            *args,
+            **kwargs
+        )
+
+    def visible(self):
+        return settings2.get("feature", "in_place_editing") and hasattr(
+            self.viewer.widget, "edit_clicked_cell"
+        )
+
+    def enabled(self, event):
+        return self.viewer.widget.can_edit_clicked_cell()
+
+    def do_command(self, event):
+        self.viewer.widget.edit_clicked_cell()
 
 
 class Edit(ViewerCommand):

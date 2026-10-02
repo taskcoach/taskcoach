@@ -2651,6 +2651,26 @@ class FeaturesPage(SettingsPage):
                 "Show a popup with the description of an item when hovering over it"
             ),
         )
+        self.addBooleanSetting(
+            "feature",
+            "in_place_editing",
+            _("Edit cells in place"),
+            _(
+                "Edit a cell of a task, category or note list in the list "
+                "itself: F2 on the cell just clicked, or Edit in place on "
+                "the right-click menu"
+            ),
+        )
+        self.addBooleanSetting(
+            "feature",
+            "in_place_slow_double_click",
+            _("Edit in place with a slow double click"),
+            _(
+                "Also edit a cell by clicking it, then clicking it again "
+                "after a pause of up to two seconds (with cells edited in "
+                "place)"
+            ),
+        )
 
         # Store the working hours to detect changes
         self._originalValues = {}
