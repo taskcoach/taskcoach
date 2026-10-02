@@ -204,7 +204,12 @@ class TreeListCtrlColumnsTest(TreeListCtrlTestCase):
 
     def testShowColumn(self):
         self.showColumn("column2", False)
+        hidden = self.treeCtrl.GetColumnCount()
         self.showColumn("column2", True)
+        self.assertEqual(hidden + 1, self.treeCtrl.GetColumnCount())
+        # Filled by the refresh the viewer then makes
+        self.treeCtrl.RefreshAllItems(1)
+        self.assertColumns()
 
 
 class TreeListCtrlInPlaceEditTest(TreeListCtrlTestCase):

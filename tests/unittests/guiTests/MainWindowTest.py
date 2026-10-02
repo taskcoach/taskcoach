@@ -20,6 +20,8 @@ import os
 import shutil
 import tempfile
 import time
+from unittest import mock
+
 import wx, test
 from taskcoachlib import gui, config, persistence, meta, operating_system
 from taskcoachlib import patterns
@@ -142,6 +144,16 @@ class MainWindowMaximizeTestCase(MainWindowTestCase):
     def setSettings(self):
         self.settings.setboolean("window", "maximized", self.maximized)
 
+    def placed(self):
+        """The window's tracker once the placement is quiet
+        (docs/WINDOW_GEOMETRY.md)."""
+        tracker = self.mainwindow._MainWindow__dimensions_tracker
+        deadline = time.monotonic() + 5
+        while not tracker.ready and time.monotonic() < deadline:
+            wx.Yield()
+            time.sleep(0.01)
+        return tracker
+
 
 class MainWindowNotMaximizedTest(MainWindowMaximizeTestCase):
     maximized = False
@@ -149,15 +161,16 @@ class MainWindowNotMaximizedTest(MainWindowMaximizeTestCase):
     def testCreate(self):
         self.assertFalse(self.mainwindow.IsMaximized())
 
-    @test.skipOnPlatform("__WXGTK__")
-    def testMaximize(self):  # pragma: no cover
-        # Skipping this test under wxGTK. I don't know how it managed
-        # to pass before but according to
-        # http://trac.wxwidgets.org/ticket/9167 and to my own tests,
-        # EVT_MAXIMIZE is a noop under this platform.
-        self.mainwindow.Maximize()
-        if operating_system.isWindows():
-            wx.Yield()
+    def test_maximize(self):
+        # The window manager's answer, which a test display without one
+        # never sends
+        self.assertTrue(self.placed().ready)
+        with mock.patch.object(
+            self.mainwindow, "IsMaximized", return_value=True
+        ):
+            self.mainwindow.GetEventHandler().ProcessEvent(
+                wx.MaximizeEvent(self.mainwindow.GetId())
+            )
         self.mainwindow.save_settings()  # Geometry is written on close
         self.assertTrue(self.settings.getboolean("window", "maximized"))
 
@@ -167,13 +180,9 @@ class MainWindowMaximizedTest(MainWindowMaximizeTestCase):
 
     @test.skipOnPlatform("__WXMAC__")
     def test_create(self):  # pragma: no cover
-        # The maximize comes once the placement is quiet
-        # (docs/WINDOW_GEOMETRY.md), and a window manager grants it
-        tracker = self.mainwindow._MainWindow__dimensions_tracker
-        deadline = time.monotonic() + 5
-        while not tracker.ready and time.monotonic() < deadline:
-            wx.Yield()
-            time.sleep(0.01)
+        # The maximize comes once the placement is quiet, and a window
+        # manager grants it
+        tracker = self.placed()
         if not tracker.maximized:
             self.skipTest("no window manager granted the maximize")
         self.assertTrue(

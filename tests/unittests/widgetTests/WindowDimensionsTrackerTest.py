@@ -54,11 +54,19 @@ class WindowDimensionsTrackerTest(test.wxTestCase):
             (width, height), self.settings.getvalue(self.section, "size")
         )
 
-    @test.skipOnPlatform("__WXGTK__")
     def test_maximize(self):
+        # The window manager's answer, which a test display without one
+        # never sends: the maximize event, the size event on restoring
+        self.tracker.ready = True
+        events = {
+            True: wx.MaximizeEvent(self.window.GetId()),
+            False: wx.SizeEvent(self.window.GetSize(), self.window.GetId()),
+        }
         for maximized in [True, False]:
-            self.window.Maximize(maximized)
-            self.assertEqual(maximized, self.window.IsMaximized())
+            with mock.patch.object(
+                self.window, "IsMaximized", return_value=maximized
+            ):
+                self.window.GetEventHandler().ProcessEvent(events[maximized])
             self.tracker.save_position()
             self.assertEqual(
                 maximized, self.settings.getboolean(self.section, "maximized")

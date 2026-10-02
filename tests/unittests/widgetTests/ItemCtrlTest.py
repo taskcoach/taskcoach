@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from unittest import mock
+
 import wx
 import test
 from taskcoachlib import widgets
@@ -120,39 +122,52 @@ class CtrlWithColumnsTest(
 
 
 class DummyEvent(object):
-    def __init__(self, eventObject):
-        self.eventObject = eventObject
+    def __init__(self, event_object, column=0):
+        self.event_object = event_object
+        self.column = column
 
     def Skip(self, *args):
         pass
 
     def GetColumn(self):
-        return 0
+        return self.column
 
     def GetEventObject(self):
-        return self.eventObject
+        return self.event_object
 
     def GetPosition(self):
         return 0, 0
 
 
-class ListCtrlWithColumnPopupMenuTest(CtrlWithColumnsTestCase):
+class ColumnPopupMenuTestsMixin:
+    def test_column_header_popup_menu(self):
+        # Not shown: a popup menu waits for the user
+        with mock.patch.object(self.control, "PopupMenu") as popup:
+            self.control.on_column_popup_menu(DummyEvent(self.control, 1))
+        popup.assert_called_once_with(self.menu)
+        # For its commands, which cannot tell the column otherwise
+        self.assertEqual(1, self.menu.columnIndex)
+
+
+class ListCtrlWithColumnPopupMenuTest(
+    ColumnPopupMenuTestsMixin, CtrlWithColumnsTestCase
+):
     def createControl(self):
+        self.menu = wx.Menu()
         return CtrlWithColumnsUnderTest(
             self.frame,
             style=wx.LC_REPORT,
             columns=[self.column1, self.column2],
             resizeableColumn=1,
-            columnPopupMenu=wx.Menu(),
+            columnPopupMenu=self.menu,
         )
 
-    @test.skipOnPlatform("__WXGTK__")  # Popup menu hangs the test
-    def testColumnHeaderPopupMenu(self):
-        self.control.on_column_popup_menu(DummyEvent(self.control))
 
-
-class HyperListTreeCtrlWithColumnPopupMenuTest(CtrlWithColumnsTestCase):
+class HyperListTreeCtrlWithColumnPopupMenuTest(
+    ColumnPopupMenuTestsMixin, CtrlWithColumnsTestCase
+):
     def createControl(self):
+        self.menu = wx.Menu()
         return widgets.TreeListCtrl(
             self.frame,
             [self.column1, self.column2],
@@ -160,9 +175,5 @@ class HyperListTreeCtrlWithColumnPopupMenuTest(CtrlWithColumnsTestCase):
             None,
             None,
             None,
-            columnPopupMenu=wx.Menu(),
+            columnPopupMenu=self.menu,
         )
-
-    @test.skipOnPlatform("__WXGTK__")  # Popup menu hangs the test
-    def testColumnHeaderPopupMenu(self):
-        self.control.on_column_popup_menu(DummyEvent(self.control))

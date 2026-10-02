@@ -817,11 +817,18 @@ each with the recommended action, none ruled yet:
   Python 3.11, the floor being 3.10. Recommended: fix.
 - P87. `AppTest.testAppProperties` skips unless the language is en_US,
   and errors there (with 6 more tests). Recommended: rewrite.
-- P88. Tests that check nothing: GTK-only skips that run nowhere
-  (`testMaximize` twice, two popup tests), a `pass` override in
-  `RecurrenceTest`, two `assertTrue` of a literal, a Python 2 case in
-  `RenderTest`, `TreeListCtrlTest.testShowColumn`. Recommended: fix or
-  delete.
+- P88. ~~Tests that checked nothing~~: fixed 2026-10-02, **asked by
+  designer**. Four were skipped on GTK, so on the certified platform
+  they never ran: the two column header menu tests (the menu waited
+  for the user) now patch the popup and check the column the menu
+  keeps; the two maximize tests (a test display without a window
+  manager grants no maximize) now send the window manager's answer
+  and check the saved state. `TreeListCtrlTest.testShowColumn` checks
+  the column is back and filled after the refresh the viewer makes,
+  and `NoRecurrenceTest` checks that a maximum count leaves no
+  recurrence. Each rewritten test fails with the code it covers broken
+  in a copy. The two literal asserts and the Python 2 case the audit
+  listed were gone already.
 - P89. `test.py --profile` runs the selection in one process and exits
   0 on failures. Recommended: per file, with the exit status.
 - P90. ~~A file now and then failed to start ("Can't create a
