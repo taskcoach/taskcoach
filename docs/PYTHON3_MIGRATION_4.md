@@ -416,7 +416,7 @@ The workaround was reverted - all toolbar buttons now use native AuiToolBar tool
 
 #### Test Application
 
-A minimal test app exists at `test_aui_toolbar_jitter.py` that reproduces the issue and can be used to test fixes.
+A minimal test app exists at `docs/scripts/aui_toolbar_jitter_demo.py` that reproduces the issue and can be used to test fixes.
 
 ---
 

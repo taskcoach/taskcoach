@@ -848,8 +848,11 @@ each with the recommended action, none ruled yet:
 - P95. Right and centre aligned columns truncate on the wrong side
   (the patched tree control). Fix?
 - P96. Toolbar icons on the right jitter while a sash is dragged
-  ("deferred to a separate branch", not ruled); its demo
-  `test_aui_toolbar_jitter.py` sits at the root. Fix or defer?
+  ("deferred to a separate branch", not ruled). Fix or defer? Its demo
+  moved 2026-10-02, **ruled by designer**, from the root
+  (`test_aui_toolbar_jitter.py`, named like a test) to
+  `docs/scripts/aui_toolbar_jitter_demo.py`, with the other demos; it
+  starts as before.
 - P97. `view.datestied` against the duration modes
   ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) TODO 10), and
   step 1.8.1.3 "remove step?" (the code numbers steps one ahead of the
