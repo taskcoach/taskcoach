@@ -667,6 +667,15 @@ EVT_MOTION on VirtualListCtrl
             └── start 200ms timer → OnBeforeShowToolTip
 ```
 
+Rows moving under a pointer at rest follow the tree views' rule:
+after a paint, when the row under the pointer is not the hovered one
+(the wheel, the scrollbar, a key such as End), and after the list is
+refilled (a sort, a filter), `VirtualListCtrl.follow_pointer()` hides
+the tooltip and moves the outline to the row under the pointer. Before,
+a scroll left the outline drawn by its old row number, on the column
+header (P148 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+
 Native `wx.ListCtrl` has no PaintItem hook, so the outline is drawn post-paint
 via `wx.ClientDC` + `patterns.later.soon`. `EVT_PAINT` also triggers a deferred redraw
 to survive native repaints.

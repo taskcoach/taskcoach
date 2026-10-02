@@ -1103,13 +1103,17 @@ each with the recommended action, none ruled yet:
   Checked in the app: drop, undo and redo each show the task in its
   place, still selected; a merge of changes on disk moving 40
   subtasks takes as long as before and shows the same.
-- P148. In the list views (Effort, Attachments) a scroll by the wheel
-  with the pointer resting on a row moves the hover outline onto the
-  column header instead of the row now under the pointer; the same on
-  master (found 2026-10-01, checked on a file with 6,000 efforts). The
-  list draws the outline itself after painting, by row number
-  (`VirtualListCtrl`), and nothing moves it when the rows scroll. The
-  tree views' rule (P141) would cover it.
+- P148. ~~In the list views (Effort, Attachments) a scroll moved the
+  hover outline onto the column header~~: fixed 2026-10-02, **asked
+  by designer**; the same on master. The list draws the outline after
+  painting by row number (`VirtualListCtrl`), and nothing changed the
+  number when the rows scrolled under the pointer. It now follows the
+  tree views' rule (P141): after a paint where another row is under the
+  pointer, and after the list is refilled, the tooltip hides and the
+  outline moves to that row
+  ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#row-hover-outline)).
+  Checked in the app, Effort view with 6,000 efforts: the wheel and End
+  leave the outline on the row under the pointer; at rest it stays.
 
 ## Views on the Effective Styles
 

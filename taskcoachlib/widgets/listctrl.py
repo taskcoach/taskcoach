@@ -114,6 +114,29 @@ class VirtualListCtrl(
             self._refresh_hover_row(old)
         event.Skip()
 
+    def follow_pointer(self):
+        """Rows moved under a pointer at rest (a scroll, a key, the list
+        refilled): the tooltip, about the row that was there, hides,
+        and the hover outline goes to the row under the pointer now
+        (docs/LIST_MANAGEMENT.md, Row Hover Outline)."""
+        self.cancel_tip()
+        row = self.__row_under_pointer()
+        if row != self._hover_row:
+            old, self._hover_row = self._hover_row, row
+            for each in (old, row):
+                if each >= 0:
+                    self._refresh_hover_row(each)
+
+    def __row_under_pointer(self):
+        # The rows' window, whose coordinates wx's HitTest takes; only
+        # the generic list (GTK) has one apart from the control
+        main_window = getattr(wx.ListCtrl, "GetMainWindow", None)
+        rows = (main_window(self) if main_window else None) or self
+        point = rows.ScreenToClient(wx.GetMousePosition())
+        if not rows.GetClientRect().Contains(point):
+            return -1
+        return super().HitTest(point)[0]
+
     def _draw_hover_outline(self):
         """Two-tone hover outline: fgcolor inner + bgcolor outer."""
         from taskcoachlib.config import settings2
@@ -121,6 +144,10 @@ class VirtualListCtrl(
         pw = settings2.window.hoverlinewidth
         if self._hover_row < 0 or not pw:
             return
+        if self.__row_under_pointer() != self._hover_row:
+            # The rows scrolled under the pointer at rest
+            self.follow_pointer()
+            return  # Drawn after the repaint the change asks
         try:
             outer = self.GetItemRect(self._hover_row)
         except Exception:
@@ -253,6 +280,9 @@ class VirtualListCtrl(
             # The VirtualListCtrl makes sure only visible items are updated
             super().RefreshItems(0, count - 1)
         self.selectCommand()
+        if self._hover_row >= 0:
+            # Another item may be under the pointer now
+            patterns.later.soon(self, self.follow_pointer)
 
     def RefreshItems(self, *items):
         """Refresh specific items."""
