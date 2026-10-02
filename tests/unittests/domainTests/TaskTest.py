@@ -3366,6 +3366,64 @@ class TaskConstructionTest(test.TestCase):
         )
 
 
+class PlannedDurationTest(test.TestCase):
+    """In Implicit mode the planned duration is due minus planned
+    start, whichever way a date changes (docs/DURATION_CALCULATIONS.md,
+    Stored Duration)."""
+
+    def setUp(self):
+        task.Task.settings = config.Settings(load=False)
+        self.start = date.DateTime(2026, 10, 1, 9, 0, 0)
+        self.task = task.Task(
+            plannedStartDateTime=self.start,
+            dueDateTime=self.start + date.ONE_HOUR,
+        )
+
+    def test_a_date_change_sets_it(self):
+        self.task.set_due_date_time(self.start + date.ONE_DAY)
+        self.assertEqual(date.ONE_DAY, self.task.plannedDuration())
+        self.task.set_planned_start_date_time(self.start + date.ONE_HOUR)
+        self.assertEqual(date.TimeDelta(hours=23), self.task.plannedDuration())
+
+    def test_in_whole_minutes_as_the_editor_shows_the_dates(self):
+        self.task.set_planned_start_date_time(
+            date.DateTime(2026, 10, 1, 9, 0, 40)
+        )
+        self.task.set_due_date_time(date.DateTime(2026, 10, 1, 10, 30, 20))
+        self.assertEqual(
+            date.TimeDelta(hours=1, minutes=30), self.task.plannedDuration()
+        )
+
+    def test_a_negative_one_is_kept(self):
+        self.task.set_due_date_time(self.start - date.ONE_HOUR)
+        self.assertEqual(-date.ONE_HOUR, self.task.plannedDuration())
+
+    def test_without_both_dates_it_stays(self):
+        self.task.set_due_date_time(self.start + date.ONE_DAY)
+        self.task.set_due_date_time(None)
+        self.assertEqual(date.ONE_DAY, self.task.plannedDuration())
+
+    def test_the_adjust_modes_keep_it(self):
+        # There the editor moves the other date by it
+        for mode in ("adjdue", "adjstart"):
+            self.task.setPlannedDurationMode(mode)
+            self.task.setPlannedDuration(date.ONE_HOUR)
+            self.task.set_due_date_time(self.start + date.ONE_DAY)
+            self.assertEqual(date.ONE_HOUR, self.task.plannedDuration())
+            self.task.set_due_date_time(self.start + date.ONE_HOUR)
+
+    def test_undo_puts_both_back_in_one_step(self):
+        history = patterns.CommandHistory()
+        self.addCleanup(history.clear)
+        with history.action("Change due date"):
+            self.task.set_due_date_time(self.start + date.ONE_DAY)
+        history.undo()
+        self.assertEqual(
+            (self.start + date.ONE_HOUR, date.TimeDelta()),
+            (self.task.dueDateTime(), self.task.plannedDuration()),
+        )
+
+
 # NOTE (Scheduler Refactoring - 2024):
 # TaskScheduledTest and TaskNotScheduledTest were removed because they tested
 # the old scheduler-based status transitions. With the new GlobalTimer architecture,

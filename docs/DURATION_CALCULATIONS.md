@@ -17,6 +17,7 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
   - [Field Change Effects](#field-change-effects)
   - [Action Sequence](#action-sequence-1)
 - [Preset Dropdown Sync](#preset-dropdown-sync)
+- [Stored Duration](#stored-duration)
 - [Persistence](#persistence)
 
 ---
@@ -511,6 +512,29 @@ the duration changed.
 Subscriptions are created in `DatesPage._add_planned_date_section()` (task)
 and `EffortEditBook.__add_start_and_stop_entries()` (effort), and
 unsubscribed in `close()` / `close_edit_book()`.
+
+---
+
+## Stored Duration
+
+The task stores its planned duration. In Implicit mode it is due minus
+planned start, and the task keeps it so whichever way a date changes,
+the editor or elsewhere (a task list cell), in the same undo step
+(`Task.__derive_planned_duration()`, P133 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+In whole minutes, as the editor's date fields hold them: the editor
+then finds its own value (4.3.1.2) and changes nothing when it opens.
+Not while undo or redo puts values back, which restore the duration
+with the dates.
+
+In the adjust modes the task does not touch it: the editor moves the
+other date by it (2.7, 3.7), and a duration already following the
+date would leave that date where it was. A date changed outside the
+editor in those modes keeps the stored duration (To Do 10).
+
+A file whose stored duration differs (written before this, or by an
+older release) is corrected the first time the task's editor opens,
+which marks the file changed once.
 
 ---
 

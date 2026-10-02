@@ -446,6 +446,57 @@ class FocusTest(TaskEditorTestCase):
         self.assertEqual("Some words", description._textCtrl.GetSelectedText())
 
 
+class OpeningChangesNothingTest(TaskEditorTestCase):
+    """Dates changed outside the editor (a list cell) keep the stored
+    duration right, so opening the editor writes nothing (P133)."""
+
+    def getItems(self):
+        return [self.task]
+
+    def createTasks(self):
+        # pylint: disable=W0201
+        self.task = task.Task("Task")
+        start = date.DateTime(2026, 9, 30, 9, 0, 0)
+        self.task.set_planned_start_date_time(start)
+        self.task.set_due_date_time(start + date.ONE_DAY)
+        self.history = patterns.CommandHistory()
+        self.history.clear()
+        self.addCleanup(self.history.clear)
+        return [self.task]
+
+    def test_opening_records_no_step(self):
+        wx.Yield()
+        self.assertEqual([], self.history.get_history())
+
+
+class AdjustDueModeTest(TaskEditorSetterMixin, TaskEditorTestCase):
+    """The duration moves the due date when the start changes: the task
+    keeps the duration only in Implicit mode."""
+
+    def getItems(self):
+        return [self.task]
+
+    def createTasks(self):
+        # pylint: disable=W0201
+        self.start = date.DateTime(2026, 9, 30, 9, 0, 0)
+        self.task = task.Task(
+            "Task",
+            plannedStartDateTime=self.start,
+            dueDateTime=self.start + date.ONE_DAY,
+            plannedDuration=date.ONE_DAY,
+            plannedDurationMode="adjdue",
+        )
+        return [self.task]
+
+    def test_a_new_start_moves_the_due_date(self):
+        self.set_planned_start_date_time(self.start + date.ONE_HOUR)
+        wx.Yield()  # The due field's change is posted
+        self.assertEqual(
+            (self.start + date.ONE_DAY + date.ONE_HOUR, date.ONE_DAY),
+            (self.task.dueDateTime(), self.task.plannedDuration()),
+        )
+
+
 class ChangeFromElsewhereTest(TaskEditorTestCase):
     """A change made elsewhere (undo, another window) is shown, not
     edited: the fields write nothing back

@@ -316,6 +316,7 @@ class Task(
 
     def _on_due_date_time_changed(self, event):
         self._update_status()
+        self.__derive_planned_duration(event)
         self._send_to_self_and_ancestors(
             event, self.dueDateTimeChangedEventType(), self.dueDateTime()
         )
@@ -357,6 +358,7 @@ class Task(
 
     def _on_planned_start_date_time_changed(self, event):
         self._update_status()
+        self.__derive_planned_duration(event)
         self._send_to_self_and_ancestors(
             event,
             self.plannedStartDateTimeChangedEventType(),
@@ -1075,6 +1077,27 @@ class Task(
     @classmethod
     def plannedDurationModeChangedEventType(class_):
         return "task.plannedDurationMode"
+
+    def __derive_planned_duration(self, event):
+        """In Implicit mode the planned duration is due minus planned
+        start, whichever way a date changed (a list cell, the editor):
+        in the same step, so the editor, which shows it read-only, finds
+        it right and changes nothing when it opens. In whole minutes, as
+        the editor's date fields hold them
+        (docs/DURATION_CALCULATIONS.md, Stored Duration)."""
+        if is_restoring() or self.plannedDurationMode() != "implicit":
+            return  # The adjust modes move a date by the duration
+        start = self.__plannedStartDateTime.get()
+        due = self.__dueDateTime.get()
+        if self.maxDateTime in (start, due):
+            return
+        delta = due.replace(second=0, microsecond=0) - start.replace(
+            second=0, microsecond=0
+        )
+        self.setPlannedDuration(
+            date.TimeDelta(days=delta.days, seconds=delta.seconds),
+            event=event,
+        )
 
     # Styles by status: the effective styles' last source
     # (docs/TASK_STATUS.md, Appearance Inheritance Overview)

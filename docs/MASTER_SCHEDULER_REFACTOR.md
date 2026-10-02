@@ -956,17 +956,23 @@ each with the recommended action, none ruled yet:
   field (as in P123); its Scintilla fields now count as text fields,
   and their undo covers only the typing
   ([MENUS.md](MENUS.md#keyboard-shortcuts)).
-- P133. Opening a task's editor records a "Change planned duration"
-  step and modifies the task when its stored planned duration differs
-  from due minus planned start (Welcome.tsk's "Try different views",
-  for one): the editor's sync on opening writes it
-  (DURATION_CALCULATIONS.md, Logic Flow 4.3.1.2). The same on master
-  (checked in the app). Checked again 2026-10-01 on a Welcome.tsk
-  copy: once corrected and saved, opening the editor again changes
-  nothing; but a due date changed in the task list's date cell leaves
-  the stored duration as it was, and after saving, opening that task's
-  editor without touching anything marks the file modified again
-  ("Change planned duration"). Fix?
+- P133. ~~Opening a task's editor could change a file just saved~~:
+  fixed 2026-10-02, **asked by designer**; the same on master. A date
+  changed outside the editor (a task list cell) left the stored planned
+  duration as it was; after saving, opening the task's editor without
+  touching anything marked the file changed ("Change planned
+  duration"): the editor's Implicit mode writes due minus start when it
+  opens (DURATION_CALCULATIONS.md, Logic Flow 4.3.1.2). The task now
+  keeps that duration itself in Implicit mode, in the same undo step
+  as the date ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md#stored-duration)).
+  Not in the adjust modes: there the editor moves the other date by
+  the duration, which the task changing it first would stop (a test
+  shows it). Old data is still corrected the first time the editor
+  opens, **ruled by designer** ("correcting data on an incorrect old
+  file ... seems totally normal"). Checked in the app on a Welcome.tsk
+  copy: after a due date changed in the list and a save, opening and
+  closing the editor leaves the file unchanged; the list edit's undo
+  step carries the duration.
 - P134. ~~The search box and the list's in-place editor had no
   undo~~: fixed 2026-10-01, **ruled by designer** ("the text boxes
   should all behave the same ... limited to the platforms that don't
