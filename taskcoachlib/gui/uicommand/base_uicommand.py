@@ -17,7 +17,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import itertools
 import time
 
 import wx
@@ -76,8 +75,6 @@ class _SameWindowThrottle:
 
 
 _same_window = _SameWindowThrottle()
-# A command's own number for same_window_key(): an id() is reused
-_serials = itertools.count()
 
 
 class MenuItem(wx.MenuItem):
@@ -117,7 +114,6 @@ class UICommand(patterns.Observer):
         self.id = IdProvider.get()
         self.toolbar = None
         self.menu_items = []  # uiCommands can be used in multiple menu's
-        self.__serial = next(_serials)
 
     def __del__(self):
         IdProvider.put(self.id)
@@ -275,10 +271,11 @@ class UICommand(patterns.Observer):
 
     def same_window_key(self):
         """What makes a window this command opens the same as the last
-        one: the command itself (each menu item, button, list or
-        calendar slot has its own), and for a viewer command the items
-        it acts on."""
-        return (type(self), self.__serial)
+        one: the kind of command, for a viewer command the items it
+        acts on, and the parameters a command was made with (a
+        calendar slot's dates). Not the command object: the calendar
+        makes a new one for each edit."""
+        return (type(self),)
 
     def __call__(self, *args, **kwargs):
         return self.on_command_activate(*args, **kwargs)

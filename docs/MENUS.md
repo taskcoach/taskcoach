@@ -108,34 +108,40 @@ unbind it.
 ## The Same Window Once a Second
 
 **Ruled by designer 2026-10-02:** a command opens the same window at
-most once a second. The same window: the same command on the same
-items (Edit on one task, New task with the same selection,
-Preferences). Why: a held key, or presses queued while the system is
-busy, opened one window per press, hundreds under heavy load, which
-loads the system further; once a second leaves the user time to see
-what happens and react. Checked in the app: Enter held 2 s while the
-application was busy opened 14 editors of one task, now one or two
-(one a second while the queued presses are handled).
+most once a second. The same window: the same kind of command, on the
+same items, made with the same parameters (Edit on one task, New task
+for one calendar slot, Preferences). Why: a held key, or presses
+queued while the system is busy, opened one window per press,
+hundreds under heavy load, which loads the system further; once a
+second leaves the user time to see what happens and react. Checked in
+the app: Enter held 2 s while the application was busy opened 14
+editors of one task, now one or two (one a second while the queued
+presses are handled); three double-clicks within a second on a task,
+in the list or the calendar, open one editor.
 
 Not held back, as ruled:
-- another item's window: five tasks opened quickly open five editors;
+- another item's window: five tasks opened quickly open five editors,
+  two calendar slots two new tasks;
 - commands that open no window: a held key repeats them (a + button);
 - the keys themselves: a held key's characters still reach the window
   that opened;
-- the same task's editor asked for again more than a second later
-  opens a second editor, as before.
+- the same task's editor asked for again a second or more later: a
+  second editor opens, as before.
 
 Every command passes `UICommand.on_command_activate()`: menus,
-shortcuts, toolbar buttons and a list's Enter, Space or double-click.
-A command whose run left a new top-level window is held back for a
-second after it, keyed by `same_window_key()`: the command object
-(each menu item, toolbar button, list and calendar slot has its own,
-and a held key or a burst of presses goes through one) and, for a
-viewer command, the selected items' ids. A modal dialog is
+shortcuts, toolbar buttons, a list's Enter, Space or double-click, and
+the calendar and timeline views' edits. A command whose run left a new
+top-level window is held back for a second after it, keyed by
+`same_window_key()`: the command's class, a viewer command's selected
+items (their ids) and a command's own parameters (`TaskNew`'s dates,
+`TaskNewFromTemplate`'s file). Not the command object: the calendar
+and timeline views make a new `Edit` for each edit. A modal dialog is
 closed by the time its command returns, so it is not counted; while
-open it takes the keys. The first press held back is logged
-(`[COMMAND]`, [LOGGING_GUIDE.md](LOGGING_GUIDE.md)). To Do 72 in
-[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do).
+open it takes the keys. Windows opened outside a command open once per
+action that cannot repeat: a reminder's "open the task", the effort
+editor's task button, a dropped attachment. The first press held back
+is logged (`[COMMAND]`, [LOGGING_GUIDE.md](LOGGING_GUIDE.md)). To Do
+72 in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do).
 
 ---
 

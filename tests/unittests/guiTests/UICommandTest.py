@@ -889,13 +889,33 @@ class SameWindowThrottleTest(test.wxTestCase):
         command(None)
         self.assertEqual(2, len(command.windows))
 
-    def test_another_commands_window_opens(self):
-        # As a calendar slot's New task, made with that slot's dates
+    def test_a_new_command_for_the_same_items_is_held_back(self):
+        # The calendar makes a new Edit for each edit
         first = self.open_window(self.task)
         second = self.open_window(self.task)
         first(None)
         second(None)
-        self.assertEqual(1, len(second.windows))
+        self.assertEqual(0, len(second.windows))
+
+    def new_task_key(self, **keywords):
+        command = gui.uicommand.TaskNew(
+            taskList=task.TaskList(),
+            settings=config.Settings(load=False),
+            taskKeywords=keywords,
+        )
+        return command.same_window_key()
+
+    def test_a_new_task_for_another_calendar_slot_is_another_window(self):
+        self.assertNotEqual(
+            self.new_task_key(dueDateTime=date.DateTime(2026, 10, 2, 9)),
+            self.new_task_key(dueDateTime=date.DateTime(2026, 10, 2, 10)),
+        )
+
+    def test_a_new_task_for_the_same_slot_is_the_same_window(self):
+        self.assertEqual(
+            self.new_task_key(dueDateTime=date.DateTime(2026, 10, 2, 9)),
+            self.new_task_key(dueDateTime=date.DateTime(2026, 10, 2, 9)),
+        )
 
     def test_a_command_opening_no_window_is_not_held_back(self):
         command = Count(viewer=Selection(self.task))

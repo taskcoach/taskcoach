@@ -1920,6 +1920,13 @@ class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
             icon_id="nuvola_actions_document-new", *args, **kwargs
         )
 
+    def same_window_key(self):
+        # A calendar slot's new task is another window than the next's
+        keywords = sorted(
+            (name, repr(value)) for name, value in self.taskKeywords.items()
+        )
+        return super().same_window_key() + tuple(keywords)
+
     def do_command(self, event, show=True):  # pylint: disable=W0221
         kwargs = self.taskKeywords.copy()
         if self.__shouldPresetPlannedStartDateTime():
@@ -2002,6 +2009,10 @@ class TaskNewFromTemplate(TaskNew):
     def __read_template(self):
         with open(self.__filename, "r", encoding="utf-8") as template_file:
             return persistence.TemplateXMLReader(template_file).read()
+
+    def same_window_key(self):
+        # Another template's new task is another window
+        return super().same_window_key() + (self.__filename,)
 
     def do_command(self, event, show=True):  # pylint: disable=W0221
         # The task template is read every time because it's the

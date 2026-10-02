@@ -286,7 +286,8 @@ go at the end. Details live in the sections and documents linked.
     app: Enter held 2 s while the application was paused opened 14
     editors of one task, now one or two; Enter on two tasks within
     half a second opens both; three double-clicks on one row within a
-    second open one editor, one more 4.5 s later a second.
+    second open one editor, one more 4.5 s later a second (a second
+    editor of the same task stays, ruled); the same in the calendar.
 
 ## Deferred or Will Not Do
 
