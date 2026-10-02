@@ -1571,6 +1571,49 @@ class TaskTimelineViewerTest(test.wxTestCase):
         self.taskFile.stop()
 
 
+class DatesTiedTest(test.wxTestCase):
+    """The preference to keep the dates tied applies in Implicit mode;
+    the adjust modes decide what follows a date (P150)."""
+
+    def setUp(self):
+        super().setUp()
+        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings.set("view", "datestied", "duestart")
+        self.taskFile = persistence.TaskFile()
+        self.addCleanup(self.taskFile.stop)
+        self.addCleanup(self.taskFile.close)
+        self.start = date.DateTime(2026, 1, 30, 9, 0, 0)
+        self.task = task.Task(
+            "task",
+            plannedStartDateTime=self.start,
+            dueDateTime=self.start + date.ONE_DAY,
+            plannedDuration=date.ONE_DAY,
+        )
+        self.taskFile.tasks().append(self.task)
+        self.viewer = gui.viewer.TaskViewer(
+            self.frame, self.taskFile, self.settings
+        )
+
+    def change_due(self, mode):
+        self.task.setPlannedDurationMode(mode)
+        self.viewer.onEditDueDateTime(
+            self.task, self.start + date.ONE_DAY + date.ONE_HOUR
+        )
+
+    def test_implicit_the_start_follows(self):
+        self.change_due("implicit")
+        self.assertEqual(
+            self.start + date.ONE_HOUR, self.task.plannedStartDateTime()
+        )
+
+    def test_adjust_due_the_start_stays_and_the_duration_follows(self):
+        self.change_due("adjdue")
+        self.assertEqual(
+            (self.start, date.ONE_DAY + date.ONE_HOUR),
+            (self.task.plannedStartDateTime(), self.task.plannedDuration()),
+        )
+
+
 class TaskStatisticsViewerTest(test.wxTestCase):
     def create_viewer(self):
         task.Task.settings = settings = config.Settings(load=False)

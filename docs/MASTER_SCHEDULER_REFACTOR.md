@@ -1139,15 +1139,20 @@ each with the recommended action, none ruled yet:
   through their tooltip's debounced call (found 2026-10-02 while
   tracing P113). Harmless since P113's fix, but it grows. Not checked
   in the app.
-- P150. In the Adjust due date mode, a due date changed in the task
-  list keeps the stored duration, and changing the start in the editor
-  afterwards moves the due date to the start plus that duration,
-  dropping the list's change. Checked in the app 2026-10-02 on a
-  Welcome.tsk copy, the same on master: due set to 2026-03-04 in the
-  list, the editor shows start 2026-01-30 09:00, duration 5d 08:00 and
-  that due; the start moved a day, the due becomes 2026-02-05. The
-  Adjust start date mode mirrors it. Part of DURATION_CALCULATIONS.md
-  To Do 10 (the list's old "dates tied" setting).
+- P150. ~~In the Adjust due date mode a due date changed in the task
+  list was lost when the start then changed in the editor~~: fixed
+  2026-10-02, **asked by designer** (option A); the same on master.
+  A planned date changed outside the editor (a list cell, a calendar
+  drag) now follows the task's duration mode as in the editor: in
+  Adjust Due a new start moves the due date by the duration and a new
+  due date sets the duration; Adjust Start mirrors it; a calendar move
+  is one change of both ends. The list's "dates tied" preference
+  applies only in Implicit mode
+  ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md#stored-duration)).
+  Checked in the app on a Welcome.tsk copy: after the list's due date
+  2026-03-04 the editor shows a duration of 33d 08:00, and the start
+  moved a day takes the due date to 2026-03-05. The calendar views
+  were checked by tests only.
 
 ## Views on the Effective Styles
 

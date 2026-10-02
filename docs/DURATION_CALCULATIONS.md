@@ -41,7 +41,12 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
    which fires on checkbox toggle AND date/time edits. External
    EVT_CHECKBOX handlers and `sync.commit()` hacks removed.
    See [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) TODO item 3.
-10. **Reconcile legacy "datestied" preference with duration mode.**
+10. ~~**Reconcile legacy "datestied" preference with duration mode.**~~
+   **Done 2026-10-02 for the adjust modes** (P150, **asked by
+   designer**): a list cell follows the task's mode there and the
+   preference applies only in Implicit mode ([Stored
+   Duration](#stored-duration)). Left: whether the preference stays
+   for Implicit mode.
    The `view.datestied` setting (`preferences.py:2029`) is a legacy
    predecessor to duration mode. It has three options: nothing, "changing
    start shifts due" (`startdue`), or "changing due shifts start"
@@ -527,10 +532,18 @@ then finds its own value (4.3.1.2) and changes nothing when it opens.
 Not while undo or redo puts values back, which restore the duration
 with the dates.
 
-In the adjust modes the task does not touch it: the editor moves the
+In the adjust modes a planned date changed outside the editor (a task
+list cell, a calendar drag) follows the mode as in the editor, in the
+date command (`PlannedPeriodMixin` in `command/taskCommands.py`, P150):
+a change of the mode's input end (the start in Adjust Due, the due
+date in Adjust Start) moves the other end by the duration; a change
+of the other end sets the duration to the difference, the user's date
+kept. Both ends at once (a calendar move, given as one change) keep
+both dates and set the duration to their difference. The task itself
+does not touch the duration in these modes: the editor moves the
 other date by it (2.7, 3.7), and a duration already following the
-date would leave that date where it was. A date changed outside the
-editor in those modes keeps the stored duration (To Do 10).
+date would leave that date where it was. The editor's own changes
+run the same commands and find nothing left to change.
 
 A file whose stored duration differs (written before this, or by an
 older release) is corrected the first time the task's editor opens,

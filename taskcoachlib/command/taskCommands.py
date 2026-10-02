@@ -355,11 +355,25 @@ class EditPeriodDateTimeCommand(EditDateTimeCommand):
 
     def __init__(self, *args, **kwargs):
         self.__keep_delta = kwargs.pop("keep_delta", False)
+        # Both ends given at once (a calendar drag)
+        self.__other_value = kwargs.pop("other_value", None)
         super().__init__(*args, **kwargs)
 
     def do_command(self):
+        both_ends = {
+            id(item): self.__other_value is not None
+            or self.__shouldAdjustItem(item)
+            for item in self.items
+        }
         self.__adjust_other_date_time()
         super().do_command()
+        for item in self.items:
+            if self.__other_value is not None:
+                self.setOtherDateTime(item, self.__other_value)
+            self._follow_duration_mode(item, both_ends[id(item)])
+
+    def _follow_duration_mode(self, item, both_ends):
+        """Only the planned dates have a duration mode."""
 
     def __adjust_other_date_time(self):
         for item in self.items:
@@ -388,7 +402,30 @@ class EditPeriodDateTimeCommand(EditDateTimeCommand):
         raise NotImplementedError  # pragma: no cover
 
 
-class EditPlannedStartDateTimeCommand(EditPeriodDateTimeCommand):
+class PlannedPeriodMixin:
+    """The planned start and due follow the task's duration mode however
+    they change, as in the editor (docs/DURATION_CALCULATIONS.md, Stored
+    Duration). In an adjust mode a change of the mode's input end moves
+    the other end by the duration; any other change, or both ends at
+    once, sets the duration to their difference. Implicit mode: the task
+    keeps the duration itself."""
+
+    input_end_of = None  # The adjust mode in which this end is the input
+
+    def _follow_duration_mode(self, item, both_ends):
+        mode = item.plannedDurationMode()
+        difference = item.planned_dates_difference()
+        if mode not in ("adjdue", "adjstart") or difference is None:
+            return
+        if mode == self.input_end_of and not both_ends:
+            self.setOtherDateTime(item, self._other_end(item))
+        else:
+            item.setPlannedDuration(difference)
+
+
+class EditPlannedStartDateTimeCommand(
+    PlannedPeriodMixin, EditPeriodDateTimeCommand
+):
     plural_name = _("Change planned start date")
     singular_name = _('Change planned start date of "%s"')
 
@@ -408,8 +445,14 @@ class EditPlannedStartDateTimeCommand(EditPeriodDateTimeCommand):
     def setOtherDateTime(item, dateTime):
         item.set_due_date_time(dateTime)
 
+    input_end_of = "adjdue"
 
-class EditDueDateTimeCommand(EditPeriodDateTimeCommand):
+    @staticmethod
+    def _other_end(item):
+        return item.plannedStartDateTime() + item.plannedDuration()
+
+
+class EditDueDateTimeCommand(PlannedPeriodMixin, EditPeriodDateTimeCommand):
     plural_name = _("Change due date")
     singular_name = _('Change due date of "%s"')
 
@@ -428,6 +471,12 @@ class EditDueDateTimeCommand(EditPeriodDateTimeCommand):
     @staticmethod
     def setOtherDateTime(item, dateTime):
         item.set_planned_start_date_time(dateTime)
+
+    input_end_of = "adjstart"
+
+    @staticmethod
+    def _other_end(item):
+        return item.dueDateTime() - item.plannedDuration()
 
 
 class EditActualStartDateTimeCommand(EditPeriodDateTimeCommand):

@@ -2156,16 +2156,26 @@ class TaskViewer(
         ]
 
     def onEditPlannedStartDateTime(self, item, newValue):
-        keep_delta = self.settings.get("view", "datestied") == "startdue"
         command.EditPlannedStartDateTimeCommand(
-            items=[item], newValue=newValue, keep_delta=keep_delta
+            items=[item],
+            newValue=newValue,
+            keep_delta=self.__dates_tied(item, "startdue"),
         ).do()
 
     def onEditDueDateTime(self, item, newValue):
-        keep_delta = self.settings.get("view", "datestied") == "duestart"
         command.EditDueDateTimeCommand(
-            items=[item], newValue=newValue, keep_delta=keep_delta
+            items=[item],
+            newValue=newValue,
+            keep_delta=self.__dates_tied(item, "duestart"),
         ).do()
+
+    def __dates_tied(self, item, tie):
+        # The adjust modes decide what follows a date
+        # (docs/DURATION_CALCULATIONS.md, Stored Duration)
+        return (
+            self.settings.get("view", "datestied") == tie
+            and item.plannedDurationMode() == "implicit"
+        )
 
     def onEditActualStartDateTime(self, item, newValue):
         command.EditActualStartDateTimeCommand(

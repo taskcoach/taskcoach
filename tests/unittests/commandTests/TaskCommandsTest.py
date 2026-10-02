@@ -903,6 +903,106 @@ class AddNoteCommandTest(TaskCommandTestCase):
         )
 
 
+class PlannedDatesFollowTheModeTest(TaskCommandTestCase):
+    """A planned date changed outside the editor follows the task's
+    duration mode, as in the editor (P150)."""
+
+    def setUp(self):
+        super().setUp()
+        self.start = date.DateTime(2026, 1, 30, 9, 0, 0)
+        self.due = self.start + date.ONE_DAY
+        self.task1.set_planned_start_date_time(self.start)
+        self.task1.set_due_date_time(self.due)
+
+    def set_mode(self, mode):
+        self.task1.setPlannedDurationMode(mode)
+        self.task1.setPlannedDuration(date.ONE_DAY)
+
+    def assert_period(self, start, due, duration):
+        self.assertEqual(
+            (start, due, duration),
+            (
+                self.task1.plannedStartDateTime(),
+                self.task1.dueDateTime(),
+                self.task1.plannedDuration(),
+            ),
+        )
+
+    def assert_do_undo_redo(self, *period):
+        self.assertDoUndoRedo(
+            lambda: self.assert_period(*period),
+            lambda: self.assert_period(self.start, self.due, date.ONE_DAY),
+        )
+
+    def test_adjust_due_a_new_start_moves_the_due_date(self):
+        self.set_mode("adjdue")
+        new_start = self.start + date.ONE_HOUR
+        self.editPlannedStart(new_start, [self.task1])
+        self.assert_do_undo_redo(
+            new_start, new_start + date.ONE_DAY, date.ONE_DAY
+        )
+
+    def test_adjust_due_a_new_due_date_sets_the_duration(self):
+        self.set_mode("adjdue")
+        new_due = self.due + date.ONE_DAY
+        self.editDue(new_due, [self.task1])
+        self.assert_do_undo_redo(self.start, new_due, date.TimeDelta(days=2))
+
+    def test_adjust_start_a_new_due_date_moves_the_start(self):
+        self.set_mode("adjstart")
+        new_due = self.due + date.ONE_HOUR
+        self.editDue(new_due, [self.task1])
+        self.assert_do_undo_redo(new_due - date.ONE_DAY, new_due, date.ONE_DAY)
+
+    def test_adjust_start_a_new_start_sets_the_duration(self):
+        self.set_mode("adjstart")
+        new_start = self.start - date.ONE_DAY
+        self.editPlannedStart(new_start, [self.task1])
+        self.assert_do_undo_redo(new_start, self.due, date.TimeDelta(days=2))
+
+    def test_a_move_keeps_the_duration_in_every_mode(self):
+        for mode in ("implicit", "adjdue", "adjstart"):
+            self.set_mode(mode)
+            self.editPlannedStart(
+                self.start + date.ONE_HOUR, [self.task1], keep_delta=True
+            )
+            self.assert_period(
+                self.start + date.ONE_HOUR,
+                self.due + date.ONE_HOUR,
+                date.ONE_DAY,
+            )
+            self.editPlannedStart(self.start, [self.task1], keep_delta=True)
+
+    def test_both_ends_given_set_the_duration(self):
+        self.set_mode("adjstart")
+        command.EditPlannedStartDateTimeCommand(
+            self.taskList,
+            [self.task1],
+            newValue=self.start + date.ONE_HOUR,
+            other_value=self.due + date.TWO_HOURS,
+        ).do()
+        self.assert_period(
+            self.start + date.ONE_HOUR,
+            self.due + date.TWO_HOURS,
+            date.ONE_DAY + date.ONE_HOUR,
+        )
+
+    def test_without_the_other_date_nothing_else_changes(self):
+        self.set_mode("adjdue")
+        self.task1.set_due_date_time(None)
+        self.editPlannedStart(self.start + date.ONE_HOUR, [self.task1])
+        self.assert_period(
+            self.start + date.ONE_HOUR, date.DateTime(), date.ONE_DAY
+        )
+
+    def test_implicit_the_other_date_stays(self):
+        self.set_mode("implicit")
+        self.editPlannedStart(self.start + date.ONE_HOUR, [self.task1])
+        self.assert_period(
+            self.start + date.ONE_HOUR, self.due, date.TimeDelta(hours=23)
+        )
+
+
 class EditDuePlannedStartDateCommandTest(TaskCommandTestCase):
     def testSetPlannedStartDateToTomorrow(self):
         previousStart = self.task1.plannedStartDateTime()

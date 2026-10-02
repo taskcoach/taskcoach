@@ -82,11 +82,14 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         start = date.DateTime.fromDateTime(event.start)
         end = date.DateTime.fromDateTime(event.end)
 
+        # One end, or both at once: each follows the task's duration
+        # mode (docs/DURATION_CALCULATIONS.md, Stored Duration)
         if task.plannedStartDateTime() != start:
+            other = {} if task.dueDateTime() == end else {"other_value": end}
             command.EditPlannedStartDateTimeCommand(
-                items=[task], newValue=start
+                items=[task], newValue=start, **other
             ).do()
-        if task.dueDateTime() != end:
+        elif task.dueDateTime() != end:
             command.EditDueDateTimeCommand(items=[task], newValue=end).do()
 
     def _OnLeftDClick(self, event):

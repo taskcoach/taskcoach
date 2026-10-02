@@ -1086,18 +1086,22 @@ class Task(
         the editor's date fields hold them
         (docs/DURATION_CALCULATIONS.md, Stored Duration)."""
         if is_restoring() or self.plannedDurationMode() != "implicit":
-            return  # The adjust modes move a date by the duration
+            return  # The adjust modes: the date commands follow them
+        difference = self.planned_dates_difference()
+        if difference is not None:
+            self.setPlannedDuration(difference, event=event)
+
+    def planned_dates_difference(self):
+        """Due minus planned start in whole minutes, as the editor's
+        date fields hold them; None without both dates."""
         start = self.__plannedStartDateTime.get()
         due = self.__dueDateTime.get()
         if self.maxDateTime in (start, due):
-            return
+            return None
         delta = due.replace(second=0, microsecond=0) - start.replace(
             second=0, microsecond=0
         )
-        self.setPlannedDuration(
-            date.TimeDelta(days=delta.days, seconds=delta.seconds),
-            event=event,
-        )
+        return date.TimeDelta(days=delta.days, seconds=delta.seconds)
 
     # Styles by status: the effective styles' last source
     # (docs/TASK_STATUS.md, Appearance Inheritance Overview)

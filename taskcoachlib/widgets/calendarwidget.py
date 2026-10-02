@@ -490,11 +490,17 @@ class TaskSchedule(wxSchedule):
             ).do()
 
     def Offset(self, ts):
-        if self.task.plannedStartDateTime() != date.DateTime():
+        has_start = self.task.plannedStartDateTime() != date.DateTime()
+        if has_start:
             start = self.GetStart()
             start.Add(ts)
+            # A move takes the due date along at once, which the task's
+            # duration mode then keeps (docs/DURATION_CALCULATIONS.md,
+            # Stored Duration); a completed task's end is its completion
             command.EditPlannedStartDateTimeCommand(
-                items=[self.task], newValue=self.tcDateTime(start)
+                items=[self.task],
+                newValue=self.tcDateTime(start),
+                keep_delta=not self.task.completed(),
             ).do()
         if self.task.completed():
             end = self.GetEnd()
@@ -502,7 +508,7 @@ class TaskSchedule(wxSchedule):
             command.EditCompletionDateTimeCommand(
                 items=[self.task], newValue=self.tcDateTime(end)
             ).do()
-        elif self.task.dueDateTime() != date.DateTime():
+        elif not has_start and self.task.dueDateTime() != date.DateTime():
             end = self.GetEnd()
             end.Add(ts)
             command.EditDueDateTimeCommand(
