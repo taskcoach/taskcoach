@@ -740,9 +740,10 @@ each with the recommended action, none ruled yet:
   its demo for an option with longer, worded durations if one is ever
   asked for. Its doc section and docstring say so
   ([DATETIME_CONTROLS.md](DATETIME_CONTROLS.md#durationctrlverbose)).
-- P67. `[version] python`, `wxpython`, `pythonfrozen`, `current`:
-  written to the INI on every save, never read. Keep as diagnostics or
-  drop?
+- P67. ~~`[version] python`, `wxpython`, `pythonfrozen`, `current`:
+  written on every save, never read~~: kept 2026-10-02, **ruled by
+  designer**: they tell whoever reads a settings file a user sent which
+  build wrote it ([SETTINGS.md](SETTINGS.md#persistence)).
 - P68. ~~`six`~~: removed 2026-10-01: its last use went with the
   bundled tree widget (P118); no package or setup script declares it
   now, and the startup report no longer lists it.

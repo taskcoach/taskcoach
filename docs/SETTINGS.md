@@ -166,6 +166,15 @@ After step 2, ConfigParser contains both the original template sections
 (possibly overwritten by INI values from instance 0) and all viewer
 instance sections saved from the previous session.
 
+Each save also writes `[version] python`, `wxpython`, `pythonfrozen`
+and `current`: the Python, wxPython and Task Coach that wrote the file,
+and whether Task Coach ran frozen (an installer build). Nothing reads
+them; they tell whoever reads a settings file a user sent which build
+wrote it. Kept, **ruled by designer 2026-10-02** (P67 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+`[version] notify` and `notified` are the update check's
+([PACKAGING.md](PACKAGING.md)).
+
 ---
 
 ## Current State
