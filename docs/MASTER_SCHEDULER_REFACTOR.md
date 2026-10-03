@@ -328,9 +328,14 @@ go at the end. Details live in the sections and documents linked.
     numpy 2.4, a crash on processors without SSE4.2. Options: keep it,
     or the same operations on `bytes` (Python's own C loops, such as
     `bytes(map(max, a, b))`) or `wx.Image`'s calls. **The designer's
-    concern 2026-10-02**: speed with many icons. To analyse first:
-    which icons go through it and when (start, icon picker, each
-    paint), timed both ways in the app.
+    concern 2026-10-02**: speed with many icons. Analysed 2026-10-02:
+    only the six status filter buttons' icons go through it (Hide
+    inactive, late, active, due soon, overdue and completed tasks, in
+    the views' toolbars and the Customise toolbar dialog, 16 px), each
+    composed once per size and kept. Timed in the app both ways,
+    median of 20 on the loaded machine: numpy 1.3 to 1.8 ms an icon,
+    the same on `bytes` 1.05 to 1.4 ms, the same pixels; numpy's probe
+    costs 0.4 to 0.6 s at every start. Replace?
 77. `dbus-python` to Gio (was P83). Three calls: the startup report's
     tray check (is `org.kde.StatusNotifierWatcher` on the session
     bus?) and two Idle time notice methods (GNOME's
@@ -347,8 +352,10 @@ go at the end. Details live in the sections and documents linked.
     among the running processes. `pywin32`, shipped in the Windows
     build, makes the same query
     (`win32com.client.GetObject("winmgmts:")`). Risk: Windows only, not
-    runnable here, and CI runs no tests (P85); checked against WMI's
-    own code or on a Windows machine.
+    runnable here, and CI runs no tests (P85). Checked against WMI
+    1.5.1's code: `wmi.WMI()` is `GetObject("winmgmts:")` and its
+    `Win32_Process()` runs `SELECT ... FROM Win32_Process`, the query
+    `GetObject("winmgmts:").ExecQuery(...)` makes directly. Replace?
 79. `watchdog` (was P81): watches the open task file, so a change by
     another program (a second Task Coach, a sync tool) is merged at
     once. The poller in the code (`filesystem/fs_poller.py`, every
@@ -372,7 +379,9 @@ go at the end. Details live in the sections and documents linked.
     view, optional; packaged by Debian and Ubuntu, not by Fedora or
     Arch (pip in their builds); last release 1.0.5. Options: keep the
     dependency, or copy it into `thirdparty/` and the view is always
-    there.
+    there. Recommended: keep; every build already installs or bundles
+    it ([PACKAGING.md](PACKAGING.md)), and a copy is 629 lines of
+    drawing code to maintain. Keep?
 
 ## Deferred or Will Not Do
 
