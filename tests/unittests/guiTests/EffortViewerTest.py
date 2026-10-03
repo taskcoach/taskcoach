@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import gui, config, patterns, persistence, render
+from taskcoachlib import gui, patterns, persistence, render
 from taskcoachlib.domain import category, task, effort, date
+from taskcoachlib.config import settings
 from unittests import dummy
 import test
 import wx
@@ -34,7 +35,6 @@ class EffortViewerUnderTest(gui.viewer.EffortViewer):  # pylint: disable=W0223
 class EffortViewerForSpecificTasksTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.task1 = task.Task("Task 1")
         self.task2 = task.Task("Task 2")
@@ -89,7 +89,6 @@ class EffortViewerForSpecificTasksTest(test.wxTestCase):
 class EffortViewerStatusMessageTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.task = task.Task()
         self.taskFile.tasks().append(self.task)
@@ -178,7 +177,6 @@ class EffortViewerStatusMessageTest(test.wxTestCase):
 class EffortViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.task = task.Task("task")
         self.taskFile.tasks().append(self.task)
@@ -287,8 +285,7 @@ class EffortViewerAggregationTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
-        self.settings.set("effortviewer", "aggregation", self.aggregation)
+        settings.set("effortviewer", "aggregation", self.aggregation)
 
         self.taskFile = persistence.TaskFile()
         self.viewer = self.createViewer()
@@ -346,13 +343,10 @@ class EffortViewerAggregationRoundingTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
-        self.settings.set("effortviewer", "aggregation", self.aggregation)
-        self.settings.setint("effortviewer", "round", self.roundingValue)
-        self.settings.setboolean(
-            "effortviewer", "alwaysroundup", self.alwaysRoundUp
-        )
-        self.settings.setboolean(
+        settings.set("effortviewer", "aggregation", self.aggregation)
+        settings.set("effortviewer", "round", self.roundingValue)
+        settings.set("effortviewer", "alwaysroundup", self.alwaysRoundUp)
+        settings.set(
             "effortviewer",
             "consolidateeffortspertask",
             self.consolidateEffortsPerTask,
@@ -597,7 +591,7 @@ class CommonTestsMixin(object):
     def testAggregationIsSavedInSettings(self):
         self.assertEqual(
             self.aggregation,
-            self.settings.get(self.viewer.settingsSection(), "aggregation"),
+            settings.get(self.viewer.settingsSection(), "aggregation"),
         )
 
     def testToolbarChoiceCtrlShowsAggegrationMode(self):
@@ -786,8 +780,7 @@ class EffortViewerRenderTestMixin(object):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
-        self.settings.set("effortviewer", "aggregation", self.aggregation)
+        settings.set("effortviewer", "aggregation", self.aggregation)
 
         self.taskFile = persistence.TaskFile()
         self.task = task.Task("task")

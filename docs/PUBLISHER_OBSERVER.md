@@ -206,7 +206,7 @@ Menu Radio Option ── do_command(event) ────────────�
                                                      │
                                     ┌────────────────┼────────────────┐
                                     ▼                ▼                ▼
-                            settings.setboolean  presentation    patterns.Event
+                          options.treemode = v  presentation    patterns.Event
                             (persistence only)   .set_tree_mode()   .send()
                                                                      │
                                               ┌──────────────────────┤
@@ -247,8 +247,8 @@ Menu Radio Option ── do_command(event) ────────────�
    tracks all registered observers. When the viewer is destroyed,
    `removeInstance()` unregisters them. No manual unsubscribe needed.
 
-6. **Settings write.** `settings.setboolean()` sends the settings
-   event `taskviewer.treemode`, the settings as source
+6. **Settings write.** `self.options.treemode = value` sends the
+   settings event `taskviewer.treemode`, the settings as source
    ([Settings Events](#settings-events)); the toggle's subscribers listen
    to the viewer's own event instead.
 
@@ -451,7 +451,7 @@ two types: `"<section>.<option>"` with the new text as value, and
 `Settings.section_changed_event_type(section)` (`"settings.<section>"`)
 with the option's name as value, for listeners of a whole section (the
 appearance sections, whose options are the statuses). Listeners read
-typed values from the settings (`getint()`, `getboolean()`), not from
+typed values from the settings (`settings.view.statusbar`), not from
 the event. `Settings.send_changed()` sends the same event without a
 change: the main window uses it when the system theme changes while
 the theme follows it. The settings act on their own change of the ini

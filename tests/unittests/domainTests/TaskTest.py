@@ -18,9 +18,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import ast
-from taskcoachlib import patterns, config
+from taskcoachlib import patterns
 from taskcoachlib.domain import task, effort, date, attachment, note, category
+from taskcoachlib.config import settings
 from unittests import asserts
 import test
 import wx
@@ -52,12 +52,7 @@ class TaskTestCase(test.TestCase):
             effortLabel = "%seffort%d" % (taskLabel, effortIndex + 1)
             setattr(self, effortLabel, eachEffort)
 
-    def setUp(self, settings=None):
-        self.settings = config.settings.current()
-        if settings is not None:
-            for section, name, value in settings:
-                # XXXTODO: other types ? Not needed right now
-                self.settings.setint(section, name, value)
+    def setUp(self):
         self.yesterday = date.Yesterday()
         self.tomorrow = date.Tomorrow()
         self.tasks = self.createTasks()
@@ -365,7 +360,7 @@ class DefaultTaskStateTest(
         )
 
     def testIconChangedAfterTaskHasBecomeDueSoon(self):
-        self.settings.setint("behavior", "duesoonhours", 1)
+        settings.set("behavior", "duesoonhours", 1)
         self.task.set_due_date_time(self.tomorrow)
         now = self.tomorrow + date.ONE_SECOND - date.ONE_HOUR
         self.addCleanup(setattr, date, "Now", date.Now)
@@ -380,7 +375,7 @@ class DefaultTaskStateTest(
         self,
     ):
         self.task.set_due_date_time(self.tomorrow)
-        self.settings.setint("behavior", "duesoonhours", 1)
+        settings.set("behavior", "duesoonhours", 1)
         now = self.tomorrow + date.ONE_SECOND - date.ONE_HOUR
         self.addCleanup(setattr, date, "Now", date.Now)
         date.Now = lambda: now
@@ -571,7 +566,7 @@ class DefaultTaskStateTest(
         self.assertEqual(child, self.events[0].value())
 
     def testAddCompletedChildAsOnlyChildMakesParentCompleted(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         child = task.Task(completionDateTime=self.yesterday)
@@ -922,7 +917,7 @@ class TimerSecondsTest(TaskTestCase):
 
     def setUp(self):
         super().setUp()
-        self.hours = self.settings.getint("behavior", "duesoonhours")
+        self.hours = settings.get("behavior", "duesoonhours")
 
     def status_at(self, moment):
         self.task.compute_stored_status(moment)
@@ -1029,11 +1024,9 @@ class TaskDueTodayTest(TaskTestCase, CommonTaskTestsMixin):
         )
 
     def testDefaultDueSoonColor(self):
-        expectedColor = wx.Colour(
-            *ast.literal_eval(self.settings.get("fgcolor", "duesoontasks"))
-        )
+        expected_color = wx.Colour(*settings.get("fgcolor", "duesoontasks"))
         self.assertEqual(
-            expectedColor, test.styled(self.task).shown_fg_color()
+            expected_color, test.styled(self.task).shown_fg_color()
         )
 
     def testColorWhenTaskHasOwnColor(self):
@@ -1048,7 +1041,7 @@ class TaskDueTodayTest(TaskTestCase, CommonTaskTestsMixin):
         )
 
     def testIconAfterChangingDueSoonHours(self):
-        self.settings.setint("behavior", "duesoonhours", 0)
+        settings.set("behavior", "duesoonhours", 0)
         self.assertEqual(
             task.inactive.icon_id(),
             test.styled(self.task).shown_icon_id(),
@@ -1057,7 +1050,7 @@ class TaskDueTodayTest(TaskTestCase, CommonTaskTestsMixin):
     def test_icon_event_after_changing_due_soon_hours(self):
         test.styled(self.task)
         self.registerObserver(self.task.effectiveIconChangedEventType())
-        self.settings.setint("behavior", "duesoonhours", 0)
+        settings.set("behavior", "duesoonhours", 0)
         test.styled(self.task)
         self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
@@ -1099,7 +1092,7 @@ class TaskDueTomorrowTest(TaskTestCase, CommonTaskTestsMixin):
         self.assertFalse(self.task.dueSoon())
 
     def testDueSoon_2days(self):
-        self.settings.setint("behavior", "duesoonhours", 48)
+        settings.set("behavior", "duesoonhours", 48)
         self.assertTrue(self.task.dueSoon())
 
     def testIconNotDueSoon(self):
@@ -1109,7 +1102,7 @@ class TaskDueTomorrowTest(TaskTestCase, CommonTaskTestsMixin):
         )
 
     def testIconDueSoon(self):
-        self.settings.setint("behavior", "duesoonhours", 48)
+        settings.set("behavior", "duesoonhours", 48)
         self.assertEqual(
             task.duesoon.icon_id(),
             test.styled(self.task).shown_icon_id(),
@@ -1118,7 +1111,7 @@ class TaskDueTomorrowTest(TaskTestCase, CommonTaskTestsMixin):
     def test_icon_event_after_changing_due_soon_hours(self):
         test.styled(self.task)
         self.registerObserver(self.task.effectiveIconChangedEventType())
-        self.settings.setint("behavior", "duesoonhours", 48)
+        settings.set("behavior", "duesoonhours", 48)
         test.styled(self.task)
         self.assertEvent(self.task.effectiveIconChangedEventType(), self.task)
 
@@ -1141,11 +1134,9 @@ class OverdueTaskTest(TaskTestCase, CommonTaskTestsMixin):
         )
 
     def testDefaultOverdueColor(self):
-        expectedColor = wx.Colour(
-            *ast.literal_eval(self.settings.get("fgcolor", "overduetasks"))
-        )
+        expected_color = wx.Colour(*settings.get("fgcolor", "overduetasks"))
         self.assertEqual(
-            expectedColor, test.styled(self.task).shown_fg_color()
+            expected_color, test.styled(self.task).shown_fg_color()
         )
 
     def testColorWhenTaskHasOwnColor(self):
@@ -1222,11 +1213,9 @@ class CompletedTaskTest(TaskTestCase, CommonTaskTestsMixin):
         self.assertEqual([(0, self.task)], self.changes)
 
     def testDefaultCompletedColor(self):
-        expectedColor = wx.Colour(
-            *ast.literal_eval(self.settings.get("fgcolor", "completedtasks"))
-        )
+        expected_color = wx.Colour(*settings.get("fgcolor", "completedtasks"))
         self.assertEqual(
-            expectedColor, test.styled(self.task).shown_fg_color()
+            expected_color, test.styled(self.task).shown_fg_color()
         )
 
     def testColorWhenTaskHasOwnColor(self):
@@ -1306,11 +1295,9 @@ class TaskWithPlannedStartDateInTheFutureTest(
         self.assertTrue(self.task.active())
 
     def testDefaultInactiveColor(self):
-        expectedColor = wx.Colour(
-            *ast.literal_eval(self.settings.get("fgcolor", "inactivetasks"))
-        )
+        expected_color = wx.Colour(*settings.get("fgcolor", "inactivetasks"))
         self.assertEqual(
-            expectedColor, test.styled(self.task).shown_fg_color()
+            expected_color, test.styled(self.task).shown_fg_color()
         )
 
     def testColorWhenTaskHasOwnColor(self):
@@ -1814,7 +1801,7 @@ class TaskWithChildTest(
         )
 
     def testRecursiveCompletionDateTime(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.task1_1.set_completion_date_time(self.tomorrow)
@@ -2120,7 +2107,7 @@ class TaskWithChildTest(
         self.assertEqual(0, self.task.percentageComplete(recursive=True))
 
     def testPercentageCompletedWhenChildIs50ProcentComplete(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.task1_1.setPercentageComplete(50)
@@ -2136,7 +2123,7 @@ class TaskWithChildTest(
     def testPercentageCompletedWhenChildIs50ProcentCompleteAndGlobalMarkCompletedWhenChildrenAreCompletedIsTurnedOff(
         self,
     ):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", False
         )
         self.task1_1.setPercentageComplete(50)
@@ -2145,7 +2132,7 @@ class TaskWithChildTest(
     def test_percentage_completed_notification_when_child_percentage_changes(
         self,
     ):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.record_changes(task.Task.percentageCompleteChangedEventType())
@@ -2157,12 +2144,12 @@ class TaskWithChildTest(
     def test_percentage_notification_on_mark_completed_setting_change(
         self,
     ):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.task1_1.setPercentageComplete(50)
         self.record_changes(task.Task.percentageCompleteChangedEventType())
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", False
         )
         self.assertEqual([(0, self.task)], self.changes)
@@ -2277,7 +2264,7 @@ class TaskWithTwoChildrenTest(
         self.assertTrue(self.task.completed())
 
     def testPercentageCompletedWhenOneChildIs50ProcentComplete(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.task1_1.setPercentageComplete(50)
@@ -2293,7 +2280,7 @@ class TaskWithTwoChildrenTest(
         )
 
     def testPercentageCompletedWhenOneChildIsComplete(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.task1_1.setPercentageComplete(100)
@@ -3052,7 +3039,6 @@ class TaskWithCategoryTestCase(TaskTestCase):
 class TaskColorTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.yesterday = date.Yesterday()
         self.tomorrow = date.Tomorrow()
 
@@ -3079,9 +3065,7 @@ class TaskColorTest(test.TestCase):
     def testActive(self):
         active = task.Task(actualStartDateTime=date.Now())
         self.assertEqual(
-            wx.Colour(
-                *ast.literal_eval(self.settings.get("fgcolor", "activetasks"))
-            ),
+            wx.Colour(*settings.get("fgcolor", "activetasks")),
             active.statusFgColor(),
         )
 
@@ -3192,7 +3176,6 @@ class TaskWithDependency(TaskTestCase):
 class TaskSuggestedDateTimeBaseSetupAndTests(object):
     def setUp(self):
         # pylint: disable=W0142
-        self.settings = config.settings.current()
         self.changeSettings()
         self.now = now = date.Now()
         tomorrow = now + date.ONE_DAY
@@ -3208,20 +3191,20 @@ class TaskSuggestedDateTimeBaseSetupAndTests(object):
             .startOfWorkWeek()
             .replace(**currentTimeKwArgs)
         )
-        startOfWorkingDayHour = self.settings.getint("view", "efforthourstart")
+        start_of_working_day_hour = settings.get("view", "efforthourstart")
         startOfWorkingDayKwArgs = dict(
-            hour=startOfWorkingDayHour, minute=0, second=0
+            hour=start_of_working_day_hour, minute=0, second=0
         )
-        endOfWorkingDayHour = self.settings.getint("view", "efforthourend")
-        if endOfWorkingDayHour == 24:
-            endOfWorkingDayHour = 23
+        end_of_working_day_hour = settings.get("view", "efforthourend")
+        if end_of_working_day_hour == 24:
+            end_of_working_day_hour = 23
             minute = 59
             second = 59
         else:
             minute = 0
             second = 0
         endOfWorkingDayKwArgs = dict(
-            hour=endOfWorkingDayHour,
+            hour=end_of_working_day_hour,
             minute=minute,
             second=second,
         )
@@ -3277,7 +3260,7 @@ class TaskSuggestedDateTimeBaseSetupAndTests(object):
 
     def testSuggestedPlannedStartDateTime(self):
         for timeValue, expectedDateTime in list(self.times.items()):
-            self.settings.set(
+            settings.set(
                 "view", "defaultplannedstartdatetime", "preset_" + timeValue
             )
             self.assertEqual(
@@ -3287,7 +3270,7 @@ class TaskSuggestedDateTimeBaseSetupAndTests(object):
 
     def testSuggestedActualStartDateTime(self):
         for timeValue, expectedDateTime in list(self.times.items()):
-            self.settings.set(
+            settings.set(
                 "view", "defaultactualstartdatetime", "preset_" + timeValue
             )
             self.assertEqual(
@@ -3297,9 +3280,7 @@ class TaskSuggestedDateTimeBaseSetupAndTests(object):
 
     def testSuggestedDueDateTime(self):
         for timeValue, expectedDateTime in list(self.times.items()):
-            self.settings.set(
-                "view", "defaultduedatetime", "propose_" + timeValue
-            )
+            settings.set("view", "defaultduedatetime", "propose_" + timeValue)
             self.assertEqual(
                 expectedDateTime,
                 task.Task.suggestedDueDateTime(lambda: self.now),
@@ -3307,7 +3288,7 @@ class TaskSuggestedDateTimeBaseSetupAndTests(object):
 
     def testSuggestedCompletionDateTime(self):
         for timeValue, expectedDateTime in list(self.times.items()):
-            self.settings.set(
+            settings.set(
                 "view", "defaultcompletiondatetime", "propose_" + timeValue
             )
             self.assertEqual(
@@ -3324,7 +3305,7 @@ class TaskSuggestedDateTimeBaseSetupAndTests(object):
 
     def testSuggestedReminderDateTime(self):
         for timeValue, expectedDateTime in list(self.times.items()):
-            self.settings.set(
+            settings.set(
                 "view", "defaultreminderdatetime", "propose_" + timeValue
             )
             self.assertEqual(
@@ -3343,8 +3324,8 @@ class TaskSuggestedDateTimeTestWithStartAndEndOfWorkingDayEqualToDay(
     TaskSuggestedDateTimeBaseSetupAndTests, test.TestCase
 ):
     def changeSettings(self):
-        self.settings.setint("view", "efforthourstart", 0)
-        self.settings.setint("view", "efforthourend", 24)
+        settings.set("view", "efforthourstart", 0)
+        settings.set("view", "efforthourend", 24)
 
 
 class TaskConstructionTest(test.TestCase):

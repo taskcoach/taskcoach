@@ -332,13 +332,13 @@ the same per-instance pattern used for
 ```
 Toolbar Dropdown / Menu Radio
     └── viewer.set_tree_mode(value)  (task.py)
-        ├── settings.setboolean(...)          ← persistence
+        ├── self.options.treemode = value     ← persistence
         ├── presentation().set_tree_mode(value) ← data layer
         └── patterns.Event(view_settings_changed_event_type, self).send()
             ├── _ViewSettingsSync._on_view_settings_changed(event)
             │   └── toolbar.EnableTool(id, command.enabled(None))
             └── TaskViewerTreeOrListChoice._on_view_settings_changed(event)
-                └── set_choice(settings.getboolean(..., "treemode"))
+                └── set_choice(<the view's section>.treemode)
 ```
 
 ### Design
@@ -412,7 +412,7 @@ on_presentation_changed (base.py)
 **Mode switch (list <-> tree)** - fires sort event, NOT add/remove:
 ```
 viewer.set_tree_mode(value) (task.py)
-  -> settings.setboolean(...)                (persistence)
+  -> self.options.treemode = value          (persistence)
   -> presentation().set_tree_mode(value)
     -> Sorter.reset() -> fires sort_event_type (NOT add/remove)
       -> on_sort_order_changed (mixin.py) -> refresh()

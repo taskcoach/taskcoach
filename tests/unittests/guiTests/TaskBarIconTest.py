@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import meta, config, gui, operating_system, patterns
+from taskcoachlib import meta, gui, operating_system, patterns
 from taskcoachlib.domain import task, effort, date
+from taskcoachlib.config import settings
 import test
 
 
@@ -49,7 +50,6 @@ class MainWindowMock(object):
 class TaskBarIconTestCase(test.TestCase):
     def setUp(self):
         self.taskList = task.TaskList()
-        self.settings = config.settings.current()
         self.window = MainWindowMock()
         self.icon = gui.taskbaricon.TaskBarIcon(self.window, self.taskList)
 
@@ -103,7 +103,7 @@ class TaskBarIconTooltipTest(TaskBarIconTooltipTestCase):
 
     def testOneTaskNoLongerDueSoonAfterChangingDueSoonSetting(self):
         self.taskList.append(task.Task(dueDateTime=date.Now() + date.ONE_HOUR))
-        self.settings.setint("behavior", "duesoonhours", 0)
+        settings.set("behavior", "duesoonhours", 0)
         self.assertTooltip("")
 
     def testTwoTasksDueSoon(self):

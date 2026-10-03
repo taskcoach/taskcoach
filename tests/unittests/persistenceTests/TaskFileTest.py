@@ -23,7 +23,7 @@ import stat
 import tempfile
 import wx
 import test
-from taskcoachlib import command, config, patterns, persistence
+from taskcoachlib import command, patterns, persistence
 from taskcoachlib.domain import (
     base,
     task,
@@ -33,6 +33,7 @@ from taskcoachlib.domain import (
     note,
     attachment,
 )
+from taskcoachlib.config import settings
 
 
 class FakeAttachment(base.Object):
@@ -55,7 +56,6 @@ class FakeAttachment(base.Object):
 
 class TaskFileTestCase(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.createTaskFiles()
         self.task = task.Task(subject="task")
         self.taskFile.tasks().append(self.task)
@@ -1211,7 +1211,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         )
 
     def test_merging_subtasks_completes_no_parent(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         parent = self.their_copy(

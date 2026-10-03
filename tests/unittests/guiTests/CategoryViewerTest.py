@@ -17,14 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import gui, persistence
 from taskcoachlib.domain import category
+from taskcoachlib.config import settings
 
 
 class CategoryViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.categories = self.taskFile.categories()
         self.viewer = gui.viewer.CategoryViewer(self.frame, self.taskFile)
@@ -87,12 +87,8 @@ class CategoryViewerTest(test.wxTestCase):
 
     def testFilterOnAllCheckedCategoriesSetsSetting(self):
         self.viewer.filterUICommand.doChoice(True)
-        self.assertTrue(
-            self.settings.getboolean("view", "categoryfiltermatchall")
-        )
+        self.assertTrue(settings.get("view", "categoryfiltermatchall"))
 
     def testFilterOnAnyCheckedCategoriesSetsSetting(self):
         self.viewer.filterUICommand.doChoice(False)
-        self.assertFalse(
-            self.settings.getboolean("view", "categoryfiltermatchall")
-        )
+        self.assertFalse(settings.get("view", "categoryfiltermatchall"))

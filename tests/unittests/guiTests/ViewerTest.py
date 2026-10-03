@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import ast
 import test
 from taskcoachlib import gui, config, widgets, patterns, persistence
 from taskcoachlib.config import settings
@@ -39,7 +38,6 @@ class Window(AuiManagedFrameWithDynamicCenterPane):
 class ViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.task = task.Task("task")
         self.taskFile.tasks().append(self.task)
@@ -170,13 +168,13 @@ class ViewerTest(test.wxTestCase):
         self.viewer.set_title("New title")
         self.assertEqual(
             "New title",
-            self.settings.get(self.viewer.settingsSection(), "title"),
+            settings.get(self.viewer.settingsSection(), "title"),
         )
 
     def testSetTitleDoesNotSaveTitleInSettingsWhenTitleIsDefaultTitle(self):
         self.viewer.set_title(self.viewer.defaultTitle)
         self.assertEqual(
-            "", self.settings.get(self.viewer.settingsSection(), "title")
+            "", settings.get(self.viewer.settingsSection(), "title")
         )
 
     def testSetTitleChangesTabTitle(self):
@@ -201,7 +199,6 @@ class ViewerTest(test.wxTestCase):
 
 class SortableViewerTest(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.viewer = self.createViewer()
 
     def createViewer(self):
@@ -220,9 +217,7 @@ class SortableViewerTest(test.TestCase):
         self.viewer.sortBy("subject")
         self.assertEqual(
             "subject",
-            ast.literal_eval(
-                self.settings.get(self.viewer.settingsSection(), "sortby")
-            )[0],
+            settings.get(self.viewer.settingsSection(), "sortby")[0],
         )
 
     def testSortByTwiceFlipsSortOrder(self):
@@ -252,9 +247,7 @@ class SortableViewerTest(test.TestCase):
         self.assertFalse(self.viewer.isSortCaseSensitive())
 
     def testApplySettingsWhenCreatingViewer(self):
-        self.settings.set(
-            self.viewer.settingsSection(), "sortby", '["description"]'
-        )
+        settings.set(self.viewer.settingsSection(), "sortby", ["description"])
         anotherViewer = self.createViewer()
         anotherViewer.presentation().extend(
             [task.Task(description="B"), task.Task(description="A")]
@@ -266,7 +259,6 @@ class SortableViewerTest(test.TestCase):
 
 class SortableViewerForTasksTest(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
 
         class ViewerUnderTest(gui.viewer.mixin.SortableViewerForTasksMixin):
             pass
@@ -301,7 +293,6 @@ class SearchableViewerUnderTest(
 
 class SearchableViewerTest(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.viewer = self.createViewer()
 
     def createViewer(self):
@@ -325,9 +316,7 @@ class SearchableViewerTest(test.TestCase):
         self.viewer.setSearchFilter("bla", matchCase=True)
         self.assertEqual(
             "bla",
-            self.settings.get(
-                self.viewer.settingsSection(), "searchfilterstring"
-            ),
+            settings.get(self.viewer.settingsSection(), "searchfilterstring"),
         )
 
     def testSetSearchFilterString_AffectsPresentation(self):
@@ -339,7 +328,7 @@ class SearchableViewerTest(test.TestCase):
         self.viewer.setSearchFilter("bla", matchCase=True)
         self.assertEqual(
             True,
-            self.settings.getboolean(
+            settings.get(
                 self.viewer.settingsSection(), "searchfiltermatchcase"
             ),
         )
@@ -353,7 +342,7 @@ class SearchableViewerTest(test.TestCase):
         self.viewer.setSearchFilter("bla", includeSubItems=True)
         self.assertEqual(
             True,
-            self.settings.getboolean(
+            settings.get(
                 self.viewer.settingsSection(), "searchfilterincludesubitems"
             ),
         )
@@ -370,9 +359,7 @@ class SearchableViewerTest(test.TestCase):
         self.viewer.setSearchFilter("bla", searchDescription=True)
         self.assertEqual(
             True,
-            self.settings.getboolean(
-                self.viewer.settingsSection(), "searchdescription"
-            ),
+            settings.get(self.viewer.settingsSection(), "searchdescription"),
         )
 
     def testSearchDescription_AffectsPresentation(self):
@@ -383,7 +370,7 @@ class SearchableViewerTest(test.TestCase):
         self.assertEqual(1, len(self.viewer.presentation()))
 
     def testApplySettingsWhenCreatingViewer(self):
-        self.settings.set(
+        settings.set(
             self.viewer.settingsSection(), "searchfilterstring", "whatever"
         )
         anotherViewer = self.createViewer()
@@ -407,7 +394,6 @@ class FilterableViewerForTasksUnderTest(
 
 class FilterableViewerForTasks(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.viewer = self.createViewer()
 
     def tearDown(self):
@@ -439,9 +425,7 @@ class FilterableViewerForTasks(test.TestCase):
     def testHideInactiveTasks_SetsSetting(self):
         self.viewer.hide_task_status(task.status.inactive)
         self.assertTrue(
-            self.settings.getboolean(
-                self.viewer.settingsSection(), "hideinactivetasks"
-            )
+            settings.get(self.viewer.settingsSection(), "hideinactivetasks")
         )
 
     def testHideInactiveTasks_AffectsPresentation(self):
@@ -469,9 +453,7 @@ class FilterableViewerForTasks(test.TestCase):
     def testHideLateTasks_SetsSetting(self):
         self.viewer.hide_task_status(task.status.late)
         self.assertTrue(
-            self.settings.getboolean(
-                self.viewer.settingsSection(), "hidelatetasks"
-            )
+            settings.get(self.viewer.settingsSection(), "hidelatetasks")
         )
 
     def testHideLateTasks_AffectsPresentation(self):
@@ -501,9 +483,7 @@ class FilterableViewerForTasks(test.TestCase):
     def testHideDueSoonTasks_SetsSetting(self):
         self.viewer.hide_task_status(task.status.duesoon)
         self.assertTrue(
-            self.settings.getboolean(
-                self.viewer.settingsSection(), "hideduesoontasks"
-            )
+            settings.get(self.viewer.settingsSection(), "hideduesoontasks")
         )
 
     def testHideDueSoonTasks_AffectsPresentation(self):
@@ -533,9 +513,7 @@ class FilterableViewerForTasks(test.TestCase):
     def testHideOverDueTasks_SetsSetting(self):
         self.viewer.hide_task_status(task.status.overdue)
         self.assertTrue(
-            self.settings.getboolean(
-                self.viewer.settingsSection(), "hideoverduetasks"
-            )
+            settings.get(self.viewer.settingsSection(), "hideoverduetasks")
         )
 
     def testHideOverDueTasks_AffectsPresentation(self):
@@ -567,9 +545,7 @@ class FilterableViewerForTasks(test.TestCase):
     def testHideCompletedTasks_SetsSetting(self):
         self.viewer.hide_task_status(task.status.completed)
         self.assertTrue(
-            self.settings.getboolean(
-                self.viewer.settingsSection(), "hidecompletedtasks"
-            )
+            settings.get(self.viewer.settingsSection(), "hidecompletedtasks")
         )
 
     def testHideCompletedTasks_AffectsPresentation(self):
@@ -597,9 +573,7 @@ class FilterableViewerForTasks(test.TestCase):
     def testHideCompositeTasks_SetsSettings(self):
         self.viewer.hide_composite_tasks()
         self.assertTrue(
-            self.settings.getboolean(
-                self.viewer.settingsSection(), "hidecompositetasks"
-            )
+            settings.get(self.viewer.settingsSection(), "hidecompositetasks")
         )
 
     def testHideCompositeTasks_AffectsPresentation(self):
@@ -629,9 +603,7 @@ class FilterableViewerForTasks(test.TestCase):
             self.assertFalse(self.viewer.is_hiding_task_status(status))
 
     def testApplySettingsWhenCreatingViewer(self):
-        self.settings.set(
-            self.viewer.settingsSection(), "hidecompletedtasks", "True"
-        )
+        settings.set(self.viewer.settingsSection(), "hidecompletedtasks", True)
         anotherViewer = self.createViewer()
         anotherViewer.presentation().append(
             task.Task(completionDateTime=date.Now())
@@ -663,7 +635,6 @@ class ViewerIteratorTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.taskList = self.taskFile.tasks()
         self.window = AuiManagedFrameWithDynamicCenterPane(self.frame)
@@ -731,7 +702,6 @@ class ListViewerIteratorTest(ViewerIteratorTestCase, ViewerIteratorTestsMixin):
 
 class ViewerWithColumnsTest(test.wxTestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
 

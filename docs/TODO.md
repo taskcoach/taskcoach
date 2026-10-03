@@ -316,12 +316,12 @@ No need to store "original values" — the settings object is the baseline.
 
 | Method | Compare |
 |--------|---------|
-| `addBooleanSetting` | `checkBox.IsChecked() != self.getboolean(section, setting)` |
-| `addChoiceSetting` | reconstructed value != `self.gettext(section, setting)` |
-| `addIntegerSetting` | `spin.GetValue() != self.getint(section, setting)` |
-| `addPathSetting` | `pathChooser.GetPath() != self.gettext(section, setting)` |
-| `addTextSetting` | `textCtrl.GetValue() != self.gettext(section, setting)` |
-| `addMultipleChoiceSettings` | checked items != `self.getlist(section, setting)` |
+| `addBooleanSetting` | `checkBox.IsChecked() != settings.get(section, setting)` |
+| `addChoiceSetting` | reconstructed value != `str(settings.get(section, setting))` |
+| `addIntegerSetting` | `spin.GetValue() != settings.get(section, setting)` |
+| `addPathSetting` | `pathChooser.GetPath() != settings.get(section, setting)` |
+| `addTextSetting` | `textCtrl.GetValue() != settings.get(section, setting)` |
+| `addMultipleChoiceSettings` | checked items != `settings.get(section, setting)` |
 
 ### Notes
 

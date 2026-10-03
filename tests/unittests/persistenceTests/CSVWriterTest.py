@@ -18,8 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import io
 import test
-from taskcoachlib import persistence, gui, config, render
+from taskcoachlib import persistence, gui, render
 from taskcoachlib.domain import task, effort, date
+from taskcoachlib.config import settings
 
 
 class CSVWriterTestCase(test.wxTestCase):
@@ -27,7 +28,6 @@ class CSVWriterTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.fd = io.StringIO()
         self.writer = persistence.CSVWriter(self.fd)
         self.taskFile = persistence.TaskFile()
@@ -41,7 +41,7 @@ class CSVWriterTestCase(test.wxTestCase):
         self.taskFile.stop()
 
     def createViewer(self):
-        self.settings.set("taskviewer", "treemode", self.tree_mode)
+        settings.set("taskviewer", "treemode", self.tree_mode)
         # pylint: disable=W0201
         self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
 
@@ -343,7 +343,7 @@ class TaskTestsMixin(object):
 
 
 class CSVListWriterTest(TaskTestsMixin, CSVWriterTestCase):
-    tree_mode = "False"
+    tree_mode = False
 
     def testTaskDescription(self):
         self.task.setDescription("Task description")
@@ -357,7 +357,7 @@ class CSVListWriterTest(TaskTestsMixin, CSVWriterTestCase):
 
 
 class CSVTreeWriterTest(TaskTestsMixin, CSVWriterTestCase):
-    tree_mode = "True"
+    tree_mode = True
 
 
 class EffortWriterTest(CSVWriterTestCase):

@@ -16,14 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import config
+from taskcoachlib.config import settings
 from taskcoachlib.domain import task, date, effort
 import test
 
 
 class CommonTaskRelationshipManagerTestsMixin(object):
     def setUp(self):
-        settings = config.settings.current()
         now = self.now = date.Now()
         self.yesterday = now - date.ONE_DAY
         self.tomorrow = now + date.ONE_DAY
@@ -36,7 +35,7 @@ class CommonTaskRelationshipManagerTestsMixin(object):
         settings.set(
             "behavior",
             "markparentcompletedwhenallchildrencompleted",
-            str(self.markParentCompletedWhenAllChildrenCompleted),
+            self.markParentCompletedWhenAllChildrenCompleted,
         )
         self.taskList = task.TaskList(
             [self.parent, self.child2, self.grandchild]

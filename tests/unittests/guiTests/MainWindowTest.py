@@ -23,9 +23,10 @@ import time
 from unittest import mock
 
 import wx, test
-from taskcoachlib import gui, config, persistence, meta, operating_system
+from taskcoachlib import gui, persistence, meta, operating_system
 from taskcoachlib import patterns
 from taskcoachlib.domain import task
+from taskcoachlib.config import settings
 
 
 class MockViewer(wx.Frame):
@@ -58,7 +59,6 @@ class DummyIOController(object):
 class MainWindowTestCase(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.setSettings()
         self.taskFile = persistence.TaskFile()
         self.mainwindow = MainWindowUnderTest(
@@ -85,11 +85,11 @@ class MainWindowTestCase(test.wxTestCase):
 
 class MainWindowTest(MainWindowTestCase):
     def testStatusBar_Show(self):
-        self.settings.setboolean("view", "statusbar", True)
+        settings.set("view", "statusbar", True)
         self.assertTrue(self.mainwindow.GetStatusBar().IsShown())
 
     def testStatusBar_Hide(self):
-        self.settings.setboolean("view", "statusbar", False)
+        settings.set("view", "statusbar", False)
         self.assertFalse(self.mainwindow.GetStatusBar().IsShown())
 
     def test_a_task_status_change_refreshes_the_status_bar(self):
@@ -141,7 +141,7 @@ class MainWindowMaximizeTestCase(MainWindowTestCase):
             self.mainwindow.Show()  # Or IsMaximized() returns always False...
 
     def setSettings(self):
-        self.settings.setboolean("window", "maximized", self.maximized)
+        settings.set("window", "maximized", self.maximized)
 
     def placed(self):
         """The window's tracker once the placement is quiet
@@ -171,7 +171,7 @@ class MainWindowNotMaximizedTest(MainWindowMaximizeTestCase):
                 wx.MaximizeEvent(self.mainwindow.GetId())
             )
         self.mainwindow.save_settings()  # Geometry is written on close
-        self.assertTrue(self.settings.getboolean("window", "maximized"))
+        self.assertTrue(settings.get("window", "maximized"))
 
 
 class MainWindowMaximizedTest(MainWindowMaximizeTestCase):

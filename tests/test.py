@@ -261,7 +261,7 @@ class wxTestCase(TestCase):
     app.settings = config.settings.current() or config.Settings(load=False)
     config.settings.use(app.settings)
     # Light, so colours do not follow the desktop theme
-    app.settings.settext("window", "theme", "light")
+    app.settings.set_typed("window", "theme", "light")
     frame = TestCaseFrame()
     from taskcoachlib import i18n
 

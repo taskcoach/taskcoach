@@ -19,7 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import io
 import json
 import test
-from taskcoachlib import config, meta
+from taskcoachlib import meta
+from taskcoachlib.config import settings
 
 
 class VersionCheckerUnderTest(meta.VersionChecker):
@@ -48,9 +49,6 @@ class VersionCheckerUnderTest(meta.VersionChecker):
 
 
 class VersionCheckerTest(test.TestCase):
-    def setUp(self):
-        self.settings = config.settings.current()
-
     def checkVersion(
         self, version, retrievalException=None, parseException=None
     ):
@@ -66,7 +64,7 @@ class VersionCheckerTest(test.TestCase):
         self, version, retrievalException=None, parseException=None
     ):
         self.checkVersion(version, retrievalException, parseException)
-        self.assertEqual(version, self.settings.get("version", "notified"))
+        self.assertEqual(version, settings.get("version", "notified"))
 
     def testLatestVersionIsNewerThanLastVersionNotified(self):
         self.assertLastVersionNotified("99.99.99")
@@ -90,14 +88,14 @@ class VersionCheckerTest(test.TestCase):
         )
 
     def testDontNotifyWhenCurrentVersionIsNewerThanLastVersionNotified(self):
-        self.settings.set("version", "notified", "0.0")
+        settings.set("version", "notified", "0.0")
         checker = self.checkVersion(meta.data.version_full)
         self.assertFalse(checker.userNotified)
 
     def test9IsNotNewerThan10(self):
         current_version = meta.data.version_full
         meta.data.version_full = "0.72.10"
-        self.settings.set("version", "notified", "0.72.8")
+        settings.set("version", "notified", "0.72.8")
         checker = self.checkVersion("0.72.9")
         self.assertFalse(checker.userNotified)
         meta.data.version_full = current_version

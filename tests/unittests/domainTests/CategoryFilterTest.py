@@ -17,8 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import config
 from taskcoachlib.domain import task, category
+from taskcoachlib.config import settings
 
 # pylint: disable=W0201,E1101
 
@@ -30,10 +30,10 @@ from taskcoachlib.domain import task, category
 
 class CategoryFilterHelpersMixin(object):
     def setFilterOnAnyCategory(self):
-        self.settings.setboolean("view", "categoryfiltermatchall", False)
+        settings.set("view", "categoryfiltermatchall", False)
 
     def setFilterOnAllCategories(self):
-        self.settings.setboolean("view", "categoryfiltermatchall", True)
+        settings.set("view", "categoryfiltermatchall", True)
 
     def link(self, category, categorizable):  # pylint: disable=W0621
         categorizable.addCategory(category)
@@ -59,7 +59,6 @@ class Fixture(CategoryFilterHelpersMixin):
     tree_mode = False
 
     def setUp(self):
-        self.settings = config.settings.current()
         self.categories = category.CategoryList(self.createCategories())
         self.tasks = task.TaskList(self.createTasks())
         self.categorize()

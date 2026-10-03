@@ -21,12 +21,13 @@ import wx
 import test
 from unittest import mock
 from unittests import dummy
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import gui, persistence
 from taskcoachlib.domain import attachment, category, date, effort, note
 from taskcoachlib.domain import task
 from taskcoachlib.gui.dialog.editor import NoteEditor, TaskEditor
 from taskcoachlib.gui.uicommand import base_uicommand
 from taskcoachlib.tools import openfile
+from taskcoachlib.config import settings
 
 
 class UICommandTest(test.wxTestCase):
@@ -92,7 +93,6 @@ class UICommandTest(test.wxTestCase):
 
 class wxTestCaseWithFrameAsTopLevelWindow(test.wxTestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         wx.GetApp().SetTopWindow(self.frame)
         self.taskFile = self.frame.taskFile = persistence.TaskFile()
 
@@ -342,7 +342,7 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         self.assertTrue(firstChild.IsChecked())
 
     def testNewTaskWithPresetPlannedStartDateTime(self):
-        self.settings.set(
+        settings.set(
             "view",
             "defaultplannedstartdatetime",
             "preset_tomorrow_endofworkingday",
@@ -355,7 +355,7 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         )
 
     def testNewTaskWithProposedPlannedStartDateTime(self):
-        self.settings.set(
+        settings.set(
             "view",
             "defaultplannedstartdatetime",
             "propose_tomorrow_endofworkingday",
@@ -368,7 +368,7 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         )
 
     def testNewTaskWithPresetDueDateTime(self):
-        self.settings.set(
+        settings.set(
             "view", "defaultduedatetime", "preset_tomorrow_endofworkingday"
         )
         task_new = gui.uicommand.TaskNew(taskList=self.taskFile.tasks())
@@ -378,7 +378,7 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         )
 
     def testNewTaskWithPresetReminderDateTime(self):
-        self.settings.set(
+        settings.set(
             "view",
             "defaultreminderdatetime",
             "preset_tomorrow_endofworkingday",
@@ -434,7 +434,6 @@ class EditPreferencesTest(test.TestCase):
 
 class EffortViewerAggregationChoiceTest(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.choice = gui.uicommand.EffortViewerAggregationChoice(viewer=self)
         self.choice.currentChoice = 0
 
@@ -455,9 +454,7 @@ class EffortViewerAggregationChoiceTest(test.TestCase):
     aggregation = "details"
 
     def set_aggregation(self, aggregation):
-        self.settings.settext(
-            self.settingsSection(), "aggregation", aggregation
-        )
+        settings.set(self.settingsSection(), "aggregation", aggregation)
 
     def registerObserver(self, *args, **kwargs):
         pass
@@ -468,21 +465,21 @@ class EffortViewerAggregationChoiceTest(test.TestCase):
     def testUserPicksEffortPerDay(self):
         self.choice.onChoice(self.DummyEvent(1))
         self.assertEqual(
-            "day", self.settings.gettext(self.settingsSection(), "aggregation")
+            "day", settings.get(self.settingsSection(), "aggregation")
         )
 
     def testUserPicksEffortPerWeek(self):
         self.choice.onChoice(self.DummyEvent(2))
         self.assertEqual(
             "week",
-            self.settings.gettext(self.settingsSection(), "aggregation"),
+            settings.get(self.settingsSection(), "aggregation"),
         )
 
     def testUserPicksEffortPerMonth(self):
         self.choice.onChoice(self.DummyEvent(3))
         self.assertEqual(
             "month",
-            self.settings.gettext(self.settingsSection(), "aggregation"),
+            settings.get(self.settingsSection(), "aggregation"),
         )
 
     def testSetChoice(self):

@@ -18,8 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx, io, os
 import test
-from taskcoachlib import persistence, gui, config, render
+from taskcoachlib import persistence, gui, render
 from taskcoachlib.domain import task, category, effort, date
+from taskcoachlib.config import settings
 
 
 class HTMLWriterTestCase(test.wxTestCase):
@@ -28,7 +29,6 @@ class HTMLWriterTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.fd = io.StringIO()
         self.writer = persistence.HTMLWriter(self.fd, self.filename)
         self.taskFile = persistence.TaskFile()
@@ -87,7 +87,7 @@ class CommonTestsMixin(object):
 
 class TaskWriterTestCase(HTMLWriterTestCase):
     def createViewer(self):
-        self.settings.set("taskviewer", "treemode", self.tree_mode)
+        settings.set("taskviewer", "treemode", self.tree_mode)
         return gui.viewer.TaskViewer(self.frame, self.taskFile)
 
 
@@ -124,7 +124,7 @@ class TaskTestsMixin(CommonTestsMixin):
         self.expect_row_style("color: #00ff00")
 
     def test_foreground_color_from_settings(self):
-        self.settings.set("fgcolor", "completedtasks", str(wx.RED))
+        settings.set("fgcolor", "completedtasks", wx.RED)
         self.task.set_completion_date_time()
         self.expect_row_style("color: #ff0000")
 
@@ -225,24 +225,24 @@ class TaskListTestsMixin(object):
 class TaskListExportTest(
     TaskTestsMixin, TaskListTestsMixin, TaskWriterTestCase
 ):
-    tree_mode = "False"
+    tree_mode = False
     filename = "filename"
 
 
 class TaskListPrintTest(
     TaskTestsMixin, TaskListTestsMixin, TaskWriterTestCase
 ):
-    tree_mode = "False"
+    tree_mode = False
     filename = ""
 
 
 class TaskTreeExportTest(TaskTestsMixin, TaskWriterTestCase):
-    tree_mode = "True"
+    tree_mode = True
     filename = "filename"
 
 
 class TaskTreePrintTest(TaskTestsMixin, TaskWriterTestCase):
-    tree_mode = "True"
+    tree_mode = True
     filename = ""
 
 

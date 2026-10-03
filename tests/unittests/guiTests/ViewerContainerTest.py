@@ -19,10 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import test
 import wx
 from unittests import dummy
-from taskcoachlib import gui, config, persistence, widgets
+from taskcoachlib import gui, persistence, widgets
 from taskcoachlib.i18n import _
 from taskcoachlib.domain import task
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 
 
 class DummyMainWindow(widgets.AuiManagedFrameWithDynamicCenterPane):
@@ -92,8 +93,6 @@ class ViewerContainerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
         self.events = 0
-        self.settings = config.settings.current()
-        self.settings.set("view", "viewerwithdummywidgetcount", "2", new=True)
         self.taskFile = persistence.TaskFile()
         self.mainWindow = DummyMainWindow()
         self.container = gui.viewer.ViewerContainer(self.mainWindow)
@@ -103,7 +102,7 @@ class ViewerContainerTest(test.wxTestCase):
         self.container.add_viewer(self.viewer2)
 
     def createViewer(self, settingsSection):
-        self.settings.add_section(settingsSection)
+        settings.add_section(settingsSection)
         return ViewerWithClickableWidget(
             self.mainWindow,
             self.taskFile,

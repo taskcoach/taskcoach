@@ -17,10 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import config, patterns
+from taskcoachlib import patterns
 from taskcoachlib.patterns.snapshot import register_collection
 from taskcoachlib.domain import attachment, base, task, effort, date
 from taskcoachlib.domain import category
+from taskcoachlib.config import settings
 
 
 class RecordingFilter(base.Filter):
@@ -357,7 +358,6 @@ class TaskSorterSettingsTest(test.TestCase):
 
 class TaskSorterStatusPriorityTest(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.taskList = task.TaskList()
         self.sorter = task.sorter.Sorter(self.taskList)
         self.sorter.sort_by("subject")
@@ -368,19 +368,16 @@ class TaskSorterStatusPriorityTest(test.TestCase):
         self.taskList.extend([overdue, active])
 
     def swap_priorities(self):
-        get = self.settings.get
-        overdue = get("statussortpriority", "overduetasks")
-        active = get("statussortpriority", "activetasks")
-        self.settings.set("statussortpriority", "overduetasks", active)
-        self.settings.set("statussortpriority", "activetasks", overdue)
+        overdue = settings.get("statussortpriority", "overduetasks")
+        active = settings.get("statussortpriority", "activetasks")
+        settings.set("statussortpriority", "overduetasks", active)
+        settings.set("statussortpriority", "activetasks", overdue)
 
     def test_new_priorities_resort_once_preferences_send_them(self):
         before = list(self.sorter)
         self.swap_priorities()
         self.assertEqual(before, list(self.sorter))
-        patterns.Event(
-            "settings.statussortpriority.changed", self.settings
-        ).send()
+        patterns.Event("settings.statussortpriority.changed", self).send()
         self.assertEqual(list(reversed(before)), list(self.sorter))
 
 

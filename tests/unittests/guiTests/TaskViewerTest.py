@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import (
     gui,
-    config,
     persistence,
     command,
     mailer,
@@ -33,6 +32,7 @@ from taskcoachlib.domain import task, date, effort, category, attachment
 from taskcoachlib.domain.date import dateandtime
 from taskcoachlib.i18n import _
 from taskcoachlib.thirdparty import wxScheduler
+from taskcoachlib.config import settings
 from unittest import mock
 import locale
 import os
@@ -55,7 +55,6 @@ class TaskViewerTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         # Late: planned a second ago, dates being whole seconds
         started = date.Now() - date.ONE_SECOND
         self.task = task.Task(subject="task", plannedStartDateTime=started)
@@ -148,7 +147,7 @@ class TaskViewerTestCase(test.wxTestCase):
         self.viewer.showColumnByName(columnName, show)
 
     def setColor(self, setting):
-        self.settings.settuple("fgcolor", setting, self.newColor)
+        settings.set("fgcolor", setting, self.newColor)
 
     def run_style_pass(self):
         # Rows show the styles of the master loop's pass
@@ -334,7 +333,7 @@ class CommonTestsMixin(object):
             self.assertItems(notCompletedChild, self.task)
 
     def testUndoMarkCompletedWhenFilteringCompletedTasks(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.viewer.hide_task_status(task.status.completed)
@@ -356,7 +355,7 @@ class CommonTestsMixin(object):
         self.assertEqual(4, self.viewer.size())
 
     def testFilterOnAllCategories(self):
-        self.settings.setboolean("view", "categoryfiltermatchall", False)
+        settings.set("view", "categoryfiltermatchall", False)
         self.taskList.append(self.task)
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
@@ -365,11 +364,11 @@ class CommonTestsMixin(object):
         cat1.setFiltered(True)
         cat2.setFiltered(True)
         self.assertEqual(1, self.viewer.size())
-        self.settings.setboolean("view", "categoryfiltermatchall", True)
+        settings.set("view", "categoryfiltermatchall", True)
         self.assertEqual(0, self.viewer.size())
 
     def testFilterOnAnyCategory(self):
-        self.settings.setboolean("view", "categoryfiltermatchall", True)
+        settings.set("view", "categoryfiltermatchall", True)
         self.taskList.append(self.task)
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
@@ -378,7 +377,7 @@ class CommonTestsMixin(object):
         cat1.setFiltered(True)
         cat2.setFiltered(True)
         self.assertEqual(0, self.viewer.size())
-        self.settings.setboolean("view", "categoryfiltermatchall", False)
+        settings.set("view", "categoryfiltermatchall", False)
         self.assertEqual(1, self.viewer.size())
 
     def testDefaultVisibleColumns(self):
@@ -856,9 +855,7 @@ class CommonTestsMixin(object):
     def testModeIsSavedInSettings(self):
         self.assertEqual(
             self.tree_mode,
-            self.settings.getboolean(
-                self.viewer.settingsSection(), "treemode"
-            ),
+            settings.get(self.viewer.settingsSection(), "treemode"),
         )
 
     def testRenderSubject(self):
@@ -1661,7 +1658,6 @@ class TaskViewerInListModeTest(CommonTestsMixin, TaskViewerTestCase):
 class TaskCalendarViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.frame.taskFile = self.taskFile
         self.viewer = gui.viewer.task.CalendarViewer(self.frame, self.taskFile)
@@ -1691,14 +1687,14 @@ class TaskCalendarViewerTest(test.wxTestCase):
         self.openDialogAndAssertDateTimes(dateTime, dateTime, dateTime)
 
     def test_week_start_applies_at_once(self):
-        self.settings.settext("view", "weekstart", "sunday")
+        settings.set("view", "weekstart", "sunday")
         self.assertEqual(
             wxScheduler.wxSCHEDULER_WEEKSTART_SUNDAY,
             self.viewer.widget.GetWeekStart(),
         )
 
     def test_gradient_applies_at_once(self):
-        self.settings.setboolean("calendarviewer", "gradient", True)
+        settings.set("calendarviewer", "gradient", True)
         self.assertIs(
             wxScheduler.wxFancyDrawer, self.viewer.widget.GetDrawer()
         )
@@ -1713,9 +1709,9 @@ class TaskCalendarViewerTest(test.wxTestCase):
 
     def test_colours_follow_preferences(self):
         for section in ("calendar_light", "calendar_dark"):
-            self.settings.setboolean(section, "other_month_bg_system", False)
-            self.settings.setvalue(section, "other_month_bg", (1, 2, 3))
-        patterns.Event("calendar.colours.changed", self.settings).send()
+            settings.set(section, "other_month_bg_system", False)
+            settings.set(section, "other_month_bg", (1, 2, 3))
+        patterns.Event("calendar.colours.changed", self).send()
         self.assertEqual(
             wx.Colour(1, 2, 3), self.viewer.widget.GetOtherMonthColor()
         )
@@ -1754,8 +1750,7 @@ class DatesTiedTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
-        self.settings.set("view", "datestied", "duestart")
+        settings.set("view", "datestied", "duestart")
         self.taskFile = persistence.TaskFile()
         self.addCleanup(self.taskFile.stop)
         self.addCleanup(self.taskFile.close)

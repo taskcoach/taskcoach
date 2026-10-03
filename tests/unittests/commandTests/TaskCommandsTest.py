@@ -18,14 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from unittests import asserts
 from .CommandTestCase import CommandTestCase
-from taskcoachlib import command, patterns, config
+from taskcoachlib import command, patterns
 from taskcoachlib.domain import task, effort, date, category, attachment
+from taskcoachlib.config import settings
 
 
 class TaskCommandTestCase(CommandTestCase, asserts.Mixin):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.list = self.taskList = self.task_file.tasks()
         self.categories = self.task_file.categories()
         self.category = category.Category("cat")
@@ -243,7 +243,7 @@ class DeleteCommandWithTasksWithChildrenTest(CommandWithChildrenTestCase):
         self.assertDeleteWorks()
 
     def testDeleteLastNotCompletedChildMarksParentAsCompleted(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.markCompleted([self.child2])
@@ -424,7 +424,7 @@ class NewSubTaskCommandTest(TaskCommandTestCase):
         )
 
     def testNewCompletedSubTask(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.newSubTask([self.task1], markCompleted=True)
@@ -481,7 +481,7 @@ class MarkCompletedCommandTest(CommandWithChildrenTestCase):
         self.assertDoUndoRedo(lambda: self.assertTrue(self.child.completed()))
 
     def testMarkCompletedGrandChild(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.markCompleted([self.grandchild])
@@ -496,7 +496,7 @@ class MarkCompletedCommandTest(CommandWithChildrenTestCase):
 
     def test_undo_puts_back_the_date_of_every_task_it_changed(self):
         # The child is completed by its last subtask, not by the command
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         before = date.DateTime(2020, 1, 1)

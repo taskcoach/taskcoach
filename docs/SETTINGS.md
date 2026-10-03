@@ -5,7 +5,7 @@
 1. [TODO](#todo)
 2. [One Settings Object (To Do 70)](#one-settings-object-to-do-70)
 3. [Known Anomalies](#known-anomalies)
-4. [ConfigParser Architecture](#configparser-architecture)
+4. [The Store](#the-store)
 5. [Usage](#usage)
 6. [In-Place Editing Options](#in-place-editing-options)
 7. [Key Files](#key-files)
@@ -17,7 +17,7 @@
 1. **Modernize the settings system**: one typed settings object that
    any module reads and writes by attribute, `ConfigParser` replaced by
    a purpose-built class. To Do 70, [One Settings
-   Object](#one-settings-object-to-do-70): steps 5 and 6 are left.
+   Object](#one-settings-object-to-do-70): step 6 is left.
 2. ~~Create `settings2.py`, a read-only copy~~: done; gone 2026-10-03
    (To Do 70 step 4).
 3. ~~Migrate the tooltip config lookup~~: done.
@@ -127,7 +127,7 @@ settings.get(section, option)            # names computed by the caller
 Each step: tests that fail before and pass after where behaviour is
 fixed, the full suite, and an app check of what it touches.
 
-Status: steps 1 to 4 done 2026-10-03. No module takes or keeps the
+Status: steps 1 to 5 done 2026-10-03. No module takes or keeps the
 object but the application, which makes, loads, locks and saves it;
 every other module reads and writes options by attribute
 (`settings.get()` and `settings.set()` for computed names) and takes
@@ -137,9 +137,11 @@ the folders from `settings.templates_dir()` and
 31 UI commands, which only handed the object on; parameters nothing
 read (the object in the export writers and the view container, the
 task file in Preferences); the text layer of the Preferences pages (a
-choice list's text is converted to the option's type on save); and
-`settings2`, the read-only copy refreshed a second after a change.
-Steps 5 and 6 are left.
+choice list's text is converted to the option's type on save);
+`settings2`, the read-only copy refreshed a second after a change; and
+the `ConfigParser` subclass with its untyped `get*()`/`set*()` methods
+and the conversion of old values at every read ([The
+Store](#the-store)). Step 6 is left.
 
 ### Risks
 
@@ -189,24 +191,30 @@ Limits:
 
 ---
 
-## ConfigParser Architecture
+## The Store
+
+`Settings` (`taskcoachlib/config/settings.py`) holds each option's text
+by section, the form the INI file keeps; `configparser` only reads and
+writes the file. A read gives the option's type (`get_typed()`, behind
+`settings.view.statusbar`), a write takes it (`set_typed()`) and stores
+its text. A text that does not read as its option's type is shown as an
+error when first read and replaced by the default. `defaults.minimum`
+holds the one floor (at least one task view).
 
 ### Section types
 
-All settings live in a single `ConfigParser` instance (`settings.current()`)
-with no formal separation between section types. Three kinds of sections
-coexist in the same flat namespace:
+Four kinds of sections share one flat namespace:
 
 | Type | Examples | Created by | Used by |
 |------|----------|------------|---------|
-| **App settings** | `window`, `view`, `file`, `icon`, `iconpicker`, `version`, `feature`, `behavior`, `fgcolor`, `bgcolor`, `font`, `printer`, `export` | `initializeWithDefaults()` from `defaults.defaults` | Preferences dialog, mainwindow, application code |
-| **Viewer templates** | `taskviewer`, `categoryviewer`, `effortviewer`, `noteviewer` | `initializeWithDefaults()` from `defaults.defaults` | Never read directly — serve as copy source for viewer instances |
-| **Viewer instances** | `taskviewer1`, `effortviewer2`, `categoryviewer1` | Loaded from INI file (previous session), or created at runtime by `Viewer.settingsSection()` via `settings.add_section(section, copy_from=...)` | Individual viewer windows |
+| **App settings** | `window`, `view`, `file`, `icon`, `iconpicker`, `version`, `feature`, `behavior`, `fgcolor`, `bgcolor`, `font`, `printer`, `export` | `defaults.defaults` | Preferences, the main window, the application |
+| **Viewer templates** | `taskviewer`, `categoryviewer`, `effortviewer`, `noteviewer` | `defaults.defaults` | The first view of each kind, and the copy source of the next |
+| **Viewer instances** | `taskviewer1`, `effortviewer2`, `categoryviewer1` | Loaded from the INI file, or made by `Viewer.settingsSection()` with `settings.add_section(section, copy_from=...)` | Individual views |
+| **Editor windows** | `taskdialog_with_dates_subject` | Loaded, or made by the editor with `settings.add_section(section)` from `defaults.editor_window` | One editor layout (its tabs) |
 
-There is **no property or flag** distinguishing these types. The only
-signal is naming convention: viewer instances have a trailing digit,
-viewer templates match a `defaults.defaults` key that ends in `viewer`
-or `viewerin*editor`, and app settings are everything else.
+Names tell them apart: `template()` gives a section's defaults, a view
+instance's by its name without the trailing number, an editor window's
+by `dialog_with_` in its name.
 
 ### Viewer instance 0 problem
 
@@ -219,7 +227,7 @@ second viewer is created and copies from the "template", it actually
 copies instance 0's live state, not the original defaults.
 
 The only true defaults are in `defaults.defaults` (the Python dict in
-`defaults.py`), not in ConfigParser.
+`defaults.py`), not in the store.
 
 ### Persistence
 
@@ -230,33 +238,31 @@ only; templates and backups are in `$XDG_DATA_HOME/Task Coach`
 them, in place of the pyxdg package (To Do 74 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
 
-The INI file is written to disk **once at shutdown** by `Settings.save()`,
-called from `application.py`. All `Settings.set()` / `setboolean()` /
-`setvalue()` calls during the session update the in-memory ConfigParser
-only.
+The INI file is written **once at shutdown** by `Settings.save()`,
+called from `application.py`; changes during the session, Preferences'
+too, are in memory until then. With the legacy status icons on, the
+file gets the status icons by the names releases before 2.0.1.72 know.
 
-The Preferences dialog also writes to ConfigParser in memory via the
-same `Settings.set*()` methods. When the user clicks Save/OK in
-Preferences, the values are in memory and persist to the INI file at
-shutdown (or on the next `Settings.save()` call).
+At startup `Settings()` takes:
 
-At startup, `Settings.__init__()` runs:
-
-1. `initializeWithDefaults()` — creates all sections from
-   `defaults.defaults` with default values
-2. `ConfigParser.read(inifile)` — merges saved INI on top (existing
-   sections get updated values, new sections like `taskviewer1` get
-   added)
+1. The defaults (`defaults.defaults`).
+2. The INI file, the program folder's first, else the settings
+   folder's, read by `configparser` and laid over the defaults. Sections
+   and options no code reads (`syncml`, from older releases) are kept
+   and written back.
 3. `_migrateOldSettingNames()` renames options, and
    `_remove_obsolete_settings()` drops the ones no release reads
    (`_OBSOLETE_SETTINGS`), so an old INI file carries neither forward.
    An option retired from `defaults.py` goes on that list; a retired
    view goes on `_OBSOLETE_VIEWERS`, which drops its template section
    and numbered instances (the Dependency Graph's, P82).
+4. Values in the forms older releases wrote are converted, once
+   (`_upgraded()`): a sort column becomes a list, the 1.1.0 date
+   columns get `Time`, the ordering column a width, and icon names
+   today's.
 
-After step 2, ConfigParser contains both the original template sections
-(possibly overwritten by INI values from instance 0) and all viewer
-instance sections saved from the previous session.
+A file that does not parse leaves the defaults, and the application
+says so at start (`file.inifileloaderror`).
 
 Each save also writes `[version] python`, `wxpython`, `pythonfrozen`
 and `current`: the Python, wxPython and Task Coach that wrote the file,
@@ -341,6 +347,6 @@ On the Features page, by Hoverover popups:
 
 | File | Purpose |
 |------|---------|
-| `taskcoachlib/config/settings.py` | `Settings` class (ConfigParser subclass) and the module every other module reads it through |
+| `taskcoachlib/config/settings.py` | The store (`Settings`) and the module every other module reads it through |
 | `taskcoachlib/config/defaults.py` | Default values and type schema |
 | `taskcoachlib/config/__init__.py` | Package exports |

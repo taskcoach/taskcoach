@@ -20,10 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import test
-from taskcoachlib import gui, config
+from taskcoachlib import gui
 from taskcoachlib.gui import uicommand
 from taskcoachlib.gui.uicommand import Separator
 from taskcoachlib.domain import task, category, date
+from taskcoachlib.config import settings
 
 
 class MockViewerContainer(object):
@@ -157,7 +158,6 @@ class MenuWithOptionalItemsTest(MenuTestCase):
 class MenuWithBooleanMenuItemsTestCase(MenuTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.commands = self.createCommands()
 
     def createCommands(self):
@@ -180,11 +180,11 @@ class MenuWithCheckItemsTest(MenuWithBooleanMenuItemsTestCase):
         return [uicommand.UICheckCommand(section="view", setting="statusbar")]
 
     def testCheckedItem(self):
-        self.settings.set("view", "statusbar", "True")
+        settings.set("view", "statusbar", True)
         self.assertMenuItemsChecked(True)
 
     def testUncheckedItem(self):
-        self.settings.set("view", "statusbar", "False")
+        settings.set("view", "statusbar", False)
         self.assertMenuItemsChecked(False)
 
 
@@ -200,11 +200,11 @@ class MenuWithRadioItemsTest(MenuWithBooleanMenuItemsTestCase):
         ]
 
     def testRadioItem_FirstChecked(self):
-        self.settings.setvalue("view", "toolbar", None)
+        settings.set("view", "toolbar", None)
         self.assertMenuItemsChecked(True, False)
 
     def testRadioItem_SecondChecked(self):
-        self.settings.setvalue("view", "toolbar", (16, 16))
+        settings.set("view", "toolbar", (16, 16))
         self.assertMenuItemsChecked(False, True)
 
 
@@ -220,7 +220,6 @@ class RecentFilesMenuTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
         self.ioController = MockIOController()
-        self.settings = config.settings.current()
         self.initialFileMenuLength = len(self.createFileMenu())
         self.filename1 = "c:/Program Files/TaskCoach/test.tsk"
         self.filename2 = "c:/two.tsk"
@@ -235,7 +234,7 @@ class RecentFilesMenuTest(test.wxTestCase):
 
     def addRecentFiles(self, *filenames):
         self.filenames.extend(filenames)
-        self.settings.set("file", "recentfiles", str(list(self.filenames)))
+        settings.set("file", "recentfiles", list(self.filenames))
 
     def assertRecentFileMenuItems(self, *expectedFilenames):
         expectedFilenames = expectedFilenames or self.filenames
@@ -290,7 +289,7 @@ class RecentFilesMenuTest(test.wxTestCase):
 
     def testNeverShowMoreThanTheMaximumNumberAllowed(self):
         # Read when the menu is built; it has no Preferences setting
-        self.settings.set("file", "maxrecentfiles", "1")
+        settings.set("file", "maxrecentfiles", 1)
         self.setRecentFilesAndCreateMenu(self.filename1, self.filename2)
         self.assertRecentFileMenuItems(self.filename1)
 
@@ -298,7 +297,6 @@ class RecentFilesMenuTest(test.wxTestCase):
 class ViewMenuTestCase(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.viewerContainer = MockViewerContainer()
         self.menuBar = wx.MenuBar()
         self.parentMenu = wx.Menu()
@@ -527,7 +525,6 @@ class TaskTemplateMenuTest(test.wxTestCase):
                 return uicommands
 
         self.menu_class = TaskTemplateMenu
-        self.settings = config.settings.current()
 
     def open_menu(self, menu):
         self.frame.ProcessEvent(wx.MenuEvent(wx.wxEVT_MENU_OPEN, menu=menu))

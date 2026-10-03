@@ -16,9 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import command, gui, config, patterns, persistence
+from taskcoachlib import command, gui, patterns, persistence
 from taskcoachlib.domain import task, note, category
 from taskcoachlib.filesystem import resourcelock
+from taskcoachlib.config import settings
 from unittests import dummy
 import os
 import shutil
@@ -51,7 +52,6 @@ def select_file_once(test_case, filename):
 
 class IOControllerTest(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.taskFile = dummy.TaskFile()
         self.iocontroller = gui.iocontroller.IOController(
             self.taskFile, lambda *args: None
@@ -100,9 +100,8 @@ class IOControllerTest(test.TestCase):
 
     def checkRecentFiles(self, expectedFilenames):
         expectedFilenames.reverse()
-        expectedFilenames = str(expectedFilenames)
         self.assertEqual(
-            expectedFilenames, self.settings.get("file", "recentfiles")
+            expectedFilenames, settings.get("file", "recentfiles")
         )
 
     def testOpenFileAddsItToRecentFiles(self):
@@ -128,15 +127,13 @@ class IOControllerTest(test.TestCase):
         self.doIOAndCheckRecentFiles(saveselection=[self.filename1])
 
     def testMaximumNumberOfRecentFiles(self):
-        maximumNumberOfRecentFiles = self.settings.getint(
-            "file", "maxrecentfiles"
-        )
+        maximum_number_of_recent_files = settings.get("file", "maxrecentfiles")
         # Opening leaves lock files, which are never deleted
         directory = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, directory)
         filenames = [
             os.path.join(directory, "filename %d" % index)
-            for index in range(maximumNumberOfRecentFiles + 1)
+            for index in range(maximum_number_of_recent_files + 1)
         ]
         self.doIOAndCheckRecentFiles(
             filenames, expectedFilenames=filenames[1:]
@@ -430,7 +427,6 @@ class IOControllerOverwriteExistingFileTest(test.TestCase):
             return wx.CANCEL
 
         wx.MessageBox = messageBox
-        self.settings = config.settings.current()
         self.taskFile = dummy.TaskFile()
         self.iocontroller = gui.iocontroller.IOController(
             self.taskFile, lambda *args: None
@@ -485,8 +481,7 @@ class IOControllerReplaceFileTest(test.TestCase):
         original = wx.MessageBox
         wx.MessageBox = lambda *args, **kwargs: wx.YES
         self.addCleanup(setattr, wx, "MessageBox", original)
-        self.settings = config.settings.current()
-        self.settings.setlist("file", "autoexport", ["Todo.txt"])
+        settings.set("file", "autoexport", ["Todo.txt"])
         self.task_file = dummy.TaskFile()
         self.addCleanup(self.task_file.stop)
         self.iocontroller = gui.iocontroller.IOController(
@@ -520,7 +515,6 @@ class IOControllerReplaceFileTest(test.TestCase):
 class IOControllerCloseTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.task_file = persistence.TaskFile()
         self.addCleanup(self.task_file.stop)
         self.addCleanup(self.task_file.close)
@@ -547,7 +541,6 @@ class IOControllerChangedOnDiskTest(test.TestCase):
         self.addCleanup(shutil.rmtree, directory)
         self.filename = os.path.join(directory, "tasks.tsk")
         self.other_filename = os.path.join(directory, "other.tsk")
-        self.settings = config.settings.current()
         self.task_file = persistence.TaskFile()
         self.addCleanup(self.task_file.stop)
         self.addCleanup(self.task_file.close)

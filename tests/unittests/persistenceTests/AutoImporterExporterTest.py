@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import persistence, config
+from taskcoachlib import persistence
 from taskcoachlib.domain import task, date
+from taskcoachlib.config import settings
 import test
 import os
 from unittests import dummy
@@ -25,7 +26,6 @@ from unittests import dummy
 
 class AutoExporterTestCase(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.exporter = persistence.AutoImporterExporter()
         self.taskFile = persistence.TaskFile()
         self.tskFilename = "autoexport.tsk"
@@ -46,8 +46,8 @@ class AutoExporterTestCase(test.TestCase):
                 pass
 
     def testAddOneTaskWhenAutoSaveIsOn(self):
-        self.settings.set("file", "autoexport", '["Todo.txt"]')
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autoexport", ["Todo.txt"])
+        settings.set("file", "autosave", True)
         autosaver = persistence.AutoSaver()
         theTask = task.Task(subject="Some task")
         self.taskFile.tasks().append(theTask)
@@ -58,7 +58,7 @@ class AutoExporterTestCase(test.TestCase):
         )
 
     def testAddOneTaskAndSaveManually(self):
-        self.settings.set("file", "autoexport", '["Todo.txt"]')
+        settings.set("file", "autoexport", ["Todo.txt"])
         theTask = task.Task(subject="Whatever")
         self.taskFile.tasks().append(theTask)
         self.taskFile.save()
@@ -68,7 +68,7 @@ class AutoExporterTestCase(test.TestCase):
         )
 
     def testImportOneTaskWhenSavingManually(self):
-        self.settings.set("file", "autoimport", '["Todo.txt"]')
+        settings.set("file", "autoimport", ["Todo.txt"])
         with open(self.txtFilename, "w") as todoTxtFile:
             todoTxtFile.write("Imported task\n")
         self.taskFile.save()
@@ -77,8 +77,8 @@ class AutoExporterTestCase(test.TestCase):
         )
 
     def testImportOneTaskWhenAutoSaving(self):
-        self.settings.set("file", "autoimport", '["Todo.txt"]')
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autoimport", ["Todo.txt"])
+        settings.set("file", "autosave", True)
         autosaver = persistence.AutoSaver()
         with open(self.txtFilename, "w") as todoTxtFile:
             todoTxtFile.write("Imported task\n")
@@ -88,7 +88,7 @@ class AutoExporterTestCase(test.TestCase):
 
     def testImportAfterReadingTaskFile(self):
         self.taskFile.save()
-        self.settings.set("file", "autoimport", '["Todo.txt"]')
+        settings.set("file", "autoimport", ["Todo.txt"])
         with open(self.txtFilename, "w") as todoTxtFile:
             todoTxtFile.write("Imported task\n")
         self.taskFile.load()
@@ -97,13 +97,13 @@ class AutoExporterTestCase(test.TestCase):
         )
 
     def testSaveWithAutoImportWhenFileToImportDoesNotExist(self):
-        self.settings.set("file", "autoimport", '["Todo.txt"]')
+        settings.set("file", "autoimport", ["Todo.txt"])
         self.taskFile.tasks().append(task.Task(subject="Whatever"))
         self.taskFile.save()
 
     def testBothDeletedTask(self):
-        self.settings.set("file", "autoimport", '["Todo.txt"]')
-        self.settings.set("file", "autoexport", '["Todo.txt"]')
+        settings.set("file", "autoimport", ["Todo.txt"])
+        settings.set("file", "autoexport", ["Todo.txt"])
         aTask = task.Task(subject="Whatever")
         self.taskFile.tasks().append(aTask)
         self.taskFile.save()
@@ -112,8 +112,8 @@ class AutoExporterTestCase(test.TestCase):
         self.assertEqual(self.taskFile.tasks(), [])
 
     def testBothMarkCompleted(self):
-        self.settings.set("file", "autoimport", '["Todo.txt"]')
-        self.settings.set("file", "autoexport", '["Todo.txt"]')
+        settings.set("file", "autoimport", ["Todo.txt"])
+        settings.set("file", "autoexport", ["Todo.txt"])
         aTask = task.Task(subject="Whatever")
         self.taskFile.tasks().append(aTask)
         self.taskFile.save()

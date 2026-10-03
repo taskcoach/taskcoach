@@ -41,99 +41,112 @@ class SettingsTestCase(test.TestCase):
 class SettingsTest(SettingsTestCase):
     def testDefaults(self):
         self.assertTrue(self.settings.has_section("view"))
-        self.assertEqual(True, self.settings.getboolean("view", "statusbar"))
+        self.assertEqual(True, self.settings.get_typed("view", "statusbar"))
 
     def testSet(self):
-        self.settings.setvalue("view", "toolbar", (16, 16))
-        self.assertEqual((16, 16), self.settings.gettuple("view", "toolbar"))
+        self.settings.set_typed("view", "toolbar", (16, 16))
+        self.assertEqual((16, 16), self.settings.get_typed("view", "toolbar"))
 
     def testGetList_EmptyByDefault(self):
-        self.assertEqual([], self.settings.getlist("file", "recentfiles"))
+        self.assertEqual([], self.settings.get_typed("file", "recentfiles"))
 
     def testSetList_Empty(self):
-        self.settings.setlist("file", "recentfiles", [])
-        self.assertEqual([], self.settings.getlist("file", "recentfiles"))
+        self.settings.set_typed("file", "recentfiles", [])
+        self.assertEqual([], self.settings.get_typed("file", "recentfiles"))
 
     def testSetList_SimpleStrings(self):
         recentfiles = ["abc", r"C:\Documents And Settings\Whatever"]
-        self.settings.setlist("file", "recentfiles", recentfiles)
+        self.settings.set_typed("file", "recentfiles", recentfiles)
         self.assertEqual(
-            recentfiles, self.settings.getlist("file", "recentfiles")
+            recentfiles, self.settings.get_typed("file", "recentfiles")
         )
 
     def testSetList_UnicodeStrings(self):
-        recentfiles = ["√É¬ºmlaut", "√é¬£√é¬ø√é¬º√é¬∑ √è‚Ä°√èÔøΩ√é¬µ√é¬µ√é¬∫"]
-        self.settings.setlist("file", "recentfiles", recentfiles)
+        recentfiles = [
+            "\u00fcmlaut",
+            "\u03a3\u03bf\u03bc\u03b7 \u03c7\u03c1\u03b5\u03b5\u03ba",
+        ]
+        self.settings.set_typed("file", "recentfiles", recentfiles)
         self.assertEqual(
-            recentfiles, self.settings.getlist("file", "recentfiles")
+            recentfiles, self.settings.get_typed("file", "recentfiles")
         )
 
     def testGetNonExistingSettingFromSection1ReturnsDefault(self):
         self.settings.add_section("effortviewer1")
-        self.settings.set("effortviewer", "columnwidths", "{'subject': 10}")
+        self.settings.set_typed(
+            "effortviewer", "columnwidths", {"subject": 10}
+        )
         self.assertEqual(
             ast.literal_eval(
                 config.defaults.defaults["effortviewer"]["columnwidths"]
             ),
-            self.settings.getdict("effortviewer1", "columnwidths"),
+            self.settings.get_typed("effortviewer1", "columnwidths"),
         )
 
     def testGetNonExistingSettingFromSection2ReturnsDefault(self):
         self.settings.add_section("effortviewer1")
         self.settings.add_section("effortviewer2")
-        self.settings.set("effortviewer1", "columnwidths", "dict(subject=10)")
+        self.settings.set_typed(
+            "effortviewer1", "columnwidths", {"subject": 10}
+        )
         self.assertEqual(
             ast.literal_eval(
                 config.defaults.defaults["effortviewer"]["columnwidths"]
             ),
-            self.settings.getdict("effortviewer2", "columnwidths"),
+            self.settings.get_typed("effortviewer2", "columnwidths"),
         )
 
     def testGetNonExistingSettingFromSection2RaisesException(self):
         self.settings.add_section("effortviewer1")
         self.settings.add_section("effortviewer2")
         self.assertRaises(
-            configparser.NoOptionError,
-            self.settings.get,
-            "effortviewer2",
-            "nonexisting",
+            KeyError, self.settings.get_typed, "effortviewer2", "nonexisting"
         )
 
     def testGetNonExistingSectionRaisesException(self):
-        self.assertRaises(
-            configparser.NoSectionError, self.settings.get, "bla", "bla"
-        )
+        self.assertRaises(KeyError, self.settings.get_typed, "bla", "bla")
 
     def testAddSectionAndSkipOne(self):
-        self.settings.set("effortviewer", "columnwidths", "{'subject': 10}")
-        self.settings.add_section(
-            "effortviewer2", copyFromSection="effortviewer"
+        self.settings.set_typed(
+            "effortviewer", "columnwidths", {"subject": 10}
         )
+        self.settings.add_section("effortviewer2", copy_from="effortviewer")
         self.assertEqual(
             dict(subject=10),
-            self.settings.getdict("effortviewer2", "columnwidths"),
+            self.settings.get_typed("effortviewer2", "columnwidths"),
         )
 
-    def testSinglePercentage(self):
-        # Prevent ValueError: invalid interpolation syntax in '%' at position 0:
-        self.settings.set("effortviewer", "searchfilterstring", "%")
+    def assert_percentage_kept(self, text):
+        # No interpolation: "%" is no syntax, in memory or in the file
+        self.settings.set_typed("effortviewer", "searchfilterstring", text)
+        file = io.StringIO()
+        self.settings.write(file)
         self.assertEqual(
-            "%", self.settings.get("effortviewer", "searchfilterstring")
+            text,
+            self.settings.get_typed("effortviewer", "searchfilterstring"),
         )
+        self.assertIn("searchfilterstring = %s\n" % text, file.getvalue())
 
-    def testEmbeddedPercentage(self):
-        # Prevent ValueError: invalid interpolation syntax in '%' at position 0
-        self.settings.set("effortviewer", "searchfilterstring", "Bla%Bla")
-        self.assertEqual(
-            "Bla%Bla", self.settings.get("effortviewer", "searchfilterstring")
-        )
+    def test_single_percentage(self):
+        self.assert_percentage_kept("%")
 
-    def testDoublePercentage(self):
-        # Prevent ValueError: invalid interpolation syntax in '%' at position 0
-        self.settings.set("effortviewer", "searchfilterstring", "%%")
-        self.assertEqual(
-            "%%", self.settings.get("effortviewer", "searchfilterstring")
-        )
+    def test_embedded_percentage(self):
+        self.assert_percentage_kept("Bla%Bla")
+
+    def test_double_percentage(self):
+        self.assert_percentage_kept("%%")
+
+    def test_a_value_not_of_its_type_is_shown_and_replaced(self):
+        self.settings.read_file(io.StringIO("[view]\nstatusbar = maybe\n"))
+        with mock.patch("wx.MessageBox") as message_box:
+            self.assertEqual(
+                True, self.settings.get_typed("view", "statusbar")
+            )
+        self.assertEqual(1, message_box.call_count)
+        # Replaced: shown once
+        with mock.patch("wx.MessageBox") as message_box:
+            self.settings.get_typed("view", "statusbar")
+        self.assertEqual(0, message_box.call_count)
 
 
 class SettingsIOTest(SettingsTestCase):
@@ -154,6 +167,12 @@ class SettingsIOTest(SettingsTestCase):
         self.settings.read_file(self.fakeFile)
         self.assertTrue(self.settings.has_section("testing"))
 
+    def test_sections_and_options_nothing_reads_are_kept(self):
+        # An older release may read them
+        self.settings.read_file(io.StringIO("[syncml]\nverbose = 1\n"))
+        self.settings.write(self.fakeFile)
+        self.assertIn("[syncml]\nverbose = 1\n", self.fakeFile.getvalue())
+
     def testIOErrorWhileSaving(self):
         def file_that_raises_ioerror(*args):  # pylint: disable=W0613,W0622
             raise IOError
@@ -166,16 +185,18 @@ class SettingsIOTest(SettingsTestCase):
         self.assertTrue(self.showerror_args)
 
     def testIOErrorWhileReading(self):
-        class SettingsThatThrowsParsingError(config.Settings):
-            def read(self, *args, **kwargs):  # pylint: disable=W0613
-                self.remove_section("file")
-                raise configparser.ParsingError("Testing")
-
-        self.assertFalse(
-            SettingsThatThrowsParsingError().getboolean(
-                "file", "inifileloaded"
-            )
-        )
+        folder = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, folder)
+        ini_file = os.path.join(folder, "TaskCoach.ini")
+        with open(ini_file, "w", encoding="utf-8") as file:
+            file.write("[file]\n")
+        with mock.patch.object(
+            configparser.ConfigParser,
+            "read",
+            side_effect=configparser.ParsingError("Testing"),
+        ):
+            settings = config.Settings(ini_file=ini_file)
+        self.assertFalse(settings.get_typed("file", "inifileloaded"))
 
     def testFixOldColumnValues(self):
         section = "prerequisiteviewerintaskeditor1"
@@ -185,12 +206,22 @@ class SettingsIOTest(SettingsTestCase):
         )
         self.fakeFile.seek(0)
         self.settings.read_file(self.fakeFile)
-        self.assertTrue(
-            ["dueDateTime"], self.settings.getlist(section, "columns")
+        self.assertEqual(
+            ["dueDateTime"], self.settings.get_typed(section, "columns")
         )
         self.assertEqual(
             dict(dueDateTime=40),
-            self.settings.getdict(section, "columnwidths"),
+            self.settings.get_typed(section, "columnwidths"),
+        )
+
+    def test_an_old_sort_column_becomes_a_list(self):
+        self.settings.read_file(
+            io.StringIO(
+                "[taskviewer]\nsortby = dueDate\nsortascending = False\n"
+            )
+        )
+        self.assertEqual(
+            ["-dueDateTime"], self.settings.get_typed("taskviewer", "sortby")
         )
 
     def test_options_nothing_reads_are_dropped(self):
@@ -202,7 +233,6 @@ class SettingsIOTest(SettingsTestCase):
         )
         self.fakeFile.seek(0)
         self.settings.read_file(self.fakeFile)
-        self.settings._remove_obsolete_settings()
         self.assertEqual(
             (False, False, False, True),
             (
@@ -221,7 +251,6 @@ class SettingsIOTest(SettingsTestCase):
         )
         self.fakeFile.seek(0)
         self.settings.read_file(self.fakeFile)
-        self.settings._remove_obsolete_settings()
         self.assertEqual(
             (False, False, False, True),
             (
@@ -233,56 +262,84 @@ class SettingsIOTest(SettingsTestCase):
         )
 
 
+class LegacyStatusIconsTest(SettingsTestCase):
+    """With the legacy status icons on, the file names the status icons
+    as releases before 2.0.1.72 know them; the settings keep today's
+    names."""
+
+    def written(self):
+        file = io.StringIO()
+        self.settings.write(file)
+        return file.getvalue()
+
+    def test_on_the_old_names_in_the_file(self):
+        self.settings.set_typed("icon", "legacystatusicons", True)
+        self.assertIn("\nactivetasks = led_blue_icon\n", self.written())
+        self.assertEqual(
+            "nuvola_actions_ledblue",
+            self.settings.get_typed("icon", "activetasks"),
+        )
+
+    def test_off_todays_names(self):
+        self.assertIn(
+            "\nactivetasks = nuvola_actions_ledblue\n", self.written()
+        )
+        self.assertNotIn("led_blue_icon", self.written())
+
+
 class SettingsObservableTest(SettingsTestCase):
     def setUp(self):
         super().setUp()
         self.events = test.ChangeRecorder("view.toolbar")
 
     def test_changing_the_setting_causes_notification(self):
-        self.settings.settuple("view", "toolbar", (16, 16))
+        self.settings.set_typed("view", "toolbar", (16, 16))
         self.assertEqual([("(16, 16)", self.settings)], self.events)
 
     def test_changing_another_setting_does_not_cause_a_notification(self):
-        self.settings.set("view", "statusbar", "True")
+        self.settings.set_typed("view", "statusbar", True)
         self.assertFalse(self.events)
 
     def test_the_section_is_told_which_option_changed(self):
         section = test.ChangeRecorder(
             self.settings.section_changed_event_type("view")
         )
-        self.settings.settuple("view", "toolbar", (16, 16))
+        self.settings.set_typed("view", "toolbar", (16, 16))
         self.assertEqual([("toolbar", self.settings)], section)
 
 
 class SpecificSettingsTest(SettingsTestCase):
     def testDefaultWindowPosition(self):
-        self.assertEqual("(-1, -1)", self.settings.get("window", "position"))
+        self.assertEqual(
+            (-1, -1), self.settings.get_typed("window", "position")
+        )
 
     def testSetCurrentVersionAtSave(self):
-        self.settings.set("version", "current", "0.0")
+        self.settings.set_typed("version", "current", "0.0")
         self.settings.save()
         self.assertEqual(
-            meta.data.version, self.settings.get("version", "current")
+            meta.data.version, self.settings.get_typed("version", "current")
         )
 
 
 class SettingsFileLocationTest(SettingsTestCase):
     def testDefaultSetting(self):
         self.assertEqual(
-            False, self.settings.getboolean("file", "saveinifileinprogramdir")
+            False,
+            self.settings.get_typed("file", "saveinifileinprogramdir"),
         )
 
     def testPathWhenNotSavingIniFileInProgramDir(self):
         self.assertNotEqual(sys.argv[0], self.settings.path())
 
     def testPathWhenSavingIniFileInProgramDir(self):
-        self.settings.setboolean("file", "saveinifileinprogramdir", True)
+        self.settings.set_typed("file", "saveinifileinprogramdir", True)
         self.assertEqual(
             os.path.abspath(os.path.dirname(sys.argv[0])), self.settings.path()
         )
 
     def testPathWhenSavingIniFileInProgramDirAndRunFromZipFile(self):
-        self.settings.setboolean("file", "saveinifileinprogramdir", True)
+        self.settings.set_typed("file", "saveinifileinprogramdir", True)
         sys.argv.insert(0, os.path.join("d:", "TaskCoach", "library.zip"))
         self.assertEqual(
             os.path.abspath(os.path.join("d:", "TaskCoach")),
@@ -294,13 +351,13 @@ class SettingsFileLocationTest(SettingsTestCase):
         class SettingsUnderTest(config.Settings):
             def on_settings_file_location_changed(self):
                 # pylint: disable=W0201
-                self.in_program_dir = self.getboolean(
+                self.in_program_dir = self.get_typed(
                     "file", "saveinifileinprogramdir"
                 )
 
         settings = SettingsUnderTest(load=False)
-        settings.setboolean("file", "saveinifileinprogramdir", True)
-        settings.setboolean("file", "saveinifileinprogramdir", False)
+        settings.set_typed("file", "saveinifileinprogramdir", True)
+        settings.set_typed("file", "saveinifileinprogramdir", False)
         self.assertFalse(settings.in_program_dir)
 
 
@@ -360,15 +417,15 @@ class SettingsLifetimeTest(test.TestCase):
 
 class MinimumSettingsTest(SettingsTestCase):
     def testAtLeastOneTaskTreeListViewer(self):
-        self.assertEqual(1, self.settings.getint("view", "taskviewercount"))
+        self.assertEqual(1, self.settings.get_typed("view", "taskviewercount"))
 
     def testTwoTaskTreeListViewers(self):
-        self.settings.set("view", "taskviewercount", "2")
-        self.assertEqual(2, self.settings.getint("view", "taskviewercount"))
+        self.settings.set_typed("view", "taskviewercount", 2)
+        self.assertEqual(2, self.settings.get_typed("view", "taskviewercount"))
 
     def testAtLeastOneTaskTreeListViewer_EvenWhenSetToZero(self):
-        self.settings.set("view", "taskviewercount", "0")
-        self.assertEqual(1, self.settings.getint("view", "taskviewercount"))
+        self.settings.set_typed("view", "taskviewercount", 0)
+        self.assertEqual(1, self.settings.get_typed("view", "taskviewercount"))
 
 
 class ApplicationOptionsTest(test.TestCase):

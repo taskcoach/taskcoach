@@ -21,15 +21,15 @@ from unittest import mock
 
 import wx
 import test
-from taskcoachlib import gui, config, operating_system
+from taskcoachlib import gui, operating_system
+from taskcoachlib.config import settings
 
 
 class WindowDimensionsTrackerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.section = "window"
-        self.settings.setvalue(self.section, "position", (50, 50))
+        settings.set(self.section, "position", (50, 50))
         # A frame per test: the shared one keeps earlier trackers bound
         self.window = wx.Frame(self.frame)
         if operating_system.isWindows():
@@ -44,15 +44,13 @@ class WindowDimensionsTrackerTest(test.wxTestCase):
 
     def test_initial_position(self):
         self.assertEqual(
-            self.settings.getvalue(self.section, "position"),
+            settings.get(self.section, "position"),
             self.window.GetPosition(),
         )
 
     def test_initial_size(self):
         width, height = self.window.GetSize()
-        self.assertEqual(
-            (width, height), self.settings.getvalue(self.section, "size")
-        )
+        self.assertEqual((width, height), settings.get(self.section, "size"))
 
     def test_maximize(self):
         # The window manager's answer, which a test display without one
@@ -69,7 +67,7 @@ class WindowDimensionsTrackerTest(test.wxTestCase):
                 self.window.GetEventHandler().ProcessEvent(events[maximized])
             self.tracker.save_position()
             self.assertEqual(
-                maximized, self.settings.getboolean(self.section, "maximized")
+                maximized, settings.get(self.section, "maximized")
             )
 
     def test_change_size(self):
@@ -77,18 +75,14 @@ class WindowDimensionsTrackerTest(test.wxTestCase):
         self.tracker.ready = True
         self.window.SetSize((1000, 600))
         self.tracker.save_position()
-        self.assertEqual(
-            (1000, 600), self.settings.getvalue(self.section, "size")
-        )
+        self.assertEqual((1000, 600), settings.get(self.section, "size"))
 
     def test_move(self):
         # Once placed, a move is kept and written on close
         self.tracker.ready = True
         self.window.SetPosition((200, 200))
         self.tracker.save_position()
-        self.assertEqual(
-            (200, 200), self.settings.getvalue(self.section, "position")
-        )
+        self.assertEqual((200, 200), settings.get(self.section, "position"))
 
     @test.skipOnPlatform("__WXMSW__", "__WXMAC__")  # Placed at once
     def test_nothing_is_kept_before_placed(self):
@@ -96,9 +90,7 @@ class WindowDimensionsTrackerTest(test.wxTestCase):
         # the user's: the saved position stays
         self.window.SetPosition((200, 200))
         self.tracker.save_position()
-        self.assertEqual(
-            (50, 50), self.settings.getvalue(self.section, "position")
-        )
+        self.assertEqual((50, 50), settings.get(self.section, "position"))
 
 
 class WindowGeometryTrackerFirstShowTest(test.wxTestCase):
@@ -107,9 +99,8 @@ class WindowGeometryTrackerFirstShowTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
-        self.settings.setvalue("window", "position", (10, 10))
-        self.settings.setvalue("window", "size", (620, 450))
+        settings.set("window", "position", (10, 10))
+        settings.set("window", "size", (620, 450))
         self.window = wx.Frame(self.frame)
         gui.windowdimensionstracker.WindowGeometryTracker(
             self.window, "window"
@@ -250,12 +241,11 @@ class PlacementTest(test.wxTestCase):
         )
         patcher.start()
         self.addCleanup(patcher.stop)
-        self.settings = config.settings.current()
-        self.settings.setvalue("window", "position", (300, 200))
-        self.settings.setvalue("window", "size", (1000, 700))
+        settings.set("window", "position", (300, 200))
+        settings.set("window", "size", (1000, 700))
 
     def place(self, window, maximized=False):
-        self.settings.setvalue("window", "maximized", maximized)
+        settings.set("window", "maximized", maximized)
         tracker = gui.windowdimensionstracker.WindowGeometryTracker(
             window, "window"
         )
@@ -346,7 +336,7 @@ class PlacementTest(test.wxTestCase):
         self.assertEqual(slowest, tracker._slowest_answer)
 
     def test_no_saved_position_keeps_the_saved_maximized(self):
-        self.settings.setvalue("window", "position", (-1, -1))
+        settings.set("window", "position", (-1, -1))
         window = FakeWindow()
         tracker = self.place(window, maximized=True)
         self.check_when_quiet(tracker, 2)
@@ -393,12 +383,11 @@ class DirectPlacementTest(test.wxTestCase):
         )
         patcher.start()
         self.addCleanup(patcher.stop)
-        self.settings = config.settings.current()
-        self.settings.setvalue("window", "position", (300, 200))
-        self.settings.setvalue("window", "size", (1000, 700))
+        settings.set("window", "position", (300, 200))
+        settings.set("window", "size", (1000, 700))
 
     def place(self, window, maximized=False):
-        self.settings.setvalue("window", "maximized", maximized)
+        settings.set("window", "maximized", maximized)
         tracker = gui.windowdimensionstracker.WindowGeometryTracker(
             window, "window"
         )
@@ -421,7 +410,7 @@ class DirectPlacementTest(test.wxTestCase):
         )
 
     def test_no_saved_position_keeps_the_saved_maximized(self):
-        self.settings.setvalue("window", "position", (-1, -1))
+        settings.set("window", "position", (-1, -1))
         window = FakeWindow()
         self.place(window, maximized=True)
         self.assertEqual(
@@ -447,12 +436,11 @@ class WaylandTest(test.wxTestCase):
         ):
             patcher.start()
             self.addCleanup(patcher.stop)
-        self.settings = config.settings.current()
 
     def test_main_window_keeps_size_and_maximized(self):
-        self.settings.setvalue("window", "position", (300, 200))
-        self.settings.setvalue("window", "size", (1000, 700))
-        self.settings.setvalue("window", "maximized", True)
+        settings.set("window", "position", (300, 200))
+        settings.set("window", "size", (1000, 700))
+        settings.set("window", "maximized", True)
         window = FakeWindow()
         tracker = gui.windowdimensionstracker.WindowGeometryTracker(
             window, "window"
@@ -461,13 +449,11 @@ class WaylandTest(test.wxTestCase):
             [("size", (1000, 700)), ("maximize", None)], window.requests
         )
         tracker.save()
-        self.assertEqual(
-            (300, 200), self.settings.getvalue("window", "position")
-        )
+        self.assertEqual((300, 200), settings.get("window", "position"))
 
     def test_editor_keeps_its_size_only(self):
-        self.settings.setvalue("effortdialog", "position", (2200, 100))
-        self.settings.setvalue("effortdialog", "size", (700, 500))
+        settings.set("effortdialog", "position", (2200, 100))
+        settings.set("effortdialog", "size", (700, 500))
         parent = FakeWindow()
         editor = FakeWindow()
         tracker = gui.windowdimensionstracker.WindowGeometryTracker(
@@ -475,9 +461,7 @@ class WaylandTest(test.wxTestCase):
         )
         self.assertEqual([("size", (700, 500))], editor.requests)
         tracker.save()
-        self.assertEqual(
-            (2200, 100), self.settings.getvalue("effortdialog", "position")
-        )
+        self.assertEqual((2200, 100), settings.get("effortdialog", "position"))
 
 
 class FakeDisplay:
@@ -517,15 +501,14 @@ class EditorPlacementTest(test.wxTestCase):
         ):
             patcher.start()
             self.addCleanup(patcher.stop)
-        self.settings = config.settings.current()
         self.parent = FakeWindow()
         self.parent.position = (100, 100)
         self.parent.size = (1200, 800)
 
     def open(self, position, size, maximized=False):
-        self.settings.setvalue("effortdialog", "position", position)
-        self.settings.setvalue("effortdialog", "size", size)
-        self.settings.setvalue("effortdialog", "maximized", maximized)
+        settings.set("effortdialog", "position", position)
+        settings.set("effortdialog", "size", size)
+        settings.set("effortdialog", "maximized", maximized)
         editor = FakeWindow()
         self.tracker = gui.windowdimensionstracker.WindowGeometryTracker(
             editor, "effortdialog", parent=self.parent
@@ -533,7 +516,7 @@ class EditorPlacementTest(test.wxTestCase):
         return editor.requests
 
     def saved_position(self):
-        return self.settings.getvalue("effortdialog", "position")
+        return settings.get("effortdialog", "position")
 
     def test_saved_geometry_on_the_parents_monitor_is_kept(self):
         requests = self.open((200, 150), (700, 500))

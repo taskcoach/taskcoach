@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import config
 from taskcoachlib.gui.dialog import version
+from taskcoachlib.config import settings
 import test
 
 
@@ -29,17 +29,16 @@ class DummyEvent(object):
 class CommonTestsMixin(object):
     def testCreateAndClose(self):
         self.dialog.onClose(DummyEvent())
-        self.assertTrue(self.settings.getboolean("version", "notify"))
+        self.assertTrue(settings.get("version", "notify"))
 
     def testNoMoreNotifications(self):
         self.dialog.check.SetValue(False)
         self.dialog.onClose(DummyEvent())
-        self.assertFalse(self.settings.getboolean("version", "notify"))
+        self.assertFalse(settings.get("version", "notify"))
 
 
 class VersionDialogTestCase(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.dialog = self.createDialog()
 
     def createDialog(self):

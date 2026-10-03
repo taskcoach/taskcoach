@@ -17,15 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import command, gui, config, persistence
+from taskcoachlib import command, gui, persistence
 from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.domain import note, attachment, category
+from taskcoachlib.config import settings
 
 
 class NoteViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.note = note.Note()
         self.taskFile.notes().append(self.note)
@@ -98,7 +98,7 @@ class NoteViewerTest(test.wxTestCase):
         cat1.setFiltered(True)
         cat2.setFiltered(True)
         self.assertEqual(1, self.viewer.size())
-        self.settings.setboolean("view", "categoryfiltermatchall", True)
+        settings.set("view", "categoryfiltermatchall", True)
         self.assertEqual(0, self.viewer.size())
 
     def testFilterOnAnyCategory(self):
@@ -109,5 +109,5 @@ class NoteViewerTest(test.wxTestCase):
         cat1.setFiltered(True)
         cat2.setFiltered(True)
         self.assertEqual(1, self.viewer.size())
-        self.settings.setboolean("view", "categoryfiltermatchall", False)
+        settings.set("view", "categoryfiltermatchall", False)
         self.assertEqual(1, self.viewer.size())

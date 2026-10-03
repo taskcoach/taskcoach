@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import gui, persistence
 from taskcoachlib.domain import base, task, effort, category
+from taskcoachlib.config import settings
 import test
 
 
@@ -38,8 +39,7 @@ class MockWidget(object):
 class UpdatePerSecondViewerTestsMixin(object):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
-        self.settings.set("taskviewer", "columns", "['timeSpent']")
+        settings.set("taskviewer", "columns", ["timeSpent"])
         self.taskFile = persistence.TaskFile()
         self.taskList = task.sorter.Sorter(
             self.taskFile.tasks(), sortBy="dueDateTime"

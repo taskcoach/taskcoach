@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import persistence, config, patterns
+from taskcoachlib import persistence, patterns
 from taskcoachlib.domain import task, category, date
+from taskcoachlib.config import settings
 from unittests import dummy
 import os
 import shutil
@@ -80,7 +81,6 @@ class DummyTaskFile(persistence.TaskFile):
 
 class AutoSaverTestCase(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.taskFile = DummyTaskFile()
         self.autoSaver = persistence.AutoSaver()
 
@@ -99,34 +99,34 @@ class AutoSaverTestCase(test.TestCase):
         self.assertFalse(self.taskFile.saveCalled)
 
     def testFileChanged_ButAutoSaveOff(self):
-        self.settings.set("file", "autosave", "False")
+        settings.set("file", "autosave", False)
         self.taskFile.setFilename("whatever.tsk")
         self.taskFile.tasks().append(task.Task())
         self.autoSaver.on_idle(dummy.Event())
         self.assertFalse(self.taskFile.saveCalled)
 
     def testFileChanged_ButNoFilename(self):
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autosave", True)
         self.taskFile.tasks().append(task.Task())
         self.autoSaver.on_idle(dummy.Event())
         self.assertFalse(self.taskFile.saveCalled)
 
     def testFileChanged(self):
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autosave", True)
         self.taskFile.setFilename("whatever.tsk")
         self.taskFile.tasks().append(task.Task())
         self.autoSaver.on_idle(dummy.Event())
         self.assertEqual(1, self.taskFile.saveCalled)
 
     def testSaveAsDoesNotTriggerAutoSave(self):
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autosave", True)
         self.taskFile.setFilename("whatever.tsk")
         self.taskFile.saveas("newfilename.tsk")
         self.autoSaver.on_idle(dummy.Event())
         self.assertEqual(1, self.taskFile.saveCalled)
 
     def testCloseDoesNotTriggerAutoSave(self):
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autosave", True)
         self.taskFile.setFilename("whatever.tsk")
         self.taskFile.tasks().append(task.Task())
         self.autoSaver.on_idle(dummy.Event())
@@ -134,14 +134,14 @@ class AutoSaverTestCase(test.TestCase):
         self.assertEqual(1, self.taskFile.saveCalled)
 
     def testLoadDoesNotTriggerAutoSave(self):
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autosave", True)
         self.taskFile.setFilename("whatever.tsk")
         self.taskFile.load()
         self.autoSaver.on_idle(dummy.Event())
         self.assertFalse(self.taskFile.saveCalled)
 
     def testLoadWithExceptionDoesNotTriggerAutoSave(self):
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autosave", True)
         self.taskFile.setFilename("whatever.tsk")
         try:
             self.taskFile.load(throw=True)
@@ -151,7 +151,7 @@ class AutoSaverTestCase(test.TestCase):
         self.assertFalse(self.taskFile.saveCalled)
 
     def testMergeDoesTriggerAutoSave(self):
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autosave", True)
         self.taskFile.setFilename("whatever.tsk")
         self.taskFile.merge("another-non-existing-file.tsk")
         self.autoSaver.on_idle(dummy.Event())
@@ -159,7 +159,7 @@ class AutoSaverTestCase(test.TestCase):
 
     def test_change_on_disk_pauses_auto_save(self):
         # Saving would replace another program's changes
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autosave", True)
         self.taskFile.setFilename("whatever.tsk")
         self.taskFile.changed_on_disk = lambda: True
         self.taskFile.tasks().append(task.Task())
@@ -170,13 +170,12 @@ class AutoSaverTestCase(test.TestCase):
 class AutoSaverRetryTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = DummyTaskFile()
         self.autoSaver = persistence.AutoSaver()
         self.autoSaver.RETRY_SECONDS = 0
         self.messages = []
         self.autoSaver._tell_user = self.messages.append
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autosave", True)
         self.taskFile.setFilename("whatever.tsk")
 
     def tearDown(self):
@@ -229,8 +228,7 @@ class AutoSaverChangedOnDiskTest(test.TestCase):
         directory = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, directory)
         self.filename = os.path.join(directory, "tasks.tsk")
-        self.settings = config.settings.current()
-        self.settings.set("file", "autosave", "True")
+        settings.set("file", "autosave", True)
         self.task_file = persistence.TaskFile()
         self.addCleanup(self.task_file.stop)
         self.addCleanup(self.task_file.close)

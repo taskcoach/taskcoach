@@ -19,16 +19,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test, io
-from taskcoachlib import persistence, config, gui
+from taskcoachlib import persistence, gui
 from taskcoachlib.domain import task, category, date
+from taskcoachlib.config import settings
 
 
 class TodoTxtWriterTestCase(test.wxTestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.file = io.StringIO()
         self.writer = persistence.TodoTxtWriter(self.file, "whatever.tsk")
-        self.settings.set("taskviewer", "treemode", "False")
+        settings.set("taskviewer", "treemode", False)
         self.taskFile = persistence.TaskFile()
         self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
 

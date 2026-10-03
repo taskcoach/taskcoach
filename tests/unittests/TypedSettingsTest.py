@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import io
 from unittest import mock
 
 import test
@@ -51,7 +52,7 @@ class TypedSettingsTest(test.TestCase):
         self.assertEqual("24", settings.view.timeformat)
 
     def test_a_viewer_instance_has_its_templates_types(self):
-        self.settings.add_section("taskviewer1", copyFromSection="taskviewer")
+        self.settings.add_section("taskviewer1", copy_from="taskviewer")
         self.assertEqual(
             ["dueDateTime"], settings.section("taskviewer1").sortby
         )
@@ -92,7 +93,9 @@ class TypedSettingsTest(test.TestCase):
 
     def test_write_stores_the_text_form(self):
         settings.view.statusbar = False
-        self.assertEqual("False", self.settings.get("view", "statusbar"))
+        file = io.StringIO()
+        self.settings.write(file)
+        self.assertIn("\nstatusbar = False\n", file.getvalue())
 
     def test_write_tells_the_listeners(self):
         self.registerObserver("view.statusbar")
@@ -117,7 +120,7 @@ class TypedSettingsTest(test.TestCase):
 
     def test_reads_the_object_in_use(self):
         other = config.Settings(load=False)
-        other.setboolean("view", "statusbar", False)
+        other.set_typed("view", "statusbar", False)
         settings.use(other)
         self.assertIs(False, settings.view.statusbar)
 
@@ -184,25 +187,25 @@ class ResetTest(test.TestCase):
         self.settings = config.Settings(load=False)
 
     def test_back_to_the_defaults(self):
-        self.settings.setboolean("view", "statusbar", False)
+        self.settings.set_typed("view", "statusbar", False)
         self.settings.reset()
-        self.assertIs(True, self.settings.getboolean("view", "statusbar"))
+        self.assertIs(True, self.settings.get_typed("view", "statusbar"))
 
     def test_sections_made_while_running_go(self):
-        self.settings.add_section("taskviewer1", copyFromSection="taskviewer")
-        self.settings.settext("taskviewer1", "title", "Mine")
+        self.settings.add_section("taskviewer1", copy_from="taskviewer")
+        self.settings.set_typed("taskviewer1", "title", "Mine")
         self.settings.reset()
         self.assertFalse(self.settings.has_section("taskviewer1"))
 
     def test_no_listener_is_told(self):
-        self.settings.setboolean("view", "statusbar", False)
+        self.settings.set_typed("view", "statusbar", False)
         self.registerObserver("view.statusbar")
         self.settings.reset()
         self.assertEqual([], self.events)
 
     def test_quiet_as_when_made(self):
         self.settings.reset()
-        self.assertIs(False, self.settings.getboolean("window", "tips"))
+        self.assertIs(False, self.settings.get_typed("window", "tips"))
 
 
 class ThemeIsDarkTest(test.wxTestCase):

@@ -20,8 +20,8 @@ import test
 import wx
 from unittest import mock
 from taskcoachlib.gui import dialog
-from taskcoachlib import config
 from taskcoachlib.domain import task, effort
+from taskcoachlib.config import settings
 
 
 class DummyEvent(object):
@@ -31,7 +31,6 @@ class DummyEvent(object):
 
 class ReminderDialogTest(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.aTask = task.Task("subject")
         self.taskList = task.TaskList([self.aTask])
         self.effortList = effort.EffortList(self.taskList)
@@ -64,23 +63,23 @@ class ReminderDialogTest(test.TestCase):
         reminderDialog = self.createReminderDialog()
         reminderDialog.snoozeOptions.SetSelection(0)
         reminderDialog.on_close(DummyEvent())
-        self.assertEqual(0, self.settings.getint("view", "defaultsnoozetime"))
+        self.assertEqual(0, settings.get("view", "defaultsnoozetime"))
 
     def testRememberSnoozeTime(self):
         reminderDialog = self.createReminderDialog()
         reminderDialog.snoozeOptions.SetSelection(2)
         reminderDialog.on_close(DummyEvent())
-        self.assertEqual(10, self.settings.getint("view", "defaultsnoozetime"))
+        self.assertEqual(10, settings.get("view", "defaultsnoozetime"))
 
     def testUseDefaultSnoozeTime(self):
-        self.settings.set("view", "defaultsnoozetime", "15")
+        settings.set("view", "defaultsnoozetime", 15)
         reminderDialog = self.createReminderDialog()
         self.assertEqual(
             "15 minutes", reminderDialog.snoozeOptions.GetStringSelection()
         )
 
     def testDontUseDefaultSnoozeTimeWhenItsNotInTheListOfOptions(self):
-        self.settings.set("view", "defaultsnoozetime", "17")
+        settings.set("view", "defaultsnoozetime", 17)
         reminderDialog = self.createReminderDialog()
         self.assertEqual(
             "5 minutes", reminderDialog.snoozeOptions.GetStringSelection()
@@ -91,11 +90,11 @@ class ReminderDialogTest(test.TestCase):
         reminderDialog.replaceDefaultSnoozeTime.SetValue(False)
         reminderDialog.on_close(DummyEvent())
         self.assertEqual(
-            False, self.settings.getboolean("view", "replacedefaultsnoozetime")
+            False, settings.get("view", "replacedefaultsnoozetime")
         )
 
     def testUseReminderReplaceDefaultSnoozeTime(self):
-        self.settings.setboolean("view", "replacedefaultsnoozetime", False)
+        settings.set("view", "replacedefaultsnoozetime", False)
         reminderDialog = self.createReminderDialog()
         self.assertEqual(
             False, reminderDialog.replaceDefaultSnoozeTime.GetValue()

@@ -18,7 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import command, config, gui, operating_system
+from taskcoachlib import command, gui, operating_system
 from taskcoachlib import patterns, persistence
 from taskcoachlib.domain import task, effort, date, note, attachment
 from taskcoachlib.gui import uicommand
@@ -89,14 +89,10 @@ class TaskEditorBySettingFocusMixin(TaskEditorSetterMixin):
 
 
 class TaskEditorTestCase(test.wxTestCase):
-    extraSettings = list()
     editorClass = gui.dialog.editor.TaskEditor
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
-        for section, name, value in self.extraSettings:
-            self.settings.set(section, name, value)
         self.today = date.Now()
         self.tomorrow = self.today + date.ONE_DAY
         self.yesterday = self.today - date.ONE_DAY

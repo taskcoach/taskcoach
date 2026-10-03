@@ -20,8 +20,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test, io, time
 import datetime
-from taskcoachlib import persistence, gui, config, meta
+from taskcoachlib import persistence, gui, meta
 from taskcoachlib.domain import task, effort, date
+from taskcoachlib.config import settings
 
 
 class VCalTestCase(test.wxTestCase):
@@ -29,7 +30,6 @@ class VCalTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.fd = io.StringIO()  # The app writes text (codecs.open)
         self.writer = persistence.iCalendarWriter(self.fd)
         self.taskFile = persistence.TaskFile()
@@ -184,7 +184,7 @@ class VCalTaskWriterTestCase(VCalTestCase):
             modificationDateTime=date.DateTime(2012, 1, 1),
         )
         self.taskFile.tasks().extend([self.task1, self.task2])
-        self.settings.set("taskviewer", "treemode", self.tree_mode)
+        settings.set("taskviewer", "treemode", self.tree_mode)
         self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
         self.selectItems([self.task2])
         self.vcalFile = self.writeAndRead()
@@ -238,11 +238,11 @@ class TestSelectionOnlyMixin(VCalTaskCommonTestsMixin):
 
 
 class TestSelectionList(TestSelectionOnlyMixin, VCalTaskWriterTestCase):
-    tree_mode = "False"
+    tree_mode = False
 
 
 class TestSelectionTree(TestSelectionOnlyMixin, VCalTaskWriterTestCase):
-    tree_mode = "True"
+    tree_mode = True
 
 
 class TestNotSelectionOnlyMixin(VCalTaskCommonTestsMixin):
@@ -256,11 +256,11 @@ class TestNotSelectionOnlyMixin(VCalTaskCommonTestsMixin):
 
 
 class TestNotSelectionList(TestNotSelectionOnlyMixin, VCalTaskWriterTestCase):
-    tree_mode = "False"
+    tree_mode = False
 
 
 class TestNotSelectionTree(TestNotSelectionOnlyMixin, VCalTaskWriterTestCase):
-    tree_mode = "True"
+    tree_mode = True
 
 
 class FoldTest(test.TestCase):

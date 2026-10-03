@@ -20,9 +20,10 @@ import time
 from unittest import mock
 
 import test
-from taskcoachlib import config, patterns, persistence
+from taskcoachlib import patterns, persistence
 from taskcoachlib.domain import effort, task
 from taskcoachlib.gui import idlecontroller
+from taskcoachlib.config import settings
 
 
 class IdleControllerTest(test.wxTestCase):
@@ -30,7 +31,6 @@ class IdleControllerTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.task_file = persistence.TaskFile()
         self.controller = idlecontroller.IdleController(
             self.task_file.efforts()
@@ -50,7 +50,7 @@ class IdleControllerTest(test.wxTestCase):
         self.task_file.stop()
 
     def enable(self, minutes=1):
-        self.settings.setint("feature", "minidletime", minutes)
+        settings.set("feature", "minidletime", minutes)
 
     def track(self):
         self.task.addEffort(effort.Effort(self.task))

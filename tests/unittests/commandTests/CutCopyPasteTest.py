@@ -24,6 +24,7 @@ from .TaskCommandsTest import (
     CommandWithEffortTestCase,
 )
 from taskcoachlib import command, patterns
+from taskcoachlib.config import settings
 from taskcoachlib.domain import note
 
 
@@ -301,7 +302,7 @@ class PasteIntoTaskCommandTest(CommandWithChildrenTestCase):
         )
 
     def testPasteChild_MarksNewParentAsNotCompleted(self):
-        self.settings.setboolean(
+        settings.set(
             "behavior", "markparentcompletedwhenallchildrencompleted", True
         )
         self.markCompleted([self.parent])
