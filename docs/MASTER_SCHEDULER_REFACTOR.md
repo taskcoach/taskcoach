@@ -374,7 +374,15 @@ go at the end. Details live in the sections and documents linked.
     lines: an engine per system (Linux inotify, Windows
     ReadDirectoryChangesW, macOS FSEvents, BSD kqueue) and a polling
     one. Every save checks the file on disk first, so the watcher only
-    makes the prompt come early.
+    makes the prompt come early. Cost of polling, measured in the app
+    2026-10-03: one check (does the file exist, its modification time)
+    takes 12 to 30 microseconds and read 0 bytes from the disk in
+    10,000 tries (the kernel keeps file details in memory); the 10 s
+    poller wakes 6 times a minute, while Task Coach's window thread
+    wakes 72 to 89 times a minute anyway. watchdog's three threads woke
+    0 times with nothing changing, but wake for every change of any
+    file in the task file's folder, and see no change made from another
+    computer on a network share.
     Lower the minimum to 2.1.6, so the Debian 12 and Ubuntu 22.04
     packages and setup scripts use the distribution's watchdog instead
     of bundling one from pip?
