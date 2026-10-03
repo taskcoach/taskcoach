@@ -347,58 +347,44 @@ version:
 7.x is under the 0BSD licence (4.0 to 6.0: LGPL 2.1 or later) and
 needs Python 3.10; 17 releases since 2023.
 
-**Size**: `python3-chardet` 5.2: 1.1 MB installed (2.3 MB with its
-files); pip: 4.0 2.1 MB, 6.0 24 MB, 7.6 3.2 MB plus an 864 KB compiled
-module.
+**Size**: `python3-chardet` 5.2: 1.1 MB installed (Debian 13); Arch's
+6.0: 36 MB; pip 7.6: 3.2 MB plus an 864 KB compiled module.
 
-**Measured**: 36 CSV files, 13 languages in their usual encodings
-(UTF-8 with and without mark, UTF-16, Windows-1250 to 1255,
-ISO-8859-1 and 2, Mac Roman, KOI8-R, Shift JIS, EUC-JP, GBK, Big5), 5
-and 100 rows. Read right, of 36:
+**Keep or replace**: the alternatives are charset-normalizer (another
+library, in every distribution: Ubuntu 22.04 2.0.6, Debian 12 3.0.1,
+Ubuntu 24.04 3.3.2, Debian 13 3.4.2, Fedora 43 3.4.3, Arch 3.5.1, pip
+3.5.2; MIT) and a guess of our own (a byte order mark, else UTF-8,
+else the system's code page). Measured on 36 CSV files, 13 languages
+in their usual encodings (UTF-8 with and without mark, UTF-16,
+Windows-1250 to 1255, ISO-8859-1 and 2, Mac Roman, KOI8-R, Shift JIS,
+EUC-JP, GBK, Big5), at 5, 100 and 2,000 rows; files read right, of 36,
+with the version each build gets:
 
-| chardet | Right | Wrong |
-|---------|:-----:|-------|
-| 4.0.0 | 29 | Polish and Czech Windows-1250 and ISO-8859-2, Turkish Windows-1254, French and German Mac Roman (one cannot be decoded: the wizard stops with an error, inferred) |
-| 5.1.0, 5.2.0 | 31 | Polish and Czech Windows-1250 and ISO-8859-2, Turkish Windows-1254 (P174) |
-| 6.0.0 | 32 | Polish and Czech ISO-8859-2 (read as Windows-1250), French and German Mac Roman |
-| 7.6.0 | 36 | |
+| Build | chardet | charset-normalizer | Our own guess |
+|---|---|---|---|
+| Ubuntu 22.04 | 29 (4.0) | 26 to 27 (2.0.6) | 21 |
+| Debian 12 | 31 (5.1) | 26 to 27 (3.0.1) | 21 |
+| Debian 13, Ubuntu 24.04, Fedora 43 | 31 (5.2) | 27 to 28 (3.3.2, 3.4.2) | 21 |
+| Arch | 32 (6.0) | 30 to 31 (3.5) | 21 |
+| macOS (pinned to 5.1) | 31 | 30 to 31 (3.5.2) | 21 |
+| Windows, AppImage, Flatpak | 36 (7.6) | 30 to 31 (3.5.2) | 21 |
 
-French text with typographic quotes, dashes and "œ" in Windows-1252:
-right on all. A wrong guess shows garbled in the preview and imports
-garbled. Guessing runs on the window's thread when the file is
-chosen; for a 430 KB file: 4.0 1.4 to 1.6 s, 5.1 2.0 to 2.8 s, 5.2
-1.3 s, 6.0 2.0 to 2.3 s, 7.6 under 0.1 s. Guessing from the first
-64 KB gave the same answer for all 36 at 8,000 rows, 6 times faster;
-a file plain ASCII in its first 64 KB would then be guessed ASCII
-(inferred).
+The own guess is right for 21 with a Western system code page, 20
+with a Central European one, 17 with a Cyrillic one. charset-normalizer
+reads French Windows-1252 files, the usual CSV Excel saves in Western
+Europe and the Americas, as Baltic or Central European in every
+version (Spanish ones too before 3.5, typographic quotes and dashes
+from 3.0 on); chardet reads them right in every version. Time for a 430 KB file:
+chardet 4.0 to 6.0 1.3 to 2.8 s, 7.6 under 0.1 s; charset-normalizer
+3.0 and 3.4 0.5 to 1.5 s, 3.5 under 0.1 s.
 
-A standard-library guess (a byte order mark, else strict UTF-8, else
-the system's code page) reads 21 of the 36 right with Windows-1252
-(Western), 20 with Windows-1250 (Central European), 17 with
-Windows-1251.
+**Recommendation**: keep. Each replacement reads fewer files on every
+build, and charset-normalizer misreads the most common legacy CSV.
 
-**Options**:
-
-- A. Keep as is. P174 stays on every build but Windows, AppImage and
-  Flatpak.
-- B. Keep chardet and add an Encoding choice to the wizard's first
-  page, set to chardet's guess; changing it reloads the preview.
-  About 20 lines in `csvimport.py`. Fixes P174 on every build: the
-  preview shows the garbling, the user picks the encoding.
-- C. Replace chardet by the standard-library guess and the same
-  Encoding choice: about 30 lines; chardet out of every build, the
-  macOS pin with it. ASCII, UTF-8, UTF-16 and the system code page's
-  files read as today; a file in another legacy encoding (Russian,
-  Greek, Hebrew, Japanese, Chinese, Central European on a Western
-  system) previews garbled until the user picks its encoding, which
-  chardet guesses today.
-- D. Require chardet 7 on every build: no distribution packages it,
-  so each would bundle it (P175's problem).
-
-**Recommendation**: B: it fixes P174 on all builds and loses none of
-chardet's guesses. C if fewer packages matter more than the guess for
-other languages' legacy files. Effort for B: the choice and its
-reload, a test with a Windows-1250 file, an app check.
+**Separate issue**: P174, Central European and Turkish files garbled
+by chardet 4.0 to 6.0 (every build but Windows, AppImage and Flatpak);
+its fix, an Encoding choice in the import wizard, is not part of this
+decision.
 
 ---
 
