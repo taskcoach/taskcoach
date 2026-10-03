@@ -1453,6 +1453,13 @@ each with the recommended action, none ruled yet:
   switch from the menu or the keys runs it twice: the view's focus
   activates the pane again. Measured 2026-10-02 (P122) with a timed
   copy of `RefreshCaptions()`; slower when the machine is loaded.
+  Proposed: our AUI manager (`widgets/frame.py`) refreshes the
+  captions without forcing each repaint; they are drawn at the next
+  paint. Prototyped in a scratch copy, Ctrl+PgDn through four views,
+  back to back: 0.57 to 5.2 s per switch before, 0.00 to 0.03 s
+  after; the active caption follows a moment later. AUI's other
+  callers (a notebook tab's caption, a floating view activated, a
+  caption drag) only need that repaint. Apply it?
 - P161. A calendar view squeezed to no height prints
   `wxAssertionError ... invalid bitmap size` from
   `wxevents.py` `_on_paint` (`wx.Bitmap(vw, vh)`) on each paint, the
@@ -1468,6 +1475,22 @@ each with the recommended action, none ruled yet:
   reach the main window's active view. The return to the main window
   comes from the window manager or GTK (no Python caller in the
   logged stack). Not traced further.
+- P163. Dependencies that add little, **asked by designer
+  2026-10-02**: where a package is trivially simple and the same on
+  every platform, our own few lines instead. All 21 non-standard
+  imports reviewed. A few lines of ours: `pyxdg` (the config and data
+  folders: `$XDG_CONFIG_HOME` or `~/.config`, two calls), `numpy`
+  (alpha of 16 to 32 px icons, P79), `WMI` (one query for Thunderbird
+  Portable's folder; `pywin32`, shipped, makes the same query),
+  `dbus-python` (three calls; Gio is loaded, P83), `distro`
+  (`setup.py` only, P78). With a trade-off: `watchdog` (watches one
+  file; the poller in the code checks it every 10 s), `lxml` (parses
+  the task file; the standard library can, on the path every file
+  loads through), `squaremap` (one 629-line module, packaged by
+  neither Fedora nor Arch; copy it into `thirdparty/`). Kept: wxPython,
+  PyGObject, pywin32, keyring, pyenchant, pywayland (platform
+  services); python-dateutil, chardet, pyparsing (parsing too large to
+  write ourselves); igraph (P82). Which to replace?
 
 ## Views on the Effective Styles
 
