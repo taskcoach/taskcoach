@@ -297,18 +297,14 @@ go at the end. Details live in the sections and documents linked.
     editor of the same task stays, ruled); the same in the calendar.
 
 73. Release notes for the next release. **Found 2026-10-02**: releases
-    are made by CI from a tag with no notes, and no changelog is kept
-    (`changes.in/` retired, P45): each of the seven build workflows
-    uploads its packages to the tag's GitHub release
-    (`action-gh-release`) with no text. Options: a `CHANGELOG.md` at
-    the top of the repository, a section per release, newest first,
-    the tag's section put on the release page by the workflows
-    (`body_path`); text typed on the release page by hand after the
-    builds; or the pull request's description. Recommended:
-    `CHANGELOG.md`, kept with the code and shown where users download.
-    First entry:
-    editing cells in place is off by default, after an upgrade too;
-    Preferences > Features > Edit cells in place turns it on (To Do 69).
+    were made by CI from a tag with no text, and no changelog was kept
+    (`changes.in/` retired, P45). Where, **ruled by designer
+    2026-10-02**: `CHANGELOG.md`, the tag's section put on the release
+    page by `release-notes.yml`
+    ([PACKAGING.md](PACKAGING.md#release-notes)); its first entry,
+    in-place editing off by default (To Do 69). Left: this branch's
+    other changes users notice, from these records, before the
+    release.
 74. ~~Replace `pyxdg` with a few lines of ours (was P163)~~: done
     2026-10-02, **ruled by designer**: `_xdg_dir()` in `settings.py`
     ([SETTINGS.md](SETTINGS.md#persistence)); the package left every

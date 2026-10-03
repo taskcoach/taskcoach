@@ -1,0 +1,33 @@
+name: Release Notes
+
+# A release tag's section of CHANGELOG.md becomes the text of its
+# release page; the build workflows add their packages to the same
+# release (docs/PACKAGING.md#release-notes).
+on:
+  push:
+    tags:
+      # The build workflows' release tags: Major.Minor.Milestone.Patch
+      - 'v[0-9]+.[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release-notes:
+    name: Release Notes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: The tag's section of CHANGELOG.md
+        run: python3 tools/release_notes.py "$GITHUB_REF_NAME" > release_notes.md
+
+      - name: Release page text
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

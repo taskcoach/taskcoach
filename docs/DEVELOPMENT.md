@@ -147,6 +147,9 @@ Canon decision by designer, 2026-09-28.
 ## Documentation
 
 - Update documentation when adding or changing features.
+- A change users notice gets a line in `CHANGELOG.md`, under the
+  version being made: its release notes
+  ([PACKAGING.md](PACKAGING.md#release-notes)).
 - Record non-obvious rationale (version pins, platform workarounds,
   design decisions) in a dedicated `docs/*.md` so the next reader does
   not have to rediscover it.

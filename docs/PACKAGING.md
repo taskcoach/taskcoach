@@ -22,6 +22,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 **Appendix**
 - [Dependency Installation Strategy](#dependency-installation-strategy)
 - [Creating a Release](#creating-a-release)
+- [Release Notes](#release-notes)
 - [Version Check](#version-check)
 
 ## Minimum Version Requirements
@@ -150,6 +151,9 @@ because deletions raise `delete`, not `push`.
 
 All seven also share a `concurrency` group that cancels superseded runs
 on a branch or PR but never on a tag.
+
+`release-notes.yml` runs on the release tags only, to write the
+release page's text ([Release Notes](#release-notes)).
 
 `build-flatpak.yml` additionally runs on a weekly `schedule`. That adds
 no build ref of its own: it exists solely because GitHub evicts the
@@ -612,13 +616,30 @@ All build scripts follow the same simple strategy:
 This process applies to all build targets (AppImage, Windows, macOS, etc.):
 
 1. Update version in `taskcoachlib/meta/data.py`
-2. Commit and push changes
-3. Create and push a version tag:
+2. Check that `CHANGELOG.md` has the version's section, its release
+   notes ([below](#release-notes))
+3. Commit and push changes
+4. Create and push a version tag:
    ```bash
    git tag v2.0.1.23
    git push origin v2.0.1.23
    ```
-4. GitHub Actions will automatically build all packages and create a GitHub Release
+5. GitHub Actions will automatically build all packages and create a GitHub Release
+
+### Release Notes
+
+**Ruled by designer 2026-10-02** (To Do 73 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)):
+release notes are kept in `CHANGELOG.md` at the top of the
+repository, a `## <version>` section per release, newest first: what
+changes for users. A change users notice gets its line there in the
+same commit, under the version being made.
+
+On a release tag, `release-notes.yml` puts the tag's section on the
+release page (`tools/release_notes.py` prints it); the build
+workflows add their packages to the same release. Without a section,
+or with an empty one, that workflow fails and the page has no text;
+the packages still upload.
 
 ### Version Check
 
