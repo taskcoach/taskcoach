@@ -361,7 +361,16 @@ go at the end. Details live in the sections and documents linked.
     ship, after testing them, so their packages stop bundling it; or
     drop it and always poll (every 1 or 2 s): another program's change
     then shows up within that time, and the released preference no
-    longer changes anything.
+    longer changes anything. Analysed 2026-10-02: our watcher uses only
+    an observer, a watch of the file's folder and the modified, moved
+    and created events, all much older than 2.0. Checked in the app
+    with 2.1.6 (Ubuntu 22.04), 2.2.1 (Debian 12) and 6.0 (installed
+    here): a file another program replaces by renaming a new copy over
+    it (sync clients, Task Coach itself) is noticed with all three; one
+    changed in place is now and then missed with all three (P165).
+    Lower the minimum to 2.1.6, so the Debian 12 and Ubuntu 22.04
+    packages and setup scripts use the distribution's watchdog instead
+    of bundling one from pip?
 80. `lxml`: parses the task file (`persistence/xml/reader.py`) and
     Help > Anonymize's file; the writer already uses the standard
     library's ElementTree, which drops the `<?taskcoach?>` version line
@@ -972,7 +981,10 @@ each with the recommended action, none ruled yet:
   log empty); the test process fails creating `test.py`'s `wx.App`,
   before any test. A bare `wx.App`, alone or after `test.py`'s imports,
   did not fail in 28 starts, nor `xdpyinfo` in 28: the trigger is in
-  `test.py`'s own start. Not traced further.
+  `test.py`'s own start. In a full run inside one Xvfb shared by every
+  file, one file failed this way twice in a row while the display was
+  up the whole time: it is the test process connecting, not a display
+  starting. Not traced further.
 - P91. Editors first open at 400x300, tabs scrolled, fields cut off
   ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md), Left). Pick a first size?
   2026-10-02: the editor's fitted size is 226x297 because its pages
@@ -1567,6 +1579,13 @@ each with the recommended action, none ruled yet:
   printed "desktop... ✗ Failed" and "Some packages failed to import"
   and exited with an error. They now check `watchdog`, installed on
   every path (found with To Do 75).
+- P165. A change another program writes into the open task file in
+  place, rather than by renaming a new copy over it, is now and then not
+  noticed: no "changed on disk" in the log, no prompt. Seen 2026-10-02
+  with watchdog 2.1.6, 2.2.1 and 6.0: 6 of 10 tries missed, while
+  renamed copies were noticed every time (To Do 79). Steps: open a
+  task file, append a line to it from a terminal (`printf '\n' >>
+  file`), wait 10 s. Master not checked yet; cause not traced.
 
 ## Views on the Effective Styles
 
