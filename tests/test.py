@@ -621,8 +621,15 @@ class TestProfiler:
             stats.print_callees()
 
     def run(self, tests, command="runTests"):
-        if self._options.profile_report_only or self.profile(tests, command):
+        """Profile the tests and report; false when a test failed,
+        which leaves no profile to report."""
+        if self._options.profile_report_only:
             self.reportLastRun()
+            return True
+        succeeded = self.profile(tests, command)
+        if succeeded:
+            self.reportLastRun()
+        return succeeded
 
     def profile(self, tests, command):  # pylint: disable=W0613
         import cProfile  # pylint: disable=W0404
@@ -648,7 +655,10 @@ if __name__ == "__main__":
     theOptions, theTestFiles = TestOptionParser().parse_args()
     check_platform()
     if theOptions.profile:
-        TestProfiler(theOptions).run(AllTests(theOptions, theTestFiles))
+        # In one process: the profile covers the selection as a whole
+        profiler = TestProfiler(theOptions)
+        if not profiler.run(AllTests(theOptions, theTestFiles)):
+            sys.exit(1)
     elif len(theTestFiles) == 1:
         if not AllTests(theOptions, theTestFiles).runTests().wasSuccessful():
             sys.exit(1)

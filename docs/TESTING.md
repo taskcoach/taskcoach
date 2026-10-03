@@ -46,6 +46,10 @@ xvfb-run -a ../.venv/bin/python test.py --alltests
 Without `--alltests` it runs the unit tests; `--help` lists the parts.
 `xvfb-run` keeps the test windows off the desktop.
 
+`--profile` runs the files given in one process under `cProfile`, so
+the report covers them together (`--help` lists its sort and limit
+options). A failing test exits 1 with no report, as a run without it.
+
 A test that no longer matches the app and needs a rewrite is marked
 `@test.stale("reason")`; `grep -rn "test.stale" tests` lists them.
 

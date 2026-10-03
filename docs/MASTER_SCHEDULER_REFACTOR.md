@@ -868,11 +868,12 @@ each with the recommended action, none ruled yet:
   recurrence. Each rewritten test fails with the code it covers broken
   in a copy. The two literal asserts and the Python 2 case the audit
   listed were gone already.
-- P89. `test.py --profile` runs the selection in one process and exits
-  0 on failures. Recommended: per file, with the exit status.
-  Analysed 2026-10-02: on a failure the profiler deletes its data and
-  returns nothing, and `test.py` exits 0 with no report. One process
-  is what a combined profile needs; the exit status is the fault.
+- P89. ~~`test.py --profile` exited 0 on failures~~: fixed 2026-10-02,
+  **asked by designer**. On a failure the profiler deleted its data and
+  printed no report, and `test.py` exited 0. It now exits 1. One
+  process stays: a combined profile needs it
+  ([TESTING.md](TESTING.md#running)). Checked: a passing file exits 0
+  with the report, a failing one exits 1 (0 before).
 - P90. ~~A file now and then failed to start ("Can't create a
   GtkStyleContext without a display connection", exit 133) when
   another `xvfb-run -a` started at the same moment~~: closed
