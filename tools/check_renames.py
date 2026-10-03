@@ -53,9 +53,6 @@ ALLOWED = {
     ("taskcoachlib/thirdparty/deltaTime.py", "R2", "day_name"): (
         "calendar.day_name; pyparsing result name"
     ),
-    ("taskcoachlib/application/application.py", "R2", "get_default"): (
-        "Gtk.IconTheme method"
-    ),
     ("taskcoachlib/config/settings.py", "R4", "frozen"): (
         "sys.frozen, set by bundlers"
     ),
@@ -78,10 +75,6 @@ ALLOWED = {
         "optional domain method, not defined yet"
     ),
     ("tests/test.py", "R2", "add_option"): "optparse method",
-    ("tests/test.py", "R2", "get_default"): "Gdk.Display method",
-    ("tests/unittests/ConfigTest.py", "R2", "read_file"): (
-        "configparser method"
-    ),
     ("taskcoachlib/persistence/xml/defaults.py", "R6", "fromName"): (
         "task file attribute"
     ),
