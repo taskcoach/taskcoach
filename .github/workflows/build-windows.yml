@@ -241,9 +241,6 @@ jobs:
           Copy-Item -Path "taskcoach.py" -Destination "build\TaskCoach\"
           Copy-Item -Path "launcher.pyw" -Destination "build\TaskCoach\"
 
-          # Copy icons
-          Copy-Item -Path "icons.in" -Destination "build\TaskCoach\icons.in" -Recurse
-
           # Copy Welcome.tsk if it exists
           if (Test-Path "Welcome.tsk") {
             Copy-Item -Path "Welcome.tsk" -Destination "build\TaskCoach\"

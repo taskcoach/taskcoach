@@ -793,16 +793,18 @@ each with the recommended action, none ruled yet:
   designer**; #213 copied the files and never deleted these, and the
   three English variants had already drifted. The template's folder is
   made by the command in [TRANSLATIONS.md](TRANSLATIONS.md).
-- P73. `icons.in/`: `nuvola.zip` (16 MB), `splash.png`,
-  `splash_inno.bmp` unused, shipped by the Windows build, which copies
-  the whole directory; `gui/icons/ICON_SOURCES.json` and
-  `splash_legacy.png` unused. Recommended: remove; copy only the icon.
-  Analysed 2026-10-02: nothing in the application, tools, packaging or
-  docs reads them; the Windows installer takes its icon from its own
-  copy of `taskcoach.ico`; icons are imported from downloads outside
-  the repository ([ICON_LIBRARY.md](ICON_LIBRARY.md)), not from the
-  zip; `ICON_SOURCES.json` repeats `ICON_THEME_CATALOG.json` (the
-  documented provenance) with older addresses.
+- P73. ~~Unused icon files, 16 MB of them shipped by the Windows
+  installer~~: removed 2026-10-02, **asked by designer**. `icons.in/`
+  kept `nuvola.zip` (16 MB), `splash.png` and `splash_inno.bmp`, which
+  the Windows build copied into the install with the whole folder;
+  `gui/icons/` kept `ICON_SOURCES.json` (an older copy of
+  `ICON_THEME_CATALOG.json`, the documented provenance) and
+  `splash_legacy.png`. Nothing read them: not the application, the
+  tools, the packaging or the docs; icons are imported from downloads
+  outside the repository ([ICON_LIBRARY.md](ICON_LIBRARY.md)). The
+  Windows build now copies only `taskcoach.ico`, which its installer
+  uses. Checked in the app: no icon error in the log, the About
+  dialog's splash shows. The Windows build runs in CI only.
 - P74. ~~Unused files~~: removed 2026-10-01, **ruled by designer**:
   the root `thirdparty/` (a README pointing elsewhere),
   `TaskCoach.entitlements` (no build signs the app), `tools/dot.py`,
