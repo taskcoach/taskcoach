@@ -247,25 +247,12 @@ go at the end. Details live in the sections and documents linked.
     and the slow double click then do nothing. The designer, verbatim:
     "I don't use list editing ever but some people do because it goes
     faster I find it's less reliable".
-70. One settings object, read directly (was P102). **Asked by
-    designer 2026-10-02**: "There's supposed to be one global settings
-    object ... I was creating a virtual layer over it ... we should
-    make a new task to completely refactor this." Done first: no
-    module but the application makes a `Settings` object (P152).
-    Left: move the reads that take the object through constructors to
-    `settings2`, replace `ConfigParser`, refine the refresh triggers,
-    and stop viewer instance 0 sharing the template section
-    ([SETTINGS.md](SETTINGS.md#todo) 1, 5, 7, 8). Not started beyond
-    P152: on 2026-10-02 15 reads go through `settings2.get()`, about 185
-    through the object passed down. Open before continuing: in this
-    branch or one of its own after the merge; the target (the read-only
-    shim as the one way to read, or a typed settings class replacing
-    `ConfigParser`, the INI format kept for users' files); all at once
-    or module by module; the refresh signal once `ConfigParser` goes;
-    how viewer instance 0 stops sharing the template section.
-    Started 2026-10-03, **asked by designer**: the analysis, the
-    answers to these questions, the steps and their status are in
-    [SETTINGS.md](SETTINGS.md#one-settings-object-to-do-70).
+70. ~~One settings object, read directly (was P102)~~: done
+    2026-10-03, **asked by designer**. Every module reads and writes
+    the application's one `Settings` by attribute, each option as its
+    type; `settings2` and the `ConfigParser` subclass are gone, and seven
+    options nothing reads left `defaults.py`. Analysis, decisions, steps
+    and results: [SETTINGS.md](SETTINGS.md#one-settings-object-to-do-70).
 71. ~~The Publisher cleans up after itself (was P153)~~: done
     2026-10-02, **asked by designer**. It held a subscription's
     source strongly and dropped a freed subscriber only when an event

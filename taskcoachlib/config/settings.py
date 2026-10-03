@@ -340,6 +340,14 @@ class Settings:
         ("export", "todotxt_selectiononly"),
         ("view", "taskinterdepsviewercount"),
         ("file", "fspoll"),
+        # Views in editors are never captioned or renamed
+        ("attachmentviewer", "title"),
+        ("attachmentviewerincategoryeditor", "title"),
+        ("attachmentviewerinnoteeditor", "title"),
+        ("attachmentviewerintaskeditor", "title"),
+        ("categoryviewerinnoteeditor", "title"),
+        ("categoryviewerintaskeditor", "title"),
+        ("prerequisiteviewerintaskeditor", "title"),
     )
     # Retired views: their template section and numbered instances
     _OBSOLETE_VIEWERS = ("taskinterdepsviewer",)

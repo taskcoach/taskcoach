@@ -243,6 +243,15 @@ class SettingsIOTest(SettingsTestCase):
             ),
         )
 
+    def test_the_titles_of_views_in_editors_are_dropped(self):
+        # Never captioned or renamed: nothing reads them
+        self.settings.read_file(
+            io.StringIO("[categoryviewerintaskeditor]\ntitle = Mine\n")
+        )
+        self.assertFalse(
+            self.settings.has_option("categoryviewerintaskeditor", "title")
+        )
+
     def test_the_retired_dependency_graph_view_is_dropped(self):
         self.fakeFile.write(
             "[view]\ntaskinterdepsviewercount = 2\n"

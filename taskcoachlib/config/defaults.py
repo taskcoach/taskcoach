@@ -151,7 +151,6 @@ defaults = {
         "piechartangle": "30",
     },
     "prerequisiteviewerintaskeditor": {
-        "title": "",  # User supplied viewer title
         "toolbarperspective": "TaskNew,NewSubItem,TaskNewFromTemplateButton,Separator,Edit,Delete,Separator,TaskMarkInactive,TaskMarkActive,TaskMarkCompleted,Separator,EffortStart,EffortStop,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ViewerHideTasks_completed,ViewerHideTasks_inactive,ResetFilter,Search",
         "treemode": "True",  # True = tree mode, False = list mode
         "sortby": '["subject"]',
@@ -277,7 +276,6 @@ defaults = {
         "columnautoresizing": "True",
     },
     "categoryviewerintaskeditor": {
-        "title": "",
         "toolbarperspective": "CategoryNew,NewSubItem,Separator,Edit,Delete,Separator,CategoryCheckAll,CategoryUncheckAll,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ResetFilter,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -292,7 +290,6 @@ defaults = {
         "columnautoresizing": "True",
     },
     "categoryviewerinnoteeditor": {
-        "title": "",
         "toolbarperspective": "CategoryNew,NewSubItem,Separator,Edit,Delete,Spacer,ResetFilter,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -428,7 +425,6 @@ defaults = {
         "consolidateeffortspertask": "False",
     },
     "attachmentviewer": {
-        "title": "",
         "toolbarperspective": "AttachmentNew,Separator,Edit,Delete,Separator,AttachmentOpen,Spacer,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -443,7 +439,6 @@ defaults = {
         "columnautoresizing": "True",
     },
     "attachmentviewerintaskeditor": {
-        "title": "",
         "toolbarperspective": "AttachmentNew,Separator,Edit,Delete,Separator,AttachmentOpen,Spacer,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -458,7 +453,6 @@ defaults = {
         "columnautoresizing": "True",
     },
     "attachmentviewerinnoteeditor": {
-        "title": "",
         "toolbarperspective": "AttachmentNew,Separator,Edit,Delete,Separator,AttachmentOpen,Spacer,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -473,7 +467,6 @@ defaults = {
         "columnautoresizing": "True",
     },
     "attachmentviewerincategoryeditor": {
-        "title": "",
         "toolbarperspective": "AttachmentNew,Separator,Edit,Delete,Separator,AttachmentOpen,Spacer,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",

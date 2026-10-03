@@ -14,10 +14,10 @@
 
 ## TODO
 
-1. **Modernize the settings system**: one typed settings object that
-   any module reads and writes by attribute, `ConfigParser` replaced by
-   a purpose-built class. To Do 70, [One Settings
-   Object](#one-settings-object-to-do-70): step 6 is left.
+1. ~~**Modernize the settings system**: one typed settings object
+   that any module reads and writes by attribute, `ConfigParser`
+   replaced by a purpose-built class~~: done 2026-10-03, To Do 70, [One
+   Settings Object](#one-settings-object-to-do-70).
 2. ~~Create `settings2.py`, a read-only copy~~: done; gone 2026-10-03
    (To Do 70 step 4).
 3. ~~Migrate the tooltip config lookup~~: done.
@@ -127,7 +127,7 @@ settings.get(section, option)            # names computed by the caller
 Each step: tests that fail before and pass after where behaviour is
 fixed, the full suite, and an app check of what it touches.
 
-Status: steps 1 to 5 done 2026-10-03. No module takes or keeps the
+Status: steps 1 to 6 done 2026-10-03. No module takes or keeps the
 object but the application, which makes, loads, locks and saves it;
 every other module reads and writes options by attribute
 (`settings.get()` and `settings.set()` for computed names) and takes
@@ -141,7 +141,21 @@ choice list's text is converted to the option's type on save);
 `settings2`, the read-only copy refreshed a second after a change; and
 the `ConfigParser` subclass with its untyped `get*()`/`set*()` methods
 and the conversion of old values at every read ([The
-Store](#the-store)). Step 6 is left.
+Store](#the-store)).
+
+Step 6: a full suite run and an app session logging every read (every
+view, editor tab, Preferences page and export dialog) left 21 of the
+503 declared options unread. The code reads eight of them on paths
+the run did not take: `file.lastfile` (a start without a file),
+`lastattachmentpath` (Browse), `inifileloaderror` (a file that does not
+load), the three balloon tips, and `round` of two effort views.
+`[version] python`, `wxpython` and `pythonfrozen` are written for
+support (P67). The three effort views' `sortby` is written by their
+sort order command and never read (they sort by period, descending);
+it stays, as removing it would fail that write. Gone: `title` of the
+attachment view and of the attachment, category and prerequisite
+views in editors, which are never captioned or renamed; an INI file
+loses them on load (`_OBSOLETE_SETTINGS`).
 
 ### Risks
 
