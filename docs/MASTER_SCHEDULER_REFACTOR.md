@@ -263,6 +263,9 @@ go at the end. Details live in the sections and documents linked.
     `ConfigParser`, the INI format kept for users' files); all at once
     or module by module; the refresh signal once `ConfigParser` goes;
     how viewer instance 0 stops sharing the template section.
+    Started 2026-10-03, **asked by designer**: the analysis, the
+    answers to these questions and the steps are in
+    [SETTINGS.md](SETTINGS.md#one-settings-object-to-do-70).
 71. ~~The Publisher cleans up after itself (was P153)~~: done
     2026-10-02, **asked by designer**. It held a subscription's
     source strongly and dropped a freed subscriber only when an event

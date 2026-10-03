@@ -3,16 +3,17 @@
 ## Table of Contents
 
 1. [TODO](#todo)
-2. [Known Anomalies](#known-anomalies)
-3. [ConfigParser Architecture](#configparser-architecture)
-4. [Current State](#current-state)
-5. [Problem](#problem)
-6. [Read-Only Shim](#read-only-shim)
-7. [Initialization](#initialization)
-8. [Usage](#usage)
-9. [Writes Stay on the Existing API](#writes-stay-on-the-existing-api)
-10. [In-Place Editing Options](#in-place-editing-options)
-11. [Key Files](#key-files)
+2. [One Settings Object (To Do 70)](#one-settings-object-to-do-70)
+3. [Known Anomalies](#known-anomalies)
+4. [ConfigParser Architecture](#configparser-architecture)
+5. [Current State](#current-state)
+6. [Problem](#problem)
+7. [Read-Only Shim](#read-only-shim)
+8. [Initialization](#initialization)
+9. [Usage](#usage)
+10. [Writes Stay on the Existing API](#writes-stay-on-the-existing-api)
+11. [In-Place Editing Options](#in-place-editing-options)
+12. [Key Files](#key-files)
 
 ---
 
@@ -47,6 +48,116 @@
    `patterns.Publisher().registerObserver(callback, eventType="settings2.changed")`.
    First listener (2026-09-28): viewers redraw when
    `feature.decimal_time` changes.
+
+Items 1, 5, 7 and 8 are To Do 70's: [One Settings
+Object](#one-settings-object-to-do-70).
+
+---
+
+## One Settings Object (To Do 70)
+
+**Asked by designer 2026-10-02** (To Do 70 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)):
+"There's supposed to be one global settings object ... I was creating
+a virtual layer over it. And it should be much simplified ... we
+should make a new task to completely refactor this." Started
+2026-10-03 in this branch, **asked by designer**.
+
+### Now (2026-10-03)
+
+- One `Settings` object, made by the application, reached four ways:
+  passed down through constructors, the class attributes
+  `Task.settings` and `Attachment.settings`, `wx.GetApp().settings`
+  (3 places), and `settings2`'s copy (about 40 reads).
+- 303 calls on it in 65 files: 194 reads, 83 writes, the rest file
+  paths and sections. The caller picks the type (`getboolean`,
+  `getint`, `getlist`, ...); nothing declares an option's type.
+- Passing it down: 92 functions take a `settings` parameter (61 of
+  them constructors), 263 calls pass it on, 39 attributes keep it.
+  Most in `menu.py`, `viewer/task.py`, `uicommand.py`, `editor.py`.
+- `settings2` is refreshed a second after a change (`window.theme` at
+  once): a read in that second gets the old value.
+- 18 listeners of setting changes, on the option's event
+  (`"view.statusbar"`) or the section's (`"settings.<section>"`); one
+  on `"settings2.changed"` (viewers, for `feature.decimal_time`).
+- Tests: 79 files make 143 objects of their own and set `Task.settings`
+  93 times, while the harness makes the one `settings2` reads; code
+  under test can read either.
+- 46 declared sections with 498 options: 224 true/false, 44 whole
+  numbers, 112 Python literals, 118 texts. Viewer instances
+  (`taskviewer1`) and editor windows (`taskdialog_with_<tabs>`) add
+  sections while running; files from old releases keep sections no
+  code reads (`syncml`, `iphone`).
+- Old files' values are fixed at every read (`_fixValuesFromOldIniFiles`
+  in `get()`), and a bad value shows an error when first read.
+
+### Target
+
+TODO 1: one typed settings object that any module reads and writes by
+attribute; the INI file stays as it is.
+
+```python
+from taskcoachlib.config import settings
+
+settings.view.statusbar                  # True
+settings.view.statusbar = False          # stored, "view.statusbar" sent
+settings.section("taskviewer1").sortby   # a section named while running
+settings.get(section, option)            # names computed by the caller
+```
+
+- Each option's type comes from its default: true/false, whole number,
+  Python literal, text. A viewer instance takes its template's types,
+  an editor window section one template's.
+- No copy and no refresh: every read is of the one object.
+  `window.theme_is_dark` is recomputed when the theme setting or the
+  system theme changes.
+- The same change events as now.
+- The INI file keeps its sections and text values; old values are
+  converted once, on load.
+- Tests: the harness resets the one object before each test.
+
+### Decisions
+
+1. In this branch, **asked by designer 2026-10-03**.
+2. The target is TODO 1's: a typed class in place of `ConfigParser`,
+   read and written by attribute, the INI format kept.
+3. Module by module, each step tested and pushed; it ends with
+   `ConfigParser` and `settings2` gone.
+4. With no copy there is nothing to refresh; the option and section
+   events stay, `"settings2.changed"` goes (its one listener takes
+   `"feature.decimal_time"`).
+5. Viewer instance 0 keeps using the template section: a new viewer
+   copies the previous one's, which users have (released behaviour);
+   the defaults stay in `defaults.py`.
+
+### Steps
+
+1. Typed attribute access and module-level access on the existing
+   object, with tests.
+2. Tests use the one object, reset before each test; `Task.settings`,
+   `Attachment.settings` and `wx.GetApp().settings` point to it.
+3. Module by module, from the widgets and the domain up to the menus,
+   main window and application: the parameters and attributes go,
+   reads and writes become attribute access, and the module's tests
+   follow.
+4. `settings2`'s readers move to `settings`; `settings2` goes.
+5. The store: no `ConfigParser` subclass; `configparser` only reads and
+   writes the file; old values converted on load.
+6. Options nothing reads leave `defaults.py` (static scan and a full
+   suite run logging every read).
+
+Each step: tests that fail before and pass after where behaviour is
+fixed, the full suite, and an app check of what it touches.
+
+### Risks
+
+- It touches 65 files and 79 test files. Checks: the full suite after
+  each step, an app check of each area touched.
+- An option read as two types: none among the 64 named directly; the
+  ones reached through computed names are checked by the logged run.
+- Reads in drawing loops (hover line width, theme) stay plain
+  attribute reads: typed values are cached.
+- An older release reads the same INI file: its format is unchanged.
 
 ---
 
