@@ -375,13 +375,7 @@ go at the end. Details live in the sections and documents linked.
     loads through it, and a parser change can treat odd files
     differently (entities, encodings, broken files); gain: one compiled
     package fewer.
-81. `squaremap`: one 629-line module (BSD) drawing the Task square map
-    view, optional; packaged by Debian and Ubuntu, not by Fedora or
-    Arch (pip in their builds); last release 1.0.5. Options: keep the
-    dependency, or copy it into `thirdparty/` and the view is always
-    there. Recommended: keep; every build already installs or bundles
-    it ([PACKAGING.md](PACKAGING.md)), and a copy is 629 lines of
-    drawing code to maintain. Keep?
+81. ~~`squaremap`~~: kept, D13.
 
 ## Deferred or Will Not Do
 
@@ -472,6 +466,11 @@ Numbered D1, D2, ...
   (`sounds/__init__.py`); Python warns "subprocess is still running"
   only with developer warnings on, and the sound plays. Keeping the
   object until the player ends would silence it.
+- D13. Copying `squaremap` into `thirdparty/` (was To Do 81), **ruled
+  by designer 2026-10-02**: kept as it is, a dependency. The one
+  629-line module (BSD) draws the Task square map view; every build
+  already installs or bundles it ([PACKAGING.md](PACKAGING.md)), and a
+  copy would be drawing code of ours to maintain.
 
 ## Pre-existing Issues
 
