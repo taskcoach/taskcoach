@@ -383,43 +383,27 @@ go at the end. Details live in the sections and documents linked.
     embedded layout).
 83. ~~wxPython~~: kept, **ruled by designer 2026-10-03**
     ([DEPENDENCIES.md](DEPENDENCIES.md#wxpython-to-do-83)).
-84. PyGObject: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#pygobject-to-do-84)): why, code,
-    platforms, size, replacing or removing it. Recommended: keep (the
-    Linux tray). Open: the designer's ruling.
-85. pywin32: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#pywin32-to-do-85)): why, code,
-    platforms, size, replacing or removing it. Recommended: keep (the
-    Windows calls, the Outlook drop's COM above all). Open: the
-    designer's ruling.
-86. keyring: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#keyring-to-do-86)): why, code,
-    platforms, size, replacing or removing it. Recommended: keep (the
-    stored IMAP password). Open: the designer's ruling.
-87. pyenchant: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#pyenchant-to-do-87)): why, code,
-    platforms, size, replacing or removing it. Recommended: keep (spell
-    checking). Open: the designer's ruling.
-88. pywayland: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)): why, code,
-    platforms, size, replacing or removing it. Recommended: keep (the
-    Idle time notice on KDE 6, wlroots and COSMIC Wayland). Open: the
-    designer's ruling.
-89. python-dateutil: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#python-dateutil-to-do-89)):
-    118 dates measured, P173 found; options A to D. Recommended: B,
-    keep it and add the system language's month names. Open: the
-    designer's ruling.
-90. chardet: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#chardet-to-do-90)): 5 versions
-    measured on 36 files, P174 found; options A to D. Recommended: B,
-    keep it and add an Encoding choice to the import wizard. Open: the
-    designer's ruling.
-91. pyparsing: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#pyparsing-to-do-91)): a
-    standard-library parser compared on 202,380 cases, P171, P172 and
-    P175 found; options A to D. Recommended: B, replace it with that
-    parser. Open: the designer's ruling.
+84. ~~PyGObject~~: moved to To Do 93, **parked by designer
+    2026-10-03**.
+85. ~~pywin32~~: moved to To Do 94, **parked by designer
+    2026-10-03**.
+86. ~~keyring~~: moved to To Do 95, **parked by designer
+    2026-10-03**.
+87. ~~pyenchant~~: moved to To Do 96, **parked by designer
+    2026-10-03**.
+88. ~~pywayland~~: moved to To Do 97, **parked by designer
+    2026-10-03**.
+89. python-dateutil, **asked by designer**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#python-dateutil-to-do-89)).
+    Proposed 2026-10-03 (with P173): keep it; the CSV import reads the
+    system language's month names and AM/PM, gives no date where the
+    text lacks its day or month (today's are taken now), and reads a
+    year-first date as year-month-day anywhere in the text. Prototyped
+    in a scratch copy with its tests; open: the designer's ruling.
+90. ~~chardet~~: moved to To Do 98, **parked by designer
+    2026-10-03**.
+91. ~~pyparsing~~: moved to To Do 99, **parked by designer
+    2026-10-03**.
 92. `dbus-python` to Gio (was To Do 77), **put off by designer
     2026-10-03** to the end of this refactor: no proposal until
     research shows it suits, without a regression, every supported
@@ -443,6 +427,28 @@ go at the end. Details live in the sections and documents linked.
       `org.kde.StatusNotifierWatcher` and bundles dbus-python), the
       AppImage (no PyGObject, P159), and the PyGObject of Ubuntu 22.04,
       the oldest.
+93. PyGObject (was To Do 84), **parked by designer 2026-10-03**: no
+    clear solution to decide on yet. Analysis:
+    [DEPENDENCIES.md](DEPENDENCIES.md#pygobject-to-do-84).
+94. pywin32 (was To Do 85), **parked by designer 2026-10-03**: no
+    clear solution to decide on yet. Analysis:
+    [DEPENDENCIES.md](DEPENDENCIES.md#pywin32-to-do-85).
+95. keyring (was To Do 86), **parked by designer 2026-10-03**: no
+    clear solution to decide on yet. Analysis:
+    [DEPENDENCIES.md](DEPENDENCIES.md#keyring-to-do-86).
+96. pyenchant (was To Do 87), **parked by designer 2026-10-03**: no
+    clear solution to decide on yet. Analysis:
+    [DEPENDENCIES.md](DEPENDENCIES.md#pyenchant-to-do-87).
+97. pywayland (was To Do 88), **parked by designer 2026-10-03**: no
+    clear solution to decide on yet. Analysis:
+    [DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88).
+98. chardet (was To Do 90), **parked by designer 2026-10-03**: no
+    clear solution to decide on yet; P174 belongs to it. Analysis:
+    [DEPENDENCIES.md](DEPENDENCIES.md#chardet-to-do-90).
+99. pyparsing (was To Do 91), **parked by designer 2026-10-03**: no
+    clear solution to decide on yet; P171, P172 and P175 (the Ubuntu
+    22.04 package) belong to it. Analysis:
+    [DEPENDENCIES.md](DEPENDENCIES.md#pyparsing-to-do-91).
 
 ## Deferred and Will Not Do
 
