@@ -359,8 +359,10 @@ go at the end. Details live in the sections and documents linked.
     `setup.py` now declares `pywin32` for Windows, which WMI had
     pulled in. Not run: Windows only, and CI runs no tests (P85).
 79. ~~`watchdog` (was P81)~~: replaced 2026-10-03, **ruled by
-    designer** (option B): Task Coach checks the open file's
-    modification time and size every 5 s in a thread of its own
+    designer** (option B, every 10 s, ruled the same day: another
+    program changing the file is exceptional and the notice only
+    asks): Task Coach checks the open file's modification time and
+    size every 10 s in a thread of its own
     (`filesystem/watcher.py`), the same on every system and on network
     shares ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#watching-the-file),
     with the measured cost). The watcher runs only while a file is

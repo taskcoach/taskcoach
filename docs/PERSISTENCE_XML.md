@@ -153,7 +153,7 @@ so a change the watcher has not reported yet is never written over.
 
 **Ruled by designer 2026-10-03** (To Do 79 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)):
-Task Coach checks the open file's modification time and size every 5
+Task Coach checks the open file's modification time and size every 10
 seconds (`filesystem/watcher.py`), in a thread that runs while a file
 is open. Any difference from what it last saw, an older time too (a
 restored copy), goes to `TaskFile.check_disk()` on the user interface
@@ -167,7 +167,7 @@ Measured in the app, 2026-10-03:
 - A check takes 12 to 30 microseconds and reads nothing from the
   disk: the system keeps a file's details in memory, and a check does
   not change its access time, so a sleeping drive stays asleep.
-- It wakes 12 times a minute; Task Coach's window thread wakes 72 to
+- It wakes 6 times a minute; Task Coach's window thread wakes 72 to
   89 times a minute anyway (its clock for timers and reminders). It
   keeps nothing awake: a suspended laptop runs no thread.
 - On a network share, a check is one small request.
@@ -176,9 +176,11 @@ watchdog, used before, reported a change at once through each
 system's notices (inotify, FSEvents, ReadDirectoryChangesW), but woke
 for every change to any file in the task file's folder, did not see
 changes made from another computer on a network share, and differed
-per system (about 6,000 lines, a compiled part on macOS). A notice up
-to 5 s later changes nothing that matters: every save checks the file
-first.
+per system (about 6,000 lines, a compiled part on macOS). Another
+program changing the open file is exceptional, and the notice only
+asks (nothing is merged or reloaded unasked), so 10 s is soon enough
+(**ruled by designer 2026-10-03**); every save checks the file first
+anyway.
 
 ## Merging
 

@@ -28,7 +28,7 @@ import threading
 
 
 class FilesystemNotifier:
-    INTERVAL = 5  # Seconds between checks
+    INTERVAL = 10  # Seconds between checks
 
     def __init__(self):
         super().__init__()

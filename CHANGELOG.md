@@ -8,3 +8,6 @@ section is the text of its GitHub release page
 
 - Editing cells in place is off by default, after an upgrade too;
   Preferences > Features > Edit cells in place turns it on.
+- Preferences > Files no longer has "Use polling for file monitoring":
+  Task Coach checks the open file every 10 seconds on every system,
+  network shares included, and asks when another program changed it.
