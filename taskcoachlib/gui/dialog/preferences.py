@@ -69,7 +69,9 @@ class FontColorSyncer(object):
             self._fontButton.SetSelectedColour(self._fgColorButton.GetColour())
 
 
-class SettingsPageBase(widgets.ScrolledBookPage):
+class SettingsPage(widgets.ScrolledBookPage):
+    _labelWidth = 300
+    _maxHelpRight = 1000  # Max right edge (px from left of page) for help text
 
     @property
     def _columnGap(self):
@@ -606,11 +608,6 @@ class SettingsPageBase(widgets.ScrolledBookPage):
             settings.set(section, setting, icon_id)
         for section, setting, btn in self._pathSettings:
             settings.set(section, setting, btn.GetPath())
-
-
-class SettingsPage(SettingsPageBase):
-    _labelWidth = 300
-    _maxHelpRight = 1000  # Max right edge (px from left of page) for help text
 
     def fit(self):
         """Wrap column 0 labels and inline help texts before final layout."""

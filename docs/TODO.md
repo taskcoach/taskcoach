@@ -297,7 +297,7 @@ Use `EVT_CHILD_FOCUS` on each page to detect when the user leaves a control
 all tracked controls against the live `Settings` object (the INI file values).
 No need to store "original values" — the settings object is the baseline.
 
-**`SettingsPageBase`:**
+**`SettingsPage`:**
 - Bind `EVT_CHILD_FOCUS` → `_onChildFocus`
 - Add `hasChanges()` that iterates `_booleanSettings`, `_choiceSettings`,
   `_integerSettings`, `_pathSettings`, `_textSettings`,
