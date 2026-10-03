@@ -153,7 +153,6 @@ class MainWindow(
         self.SetMenuBar(
             menu.MainMenu(
                 self,
-                self.settings,
                 self.iocontroller,
                 self.viewer,
                 self.taskFile,

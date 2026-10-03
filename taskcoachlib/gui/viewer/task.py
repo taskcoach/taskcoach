@@ -308,7 +308,6 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
     def createTaskPopupMenu(self):
         return taskcoachlib.gui.menu.TaskPopupMenu(
             self.parent,
-            settings.current(),
             self.presentation(),
             self.taskFile.efforts(),
             self.taskFile.categories(),

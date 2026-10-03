@@ -157,9 +157,10 @@ tips, the version check, the reminders, the idle time notice, the
 window size tracker, the templates dialog, the date and time entry
 helpers and the list columns (which handed the object to the in-place
 editors), the UI commands (31 of which had a settings base only to be
-handed the object), and the views, editors, toolbars and the view
-container (which kept the object and never read it). The menus, export
-dialog, Preferences, tray icon, file commands, main window and
+handed the object), the views, editors, toolbars and the view
+container (which kept the object and never read it), and the menus
+(only the File menu read it, for the recent files) and the tray icon.
+The export dialog, Preferences, file commands, main window and
 application are left; where one of them still takes the object, the
 code moved so far passes `settings.current()`.
 

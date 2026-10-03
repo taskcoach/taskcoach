@@ -2022,9 +2022,7 @@ class TaskNewFromTemplateButton(
     def createPopupMenu(self):
         from taskcoachlib.gui import menu
 
-        return menu.TaskTemplateMenu(
-            self.main_window(), self.taskList, settings.current()
-        )
+        return menu.TaskTemplateMenu(self.main_window(), self.taskList)
 
     def get_menu_text(self):
         return _("New task from &template")

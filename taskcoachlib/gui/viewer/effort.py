@@ -270,7 +270,6 @@ class EffortViewer(
             self.parent,
             self.taskFile.tasks(),
             self.taskFile.efforts(),
-            settings.current(),
             self,
         )
         columnPopupMenu = taskcoachlib.gui.menu.EffortViewerColumnPopupMenu(

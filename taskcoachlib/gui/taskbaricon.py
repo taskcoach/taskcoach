@@ -23,6 +23,7 @@ import wx
 import os
 import logging
 from taskcoachlib import meta, patterns, operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.gui.toplevelcontroller import (
     create_toplevel_controller,
@@ -107,8 +108,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def __init__(
         self,
         mainwindow,
-        taskList,
-        settings,
+        task_list,
         default_icon_id="nuvola_apps_korganizer",
         tick_icon_id="nuvola_apps_clock",
         tack_icon_id="nuvola_apps_ktimer",
@@ -121,8 +121,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         super().__init__(*args, **kwargs)
         self.__window = mainwindow
         self.__toplevel = None
-        self.__task_list = taskList
-        self.__settings = settings
+        self.__task_list = task_list
         self.__icon_id = self.__default_icon_id = default_icon_id
         self.__current_icon_id = self.__icon_id
         self.__tooltip_text = ""
@@ -132,13 +131,13 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         self.__update_tooltip = _OnceAfterBursts(self, self.__set_tooltip_text)
         self.registerObserver(
             self.on_task_list_changed,
-            eventType=taskList.addItemEventType(),
-            eventSource=taskList,
+            eventType=task_list.addItemEventType(),
+            eventSource=task_list,
         )
         self.registerObserver(
             self.on_task_list_changed,
-            eventType=taskList.removeItemEventType(),
-            eventSource=taskList,
+            eventType=task_list.removeItemEventType(),
+            eventSource=task_list,
         )
         self.registerObserver(
             self.on_tracking_changed,
@@ -228,9 +227,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         self.__update_tooltip()
 
     def on_every_second(self):
-        if self.__settings.getboolean(
-            "window", "blinktaskbariconwhentrackingeffort"
-        ):
+        if settings.window.blinktaskbariconwhentrackingeffort:
             self.__toggle_tracking_icon()
             self.__set_icon()
 
@@ -402,8 +399,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def __init__(
         self,
         mainwindow,
-        taskList,
-        settings,
+        task_list,
         default_tray_icon_id="taskcoach-app",
         tick_tray_icon_id="taskcoach-clock",
         tack_tray_icon_id="taskcoach-timer",
@@ -413,9 +409,8 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         super().__init__()
         self.__window = mainwindow
         self.__toplevel = None
-        self.__task_list = taskList
-        self.__trackable_tasks = taskList
-        self.__settings = settings
+        self.__task_list = task_list
+        self.__trackable_tasks = task_list
         self.__menu_rebuild_pending = False
 
         # Under Flatpak the SNI host runs outside the sandbox and cannot
@@ -463,13 +458,13 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         # Set up observers
         self.registerObserver(
             self.on_task_list_changed,
-            eventType=taskList.addItemEventType(),
-            eventSource=taskList,
+            eventType=task_list.addItemEventType(),
+            eventSource=task_list,
         )
         self.registerObserver(
             self.on_task_list_changed,
-            eventType=taskList.removeItemEventType(),
-            eventSource=taskList,
+            eventType=task_list.removeItemEventType(),
+            eventSource=task_list,
         )
         self.registerObserver(
             self.on_tracking_changed,
@@ -540,9 +535,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__update_tooltip()
 
     def on_every_second(self):
-        if self.__settings.getboolean(
-            "window", "blinktaskbariconwhentrackingeffort"
-        ):
+        if settings.window.blinktaskbariconwhentrackingeffort:
             self.__toggle_tracking_icon()
             self.__set_icon()
 
@@ -698,7 +691,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         """Build submenu for task templates."""
         from taskcoachlib import persistence
 
-        path = self.__settings.pathToTemplatesDir()
+        path = settings.current().pathToTemplatesDir()
         try:
             template_list = persistence.TemplateList(path)
             templates = list(zip(template_list.tasks(), template_list.names()))
@@ -1039,7 +1032,7 @@ def _needs_appindicator():
     return False
 
 
-def create_taskbar_icon(mainwindow, taskList, settings):
+def create_taskbar_icon(mainwindow, task_list):
     """Factory function to create the appropriate taskbar icon.
 
     Uses wx.adv.TaskBarIcon when available (preferred for full click event support).
@@ -1049,8 +1042,7 @@ def create_taskbar_icon(mainwindow, taskList, settings):
 
     Args:
         mainwindow: The main application window
-        taskList: The task list
-        settings: Application settings
+        task_list: The task list
 
     Returns:
         TaskBarIcon or AppIndicatorTaskBarIcon instance
@@ -1075,17 +1067,17 @@ def create_taskbar_icon(mainwindow, taskList, settings):
     # Use AppIndicator if needed and available
     if needs_appindicator and _APPINDICATOR_AVAILABLE:
         log_step("Using AppIndicator (desktop requires it)", prefix="TRAY")
-        return AppIndicatorTaskBarIcon(mainwindow, taskList, settings)
+        return AppIndicatorTaskBarIcon(mainwindow, task_list)
 
     # Use native wx.adv.TaskBarIcon if available
     if wx_taskbar_available:
         log_step("Using wx.adv.TaskBarIcon (native)", prefix="TRAY")
-        return TaskBarIcon(mainwindow, taskList, settings)
+        return TaskBarIcon(mainwindow, task_list)
 
     # Last resort: try AppIndicator on GTK
     if operating_system.isGTK() and _APPINDICATOR_AVAILABLE:
         log_step("Using AppIndicator (fallback)", prefix="TRAY")
-        return AppIndicatorTaskBarIcon(mainwindow, taskList, settings)
+        return AppIndicatorTaskBarIcon(mainwindow, task_list)
 
     # No working tray backend: the native tray is unavailable (e.g. GNOME on
     # Wayland, which has no XEmbed system tray) and the AppIndicator bindings

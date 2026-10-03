@@ -94,7 +94,7 @@ class BaseCategoryViewer(
 
     def createCategoryPopupMenu(self, localOnly=False):
         return taskcoachlib.gui.menu.CategoryPopupMenu(
-            self.parent, settings.current(), self.taskFile, self, localOnly
+            self.parent, self.taskFile, self, localOnly
         )
 
     def _createColumns(self):

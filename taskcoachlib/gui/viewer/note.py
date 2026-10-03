@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import command, widgets
-from taskcoachlib.config import settings
 from taskcoachlib.domain import note
 from taskcoachlib.gui import uicommand, dialog
 from taskcoachlib.gui.icons import image_list_cache
@@ -73,7 +72,6 @@ class BaseNoteViewer(
         self._columns = self._createColumns()
         itemPopupMenu = taskcoachlib.gui.menu.NotePopupMenu(
             self.parent,
-            settings.current(),
             self.taskFile.categories(),
             self,
             notes=self.taskFile.notes(),

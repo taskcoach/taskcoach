@@ -877,9 +877,7 @@ class Application(object, metaclass=patterns.Singleton):
             # None when no tray backend can work on this system; in that case
             # we run without a tray icon rather than create a broken one.
             task_bar_icon = taskbaricon.create_taskbar_icon(
-                self.mainwindow,
-                self.taskFile.tasks(),
-                self.settings,
+                self.mainwindow, self.taskFile.tasks()
             )
             if task_bar_icon is None:
                 return
@@ -887,7 +885,6 @@ class Application(object, metaclass=patterns.Singleton):
             self.taskBarIcon.set_popup_menu(
                 menu.TaskBarMenu(
                     self.taskBarIcon,
-                    self.settings,
                     self.taskFile,
                     self.mainwindow.__dict__.get("viewer"),
                 )

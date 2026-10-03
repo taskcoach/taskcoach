@@ -114,7 +114,7 @@ class AttachmentViewer(
     def createWidget(self):
         imageList = self.createImageList()
         itemPopupMenu = taskcoachlib.gui.menu.AttachmentPopupMenu(
-            self.parent, settings.current(), self.presentation(), self
+            self.parent, self.presentation(), self
         )
         columnPopupMenu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
         self._popupMenus.extend([itemPopupMenu, columnPopupMenu])

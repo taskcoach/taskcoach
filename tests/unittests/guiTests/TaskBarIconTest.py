@@ -51,9 +51,7 @@ class TaskBarIconTestCase(test.TestCase):
         self.taskList = task.TaskList()
         self.settings = config.settings.current()
         self.window = MainWindowMock()
-        self.icon = gui.taskbaricon.TaskBarIcon(
-            self.window, self.taskList, self.settings
-        )
+        self.icon = gui.taskbaricon.TaskBarIcon(self.window, self.taskList)
 
     def tearDown(self):  # pragma: no cover
         if operating_system.isWindows():

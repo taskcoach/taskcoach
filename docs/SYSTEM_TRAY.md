@@ -71,7 +71,7 @@ usual there.
 ### Platform Detection Flow
 
 ```
-create_taskbar_icon(mainwindow, taskList, settings)
+create_taskbar_icon(mainwindow, task_list)
   │
   ├─ Linux/GTK + AppIndicator available → AppIndicatorTaskBarIcon
   │   .__init__()

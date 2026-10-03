@@ -227,9 +227,7 @@ class RecentFilesMenuTest(test.wxTestCase):
         self.filenames = []
 
     def createFileMenu(self):
-        return gui.menu.FileMenu(
-            self.frame, self.settings, self.ioController, None
-        )
+        return gui.menu.FileMenu(self.frame, self.ioController, None)
 
     def setRecentFilesAndCreateMenu(self, *filenames):
         self.addRecentFiles(*filenames)
@@ -536,9 +534,7 @@ class TaskTemplateMenuTest(test.wxTestCase):
 
     def test_menu_is_refilled_when_its_parent_opens(self):
         parent = wx.Menu()
-        menu = self.menu_class(
-            self.frame, task.TaskList(), self.settings, parent
-        )
+        menu = self.menu_class(self.frame, task.TaskList(), parent)
         parent.AppendSubMenu(menu, "Templates")
         self.uicommands.append(Separator())  # A template was added
         self.open_menu(parent)
@@ -546,9 +542,7 @@ class TaskTemplateMenuTest(test.wxTestCase):
 
     def test_menu_is_not_refilled_when_another_menu_opens(self):
         parent = wx.Menu()
-        menu = self.menu_class(
-            self.frame, task.TaskList(), self.settings, parent
-        )
+        menu = self.menu_class(self.frame, task.TaskList(), parent)
         self.uicommands.append(Separator())
         self.open_menu(wx.Menu())
         self.assertEqual(1, len(menu))
