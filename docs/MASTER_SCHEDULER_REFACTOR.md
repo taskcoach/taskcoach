@@ -302,6 +302,67 @@ go at the end. Details live in the sections and documents linked.
     section here, a `CHANGELOG.md`, the pull request). First entry:
     editing cells in place is off by default, after an upgrade too;
     Preferences > Features > Edit cells in place turns it on (To Do 69).
+74. Replace `pyxdg` with a few lines of ours (was P163). **Ruled by
+    designer 2026-10-02.** Two calls: the settings folder
+    (`$XDG_CONFIG_HOME` or `~/.config`) and the data folder
+    (`$XDG_DATA_HOME` or `~/.local/share`), Linux only.
+75. Remove `distro` (was P78). **Ruled by designer 2026-10-02.** Only
+    `setup.py` imports it, to add the desktop file, AppStream file and
+    icon to a Debian or Ubuntu install, which `debian/rules` installs
+    itself; the builds and setup scripts install it for nothing.
+76. `numpy` (was P79): combines the transparency of an icon and its
+    overlay (`tools/wxhelper.py`,
+    `gui/icons/synthetic_icon_generator.py`).
+    It also costs a subprocess probe at each start
+    ([NUMPY.md](NUMPY.md)), the `<2` pin of the pip builds and, from
+    numpy 2.4, a crash on processors without SSE4.2. Options: keep it,
+    or the same operations on `bytes` (Python's own C loops, such as
+    `bytes(map(max, a, b))`) or `wx.Image`'s calls. **The designer's
+    concern 2026-10-02**: speed with many icons. To analyse first:
+    which icons go through it and when (start, icon picker, each
+    paint), timed both ways in the app.
+77. `dbus-python` to Gio (was P83). Three calls: the startup report's
+    tray check (is `org.kde.StatusNotifierWatcher` on the session
+    bus?) and two Idle time notice methods (GNOME's
+    `org.gnome.Mutter.IdleMonitor`, KDE Plasma 5's
+    `org.freedesktop.ScreenSaver`; [IDLE.md](IDLE.md)). Gio, in
+    PyGObject (required on Linux since P62), makes the same calls.
+    Removes an optional package from the deb (`Recommends:` per
+    codename in `build-deb.yml`), rpm, Arch and Flatpak builds; idle
+    detection on GNOME and Plasma 5 then works without it. Risk: both
+    methods run only in those sessions; here only against a stand-in
+    service on a private session bus.
+78. `WMI` (Windows) to `pywin32`. One call: when an e-mail is dropped
+    from Thunderbird Portable, `mailer/thunderbird.py` finds its folder
+    among the running processes. `pywin32`, shipped in the Windows
+    build, makes the same query
+    (`win32com.client.GetObject("winmgmts:")`). Risk: Windows only, not
+    runnable here, and CI runs no tests (P85); checked against WMI's
+    own code or on a Windows machine.
+79. `watchdog` (was P81): watches the open task file, so a change by
+    another program (a second Task Coach, a sync tool) is merged at
+    once. The poller in the code (`filesystem/fs_poller.py`, every
+    10 s) takes over when it is missing or with Preferences > Files >
+    "Use polling for file monitoring" (for network shares, where the
+    system's notices fail). Options: keep it and lower `>=3.0.0`, which
+    has no recorded reason, to what Bookworm (2.2.1) and Jammy (2.1.6)
+    ship, after testing them, so their packages stop bundling it; or
+    drop it and always poll (every 1 or 2 s): another program's change
+    then shows up within that time, and the released preference no
+    longer changes anything.
+80. `lxml`: parses the task file (`persistence/xml/reader.py`) and
+    Help > Anonymize's file; the writer already uses the standard
+    library's ElementTree, which drops the `<?taskcoach?>` version line
+    lxml keeps (P128). Options: keep it, or the standard library (the
+    version line read from `XMLPullParser` events). Risk: every file
+    loads through it, and a parser change can treat odd files
+    differently (entities, encodings, broken files); gain: one compiled
+    package fewer.
+81. `squaremap`: one 629-line module (BSD) drawing the Task square map
+    view, optional; packaged by Debian and Ubuntu, not by Fedora or
+    Arch (pip in their builds); last release 1.0.5. Options: keep the
+    dependency, or copy it into `thirdparty/` and the view is always
+    there.
 
 ## Deferred or Will Not Do
 
@@ -830,20 +891,15 @@ each with the recommended action, none ruled yet:
   README banner is `icon-ideas/splash-modernize/splash_new3a.jpg`.
 - P77. Three AppStream files (Debian's legacy one, the Flatpak's, the
   AppImage's inline). Recommended: one metainfo.
-- P78. `distro` serves only `setup.py`'s Debian `data_files`, which
-  duplicate `debian/rules`. Recommended: remove both.
-- P79. `numpy` serves six status-filter icons; it costs a probe at each
-  start and pins (`<2` blocks Python 3.13 pip builds). Replace with
-  `wx.Image` and drop it?
+- P78. Moved to To Do 75.
+- P79. Moved to To Do 76.
 - P80. Python floor: the code needs 3.10, packaging says 3.8;
   `setup.py` lists 3.8/3.9, `tests_require`, an iOS description and an
   unused Windows branch. Recommended: 3.10, metadata cleaned.
-- P81. `watchdog>=3.0.0` has no recorded reason and forces bundling on
-  Bookworm and Jammy. Test 2.2.1 and lower it?
+- P81. Moved to To Do 79.
 - P82. `igraph` is declared nowhere, so the Dependency Graph viewer is
   hidden in every package. Declare it or retire the viewer?
-- P83. `dbus-python` (3 call sites) could be Gio, already used.
-  Replace?
+- P83. Moved to To Do 77.
 - P84. Build inputs adrift: `scripts/build-*.sh` differ from CI; the
   spec's `Source0` names a `main` branch; PKGBUILD leftovers; an
   empty `debian/taskcoach.install`; `appimagetool` from AppImageKit.
@@ -882,8 +938,10 @@ each with the recommended action, none ruled yet:
   six at a time all started), reopened the same day: the third of
   three test files run one after another, each under its own
   `xvfb-run -a`, failed this way, as did single files in full runs
-  (`LeakTest.py`, `TaskStatusTest.py`, `ListCtrlTest.py`). Cause not
-  traced.
+  (`LeakTest.py`, `TaskStatusTest.py`, `ListCtrlTest.py`). Twice in a
+  row again that evening while another program's `xvfb-run -a`
+  displays (:99 to :101) were running; 12 starts right after did not
+  fail. Cause not traced.
 - P91. Editors first open at 400x300, tabs scrolled, fields cut off
   ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md), Left). Pick a first size?
   2026-10-02: the editor's fitted size is 226x297 because its pages
@@ -1475,22 +1533,7 @@ each with the recommended action, none ruled yet:
   reach the main window's active view. The return to the main window
   comes from the window manager or GTK (no Python caller in the
   logged stack). Not traced further.
-- P163. Dependencies that add little, **asked by designer
-  2026-10-02**: where a package is trivially simple and the same on
-  every platform, our own few lines instead. All 21 non-standard
-  imports reviewed. A few lines of ours: `pyxdg` (the config and data
-  folders: `$XDG_CONFIG_HOME` or `~/.config`, two calls), `numpy`
-  (alpha of 16 to 32 px icons, P79), `WMI` (one query for Thunderbird
-  Portable's folder; `pywin32`, shipped, makes the same query),
-  `dbus-python` (three calls; Gio is loaded, P83), `distro`
-  (`setup.py` only, P78). With a trade-off: `watchdog` (watches one
-  file; the poller in the code checks it every 10 s), `lxml` (parses
-  the task file; the standard library can, on the path every file
-  loads through), `squaremap` (one 629-line module, packaged by
-  neither Fedora nor Arch; copy it into `thirdparty/`). Kept: wxPython,
-  PyGObject, pywin32, keyring, pyenchant, pywayland (platform
-  services); python-dateutil, chardet, pyparsing (parsing too large to
-  write ourselves); igraph (P82). Which to replace?
+- P163. Moved to To Do 74 to 81.
 
 ## Views on the Effective Styles
 
