@@ -107,7 +107,6 @@ class TaskEditorTestCase(test.wxTestCase):
         self.editor = self.editorClass(
             self.frame,
             self.getItems(),
-            self.settings,
             self.taskList,
             self.taskFile,
         )

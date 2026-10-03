@@ -27,9 +27,7 @@ class CategoryViewerTest(test.wxTestCase):
         self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.categories = self.taskFile.categories()
-        self.viewer = gui.viewer.CategoryViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.CategoryViewer(self.frame, self.taskFile)
 
     def tearDown(self):
         super().tearDown()
@@ -50,7 +48,7 @@ class CategoryViewerTest(test.wxTestCase):
         paint = task.Task(subject="paint")
         self.taskFile.tasks().append(paint)
         local = gui.dialog.editor.LocalCategoryViewer(
-            [paint], self.frame, self.taskFile, self.settings
+            [paint], self.frame, self.taskFile
         )
         local.check_all_categories()
         self.assertEqual(

@@ -30,12 +30,11 @@ class ViewerContainer(object):
     components, e.g. menu's, to talk to the ViewerContainer as were
     it a regular viewer."""
 
-    def __init__(self, containerWidget, settings, *args, **kwargs):
-        self.containerWidget = containerWidget
+    def __init__(self, container_widget, *args, **kwargs):
+        self.containerWidget = container_widget
         self._notifyActiveViewer = False
         self._focus_skipped = False  # While the main window was minimized
         self.__bind_event_handlers()
-        self._settings = settings
         self.viewers = []
         super().__init__(*args, **kwargs)
 

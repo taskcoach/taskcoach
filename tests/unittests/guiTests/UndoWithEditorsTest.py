@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 
 import test
-from taskcoachlib import config
 from taskcoachlib.domain import attachment
 from taskcoachlib.gui.dialog import editor
 from taskcoachlib.patterns.snapshot import Snapshot
@@ -33,35 +32,27 @@ class UndoWithEditorsTest(UndoTest.UndoTest, test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        settings = config.settings.current()
         task_file = self.task_file
         self.editors = [
-            editor.TaskEditor(
-                self.frame, [each], settings, self.tasks, task_file
-            )
+            editor.TaskEditor(self.frame, [each], self.tasks, task_file)
             for each in (self.parent, self.child, self.other)
         ] + [
             editor.EffortEditor(
                 self.frame,
                 [self.effort],
-                settings,
                 task_file.efforts(),
                 task_file,
             ),
             editor.CategoryEditor(
                 self.frame,
                 [self.category],
-                settings,
                 self.categories,
                 task_file,
             ),
-            editor.NoteEditor(
-                self.frame, [self.note], settings, self.notes, task_file
-            ),
+            editor.NoteEditor(self.frame, [self.note], self.notes, task_file),
             editor.AttachmentEditor(
                 self.frame,
                 [self.mail],
-                settings,
                 attachment.AttachmentList([self.mail]),
                 task_file,
             ),

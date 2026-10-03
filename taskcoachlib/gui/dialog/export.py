@@ -351,7 +351,7 @@ class ExportAsCSVDialog(ExportDialog):
 
             kwargs["attachmentsToShow"] = AttachmentList()
         hiddenViewer = viewerClass(
-            self._hiddenPanel, self.window.taskFile, self.settings, **kwargs
+            self._hiddenPanel, self.window.taskFile, **kwargs
         )
         hiddenViewer.Hide()
         self._hiddenViewers[viewerClass] = hiddenViewer
@@ -991,7 +991,7 @@ class ExportAsHTMLDialog(ExportDialog):
 
             kwargs["attachmentsToShow"] = AttachmentList()
         hiddenViewer = viewerClass(
-            self._hiddenPanel, self.window.taskFile, self.settings, **kwargs
+            self._hiddenPanel, self.window.taskFile, **kwargs
         )
         hiddenViewer.Hide()
         self._hiddenViewers[viewerClass] = hiddenViewer

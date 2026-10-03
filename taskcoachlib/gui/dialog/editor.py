@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import widgets, patterns, command, operating_system, render
-from taskcoachlib.config import defaults
+from taskcoachlib.config import settings
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.domain import (
@@ -219,10 +219,6 @@ class SubjectPage(Page):
     pageName = "subject"
     pageTitle = _("Description")
     pageIcon = "nuvola_actions_draw-freehand"
-
-    def __init__(self, items, parent, settings, *args, **kwargs):
-        self._settings = settings
-        super().__init__(items, parent, *args, **kwargs)
 
     def addEntries(self):
         self.add_subject_entry()
@@ -541,9 +537,7 @@ class AttachmentSubjectPage(SubjectPage):
                 )
                 # Check if file exists for file attachments
                 if item_type == "file":
-                    attachment_base = self._settings.get(
-                        "file", "attachmentbase"
-                    )
+                    attachment_base = settings.file.attachmentbase
                     if not os.path.exists(
                         item.normalizedLocation(attachment_base)
                     ):
@@ -611,20 +605,18 @@ class AttachmentSubjectPage(SubjectPage):
         self.addEntry(_("Location"), panel, flags=[None, wx.EXPAND])
 
     def onSelectLocation(self, event):  # pylint: disable=W0613
-        base_path = self._settings.get("file", "lastattachmentpath")
+        base_path = settings.file.lastattachmentpath
         if not base_path:
             base_path = os.getcwd()
         filename = widgets.AttachmentSelector(default_path=base_path)
 
         if filename:
-            self._settings.set(
-                "file",
-                "lastattachmentpath",
-                os.path.abspath(os.path.split(filename)[0]),
+            settings.file.lastattachmentpath = os.path.abspath(
+                os.path.split(filename)[0]
             )
-            if self._settings.get("file", "attachmentbase"):
+            if settings.file.attachmentbase:
                 filename = attachment.getRelativePath(
-                    filename, self._settings.get("file", "attachmentbase")
+                    filename, settings.file.attachmentbase
                 )
             self._subjectEntry.SetValue(os.path.split(filename)[-1])
             self._locationEntry.SetValue(filename)
@@ -1327,12 +1319,9 @@ class DatesPage(ScrolledPage):
     pageIcon = "nuvola_apps_date"
     columns = 3  # label, datetime row, rest
 
-    def __init__(
-        self, theTask, parent, settings, items_are_new, *args, **kwargs
-    ):
-        self.__settings = settings
+    def __init__(self, the_task, parent, items_are_new, *args, **kwargs):
         self.__items_are_new = items_are_new
-        super().__init__(theTask, parent, *args, **kwargs)
+        super().__init__(the_task, parent, *args, **kwargs)
 
     def close(self):
         if len(self.items) == 1 and hasattr(self, "_statusLabel"):
@@ -1607,7 +1596,6 @@ class DatesPage(ScrolledPage):
         self.registerObserver(
             self.__onPresetsConfigChanged,
             eventType="feature.task_duration_presets",
-            eventSource=self.__settings,
         )
 
         # Mode dropdown: Automatic, Implicit, Adjust Due Date, Adjust Start Date
@@ -1801,7 +1789,7 @@ class DatesPage(ScrolledPage):
             _("Presets..."), None
         )  # Placeholder
 
-        presets_str = self.__settings.get("feature", "task_duration_presets")
+        presets_str = settings.feature.task_duration_presets
         if presets_str:
             presets = []
             for minutes_str in presets_str.split(","):
@@ -2580,28 +2568,20 @@ class PageWithViewer(Page):
     columns = 1
 
     def __init__(
-        self,
-        items,
-        parent,
-        taskFile,
-        settings,
-        settingsSection,
-        *args,
-        **kwargs
+        self, items, parent, task_file, settings_section, *args, **kwargs
     ):
-        self.__taskFile = taskFile
-        self.__settings = settings
-        self.__settingsSection = settingsSection
+        self.__task_file = task_file
+        self.__settings_section = settings_section
         super().__init__(items, parent, *args, **kwargs)
 
     def addEntries(self):
         # pylint: disable=W0201
-        self.viewer = self.createViewer(
-            self.__taskFile, self.__settings, self.__settingsSection
+        self.viewer = self.create_viewer(
+            self.__task_file, self.__settings_section
         )
         self.addEntry(self.viewer, growable=True, flags=[wx.EXPAND])
 
-    def createViewer(self, taskFile, settings, settingsSection):
+    def create_viewer(self, task_file, settings_section):
         raise NotImplementedError
 
     def close(self):
@@ -2618,12 +2598,11 @@ class EffortPage(PageWithViewer):
     pageTitle = _("Effort")
     pageIcon = "nuvola_apps_clock"
 
-    def createViewer(self, taskFile, settings, settingsSection):
+    def create_viewer(self, task_file, settings_section):
         return viewer.EffortViewer(
             self,
-            taskFile,
-            settings,
-            settingsSection=settingsSection,
+            task_file,
+            settingsSection=settings_section,
             use_separate_settings_section=False,
             tasksToShowEffortFor=task.TaskList(self.items),
         )
@@ -2709,7 +2688,7 @@ class CategoriesPage(PageWithViewer):
             super().addEntries()
             self.fit()
 
-    def createViewer(self, taskFile, settings, settingsSection):
+    def create_viewer(self, task_file, settings_section):
         for item in self.items:
             for eventType in (
                 item.categoryAddedEventType(),
@@ -2723,9 +2702,8 @@ class CategoriesPage(PageWithViewer):
         return LocalCategoryViewer(
             self.items,
             self,
-            taskFile,
-            settings,
-            settingsSection=settingsSection,
+            task_file,
+            settingsSection=settings_section,
             use_separate_settings_section=False,
         )
 
@@ -2779,7 +2757,7 @@ class AttachmentsPage(PageWithViewer):
     pageTitle = _("Attachments")
     pageIcon = "nuvola_status_mail-attachment"
 
-    def createViewer(self, taskFile, settings, settingsSection):
+    def create_viewer(self, task_file, settings_section):
         assert len(self.items) == 1
         item = self.items[0]
         self.registerObserver(
@@ -2789,9 +2767,8 @@ class AttachmentsPage(PageWithViewer):
         )
         return LocalAttachmentViewer(
             self,
-            taskFile,
-            settings,
-            settingsSection=settingsSection,
+            task_file,
+            settingsSection=settings_section,
             use_separate_settings_section=False,
             owner=item,
         )
@@ -2877,7 +2854,7 @@ class NotesPage(PageWithViewer):
     pageTitle = _("Notes")
     pageIcon = "nuvola_apps_knotes"
 
-    def createViewer(self, taskFile, settings, settingsSection):
+    def create_viewer(self, task_file, settings_section):
         assert len(self.items) == 1
         item = self.items[0]
         self.registerObserver(
@@ -2887,9 +2864,8 @@ class NotesPage(PageWithViewer):
         )
         return LocalNoteViewer(
             self,
-            taskFile,
-            settings,
-            settingsSection=settingsSection,
+            task_file,
+            settingsSection=settings_section,
             use_separate_settings_section=False,
             owner=item,
         )
@@ -2948,7 +2924,7 @@ class PrerequisitesPage(PageWithViewer):
             super().addEntries()
             self.fit()
 
-    def createViewer(self, taskFile, settings, settingsSection):
+    def create_viewer(self, task_file, settings_section):
         assert len(self.items) == 1
         patterns.Publisher().registerObserver(
             self.on_prerequisites_changed,
@@ -2958,9 +2934,8 @@ class PrerequisitesPage(PageWithViewer):
         return LocalPrerequisiteViewer(
             self.items,
             self,
-            taskFile,
-            settings,
-            settingsSection=settingsSection,
+            task_file,
+            settingsSection=settings_section,
             use_separate_settings_section=False,
         )
 
@@ -3521,11 +3496,10 @@ class EditBook(widgets.Notebook):
     all_page_names = ["subclass responsibility"]
     domainObject = "subclass responsibility"
 
-    def __init__(self, parent, items, taskFile, settings, items_are_new):
+    def __init__(self, parent, items, task_file, items_are_new):
         self.items = items
-        self.settings = settings
         super().__init__(parent)
-        self.addPages(taskFile, items_are_new)
+        self.addPages(task_file, items_are_new)
         self.__load_perspective(items_are_new)
 
     def NavigateBook(self, forward):
@@ -3535,7 +3509,7 @@ class EditBook(widgets.Notebook):
             self.SetSelection(curSel)
 
     def addPages(self, task_file, items_are_new):
-        page_names = self.settings.getlist(self.settings_section(), "pages")
+        page_names = self.options.pages
         for page_name in page_names:
             page = self.createPage(page_name, task_file, items_are_new)
             self.AddPage(page, page.pageTitle, page.pageIcon)
@@ -3590,14 +3564,13 @@ class EditBook(widgets.Notebook):
         if page_name == "subject":
             return self.create_subject_page()
         elif page_name == "dates":
-            return DatesPage(self.items, self, self.settings, items_are_new)
+            return DatesPage(self.items, self, items_are_new)
         elif page_name == "prerequisites":
             return PrerequisitesPage(
                 self.items,
                 self,
                 task_file,
-                self.settings,
-                settingsSection="prerequisiteviewerin%seditor"
+                settings_section="prerequisiteviewerin%seditor"
                 % self.domainObject,
             )
         elif page_name == "progress":
@@ -3607,8 +3580,8 @@ class EditBook(widgets.Notebook):
                 self.items,
                 self,
                 task_file,
-                self.settings,
-                settingsSection="categoryviewerin%seditor" % self.domainObject,
+                settings_section="categoryviewerin%seditor"
+                % self.domainObject,
             )
         elif page_name == "budget":
             return BudgetPage(self.items, self)
@@ -3617,24 +3590,21 @@ class EditBook(widgets.Notebook):
                 self.items,
                 self,
                 task_file,
-                self.settings,
-                settingsSection="effortviewerin%seditor" % self.domainObject,
+                settings_section="effortviewerin%seditor" % self.domainObject,
             )
         elif page_name == "notes":
             return NotesPage(
                 self.items,
                 self,
                 task_file,
-                self.settings,
-                settingsSection="noteviewerin%seditor" % self.domainObject,
+                settings_section="noteviewerin%seditor" % self.domainObject,
             )
         elif page_name == "attachments":
             return AttachmentsPage(
                 self.items,
                 self,
                 task_file,
-                self.settings,
-                settingsSection="attachmentviewerin%seditor"
+                settings_section="attachmentviewerin%seditor"
                 % self.domainObject,
             )
         elif page_name == "appearance":
@@ -3643,7 +3613,7 @@ class EditBook(widgets.Notebook):
             return PathPage(self.items, self, task_file)
 
     def create_subject_page(self):
-        return SubjectPage(self.items, self, self.settings)
+        return SubjectPage(self.items, self)
 
     def setFocus(self, columnName):
         """Select the correct page of the editor and correct control on a page
@@ -3658,7 +3628,7 @@ class EditBook(widgets.Notebook):
 
     def perspective(self):
         """Return the perspective for the notebook."""
-        return self.settings.gettext(self.settings_section(), "perspective")
+        return self.options.perspective
 
     def __load_perspective(self, items_are_new=False):
         """Load the perspective (layout) for the current combination of visible
@@ -3702,15 +3672,15 @@ class EditBook(widgets.Notebook):
         page_names = [
             self[index].pageName for index in range(self.GetPageCount())
         ]
-        section = self.settings_section()
-        self.settings.settext(section, "perspective", self.SavePerspective())
-        self.settings.setlist(section, "pages", page_names)
+        options = self.options
+        options.perspective = self.SavePerspective()
+        options.pages = page_names
 
     def settings_section(self):
         """Create the settings section for this dialog if necessary and
         return it."""
         section = self.__settings_section_name()
-        if not self.settings.has_section(section):
+        if not settings.has_section(section):
             self.__create_settings_section(section)
         return section
 
@@ -3723,13 +3693,16 @@ class EditBook(widgets.Notebook):
         return "%sdialog_with_%s" % (self.domainObject, sorted_page_names)
 
     def __create_settings_section(self, section):
-        """Create the section and initialize the options in the section."""
-        self.settings.add_section(section)
-        values = dict(
-            defaults.editor_window, pages=str(self.__pages_to_create())
-        )
-        for option, value in values.items():
-            self.settings.init(section, option, value)
+        """Create the section with the editor window defaults and the
+        pages to show."""
+        settings.add_section(section)
+        settings.section(section).pages = self.__pages_to_create()
+
+    @property
+    def options(self):
+        """This editor window's section of the settings, its options as
+        attributes."""
+        return settings.section(self.settings_section())
 
     def close_edit_book(self):
         """Close all pages in the edit book and save the current layout in
@@ -3756,7 +3729,7 @@ class TaskEditBook(EditBook):
     domainObject = "task"
 
     def create_subject_page(self):
-        return TaskSubjectPage(self.items, self, self.settings)
+        return TaskSubjectPage(self.items, self)
 
 
 class CategoryEditBook(EditBook):
@@ -3764,7 +3737,7 @@ class CategoryEditBook(EditBook):
     domainObject = "category"
 
     def create_subject_page(self):
-        return CategorySubjectPage(self.items, self, self.settings)
+        return CategorySubjectPage(self.items, self)
 
 
 class NoteEditBook(EditBook):
@@ -3783,7 +3756,7 @@ class AttachmentEditBook(EditBook):
     domainObject = "attachment"
 
     def create_subject_page(self):
-        return AttachmentSubjectPage(self.items, self, self.settings)
+        return AttachmentSubjectPage(self.items, self)
 
 
 class EffortEditBook(Page):
@@ -3791,17 +3764,10 @@ class EffortEditBook(Page):
     columns = 3  # Label, DateTime row, Button/Rest (matches DatesPage)
 
     def __init__(
-        self,
-        parent,
-        efforts,
-        taskFile,
-        settings,
-        items_are_new,
-        *args,
-        **kwargs
+        self, parent, efforts, task_file, items_are_new, *args, **kwargs
     ):  # pylint: disable=W0613
-        self._effort_list = taskFile.efforts()
-        task_list = taskFile.tasks()
+        self._effort_list = task_file.efforts()
+        task_list = task_file.tasks()
         self._task_list = task.TaskList(task_list)
         self._task_list.extend(
             [
@@ -3810,8 +3776,7 @@ class EffortEditBook(Page):
                 if effort.task() not in task_list
             ]
         )
-        self._settings = settings
-        self._taskFile = taskFile
+        self._taskFile = task_file
         super().__init__(efforts, parent, *args, **kwargs)
 
     def getPage(self, pageName):  # pylint: disable=W0613
@@ -4026,7 +3991,6 @@ class EffortEditBook(Page):
         self.registerObserver(
             self.__on_effort_presets_config_changed,
             eventType="feature.effort_duration_presets",
-            eventSource=self._settings,
         )
         if len(self.items) == 1:
             self.registerObserver(
@@ -4440,7 +4404,7 @@ class EffortEditBook(Page):
             _("Presets..."), None
         )  # Placeholder
 
-        presets_str = self._settings.get("feature", "effort_duration_presets")
+        presets_str = settings.feature.effort_duration_presets
         if presets_str:
             presets = []
             for seconds_str in presets_str.split(","):
@@ -4678,7 +4642,6 @@ class EffortEditBook(Page):
         TaskEditor(
             None,
             [task_to_edit],
-            self._settings,
             self._taskFile.tasks(),
             self._taskFile,
         ).Show()
@@ -4748,11 +4711,8 @@ class Editor(BalloonTipManager, widgets.Dialog):
     plural_title = "Subclass responsibility"
     item_type_plural = "Items"
 
-    def __init__(
-        self, parent, items, settings, container, task_file, *args, **kwargs
-    ):
+    def __init__(self, parent, items, container, task_file, *args, **kwargs):
         self._items = items
-        self._settings = settings
         self._taskFile = task_file
         # The items the file holds as the editor opens; it closes when
         # one leaves the file (docs/UNDO_REDO.md, Windows)
@@ -4867,7 +4827,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
             self._panel,
             self._items,
             self._taskFile,
-            self._settings,
             self.__items_are_new,
         )
 

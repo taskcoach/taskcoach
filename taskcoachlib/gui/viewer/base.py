@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import contextlib
 import wx
 from taskcoachlib import patterns, widgets, command, render
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, toolbar
 from taskcoachlib.gui.icons import image_list_cache
@@ -44,12 +44,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     defaultBitmap = "Subclass responsibility"
     coreObjectType = None
 
-    def __init__(self, parent, taskFile, settings, *args, **kwargs):
+    def __init__(self, parent, task_file, *args, **kwargs):
         patterns.Observer.__init__(self)
         super().__init__(parent, -1)
         self.parent = parent
-        self.taskFile = taskFile
-        self.settings = settings
+        self.taskFile = task_file
         self.__settingsSection = kwargs.pop("settingsSection")
         self.__freezeCount = 0
         self.__in_pass = False
@@ -78,21 +77,17 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.widget.SetBackgroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         )
-        self.toolbar = toolbar.ToolBar(
-            self, settings, (toolbar.TOOLBAR_ICON_SIZE,) * 2
-        )
+        self.toolbar = toolbar.ToolBar(self, (toolbar.TOOLBAR_ICON_SIZE,) * 2)
         self.init_layout()
         self.register_presentation_observers()
         # Re-center when auto-scroll is turned back on
         self.registerObserver(
             self.on_auto_scroll_changed,
             eventType="view.autoscrollselection",
-            eventSource=self.settings,
         )
         # Times are drawn as decimal hours or not: redraw on a change
-        self.__decimal_time = settings2.feature.decimal_time
         self.registerObserver(
-            self.__on_settings2_changed, eventType="settings2.changed"
+            self.__on_decimal_time_changed, eventType="feature.decimal_time"
         )
         self.refresh()
 
@@ -335,16 +330,11 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         return "", ""
 
     def title(self):
-        return (
-            self.settings.get(self.settingsSection(), "title")
-            or self.defaultTitle
-        )
+        return self.options.title or self.defaultTitle
 
     def set_title(self, title):
         titleToSaveInSettings = "" if title == self.defaultTitle else title
-        self.settings.set(
-            self.settingsSection(), "title", titleToSaveInSettings
-        )
+        self.options.title = titleToSaveInSettings
         self.parent.set_pane_title(self, title)
         self.parent.manager.Update()
 
@@ -445,15 +435,13 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.widget.ensureSelectionVisible()
         self.send_viewer_status_event()
 
-    def __on_settings2_changed(self, event):  # pylint: disable=W0613
-        if settings2.feature.decimal_time != self.__decimal_time:
-            self.__decimal_time = settings2.feature.decimal_time
-            self.refresh()
+    def __on_decimal_time_changed(self, event):  # pylint: disable=W0613
+        self.refresh()
 
     def on_auto_scroll_changed(self, event=None):
         """Re-center on the selection when auto-scroll is turned back
         on."""
-        if not self.settings.getboolean("view", "autoscrollselection"):
+        if not settings.view.autoscrollselection:
             return
         if hasattr(self.widget, "scroll_to_selection_centered"):
             self.widget.scroll_to_selection_centered()
@@ -602,6 +590,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         'Viewer->New viewer' menu item, for example."""
         return self.defaultBitmap  # Class attribute of concrete viewers
 
+    @property
+    def options(self):
+        """This viewer's own section of the settings, its options as
+        attributes."""
+        return settings.section(self.settingsSection())
+
     def settingsSection(self):
         """Return the settings section of this viewer."""
         section = self.__settingsSection
@@ -609,14 +603,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             # We're not the first viewer of our class, so we need a different
             # settings section than the default one.
             section += str(self.__instanceNumber)
-            if not self.settings.has_section(section):
+            if not settings.has_section(section):
                 # Our section does not exist yet. Create it and copy the
                 # settings from the previous section as starting point. We're
                 # copying from the previous section instead of the default
                 # section so that when the user closes a viewer and then opens
                 # a new one, the settings of that closed viewer are reused.
-                self.settings.add_section(
-                    section, copyFromSection=self.previousSettingsSection()
+                settings.add_section(
+                    section, copy_from=self.previousSettingsSection()
                 )
         return section
 
@@ -628,7 +622,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             previousSection = self.__settingsSection + str(
                 previousSectionNumber
             )
-            if self.settings.has_section(previousSection):
+            if settings.has_section(previousSection):
                 return previousSection
             previousSectionNumber -= 1
         return self.__settingsSection
@@ -731,12 +725,10 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         )
 
     def getToolBarPerspective(self):
-        return self.settings.get(self.settingsSection(), "toolbarperspective")
+        return self.options.toolbarperspective
 
     def saveToolBarPerspective(self, perspective):
-        self.settings.set(
-            self.settingsSection(), "toolbarperspective", perspective
-        )
+        self.options.toolbarperspective = perspective
 
     def createClipboardToolBarUICommands(self):
         """UI commands for manipulating the clipboard (cut, copy, paste)."""
@@ -804,7 +796,6 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         return EditorClass(
             parent,
             items,
-            self.settings,
             self.presentation(),
             self.taskFile,
             icon_id=icon_id,
@@ -1169,14 +1160,10 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             self.widget.SetMainColumn(1)
 
     def initColumn(self, column):
-        if column.name() in self.settings.getlist(
-            self.settingsSection(), "columnsalwaysvisible"
-        ):
+        if column.name() in self.options.columnsalwaysvisible:
             show = True
         else:
-            show = column.name() in self.settings.getlist(
-                self.settingsSection(), "columns"
-            )
+            show = column.name() in self.options.columns
             self.widget.showColumn(column, show=show)
         if show:
             self.__visibleColumns.append(column)
@@ -1208,11 +1195,9 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         if column.name() == "ordering":
             self.widget.SetResizeColumn(1 if show else 0)
             self.widget.SetMainColumn(1 if show else 0)
-        self.settings.set(
-            self.settingsSection(),
-            "columns",
-            str([column.name() for column in self.__visibleColumns]),
-        )
+        self.options.columns = [
+            column.name() for column in self.__visibleColumns
+        ]
         if refresh:
             self.widget.RefreshAllItems(len(self.presentation()))
 
@@ -1241,23 +1226,16 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         return [
             column
             for column in self._columns
-            if column.name()
-            not in self.settings.getlist(
-                self.settingsSection(), "columnsalwaysvisible"
-            )
+            if column.name() not in self.options.columnsalwaysvisible
         ]
 
     def is_hideable_column(self, visibleColumnIndex):
         column = self.visibleColumns()[visibleColumnIndex]
-        unhideable_columns = self.settings.getlist(
-            self.settingsSection(), "columnsalwaysvisible"
-        )
+        unhideable_columns = self.options.columnsalwaysvisible
         return column.name() not in unhideable_columns
 
     def getColumnWidth(self, column_name):
-        column_widths = self.settings.getdict(
-            self.settingsSection(), "columnwidths"
-        )
+        column_widths = self.options.columnwidths
         default_width = (
             28
             if column_name == "ordering"
@@ -1266,13 +1244,9 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         return int(column_widths.get(column_name, default_width))
 
     def onResizeColumn(self, column, width):
-        column_widths = self.settings.getdict(
-            self.settingsSection(), "columnwidths"
-        )
+        column_widths = self.options.columnwidths
         column_widths[column.name()] = int(width)
-        self.settings.setdict(
-            self.settingsSection(), "columnwidths", column_widths
-        )
+        self.options.columnwidths = column_widths
 
     def validateDrag(self, dropItem, dragItems, columnIndex):
         if (

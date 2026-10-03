@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import command, patterns, widgets, domain, render
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 from taskcoachlib.domain import effort, date
 from taskcoachlib.domain.base import filter  # pylint: disable=W0622
 from taskcoachlib.gui import uicommand, dialog
@@ -45,7 +45,7 @@ class EffortViewer(
     coreObjectType = "efforts"
     SorterClass = effort.EffortSorter
 
-    def __init__(self, parent, taskFile, settings, *args, **kwargs):
+    def __init__(self, parent, task_file, *args, **kwargs):
         kwargs.setdefault("settingsSection", "effortviewer")
         self.__tasks_to_show_effort_for = kwargs.pop(
             "tasksToShowEffortFor", []
@@ -56,11 +56,11 @@ class EffortViewer(
         self.__hidden_weekday_columns = []
         self.__hidden_total_columns = []
         self.__domain_objects_to_view = None
-        super().__init__(parent, taskFile, settings, *args, **kwargs)
+        super().__init__(parent, task_file, *args, **kwargs)
         self.second_refresher = refresher.SecondRefresher(
             self, effort.Effort.trackingChangedEventType()
         )
-        self.aggregation = settings.get(self.settingsSection(), "aggregation")
+        self.aggregation = self.options.aggregation
         self.__init_mode_toolbar_ui_commands()
         # Effort rows show their task's styles, path and categories
         for event_type in effort.Effort.effective_style_event_types() + (
@@ -84,7 +84,6 @@ class EffortViewer(
             self.registerObserver(
                 self.on_rounding_changed,
                 eventType="%s.%s" % (self.settingsSection(), option),
-                eventSource=self.settings,
             )
 
     def selectable_columns(self):
@@ -204,9 +203,7 @@ class EffortViewer(
         """Change the aggregation mode. Can be one of 'details', 'day', 'week'
         and 'month'."""
         assert aggregation in ("details", "day", "week", "month")
-        self.settings.settext(
-            self.settingsSection(), "aggregation", aggregation
-        )
+        self.options.aggregation = aggregation
         self.aggregation = aggregation
         self._refresh()
         patterns.Event(self.view_settings_changed_event_type(), self).send()
@@ -244,7 +241,7 @@ class EffortViewer(
         create an effort aggregator that aggregates the effort records in
         the taskList, either individually (i.e. no aggregation), per day,
         per week, or per month."""
-        aggregation = self.settings.get(self.settingsSection(), "aggregation")
+        aggregation = self.options.aggregation
         category_filter = super().createFilter(taskList)
         searchFilter = filter.SearchFilter(
             self.createAggregator(category_filter, aggregation)
@@ -273,7 +270,7 @@ class EffortViewer(
             self.parent,
             self.taskFile.tasks(),
             self.taskFile.efforts(),
-            self.settings,
+            settings.current(),
             self,
         )
         columnPopupMenu = taskcoachlib.gui.menu.EffortViewerColumnPopupMenu(
@@ -690,11 +687,11 @@ class EffortViewer(
         sum_time_spent = render.time_spent(
             td,
             show_seconds=self.__show_seconds(),
-            decimal=settings2.feature.decimal_time,
+            decimal=settings.feature.decimal_time,
         )
 
         if sum_time_spent == "":
-            if settings2.feature.decimal_time:
+            if settings.feature.decimal_time:
                 sum_time_spent = "0.0"
             elif self.__show_seconds():
                 sum_time_spent = "0:00:00"
@@ -811,7 +808,7 @@ class EffortViewer(
         return render.time_spent(
             time_spent,
             show_seconds=show_seconds,
-            decimal=settings2.feature.decimal_time,
+            decimal=settings.feature.decimal_time,
         )
 
     def __render_total_time_spent(self, an_effort):
@@ -826,7 +823,7 @@ class EffortViewer(
         return render.time_spent(
             total_time_spent,
             show_seconds=self.__show_seconds(),
-            decimal=settings2.feature.decimal_time,
+            decimal=settings.feature.decimal_time,
         )
 
     def __render_time_spent_on_day(self, an_effort, day_offset):
@@ -845,7 +842,7 @@ class EffortViewer(
         return render.time_spent(
             self.__roundTimeSpent(time_spent),
             show_seconds=self.__show_seconds(),
-            decimal=settings2.feature.decimal_time,
+            decimal=settings.feature.decimal_time,
         )
 
     def getItemTooltipData(self, item):
@@ -890,19 +887,15 @@ class EffortViewer(
 
     def __round_precision(self):
         """Return with what precision the viewer is rounding durations."""
-        return self.settings.getint(self.settingsSection(), "round")
+        return self.options.round
 
     def __always_round_up(self):
         """Return whether durations are always rounded up or not."""
-        return self.settings.getboolean(
-            self.settingsSection(), "alwaysroundup"
-        )
+        return self.options.alwaysroundup
 
     def __consolidate_efforts_per_task(self):
         """Return whether task efforts are consolidated before rounding."""
-        return self.settings.getboolean(
-            self.settingsSection(), "consolidateeffortspertask"
-        )
+        return self.options.consolidateeffortspertask
 
 
 class EffortViewerForSelectedTasks(EffortViewer):

@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import test
-from taskcoachlib import gui, config, persistence, operating_system, render
+from taskcoachlib import gui, persistence, operating_system, render
 from taskcoachlib.domain import category, attachment
 
 
@@ -30,14 +30,12 @@ class DummyEvent(object):
 class CategoryEditorTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.categories = self.taskFile.categories()
         self.categories.extend(self.createCategories())
         self.editor = gui.dialog.editor.CategoryEditor(
             self.frame,
             list(self.categories),
-            self.settings,
             self.categories,
             self.taskFile,
         )

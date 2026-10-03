@@ -18,18 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 import wx
-from taskcoachlib import gui, config, patterns, persistence
+from taskcoachlib import gui, patterns, persistence
 from taskcoachlib.domain import date, task
 
 
 class TreeViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
-        self.viewer = gui.viewer.TaskViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
         self.expansionContext = self.viewer.settingsSection()
         self.parent = task.Task("parent")
         self.child = task.Task("child")

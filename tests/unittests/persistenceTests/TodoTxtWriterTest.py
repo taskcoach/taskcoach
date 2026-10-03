@@ -30,9 +30,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         self.writer = persistence.TodoTxtWriter(self.file, "whatever.tsk")
         self.settings.set("taskviewer", "treemode", "False")
         self.taskFile = persistence.TaskFile()
-        self.viewer = gui.viewer.TaskViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
 
     def testNoTasksAndCategories(self):
         self.writer.write(self.viewer, False)
@@ -225,7 +223,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         self.taskFile.tasks().append(cheese)
         self.taskFile.tasks().append(task.Task(subject="Paint house"))
         self.viewer.select([cheese])
-        self.writer.write(self.viewer, self.settings, True)
+        self.writer.write(self.viewer, True)
         self.assertEqual(
             "Get cheese tcid:%s\n" % cheese.id(), self.file.getvalue()
         )

@@ -56,7 +56,7 @@ class UpdatePerSecondViewerTestsMixin(object):
         self.taskFile.stop()
 
     def createUpdateViewer(self):
-        return self.ListViewerClass(self.frame, self.taskFile, self.settings)
+        return self.ListViewerClass(self.frame, self.taskFile)
 
     def testClockNotificationResultsInRefreshedItem(self):
         self.updateViewer.widget = MockWidget()

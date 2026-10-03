@@ -88,7 +88,7 @@ class CommonTestsMixin(object):
 class TaskWriterTestCase(HTMLWriterTestCase):
     def createViewer(self):
         self.settings.set("taskviewer", "treemode", self.tree_mode)
-        return gui.viewer.TaskViewer(self.frame, self.taskFile, self.settings)
+        return gui.viewer.TaskViewer(self.frame, self.taskFile)
 
 
 class TaskTestsMixin(CommonTestsMixin):
@@ -257,9 +257,7 @@ class EffortWriterTestCase(CommonTestsMixin, HTMLWriterTestCase):
         )
 
     def createViewer(self):
-        return gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        return gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def testTaskSubject(self):
         self.expectInHTML(">Task subject<")
@@ -288,9 +286,7 @@ class CategoryWriterTestCase(HTMLWriterTestCase):
         self.taskFile.categories().append(self.category)
 
     def createViewer(self):
-        return gui.viewer.CategoryViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        return gui.viewer.CategoryViewer(self.frame, self.taskFile)
 
 
 class CategoryWriterExportTest(

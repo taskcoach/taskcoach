@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.config.defaults import MAIN_TOOLBAR_ICON_SIZE_DEFAULT
 from taskcoachlib.gui.icons.icon_library import LIST_ICON_SIZE
 from taskcoachlib.meta.debug import log_step
@@ -98,11 +99,8 @@ class _Toolbar(aui.AuiToolBar):
 
 
 class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
-    def __init__(
-        self, window, settings, size=(MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2
-    ):
+    def __init__(self, window, size=(MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2):
         self.__window = window
-        self.__settings = settings
         self.__visible_ui_commands = list()
         self.__cache = None
         super().__init__(window, style=wx.TB_FLAT | wx.TB_NODIVIDER)
@@ -223,7 +221,7 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
         else:
             # MainWindow uses "view" section
             section = "view"
-        return self.__settings.getDefault(section, "toolbarperspective")
+        return settings.template(section)["toolbarperspective"]
 
     def AppendSeparator(self):
         """This little adapter is needed for

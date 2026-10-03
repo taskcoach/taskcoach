@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from taskcoachlib import command, widgets
+from taskcoachlib.config import settings
 from taskcoachlib.domain import category
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, dialog
@@ -93,7 +94,7 @@ class BaseCategoryViewer(
 
     def createCategoryPopupMenu(self, localOnly=False):
         return taskcoachlib.gui.menu.CategoryPopupMenu(
-            self.parent, self.settings, self.taskFile, self, localOnly
+            self.parent, settings.current(), self.taskFile, self, localOnly
         )
 
     def _createColumns(self):
@@ -337,9 +338,7 @@ class BaseCategoryViewer(
 class CategoryViewer(BaseCategoryViewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.filterUICommand.set_choice(
-            self.settings.getboolean("view", "categoryfiltermatchall")
-        )
+        self.filterUICommand.set_choice(settings.view.categoryfiltermatchall)
 
     def createModeToolBarUICommands(self):
         # pylint: disable=W0201

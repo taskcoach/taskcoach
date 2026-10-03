@@ -18,12 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from taskcoachlib.domain import task, date
-from taskcoachlib import config
 
 
 class TaskStatusTest(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.now = date.Now()
         self.yesterday = self.now - date.ONE_DAY
         self.nearFuture = self.now + date.ONE_DAY - date.ONE_HOUR

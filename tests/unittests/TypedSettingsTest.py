@@ -56,9 +56,7 @@ class TypedSettingsTest(test.TestCase):
 
     def test_an_editor_window_has_the_editor_windows_types(self):
         name = "taskdialog_with_dates_subject"
-        self.settings.add_section(name)
-        for option, value in config.defaults.editor_window.items():
-            self.settings.init(name, option, value)
+        settings.add_section(name)
         self.assertEqual(
             (False, (-1, -1)),
             (settings.section(name).maximized, settings.section(name).size),
@@ -97,6 +95,38 @@ class TypedSettingsTest(test.TestCase):
         other.setboolean("view", "statusbar", False)
         settings.use(other)
         self.assertIs(False, settings.view.statusbar)
+
+
+class SectionsMadeWhileRunningTest(test.TestCase):
+    """A viewer instance's section copies the previous viewer's; an
+    editor window's starts from the editor window defaults."""
+
+    def setUp(self):
+        super().setUp()
+        self.settings = config.Settings(load=False)
+        self.addCleanup(settings.use, settings.current())
+        settings.use(self.settings)
+
+    def test_a_declared_section_exists(self):
+        self.assertTrue(settings.has_section("taskviewer"))
+
+    def test_a_section_not_made_yet(self):
+        self.assertFalse(settings.has_section("taskviewer1"))
+
+    def test_a_copy_of_the_previous_viewers(self):
+        settings.taskviewer.title = "Mine"
+        settings.add_section("taskviewer1", copy_from="taskviewer")
+        self.assertEqual("Mine", settings.section("taskviewer1").title)
+
+    def test_an_editor_window_starts_from_its_defaults(self):
+        name = "notedialog_with_subject"
+        settings.add_section(name)
+        self.assertEqual([], settings.section(name).pages)
+
+    def test_no_listener_is_told(self):
+        self.registerObserver("notedialog_with_subject.pages")
+        settings.add_section("notedialog_with_subject")
+        self.assertEqual([], self.events)
 
 
 class ResetTest(test.TestCase):

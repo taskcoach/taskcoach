@@ -32,7 +32,6 @@ class NoteViewerTest(test.wxTestCase):
         self.viewer = gui.viewer.NoteViewer(
             self.frame,
             self.taskFile,
-            self.settings,
             notesToShow=self.taskFile.notes(),
         )
 
@@ -55,7 +54,6 @@ class NoteViewerTest(test.wxTestCase):
         localViewer = gui.viewer.NoteViewer(
             self.frame,
             self.taskFile,
-            self.settings,
             notesToShow=note.NoteContainer(),
         )
         self.assertFalse(localViewer.presentation())
@@ -63,7 +61,7 @@ class NoteViewerTest(test.wxTestCase):
     def test_the_editor_pastes_every_note(self):
         owner = category.Category("owner")
         local_viewer = gui.dialog.editor.LocalNoteViewer(
-            self.frame, self.taskFile, self.settings, owner=owner
+            self.frame, self.taskFile, owner=owner
         )
         copied = [note.Note(subject="a"), note.Note(subject="b")]
         command.Clipboard().put(copied, self.taskFile.notes())

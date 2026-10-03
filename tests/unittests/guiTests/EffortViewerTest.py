@@ -50,7 +50,6 @@ class EffortViewerForSpecificTasksTest(test.wxTestCase):
         self.viewer = EffortViewerUnderTest(
             self.frame,
             self.taskFile,
-            self.settings,
             tasksToShowEffortFor=task.TaskList([self.task1]),
         )
 
@@ -100,9 +99,7 @@ class EffortViewerStatusMessageTest(test.wxTestCase):
         self.effort2 = effort.Effort(
             self.task, date.DateTime(2006, 1, 2), date.DateTime(2006, 1, 3)
         )
-        self.viewer = EffortViewerUnderTest(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = EffortViewerUnderTest(self.frame, self.taskFile)
 
     def tearDown(self):
         super().tearDown()
@@ -191,9 +188,7 @@ class EffortViewerTest(test.wxTestCase):
         self.effort2 = effort.Effort(
             self.task, date.DateTime(2006, 1, 2), date.DateTime(2006, 1, 3)
         )
-        self.viewer = gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def tearDown(self):
         super().tearDown()
@@ -288,9 +283,7 @@ class EffortViewerAggregationTestCase(test.wxTestCase):
     aggregation = "Subclass responsibility"
 
     def createViewer(self):
-        return gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        return gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def setUp(self):
         super().setUp()
@@ -349,9 +342,7 @@ class EffortViewerAggregationRoundingTestCase(test.wxTestCase):
     consolidateEffortsPerTask = None
 
     def createViewer(self):
-        return gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        return gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def setUp(self):
         super().setUp()
@@ -791,9 +782,7 @@ class EffortViewerRenderTestMixin(object):
     aggregation = "Subclass responsibility"
 
     def createViewer(self):
-        return gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        return gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def setUp(self):
         super().setUp()

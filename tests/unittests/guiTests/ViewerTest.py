@@ -44,9 +44,7 @@ class ViewerTest(test.wxTestCase):
         self.task = task.Task("task")
         self.taskFile.tasks().append(self.task)
         self.window = Window(self.frame)
-        self.viewerContainer = gui.viewer.ViewerContainer(
-            self.window, self.settings
-        )
+        self.viewerContainer = gui.viewer.ViewerContainer(self.window)
         self.viewer = self.createViewer()
         self.viewerContainer.add_viewer(self.viewer)
 
@@ -56,7 +54,7 @@ class ViewerTest(test.wxTestCase):
         self.taskFile.stop()
 
     def createViewer(self):
-        return gui.viewer.TaskViewer(self.window, self.taskFile, self.settings)
+        return gui.viewer.TaskViewer(self.window, self.taskFile)
 
     def set_decimal_time(self, decimal):
         # In the settings settings2 reads, applied at once as its
@@ -217,7 +215,7 @@ class SortableViewerTest(test.TestCase):
 
     def createViewer(self):
         viewer = gui.viewer.mixin.SortableViewerMixin()
-        viewer.settings = self.settings
+        viewer.options = config.settings.section("taskviewer")
         viewer.settingsSection = lambda: "taskviewer"
         viewer.SorterClass = task.sorter.Sorter
         presentation = viewer.create_sorter(task.TaskList())
@@ -283,7 +281,7 @@ class SortableViewerForTasksTest(test.TestCase):
             pass
 
         self.viewer = ViewerUnderTest()
-        self.viewer.settings = self.settings
+        self.viewer.options = config.settings.section("taskviewer")
         self.viewer.settingsSection = lambda: "taskviewer"
         self.viewer.presentation = lambda: task.sorter.Sorter(task.TaskList())
 
@@ -318,7 +316,7 @@ class SearchableViewerTest(test.TestCase):
     def createViewer(self):
         viewer = SearchableViewerUnderTest()
         # pylint: disable=W0201
-        viewer.settings = self.settings
+        viewer.options = config.settings.section("taskviewer")
         viewer.settingsSection = lambda: "taskviewer"
         presentation = viewer.createFilter(task.TaskList())
         viewer.presentation = lambda: presentation
@@ -430,7 +428,7 @@ class FilterableViewerForTasks(test.TestCase):
         viewer = FilterableViewerForTasksUnderTest()
         # pylint: disable=W0201
         viewer.taskFile = persistence.TaskFile()
-        viewer.settings = self.settings
+        viewer.options = config.settings.section("taskviewer")
         viewer.settingsSection = lambda: "taskviewer"
         presentation = viewer.createFilter(viewer.taskFile.tasks())
         viewer.presentation = lambda: presentation
@@ -656,7 +654,7 @@ class ViewerBaseClassTest(test.wxTestCase):
         try:
             try:
                 gui.viewer.base.Viewer(
-                    self.frame, taskFile, None, settingsSection="bla"
+                    self.frame, taskFile, settingsSection="bla"
                 )
                 self.fail("Expected NotImplementedError")  # pragma: no cover
             except NotImplementedError:
@@ -670,7 +668,7 @@ class ViewerIteratorTestCase(test.wxTestCase):
     tree_mode = "Subclass responsibility"
 
     def createViewer(self):
-        return gui.viewer.TaskViewer(self.window, self.taskFile, self.settings)
+        return gui.viewer.TaskViewer(self.window, self.taskFile)
 
     def setUp(self):
         super().setUp()
@@ -744,9 +742,7 @@ class ViewerWithColumnsTest(test.wxTestCase):
     def setUp(self):
         self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
-        self.viewer = gui.viewer.TaskViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
 
     def tearDown(self):
         super().tearDown()

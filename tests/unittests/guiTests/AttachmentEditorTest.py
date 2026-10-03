@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 import wx
-from taskcoachlib import gui, config, persistence, operating_system
+from taskcoachlib import gui, persistence, operating_system
 from taskcoachlib.domain import attachment, date
 
 
@@ -30,7 +30,6 @@ class DummyEvent(object):
 class AttachmentEditorTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.attachment = attachment.FileAttachment("Attachment")
         self.attachments = attachment.AttachmentList()
@@ -38,7 +37,6 @@ class AttachmentEditorTest(test.wxTestCase):
         self.editor = gui.dialog.editor.AttachmentEditor(
             self.frame,
             self.attachments,
-            self.settings,
             self.attachments,
             self.taskFile,
         )
@@ -94,7 +92,6 @@ class MailAttachmentEditorTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.mail = attachment.MailAttachment(
             "mid:1@example.com",
@@ -107,7 +104,6 @@ class MailAttachmentEditorTest(test.wxTestCase):
         self.editor = gui.dialog.editor.AttachmentEditor(
             self.frame,
             self.attachments,
-            self.settings,
             self.attachments,
             self.taskFile,
         )

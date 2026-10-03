@@ -1009,6 +1009,22 @@ def get(section_name, option):
     return getattr(section(section_name), option)
 
 
+def has_section(name):
+    """Whether the section exists: a viewer instance's or an editor
+    window's, made while running or loaded from the file."""
+    return _current.has_section(name)
+
+
+def add_section(name, copy_from=None):
+    """Make a section while running, telling no listener: with
+    copy_from's values (a new viewer takes the previous one's), else
+    its template's defaults."""
+    _current.add_section(name, copyFromSection=copy_from)
+    if not copy_from:
+        for option, value in template(name).items():
+            _current.init(name, option, value)
+
+
 def __getattr__(name):
     """settings.view and the other declared sections (PEP 562)."""
     if name in defaults.defaults:

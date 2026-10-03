@@ -64,9 +64,7 @@ class TaskViewerTestCase(test.wxTestCase):
         self.taskFile = persistence.TaskFile()
         self.taskList = self.taskFile.tasks()
         self.parentFrame = wx.Frame(self.frame, wx.ID_ANY, "")
-        self.viewer = TaskViewerUnderTest(
-            self.parentFrame, self.taskFile, self.settings
-        )
+        self.viewer = TaskViewerUnderTest(self.parentFrame, self.taskFile)
         self.viewer.sortBy("subject")
         self.viewer.setSortOrderAscending()
         self.viewer.setSortByTaskStatusFirst(True)
@@ -1666,9 +1664,7 @@ class TaskCalendarViewerTest(test.wxTestCase):
         self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.frame.taskFile = self.taskFile
-        self.viewer = gui.viewer.task.CalendarViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.task.CalendarViewer(self.frame, self.taskFile)
         self.originalTopWindow = wx.GetApp().TopWindow
         wx.GetApp().TopWindow = (
             self.frame
@@ -1727,9 +1723,8 @@ class TaskCalendarViewerTest(test.wxTestCase):
 
 class TaskSquareMapViewerTest(test.wxTestCase):
     def testCreate(self):
-        settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
-        gui.viewer.task.SquareTaskViewer(self.frame, self.taskFile, settings)
+        gui.viewer.task.SquareTaskViewer(self.frame, self.taskFile)
 
     def tearDown(self):
         super().tearDown()
@@ -1740,11 +1735,8 @@ class TaskSquareMapViewerTest(test.wxTestCase):
 class TaskTimelineViewerTest(test.wxTestCase):
     def testCreate(self):
         # pylint: disable-msg=W0201
-        settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
-        self.viewer = gui.viewer.task.TimelineViewer(
-            self.frame, self.taskFile, settings
-        )
+        self.viewer = gui.viewer.task.TimelineViewer(self.frame, self.taskFile)
 
     def test_no_icon_until_the_loop_styles_the_task(self):
         self.testCreate()
@@ -1775,9 +1767,7 @@ class DatesTiedTest(test.wxTestCase):
             plannedDuration=date.ONE_DAY,
         )
         self.taskFile.tasks().append(self.task)
-        self.viewer = gui.viewer.TaskViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
 
     def change_due(self, mode):
         self.task.setPlannedDurationMode(mode)
@@ -1801,11 +1791,8 @@ class DatesTiedTest(test.wxTestCase):
 
 class TaskStatisticsViewerTest(test.wxTestCase):
     def create_viewer(self):
-        settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
-        return gui.viewer.task.TaskStatsViewer(
-            self.frame, self.taskFile, settings
-        )
+        return gui.viewer.task.TaskStatsViewer(self.frame, self.taskFile)
 
     def test_create(self):
         self.create_viewer()

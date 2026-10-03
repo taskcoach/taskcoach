@@ -27,7 +27,7 @@ from taskcoachlib import patterns
 
 
 class _ToolBarEditorInterior(wx.Panel):
-    def __init__(self, toolbar, settings, parent):
+    def __init__(self, toolbar, parent):
         self.__toolbar = toolbar
         self.__visible = toolbar.visible_ui_commands()
 
@@ -39,9 +39,7 @@ class _ToolBarEditorInterior(wx.Panel):
         sb = wx.StaticBox(self, wx.ID_ANY, _("Preview"))
         from taskcoachlib.gui.toolbar import ToolBar
 
-        self.__preview = ToolBar(
-            self, settings, self.__toolbar.GetToolBitmapSize()
-        )
+        self.__preview = ToolBar(self, self.__toolbar.GetToolBitmapSize())
         sbsz = wx.StaticBoxSizer(sb)
         sbsz.Add(self.__preview, 1)
         vsizer.Add(sbsz, 0, wx.EXPAND | wx.ALL, 3)
@@ -187,7 +185,6 @@ class _ToolBarEditorInterior(wx.Panel):
         patterns.later.soon(
             wx.GetTopLevelParent(self),
             wx.GetTopLevelParent(self).AddBalloonTip,
-            settings,
             "customizabletoolbars_dnd",
             self.__visible_commands,
             title=_("Drag and drop"),
@@ -642,17 +639,14 @@ class _ListDropTarget(wx.DropTarget):
 
 
 class ToolBarEditor(BalloonTipManager, widgets.Dialog):
-    def __init__(self, toolbar, settings, *args, **kwargs):
+    def __init__(self, toolbar, *args, **kwargs):
         self.__toolbar = toolbar
-        self.__settings = settings
         super().__init__(*args, **kwargs)
         self.SetClientSize(wx.Size(900, 700))
         self.CentreOnParent()
 
     def createInterior(self):
-        return _ToolBarEditorInterior(
-            self.__toolbar, self.__settings, self._panel
-        )
+        return _ToolBarEditorInterior(self.__toolbar, self._panel)
 
     def createButtons(self):
         # Create buttons with dialog as parent

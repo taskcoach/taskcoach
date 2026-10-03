@@ -156,11 +156,12 @@ the automatic save, backup, import and export, the tips and balloon
 tips, the version check, the reminders, the idle time notice, the
 window size tracker, the templates dialog, the date and time entry
 helpers and the list columns (which handed the object to the in-place
-editors), and the UI commands (31 of which had a settings base only to
-be handed the object). The menus, views, editors, toolbars, export
-dialog, Preferences, tray icon and main window are left; where one of
-them still takes the object, the code moved so far passes
-`settings.current()`.
+editors), the UI commands (31 of which had a settings base only to be
+handed the object), and the views, editors, toolbars and the view
+container (which kept the object and never read it). The menus, export
+dialog, Preferences, tray icon, file commands, main window and
+application are left; where one of them still takes the object, the
+code moved so far passes `settings.current()`.
 
 ### Risks
 
@@ -242,7 +243,7 @@ coexist in the same flat namespace:
 |------|----------|------------|---------|
 | **App settings** | `window`, `view`, `file`, `icon`, `iconpicker`, `version`, `feature`, `behavior`, `fgcolor`, `bgcolor`, `font`, `printer`, `export` | `initializeWithDefaults()` from `defaults.defaults` | Preferences dialog, mainwindow, application code |
 | **Viewer templates** | `taskviewer`, `categoryviewer`, `effortviewer`, `noteviewer` | `initializeWithDefaults()` from `defaults.defaults` | Never read directly — serve as copy source for viewer instances |
-| **Viewer instances** | `taskviewer1`, `effortviewer2`, `categoryviewer1` | Loaded from INI file (previous session), or created at runtime by `Viewer.settingsSection()` via `Settings.add_section(section, copyFromSection=...)` | Individual viewer windows |
+| **Viewer instances** | `taskviewer1`, `effortviewer2`, `categoryviewer1` | Loaded from INI file (previous session), or created at runtime by `Viewer.settingsSection()` via `settings.add_section(section, copy_from=...)` | Individual viewer windows |
 
 There is **no property or flag** distinguishing these types. The only
 signal is naming convention: viewer instances have a trailing digit,
@@ -528,6 +529,19 @@ type than the option's default is refused (`TypeError`); an option or
 section no defaults name raises `AttributeError`. Before the
 application has its settings (a module reading while it loads), reads
 give the defaults.
+
+Sections made while running, a viewer instance's (`taskviewer1`) and
+an editor window's (`taskdialog_with_<tabs>`), are made without telling
+any listener:
+
+```python
+settings.has_section("taskviewer1")
+settings.add_section("taskviewer1", copy_from="taskviewer")  # its values
+settings.add_section("notedialog_with_subject")  # the template's defaults
+```
+
+A view and an editor window reach their own section as `self.options`
+(`self.options.sortby`).
 
 Only the application makes the `Settings` object
 (`config.settings.use()`); `Settings2Test` fails on any other. The

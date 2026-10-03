@@ -17,13 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import config
 from taskcoachlib.domain import task, date
 
 
 class RecurringTaskTestCase(test.TestCase):
     def setUp(self):
-        self.settings = config.settings.current()
         self.now = date.Now()
         self.yesterday = self.now - date.ONE_DAY
         self.tomorrow = self.now + date.ONE_DAY

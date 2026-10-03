@@ -18,20 +18,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 import wx
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import gui, persistence
 from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.domain import attachment, date
 
 
 class AttachmentViewerTest(test.wxTestCase):
     def setUp(self):
-        settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         attachments = attachment.AttachmentList()
         self.viewer = gui.viewer.AttachmentViewer(
             self.frame,
             self.taskFile,
-            settings,
             attachmentsToShow=attachments,
             settingsSection="attachmentviewer",
         )
@@ -78,7 +76,6 @@ class AttachmentViewerMailColumnsTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.early = attachment.MailAttachment(
             "mid:2@example.com",
@@ -101,7 +98,6 @@ class AttachmentViewerMailColumnsTest(test.wxTestCase):
         self.viewer = gui.viewer.AttachmentViewer(
             self.frame,
             self.taskFile,
-            self.settings,
             attachmentsToShow=self.attachments,
             settingsSection="attachmentviewer",
         )

@@ -130,7 +130,7 @@ class MainWindow(
             self._masterScheduler = scheduler.MasterScheduler(self.taskFile)
 
             self._create_viewer_container()
-            viewer.addViewers(self.viewer, self.taskFile, self.settings)
+            viewer.addViewers(self.viewer, self.taskFile)
             self._create_status_bar()
             self.__create_menu_bar()
             self.__create_reminder_controller()
@@ -140,7 +140,7 @@ class MainWindow(
 
     def _create_viewer_container(self):  # Not private for test purposes
         # pylint: disable=W0201
-        self.viewer = viewer.ViewerContainer(self, self.settings)
+        self.viewer = viewer.ViewerContainer(self)
 
     def _create_status_bar(self):
         from taskcoachlib.gui import status  # pylint: disable=W0404
@@ -451,7 +451,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.settings.set("view", "perspective", "")
 
         # Recreate viewers with default counts
-        viewer.addViewers(self.viewer, self.taskFile, self.settings)
+        viewer.addViewers(self.viewer, self.taskFile)
 
         # Explicitly position the first TaskViewer in center (in case auto-positioning failed)
         for pane in self.manager.GetAllPanes():
@@ -534,7 +534,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             self.manager.DetachPane(current_toolbar.window)
             current_toolbar.window.Destroy()
         if value:
-            bar = toolbar.MainToolBar(self, self.settings, size=value)
+            bar = toolbar.MainToolBar(self, size=value)
             # Use GetBestSize() for height - toolbar calculates this during Realize()
             best_size = bar.GetBestSize()
             self.manager.AddPane(

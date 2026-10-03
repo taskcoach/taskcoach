@@ -43,9 +43,7 @@ class CSVWriterTestCase(test.wxTestCase):
     def createViewer(self):
         self.settings.set("taskviewer", "treemode", self.tree_mode)
         # pylint: disable=W0201
-        self.viewer = gui.viewer.TaskViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
 
     def __writeAndRead(
         self, selectionOnly, separateDateAndTimeColumns, columns
@@ -373,9 +371,7 @@ class EffortWriterTest(CSVWriterTestCase):
 
     def createViewer(self):
         # pylint: disable=W0201
-        self.viewer = gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def testTaskSubject(self):
         self.expectInCSV("Task subject,")
@@ -422,9 +418,7 @@ class EffortWriterTest(CSVWriterTestCase):
 class EffortWriterRenderTest(CSVWriterTestCase):
     def createViewer(self):
         # pylint: disable=W0201
-        self.viewer = gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def testToday(self):
         midnight = date.Now().startOfDay()

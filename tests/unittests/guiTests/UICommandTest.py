@@ -107,9 +107,7 @@ class NewTaskWithSelectedCategoryTest(wxTestCaseWithFrameAsTopLevelWindow):
         super().setUp()
         self.categories = self.taskFile.categories()
         self.categories.append(category.Category("cat"))
-        self.viewer = gui.viewer.CategoryViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.CategoryViewer(self.frame, self.taskFile)
 
     def createNewTask(self):
         task_new = gui.uicommand.NewTaskWithSelectedCategories(
@@ -141,9 +139,7 @@ class NewNoteWithSelectedCategoryTest(wxTestCaseWithFrameAsTopLevelWindow):
         super().setUp()
         self.categories = self.taskFile.categories()
         self.categories.append(category.Category("cat"))
-        self.viewer = gui.viewer.CategoryViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.CategoryViewer(self.frame, self.taskFile)
 
     def createNewNote(self):
         note_new = gui.uicommand.NewNoteWithSelectedCategories(
@@ -430,7 +426,6 @@ class EffortNewTest(wxTestCaseWithFrameAsTopLevelWindow):
 
 class EditPreferencesTest(test.TestCase):
     def testEditPreferences(self):
-        settings = config.settings.current()
         self.set_main_window_task_file()
         edit_preferences = gui.uicommand.EditPreferences()
         edit_preferences.do_command(None, show=False)
@@ -505,7 +500,6 @@ class EffortViewerAggregationChoiceTest(test.TestCase):
 
 class OpenAllAttachmentsTest(test.TestCase):
     def setUp(self):
-        settings = config.settings.current()
         self.viewer = DummyViewer([task.Task("Task")])
         self.openAll = gui.uicommand.OpenAllAttachments(viewer=self.viewer)
         self.errorArgs = self.errorKwargs = None
@@ -723,7 +717,6 @@ class AttachmentTest(test.wxTestCase):
         self.viewer = gui.dialog.editor.LocalAttachmentViewer(
             self.frame,
             taskFile,
-            config.settings.current(),
             owner=self.task,
             settingsSection="attachmentviewer",
         )

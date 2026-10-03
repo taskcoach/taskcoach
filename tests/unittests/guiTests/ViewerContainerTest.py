@@ -96,9 +96,7 @@ class ViewerContainerTest(test.wxTestCase):
         self.settings.set("view", "viewerwithdummywidgetcount", "2", new=True)
         self.taskFile = persistence.TaskFile()
         self.mainWindow = DummyMainWindow()
-        self.container = gui.viewer.ViewerContainer(
-            self.mainWindow, self.settings
-        )
+        self.container = gui.viewer.ViewerContainer(self.mainWindow)
         self.viewer1 = self.createViewer("taskviewer1")
         self.container.add_viewer(self.viewer1)
         self.viewer2 = self.createViewer("taskviewer2")
@@ -109,7 +107,6 @@ class ViewerContainerTest(test.wxTestCase):
         return ViewerWithClickableWidget(
             self.mainWindow,
             self.taskFile,
-            self.settings,
             settingsSection=settingsSection,
         )
 

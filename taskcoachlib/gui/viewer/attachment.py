@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os, wx
 from taskcoachlib import render, widgets
+from taskcoachlib.config import settings
 from taskcoachlib.domain import attachment
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, dialog
@@ -113,7 +114,7 @@ class AttachmentViewer(
     def createWidget(self):
         imageList = self.createImageList()
         itemPopupMenu = taskcoachlib.gui.menu.AttachmentPopupMenu(
-            self.parent, self.settings, self.presentation(), self
+            self.parent, settings.current(), self.presentation(), self
         )
         columnPopupMenu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
         self._popupMenus.extend([itemPopupMenu, columnPopupMenu])
@@ -375,8 +376,8 @@ class AttachmentViewer(
         self, anAttachment, exists=os.path.exists
     ):  # pylint: disable=W0613
         if anAttachment.type_ == "file":
-            attachmentBase = self.settings.get("file", "attachmentbase")
-            if exists(anAttachment.normalizedLocation(attachmentBase)):
+            attachment_base = settings.file.attachmentbase
+            if exists(anAttachment.normalizedLocation(attachment_base)):
                 index = image_list_cache.get_index(
                     "nuvola_mimetypes_application-x-dvi"
                 )

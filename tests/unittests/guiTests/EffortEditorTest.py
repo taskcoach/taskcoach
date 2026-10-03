@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 import wx
-from taskcoachlib import command, config, gui, patterns, persistence
+from taskcoachlib import command, gui, patterns, persistence
 from taskcoachlib.domain import task, effort, date
 from unittests import dummy
 
@@ -36,7 +36,6 @@ class EditorUnderTest(gui.dialog.editor.EffortEditor):
 class EffortEditorTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.taskList = self.taskFile.tasks()
         self.effortList = self.taskFile.efforts()
@@ -48,7 +47,6 @@ class EffortEditorTest(test.wxTestCase):
         self.editor = EditorUnderTest(
             self.frame,
             list(self.effortList),
-            self.settings,
             self.taskFile.efforts(),
             self.taskFile,
             raiseDialog=False,
@@ -63,7 +61,6 @@ class EffortEditorTest(test.wxTestCase):
         return EditorUnderTest(
             self.frame,
             list(self.taskFile.efforts()),
-            self.settings,
             self.taskFile.efforts(),
             self.taskFile,
         )

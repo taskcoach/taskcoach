@@ -21,7 +21,7 @@ from unittest import mock
 import wx
 
 import test
-from taskcoachlib import command, config, gui, patterns, persistence
+from taskcoachlib import command, gui, patterns, persistence
 from taskcoachlib.domain import date, note, task
 from taskcoachlib.gui.dialog import editor, reminder
 
@@ -33,7 +33,6 @@ class SelfHealTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.settings.current()
         self.history = patterns.CommandHistory()
         self.history.clear()
         self.addCleanup(self.history.clear)
@@ -121,9 +120,7 @@ class ReminderWindowTest(SelfHealTestCase):
 
 class EditorTest(SelfHealTestCase):
     def open(self, editor_class, items, container):
-        window = editor_class(
-            self.frame, items, self.settings, container, self.task_file
-        )
+        window = editor_class(self.frame, items, container, self.task_file)
         self.addCleanup(lambda: window and window.Destroy())
         window.Show()
         return window

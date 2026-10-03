@@ -86,9 +86,7 @@ class VCalEffortWriterTestCase(VCalTestCase):
         self.task1.addEffort(self.effort1)
         self.task1.addEffort(self.effort2)
         self.taskFile.tasks().extend([self.task1])
-        self.viewer = gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.EffortViewer(self.frame, self.taskFile)
         self.viewer.widget.select([self.effort1])
         self.viewer.updateSelection()
         self.vcalFile = self.writeAndRead()
@@ -187,9 +185,7 @@ class VCalTaskWriterTestCase(VCalTestCase):
         )
         self.taskFile.tasks().extend([self.task1, self.task2])
         self.settings.set("taskviewer", "treemode", self.tree_mode)
-        self.viewer = gui.viewer.TaskViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
         self.selectItems([self.task2])
         self.vcalFile = self.writeAndRead()
 

@@ -21,11 +21,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import command
+from taskcoachlib.config import settings
 from taskcoachlib.domain import base, task, category, attachment
 from taskcoachlib.gui import uicommand
 from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.i18n import _
-import ast
 import wx
 from taskcoachlib import patterns
 
@@ -65,14 +65,12 @@ class SearchableViewerMixin(object):
         searchDescription=False,
         regularExpression=False,
     ):
-        section = self.settingsSection()
-        self.settings.set(section, "searchfilterstring", searchString)
-        self.settings.set(section, "searchfiltermatchcase", str(matchCase))
-        self.settings.set(
-            section, "searchfilterincludesubitems", str(includeSubItems)
-        )
-        self.settings.set(section, "searchdescription", str(searchDescription))
-        self.settings.set(section, "regularexpression", str(regularExpression))
+        options = self.options
+        options.searchfilterstring = searchString
+        options.searchfiltermatchcase = matchCase
+        options.searchfilterincludesubitems = includeSubItems
+        options.searchdescription = searchDescription
+        options.regularexpression = regularExpression
         self.presentation().setSearchFilter(
             searchString,
             matchCase=matchCase,
@@ -82,24 +80,13 @@ class SearchableViewerMixin(object):
         )
 
     def getSearchFilter(self):
-        section = self.settingsSection()
-        searchString = self.settings.get(section, "searchfilterstring")
-        matchCase = self.settings.getboolean(section, "searchfiltermatchcase")
-        includeSubItems = self.settings.getboolean(
-            section, "searchfilterincludesubitems"
-        )
-        searchDescription = self.settings.getboolean(
-            section, "searchdescription"
-        )
-        regularExpression = self.settings.getboolean(
-            section, "regularexpression"
-        )
+        options = self.options
         return (
-            searchString,
-            matchCase,
-            includeSubItems,
-            searchDescription,
-            regularExpression,
+            options.searchfilterstring,
+            options.searchfiltermatchcase,
+            options.searchfilterincludesubitems,
+            options.searchdescription,
+            options.regularexpression,
         )
 
     def createToolBarUICommands(self):
@@ -264,10 +251,10 @@ class FilterableViewerForTasksMixin(FilterableViewerForCategorizablesMixin):
         )
 
     def __getBooleanSetting(self, setting):
-        return self.settings.getboolean(self.settingsSection(), setting)
+        return getattr(self.options, setting)
 
     def __setBooleanSetting(self, setting, booleanValue):
-        self.settings.setboolean(self.settingsSection(), setting, booleanValue)
+        setattr(self.options, setting, booleanValue)
 
 
 class SortableViewerMixin(object):
@@ -308,11 +295,7 @@ class SortableViewerMixin(object):
 
     def sortBy(self, sort_key):
         self.presentation().sort_by(sort_key)
-        self.settings.set(
-            self.settingsSection(),
-            "sortby",
-            str(self.presentation().sort_keys()),
-        )
+        self.options.sortby = self.presentation().sort_keys()
 
     def isSortedBy(self, sort_key):
         sort_keys = self.presentation().sort_keys()
@@ -321,9 +304,7 @@ class SortableViewerMixin(object):
         )
 
     def sortKey(self):
-        return ast.literal_eval(
-            self.settings.get(self.settingsSection(), "sortby")
-        )
+        return self.options.sortby
 
     def isSortOrderAscending(self):
         sort_keys = self.presentation().sort_keys()
@@ -331,23 +312,13 @@ class SortableViewerMixin(object):
 
     def setSortOrderAscending(self, ascending=True):
         self.presentation().sort_ascending(ascending)
-        self.settings.set(
-            self.settingsSection(),
-            "sortby",
-            str(self.presentation().sort_keys()),
-        )
+        self.options.sortby = self.presentation().sort_keys()
 
     def isSortCaseSensitive(self):
-        return self.settings.getboolean(
-            self.settingsSection(), "sortcasesensitive"
-        )
+        return self.options.sortcasesensitive
 
     def setSortCaseSensitive(self, sort_case_sensitive=True):
-        self.settings.set(
-            self.settingsSection(),
-            "sortcasesensitive",
-            str(sort_case_sensitive),
-        )
+        self.options.sortcasesensitive = sort_case_sensitive
         self.presentation().sort_case_sensitive(sort_case_sensitive)
 
     def getSortUICommands(self):
@@ -522,16 +493,10 @@ class SortableViewerForTasksMixin(
         super().sortBy(sortKey)
 
     def isSortByTaskStatusFirst(self):
-        return self.settings.getboolean(
-            self.settingsSection(), "sortbystatusfirst"
-        )
+        return self.options.sortbystatusfirst
 
     def setSortByTaskStatusFirst(self, sort_by_status_first):
-        self.settings.set(
-            self.settingsSection(),
-            "sortbystatusfirst",
-            str(sort_by_status_first),
-        )
+        self.options.sortbystatusfirst = sort_by_status_first
         self.presentation().sort_by_task_status_first(sort_by_status_first)
 
     def sorter_options(self):
@@ -636,27 +601,19 @@ class AttachmentDropTargetMixin(object):
         to that new object."""
         if item is None:
             item_dialog_kwargs["subject"] = attachments[0].subject()
-            if self.settings.get(
-                "view", "defaultplannedstartdatetime"
-            ).startswith("preset"):
+            if settings.view.defaultplannedstartdatetime.startswith("preset"):
                 item_dialog_kwargs["plannedStartDateTime"] = (
                     task.Task.suggestedPlannedStartDateTime()
                 )
-            if self.settings.get("view", "defaultduedatetime").startswith(
-                "preset"
-            ):
+            if settings.view.defaultduedatetime.startswith("preset"):
                 item_dialog_kwargs["dueDateTime"] = (
                     task.Task.suggestedDueDateTime()
                 )
-            if self.settings.get(
-                "view", "defaultactualstartdatetime"
-            ).startswith("preset"):
+            if settings.view.defaultactualstartdatetime.startswith("preset"):
                 item_dialog_kwargs["actualStartDateTime"] = (
                     task.Task.suggestedActualStartDateTime()
                 )
-            if self.settings.get("view", "defaultreminderdatetime").startswith(
-                "preset"
-            ):
+            if settings.view.defaultreminderdatetime.startswith("preset"):
                 item_dialog_kwargs["reminder"] = (
                     task.Task.suggestedReminderDateTime()
                 )
@@ -722,7 +679,6 @@ class AttachmentDropTargetMixin(object):
             itemEditor = EditorClass(
                 wx.GetTopLevelParent(self),
                 [item],
-                self.settings,
                 container,
                 self.taskFile,
                 icon_id="nuvola_actions_edit",
@@ -744,7 +700,6 @@ class AttachmentDropTargetMixin(object):
                 attachmentEditor = editor.AttachmentEditor(
                     itemEditor,  # Parent to the item editor
                     new_attachments,
-                    self.settings,
                     attachment_container,
                     self.taskFile,
                     icon_id="nuvola_actions_edit",
@@ -768,7 +723,7 @@ class AttachmentDropTargetMixin(object):
         import os
         import urllib.request
 
-        attachmentBase = self.settings.get("file", "attachmentbase")
+        attachment_base = settings.file.attachmentbase
         attachments = []
         for filename in filenames:
             if os.path.isdir(filename):
@@ -777,9 +732,9 @@ class AttachmentDropTargetMixin(object):
                 attachments.append(attachment.URIAttachment(folder_url))
             else:
                 # Regular files become file attachments
-                if attachmentBase:
+                if attachment_base:
                     filename = attachment.getRelativePath(
-                        filename, attachmentBase
+                        filename, attachment_base
                     )
                 attachments.append(attachment.FileAttachment(filename))
         self._add_attachments(attachments, item, **kwargs)

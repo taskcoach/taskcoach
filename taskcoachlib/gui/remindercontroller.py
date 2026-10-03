@@ -21,7 +21,6 @@ fires, which MasterScheduler calls in its pass at a reminder's second
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.gui.dialog import reminder, editor
 from taskcoachlib.tools import wxhelper
@@ -106,7 +105,6 @@ class ReminderController(object):
             editTask = editor.TaskEditor(
                 self.__mainWindow,
                 [taskWithReminder],
-                settings.current(),
                 self.taskList,
                 self.__mainWindow.taskFile,
                 icon_id="nuvola_actions_edit",

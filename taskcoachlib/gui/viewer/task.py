@@ -25,7 +25,7 @@ import wx.lib.agw.piectrl
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib import command, widgets, render, patterns
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 from taskcoachlib.domain import task, date
 from taskcoachlib.domain.base import by_style_priority
 from taskcoachlib.gui import uicommand, dialog
@@ -48,7 +48,6 @@ from . import base
 from . import inplace_editor
 from . import mixin
 from . import refresher
-import ast
 import wx
 
 
@@ -147,13 +146,13 @@ class BaseTaskViewer(
             # Its options are the statuses
             self.registerObserver(
                 self.on_appearance_setting_change,
-                eventType=self.settings.section_changed_event_type(appearance),
-                eventSource=self.settings,
+                eventType=settings.Settings.section_changed_event_type(
+                    appearance
+                ),
             )
         self.registerObserver(
             self.on_appearance_setting_change,
             eventType="window.theme",
-            eventSource=self.settings,
         )
         for event_type in task.Task.effective_style_event_types():
             self.registerObserver(
@@ -173,11 +172,11 @@ class BaseTaskViewer(
         self.statusMessages = None  # Break cycle
 
     def _render_time_spent(self, *args, **kwargs):
-        kwargs.setdefault("decimal", settings2.feature.decimal_time)
+        kwargs.setdefault("decimal", settings.feature.decimal_time)
         return render.time_spent(*args, **kwargs)
 
     def _render_budget(self, *args, **kwargs):
-        kwargs.setdefault("decimal", settings2.feature.decimal_time)
+        kwargs.setdefault("decimal", settings.feature.decimal_time)
         return render.budget(*args, **kwargs)
 
     def on_appearance_setting_change(self, event):  # pylint: disable=W0613
@@ -251,7 +250,6 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
             return dialog.editor.EffortEditor(
                 parent,
                 items,
-                self.settings,
                 self.taskFile.efforts(),
                 self.taskFile,
                 icon_id=icon_id,
@@ -287,24 +285,16 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
         )
 
     def __should_preset_planned_start_date_time(self):
-        return self.settings.get(
-            "view", "defaultplannedstartdatetime"
-        ).startswith("preset")
+        return settings.view.defaultplannedstartdatetime.startswith("preset")
 
     def __should_preset_due_date_time(self):
-        return self.settings.get("view", "defaultduedatetime").startswith(
-            "preset"
-        )
+        return settings.view.defaultduedatetime.startswith("preset")
 
     def __should_preset_actual_start_date_time(self):
-        return self.settings.get(
-            "view", "defaultactualstartdatetime"
-        ).startswith("preset")
+        return settings.view.defaultactualstartdatetime.startswith("preset")
 
     def __should_preset_reminder_date_time(self):
-        return self.settings.get("view", "defaultreminderdatetime").startswith(
-            "preset"
-        )
+        return settings.view.defaultreminderdatetime.startswith("preset")
 
     def deleteItemCommand(self):
         return command.DeleteTaskCommand(
@@ -318,7 +308,7 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
     def createTaskPopupMenu(self):
         return taskcoachlib.gui.menu.TaskPopupMenu(
             self.parent,
-            self.settings,
+            settings.current(),
             self.presentation(),
             self.taskFile.efforts(),
             self.taskFile.categories(),
@@ -641,9 +631,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             priority=render.priority,
         )
         super().__init__(*args, **kwargs)
-        sort_keys = ast.literal_eval(
-            self.settings.get(self.settingsSection(), "sortby")
-        )
+        sort_keys = self.options.sortby
         initial_key = sort_keys[0] if sort_keys else "budget"
         self._apply_order_by(initial_key.lstrip("-"))
         self.orderUICommand.set_choice(self.__order_by)
@@ -697,7 +685,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
 
     def set_order_by(self, choice):
         """Change the order-by attribute. Called by toolbar and menu."""
-        self.settings.settext(self.settingsSection(), "sortby", choice)
+        self.options.sortby = [choice]
         self._apply_order_by(choice)
         patterns.Event(self.view_settings_changed_event_type(), self).send()
 
@@ -861,22 +849,14 @@ class HierarchicalCalendarViewer(
         return False
 
     def reconfig(self):
-        self.widget.SetCalendarFormat(
-            self.settings.getint(self.settingsSection(), "calendarformat")
-        )
-        self.widget.SetHeaderFormat(
-            self.settings.getint(self.settingsSection(), "headerformat")
-        )
-        self.widget.SetDrawNow(
-            self.settings.getboolean(self.settingsSection(), "drawnow")
-        )
+        self.widget.SetCalendarFormat(self.options.calendarformat)
+        self.widget.SetHeaderFormat(self.options.headerformat)
+        self.widget.SetDrawNow(self.options.drawnow)
         self.widget.SetTodayColor(
             list(
                 map(
                     int,
-                    self.settings.get(
-                        self.settingsSection(), "todaycolor"
-                    ).split(","),
+                    self.options.todaycolor.split(","),
                 )
             )
         )
@@ -962,7 +942,7 @@ class CalendarViewer(
         kwargs["doRefresh"] = False
         super().__init__(*args, **kwargs)
 
-        start = self.settings.get(self.settingsSection(), "viewdate")
+        start = self.options.viewdate
         if start:
             dt = wx.DateTime.Now()
             dt.ParseDateTime(start)
@@ -970,14 +950,12 @@ class CalendarViewer(
 
         self._on_week_start_changed()
         self.widget.SetWorkHours(
-            self.settings.getint("view", "efforthourstart"),
-            self.settings.getint("view", "efforthourend"),
+            settings.view.efforthourstart,
+            settings.view.efforthourend,
         )
 
         self.reconfig()
-        self.widget.SetPeriodWidth(
-            self.settings.getint(self.settingsSection(), "periodwidth")
-        )
+        self.widget.SetPeriodWidth(self.options.periodwidth)
 
         # pylint: disable=E1101
         for event_type in (
@@ -1007,16 +985,14 @@ class CalendarViewer(
         self.registerObserver(
             self._on_week_start_changed,
             eventType="view.weekstart",
-            eventSource=self.settings,
         )
         self.registerObserver(
             self._on_gradient_changed,
             eventType="calendarviewer.gradient",
-            eventSource=self.settings,
         )
 
     def _on_week_start_changed(self, event=None):  # pylint: disable=W0613
-        if self.settings.gettext("view", "weekstart") == "monday":
+        if settings.view.weekstart == "monday":
             self.widget.SetWeekStartMonday()
         else:
             self.widget.SetWeekStartSunday()
@@ -1024,9 +1000,7 @@ class CalendarViewer(
     def _on_gradient_changed(self, event):  # pylint: disable=W0613
         # The widget exists by now: set at once, unlike at creation
         self.widget.SetDrawer(
-            wxFancyDrawer
-            if self.settings.getboolean("calendarviewer", "gradient")
-            else wxBaseDrawer
+            wxFancyDrawer if settings.calendarviewer.gradient else wxBaseDrawer
         )
 
     def _on_date_changed(self, event):  # pylint: disable=W0613
@@ -1042,7 +1016,7 @@ class CalendarViewer(
         return False
 
     def at_midnight(self):
-        if not self.settings.get(self.settingsSection(), "viewdate"):
+        if not self.options.viewdate:
             # User has selected the "current" date/time; it may have
             # changed now
             self.SetViewType(wxSCHEDULER_TODAY)
@@ -1061,7 +1035,7 @@ class CalendarViewer(
             **self.widgetCreationKeywordArguments()
         )
 
-        if self.settings.getboolean("calendarviewer", "gradient"):
+        if settings.calendarviewer.gradient:
             # If called directly, we crash with a Cairo assert failing...
             patterns.later.soon(
                 self, self.__safeSetDrawer, widget, wxFancyDrawer
@@ -1081,11 +1055,7 @@ class CalendarViewer(
         return widget
 
     def onChangeConfig(self):
-        self.settings.set(
-            self.settingsSection(),
-            "periodwidth",
-            str(self.widget.GetPeriodWidth()),
-        )
+        self.options.periodwidth = self.widget.GetPeriodWidth()
 
     def onEdit(self, item):
         edit = uicommand.Edit(viewer=self)
@@ -1128,7 +1098,7 @@ class CalendarViewer(
             to_save = ""
         else:
             to_save = dt.Format()
-        self.settings.set(self.settingsSection(), "viewdate", to_save)
+        self.options.viewdate = to_save
 
     def reconfig(self):
         self._do_reconfig()
@@ -1136,33 +1106,15 @@ class CalendarViewer(
     def _do_reconfig(self):
         self.widget.Freeze()
         try:
-            self.widget.SetPeriodCount(
-                self.settings.getint(self.settingsSection(), "periodcount")
-            )
-            self.widget.SetViewType(
-                self.settings.getint(self.settingsSection(), "viewtype")
-            )
-            self.widget.SetStyle(
-                self.settings.getint(self.settingsSection(), "vieworientation")
-            )
-            self.widget.SetShowNoStartDate(
-                self.settings.getboolean(self.settingsSection(), "shownostart")
-            )
-            self.widget.SetShowNoDueDate(
-                self.settings.getboolean(self.settingsSection(), "shownodue")
-            )
-            self.widget.SetShowUnplanned(
-                self.settings.getboolean(
-                    self.settingsSection(), "showunplanned"
-                )
-            )
-            self.widget.SetShowNow(
-                self.settings.getboolean(self.settingsSection(), "shownow")
-            )
+            self.widget.SetPeriodCount(self.options.periodcount)
+            self.widget.SetViewType(self.options.viewtype)
+            self.widget.SetStyle(self.options.vieworientation)
+            self.widget.SetShowNoStartDate(self.options.shownostart)
+            self.widget.SetShowNoDueDate(self.options.shownodue)
+            self.widget.SetShowUnplanned(self.options.showunplanned)
+            self.widget.SetShowNow(self.options.shownow)
 
-            hcolor = self.settings.get(
-                self.settingsSection(), "highlightcolor"
-            )
+            hcolor = self.options.highlightcolor
             if hcolor:
                 highlight_color = wx.Colour(
                     *tuple([int(c) for c in hcolor.split(",")])
@@ -1170,20 +1122,16 @@ class CalendarViewer(
                 self.widget.SetHighlightColor(highlight_color)
 
             # Other month days background color
-            from taskcoachlib.config import settings2
-
             section = (
                 "calendar_dark"
-                if settings2.window.theme_is_dark
+                if settings.window.theme_is_dark
                 else "calendar_light"
             )
-            use_system = self.settings.getboolean(
-                section, "other_month_bg_system"
-            )
+            use_system = settings.get(section, "other_month_bg_system")
             if use_system:
                 self.widget.SetOtherMonthColor(None)
             else:
-                color_tuple = self.settings.getvalue(section, "other_month_bg")
+                color_tuple = settings.get(section, "other_month_bg")
                 self.widget.SetOtherMonthColor(wx.Colour(*color_tuple))
 
             self.widget.RefreshAllItems(0)
@@ -1239,7 +1187,7 @@ class TaskViewer(
         try:
             return self.presentation().tree_mode()
         except AttributeError:
-            return self.settings.getboolean(self.settingsSection(), "treemode")
+            return self.options.treemode
 
     def showColumn(self, column, show=True, *args, **kwargs):
         if column.name() == "timeLeft":
@@ -2012,7 +1960,7 @@ class TaskViewer(
             self.expand_all()  # pylint: disable=E1101
 
     def set_tree_mode(self, value):
-        self.settings.setboolean(self.settingsSection(), "treemode", value)
+        self.options.treemode = value
         self.presentation().set_tree_mode(value)
         # Mode switch goes through Sorter.reset() which fires a sort event
         # (not add/remove), so onPresentationChanged doesn't fire. The rebuild
@@ -2154,7 +2102,7 @@ class TaskViewer(
         # The adjust modes decide what follows a date
         # (docs/DURATION_CALCULATIONS.md, Stored Duration)
         return (
-            self.settings.get("view", "datestied") == tie
+            settings.view.datestied == tie
             and item.plannedDurationMode() == "implicit"
         )
 
@@ -2262,7 +2210,6 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
         self.registerObserver(
             self.on_pie_chart_angle_changed,
             eventType="%s.piechartangle" % self.settingsSection(),
-            eventSource=self.settings,
         )
         # The pie counts the statuses; the clock changes them too, in
         # its passes, after which the pie is redrawn once
@@ -2313,11 +2260,7 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
         legend.Show()
 
     def refresh(self):
-        self.widget.SetAngle(
-            self.settings.getint(self.settingsSection(), "piechartangle")
-            / 180.0
-            * math.pi
-        )
+        self.widget.SetAngle(self.options.piechartangle / 180.0 * math.pi)
         self.refreshParts()
         self.widget.Refresh()
 
@@ -2338,16 +2281,12 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
 
     def getFgColor(self, status):
         try:
-            from taskcoachlib.config import settings2
-
             section = (
-                "fgcolor_dark" if settings2.window.theme_is_dark else "fgcolor"
+                "fgcolor_dark" if settings.window.theme_is_dark else "fgcolor"
             )
         except Exception:
             section = "fgcolor"
-        color = wx.Colour(
-            *ast.literal_eval(self.settings.get(section, "%stasks" % status))
-        )
+        color = wx.Colour(*settings.get(section, "%stasks" % status))
         if status == task.status.active and color == wx.BLACK:
             color = wx.BLUE
         return color

@@ -1168,7 +1168,6 @@ class EditToolBarPerspective(base_uicommand.UICommand):
     def do_command(self, event):
         self.__editorClass(
             self.__toolbar,
-            settings.current(),
             self.main_window(),
             _("Customize toolbar"),
         ).ShowModal()
@@ -1321,9 +1320,7 @@ class ViewViewer(ViewerCommand):
     def do_command(self, event):
         from taskcoachlib.gui import viewer
 
-        viewer.addOneViewer(
-            self.viewer, self.taskFile, settings.current(), self.viewerClass
-        )
+        viewer.addOneViewer(self.viewer, self.taskFile, self.viewerClass)
         self.increaseViewerCount()
 
     def increaseViewerCount(self):
@@ -1345,9 +1342,7 @@ class ViewEffortViewerForSelectedTask(ViewerCommand):
     def do_command(self, event):
         from taskcoachlib.gui import viewer
 
-        viewer.addOneViewer(
-            self.viewer, self.taskFile, settings.current(), self.viewerClass
-        )
+        viewer.addOneViewer(self.viewer, self.taskFile, self.viewerClass)
 
 
 class RenameViewer(ViewerCommand):
@@ -1751,7 +1746,6 @@ class EditTrackedTasks(TaskListCommand):
         editTaskDialog = dialog.editor.TaskEditor(
             self.main_window(),
             self.taskList.tasks_being_tracked(),
-            settings.current(),
             self.taskList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
@@ -1941,7 +1935,6 @@ class TaskNew(TaskListCommand):
         newTaskDialog = dialog.editor.TaskEditor(
             self.main_window(),
             newTaskCommand.items,
-            settings.current(),
             self.taskList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
@@ -2014,7 +2007,6 @@ class TaskNewFromTemplate(TaskNew):
         newTaskDialog = dialog.editor.TaskEditor(
             self.main_window(),
             newTaskCommand.items,
-            settings.current(),
             self.taskList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
@@ -2552,7 +2544,6 @@ class AddNote(ViewerCommand):
         editDialog = dialog.editor.NoteEditor(
             self.main_window(),
             addNoteCommand.items,
-            settings.current(),
             self.viewer.presentation(),
             self.main_window().taskFile,
             icon_id=self.icon_id,
@@ -2585,7 +2576,6 @@ class OpenAllNotes(ViewerCommand):
                 edit_dialog = dialog.editor.NoteEditor(
                     self.main_window(),
                     [item_note],
-                    settings.current(),
                     self.viewer.presentation(),
                     self.main_window().taskFile,
                     icon_id=self.icon_id,
@@ -2642,7 +2632,6 @@ class EffortNew(ViewerCommand, EffortListCommand, TaskListCommand):
         new_effort_dialog = dialog.editor.EffortEditor(
             self.main_window(),
             new_effort_command.items,
-            settings.current(),
             self.effortList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
@@ -2956,7 +2945,6 @@ class CategoryNew(CategoriesCommand):
         newCategoryDialog = dialog.editor.CategoryEditor(
             self.main_window(),
             newCategoryCommand.items,
-            settings.current(),
             taskFile.categories(),
             taskFile,
             icon_id=self.icon_id,
@@ -3042,7 +3030,6 @@ class NoteNew(NotesCommand, ViewerCommand):
             noteDialog = dialog.editor.NoteEditor(
                 self.main_window(),
                 newNoteCommand.items,
-                settings.current(),
                 self.notes,
                 self.main_window().taskFile,
                 icon_id=self.icon_id,
