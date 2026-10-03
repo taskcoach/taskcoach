@@ -319,6 +319,7 @@ class CalendarCanvas(wx.Panel):
             self._draw_event(gc, child)
 
     def _on_paint(self, event):
+        dc = wx.PaintDC(self)
         w, h = self.GetClientSize()
         vw = max(w, self._minSize[0])
         vh = max(h, self._minSize[1])
@@ -329,6 +330,8 @@ class CalendarCanvas(wx.Panel):
         if self._vScroll.IsShown():
             vw -= self._vScroll.GetClientSize()[0]
             dy = self._vScroll.GetThumbPosition()
+        if vw <= 0 or vh <= 0:
+            return  # No room, as when laid out in a crowded column
 
         bmp = wx.Bitmap(vw, vh)
         memDC = wx.MemoryDC()
@@ -338,7 +341,6 @@ class CalendarCanvas(wx.Panel):
             memDC.Clear()
             gc = wx.GraphicsContext.Create(memDC)
             self._draw(gc, vw, vh, dx, dy)
-            dc = wx.PaintDC(self)
             dc.Blit(0, 0, vw, vh, memDC, 0, 0)
         finally:
             memDC.SelectObject(wx.NullBitmap)

@@ -1582,15 +1582,14 @@ each with the recommended action, none ruled yet:
   machine, back to back: 0.8 to 3.0 s per switch before, 0.00 to
   0.01 s after; two seconds after each switch the highlighted caption
   is the active view's.
-- P161. The Hierarchical calendar prints `wxAssertionError ...
-  invalid bitmap size` (`wxevents.py` `_on_paint`) about 20 times as
-  the window lays itself out, when the view is docked in a crowded
-  column: for a moment it gets 2 to 6 pixels of height, less than its
-  scrollbar's 14, and asks for a bitmap of negative height; once laid
-  out it draws normally. The same on master (33 at start with the same
-  settings file, 2026-10-03; P14 had been closed as not reproduced).
-  Proposed: take the paint context first, and draw only when there is
-  room.
+- P161. ~~The Hierarchical calendar printed `invalid bitmap size`
+  tracebacks at start~~: fixed 2026-10-03, **ruled by designer**; the
+  same on master. Docked in a crowded column it is laid out for a
+  moment with 2 to 6 pixels of height, less than its 14-pixel
+  scrollbar, and asked for a bitmap of negative height (with no events
+  its minimum height is negative too). It now takes the paint context
+  first and draws only when there is room. Checked in the app with all
+  views open: 0 tracebacks at start (20 to 34 before), the view drawn.
 - P162. After a click in a floating view the keyboard focus goes
   back and forth between it and the main window for a second or two
   (openbox, 2026-10-02, the same before P122's change): a floating
