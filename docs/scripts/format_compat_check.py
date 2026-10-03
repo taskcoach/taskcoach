@@ -30,11 +30,11 @@ import argparse
 import collections
 import datetime
 import os
+import re
 import subprocess
 import sys
 import tempfile
-
-from lxml import etree
+from xml.etree import ElementTree
 
 REPOSITORY = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -92,10 +92,25 @@ def run(python, code, source, target):
     )
 
 
+def parse(path):
+    """The file's tree, and its version line, which the tree leaves
+    out."""
+    with open(path, encoding="utf-8") as file:
+        text = file.read()
+    version = re.search(r"<\?taskcoach .*?\?>", text).group(0)
+    return ElementTree.ElementTree(ElementTree.fromstring(text)), version
+
+
+def write(tree, version, target):
+    """The file, with its version line: the releases refuse it
+    without."""
+    with open(target, "w", encoding="utf-8") as file:
+        file.write('<?xml version="1.0" encoding="utf-8"?>\n%s\n' % version)
+        tree.write(file, encoding="unicode")
+
+
 def find(root, prefix, tag=None):
     for node in root.iter():
-        if not isinstance(node.tag, str):
-            continue
         if node.get("id", "").startswith(prefix) and tag in (None, node.tag):
             return node
     raise KeyError(prefix)
@@ -103,7 +118,7 @@ def find(root, prefix, tag=None):
 
 def build_rich_file(target):
     """Welcome.tsk with every field the format has (tskversion 37)."""
-    tree = etree.parse(os.path.join(REPOSITORY, "Welcome.tsk"))
+    tree, version = parse(os.path.join(REPOSITORY, "Welcome.tsk"))
     root = tree.getroot()
     each = find(root, "5cc7a252", "task")
     for name, value in dict(
@@ -124,7 +139,7 @@ def build_rich_file(target):
         ordering="5",
     ).items():
         each.set(name, value)
-    etree.SubElement(
+    ElementTree.SubElement(
         each,
         "recurrence",
         dict(
@@ -140,7 +155,7 @@ def build_rich_file(target):
     )
     effort = find(root, "f0109306", "effort")
     effort.set("entryMode", "duration")
-    etree.SubElement(effort, "description").text = "Effort description"
+    ElementTree.SubElement(effort, "description").text = "Effort description"
     find(root, "80f0f933", "category").set("exclusiveSubcategories", "True")
     find(root, "f0109811", "category").set("filtered", "True")
     work = find(root, "42afb411", "category")
@@ -149,7 +164,7 @@ def build_rich_file(target):
     for prefix in ("7be82e5c", "a1b2c307", "098b2f1e", "2eb06ab6", "3307cece"):
         members.append(find(root, prefix).get("id"))
     work.set("categorizables", " ".join(members))
-    etree.SubElement(
+    ElementTree.SubElement(
         find(root, "e9f1cf82", "task"),
         "attachment",
         dict(
@@ -160,16 +175,16 @@ def build_rich_file(target):
             location="https://example.org/page",
         ),
     )
-    tree.write(target, xml_declaration=True, encoding="utf-8")
+    write(tree, version, target)
 
 
 def add_mail(source, target):
     """A mail attachment, as this version writes it."""
-    tree = etree.parse(source)
-    etree.SubElement(
+    tree, version = parse(source)
+    ElementTree.SubElement(
         find(tree.getroot(), "e9f1cf82", "task"), "attachment", MAIL
     )
-    tree.write(target, xml_declaration=True, encoding="utf-8")
+    write(tree, version, target)
 
 
 def index(path):
@@ -178,10 +193,7 @@ def index(path):
 
     def walk(node, parent):
         for child in node:
-            if not isinstance(child.tag, str) or child.tag in (
-                "description",
-                "recurrence",
-            ):
+            if child.tag in ("description", "recurrence"):
                 continue
             key = child.get("id") or "%s/%s" % (parent, child.tag)
             attributes = dict(child.attrib)
@@ -195,7 +207,7 @@ def index(path):
             items[key] = (child.tag, attributes)
             walk(child, key)
 
-    walk(etree.parse(path).getroot(), "root")
+    walk(ElementTree.parse(path).getroot(), "root")
     return items
 
 

@@ -133,7 +133,7 @@ check_supported() {
 # Get distribution-specific packages
 get_system_packages() {
     # Core packages available on all Debian/Ubuntu systems
-    SYSTEM_PACKAGES="python3-wxgtk4.0 python3-lxml"
+    SYSTEM_PACKAGES="python3-wxgtk4.0"
     SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3-dateutil python3-chardet python3-keyring python3-enchant"
     SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3-pyparsing python3-venv"
     SYSTEM_PACKAGES="$SYSTEM_PACKAGES gir1.2-ayatanaappindicator3-0.1"

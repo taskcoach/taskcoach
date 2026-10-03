@@ -18,8 +18,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import lxml.etree
-import xml.parsers.expat
+from xml.etree import ElementTree
 import wx
 import io
 import os
@@ -447,13 +446,7 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
 
     def testReadEmptyStream(self):
         reader = persistence.XMLReader(io.StringIO())
-        try:
-            reader.read()
-            self.fail("Expected a parse error")  # pragma: no cover
-        except lxml.etree.XMLSyntaxError:
-            pass
-        except xml.etree.ElementTree.ParseError:
-            pass  # pragma: no cover
+        self.assertRaises(ElementTree.ParseError, reader.read)
 
     def testNoTasksAndNoCategories(self):
         tasks, categories, notes = self.writeAndReadTasksAndCategoriesAndNotes(
@@ -2311,6 +2304,23 @@ class XMLReaderVersionsTest(XMLReaderTestCase):
         self.assertEqual(
             (37, 38), (self.reader.version_needed(), self.reader.tskversion())
         )
+
+    def test_versions_in_single_quotes(self):
+        self.read("tskversion='37' tskformat='38'", "<tasks/>")
+        self.assertEqual(
+            (37, 38), (self.reader.version_needed(), self.reader.tskversion())
+        )
+
+    def test_the_version_line_after_another_instruction(self):
+        fd = io.StringIO(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            '<?xml-stylesheet href="tasks.css"?>\n'
+            '<?taskcoach release="whatever" tskversion="37"?>\n'
+            '<tasks><task id="t1" subject="read"/></tasks>'
+        )
+        fd.name = "testfile.tsk"
+        tasks, _, _ = persistence.XMLReader(fd).read()
+        self.assertEqual(["read"], [each.subject() for each in tasks])
 
     def test_one_number_is_both(self):
         self.read('tskversion="38"', "<tasks/>")

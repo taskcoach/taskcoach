@@ -226,12 +226,12 @@ Checksums in the manifest are real (verified against the GLU and PyPI artifacts)
 
 The generated runtime-deps module (`python3-sources.json`) installs with
 `pip3 ... --ignore-installed` (injected by `generate-pip-sources.sh`). The build
-runs against `org.gnome.Sdk`, which ships some of these modules (notably
-`python3-lxml`). Without `--ignore-installed`, pip treats them as already
-satisfied (from the SDK) and skips installing them into `/app`, so they are
-**missing at runtime** against `org.gnome.Platform` (which does not include
-them). This manifested as `ModuleNotFoundError: No module named 'lxml'` on first
-launch even though the build succeeded.
+runs against `org.gnome.Sdk`, which ships some Python modules. Without
+`--ignore-installed`, pip treats them as already satisfied (from the SDK) and
+skips installing them into `/app`, so they are **missing at runtime** against
+`org.gnome.Platform` (which does not include them). This showed as
+`ModuleNotFoundError: No module named 'lxml'` on first launch, when Task Coach
+still used lxml, even though the build succeeded.
 
 The set also includes **`dbus-python`**, which enables the optional idle-time
 detection feature (its D-Bus backend does `import dbus`); the matching

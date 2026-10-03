@@ -33,7 +33,6 @@ REQUIREMENTS=(
     "chardet>=5.2.0"
     "python-dateutil>=2.9.0"
     "pyparsing>=3.0.0"
-    "lxml"
     "keyring"
     "squaremap>=1.0.5"
     "pyenchant>=3.2.0"
@@ -67,13 +66,13 @@ wget -q "$GENERATOR_URL" -O "$TMP/flatpak-pip-generator"
 python3 -m pip install --quiet --user requirements-parser packaging || true
 
 # --runtime makes the generator read the TARGET Python's version/ABI tags from
-# the GNOME Sdk, so lxml/cryptography resolve to the correct cp3xx
+# the GNOME Sdk, so cryptography resolves to the correct cp3xx
 # manylinux wheels (generating on the host would pin the wrong ABI).
 # --prefer-wheels avoids compiling those heavy binary deps from sdist;
 # dbus-python is intentionally left off it (no wheels exist) and builds from its
 # sdist against the Sdk's dbus/glib headers.
 # --ignore-installed lists packages pip must install into /app even when the
-# build's org.gnome.Sdk already ships them (notably lxml): without it pip sees
+# build's org.gnome.Sdk already ships them: without it pip sees
 # them "already satisfied", skips them, and they are MISSING at runtime against
 # org.gnome.Platform, crashing the app with ModuleNotFoundError. We pass every
 # runtime dep by name; names the Sdk does not ship are harmless no-ops. Requires
@@ -84,7 +83,7 @@ IGNORE_INSTALLED="$(printf '%s\n' "${REQUIREMENTS[@]}" | sed -E 's/[<>=!~,].*//'
 echo "Generating $OUT ..."
 python3 "$TMP/flatpak-pip-generator" \
     --runtime "org.gnome.Sdk//$RUNTIME_VERSION" \
-    --prefer-wheels=lxml,cryptography,cffi \
+    --prefer-wheels=cryptography,cffi \
     --ignore-installed="$IGNORE_INSTALLED" \
     --output "$SCRIPT_DIR/python3-sources" \
     "${REQUIREMENTS[@]}"

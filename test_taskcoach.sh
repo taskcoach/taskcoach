@@ -71,9 +71,6 @@ run_test "Task Coach's tree widget loaded" \
     "python3 -c 'import taskcoachlib.workarounds.monkeypatches, wx.lib.agw.hypertreelist as h; exit(0 if \"taskcoachlib/patches\" in h.__file__ else 1)'"
 
 # Test 5: Dependencies
-run_test "lxml dependency" \
-    "python3 -c 'import lxml'"
-
 run_test "dateutil dependency" \
     "python3 -c 'import dateutil'"
 

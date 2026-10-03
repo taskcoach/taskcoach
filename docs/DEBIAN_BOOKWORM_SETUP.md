@@ -134,7 +134,6 @@ sudo apt-get update
 # Install wxPython and available Python packages from Debian repos
 sudo apt-get install -y \
     python3-wxgtk4.0 \
-    python3-lxml \
     python3-dateutil \
     python3-chardet \
     python3-keyring \
@@ -156,7 +155,7 @@ python3 -m venv --system-site-packages .venv
 
 ```
 
-**Note**: The `--system-site-packages` flag allows the virtual environment to access system-installed packages (like wxPython and lxml) while keeping pip-installed packages isolated.
+**Note**: The `--system-site-packages` flag allows the virtual environment to access system-installed packages (like wxPython) while keeping pip-installed packages isolated.
 
 #### Step 3: Run TaskCoach
 
@@ -254,7 +253,6 @@ python3 --version  # Should be 3.11.x
 ### Check System Packages
 ```bash
 dpkg -l | grep python3-wx
-dpkg -l | grep python3-lxml
 ```
 
 ### Logging
@@ -268,7 +266,6 @@ Run from a terminal: the log goes to its output
 
 ### From Debian Repositories (apt):
 - ✅ python3-wxgtk4.0 (4.2.0)
-- ✅ python3-lxml (4.9.2)
 - ✅ python3-dateutil (2.8.2)
 - ✅ python3-chardet (5.1.0)
 - ✅ python3-keyring (23.13.1)

@@ -124,7 +124,6 @@ def _log_required_packages():
         ("chardet", None),
         ("python-dateutil", "dateutil"),
         ("pyparsing", None),
-        ("lxml", None),
         ("keyring", None),
         ("squaremap", None),
     ]

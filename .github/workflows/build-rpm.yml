@@ -82,7 +82,6 @@ jobs:
             python3-chardet \
             python3-dateutil \
             python3-pyparsing \
-            python3-lxml \
             python3-keyring
 
           # NOT in Fedora repos - install via pip during RPM build:

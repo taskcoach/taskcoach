@@ -16,8 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from lxml import etree as ET
 import os
+
+from taskcoachlib.persistence.xml.reader import parse
+from taskcoachlib.persistence.xml.writer import PIElementTree
 
 
 def anonymize(filename):
@@ -59,9 +61,14 @@ def anonymize(filename):
         if node.tag == "attachment" and "location" in node.attrib:
             node.attrib["location"] = anonymize_string(node.attrib["location"])
 
-    tree = ET.parse(filename)
-    anonymize_node(tree.getroot())
+    with open(filename, encoding="utf-8") as file:
+        root, versions = parse(file.read())
+    anonymize_node(root)
     name, ext = os.path.splitext(filename)
     anonymized_filename = name + ".anonymized" + ext
-    tree.write(anonymized_filename, xml_declaration=True, encoding="utf-8")
+    # With the version line, without which Task Coach refuses the file
+    with open(anonymized_filename, "wb") as file:
+        PIElementTree(
+            "\n".join("<?%s?>" % text for text in versions), root
+        ).write(file, "utf-8")
     return anonymized_filename

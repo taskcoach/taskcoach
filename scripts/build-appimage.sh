@@ -118,7 +118,6 @@ install_dependencies() {
         "chardet>=5.2.0" \
         "python-dateutil>=2.9.0" \
         "pyparsing>=3.0.0" \
-        lxml \
         keyring \
         "squaremap>=1.0.5"
 

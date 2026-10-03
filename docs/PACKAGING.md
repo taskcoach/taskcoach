@@ -45,7 +45,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | wxpython | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | pyparsing | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
-| lxml | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | chardet (<5.2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | python-dateutil | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | keyring | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |

@@ -71,7 +71,6 @@ if command -v sudo &> /dev/null; then
     sudo pacman -S --needed --noconfirm \
         python \
         python-wxpython \
-        python-lxml \
         python-dateutil \
         python-chardet \
         python-keyring \
@@ -216,7 +215,7 @@ echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Arch/Manjaro Linux with:"
-echo "  • System packages from official repos (wxPython, lxml, etc.)"
+echo "  • System packages from official repos (wxPython, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo
 echo "Optional packages (install from AUR if needed):"

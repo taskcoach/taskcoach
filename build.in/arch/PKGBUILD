@@ -14,7 +14,6 @@ depends=(
     'python-chardet>=5.2.0'
     'python-dateutil>=2.9.0'
     'python-pyparsing>=3.0.0'
-    'python-lxml'
     'python-keyring'
     'python-pyenchant'
     'python-gobject'

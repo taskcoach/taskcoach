@@ -179,7 +179,6 @@ jobs:
             "chardet>=5.2.0" `
             "python-dateutil>=2.9.0" `
             "pyparsing>=3.0.0" `
-            lxml `
             keyring `
             "squaremap>=1.0.5" `
             "pyenchant>=3.2.0" `

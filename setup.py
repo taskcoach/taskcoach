@@ -78,7 +78,6 @@ install_requires = [
     "chardet",
     "python-dateutil",
     "pyparsing>=3.0.0",  # pyparsing 3 API, every supported distro has it
-    "lxml",
     "keyring",
     "pyenchant>=3.2.0",  # Spell checking for text fields
     # Windows calls: Outlook, folders, windows, monitors, processes

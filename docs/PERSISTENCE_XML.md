@@ -6,6 +6,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 
 - [TODO](#todo)
 - [Overview](#overview)
+  - [Files From Others](#files-from-others)
 - [Defaults](#defaults)
 - [Saving](#saving)
   - [Watching the File](#watching-the-file)
@@ -46,6 +47,33 @@ defaults from one list. A file saved before stored text dropped the
 characters XML forbids may hold them: the reader drops them, raw or
 as references, before parsing
 ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#text)).
+
+Both use the standard library's ElementTree (lxml until 2.0.3.0). Its
+parsed tree keeps nothing before the root element, so the reader takes
+the `<?taskcoach?>` line ([Two Numbers](#two-numbers)) from the
+parser's events, and Help > Anonymize writes it back.
+
+### Files From Others
+
+A task file or template may come from anyone. The standard library's
+parser, Expat, never reads another file or the network: an external
+entity is refused as undefined, an external DTD is not fetched. Since
+Expat 2.4 it refuses entity expansion bombs (billion laughs, quadratic
+blowup). Expat is the system's, or on Windows and macOS Python's own:
+the Windows build's Python 3.11.9 has Expat 2.6.0, without two later
+crash and memory fixes
+([To Do 82](MASTER_SCHEDULER_REFACTOR.md#to-do)). lxml before 5.0 read a local file named in an external entity
+into the task by default (its 5.0 changelog); Ubuntu 22.04 ships
+4.8.0, Debian 12 4.9.2. What the writer saves is escaped: markup typed
+into a field comes back as the same text.
+
+Checked 2026-10-03 with hostile files, in the app and through the
+reader: an external entity naming a local file or a URL, an external
+DTD and parameter entity (a local web server logged no request),
+XInclude, billion laughs and quadratic blowup (refused in 0.2 s), 60
+MB of text in one field (read), 100,000 nested tasks (refused: the
+reader's recursion limit; lxml stops at 256 levels). The refused files
+show the usual file error dialog.
 
 ---
 

@@ -67,7 +67,6 @@ if command -v sudo &> /dev/null; then
     sudo apt-get update -qq
     sudo apt-get install -y \
         python3-wxgtk4.0 \
-        python3-lxml \
         python3-dateutil \
         python3-chardet \
         python3-keyring \
@@ -173,7 +172,7 @@ echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up with:"
-echo "  • System packages from Debian repos (wxPython, lxml, squaremap, etc.)"
+echo "  • System packages from Debian repos (wxPython, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo
 echo "You can now run TaskCoach with:"

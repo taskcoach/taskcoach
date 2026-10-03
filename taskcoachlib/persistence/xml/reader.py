@@ -36,13 +36,12 @@ from .defaults import read
 from taskcoachlib.thirdparty.deltaTime import nlTimeExpression
 from taskcoachlib.tools import wxhelper
 import ast
-import io
 import operator
 import os
 import re
 import types
 import wx
-from lxml import etree as ET
+from xml.etree import ElementTree
 
 # What date expressions in templates saved before tskversion 32 use
 OLD_TEMPLATE_NAMES = dict(
@@ -76,6 +75,35 @@ def _without_forbidden_reference(match):
     number = match.group(1)
     code = int(number[1:], 16) if number[0] == "x" else int(number)
     return "" if _xml_forbids(code) else match.group(0)
+
+
+# A processing instruction's pseudo-attributes: name="value"
+_PSEUDO_ATTRIBUTE = re.compile(r"""\s+(\w+)\s*=\s*(?:'([^']*)'|"([^"]*)")""")
+
+
+def parse(content):
+    """The root element of the XML text, and the text of each
+    <?taskcoach ...?> version line in order. The version line comes
+    before the root, where the parsed tree keeps nothing; the parser's
+    events have it."""
+    parser = ElementTree.XMLPullParser(events=("start", "pi"))
+    parser.feed(content)
+    parser.close()
+    root, versions = None, []
+    for event, node in parser.read_events():
+        if event == "start":
+            if root is None:
+                root = node
+        elif node.text.split(None, 1)[0] == "taskcoach":
+            versions.append(node.text)
+    return root, versions
+
+
+def _pseudo_attributes(text):
+    return {
+        name: single or double
+        for name, single, double in _PSEUDO_ATTRIBUTE.findall(text)
+    }
 
 
 def _without_broken_lines(content):
@@ -250,14 +278,8 @@ class XMLReader(object):
         content = self.__without_characters_xml_forbids(
             _without_broken_lines(self.__fd.read())
         )
-        # As bytes: lxml refuses text that declares its encoding. lxml
-        # reads the PIs
-        root = ET.parse(io.BytesIO(content.encode("utf-8"))).getroot()
-        versions = [
-            pi.attrib
-            for pi in root.xpath("//processing-instruction()")
-            if pi.target == "taskcoach"
-        ]
+        root, texts = parse(content)
+        versions = [_pseudo_attributes(text) for text in texts]
         if not versions or versions[0].get("tskversion") is None:
             raise ValueError("no Task Coach file version (tskversion)")
         # pylint: disable=W0201

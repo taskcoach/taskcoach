@@ -71,7 +71,6 @@ jobs:
             python-installer \
             python-wheel \
             python-wxpython \
-            python-lxml \
             python-dateutil \
             python-chardet \
             python-keyring \

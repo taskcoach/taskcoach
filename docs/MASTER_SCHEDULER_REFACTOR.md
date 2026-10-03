@@ -331,7 +331,7 @@ go at the end. Details live in the sections and documents linked.
     ms with numpy, 1.05 to 1.4 ms without; the probe 0.4 to 0.6 s at
     each start. Checked in the app with numpy unimportable: the six
     icons byte for byte those of the base, no error.
-77. ~~`dbus-python` to Gio (was P83)~~: moved to To Do 82.
+77. ~~`dbus-python` to Gio (was P83)~~: moved to To Do 83.
 78. ~~`WMI` (Windows) to `pywin32`~~: done 2026-10-02, **ruled by
     designer**. Its one call, finding Thunderbird Portable's folder
     when an e-mail is dropped from it, is now `pywin32`'s own WMI query
@@ -356,22 +356,42 @@ go at the end. Details live in the sections and documents linked.
     Checked in the app: a change in place and a copy renamed over the
     file prompted within 3 s; our own save did not; the old setting was
     gone from the file saved on quit.
-80. `lxml`: parses the task file (`persistence/xml/reader.py`) and
-    Help > Anonymize's file; the writer already uses the standard
-    library's ElementTree, which drops the `<?taskcoach?>` version line
-    lxml keeps (P128). Options: keep it, or the standard library (the
-    version line read from `XMLPullParser` events). Risk: every file
-    loads through it, and a parser change can treat odd files
-    differently (entities, encodings, broken files); gain: one compiled
-    package fewer (4 to 9 MB to download, 9 to 20 MB installed, per
-    system). Prototyped 2026-10-03 on the standard library (the
-    version line from `XMLPullParser` events): the reader, writer, task
-    file and template tests pass (638); Welcome.tsk and generated files
-    of 2,000 and 10,000 tasks load and save back byte for byte as with
-    lxml, the templates but for their fresh ids. Parsing 10,000 tasks
-    takes 152 ms instead of 110 ms, within a 16 s load.
+80. ~~`lxml`~~: replaced 2026-10-03 by the standard library's
+    ElementTree, **ruled by designer**. lxml parsed the task file
+    (`persistence/xml/reader.py`) and Help > Anonymize's file; the
+    writer already used the standard library. The one difference
+    that matters: the standard library's tree keeps nothing before the
+    root element, where the `<?taskcoach?>` version line is. The
+    reader takes it from the parser's events, and Anonymize writes it
+    back (P128). Task Coach's code: 46 lines added, 18 removed.
+    Checked: a user's real task files (one of 301 tasks, 46
+    categories, 739 efforts; 15 files from releases 1.1.0 to 2.0.2)
+    load and save byte for byte as with lxml; parsing that 217 KB
+    file takes 8.5 ms instead of 5.3 ms (10,000 tasks: 152 ms instead
+    of 110 ms); the full suite passes with lxml blocked; in the app
+    the file opened, Anonymize's copy opened with the same counts and
+    no text, and Merge added a second file;
+    `docs/scripts/format_compat_check.py` (now on the standard
+    library) reports the same against 2.0.2.0. Hostile files are
+    refused as with lxml 5, and a local file is no longer read in as
+    lxml before 5.0 did (Debian 12, Ubuntu 22.04)
+    ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#files-from-others)); the
+    Windows build's older Expat is To Do 82.
+    lxml left every package, build and setup script: 4 to 9 MB to
+    download, 9 to 20 MB installed, per system.
 81. ~~`squaremap`~~: kept, D13.
-82. `dbus-python` to Gio (was To Do 77), **put off by designer
+82. The Windows build's Python, 3.11.9 (found with To Do 80): its
+    embedded package bundles Expat 2.6.0, which now parses task files
+    there (lxml did, with a current libxml2). It lacks Expat 2.7.0's
+    fix for a crash on deeply nested entity references
+    (CVE-2024-8176) and 2.7.2's for large memory use from a small file
+    (CVE-2025-59375): a hostile file can crash Task Coach or make it
+    use much memory as it opens, nothing more. Python 3.11 has no
+    Windows package after 3.11.9 (3.11.14 bundles Expat 2.7.3, as
+    source). To analyse before the pull request: a newer Python for
+    the Windows build (its Expat, wxPython 4.3.1's wheels, the
+    embedded layout).
+83. `dbus-python` to Gio (was To Do 77), **put off by designer
     2026-10-03** to the end of this refactor: no proposal until
     research shows it suits, without a regression, every supported
     system. Three calls use dbus-python: the startup report's tray
@@ -1248,7 +1268,8 @@ each with the recommended action, none ruled yet:
 - P128. ~~Help > Anonymize wrote a file Task Coach cannot open~~:
   fixed 2026-10-01, the same on master (an error there, a clear
   refusal here): the standard library's ElementTree dropped the
-  `<?taskcoach?>` version line; lxml keeps it.
+  `<?taskcoach?>` version line; lxml keeps it. Since To Do 80
+  Anonymize writes it back itself.
 - P129. ~~Ctrl+Z and Ctrl+Y in the search box undid and redid the
   last task change~~: fixed 2026-10-01, **ruled by designer** ("It's
   a text box. Ignore all of these shortcuts and keys"): the Edit
