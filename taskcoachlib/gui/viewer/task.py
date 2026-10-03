@@ -327,23 +327,20 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
 
     def createCreationToolBarUICommands(self):
         return (
-            uicommand.TaskNew(
-                taskList=self.presentation(), settings=self.settings
-            ),
+            uicommand.TaskNew(taskList=self.presentation()),
             uicommand.NewSubItem(viewer=self),
             uicommand.TaskNewFromTemplateButton(
                 taskList=self.presentation(),
-                settings=self.settings,
                 icon_id="taskcoach_actions_newtmpl",
             ),
         ) + super().createCreationToolBarUICommands()
 
     def createActionToolBarUICommands(self):
         ui_commands = (
-            uicommand.AddNote(settings=self.settings, viewer=self),
-            uicommand.TaskMarkInactive(settings=self.settings, viewer=self),
-            uicommand.TaskMarkActive(settings=self.settings, viewer=self),
-            uicommand.TaskMarkCompleted(settings=self.settings, viewer=self),
+            uicommand.AddNote(viewer=self),
+            uicommand.TaskMarkInactive(viewer=self),
+            uicommand.TaskMarkActive(viewer=self),
+            uicommand.TaskMarkCompleted(viewer=self),
         )
         ui_commands += (
             # EffortStart needs a reference to the original (task) list to
@@ -363,9 +360,7 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
     def createModeToolBarUICommands(self):
         hide_ui_commands = tuple(
             [
-                uicommand.ViewerHideTasks(
-                    taskStatus=status, settings=self.settings, viewer=self
-                )
+                uicommand.ViewerHideTasks(taskStatus=status, viewer=self)
                 for status in task.Task.possibleStatuses()
             ]
         )
@@ -377,7 +372,7 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
             hide_ui_commands
             + separator
             + other_mode_ui_commands
-            + (uicommand.ToggleAutoScroll(settings=self.settings),)
+            + (uicommand.ToggleAutoScroll(),)
         )
 
     def getItemTooltipData(self, task):  # pylint: disable=W0621
@@ -673,7 +668,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
 
     def createModeToolBarUICommands(self):
         self.orderUICommand = uicommand.SquareTaskViewerOrderChoice(
-            viewer=self, settings=self.settings
+            viewer=self
         )  # pylint: disable=W0201
         return super().createModeToolBarUICommands() + (self.orderUICommand,)
 
@@ -689,7 +684,6 @@ class SquareTaskViewer(BaseTaskTreeViewer):
                 menu_text=menu_text,
                 value=value,
                 viewer=self,
-                settings=self.settings,
             )
             for (menu_text, value) in zip(
                 uicommand.SquareTaskViewerOrderChoice.choiceLabels,
@@ -944,7 +938,6 @@ class HierarchicalCalendarViewer(
         )
         create = uicommand.TaskNew(
             taskList=self.presentation(),
-            settings=self.settings,
             taskKeywords=dict(
                 plannedStartDateTime=plannedStartDateTime,
                 dueDateTime=dueDateTime,
@@ -1107,7 +1100,6 @@ class CalendarViewer(
         )
         create = uicommand.TaskNew(
             taskList=self.presentation(),
-            settings=self.settings,
             taskKeywords=dict(
                 plannedStartDateTime=planned_start,
                 dueDateTime=due,
@@ -1492,7 +1484,6 @@ class TaskViewer(
                     alignment=wx.LIST_FORMAT_RIGHT,
                     editControl=editCtrl,
                     editCallback=editCallback,
-                    settings=self.settings,
                     *eventTypes,
                     **kwargs
                 )
@@ -1682,7 +1673,6 @@ class TaskViewer(
                 alignment=wx.LIST_FORMAT_RIGHT,
                 editControl=inplace_editor.DateTimeCtrl,
                 editCallback=self.onEditReminderDateTime,
-                settings=self.settings,
                 *[
                     task.Task.expansionChangedEventType(),
                     task.Task.reminderChangedEventType(),
@@ -1731,9 +1721,7 @@ class TaskViewer(
 
     def createColumnUICommands(self):
         commands = [
-            uicommand.ToggleAutoColumnResizing(
-                viewer=self, settings=self.settings
-            ),
+            uicommand.ToggleAutoColumnResizing(viewer=self),
             uicommand.Separator(),
             uicommand.SubMenu(
                 _("&Dates"),
@@ -1974,7 +1962,7 @@ class TaskViewer(
 
     def createModeToolBarUICommands(self):
         treeOrListUICommand = uicommand.TaskViewerTreeOrListChoice(
-            viewer=self, settings=self.settings
+            viewer=self
         )  # pylint: disable=W0201
         return super().createModeToolBarUICommands() + (treeOrListUICommand,)
 
@@ -1990,7 +1978,6 @@ class TaskViewer(
                 menu_text=menu_text,
                 value=value,
                 viewer=self,
-                settings=self.settings,
             )
             for (menu_text, value) in zip(
                 uicommand.TaskViewerTreeOrListChoice.choiceLabels,
@@ -2303,12 +2290,9 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
 
     def createCreationToolBarUICommands(self):
         return (
-            uicommand.TaskNew(
-                taskList=self.presentation(), settings=self.settings
-            ),
+            uicommand.TaskNew(taskList=self.presentation()),
             uicommand.TaskNewFromTemplateButton(
                 taskList=self.presentation(),
-                settings=self.settings,
                 icon_id="taskcoach_actions_newtmpl",
             ),
         )
@@ -2316,14 +2300,10 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
     def createActionToolBarUICommands(self):
         return tuple(
             [
-                uicommand.ViewerHideTasks(
-                    taskStatus=status, settings=self.settings, viewer=self
-                )
+                uicommand.ViewerHideTasks(taskStatus=status, viewer=self)
                 for status in task.Task.possibleStatuses()
             ]
-        ) + (
-            uicommand.ViewerPieChartAngle(viewer=self, settings=self.settings),
-        )
+        ) + (uicommand.ViewerPieChartAngle(viewer=self),)
 
     def initLegend(self, widget):
         legend = widget.GetLegend()

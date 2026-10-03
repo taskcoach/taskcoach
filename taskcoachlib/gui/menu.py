@@ -304,11 +304,11 @@ class FileMenu(Menu, patterns.Observer):
                 iocontroller=iocontroller, viewer=viewerContainer
             ),
             uicommand.FileImportTemplate(iocontroller=iocontroller),
-            uicommand.FileEditTemplates(settings=settings),
+            uicommand.FileEditTemplates(),
             None,
-            uicommand.PrintPageSetup(settings=settings),
-            uicommand.PrintPreview(viewer=viewerContainer, settings=settings),
-            uicommand.Print(viewer=viewerContainer, settings=settings),
+            uicommand.PrintPageSetup(),
+            uicommand.PrintPreview(viewer=viewerContainer),
+            uicommand.Print(viewer=viewerContainer),
             None,
         )
         self.appendMenu(
@@ -323,9 +323,7 @@ class FileMenu(Menu, patterns.Observer):
         )
         self.appendUICommands(
             None,
-            uicommand.FileManageBackups(
-                iocontroller=iocontroller, settings=settings
-            ),
+            uicommand.FileManageBackups(iocontroller=iocontroller),
         )
         self.__recentFilesStartPosition = len(self)
         self.appendUICommands(None, uicommand.FileQuit())
@@ -381,7 +379,7 @@ class FileMenu(Menu, patterns.Observer):
 class ExportMenu(Menu):
     def __init__(self, mainwindow, iocontroller, settings):
         super().__init__(mainwindow)
-        kwargs = dict(iocontroller=iocontroller, settings=settings)
+        kwargs = dict(iocontroller=iocontroller)
         # pylint: disable=W0142
         self.appendUICommands(
             uicommand.FileExportAsHTML(**kwargs),
@@ -435,7 +433,6 @@ class TaskTemplateMenu(DynamicMenu):
             uicommand.TaskNewFromTemplate(
                 os.path.join(path, name),
                 taskList=self.taskList,
-                settings=self.settings,
             )
             for name in persistence.TemplateList(path).names()
         ]
@@ -460,7 +457,7 @@ class EditMenu(Menu):
             uicommand.SelectAll(viewer=viewerContainer),
             uicommand.ClearSelection(viewer=viewerContainer),
             None,
-            uicommand.EditPreferences(settings),
+            uicommand.EditPreferences(),
         )
 
 
@@ -506,12 +503,11 @@ class ViewMenu(Menu):
         self.appendMenu(_("T&oolbar"), ToolBarMenu(mainwindow, settings))
         self.appendUICommands(
             uicommand.UICheckCommand(
-                settings=settings,
                 menu_text=_("Status&bar"),
                 help_text=_("Show/hide status bar"),
                 setting="statusbar",
             ),
-            uicommand.ToggleAutoScroll(settings=settings),
+            uicommand.ToggleAutoScroll(),
             None,
             uicommand.ResetWindowLayout(),
         )
@@ -521,9 +517,7 @@ class ViewViewerMenu(Menu):
     def __init__(self, mainwindow, settings, viewerContainer, taskFile):
         super().__init__(mainwindow)
         ViewViewer = uicommand.ViewViewer
-        kwargs = dict(
-            viewer=viewerContainer, taskFile=taskFile, settings=settings
-        )
+        kwargs = dict(viewer=viewerContainer, taskFile=taskFile)
         # pylint: disable=W0142
         viewViewerCommands = [
             ViewViewer(
@@ -687,7 +681,6 @@ class ToolBarMenu(Menu):
         ]:
             toolbarCommands.append(
                 uicommand.UIRadioCommand(
-                    settings=settings,
                     setting="toolbar",
                     value=value,
                     menu_text=menu_text,
@@ -703,12 +696,12 @@ class NewMenu(Menu):
         super().__init__(mainwindow)
         tasks = taskFile.tasks()
         self.appendUICommands(
-            uicommand.TaskNew(taskList=tasks, settings=settings),
+            uicommand.TaskNew(taskList=tasks),
             uicommand.NewTaskWithSelectedTasksAsPrerequisites(
-                taskList=tasks, viewer=viewerContainer, settings=settings
+                taskList=tasks, viewer=viewerContainer
             ),
             uicommand.NewTaskWithSelectedTasksAsDependencies(
-                taskList=tasks, viewer=viewerContainer, settings=settings
+                taskList=tasks, viewer=viewerContainer
             ),
         )
         label = _("New task from &template")
@@ -728,12 +721,9 @@ class NewMenu(Menu):
                 viewer=viewerContainer,
                 effortList=taskFile.efforts(),
                 taskList=tasks,
-                settings=settings,
             ),
-            uicommand.CategoryNew(
-                categories=taskFile.categories(), settings=settings
-            ),
-            uicommand.NoteNew(notes=taskFile.notes(), settings=settings),
+            uicommand.CategoryNew(categories=taskFile.categories()),
+            uicommand.NoteNew(notes=taskFile.notes()),
             None,
             uicommand.NewSubItem(viewer=viewerContainer),
         )
@@ -747,13 +737,11 @@ class ActionMenu(Menu):
         categories = taskFile.categories()
         # Generic actions, applicable to all/most domain objects:
         self.appendUICommands(
-            uicommand.AddAttachment(viewer=viewerContainer, settings=settings),
-            uicommand.OpenAllAttachments(
-                viewer=viewerContainer, settings=settings
-            ),
+            uicommand.AddAttachment(viewer=viewerContainer),
+            uicommand.OpenAllAttachments(viewer=viewerContainer),
             None,
-            uicommand.AddNote(viewer=viewerContainer, settings=settings),
-            uicommand.OpenAllNotes(viewer=viewerContainer, settings=settings),
+            uicommand.AddNote(viewer=viewerContainer),
+            uicommand.OpenAllNotes(viewer=viewerContainer),
             None,
             uicommand.Mail(viewer=viewerContainer),
             None,
@@ -768,15 +756,9 @@ class ActionMenu(Menu):
         # Start of task specific actions:
         self.appendUICommands(
             None,
-            uicommand.TaskMarkInactive(
-                settings=settings, viewer=viewerContainer
-            ),
-            uicommand.TaskMarkActive(
-                settings=settings, viewer=viewerContainer
-            ),
-            uicommand.TaskMarkCompleted(
-                settings=settings, viewer=viewerContainer
-            ),
+            uicommand.TaskMarkInactive(viewer=viewerContainer),
+            uicommand.TaskMarkActive(viewer=viewerContainer),
+            uicommand.TaskMarkCompleted(viewer=viewerContainer),
             None,
         )
         uicommand.TaskPriorityParentMenu(viewer=viewerContainer).add_to_menu(
@@ -790,7 +772,7 @@ class ActionMenu(Menu):
             uicommand.EffortStop(
                 viewer=viewerContainer, effortList=efforts, taskList=tasks
             ),
-            uicommand.EditTrackedTasks(taskList=tasks, settings=settings),
+            uicommand.EditTrackedTasks(taskList=tasks),
         )
 
 
@@ -811,7 +793,7 @@ class HelpMenu(Menu):
         self.appendUICommands(
             uicommand.Help(),
             uicommand.FAQ(),
-            uicommand.Tips(settings=settings),
+            uicommand.Tips(),
             uicommand.Anonymize(iocontroller=iocontroller),
             None,
             uicommand.RequestSupport(),
@@ -823,7 +805,7 @@ class HelpMenu(Menu):
         )
         self.appendUICommands(
             uicommand.HelpAbout(),
-            uicommand.CheckForUpdate(settings=settings),
+            uicommand.CheckForUpdate(),
             uicommand.HelpLicense(),
         )
 
@@ -833,9 +815,7 @@ class TaskBarMenu(Menu):
         super().__init__(taskBarIcon)
         tasks = taskFile.tasks()
         efforts = taskFile.efforts()
-        self.appendUICommands(
-            uicommand.TaskNew(taskList=tasks, settings=settings)
-        )
+        self.appendUICommands(uicommand.TaskNew(taskList=tasks))
         self.appendMenu(
             _("New task from &template"),
             TaskTemplateMenu(taskBarIcon, task_list=tasks, settings=settings),
@@ -843,13 +823,9 @@ class TaskBarMenu(Menu):
         )
         self.appendUICommands(None)  # Separator
         self.appendUICommands(
-            uicommand.EffortNew(
-                effortList=efforts, taskList=tasks, settings=settings
-            ),
-            uicommand.CategoryNew(
-                categories=taskFile.categories(), settings=settings
-            ),
-            uicommand.NoteNew(notes=taskFile.notes(), settings=settings),
+            uicommand.EffortNew(effortList=efforts, taskList=tasks),
+            uicommand.CategoryNew(categories=taskFile.categories()),
+            uicommand.NoteNew(notes=taskFile.notes()),
         )
         self.appendUICommands(None)  # Separator
         label = _("&Start tracking effort")
@@ -1000,11 +976,11 @@ class TaskPopupMenu(Menu):
             uicommand.EditInPlace(viewer=taskViewer),
             uicommand.Delete(viewer=taskViewer),
             None,
-            uicommand.AddAttachment(viewer=taskViewer, settings=settings),
-            uicommand.OpenAllAttachments(viewer=taskViewer, settings=settings),
+            uicommand.AddAttachment(viewer=taskViewer),
+            uicommand.OpenAllAttachments(viewer=taskViewer),
             None,
-            uicommand.AddNote(viewer=taskViewer, settings=settings),
-            uicommand.OpenAllNotes(viewer=taskViewer, settings=settings),
+            uicommand.AddNote(viewer=taskViewer),
+            uicommand.OpenAllNotes(viewer=taskViewer),
             None,
             uicommand.Mail(viewer=taskViewer),
             None,
@@ -1018,9 +994,9 @@ class TaskPopupMenu(Menu):
         )
         self.appendUICommands(
             None,
-            uicommand.TaskMarkInactive(settings=settings, viewer=taskViewer),
-            uicommand.TaskMarkActive(settings=settings, viewer=taskViewer),
-            uicommand.TaskMarkCompleted(settings=settings, viewer=taskViewer),
+            uicommand.TaskMarkInactive(viewer=taskViewer),
+            uicommand.TaskMarkActive(viewer=taskViewer),
+            uicommand.TaskMarkCompleted(viewer=taskViewer),
             None,
         )
         uicommand.TaskPriorityParentMenu(viewer=taskViewer).add_to_menu(
@@ -1034,14 +1010,13 @@ class TaskPopupMenu(Menu):
                 viewer=taskViewer,
                 effortList=efforts,
                 taskList=tasks,
-                settings=settings,
             ),
             uicommand.EffortStart(viewer=taskViewer, taskList=tasks),
             uicommand.EffortStop(
                 viewer=taskViewer, effortList=efforts, taskList=tasks
             ),
             None,
-            uicommand.TaskNew(taskList=tasks, settings=settings),
+            uicommand.TaskNew(taskList=tasks),
             uicommand.NewSubItem(viewer=taskViewer),
         )
 
@@ -1061,7 +1036,6 @@ class EffortPopupMenu(Menu):
                 viewer=effortViewer,
                 effortList=efforts,
                 taskList=tasks,
-                settings=settings,
             ),
             uicommand.EffortStartForEffort(
                 viewer=effortViewer, taskList=tasks
@@ -1090,13 +1064,11 @@ class CategoryPopupMenu(Menu):
             uicommand.EditInPlace(viewer=categoryViewer),
             uicommand.Delete(viewer=categoryViewer),
             None,
-            uicommand.AddAttachment(viewer=categoryViewer, settings=settings),
-            uicommand.OpenAllAttachments(
-                viewer=categoryViewer, settings=settings
-            ),
+            uicommand.AddAttachment(viewer=categoryViewer),
+            uicommand.OpenAllAttachments(viewer=categoryViewer),
             None,
-            uicommand.AddNote(viewer=categoryViewer, settings=settings),
-            uicommand.OpenAllNotes(viewer=categoryViewer, settings=settings),
+            uicommand.AddNote(viewer=categoryViewer),
+            uicommand.OpenAllNotes(viewer=categoryViewer),
             None,
             uicommand.Mail(viewer=categoryViewer),
         )
@@ -1105,20 +1077,18 @@ class CategoryPopupMenu(Menu):
                 None,
                 uicommand.NewTaskWithSelectedCategories(
                     taskList=tasks,
-                    settings=settings,
                     categories=categories,
                     viewer=categoryViewer,
                 ),
                 uicommand.NewNoteWithSelectedCategories(
                     notes=notes,
-                    settings=settings,
                     categories=categories,
                     viewer=categoryViewer,
                 ),
             )
         self.appendUICommands(
             None,
-            uicommand.CategoryNew(categories=categories, settings=settings),
+            uicommand.CategoryNew(categories=categories),
             uicommand.NewSubItem(viewer=categoryViewer),
         )
 
@@ -1138,8 +1108,8 @@ class NotePopupMenu(Menu):
             uicommand.EditInPlace(viewer=noteViewer),
             uicommand.Delete(viewer=noteViewer),
             None,
-            uicommand.AddAttachment(viewer=noteViewer, settings=settings),
-            uicommand.OpenAllAttachments(viewer=noteViewer, settings=settings),
+            uicommand.AddAttachment(viewer=noteViewer),
+            uicommand.OpenAllAttachments(viewer=noteViewer),
             None,
             uicommand.Mail(viewer=noteViewer),
             None,
@@ -1154,9 +1124,7 @@ class NotePopupMenu(Menu):
         self.appendUICommands(None)
         if notes is not None:
             self.appendUICommands(
-                uicommand.NoteNew(
-                    notes=notes, settings=settings, viewer=noteViewer
-                ),
+                uicommand.NoteNew(notes=notes, viewer=noteViewer),
             )
         self.appendUICommands(uicommand.NewSubItem(viewer=noteViewer))
 
@@ -1215,18 +1183,16 @@ class AttachmentPopupMenu(Menu):
             uicommand.Edit(viewer=attachmentViewer),
             uicommand.Delete(viewer=attachmentViewer),
             None,
-            uicommand.AddNote(viewer=attachmentViewer, settings=settings),
-            uicommand.OpenAllNotes(viewer=attachmentViewer, settings=settings),
+            uicommand.AddNote(viewer=attachmentViewer),
+            uicommand.OpenAllNotes(viewer=attachmentViewer),
             None,
             uicommand.AttachmentOpen(
                 viewer=attachmentViewer,
                 attachments=attachments,
-                settings=settings,
             ),
             None,
             uicommand.AttachmentNew(
                 viewer=attachmentViewer,
                 attachments=attachments,
-                settings=settings,
             ),
         )

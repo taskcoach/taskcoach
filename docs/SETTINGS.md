@@ -156,7 +156,11 @@ the automatic save, backup, import and export, the tips and balloon
 tips, the version check, the reminders, the idle time notice, the
 window size tracker, the templates dialog, the date and time entry
 helpers and the list columns (which handed the object to the in-place
-editors).
+editors), and the UI commands (31 of which had a settings base only to
+be handed the object). The menus, views, editors, toolbars, export
+dialog, Preferences, tray icon and main window are left; where one of
+them still takes the object, the code moved so far passes
+`settings.current()`.
 
 ### Risks
 

@@ -784,7 +784,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         from taskcoachlib.gui import uicommand
 
         tasks = self.__window.taskFile.tasks()
-        cmd = uicommand.TaskNew(taskList=tasks, settings=self.__settings)
+        cmd = uicommand.TaskNew(taskList=tasks)
         cmd.do_command(None)
 
     def _on_new_effort(self, widget):
@@ -797,9 +797,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
         efforts = self.__window.taskFile.efforts()
         tasks = self.__window.taskFile.tasks()
-        cmd = uicommand.EffortNew(
-            effort_list=efforts, taskList=tasks, settings=self.__settings
-        )
+        cmd = uicommand.EffortNew(effort_list=efforts, taskList=tasks)
         cmd.do_command(None)
 
     def _on_stop_tracking(self, widget):
@@ -821,9 +819,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         from taskcoachlib.gui import uicommand
 
         categories = self.__window.taskFile.categories()
-        cmd = uicommand.CategoryNew(
-            categories=categories, settings=self.__settings
-        )
+        cmd = uicommand.CategoryNew(categories=categories)
         cmd.do_command(None)
 
     def _on_new_note(self, widget):
@@ -835,7 +831,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         from taskcoachlib.gui import uicommand
 
         notes = self.__window.taskFile.notes()
-        cmd = uicommand.NoteNew(notes=notes, settings=self.__settings)
+        cmd = uicommand.NoteNew(notes=notes)
         cmd.do_command(None)
 
     def _do_new_task_from_template(self, template_path):
@@ -843,9 +839,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         from taskcoachlib.gui import uicommand
 
         tasks = self.__window.taskFile.tasks()
-        cmd = uicommand.TaskNewFromTemplate(
-            template_path, taskList=tasks, settings=self.__settings
-        )
+        cmd = uicommand.TaskNewFromTemplate(template_path, taskList=tasks)
         cmd.do_command(None)
 
     def _do_start_tracking(self, task_to_track):

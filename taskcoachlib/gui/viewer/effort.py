@@ -504,9 +504,7 @@ class EffortViewer(
         # Create new UI commands every time since the UI commands depend on the
         # aggregation mode
         columnUICommands = [
-            uicommand.ToggleAutoColumnResizing(
-                viewer=self, settings=self.settings
-            ),
+            uicommand.ToggleAutoColumnResizing(viewer=self),
             uicommand.Separator(),
             uicommand.ViewColumn(
                 menu_text=_("&Description"),
@@ -585,7 +583,6 @@ class EffortViewer(
                 viewer=self,
                 effortList=self.presentation(),
                 taskList=self.taskFile.tasks(),
-                settings=self.settings,
             ),
         )
 
@@ -603,18 +600,12 @@ class EffortViewer(
         # programmatically
         # pylint: disable=W0201
         self.aggregationUICommand = uicommand.EffortViewerAggregationChoice(
-            viewer=self, settings=self.settings
+            viewer=self
         )
-        self.roundingUICommand = uicommand.RoundingPrecision(
-            viewer=self, settings=self.settings
-        )
-        self.alwaysRoundUpUICommand = uicommand.AlwaysRoundUp(
-            viewer=self, settings=self.settings
-        )
+        self.roundingUICommand = uicommand.RoundingPrecision(viewer=self)
+        self.alwaysRoundUpUICommand = uicommand.AlwaysRoundUp(viewer=self)
         self.consolidateEffortsPerTaskUICommand = (
-            uicommand.ConsolidateEffortsPerTask(
-                viewer=self, settings=self.settings
-            )
+            uicommand.ConsolidateEffortsPerTask(viewer=self)
         )
         return (
             self.aggregationUICommand,
@@ -629,13 +620,11 @@ class EffortViewer(
     def getRoundingUICommands(self):
         return (
             [
-                uicommand.AlwaysRoundUp(viewer=self, settings=self.settings),
+                uicommand.AlwaysRoundUp(viewer=self),
                 None,
             ]
             + [
-                uicommand.ConsolidateEffortsPerTask(
-                    viewer=self, settings=self.settings
-                ),
+                uicommand.ConsolidateEffortsPerTask(viewer=self),
                 None,
             ]
             + [
@@ -643,7 +632,6 @@ class EffortViewer(
                     menu_text=menu_text,
                     value=value,
                     viewer=self,
-                    settings=self.settings,
                 )
                 for (menu_text, value) in zip(
                     uicommand.RoundingPrecision.choiceLabels,
@@ -664,7 +652,6 @@ class EffortViewer(
                 menu_text=menu_text,
                 value=value,
                 viewer=self,
-                settings=self.settings,
             )
             for (menu_text, value) in zip(
                 uicommand.EffortViewerAggregationChoice.choiceLabels,

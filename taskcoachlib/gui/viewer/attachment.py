@@ -297,9 +297,7 @@ class AttachmentViewer(
 
     def createColumnUICommands(self):
         return [
-            uicommand.ToggleAutoColumnResizing(
-                viewer=self, settings=self.settings
-            ),
+            uicommand.ToggleAutoColumnResizing(viewer=self),
             uicommand.Separator(),
             uicommand.ViewColumn(
                 menu_text=_("&Location"),
@@ -361,7 +359,6 @@ class AttachmentViewer(
         return (
             uicommand.AttachmentNew(
                 attachments=self.presentation(),
-                settings=self.settings,
                 viewer=self,
             ),
         ) + super().createCreationToolBarUICommands()
@@ -371,7 +368,6 @@ class AttachmentViewer(
             uicommand.AttachmentOpen(
                 attachments=attachment.AttachmentList(),
                 viewer=self,
-                settings=self.settings,
             ),
         ) + super().createActionToolBarUICommands()
 

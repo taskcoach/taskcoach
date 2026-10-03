@@ -18,16 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from . import base_uicommand
+from taskcoachlib.config import settings
 import wx
 
 
 class SettingsCommand(base_uicommand.UICommand):  # pylint: disable=W0223
-    """SettingsCommands are saved in the settings (a ConfigParser)."""
+    """A command on one setting: its section and option."""
 
-    def __init__(
-        self, settings=None, setting=None, section="view", *args, **kwargs
-    ):
-        self.settings = settings
+    def __init__(self, setting=None, section="view", *args, **kwargs):
         self.section = section
         self.setting = setting
         super().__init__(*args, **kwargs)
@@ -62,10 +60,12 @@ class UICheckCommand(BooleanSettingsCommand):
         super().__init__(kind=wx.ITEM_CHECK, *args, **kwargs)
 
     def is_setting_checked(self):
-        return self.settings.getboolean(self.section, self.setting)
+        return settings.get(self.section, self.setting)
 
     def do_command(self, event):
-        self.settings.setboolean(self.section, self.setting, event.IsChecked())
+        setattr(
+            settings.section(self.section), self.setting, event.IsChecked()
+        )
 
     def getBitmap(self):
         # Using our own bitmap for checkable menu items does not work on
@@ -80,7 +80,7 @@ class UIRadioCommand(BooleanSettingsCommand):
         super().__init__(kind=wx.ITEM_RADIO, icon_id="", *args, **kwargs)
 
     def is_setting_checked(self):
-        return self.settings.get(self.section, self.setting) == str(self.value)
+        return settings.get(self.section, self.setting) == self.value
 
     def do_command(self, event):
-        self.settings.setvalue(self.section, self.setting, self.value)
+        setattr(settings.section(self.section), self.setting, self.value)

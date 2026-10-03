@@ -207,9 +207,7 @@ class BaseCategoryViewer(
 
     def createCreationToolBarUICommands(self):
         return (
-            uicommand.CategoryNew(
-                categories=self.presentation(), settings=self.settings
-            ),
+            uicommand.CategoryNew(categories=self.presentation()),
             uicommand.NewSubItem(viewer=self),
         )
 
@@ -227,9 +225,7 @@ class BaseCategoryViewer(
 
     def createColumnUICommands(self):
         commands = [
-            uicommand.ToggleAutoColumnResizing(
-                viewer=self, settings=self.settings
-            ),
+            uicommand.ToggleAutoColumnResizing(viewer=self),
             uicommand.Separator(),
             uicommand.ViewColumn(
                 menu_text=_("&Manual ordering"),
@@ -347,7 +343,5 @@ class CategoryViewer(BaseCategoryViewer):  # pylint: disable=W0223
 
     def createModeToolBarUICommands(self):
         # pylint: disable=W0201
-        self.filterUICommand = uicommand.CategoryViewerFilterChoice(
-            settings=self.settings
-        )
+        self.filterUICommand = uicommand.CategoryViewerFilterChoice()
         return super().createModeToolBarUICommands() + (self.filterUICommand,)

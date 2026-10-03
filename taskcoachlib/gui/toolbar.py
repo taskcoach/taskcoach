@@ -185,9 +185,7 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
                 commands.append(uicommand.Spacer())
             from taskcoachlib.gui.dialog.toolbar import ToolBarEditor
 
-            ui_command = uicommand.EditToolBarPerspective(
-                self, ToolBarEditor, settings=self.__settings
-            )
+            ui_command = uicommand.EditToolBarPerspective(self, ToolBarEditor)
             commands.append(ui_command)
             self.__customizeId = ui_command.id
         if operating_system.isMac():

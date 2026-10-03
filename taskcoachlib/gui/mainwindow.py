@@ -501,7 +501,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         ui_commands = [
             uicommand.FileOpen(iocontroller=self.iocontroller),
             uicommand.FileSave(iocontroller=self.iocontroller),
-            uicommand.Print(viewer=self.viewer, settings=self.settings),
+            uicommand.Print(viewer=self.viewer),
             None,
             uicommand.EditUndo(),
             uicommand.EditRedo(),
@@ -516,7 +516,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                     taskList=self.taskFile.tasks(),
                 ),
                 None,
-                uicommand.ToggleAutoScroll(settings=self.settings),
+                uicommand.ToggleAutoScroll(),
             ]
         )
         return ui_commands

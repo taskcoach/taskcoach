@@ -177,11 +177,7 @@ class MenuWithBooleanMenuItemsTestCase(MenuTestCase):
 
 class MenuWithCheckItemsTest(MenuWithBooleanMenuItemsTestCase):
     def createCommands(self):
-        return [
-            uicommand.UICheckCommand(
-                settings=self.settings, section="view", setting="statusbar"
-            )
-        ]
+        return [uicommand.UICheckCommand(section="view", setting="statusbar")]
 
     def testCheckedItem(self):
         self.settings.set("view", "statusbar", "True")
@@ -196,7 +192,6 @@ class MenuWithRadioItemsTest(MenuWithBooleanMenuItemsTestCase):
     def createCommands(self):
         return [
             uicommand.UIRadioCommand(
-                settings=self.settings,
                 section="view",
                 setting="toolbar",
                 value=value,

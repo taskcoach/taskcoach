@@ -112,13 +112,12 @@ class NewTaskWithSelectedCategoryTest(wxTestCaseWithFrameAsTopLevelWindow):
         )
 
     def createNewTask(self):
-        taskNew = gui.uicommand.NewTaskWithSelectedCategories(
+        task_new = gui.uicommand.NewTaskWithSelectedCategories(
             taskList=self.taskFile.tasks(),
             viewer=self.viewer,
             categories=self.categories,
-            settings=self.settings,
         )
-        dialog = taskNew.do_command(None, show=False)
+        dialog = task_new.do_command(None, show=False)
         self.assertTrue(isinstance(dialog, TaskEditor), dialog)
         dialog._interior[4].selected()
         tree = dialog._interior[4].viewer.widget
@@ -147,13 +146,12 @@ class NewNoteWithSelectedCategoryTest(wxTestCaseWithFrameAsTopLevelWindow):
         )
 
     def createNewNote(self):
-        noteNew = gui.uicommand.NewNoteWithSelectedCategories(
+        note_new = gui.uicommand.NewNoteWithSelectedCategories(
             notes=self.taskFile.notes(),
             viewer=self.viewer,
             categories=self.categories,
-            settings=self.settings,
         )
-        dialog = noteNew.do_command(None, show=False)
+        dialog = note_new.do_command(None, show=False)
         self.assertTrue(isinstance(dialog, NoteEditor), dialog)
         dialog._interior[1].selected()
         tree = dialog._interior[1].viewer.widget
@@ -254,14 +252,12 @@ class MailTaskTest(test.TestCase):
 class MarkActiveTest(test.TestCase):
     def assertMarkActiveIsEnabled(self, selection, shouldBeEnabled=True):
         viewer = DummyViewer(selection)
-        markActive = gui.uicommand.TaskMarkActive(
-            viewer=viewer, settings=config.settings.current()
-        )
-        isEnabled = markActive.enabled(None)
+        mark_active = gui.uicommand.TaskMarkActive(viewer=viewer)
+        is_enabled = mark_active.enabled(None)
         if shouldBeEnabled:
-            self.assertTrue(isEnabled)
+            self.assertTrue(is_enabled)
         else:
-            self.assertFalse(isEnabled)
+            self.assertFalse(is_enabled)
 
     def testNotEnabledWhenSelectionIsEmpty(self):
         self.assertMarkActiveIsEnabled(selection=[], shouldBeEnabled=False)
@@ -284,14 +280,12 @@ class MarkActiveTest(test.TestCase):
 class MarkInactiveTest(test.TestCase):
     def assertMarkInactiveIsEnabled(self, selection, shouldBeEnabled=True):
         viewer = DummyViewer(selection)
-        markInactive = gui.uicommand.TaskMarkInactive(
-            viewer=viewer, settings=config.settings.current()
-        )
-        isEnabled = markInactive.enabled(None)
+        mark_inactive = gui.uicommand.TaskMarkInactive(viewer=viewer)
+        is_enabled = mark_inactive.enabled(None)
         if shouldBeEnabled:
-            self.assertTrue(isEnabled)
+            self.assertTrue(is_enabled)
         else:
-            self.assertFalse(isEnabled)
+            self.assertFalse(is_enabled)
 
     def testNotEnabledWhenSelectionIsEmpty(self):
         self.assertMarkInactiveIsEnabled(selection=[], shouldBeEnabled=False)
@@ -315,14 +309,12 @@ class MarkInactiveTest(test.TestCase):
 class MarkCompletedTest(test.TestCase):
     def assertMarkCompletedIsEnabled(self, selection, shouldBeEnabled=True):
         viewer = DummyViewer(selection)
-        markCompleted = gui.uicommand.TaskMarkCompleted(
-            viewer=viewer, settings=config.settings.current()
-        )
-        isEnabled = markCompleted.enabled(None)
+        mark_completed = gui.uicommand.TaskMarkCompleted(viewer=viewer)
+        is_enabled = mark_completed.enabled(None)
         if shouldBeEnabled:
-            self.assertTrue(isEnabled)
+            self.assertTrue(is_enabled)
         else:
-            self.assertFalse(isEnabled)
+            self.assertFalse(is_enabled)
 
     def testNotEnabledWhenSelectionIsEmpty(self):
         self.assertMarkCompletedIsEnabled(selection=[], shouldBeEnabled=False)
@@ -346,10 +338,8 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
     def testNewTaskWithCategories(self):
         cat = category.Category("cat", filtered=True)
         self.taskFile.categories().append(cat)
-        taskNew = gui.uicommand.TaskNew(
-            taskList=self.taskFile.tasks(), settings=self.settings
-        )
-        dialog = taskNew.do_command(None, show=False)
+        task_new = gui.uicommand.TaskNew(taskList=self.taskFile.tasks())
+        dialog = task_new.do_command(None, show=False)
         dialog._interior[4].selected()
         tree = dialog._interior[4].viewer.widget
         firstChild = tree.GetFirstChild(tree.GetRootItem())[0]
@@ -361,10 +351,8 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
             "defaultplannedstartdatetime",
             "preset_tomorrow_endofworkingday",
         )
-        taskNew = gui.uicommand.TaskNew(
-            taskList=self.taskFile.tasks(), settings=self.settings
-        )
-        taskNew.do_command(None, show=False)
+        task_new = gui.uicommand.TaskNew(taskList=self.taskFile.tasks())
+        task_new.do_command(None, show=False)
         self.assertFalse(
             date.DateTime()
             == list(self.taskFile.tasks())[0].plannedStartDateTime()
@@ -376,10 +364,8 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
             "defaultplannedstartdatetime",
             "propose_tomorrow_endofworkingday",
         )
-        taskNew = gui.uicommand.TaskNew(
-            taskList=self.taskFile.tasks(), settings=self.settings
-        )
-        taskNew.do_command(None, show=False)
+        task_new = gui.uicommand.TaskNew(taskList=self.taskFile.tasks())
+        task_new.do_command(None, show=False)
         self.assertEqual(
             date.DateTime(),
             list(self.taskFile.tasks())[0].plannedStartDateTime(),
@@ -389,10 +375,8 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
         self.settings.set(
             "view", "defaultduedatetime", "preset_tomorrow_endofworkingday"
         )
-        taskNew = gui.uicommand.TaskNew(
-            taskList=self.taskFile.tasks(), settings=self.settings
-        )
-        taskNew.do_command(None, show=False)
+        task_new = gui.uicommand.TaskNew(taskList=self.taskFile.tasks())
+        task_new.do_command(None, show=False)
         self.assertFalse(
             date.DateTime() == list(self.taskFile.tasks())[0].dueDateTime()
         )
@@ -403,10 +387,8 @@ class TaskNewTest(wxTestCaseWithFrameAsTopLevelWindow):
             "defaultreminderdatetime",
             "preset_tomorrow_endofworkingday",
         )
-        taskNew = gui.uicommand.TaskNew(
-            taskList=self.taskFile.tasks(), settings=self.settings
-        )
-        taskNew.do_command(None, show=False)
+        task_new = gui.uicommand.TaskNew(taskList=self.taskFile.tasks())
+        task_new.do_command(None, show=False)
         self.assertFalse(
             date.DateTime() == list(self.taskFile.tasks())[0].reminder()
         )
@@ -416,10 +398,8 @@ class NoteNewTest(wxTestCaseWithFrameAsTopLevelWindow):
     def testNewNoteWithCategories(self):
         cat = category.Category("cat", filtered=True)
         self.taskFile.categories().append(cat)
-        noteNew = gui.uicommand.NoteNew(
-            notes=self.taskFile.notes(), settings=self.settings
-        )
-        dialog = noteNew.do_command(None, show=False)
+        note_new = gui.uicommand.NoteNew(notes=self.taskFile.notes())
+        dialog = note_new.do_command(None, show=False)
         dialog._interior[1].selected()
         tree = dialog._interior[1].viewer.widget
         firstChild = tree.GetFirstChild(tree.GetRootItem())[0]
@@ -442,7 +422,6 @@ class EffortNewTest(wxTestCaseWithFrameAsTopLevelWindow):
             effortList=self.taskFile.efforts(),
             taskList=self.taskFile.tasks(),
             viewer=viewer,
-            settings=self.settings,
         )
         dialog = effortNew.do_command(None, show=False)
         for eachEffort in dialog._items:
@@ -453,17 +432,15 @@ class EditPreferencesTest(test.TestCase):
     def testEditPreferences(self):
         settings = config.settings.current()
         self.set_main_window_task_file()
-        editPreferences = gui.uicommand.EditPreferences(settings=settings)
-        editPreferences.do_command(None, show=False)
+        edit_preferences = gui.uicommand.EditPreferences()
+        edit_preferences.do_command(None, show=False)
         # No assert, just checking whether it works without exceptions
 
 
 class EffortViewerAggregationChoiceTest(test.TestCase):
     def setUp(self):
         self.settings = config.settings.current()
-        self.choice = gui.uicommand.EffortViewerAggregationChoice(
-            viewer=self, settings=self.settings
-        )
+        self.choice = gui.uicommand.EffortViewerAggregationChoice(viewer=self)
         self.choice.currentChoice = 0
 
         class DummyEvent(object):
@@ -530,9 +507,7 @@ class OpenAllAttachmentsTest(test.TestCase):
     def setUp(self):
         settings = config.settings.current()
         self.viewer = DummyViewer([task.Task("Task")])
-        self.openAll = gui.uicommand.OpenAllAttachments(
-            settings=settings, viewer=self.viewer
-        )
+        self.openAll = gui.uicommand.OpenAllAttachments(viewer=self.viewer)
         self.errorArgs = self.errorKwargs = None
 
     def showerror(self, *args, **kwargs):  # pragma: no cover
@@ -898,7 +873,6 @@ class SameWindowThrottleTest(test.wxTestCase):
     def new_task_key(self, **keywords):
         command = gui.uicommand.TaskNew(
             taskList=task.TaskList(),
-            settings=config.settings.current(),
             taskKeywords=keywords,
         )
         return command.same_window_key()

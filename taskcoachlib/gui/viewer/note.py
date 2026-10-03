@@ -101,17 +101,13 @@ class BaseNoteViewer(
 
     def createCreationToolBarUICommands(self):
         return (
-            uicommand.NoteNew(
-                notes=self.presentation(), settings=self.settings, viewer=self
-            ),
+            uicommand.NoteNew(notes=self.presentation(), viewer=self),
             uicommand.NewSubItem(viewer=self),
         ) + super().createCreationToolBarUICommands()
 
     def createColumnUICommands(self):
         return [
-            uicommand.ToggleAutoColumnResizing(
-                viewer=self, settings=self.settings
-            ),
+            uicommand.ToggleAutoColumnResizing(viewer=self),
             uicommand.Separator(),
             uicommand.ViewColumn(
                 menu_text=_("&Manual ordering"),

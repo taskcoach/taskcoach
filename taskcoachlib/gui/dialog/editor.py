@@ -4849,7 +4849,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
             viewer=effort_viewer,
             taskList=self._taskFile.tasks(),
             effortList=self._taskFile.efforts(),
-            settings=self._settings,
         )
         self.__undo_command.bind(self._interior, wx.ID_UNDO)
         self.__redo_command.bind(self._interior, wx.ID_REDO)

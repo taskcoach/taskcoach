@@ -39,7 +39,7 @@ from taskcoachlib.domain import (
 )
 from taskcoachlib.gui import dialog, printer
 from taskcoachlib.gui.wizard import CSVImportWizard
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.mailer import sendMail
 from wx.lib.agw import hypertreelist
@@ -387,9 +387,7 @@ class FileImportTemplate(IOCommand):
         self.iocontroller.import_template()
 
 
-class FileEditTemplates(
-    settings_uicommand.SettingsCommand, base_uicommand.UICommand
-):
+class FileEditTemplates(base_uicommand.UICommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             menu_text=_("Edit templates..."),
@@ -405,9 +403,7 @@ class FileEditTemplates(
         template_dialog.Show()
 
 
-class PrintPageSetup(
-    settings_uicommand.SettingsCommand, base_uicommand.UICommand
-):
+class PrintPageSetup(base_uicommand.UICommand):
     """Action for changing page settings. The page settings are saved in the
     application wide settings."""
 
@@ -433,7 +429,7 @@ class PrintPageSetup(
         pageSetupDialog.Destroy()
 
 
-class PrintPreview(ViewerCommand, settings_uicommand.SettingsCommand):
+class PrintPreview(ViewerCommand):
     """Action for previewing a print of the current viewer."""
 
     def __init__(self, *args, **kwargs):
@@ -466,7 +462,7 @@ class PrintPreview(ViewerCommand, settings_uicommand.SettingsCommand):
         previewFrame.Show()
 
 
-class Print(ViewerCommand, settings_uicommand.SettingsCommand):
+class Print(ViewerCommand):
     """Action for printing the contents of the current viewer."""
 
     def __init__(self, *args, **kwargs):
@@ -500,12 +496,12 @@ class Print(ViewerCommand, settings_uicommand.SettingsCommand):
         wx_printer.Print(self.main_window(), printout, prompt=False)
 
 
-class FileExportCommand(IOCommand, settings_uicommand.SettingsCommand):
+class FileExportCommand(IOCommand):
     """Base class for export actions."""
 
     def do_command(self, event):
         exportDialog = self.getExportDialogClass()(
-            self.main_window(), settings=self.settings
+            self.main_window(), settings=settings.current()
         )  # pylint: disable=E1101
         try:
             if wx.ID_OK == exportDialog.ShowModal():
@@ -529,7 +525,7 @@ class FileExportCommand(IOCommand, settings_uicommand.SettingsCommand):
         raise NotImplementedError  # pragma: no cover
 
 
-class FileManageBackups(IOCommand, settings_uicommand.SettingsCommand):
+class FileManageBackups(IOCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             menu_text=_("Manage backups..."),
@@ -583,7 +579,7 @@ class FileExportAsHTML(FileExportCommand):
             return
         self._exportDialog = self.getExportDialogClass()(
             self.main_window(),
-            settings=self.settings,
+            settings=settings.current(),
             exportCallback=self.exportFunction(),
         )
         self._exportDialog.Show()
@@ -631,7 +627,7 @@ class FileExportAsCSV(FileExportCommand):
             return
         self._exportDialog = self.getExportDialogClass()(
             self.main_window(),
-            settings=self.settings,
+            settings=settings.current(),
             exportCallback=self.exportFunction(),
         )
         self._exportDialog.Show()
@@ -678,7 +674,7 @@ class FileExportAsICalendar(FileExportCommand):
 
         self._exportDialog = self.getExportDialogClass()(
             self.main_window(),
-            settings=self.settings,
+            settings=settings.current(),
             exportCallback=self.exportFunction(),
         )
         # Use Show() for non-modal dialog
@@ -729,7 +725,7 @@ class FileExportAsTodoTxt(FileExportCommand):
             return
         self._exportDialog = self.getExportDialogClass()(
             self.main_window(),
-            settings=self.settings,
+            settings=settings.current(),
             exportCallback=self.exportFunction(),
         )
         self._exportDialog.Show()
@@ -1132,7 +1128,7 @@ class EditPasteAsSubItem(_KindLabelMixin, ViewerCommand):
         return True
 
 
-class EditPreferences(settings_uicommand.SettingsCommand):
+class EditPreferences(base_uicommand.UICommand):
     """Action for bringing up the preferences dialog."""
 
     def __init__(self, *args, **kwargs):
@@ -1149,13 +1145,13 @@ class EditPreferences(settings_uicommand.SettingsCommand):
         editor = dialog.preferences.Preferences(
             parent=self.main_window(),
             title=_("Preferences"),
-            settings=self.settings,
+            settings=settings.current(),
             taskFile=self.main_window().taskFile,
         )
         editor.Show(show=show)
 
 
-class EditToolBarPerspective(settings_uicommand.SettingsCommand):
+class EditToolBarPerspective(base_uicommand.UICommand):
     """Action for editing a customizable toolbar"""
 
     def __init__(self, toolbar, editorClass, *args, **kwargs):
@@ -1172,7 +1168,7 @@ class EditToolBarPerspective(settings_uicommand.SettingsCommand):
     def do_command(self, event):
         self.__editorClass(
             self.__toolbar,
-            self.settings,
+            settings.current(),
             self.main_window(),
             _("Customize toolbar"),
         ).ShowModal()
@@ -1313,7 +1309,7 @@ class ToggleCategoryFilter(base_uicommand.UICommand):
         self.category.setFiltered(event.IsChecked())
 
 
-class ViewViewer(settings_uicommand.SettingsCommand, ViewerCommand):
+class ViewViewer(ViewerCommand):
     """Action for opening a new viewer of a specific class."""
 
     def __init__(self, *args, **kwargs):
@@ -1326,7 +1322,7 @@ class ViewViewer(settings_uicommand.SettingsCommand, ViewerCommand):
         from taskcoachlib.gui import viewer
 
         viewer.addOneViewer(
-            self.viewer, self.taskFile, self.settings, self.viewerClass
+            self.viewer, self.taskFile, settings.current(), self.viewerClass
         )
         self.increaseViewerCount()
 
@@ -1334,13 +1330,10 @@ class ViewViewer(settings_uicommand.SettingsCommand, ViewerCommand):
         """Increase the viewer count for the viewer class this command is
         opening and store the viewer count in the settings."""
         setting = self.viewerClass.__name__.lower() + "count"
-        viewerCount = self.settings.getint("view", setting)
-        self.settings.set("view", setting, str(viewerCount + 1))
+        setattr(settings.view, setting, settings.get("view", setting) + 1)
 
 
-class ViewEffortViewerForSelectedTask(
-    settings_uicommand.SettingsCommand, ViewerCommand
-):
+class ViewEffortViewerForSelectedTask(ViewerCommand):
     def __init__(self, *args, **kwargs):
         from taskcoachlib.gui import viewer
 
@@ -1353,7 +1346,7 @@ class ViewEffortViewerForSelectedTask(
         from taskcoachlib.gui import viewer
 
         viewer.addOneViewer(
-            self.viewer, self.taskFile, self.settings, self.viewerClass
+            self.viewer, self.taskFile, settings.current(), self.viewerClass
         )
 
 
@@ -1665,7 +1658,6 @@ class ToggleAutoScroll(settings_uicommand.UICheckCommand):
         self.registerObserver(
             self._on_setting_change,
             eventType="view.autoscrollselection",
-            eventSource=self.settings,
         )
 
     def _on_setting_change(self, event=None):
@@ -1687,7 +1679,7 @@ class EditInPlace(ViewerCommand):
         )
 
     def visible(self):
-        return settings2.get("feature", "in_place_editing") and hasattr(
+        return settings.feature.in_place_editing and hasattr(
             self.viewer.widget, "edit_clicked_cell"
         )
 
@@ -1745,7 +1737,7 @@ class Edit(ViewerCommand):
         return window
 
 
-class EditTrackedTasks(TaskListCommand, settings_uicommand.SettingsCommand):
+class EditTrackedTasks(TaskListCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             menu_text=_("Edit &tracked task...\tShift-Alt-T"),
@@ -1759,7 +1751,7 @@ class EditTrackedTasks(TaskListCommand, settings_uicommand.SettingsCommand):
         editTaskDialog = dialog.editor.TaskEditor(
             self.main_window(),
             self.taskList.tasks_being_tracked(),
-            self.settings,
+            settings.current(),
             self.taskList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
@@ -1906,7 +1898,7 @@ class Delete(ViewerCommand):
         )
 
 
-class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
+class TaskNew(TaskListCommand):
     def __init__(self, *args, **kwargs):
         self.taskKeywords = kwargs.pop("taskKeywords", dict())
         taskList = kwargs["taskList"]
@@ -1949,7 +1941,7 @@ class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
         newTaskDialog = dialog.editor.TaskEditor(
             self.main_window(),
             newTaskCommand.items,
-            self.settings,
+            settings.current(),
             self.taskList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
@@ -1970,28 +1962,26 @@ class TaskNew(TaskListCommand, settings_uicommand.SettingsCommand):
     def __shouldPresetPlannedStartDateTime(self):
         return (
             "plannedStartDateTime" not in self.taskKeywords
-            and self.settings.get(
-                "view", "defaultplannedstartdatetime"
-            ).startswith("preset")
+            and settings.view.defaultplannedstartdatetime.startswith("preset")
         )
 
     def __shouldPresetDueDateTime(self):
-        return "dueDateTime" not in self.taskKeywords and self.settings.get(
-            "view", "defaultduedatetime"
-        ).startswith("preset")
+        return (
+            "dueDateTime" not in self.taskKeywords
+            and settings.view.defaultduedatetime.startswith("preset")
+        )
 
     def __shouldPresetActualStartDateTime(self):
         return (
             "actualStartDateTime" not in self.taskKeywords
-            and self.settings.get(
-                "view", "defaultactualstartdatetime"
-            ).startswith("preset")
+            and settings.view.defaultactualstartdatetime.startswith("preset")
         )
 
     def __shouldPresetReminderDateTime(self):
-        return "reminder" not in self.taskKeywords and self.settings.get(
-            "view", "defaultreminderdatetime"
-        ).startswith("preset")
+        return (
+            "reminder" not in self.taskKeywords
+            and settings.view.defaultreminderdatetime.startswith("preset")
+        )
 
 
 class TaskNewFromTemplate(TaskNew):
@@ -2024,7 +2014,7 @@ class TaskNewFromTemplate(TaskNew):
         newTaskDialog = dialog.editor.TaskEditor(
             self.main_window(),
             newTaskCommand.items,
-            self.settings,
+            settings.current(),
             self.taskList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
@@ -2035,15 +2025,13 @@ class TaskNewFromTemplate(TaskNew):
 
 
 class TaskNewFromTemplateButton(
-    mixin_uicommand.PopupButtonMixin,
-    TaskListCommand,
-    settings_uicommand.SettingsCommand,
+    mixin_uicommand.PopupButtonMixin, TaskListCommand
 ):
     def createPopupMenu(self):
         from taskcoachlib.gui import menu
 
         return menu.TaskTemplateMenu(
-            self.main_window(), self.taskList, self.settings
+            self.main_window(), self.taskList, settings.current()
         )
 
     def get_menu_text(self):
@@ -2139,10 +2127,7 @@ class NewSubItem(_KindLabelMixin, ViewerCommand):
         return v.has_selection and (v.is_task or v.is_note or v.is_category)
 
 
-class TaskMarkActive(
-    settings_uicommand.SettingsCommand,
-    ViewerCommand,
-):
+class TaskMarkActive(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id=task.active.icon_id(required=True),
@@ -2173,10 +2158,7 @@ class TaskMarkActive(
         )
 
 
-class TaskMarkInactive(
-    settings_uicommand.SettingsCommand,
-    ViewerCommand,
-):
+class TaskMarkInactive(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id=task.inactive.icon_id(required=True),
@@ -2204,10 +2186,7 @@ class TaskMarkInactive(
         )
 
 
-class TaskMarkCompleted(
-    settings_uicommand.SettingsCommand,
-    ViewerCommand,
-):
+class TaskMarkCompleted(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id=task.completed.icon_id(required=True),
@@ -2549,7 +2528,7 @@ class Mail(ViewerCommand):
                 )
 
 
-class AddNote(ViewerCommand, settings_uicommand.SettingsCommand):
+class AddNote(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             menu_text=_("Add &note...\tCtrl+B"),
@@ -2573,7 +2552,7 @@ class AddNote(ViewerCommand, settings_uicommand.SettingsCommand):
         editDialog = dialog.editor.NoteEditor(
             self.main_window(),
             addNoteCommand.items,
-            self.settings,
+            settings.current(),
             self.viewer.presentation(),
             self.main_window().taskFile,
             icon_id=self.icon_id,
@@ -2582,7 +2561,7 @@ class AddNote(ViewerCommand, settings_uicommand.SettingsCommand):
         return editDialog  # for testing purposes
 
 
-class OpenAllNotes(ViewerCommand, settings_uicommand.SettingsCommand):
+class OpenAllNotes(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             menu_text=_("Open all notes...\tShift+Ctrl+B"),
@@ -2606,7 +2585,7 @@ class OpenAllNotes(ViewerCommand, settings_uicommand.SettingsCommand):
                 edit_dialog = dialog.editor.NoteEditor(
                     self.main_window(),
                     [item_note],
-                    self.settings,
+                    settings.current(),
                     self.viewer.presentation(),
                     self.main_window().taskFile,
                     icon_id=self.icon_id,
@@ -2614,12 +2593,7 @@ class OpenAllNotes(ViewerCommand, settings_uicommand.SettingsCommand):
                 edit_dialog.Show()
 
 
-class EffortNew(
-    ViewerCommand,
-    EffortListCommand,
-    TaskListCommand,
-    settings_uicommand.SettingsCommand,
-):
+class EffortNew(ViewerCommand, EffortListCommand, TaskListCommand):
     def __init__(self, *args, **kwargs):
         effort_list = kwargs["effortList"]
         super().__init__(
@@ -2668,7 +2642,7 @@ class EffortNew(
         new_effort_dialog = dialog.editor.EffortEditor(
             self.main_window(),
             new_effort_command.items,
-            self.settings,
+            settings.current(),
             self.effortList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
@@ -2965,7 +2939,7 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
         )
 
 
-class CategoryNew(CategoriesCommand, settings_uicommand.SettingsCommand):
+class CategoryNew(CategoriesCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id="nuvola_actions_document-new",
@@ -2982,7 +2956,7 @@ class CategoryNew(CategoriesCommand, settings_uicommand.SettingsCommand):
         newCategoryDialog = dialog.editor.CategoryEditor(
             self.main_window(),
             newCategoryCommand.items,
-            self.settings,
+            settings.current(),
             taskFile.categories(),
             taskFile,
             icon_id=self.icon_id,
@@ -3044,7 +3018,7 @@ class CategoryUncheckAll(ViewerCommand):
         self.viewer.uncheck_all_categories()
 
 
-class NoteNew(NotesCommand, settings_uicommand.SettingsCommand, ViewerCommand):
+class NoteNew(NotesCommand, ViewerCommand):
     menu_text = _("New note...\tCtrl-J")
     help_text = help.noteNew
 
@@ -3068,7 +3042,7 @@ class NoteNew(NotesCommand, settings_uicommand.SettingsCommand, ViewerCommand):
             noteDialog = dialog.editor.NoteEditor(
                 self.main_window(),
                 newNoteCommand.items,
-                self.settings,
+                settings.current(),
                 self.notes,
                 self.main_window().taskFile,
                 icon_id=self.icon_id,
@@ -3106,9 +3080,7 @@ class NoteDragAndDrop(OrderingDragAndDropCommand, NotesCommand):
         )
 
 
-class AttachmentNew(
-    AttachmentsCommand, ViewerCommand, settings_uicommand.SettingsCommand
-):
+class AttachmentNew(AttachmentsCommand, ViewerCommand):
     def __init__(self, *args, **kwargs):
         attachments = kwargs["attachments"]
         if "menu_text" not in kwargs:
@@ -3124,7 +3096,7 @@ class AttachmentNew(
         return attachmentDialog  # for testing purposes
 
 
-class AddAttachment(ViewerCommand, settings_uicommand.SettingsCommand):
+class AddAttachment(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             menu_text=_("&Add attachment..."),
@@ -3142,9 +3114,9 @@ class AddAttachment(ViewerCommand, settings_uicommand.SettingsCommand):
         filename = widgets.AttachmentSelector()
         if not filename:
             return
-        attachmentBase = self.settings.get("file", "attachmentbase")
-        if attachmentBase:
-            filename = attachment.getRelativePath(filename, attachmentBase)
+        attachment_base = settings.file.attachmentbase
+        if attachment_base:
+            filename = attachment.getRelativePath(filename, attachment_base)
         addAttachmentCommand = command.AddAttachmentCommand(
             self.viewer.presentation(),
             self.viewer.curselection(),
@@ -3153,11 +3125,11 @@ class AddAttachment(ViewerCommand, settings_uicommand.SettingsCommand):
         addAttachmentCommand.do()
 
 
-def openAttachments(attachments, settings, showerror):
-    attachmentBase = settings.get("file", "attachmentbase")
+def open_attachments(attachments, showerror):
+    attachment_base = settings.file.attachmentbase
     for eachAttachment in attachments:
         try:
-            eachAttachment.open(attachmentBase)
+            eachAttachment.open(attachment_base)
         except Exception as instance:  # pylint: disable=W0703
             showerror(
                 render.exception(Exception, instance),
@@ -3166,11 +3138,7 @@ def openAttachments(attachments, settings, showerror):
             )
 
 
-class AttachmentOpen(
-    ViewerCommand,
-    AttachmentsCommand,
-    settings_uicommand.SettingsCommand,
-):
+class AttachmentOpen(ViewerCommand, AttachmentsCommand):
     def __init__(self, *args, **kwargs):
         attachments = kwargs["attachments"]
         super().__init__(
@@ -3189,10 +3157,10 @@ class AttachmentOpen(
     def do_command(
         self, event, showerror=wx.MessageBox
     ):  # pylint: disable=W0221
-        openAttachments(self.viewer.curselection(), self.settings, showerror)
+        open_attachments(self.viewer.curselection(), showerror)
 
 
-class OpenAllAttachments(ViewerCommand, settings_uicommand.SettingsCommand):
+class OpenAllAttachments(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             menu_text=_("&Open all attachments...\tShift+Ctrl+O"),
@@ -3217,7 +3185,7 @@ class OpenAllAttachments(ViewerCommand, settings_uicommand.SettingsCommand):
         allAttachments = []
         for item in self.viewer.curselection():
             allAttachments.extend(item.attachments())
-        openAttachments(allAttachments, self.settings, showerror)
+        open_attachments(allAttachments, showerror)
 
 
 class DialogCommand(base_uicommand.UICommand):
@@ -3271,7 +3239,7 @@ class Help(DialogCommand):
         )
 
 
-class Tips(settings_uicommand.SettingsCommand):
+class Tips(base_uicommand.UICommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
             menu_text=_("&Tips"),
@@ -3417,8 +3385,6 @@ class HelpTranslate(URLCommand):
 
 class CheckForUpdate(URLCommand):
     def __init__(self, *args, **kwargs):
-        # Remove settings from kwargs if present (not needed for URLCommand)
-        kwargs.pop("settings", None)
         super().__init__(
             menu_text=_("Check for update"),
             help_text=_("Check for the availability of a new version of %s")
@@ -3478,7 +3444,7 @@ class ResetWindowLayout(base_uicommand.UICommand):
         self.main_window().resetWindowLayout()
 
 
-class Search(ViewerCommand, settings_uicommand.SettingsCommand):
+class Search(ViewerCommand):
     # Search can only be attached to a real viewer, not to a viewercontainer
     def __init__(self, *args, **kwargs):
         self.__bound = False
@@ -3620,11 +3586,7 @@ class ToolbarChoiceCommandMixin(object):
             self.choiceCtrl.Enable(enable)
 
 
-class EffortViewerAggregationChoice(
-    ToolbarChoiceCommandMixin,
-    settings_uicommand.SettingsCommand,
-    ViewerCommand,
-):
+class EffortViewerAggregationChoice(ToolbarChoiceCommandMixin, ViewerCommand):
     choiceLabels = [
         _("Effort details"),
         _("Effort per day"),
@@ -3682,9 +3644,7 @@ class TaskViewerTreeOrListChoice(
 
     def append_to_toolbar(self, *args, **kwargs):
         super().append_to_toolbar(*args, **kwargs)
-        self.set_choice(
-            self.settings.getboolean(self.viewer.settingsSection(), "treemode")
-        )
+        self.set_choice(self.__tree_mode())
         self.viewer.registerObserver(
             self._on_view_settings_changed,
             eventType=self.viewer.view_settings_changed_event_type(),
@@ -3694,10 +3654,11 @@ class TaskViewerTreeOrListChoice(
     def doChoice(self, choice):
         self.viewer.set_tree_mode(choice)
 
+    def __tree_mode(self):
+        return settings.section(self.viewer.settingsSection()).treemode
+
     def _on_view_settings_changed(self, event):
-        self.set_choice(
-            self.settings.getboolean(self.viewer.settingsSection(), "treemode")
-        )
+        self.set_choice(self.__tree_mode())
 
 
 class TaskViewerTreeOrListOption(
@@ -3706,7 +3667,7 @@ class TaskViewerTreeOrListOption(
 
     def is_setting_checked(self):
         return (
-            self.settings.getboolean(self.viewer.settingsSection(), "treemode")
+            settings.section(self.viewer.settingsSection()).treemode
             == self.value
         )
 
@@ -3739,31 +3700,22 @@ class CategoryViewerFilterChoice(
         patterns.Publisher().registerObserver(
             self.on_setting_changed,
             eventType="view.categoryfiltermatchall",
-            eventSource=self.settings,
         )
 
     def is_setting_checked(self):
-        return self.settings.getboolean("view", "categoryfiltermatchall")
+        return settings.view.categoryfiltermatchall
 
     def doChoice(self, choice):
-        self.settings.setboolean("view", "categoryfiltermatchall", choice)
+        settings.view.categoryfiltermatchall = choice
 
     def do_command(self, event):
-        self.settings.setboolean(
-            "view", "categoryfiltermatchall", event.IsChecked()
-        )
+        settings.view.categoryfiltermatchall = event.IsChecked()
 
     def on_setting_changed(self, event):  # pylint: disable=W0613
-        self.set_choice(
-            self.settings.getboolean("view", "categoryfiltermatchall")
-        )
+        self.set_choice(settings.view.categoryfiltermatchall)
 
 
-class SquareTaskViewerOrderChoice(
-    ToolbarChoiceCommandMixin,
-    settings_uicommand.SettingsCommand,
-    ViewerCommand,
-):
+class SquareTaskViewerOrderChoice(ToolbarChoiceCommandMixin, ViewerCommand):
     choiceLabels = [
         _("Budget"),
         _("Time spent"),
@@ -3941,20 +3893,18 @@ class ToggleAutoColumnResizing(
             widget.ToggleAutoResizing(self.is_setting_checked())
 
     def is_setting_checked(self):
-        return self.settings.getboolean(
-            self.viewer.settingsSection(), "columnautoresizing"
-        )
+        return settings.section(
+            self.viewer.settingsSection()
+        ).columnautoresizing
 
     def do_command(self, event):
-        self.settings.set(
-            self.viewer.settingsSection(),
-            "columnautoresizing",
-            str(event.IsChecked()),
-        )
+        settings.section(
+            self.viewer.settingsSection()
+        ).columnautoresizing = event.IsChecked()
         self.updateWidget()
 
 
-class ViewerPieChartAngle(ViewerCommand, settings_uicommand.SettingsCommand):
+class ViewerPieChartAngle(ViewerCommand):
     def __init__(self, *args, **kwargs):
         self.sliderCtrl = None
         super().__init__(help_text=_("Set pie chart angle"), *args, **kwargs)
@@ -3987,24 +3937,16 @@ class ViewerPieChartAngle(ViewerCommand, settings_uicommand.SettingsCommand):
         pass  # Not used
 
     def getCurrentAngle(self):
-        return self.settings.getint(
-            self.viewer.settingsSection(), "piechartangle"
-        )
+        return settings.section(self.viewer.settingsSection()).piechartangle
 
     def setCurrentAngle(self):
         if self.sliderCtrl is not None:
-            self.settings.setint(
-                self.viewer.settingsSection(),
-                "piechartangle",
-                self.sliderCtrl.GetValue(),
-            )
+            settings.section(
+                self.viewer.settingsSection()
+            ).piechartangle = self.sliderCtrl.GetValue()
 
 
-class RoundingPrecision(
-    ToolbarChoiceCommandMixin,
-    ViewerCommand,
-    settings_uicommand.SettingsCommand,
-):
+class RoundingPrecision(ToolbarChoiceCommandMixin, ViewerCommand):
     roundingChoices = (0, 1, 3, 5, 6, 10, 15, 20, 30, 60)  # Minutes
     choiceData = [minutes * 60 for minutes in roundingChoices]  # Seconds
     choiceLabels = [_("No rounding"), _("1 minute")] + [
@@ -4015,21 +3957,18 @@ class RoundingPrecision(
         super().__init__(help_text=_("Rounding precision"), **kwargs)
 
     def doChoice(self, choice):
-        self.settings.setint(self.viewer.settingsSection(), "round", choice)
+        settings.section(self.viewer.settingsSection()).round = choice
 
 
 class RoundBy(settings_uicommand.UIRadioCommand, ViewerCommand):
 
     def is_setting_checked(self):
         return (
-            self.settings.getint(self.viewer.settingsSection(), "round")
-            == self.value
+            settings.section(self.viewer.settingsSection()).round == self.value
         )
 
     def do_command(self, event):
-        self.settings.setint(
-            self.viewer.settingsSection(), "round", self.value
-        )
+        settings.section(self.viewer.settingsSection()).round = self.value
 
 
 class AlwaysRoundUp(settings_uicommand.UICheckCommand, ViewerCommand):
@@ -4056,20 +3995,18 @@ class AlwaysRoundUp(settings_uicommand.UICheckCommand, ViewerCommand):
         super().unbind(window, item_id)
 
     def is_setting_checked(self):
-        return self.settings.getboolean(
-            self.viewer.settingsSection(), "alwaysroundup"
-        )
+        return settings.section(self.viewer.settingsSection()).alwaysroundup
 
     def onCheck(self, event):
-        self.setSetting(event.IsChecked())
+        self.set_setting(event.IsChecked())
 
     def do_command(self, event):
-        self.setSetting(event.IsChecked())
+        self.set_setting(event.IsChecked())
 
-    def setSetting(self, alwaysRoundUp):
-        self.settings.setboolean(
-            self.viewer.settingsSection(), "alwaysroundup", alwaysRoundUp
-        )
+    def set_setting(self, always_round_up):
+        settings.section(
+            self.viewer.settingsSection()
+        ).alwaysroundup = always_round_up
 
     def setValue(self, value):
         if self.checkboxCtrl is not None:
@@ -4108,22 +4045,20 @@ class ConsolidateEffortsPerTask(
         super().unbind(window, item_id)
 
     def is_setting_checked(self):
-        return self.settings.getboolean(
-            self.viewer.settingsSection(), "consolidateeffortspertask"
-        )
+        return settings.section(
+            self.viewer.settingsSection()
+        ).consolidateeffortspertask
 
     def onCheck(self, event):
-        self.setSetting(event.IsChecked())
+        self.set_setting(event.IsChecked())
 
     def do_command(self, event):
-        self.setSetting(event.IsChecked())
+        self.set_setting(event.IsChecked())
 
-    def setSetting(self, consolidateEffortsPerTask):
-        self.settings.setboolean(
-            self.viewer.settingsSection(),
-            "consolidateeffortspertask",
-            consolidateEffortsPerTask,
-        )
+    def set_setting(self, consolidate):
+        settings.section(
+            self.viewer.settingsSection()
+        ).consolidateeffortspertask = consolidate
 
     def setValue(self, value):
         if self.checkboxCtrl is not None:

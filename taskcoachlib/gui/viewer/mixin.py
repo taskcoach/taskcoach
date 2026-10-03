@@ -104,10 +104,10 @@ class SearchableViewerMixin(object):
 
     def createToolBarUICommands(self):
         """UI commands to put on the toolbar of this viewer."""
-        searchUICommand = uicommand.Search(viewer=self, settings=self.settings)
+        search_command = uicommand.Search(viewer=self)
         return super().createToolBarUICommands() + (
             1,
-            searchUICommand,
+            search_command,
         )
 
 
@@ -135,7 +135,7 @@ class FilterableViewerMixin(object):
     def createFilterUICommands(self):
         return [
             uicommand.ResetFilter(viewer=self),
-            uicommand.CategoryViewerFilterChoice(settings=self.settings),
+            uicommand.CategoryViewerFilterChoice(),
             None,
         ]
 
@@ -257,9 +257,7 @@ class FilterableViewerForTasksMixin(FilterableViewerForCategorizablesMixin):
         return (
             super().createFilterUICommands()
             + [
-                uicommand.ViewerHideTasks(
-                    taskStatus, viewer=self, settings=self.settings
-                )
+                uicommand.ViewerHideTasks(taskStatus, viewer=self)
                 for taskStatus in task.Task.possibleStatuses()
             ]
             + [uicommand.ViewerHideCompositeTasks(viewer=self)]

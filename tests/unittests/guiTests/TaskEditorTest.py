@@ -332,7 +332,6 @@ class EditTaskTestMixin(object):
         openAttachment = uicommand.AttachmentOpen(
             viewer=self.editor._interior[6].viewer,
             attachments=attachment.AttachmentList([att]),
-            settings=self.settings,
         )
         openAttachment.do_command(None, showerror=onError)
         self.assertFalse(self.errorMessage)
@@ -359,7 +358,7 @@ class EditTaskTestMixin(object):
         viewer = self.editor._interior[7].viewer
         wx.GetApp().TopWindow.taskFile = self.taskFile
         command = gui.uicommand.NoteNew(
-            notes=viewer.presentation(), settings=self.settings, viewer=viewer
+            notes=viewer.presentation(), viewer=viewer
         )
         dialog = command.do_command(None, show=False)
         dialog.ok()
