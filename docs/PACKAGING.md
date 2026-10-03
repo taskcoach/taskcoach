@@ -28,7 +28,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 
 | Package | Min Version | Why Required | Distros with Old Versions |
 |---------|-------------|--------------|---------------------------|
-| Python | >=3.8 | Type hints, f-strings, walrus operator | — |
+| Python | >=3.10 | The oldest supported distribution's, Ubuntu 22.04 (the code itself needs 3.8) | — |
 | wxPython | >=4.2.0 | HyperTreeList stability | — |
 | wxPython | >=4.3.0 | Native dark mode on Windows (optional, see [WINDOWS.md](WINDOWS.md#dark-mode)) | Windows builds pin 4.3.1 |
 | pyparsing | >=3.0.0 | pyparsing 3 API (`deltaTime.py`); 3.0.0 to 3.1.2 tested alike | none (Ubuntu 22.04 has 3.0.7) |

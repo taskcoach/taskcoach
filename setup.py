@@ -100,8 +100,6 @@ system = platform.system()
 if system == "Windows":
     install_requires.append("WMI")
 
-tests_requires = []
-
 # Long description for PyPI
 long_description = (
     "Task Coach is a free open source todo manager. It grew "
@@ -110,8 +108,7 @@ long_description = (
     "prerequisites, prioritizing, effort tracking, category tags, budgets, "
     "notes, and many other features. However, users are not forced to use all "
     "these features; Task Coach can be as simple or complex as you need it to be. "
-    "Task Coach is available for Windows, Mac OS X, and GNU/Linux; and there is a "
-    "companion iOS app."
+    "Task Coach is available for Windows, Mac OS X, and GNU/Linux."
 )
 
 setupOptions = {
@@ -125,7 +122,8 @@ setupOptions = {
     "license": _meta["license"],
     "install_requires": install_requires,
     "extras_require": extras_require,
-    "tests_require": tests_requires,
+    # Ubuntu 22.04's, the oldest of the supported distributions
+    "python_requires": ">=3.10",
     "packages": find_namespace_packages(
         include=["taskcoachlib", "taskcoachlib.*"]
     ),
@@ -137,8 +135,6 @@ setupOptions = {
         "License :: OSI Approved :: GNU General Public License (GPL)",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -156,11 +152,6 @@ setupOptions = {
         "Natural Language :: Spanish",
     ],
 }
-
-system = platform.system()
-if system == "Windows":
-    setupOptions["scripts"].append("taskcoach.pyw")
-
 
 if __name__ == "__main__":
     setup(**setupOptions)  # pylint: disable=W0142

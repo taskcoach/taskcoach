@@ -907,15 +907,15 @@ each with the recommended action, none ruled yet:
   AppImage's inline). Recommended: one metainfo.
 - P78. Moved to To Do 75.
 - P79. Moved to To Do 76.
-- P80. Python floor: the packages declare 3.8 (`PKGBUILD`, the Fedora
-  spec, [PACKAGING.md](PACKAGING.md); `setup.py` lists 3.8 and 3.9),
-  yet nothing runs or tests below 3.10: the oldest supported
-  distribution, Ubuntu 22.04, has 3.10, the pip builds' numpy 1.26
-  needs 3.9, and the certified test platform is 3.13. The code itself
-  runs on 3.8 (checked 2026-10-02: no 3.9 or 3.10 syntax or library
-  call; the earlier "needs 3.10" was wrong). `setup.py` also has
-  `tests_require`, an iOS description and an unused Windows branch.
-  Declare 3.10?
+- P80. ~~The packages declared Python 3.8~~: 3.10 declared
+  2026-10-02, **ruled by designer**: the oldest supported
+  distribution's, Ubuntu 22.04; nothing ran or tested below it. The
+  code itself needs no newer than 3.8 (no 3.9 or 3.10 syntax or library
+  call; an earlier "needs 3.10" was wrong). `setup.py` sets
+  `python_requires` and lost `tests_require`, the iOS app in its
+  description and the `taskcoach.pyw` script on Windows (the Windows
+  build starts `launcher.pyw`). Checked by installing with pip:
+  `Requires-Python: >=3.10`, classifiers 3.10 to 3.14.
 - P81. Moved to To Do 79.
 - P82. `igraph` is declared nowhere, so the Dependency Graph viewer is
   hidden in every package. Declare it or retire the viewer?

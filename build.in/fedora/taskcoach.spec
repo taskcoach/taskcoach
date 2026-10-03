@@ -35,7 +35,7 @@ BuildRequires:  libappstream-glib
 %global __provides_exclude ^python3\\.?[0-9]*dist\\((squaremap)\\)
 
 # Runtime dependencies - from Fedora repos
-Requires:       python3 >= 3.8
+Requires:       python3 >= 3.10
 Requires:       python3-wxpython4 >= 4.2.0
 Requires:       python3-watchdog
 Requires:       python3-chardet
