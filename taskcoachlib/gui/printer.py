@@ -74,7 +74,7 @@ class PrinterSettings(object, metaclass=patterns.Singleton):
 
     @staticmethod
     def __set_setting(option, value):
-        setattr(settings.printer, option, int(value))
+        settings.set("printer", option, int(value))
 
 
 class HTMLPrintout(wx.html.HtmlPrintout):

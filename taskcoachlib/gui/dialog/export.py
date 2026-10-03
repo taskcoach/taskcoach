@@ -24,6 +24,7 @@ from wx.lib import sized_controls
 from wx.lib.agw import hypertreelist, customtreectrl
 from taskcoachlib import meta
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 
 
 class ExportDialog(sized_controls.SizedDialog):
@@ -35,7 +36,6 @@ class ExportDialog(sized_controls.SizedDialog):
 
     def __init__(self, *args, **kwargs):
         self.window = args[0]
-        self.settings = kwargs.pop("settings")
         super().__init__(
             title=self.title,
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
@@ -185,36 +185,31 @@ class SeparateDateAndTimeColumnsCheckBox(wx.CheckBox):
     """Control that lets the user decide whether dates and times should be
     separated or kept together."""
 
-    def __init__(self, parent, settings, section, setting):
+    def __init__(self, parent, section, setting):
         super().__init__(
             parent, label=_("Put task dates and times in separate columns")
         )
-        self.settings = settings
         self.section = section
         self.setting = setting
         self.initializeCheckBox()
 
     def initializeCheckBox(self):
-        separateDateAndTimeColumns = self.settings.getboolean(
-            self.section, self.setting
-        )
-        self.SetValue(separateDateAndTimeColumns)
+        self.SetValue(settings.get(self.section, self.setting))
 
     def options(self):
         return dict(separateDateAndTimeColumns=self.GetValue())
 
     def saveSettings(self):
-        self.settings.setboolean(self.section, self.setting, self.GetValue())
+        settings.set(self.section, self.setting, self.GetValue())
 
 
 class SeparateCSSCheckBox(sized_controls.SizedPanel):
     """Control to let the user write CSS style information to a
     separate file instead of including it into the HTML file."""
 
-    def __init__(self, parent, settings, section, setting):
+    def __init__(self, parent, section, setting):
         super().__init__(parent)
         self.SetSizerProps(expand=True)
-        self.settings = settings
         self.section = section
         self.setting = setting
         self.createCheckBox()
@@ -225,8 +220,9 @@ class SeparateCSSCheckBox(sized_controls.SizedPanel):
             self,  # pylint: disable=W0201
             label=_("Write style information to a separate CSS file"),
         )
-        separateCSS = self.settings.getboolean(self.section, self.setting)
-        self.separateCSSCheckBox.SetValue(separateCSS)
+        self.separateCSSCheckBox.SetValue(
+            settings.get(self.section, self.setting)
+        )
 
     def createHelpInformation(self):
         self._helpText = (
@@ -256,10 +252,8 @@ class SeparateCSSCheckBox(sized_controls.SizedPanel):
         return dict(separateCSS=self.separateCSSCheckBox.GetValue())
 
     def saveSettings(self):
-        self.settings.set(
-            self.section,
-            self.setting,
-            str(self.separateCSSCheckBox.GetValue()),
+        settings.set(
+            self.section, self.setting, self.separateCSSCheckBox.GetValue()
         )
 
 
@@ -308,7 +302,6 @@ class ExportAsCSVDialog(ExportDialog):
         self.separateDateAndTimeColumnsCheckBox = (
             SeparateDateAndTimeColumnsCheckBox(
                 pane,
-                self.settings,
                 self.section,
                 "csv_separatedateandtimecolumns",
             )
@@ -954,7 +947,7 @@ class ExportAsHTMLDialog(ExportDialog):
 
         self.columnPicker = ColumnPicker(pane, None)
         separateCSSChooser = SeparateCSSCheckBox(
-            pane, self.settings, self.section, "html_separatecss"
+            pane, self.section, "html_separatecss"
         )
         self._updateColumnPickerState()
 

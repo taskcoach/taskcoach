@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from taskcoachlib.gui import dialog
-from taskcoachlib import config
 from wx.lib import sized_controls
 
 
@@ -67,8 +66,7 @@ class ExportDialogTest(test.wxTestCase):
     def testCreate(self):
         self.frame.viewer = DummyViewerContainer()
         self.set_main_window_task_file(self.frame)
-        settings = config.settings.current()
-        dialog.export.ExportAsHTMLDialog(self.frame, settings=settings)
+        dialog.export.ExportAsHTMLDialog(self.frame)
 
 
 class ColumnPickerTest(test.wxTestCase):

@@ -1009,6 +1009,18 @@ def get(section_name, option):
     return getattr(section(section_name), option)
 
 
+def set(section_name, option, value):  # pylint: disable=W0622
+    """Store the value, of the option's type, for names the caller
+    computes."""
+    setattr(section(section_name), option, value)
+
+
+def from_text(section_name, option, text):
+    """The option's value as its type from its text form, as a choice
+    list holds it ("15" for a whole number)."""
+    return _PARSE[option_type(section_name, option)](text)
+
+
 def has_section(name):
     """Whether the section exists: a viewer instance's or an editor
     window's, made while running or loaded from the file."""

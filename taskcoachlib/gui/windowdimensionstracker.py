@@ -211,7 +211,7 @@ class WindowGeometryTracker:
         return settings.get(self._section, setting)
 
     def _set_setting(self, setting, value):
-        setattr(settings.section(self._section), setting, value)
+        settings.set(self._section, setting, value)
 
     # === State persistence ===
 

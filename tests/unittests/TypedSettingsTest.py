@@ -65,6 +65,24 @@ class TypedSettingsTest(test.TestCase):
     def test_computed_names(self):
         self.assertIs(True, settings.get("view", "statusbar"))
 
+    def test_write_by_computed_names(self):
+        settings.set("view", "statusbar", False)
+        self.assertIs(False, settings.view.statusbar)
+
+    def test_write_by_computed_names_checks_the_type(self):
+        with self.assertRaises(TypeError):
+            settings.set("view", "statusbar", "False")
+
+    def test_from_text_whole_number(self):
+        self.assertEqual(
+            15, settings.from_text("view", "defaultsnoozetime", "15")
+        )
+
+    def test_from_text_text(self):
+        self.assertEqual(
+            "sunday", settings.from_text("view", "weekstart", "sunday")
+        )
+
     def test_write_stores_the_text_form(self):
         settings.view.statusbar = False
         self.assertEqual("False", self.settings.get("view", "statusbar"))

@@ -501,7 +501,7 @@ class FileExportCommand(IOCommand):
 
     def do_command(self, event):
         exportDialog = self.getExportDialogClass()(
-            self.main_window(), settings=settings.current()
+            self.main_window()
         )  # pylint: disable=E1101
         try:
             if wx.ID_OK == exportDialog.ShowModal():
@@ -579,7 +579,6 @@ class FileExportAsHTML(FileExportCommand):
             return
         self._exportDialog = self.getExportDialogClass()(
             self.main_window(),
-            settings=settings.current(),
             exportCallback=self.exportFunction(),
         )
         self._exportDialog.Show()
@@ -627,7 +626,6 @@ class FileExportAsCSV(FileExportCommand):
             return
         self._exportDialog = self.getExportDialogClass()(
             self.main_window(),
-            settings=settings.current(),
             exportCallback=self.exportFunction(),
         )
         self._exportDialog.Show()
@@ -674,7 +672,6 @@ class FileExportAsICalendar(FileExportCommand):
 
         self._exportDialog = self.getExportDialogClass()(
             self.main_window(),
-            settings=settings.current(),
             exportCallback=self.exportFunction(),
         )
         # Use Show() for non-modal dialog
@@ -725,7 +722,6 @@ class FileExportAsTodoTxt(FileExportCommand):
             return
         self._exportDialog = self.getExportDialogClass()(
             self.main_window(),
-            settings=settings.current(),
             exportCallback=self.exportFunction(),
         )
         self._exportDialog.Show()
@@ -1143,10 +1139,7 @@ class EditPreferences(base_uicommand.UICommand):
 
     def do_command(self, event, show=True):  # pylint: disable=W0221
         editor = dialog.preferences.Preferences(
-            parent=self.main_window(),
-            title=_("Preferences"),
-            settings=settings.current(),
-            taskFile=self.main_window().taskFile,
+            parent=self.main_window(), title=_("Preferences")
         )
         editor.Show(show=show)
 
@@ -1327,7 +1320,7 @@ class ViewViewer(ViewerCommand):
         """Increase the viewer count for the viewer class this command is
         opening and store the viewer count in the settings."""
         setting = self.viewerClass.__name__.lower() + "count"
-        setattr(settings.view, setting, settings.get("view", setting) + 1)
+        settings.set("view", setting, settings.get("view", setting) + 1)
 
 
 class ViewEffortViewerForSelectedTask(ViewerCommand):

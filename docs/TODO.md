@@ -302,7 +302,7 @@ No need to store "original values" — the settings object is the baseline.
 - Add `hasChanges()` that iterates `_booleanSettings`, `_choiceSettings`,
   `_integerSettings`, `_pathSettings`, `_textSettings`,
   `_multipleChoiceSettings` and compares each control's current value against
-  `self.settings.get(section, setting)`
+  `settings.get(section, setting)`
 - Pages with custom controls (Theme, Task Appearance, working hours) override
   `hasChanges()` to add their own comparisons
 

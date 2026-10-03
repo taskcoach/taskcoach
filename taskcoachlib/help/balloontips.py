@@ -38,4 +38,4 @@ class BalloonTipManager(balloontip.BalloonTipManager):
             )
 
     def OnBalloonTipShow(self, name=None):
-        setattr(settings.balloontips, name, False)
+        settings.set("balloontips", name, False)

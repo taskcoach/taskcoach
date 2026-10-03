@@ -159,10 +159,12 @@ helpers and the list columns (which handed the object to the in-place
 editors), the UI commands (31 of which had a settings base only to be
 handed the object), the views, editors, toolbars and the view
 container (which kept the object and never read it), and the menus
-(only the File menu read it, for the recent files) and the tray icon.
-The export dialog, Preferences, file commands, main window and
-application are left; where one of them still takes the object, the
-code moved so far passes `settings.current()`.
+(only the File menu read it, for the recent files), the tray icon, the
+export dialog and Preferences (whose pages had their own text layer
+over the object; a choice list's text is converted to the option's
+type on save). The file commands, main window and application are
+left; where one of them still takes the object, the code moved so far
+passes `settings.current()`.
 
 ### Risks
 
@@ -523,6 +525,8 @@ settings.window.theme_is_dark            # computed at each read
 settings.view.statusbar = False          # stored, "view.statusbar" sent
 settings.section(self.settingsSection()).sortby
 settings.get("icon", "%stasks" % status) # a name computed by the caller
+settings.set("view", option, value)      # written by a computed name
+settings.from_text("view", "defaultsnoozetime", "15")  # 15, a choice's text
 ```
 
 No constructor parameter, no getter lambda, no copy. A value of another

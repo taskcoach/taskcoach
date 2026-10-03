@@ -63,9 +63,7 @@ class UICheckCommand(BooleanSettingsCommand):
         return settings.get(self.section, self.setting)
 
     def do_command(self, event):
-        setattr(
-            settings.section(self.section), self.setting, event.IsChecked()
-        )
+        settings.set(self.section, self.setting, event.IsChecked())
 
     def getBitmap(self):
         # Using our own bitmap for checkable menu items does not work on
@@ -83,4 +81,4 @@ class UIRadioCommand(BooleanSettingsCommand):
         return settings.get(self.section, self.setting) == self.value
 
     def do_command(self, event):
-        setattr(settings.section(self.section), self.setting, self.value)
+        settings.set(self.section, self.setting, self.value)
