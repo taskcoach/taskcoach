@@ -368,8 +368,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             % ("dark" if is_dark else "light", found_by, theme),
             prefix="THEME",
         )
-        # Recomputes settings2.window.theme_is_dark, which the
-        # window.theme listeners read
+        # The Theme page shows the system's theme; theme_is_dark is
+        # computed at each read
         patterns.Event("system.theme_colour_changed", self).send()
         if theme == "automatic":
             # The theme follows the system: as if it had changed

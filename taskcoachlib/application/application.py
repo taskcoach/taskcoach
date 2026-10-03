@@ -549,12 +549,8 @@ class Application(object, metaclass=patterns.Singleton):
         )
         # Undo in the text fields whose platform has none
         textundo.install(self.__wx_app)
-        # Before any window or dialog exists, and before settings2
-        # computes theme_is_dark from the resulting appearance
+        # Before any window or dialog exists
         apply_native_appearance(self.__wx_app, settings.window.theme)
-        from taskcoachlib.config import settings2
-
-        settings2.wx_ready()
 
         # 4. Log wx-specific info (needs wxApp)
         _log_wx_info()
@@ -751,9 +747,6 @@ class Application(object, metaclass=patterns.Singleton):
         self.settings = config.Settings(load_settings, ini_file)
         # The one every module reads (docs/SETTINGS.md)
         settings.use(self.settings)
-        from taskcoachlib.config import settings2
-
-        settings2.init(self.settings)
 
     def __init_language(self):
         """Initialize the current translation."""

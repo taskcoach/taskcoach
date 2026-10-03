@@ -6,51 +6,29 @@
 2. [One Settings Object (To Do 70)](#one-settings-object-to-do-70)
 3. [Known Anomalies](#known-anomalies)
 4. [ConfigParser Architecture](#configparser-architecture)
-5. [Current State](#current-state)
-6. [Problem](#problem)
-7. [Read-Only Shim](#read-only-shim)
-8. [Initialization](#initialization)
-9. [Usage](#usage)
-10. [Writes Stay on the Existing API](#writes-stay-on-the-existing-api)
-11. [In-Place Editing Options](#in-place-editing-options)
-12. [Key Files](#key-files)
+5. [Usage](#usage)
+6. [In-Place Editing Options](#in-place-editing-options)
+7. [Key Files](#key-files)
 
 ---
 
 ## TODO
 
-1. **Modernize the settings system.** The current `ConfigParser`-based
-   design is 2004-era: no type schema, string-only storage, instance
-   threaded through constructors. A modern settings system would have
-   typed field declarations, module-level singleton access, and
-   attribute-style reads/writes. The read-only shim below is a temporary
-   bridge — it provides module-level access without refactoring the
-   underlying `ConfigParser`. The long-term goal is to replace
-   `ConfigParser` entirely with a purpose-built settings class.
-2. ~~**Create `settings2.py` and wire init in `application.py`.**~~ Done.
-3. ~~**Migrate tooltip config lookup** — replace pubsub subscription with
-   direct `settings2.view.descriptionpopups` read. First consumer of
-   the shim.~~ Done.
-4. ~~**Migrate hover config lookup**: replace getter lambda with direct
-   `settings2.window.hoverlinewidth` read. Remove `_hoverSettingGetter`
-   indirection.~~ Done.
-5. **Gradually migrate other read-only call sites** as code is touched.
-   No big-bang refactor — incremental adoption.
-6. ~~**Wire `EVT_SYS_COLOUR_CHANGED`** to recompute `theme_is_dark`.~~ Done.
-   `MainWindow` sends the `"system.theme_colour_changed"` Publisher event
-   on a light/dark switch; settings2 subscribes and recomputes. See
-   [System theme changes](#system-theme-changes).
-7. **Refine refresh triggers.** Eventually, replace the 1-second debounce
-   with a proper batched signal when `ConfigParser` is replaced.
-8. **Wire `"settings2.changed"` listeners.** Consumers that need to
-   react to setting changes (e.g. themed colours after a dark/light
-   switch) should register via
-   `patterns.Publisher().registerObserver(callback, eventType="settings2.changed")`.
-   First listener (2026-09-28): viewers redraw when
-   `feature.decimal_time` changes.
-
-Items 1, 5, 7 and 8 are To Do 70's: [One Settings
-Object](#one-settings-object-to-do-70).
+1. **Modernize the settings system**: one typed settings object that
+   any module reads and writes by attribute, `ConfigParser` replaced by
+   a purpose-built class. To Do 70, [One Settings
+   Object](#one-settings-object-to-do-70): steps 5 and 6 are left.
+2. ~~Create `settings2.py`, a read-only copy~~: done; gone 2026-10-03
+   (To Do 70 step 4).
+3. ~~Migrate the tooltip config lookup~~: done.
+4. ~~Migrate the hover config lookup~~: done.
+5. ~~Migrate the other call sites~~: done 2026-10-03 (To Do 70 step 3).
+6. ~~Wire `EVT_SYS_COLOUR_CHANGED`~~: done, [System theme
+   changes](#system-theme-changes).
+7. ~~Refine the refresh triggers~~: with no copy there is nothing to
+   refresh (To Do 70 step 4).
+8. ~~`"settings2.changed"` listeners~~: gone with the copy; its one
+   listener takes the option's event (`"feature.decimal_time"`).
 
 ---
 
@@ -149,7 +127,7 @@ settings.get(section, option)            # names computed by the caller
 Each step: tests that fail before and pass after where behaviour is
 fixed, the full suite, and an app check of what it touches.
 
-Status: steps 1 to 3 done 2026-10-03. No module takes or keeps the
+Status: steps 1 to 4 done 2026-10-03. No module takes or keeps the
 object but the application, which makes, loads, locks and saves it;
 every other module reads and writes options by attribute
 (`settings.get()` and `settings.set()` for computed names) and takes
@@ -159,8 +137,9 @@ the folders from `settings.templates_dir()` and
 31 UI commands, which only handed the object on; parameters nothing
 read (the object in the export writers and the view container, the
 task file in Preferences); the text layer of the Preferences pages (a
-choice list's text is converted to the option's type on save). Steps 4
-to 6 are left.
+choice list's text is converted to the option's type on save); and
+`settings2`, the read-only copy refreshed a second after a change.
+Steps 5 and 6 are left.
 
 ### Risks
 
@@ -188,10 +167,10 @@ them and a switch applies after a restart. Only the Theme page's
 "Detected" label reads the system setting there
 (`detect_system_dark_theme()`, wxPython 4.3).
 Whichever sees a switch first handles it, once: the
-`"system.theme_colour_changed"` Publisher event makes settings2
-recompute `window.theme_is_dark` and updates an open Theme preferences
-page; with Mode Automatic, the `"settings.window.theme"` message then
-re-themes tasks and task viewers as a Mode change in Preferences does.
+`"system.theme_colour_changed"` Publisher event updates an open Theme
+preferences page; with Mode Automatic, `settings.send_changed("window",
+"theme")` then re-themes tasks and task viewers as a Mode change in
+Preferences does. `window.theme_is_dark` is computed at each read.
 
 The AGW `AuiManager` consumes `EVT_SYS_COLOUR_CHANGED` (see
 [AUI.md](AUI.md#system-colour-change-event)). The main window's manager
@@ -207,26 +186,6 @@ Limits:
 - On Windows, native controls and Task Coach's colours keep the Mode
   applied at startup until a restart
   ([WINDOWS.md](WINDOWS.md#dark-mode)).
-
-### Frequent implicit refreshes
-
-Any `Settings.set()` call triggers `settings2.schedule_refresh()`, which
-starts a 1-second debounce timer. When the timer fires, settings2
-re-snapshots all monitored sections from ConfigParser and recomputes
-derived values (including `window.theme_is_dark`).
-
-In practice, `Settings.set()` is called frequently:
-
-- **Window/dialog close** — every editor and dialog saves its position
-  and size to ConfigParser on close. This is the most common trigger.
-- **Viewer state changes** — column widths, sort order, scroll position.
-- **Preferences OK** — writes all changed options in a burst (collapsed
-  into one debounce refresh).
-- **Any explicit setting change** — toggle, checkbox, toolbar state.
-
-Because dialogs and viewers save geometry on close, settings2 is
-re-snapshotted relatively often during normal use. Computed values like
-`theme_is_dark` are recomputed on each refresh.
 
 ---
 
@@ -310,203 +269,6 @@ wrote it. Kept, **ruled by designer 2026-10-02** (P67 in
 
 ---
 
-## Current State
-
-Settings are stored in a `ConfigParser`-based `Settings` class
-(`taskcoachlib/config/settings.py`). The instance is created in
-`application.py` at startup and threaded through constructors to every
-viewer, editor, toolbar, and dialog.
-
-Reading a value requires the instance reference plus the section name,
-option name, and correct type method:
-
-```python
-self.settings.getboolean("view", "descriptionpopups")
-self.settings.getint("window", "hoverlinewidth")
-self.settings.get("taskviewer", "sortby")
-```
-
-Defaults are declared in `taskcoachlib/config/defaults.py` as a dict of
-`{section: {option: string_value}}`. The string values encode the type
-implicitly: `"True"` / `"False"` for booleans, `"8"` for ints, etc.
-
----
-
-## Problem
-
-Any code that needs a config value must have a reference to the `Settings`
-instance. This creates unnecessary coupling:
-
-- **Constructor threading** — the instance is passed through 5+ layers of
-  constructors to reach the widget that reads it.
-- **Getter lambdas** — when a widget layer shouldn't depend on the config
-  layer, a lambda was injected to bridge the gap (e.g. the former
-  `_hoverSettingGetter` in `treectrl.py`, now removed).
-- **Change subscriptions**: some code subscribes to setting-change events
-  topics instead of just reading the value when needed, adding complexity
-  for a simple config lookup.
-
-Settings are global application state. Any module should be able to read
-them directly.
-
----
-
-## Read-Only Shim
-
-`settings2` (`taskcoachlib/config/settings2.py`) is a singleton class
-(`_Settings2`) with PEP 562 module-level `__getattr__`. ConfigParser
-values are snapshotted into `SimpleNamespace` attributes at init, and
-re-snapshotted on debounced setting changes. Access is a plain attribute
-read — no ConfigParser lookup, no computation at read time.
-
-```python
-from taskcoachlib.config import settings2
-
-settings2.view.descriptionpopups     # True (bool)
-settings2.window.hoverlinewidth      # 1 (int)
-settings2.window.theme               # "automatic" (str)
-settings2.window.theme_is_dark       # False (computed)
-```
-
-### How it works
-
-1. `init()` calls `_refresh(build=True)` — creates a `SimpleNamespace`
-   per section in `_SETTING_SECTIONS`, populates options as attributes,
-   sets `_initialized = True`.
-2. `Settings.set()` calls `settings2.schedule_refresh()` on every value
-   change, which restarts a 1-second debounce
-   (`patterns.later.debounced`, [DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
-   No-op before `init()`.
-3. When it runs, `_refresh(build=False)` re-walks ConfigParser
-   and overwrites all attributes on existing namespaces.
-4. After refresh, `_compute_settings_all()` recomputes derived values.
-5. After refresh + compute, fires
-   `patterns.Event("settings2.changed", _instance).send()`.
-6. Module-level `__getattr__` delegates to the singleton instance.
-
-```
-settings2.window.theme_is_dark
-    │
-    └── _instance.window.theme_is_dark
-        (plain attribute on SimpleNamespace)
-```
-
-The structure (sections and option names) never changes after init —
-only values are updated.
-
-### Monitored sections
-
-Only sections listed in `_SETTING_SECTIONS` are snapshotted. Add entries
-as code is migrated to use the shim.
-
-```python
-_SETTING_SECTIONS = {
-    "icon",
-    "iconpicker",
-    "view",
-    "window",
-}
-```
-
-### Type map
-
-Settings in `_TYPES_MAP` get type-converted during refresh. All others
-are stored as raw strings.
-
-```python
-_TYPES_MAP = {
-    ("view", "descriptionpopups"): bool,
-    ("window", "hoverlinewidth"): int,
-    ("iconpicker", "theme_nuvola"): bool,
-    ...
-}
-```
-
-| In type map | INI value valid | Returns |
-|---|---|---|
-| `bool` | `"True"` | `True` |
-| `bool` | `"banana"` | default from `defaults.py` |
-| `int` | `"3"` | `3` |
-| `int` | `"banana"` | default from `defaults.py` |
-| not in map | anything | raw string, as-is |
-
-### Computed values
-
-Computed from snapshotted values during `_compute_settings_all()`. They
-live as regular attributes on the same `SimpleNamespace` objects.
-
-| Attribute | Derivation |
-|---|---|
-| `window.theme_is_dark` | Resolves `window.theme` ("automatic"/"light"/"dark") to a bool. When "automatic", calls `detect_dark_theme()`. |
-
-### Refresh triggers
-
-- `init(settings)` — startup (build, before wxApp)
-- `wx_ready()` — after wxApp created (re-refresh with display-dependent
-  computed settings)
-- `Settings.set()` — debounced 1-second timer; burst writes (e.g.
-  Preferences OK) collapse into a single refresh. Setting
-  `window.theme` also refreshes at once (`refresh_now()`), before the
-  change is sent, since its listeners read `window.theme_is_dark`
-- System light/dark switch: `MainWindow` sends
-  `patterns.Event("system.theme_colour_changed", self)` (see
-  [System theme changes](#system-theme-changes)). Settings2 subscribes
-  in `wx_ready()` and recomputes `_compute_settings_all()` (no full
-  ConfigParser re-read needed).
-
-### Completion signal
-
-After each refresh or recomputation, settings2 fires a Publisher signal:
-
-```python
-patterns.Event("settings2.changed", _instance).send()
-```
-
-This fires after:
-- debounced `Settings.set()` refresh
-- system light/dark switch recomputation
-
-Listeners register with:
-
-```python
-from taskcoachlib.config import settings2
-patterns.Publisher().registerObserver(
-    callback,
-    eventType="settings2.changed",
-)
-```
-
----
-
-## Initialization
-
-Two-phase init in `application.py`:
-
-```python
-# Phase 1 — after Settings created, before wxApp
-settings2.init(self.settings)
-
-# Phase 2 — after wxApp created (display connection available)
-settings2.wx_ready()
-```
-
-**Phase 1** (`init(settings)`) stores the `Settings` reference, builds
-the snapshot (`_refresh(build=True)`), and enables debounced refresh.
-Computed settings that require a display (e.g. `theme_is_dark` in
-"automatic" mode) are skipped because wxApp does not exist yet.
-
-**Phase 2** (`wx_ready()`) re-runs `_refresh(build=False)` now that
-wxApp and the display connection exist. This computes all display-dependent
-settings.
-
-Before `init()`, `schedule_refresh()` is a no-op (setting writes during
-startup do not trigger refresh).
-
-After init, any module can import and use the shim. The shim uses a
-stored `Settings` reference (no `wx.GetApp()` dependency).
-
----
-
 ## Usage
 
 Any module reads and writes the one object (To Do 70, [One Settings
@@ -548,7 +310,8 @@ A view and an editor window reach their own section as `self.options`
 (`self.options.sortby`).
 
 Only the application makes the `Settings` object
-(`config.settings.use()`); `Settings2Test` fails on any other. The
+(`config.settings.use()`); `OneSettingsObjectTest` fails on any other,
+and on any module but the application calling `settings.current()`. The
 date, time and amount controls once each made their own, which read
 the default settings file from disk: a file given with `--ini` was
 ignored, a Preferences change reached them only after a restart, and
@@ -560,35 +323,14 @@ after each test (`Settings.reset()`), so a test sets what it needs. A
 test that needs other file locations installs its own object with
 `config.settings.use()`; the harness puts its own back.
 
-Not yet moved (To Do 70, step 4): code that reads `settings2` reads a
-copy of the same object.
-
 ---
-
-## Writes Stay on the Existing API
-
-The shim is read-only. All writes go through the existing `Settings`
-methods:
-
-```python
-self.settings.setboolean(section, option, value)
-self.settings.settext(section, option, value)
-```
-
-These methods handle change detection, change events
-([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#settings-events)), and
-persistence. `Settings.set()` also calls `settings2.schedule_refresh()`
-to trigger a debounced shim refresh (see [Refresh triggers](#refresh-triggers)).
-
----
-
 
 ## In-Place Editing Options
 
 **Asked by designer 2026-10-02**, To Do 68 and 69 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do);
 what they change: [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing).
-On the Features page, by Hoverover popups, read through `settings2`:
+On the Features page, by Hoverover popups:
 
 | Option | Setting | Default | On |
 |--------|---------|---------|----|
@@ -599,7 +341,6 @@ On the Features page, by Hoverover popups, read through `settings2`:
 
 | File | Purpose |
 |------|---------|
-| `taskcoachlib/config/settings2.py` | Read-only shim (module-level proxy) |
-| `taskcoachlib/config/settings.py` | `Settings` class (ConfigParser subclass) |
+| `taskcoachlib/config/settings.py` | `Settings` class (ConfigParser subclass) and the module every other module reads it through |
 | `taskcoachlib/config/defaults.py` | Default values and type schema |
 | `taskcoachlib/config/__init__.py` | Package exports |

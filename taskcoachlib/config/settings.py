@@ -380,18 +380,11 @@ class Settings(CachingConfigParser):
             current_value = self.get(section, option)
         if value != current_value:
             super().set(section, option, value)
-            from taskcoachlib.config import settings2
-
-            if (section, option) == ("window", "theme"):
-                # Before notifying: listeners read the computed
-                # window.theme_is_dark right away
-                settings2.refresh_now()
             self.send_changed(section, option)
             # Called, not subscribed: the Publisher would keep every
             # Settings object, also the ones controls read and drop
             if (section, option) == ("file", "saveinifileinprogramdir"):
                 self.on_settings_file_location_changed()
-            settings2.schedule_refresh()
             return True
         else:
             return False

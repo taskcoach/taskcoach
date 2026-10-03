@@ -66,10 +66,14 @@ class ControlsReadTheApplicationSettingsTest(test.wxTestCase):
 
 
 class OneSettingsObjectTest(test.TestCase):
-    """Only the application makes a Settings object; the rest read it
-    through settings2 (docs/SETTINGS.md)."""
+    """Only the application makes and keeps a Settings object; every
+    other module reads and writes it through the settings module
+    (docs/SETTINGS.md)."""
 
-    def test_no_other_settings_object(self):
+    @staticmethod
+    def calls(attribute, value_name=None):
+        """Where taskcoachlib calls ...attribute(), outside the
+        application and the config package."""
         root = os.path.join(
             os.path.dirname(test.__file__), "..", "taskcoachlib"
         )
@@ -80,7 +84,9 @@ class OneSettingsObjectTest(test.TestCase):
                     continue
                 path = os.path.join(folder, name)
                 relative = os.path.relpath(path, root)
-                if relative == os.path.join("application", "application.py"):
+                if relative == os.path.join(
+                    "application", "application.py"
+                ) or relative.startswith("config" + os.sep):
                     continue
                 with open(path, encoding="utf-8") as source:
                     tree = ast.parse(source.read(), path)
@@ -88,7 +94,18 @@ class OneSettingsObjectTest(test.TestCase):
                     if (
                         isinstance(node, ast.Call)
                         and isinstance(node.func, ast.Attribute)
-                        and node.func.attr == "Settings"
+                        and node.func.attr == attribute
+                        and (
+                            value_name is None
+                            or getattr(node.func.value, "id", None)
+                            == value_name
+                        )
                     ):
                         found.append("%s:%d" % (relative, node.lineno))
-        self.assertEqual([], found)
+        return found
+
+    def test_no_other_settings_object(self):
+        self.assertEqual([], self.calls("Settings"))
+
+    def test_no_module_takes_the_object(self):
+        self.assertEqual([], self.calls("current", "settings"))

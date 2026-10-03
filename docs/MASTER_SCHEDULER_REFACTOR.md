@@ -1561,7 +1561,7 @@ each with the recommended action, none ruled yet:
   `--ini` was ignored, a Preferences change reached them only after a
   restart, and each copy stayed in memory (P151). They now read the
   application's one settings object through `settings2.get()`
-  ([SETTINGS.md](SETTINGS.md#reading-from-any-module)); the date and
+  ([SETTINGS.md](SETTINGS.md#usage)); the date and
   time formats as at start, as the lists, which Preferences says need
   a restart. A test fails if any module but the application makes a
   `Settings` object. Checked in the app: `dateformat = DMY/` in the

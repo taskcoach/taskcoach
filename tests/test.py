@@ -228,7 +228,6 @@ class TestCase(unittest.TestCase, object):
         """The next test starts from the harness's settings: the one
         every module reads, at its defaults (docs/SETTINGS.md)."""
         from taskcoachlib import config
-        from taskcoachlib.config import settings2
 
         settings = getattr(app, "settings", None)
         if settings is None:
@@ -236,7 +235,6 @@ class TestCase(unittest.TestCase, object):
         config.settings.use(settings)
         settings.reset()
         settings.init("window", "theme", "light")
-        settings2.refresh_now()
 
 
 class TestCaseFrame(wx.Frame):
@@ -264,11 +262,6 @@ class wxTestCase(TestCase):
     config.settings.use(app.settings)
     # Light, so colours do not follow the desktop theme
     app.settings.settext("window", "theme", "light")
-    from taskcoachlib.config import settings2
-
-    if not settings2._initialized:  # test.py also runs as module "test"
-        settings2.init(app.settings)
-        settings2.wx_ready()
     frame = TestCaseFrame()
     from taskcoachlib import i18n
 
