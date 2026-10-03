@@ -1639,6 +1639,13 @@ each with the recommended action, none ruled yet:
   Every save checks the file on disk first, so a late notice never
   lets another program's change be written over.
 
+- P166. The Calendar view prints `invalid bitmap size` tracebacks
+  when it has no room (found 2026-10-03 in To Do 80's app check; the
+  same on master). Docked in a crowded column, about 150 pixels tall,
+  its toolbar and day header take all of it and the schedule area is
+  0 pixels tall; it is drawn anyway (`wxSchedulerPaint.DrawBuffer`, a
+  600x0 picture), at start and whenever tasks change (File > Merge).
+  Nothing visible; a traceback in the log each time. Like P161.
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**
