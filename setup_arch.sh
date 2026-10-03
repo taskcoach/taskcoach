@@ -75,6 +75,7 @@ if command -v sudo &> /dev/null; then
         python-dateutil \
         python-chardet \
         python-keyring \
+        python-pyenchant \
         python-pyparsing \
         libayatana-appindicator \
         libxss \

@@ -826,17 +826,16 @@ each with the recommended action, none ruled yet:
   export-ignore` excludes only the top-level folder. No build uses
   `git archive` or GitHub's archives: the Arch and RPM workflows tar
   their checkout.
-- P61. The run-from-source scripts README points to fail: they check
-  the removed `desktop` module, install no pyenchant;
-  `test_taskcoach.sh` checks files that do not exist. Fix or retire?
-  2026-10-03: the `desktop` check is gone (P164). No setup script
-  installs pyenchant, so spell checking is off in what they set up
-  (the packages declare it). `test_taskcoach.sh` fails 2 of 14 checks,
-  the same on master: the installed wxPython's tree widget for a fix,
-  while Task Coach uses its own copy (To Do 67), and
-  `gui/icons/splash.png`, removed in the icon migration; it also
-  requires Python 3.11 (the minimum is 3.10) and names a
-  `setup_bookworm.sh` that no longer exists.
+- P61. ~~The run-from-source scripts README points to failed~~: fixed
+  2026-10-03, **ruled by designer**; the same on master. The setup
+  scripts now install pyenchant (spell checking was off in what they
+  set up; the packages declare it); `test_taskcoach.sh` checks that
+  Task Coach's own tree widget is the one loaded (not the installed
+  wxPython's) and that the icon catalog exists (not the removed
+  `splash.png`), requires Python 3.10 and names the setup scripts as
+  they are; its checks pass, 15 of 15 (12 of 14 before). The setup
+  scripts are only syntax-checked here: they install system
+  packages.
 - P62. ~~PyGObject (`python3-gi`) was declared in no package~~: fixed
   2026-10-02, **asked by designer**. Debian, Arch and Fedora declared
   the AppIndicator library but not PyGObject, which loads it, and no

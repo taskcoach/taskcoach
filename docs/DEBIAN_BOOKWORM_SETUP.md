@@ -138,6 +138,7 @@ sudo apt-get install -y \
     python3-dateutil \
     python3-chardet \
     python3-keyring \
+    python3-enchant \
     python3-pyparsing \
     python3-venv
 ```
@@ -271,6 +272,7 @@ Run from a terminal: the log goes to its output
 - ✅ python3-dateutil (2.8.2)
 - ✅ python3-chardet (5.1.0)
 - ✅ python3-keyring (23.13.1)
+- ✅ python3-enchant (spell checking)
 - ✅ python3-pyparsing (3.0.9)
 - ✅ python3-squaremap
 

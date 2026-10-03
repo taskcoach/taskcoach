@@ -175,7 +175,7 @@ Quick sanity check to verify the installation:
 ./test_taskcoach.sh
 ```
 
-This tests Python version, dependencies, module imports, and wxPython patch status.
+This tests Python version, dependencies, module imports, and that Task Coach's own tree widget is loaded.
 
 ## License
 

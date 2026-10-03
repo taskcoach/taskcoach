@@ -72,6 +72,7 @@ if command -v sudo &> /dev/null; then
         python3-dateutil \
         python3-chardet \
         python3-keyring \
+        python3-enchant \
         python3-pyparsing \
         python3-venv \
         python3-squaremap

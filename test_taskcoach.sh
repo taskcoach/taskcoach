@@ -19,7 +19,7 @@ if [ -d "$SCRIPT_DIR/.venv" ]; then
     echo -e "${BLUE}Using virtual environment: .venv${NC}"
 else
     echo -e "${YELLOW}Warning: Virtual environment not found at .venv${NC}"
-    echo -e "${YELLOW}Some tests may fail. Run setup_bookworm.sh first.${NC}"
+    echo -e "${YELLOW}Some tests may fail. Run your system's setup_*.sh first.${NC}"
 fi
 
 echo
@@ -50,8 +50,8 @@ run_test() {
 }
 
 # Test 1: Python version
-run_test "Python version (3.11+)" \
-    "python3 -c 'import sys; assert sys.version_info >= (3, 11)'"
+run_test "Python version (3.10+)" \
+    "python3 -c 'import sys; assert sys.version_info >= (3, 10)'"
 
 # Test 2: TaskCoach module import
 run_test "TaskCoach module import" \
@@ -65,10 +65,10 @@ run_test "Version metadata" \
 run_test "wxPython import" \
     "python3 -c 'import wx; assert wx.__version__'"
 
-# Test 4b: wxPython patch verification
+# Test 4b: Task Coach's copy of the tree widget (docs/BUNDLED_TREE_WIDGET.md)
 # Use Python to check if the patch is actually loaded at runtime
-run_test "wxPython patch (background fix)" \
-    "python3 -c 'import wx.lib.agw.hypertreelist as ht; import inspect; s=inspect.getsource(ht.TreeListMainWindow.PaintItem); exit(0 if \"Fix from Issue #2081 (Roland171281)\" in s else 1)'"
+run_test "Task Coach's tree widget loaded" \
+    "python3 -c 'import taskcoachlib.workarounds.monkeypatches, wx.lib.agw.hypertreelist as h; exit(0 if \"taskcoachlib/patches\" in h.__file__ else 1)'"
 
 # Test 5: Dependencies
 run_test "lxml dependency" \
@@ -77,9 +77,12 @@ run_test "lxml dependency" \
 run_test "dateutil dependency" \
     "python3 -c 'import dateutil'"
 
-# Test 6: Icons directory exists and has PNG files
-run_test "Icons directory exists" \
-    "[ -d taskcoachlib/gui/icons ] && [ -f taskcoachlib/gui/icons/splash.png ]"
+run_test "pyenchant dependency (spell checking)" \
+    "python3 -c 'import enchant'"
+
+# Test 6: The icon catalog exists
+run_test "Icon catalog exists" \
+    "[ -f taskcoachlib/gui/icons/ICON_THEME_CATALOG.json ]"
 
 # Test 7: Templates file exists
 run_test "Templates file exists" \
