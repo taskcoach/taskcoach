@@ -438,12 +438,9 @@ go at the end. Details live in the sections and documents linked.
 97. pywayland (was To Do 88), **parked by designer 2026-10-03**: no
     clear solution to decide on yet. Analysis:
     [DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88).
-98. chardet (was To Do 90): keep or replace it, analysed again
-    2026-10-03 ([DEPENDENCIES.md](DEPENDENCIES.md#chardet-to-do-90)):
-    36 files on the versions each build gets, against charset-normalizer
-    and a guess of our own. Recommended: keep (more files read right on
-    every build). Open: the designer's ruling. P174, Central European
-    files garbled, is a separate issue.
+98. ~~chardet (was To Do 90)~~: kept, **ruled by designer 2026-10-03**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#chardet-to-do-90)). P174,
+    Central European files garbled, is a separate issue.
 99. pyparsing (was To Do 91), **parked by designer 2026-10-03**: no
     clear solution to decide on yet; P171, P172 and P175 (the Ubuntu
     22.04 package) belong to it. Analysis:

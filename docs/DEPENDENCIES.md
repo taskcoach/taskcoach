@@ -390,8 +390,8 @@ What a replacement loses, file by file (100 rows):
   files on the distribution builds and macOS, none on Windows,
   AppImage and Flatpak.
 
-**Recommendation**: keep. No replacement reads every file chardet
-reads on any build.
+**Ruling**: keep, **ruled by designer 2026-10-03**. No replacement
+reads every file chardet reads on any build.
 
 **Separate issue**: P174, Central European and Turkish files garbled
 by chardet 4.0 to 6.0 (every build but Windows, AppImage and Flatpak);
