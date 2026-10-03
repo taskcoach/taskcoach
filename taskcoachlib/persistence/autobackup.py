@@ -43,13 +43,9 @@ def compressFile(srcName, dstName):
             dst.close()
 
 
-def _backups_folder():
-    return settings.current().pathToBackupsDir()
-
-
 class BackupManifest(object):
     def __init__(self):
-        xml_name = os.path.join(_backups_folder(), "backups.xml")
+        xml_name = os.path.join(settings.backups_dir(), "backups.xml")
         if os.path.exists(xml_name):
             with open(xml_name, "rb") as fp:
                 root = ET.parse(fp).getroot()
@@ -69,7 +65,7 @@ class BackupManifest(object):
             node.attrib["sha"] = sha
             node.text = filename
         with open(
-            os.path.join(_backups_folder(), "backups.xml"),
+            os.path.join(settings.backups_dir(), "backups.xml"),
             "wb",
         ) as fp:
             ET.ElementTree(root).write(fp)
@@ -103,7 +99,7 @@ class BackupManifest(object):
         return len(self.listBackups(filename)) != 0
 
     def backupPath(self, filename):
-        path = os.path.join(_backups_folder(), SHA(filename))
+        path = os.path.join(settings.backups_dir(), SHA(filename))
         if not os.path.exists(path):
             os.makedirs(path)
         return path
@@ -119,7 +115,7 @@ class BackupManifest(object):
         sha = SHA(filename)
         src = bz2.BZ2File(
             os.path.join(
-                _backups_folder(),
+                settings.backups_dir(),
                 sha,
                 dateTime.strftime("%Y%m%d%H%M%S.bak"),
             ),
@@ -270,14 +266,14 @@ class AutoBackup(object):
 
     def backupFiles(self, taskFile, glob=glob.glob):  # pylint: disable=W0621
         sha = SHA(taskFile.filename())
-        root = os.path.join(_backups_folder(), sha)
+        root = os.path.join(settings.backups_dir(), sha)
         return sorted(glob("%s.bak" % os.path.join(root, "[0-9]" * 14)))
 
     def backupFilename(self, taskFile, now=date.DateTime.now):
         """Generate a backup filename for the specified date/time."""
         sha = SHA(taskFile.filename())
         return os.path.join(
-            _backups_folder(),
+            settings.backups_dir(),
             sha,
             now().strftime("%Y%m%d%H%M%S.bak"),
         )

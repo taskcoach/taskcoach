@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import meta, persistence, patterns, operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.filesystem import resourcelock
 from taskcoachlib.meta.debug import log_step
@@ -74,11 +75,10 @@ class IOController(object):
     saving, and exporting files. It also presents the necessary dialogs
     to let the user specify what file to load/save/etc."""
 
-    def __init__(self, task_file, message_callback, settings):
+    def __init__(self, task_file, message_callback):
         super().__init__()
         self.__task_file = task_file
         self.__message_callback = message_callback
-        self.__settings = settings
         default_path = os.path.expanduser("~")
         self.__tsk_file_save_dialog_opts = {
             "default_path": default_path,
@@ -147,7 +147,7 @@ class IOController(object):
         if command_line_args:
             filename = command_line_args[0]
         else:
-            filename = self.__settings.get("file", "lastfile")
+            filename = settings.file.lastfile
         if filename and early_lock_result != "skip":
             patterns.later.soon(None, self.open, filename)
 
@@ -251,7 +251,7 @@ class IOController(object):
                 _("... and %d more, listed in the log")
                 % (len(lines) - len(shown))
             )
-        if self.__settings.getboolean("file", "autosave"):
+        if settings.file.autosave:
             keep_or_drop = _(
                 "Autosave saves the correction; the file as it was can be "
                 "restored with File > Manage backups."
@@ -539,10 +539,7 @@ class IOController(object):
         """Remove the auto import/export files of the task file that
         filename replaces, so they are not imported into the new one."""
         extensions = {"Todo.txt": ".txt"}
-        for auto in set(
-            self.__settings.getlist("file", "autoimport")
-            + self.__settings.getlist("file", "autoexport")
-        ):
+        for auto in set(settings.file.autoimport + settings.file.autoexport):
             auto_name = os.path.splitext(filename)[0] + extensions[auto]
             if os.path.exists(auto_name):
                 os.remove(auto_name)
@@ -550,9 +547,7 @@ class IOController(object):
                 os.remove(auto_name + "-meta")
 
     def save_as_template(self, task):
-        templates = persistence.TemplateList(
-            self.__settings.pathToTemplatesDir()
-        )
+        templates = persistence.TemplateList(settings.templates_dir())
         templates.add_template(task)
         templates.save()
 
@@ -566,9 +561,7 @@ class IOController(object):
             },
         )
         if filename:
-            templates = persistence.TemplateList(
-                self.__settings.pathToTemplatesDir()
-            )
+            templates = persistence.TemplateList(settings.templates_dir())
             try:
                 templates.copyTemplate(filename)
             except Exception as reason:  # pylint: disable=W0703
@@ -770,21 +763,19 @@ class IOController(object):
             return None
 
     def __add_recent_file(self, file_name):
-        recent_files = self.__settings.getlist("file", "recentfiles")
+        recent_files = settings.file.recentfiles
         if file_name in recent_files:
             recent_files.remove(file_name)
         recent_files.insert(0, file_name)
-        maximum_number_of_recent_files = self.__settings.getint(
-            "file", "maxrecentfiles"
-        )
-        recent_files = recent_files[:maximum_number_of_recent_files]
-        self.__settings.setlist("file", "recentfiles", recent_files)
+        settings.file.recentfiles = recent_files[
+            : settings.file.maxrecentfiles
+        ]
 
     def __remove_recent_file(self, file_name):
-        recent_files = self.__settings.getlist("file", "recentfiles")
+        recent_files = settings.file.recentfiles
         if file_name in recent_files:
             recent_files.remove(file_name)
-            self.__settings.setlist("file", "recentfiles", recent_files)
+            settings.file.recentfiles = recent_files
 
     def __ask_user_for_file(
         self,

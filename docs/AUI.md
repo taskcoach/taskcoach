@@ -76,7 +76,7 @@ The correct approach is to simply load the perspective and let AUI handle it:
 ```python
 # DO THIS - simple and robust
 def __restore_perspective(self):
-    perspective = self.settings.get("view", "perspective")
+    perspective = settings.view.perspective
     try:
         self.manager.LoadPerspective(perspective)
     except Exception:

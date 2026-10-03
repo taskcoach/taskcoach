@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from unittest import mock
+
 import test
 from taskcoachlib import config
 from taskcoachlib.config import settings
@@ -73,6 +75,11 @@ class TypedSettingsTest(test.TestCase):
         with self.assertRaises(TypeError):
             settings.set("view", "statusbar", "False")
 
+    def test_send_changed_tells_the_listeners(self):
+        self.registerObserver("window.theme")
+        settings.send_changed("window", "theme")
+        self.assertEqual(["automatic"], [e.value() for e in self.events])
+
     def test_from_text_whole_number(self):
         self.assertEqual(
             15, settings.from_text("view", "defaultsnoozetime", "15")
@@ -113,6 +120,27 @@ class TypedSettingsTest(test.TestCase):
         other.setboolean("view", "statusbar", False)
         settings.use(other)
         self.assertIs(False, settings.view.statusbar)
+
+
+class FoldersTest(test.TestCase):
+    """The folders come from the Settings object in use: on Windows a
+    settings file named on the command line moves them."""
+
+    def setUp(self):
+        super().setUp()
+        self.addCleanup(settings.use, settings.current())
+        settings.use(
+            mock.Mock(
+                pathToTemplatesDir=lambda: "templates here",
+                pathToBackupsDir=lambda: "backups here",
+            )
+        )
+
+    def test_templates(self):
+        self.assertEqual("templates here", settings.templates_dir())
+
+    def test_backups(self):
+        self.assertEqual("backups here", settings.backups_dir())
 
 
 class SectionsMadeWhileRunningTest(test.TestCase):

@@ -21,7 +21,8 @@ from unittest import mock
 
 import test
 import wx
-from taskcoachlib import meta, application, config, i18n
+from taskcoachlib import meta, application, i18n
+from taskcoachlib.config import settings
 
 
 class DummyOptions(object):
@@ -44,7 +45,6 @@ class DummyLocale(object):
 class AppTests(test.TestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
         self.options = DummyOptions()
 
     def test_app_properties(self):
@@ -64,7 +64,7 @@ class AppTests(test.TestCase):
         application.Application.deleteInstance()
 
     def assert_language(self, expected_language, locale=None, **environ):
-        args = [self.options, self.settings]
+        args = [self.options]
         if locale:
             args.append(locale)
         # Not this machine's language: only the one given here
@@ -86,16 +86,16 @@ class AppTests(test.TestCase):
         self.assert_language("nl_NL")
 
     def testLanguageViaExternallySetLanguage(self):
-        self.settings.set("view", "language", "de_DE")
+        settings.view.language = "de_DE"
         self.assert_language("de_DE")
 
     def testLanguageSetByUser(self):
-        self.settings.set("view", "language_set_by_user", "de_DE")
+        settings.view.language_set_by_user = "de_DE"
         self.assert_language("de_DE")
 
     def testLanguageSetByUser_OverridesExternallySetLanguage(self):
-        self.settings.set("view", "language", "nl_NL")
-        self.settings.set("view", "language_set_by_user", "de_DE")
+        settings.view.language = "nl_NL"
+        settings.view.language_set_by_user = "de_DE"
         self.assert_language("de_DE")
 
     def test_language_via_lang(self):

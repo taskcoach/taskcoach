@@ -691,7 +691,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         """Build submenu for task templates."""
         from taskcoachlib import persistence
 
-        path = settings.current().pathToTemplatesDir()
+        path = settings.templates_dir()
         try:
             template_list = persistence.TemplateList(path)
             templates = list(zip(template_list.tasks(), template_list.names()))

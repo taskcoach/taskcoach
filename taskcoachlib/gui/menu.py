@@ -423,7 +423,7 @@ class TaskTemplateMenu(DynamicMenu):
         self.appendUICommands(*uiCommands)  # pylint: disable=W0142
 
     def getUICommands(self):
-        path = settings.current().pathToTemplatesDir()
+        path = settings.templates_dir()
         commands = [
             uicommand.TaskNewFromTemplate(
                 os.path.join(path, name),

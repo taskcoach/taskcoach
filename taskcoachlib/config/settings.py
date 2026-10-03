@@ -1015,6 +1015,22 @@ def set(section_name, option, value):  # pylint: disable=W0622
     setattr(section(section_name), option, value)
 
 
+def templates_dir():
+    """The task templates' folder, made if missing."""
+    return _current.pathToTemplatesDir()
+
+
+def backups_dir():
+    """The automatic backups' folder, made if missing."""
+    return _current.pathToBackupsDir()
+
+
+def send_changed(section_name, option):
+    """Tell the option's listeners it changed though its value did not
+    (window.theme "automatic" when the system theme changes)."""
+    _current.send_changed(section_name, option)
+
+
 def from_text(section_name, option, text):
     """The option's value as its type from its text form, as a choice
     list holds it ("15" for a whole number)."""

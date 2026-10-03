@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import workarounds  # noqa: F401
 from taskcoachlib.workarounds import textundo
 from taskcoachlib import i18n, patterns, operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 import datetime
 import locale
@@ -546,15 +547,11 @@ class Application(object, metaclass=patterns.Singleton):
         self.__wx_app = WxApp(
             self.on_end_session, self.on_reopen_app, redirect=False
         )
-        # Expose settings on wxApp so wx.GetApp().settings works everywhere
-        self.__wx_app.settings = self.settings
         # Undo in the text fields whose platform has none
         textundo.install(self.__wx_app)
         # Before any window or dialog exists, and before settings2
         # computes theme_is_dark from the resulting appearance
-        apply_native_appearance(
-            self.__wx_app, self.settings.get("window", "theme")
-        )
+        apply_native_appearance(self.__wx_app, settings.window.theme)
         from taskcoachlib.config import settings2
 
         settings2.wx_ready()
@@ -569,14 +566,14 @@ class Application(object, metaclass=patterns.Singleton):
         self.init(**kwargs)
 
         calendar.setfirstweekday(
-            dict(monday=0, sunday=6)[self.settings.get("view", "weekstart")]
+            dict(monday=0, sunday=6)[settings.view.weekstart]
         )
 
     def start(self):
         """Call this to start the Application."""
         from taskcoachlib import meta
 
-        if self.settings.getboolean("version", "notify"):
+        if settings.version.notify:
             self.__version_checker = meta.VersionChecker()
             self.__version_checker.start()
         self.__copy_default_templates()
@@ -697,14 +694,10 @@ class Application(object, metaclass=patterns.Singleton):
         self.__auto_saver = persistence.AutoSaver()
         self.__auto_exporter = persistence.AutoImporterExporter()
         self.__auto_backup = persistence.AutoBackup()
-        self.iocontroller = IOController(
-            self.taskFile, self.display_message, self.settings
-        )
-        self.mainwindow = MainWindow(
-            self.iocontroller, self.taskFile, self.settings
-        )
+        self.iocontroller = IOController(self.taskFile, self.display_message)
+        self.mainwindow = MainWindow(self.iocontroller, self.taskFile)
         self.__wx_app.SetTopWindow(self.mainwindow)
-        if not self.settings.getboolean("file", "inifileloaded"):
+        if not settings.file.inifileloaded:
             self.__warn_user_that_ini_file_was_not_loaded()
         if load_task_file:
             self.iocontroller.open_after_start(
@@ -727,7 +720,7 @@ class Application(object, metaclass=patterns.Singleton):
         if self._args:
             filename = self._args[0]
         else:
-            filename = self.settings.get("file", "lastfile")
+            filename = settings.file.lastfile
 
         if not filename or not os.path.exists(filename):
             self.__early_lock_result = None
@@ -757,7 +750,7 @@ class Application(object, metaclass=patterns.Singleton):
         # pylint: disable=W0201
         self.settings = config.Settings(load_settings, ini_file)
         # The one every module reads (docs/SETTINGS.md)
-        config.settings.use(self.settings)
+        settings.use(self.settings)
         from taskcoachlib.config import settings2
 
         settings2.init(self.settings)
@@ -778,22 +771,20 @@ class Application(object, metaclass=patterns.Singleton):
             )
             sys.exit(1)
 
-        i18n.Translator(self.determine_language(self._options, self.settings))
+        i18n.Translator(self.determine_language(self._options))
 
     @staticmethod
-    def determine_language(
-        options, settings, locale=locale
-    ):  # pylint: disable=W0621
+    def determine_language(options, locale=locale):  # pylint: disable=W0621
         language = None
         if options:
             # User specified language or .po file on command line
             language = options.pofile or options.language
         if not language:
             # Get language as set by the user via the preferences dialog
-            language = settings.get("view", "language_set_by_user")
+            language = settings.view.language_set_by_user
         if not language:
             # Get language as set by the user or externally (e.g. PortableApps)
-            language = settings.get("view", "language")
+            language = settings.view.language
         if not language:
             language = i18n.system_language(locale)
         if not language:
@@ -899,7 +890,7 @@ class Application(object, metaclass=patterns.Singleton):
             return False  # TaskBarIcon not available on this platform
 
     def __show_tips(self):
-        if self.settings.getboolean("window", "tips"):
+        if settings.window.tips:
             from taskcoachlib import help  # pylint: disable=W0622
 
             help.show_tips(self.mainwindow)
@@ -907,13 +898,13 @@ class Application(object, metaclass=patterns.Singleton):
     def __warn_user_that_ini_file_was_not_loaded(self):
         from taskcoachlib import meta
 
-        reason = self.settings.get("file", "inifileloaderror")
+        reason = settings.file.inifileloaderror
         wx.MessageBox(
             _("Couldn't load settings from TaskCoach.ini:\n%s") % reason,
             _("%s file error") % meta.name,
             style=wx.OK | wx.ICON_ERROR,
         )
-        self.settings.setboolean("file", "inifileloaded", True)  # Reset
+        settings.file.inifileloaded = True  # Reset
 
     def display_message(self, message):
         # Guard against deleted mainwindow during shutdown
@@ -941,9 +932,7 @@ class Application(object, metaclass=patterns.Singleton):
         try:
             # Remember what the user was working on
             if hasattr(self, "taskFile"):
-                self.settings.set(
-                    "file", "lastfile", self.taskFile.lastFilename()
-                )
+                settings.file.lastfile = self.taskFile.lastFilename()
             # Save window position, size, perspective
             if hasattr(self, "mainwindow"):
                 self.mainwindow.save_settings()

@@ -62,7 +62,7 @@ class MainWindowTestCase(test.wxTestCase):
         self.setSettings()
         self.taskFile = persistence.TaskFile()
         self.mainwindow = MainWindowUnderTest(
-            DummyIOController(), self.taskFile, self.settings
+            DummyIOController(), self.taskFile
         )
 
     def setSettings(self):

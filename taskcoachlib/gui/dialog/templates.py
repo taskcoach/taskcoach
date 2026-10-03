@@ -89,9 +89,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
         self._templateList.Bind(
             wx.EVT_TREE_SEL_CHANGED, self.OnSelectionChanged
         )
-        self._templates = persistence.TemplateList(
-            settings.current().pathToTemplatesDir()
-        )
+        self._templates = persistence.TemplateList(settings.templates_dir())
         self._root = self._templateList.AddRoot("Root")
         for task in self._templates.tasks():
             item = self.appendTemplate(self._root, task)

@@ -149,22 +149,18 @@ settings.get(section, option)            # names computed by the caller
 Each step: tests that fail before and pass after where behaviour is
 fixed, the full suite, and an app check of what it touches.
 
-Status: steps 1 and 2 done 2026-10-03; step 3 done for the widgets,
-the domain (`Task.settings` and `Attachment.settings` are gone), the
-printer, the export writers (whose `settings` parameter nothing read),
-the automatic save, backup, import and export, the tips and balloon
-tips, the version check, the reminders, the idle time notice, the
-window size tracker, the templates dialog, the date and time entry
-helpers and the list columns (which handed the object to the in-place
-editors), the UI commands (31 of which had a settings base only to be
-handed the object), the views, editors, toolbars and the view
-container (which kept the object and never read it), and the menus
-(only the File menu read it, for the recent files), the tray icon, the
-export dialog and Preferences (whose pages had their own text layer
-over the object; a choice list's text is converted to the option's
-type on save). The file commands, main window and application are
-left; where one of them still takes the object, the code moved so far
-passes `settings.current()`.
+Status: steps 1 to 3 done 2026-10-03. No module takes or keeps the
+object but the application, which makes, loads, locks and saves it;
+every other module reads and writes options by attribute
+(`settings.get()` and `settings.set()` for computed names) and takes
+the folders from `settings.templates_dir()` and
+`settings.backups_dir()`. Gone with it: `Task.settings`,
+`Attachment.settings` and `wx.GetApp().settings`; the settings base of
+31 UI commands, which only handed the object on; parameters nothing
+read (the object in the export writers and the view container, the
+task file in Preferences); the text layer of the Preferences pages (a
+choice list's text is converted to the option's type on save). Steps 4
+to 6 are left.
 
 ### Risks
 
@@ -238,7 +234,7 @@ re-snapshotted relatively often during normal use. Computed values like
 
 ### Section types
 
-All settings live in a single `ConfigParser` instance (`wx.GetApp().settings`)
+All settings live in a single `ConfigParser` instance (`settings.current()`)
 with no formal separation between section types. Three kinds of sections
 coexist in the same flat namespace:
 
@@ -527,6 +523,9 @@ settings.section(self.settingsSection()).sortby
 settings.get("icon", "%stasks" % status) # a name computed by the caller
 settings.set("view", option, value)      # written by a computed name
 settings.from_text("view", "defaultsnoozetime", "15")  # 15, a choice's text
+settings.send_changed("window", "theme") # listeners told, value unchanged
+settings.templates_dir()                 # folders, made if missing
+settings.backups_dir()
 ```
 
 No constructor parameter, no getter lambda, no copy. A value of another
@@ -561,8 +560,8 @@ after each test (`Settings.reset()`), so a test sets what it needs. A
 test that needs other file locations installs its own object with
 `config.settings.use()`; the harness puts its own back.
 
-Not yet moved (To Do 70, step 3): code that is passed the object or
-reads `settings2` still works on the same object.
+Not yet moved (To Do 70, step 4): code that reads `settings2` reads a
+copy of the same object.
 
 ---
 

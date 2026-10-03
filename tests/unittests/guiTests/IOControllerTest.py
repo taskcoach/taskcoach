@@ -54,7 +54,7 @@ class IOControllerTest(test.TestCase):
         self.settings = config.settings.current()
         self.taskFile = dummy.TaskFile()
         self.iocontroller = gui.iocontroller.IOController(
-            self.taskFile, lambda *args: None, self.settings
+            self.taskFile, lambda *args: None
         )
         self.filename1 = "whatever.tsk"
         self.filename2 = "another.tsk"
@@ -296,7 +296,7 @@ class IOControllerTest(test.TestCase):
         open_file.setFilename(self.filename1)
         open_file.save()
         iocontroller = gui.iocontroller.IOController(
-            open_file, lambda *args: None, self.settings
+            open_file, lambda *args: None
         )
         select_file_once(self, "")
         messages = []
@@ -325,7 +325,7 @@ class IOControllerTest(test.TestCase):
         self.addCleanup(open_file.stop)
         self.addCleanup(open_file.close)  # Before tearDown's removal
         iocontroller = gui.iocontroller.IOController(
-            open_file, lambda *args: None, self.settings
+            open_file, lambda *args: None
         )
         released = []
         release = resourcelock.ResourceLock.release
@@ -361,7 +361,7 @@ class IOControllerTest(test.TestCase):
         mergeFile.close()
         targetFile = persistence.TaskFile()
         iocontroller = gui.iocontroller.IOController(
-            targetFile, lambda *args: None, self.settings
+            targetFile, lambda *args: None
         )
         iocontroller.merge(self.filename2)
         try:
@@ -383,7 +383,7 @@ class IOControllerTest(test.TestCase):
             )
         task_file = persistence.TaskFile()
         iocontroller = gui.iocontroller.IOController(
-            task_file, lambda *args: None, self.settings
+            task_file, lambda *args: None
         )
         messages = []
         try:
@@ -433,7 +433,7 @@ class IOControllerOverwriteExistingFileTest(test.TestCase):
         self.settings = config.settings.current()
         self.taskFile = dummy.TaskFile()
         self.iocontroller = gui.iocontroller.IOController(
-            self.taskFile, lambda *args: None, self.settings
+            self.taskFile, lambda *args: None
         )
 
     def tearDown(self):
@@ -490,7 +490,7 @@ class IOControllerReplaceFileTest(test.TestCase):
         self.task_file = dummy.TaskFile()
         self.addCleanup(self.task_file.stop)
         self.iocontroller = gui.iocontroller.IOController(
-            self.task_file, lambda *args: None, self.settings
+            self.task_file, lambda *args: None
         )
         self.messages = []
 
@@ -526,7 +526,7 @@ class IOControllerCloseTest(test.TestCase):
         self.addCleanup(self.task_file.close)
         self.addCleanup(patterns.CommandHistory().clear)
         self.iocontroller = gui.iocontroller.IOController(
-            self.task_file, lambda *args: None, self.settings
+            self.task_file, lambda *args: None
         )
 
     def test_undo_back_to_the_empty_file_after_close_needs_no_save(self):
@@ -556,7 +556,7 @@ class IOControllerChangedOnDiskTest(test.TestCase):
         self.task_file.setFilename(self.filename)
         self.task_file.save()
         self.iocontroller = gui.iocontroller.IOController(
-            self.task_file, lambda *args: None, self.settings
+            self.task_file, lambda *args: None
         )
         self.iocontroller._ask = self.ask
         self.answers = []
