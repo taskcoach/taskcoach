@@ -310,9 +310,9 @@ languages, and on forms other programs write:
 | Code Task Coach owns | the reading rules in `reader.py` | a date parser, more than 93 lines to match dateutil |
 | Package | 324 KB, in every distribution; same results on 2.8.1, 2.8.2, 2.9.0 | none |
 
-**Recommendation**: keep. Replacing it saves one small package that
-every build already gets, and costs reading fewer dates and owning a
-parser.
+**Ruling**: keep, **ruled by designer 2026-10-03**. Replacing it
+saves one small package that every build already gets, and costs
+reading fewer dates and owning a parser.
 
 **Wrong dates**: fixed 2026-10-03 (P173 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)):
@@ -378,8 +378,20 @@ from 3.0 on); chardet reads them right in every version. Time for a 430 KB file:
 chardet 4.0 to 6.0 1.3 to 2.8 s, 7.6 under 0.1 s; charset-normalizer
 3.0 and 3.4 0.5 to 1.5 s, 3.5 under 0.1 s.
 
-**Recommendation**: keep. Each replacement reads fewer files on every
-build, and charset-normalizer misreads the most common legacy CSV.
+What a replacement loses, file by file (100 rows):
+
+- Our own guess, on every build: Russian (Windows-1251, KOI8-R), Greek,
+  Hebrew, Japanese (Shift JIS, EUC-JP) and Chinese (GBK, Big5) files,
+  Mac Roman on most builds, Central European and Turkish where chardet
+  reads them (Arch, the pip builds). It gains no file anywhere.
+- charset-normalizer, on every build: French Windows-1252 and Latin-1
+  files; Spanish Windows-1252, Mac Roman, Chinese GBK or Turkish
+  depending on the build. It gains one to three Central European
+  files on the distribution builds and macOS, none on Windows,
+  AppImage and Flatpak.
+
+**Recommendation**: keep. No replacement reads every file chardet
+reads on any build.
 
 **Separate issue**: P174, Central European and Turkish files garbled
 by chardet 4.0 to 6.0 (every build but Windows, AppImage and Flatpak);

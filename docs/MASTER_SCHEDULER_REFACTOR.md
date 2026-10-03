@@ -393,12 +393,9 @@ go at the end. Details live in the sections and documents linked.
     2026-10-03**.
 88. ~~pywayland~~: moved to To Do 97, **parked by designer
     2026-10-03**.
-89. python-dateutil, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#python-dateutil-to-do-89)):
-    keep or replace it with a reader of our own. Recommended: keep
-    (31 of 34 languages read every exported date back, against 23, and
-    dates among words). Open: the designer's ruling. Its wrong dates,
-    a separate issue, were fixed 2026-10-03 (P173).
+89. ~~python-dateutil~~: kept, **ruled by designer 2026-10-03**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#python-dateutil-to-do-89)); its
+    wrong dates fixed the same day (P173).
 90. ~~chardet~~: moved to To Do 98, **parked by designer
     2026-10-03**.
 91. ~~pyparsing~~: moved to To Do 99, **parked by designer
