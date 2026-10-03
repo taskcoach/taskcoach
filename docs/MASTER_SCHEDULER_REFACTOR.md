@@ -298,8 +298,15 @@ go at the end. Details live in the sections and documents linked.
 
 73. Release notes for the next release. **Found 2026-10-02**: releases
     are made by CI from a tag with no notes, and no changelog is kept
-    (`changes.in/` retired, P45). Open: where to collect them (a
-    section here, a `CHANGELOG.md`, the pull request). First entry:
+    (`changes.in/` retired, P45): each of the seven build workflows
+    uploads its packages to the tag's GitHub release
+    (`action-gh-release`) with no text. Options: a `CHANGELOG.md` at
+    the top of the repository, a section per release, newest first,
+    the tag's section put on the release page by the workflows
+    (`body_path`); text typed on the release page by hand after the
+    builds; or the pull request's description. Recommended:
+    `CHANGELOG.md`, kept with the code and shown where users download.
+    First entry:
     editing cells in place is off by default, after an upgrade too;
     Preferences > Features > Edit cells in place turns it on (To Do 69).
 74. ~~Replace `pyxdg` with a few lines of ours (was P163)~~: done
@@ -900,9 +907,15 @@ each with the recommended action, none ruled yet:
   AppImage's inline). Recommended: one metainfo.
 - P78. Moved to To Do 75.
 - P79. Moved to To Do 76.
-- P80. Python floor: the code needs 3.10, packaging says 3.8;
-  `setup.py` lists 3.8/3.9, `tests_require`, an iOS description and an
-  unused Windows branch. Recommended: 3.10, metadata cleaned.
+- P80. Python floor: the packages declare 3.8 (`PKGBUILD`, the Fedora
+  spec, [PACKAGING.md](PACKAGING.md); `setup.py` lists 3.8 and 3.9),
+  yet nothing runs or tests below 3.10: the oldest supported
+  distribution, Ubuntu 22.04, has 3.10, the pip builds' numpy 1.26
+  needs 3.9, and the certified test platform is 3.13. The code itself
+  runs on 3.8 (checked 2026-10-02: no 3.9 or 3.10 syntax or library
+  call; the earlier "needs 3.10" was wrong). `setup.py` also has
+  `tests_require`, an iOS description and an unused Windows branch.
+  Declare 3.10?
 - P81. Moved to To Do 79.
 - P82. `igraph` is declared nowhere, so the Dependency Graph viewer is
   hidden in every package. Declare it or retire the viewer?
@@ -1513,10 +1526,9 @@ each with the recommended action, none ruled yet:
   Wayland) it runs without a tray icon. Bundle them (GObject
   introspection and the typelibs), or document the limit?
 - P160. Making another view active freezes the window for 0.6 to
-  1.6 s with all views open (Xvfb, the same before this branch's
-  change; master has the same code): clicking from
-  the Tasks list into the Categories list 0.65 s, View > Activate next
-  viewer 1.6 s. AGW AUI's `RefreshCaptions()` repaints each pane
+  1.6 s with all views open (Xvfb): clicking from the Tasks list into
+  the Categories list 0.65 s, View > Activate next viewer 1.6 s. The
+  same on master: the click 1.6 to 2.1 s on a loaded machine. AGW AUI's `RefreshCaptions()` repaints each pane
   caption with `Update()`, about 0.1 s each with seven views, and a
   switch from the menu or the keys runs it twice: the view's focus
   activates the pane again. Measured 2026-10-02 (P122) with a timed
