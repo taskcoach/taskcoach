@@ -331,7 +331,7 @@ go at the end. Details live in the sections and documents linked.
     ms with numpy, 1.05 to 1.4 ms without; the probe 0.4 to 0.6 s at
     each start. Checked in the app with numpy unimportable: the six
     icons byte for byte those of the base, no error.
-77. ~~`dbus-python` to Gio (was P83)~~: moved to To Do 83.
+77. ~~`dbus-python` to Gio (was P83)~~: moved to To Do 92.
 78. ~~`WMI` (Windows) to `pywin32`~~: done 2026-10-02, **ruled by
     designer**. Its one call, finding Thunderbird Portable's folder
     when an e-mail is dropped from it, is now `pywin32`'s own WMI query
@@ -391,7 +391,47 @@ go at the end. Details live in the sections and documents linked.
     source). To analyse before the pull request: a newer Python for
     the Windows build (its Expat, wxPython 4.3.1's wheels, the
     embedded layout).
-83. `dbus-python` to Gio (was To Do 77), **put off by designer
+83. wxPython (the window toolkit): full analysis, **asked by designer
+    2026-10-03**: why it is there, its code and lines, what it does on
+    each platform, its size, and what replacing or removing it would
+    take. The 2026-10-02 review (P163) only noted it, unruled.
+84. PyGObject, `gi` (the AppIndicator tray, the GTK version in the
+    startup report, the text boxes' padding): full analysis, **asked by
+    designer 2026-10-03**: why it is there, its code and lines, what it
+    does on each platform, its size, and what replacing or removing it
+    would take. The 2026-10-02 review (P163) only noted it, unruled.
+85. pywin32 (Windows calls: Outlook's e-mail drop, Thunderbird
+    Portable's folder, folders and shortcuts, window styles, monitors):
+    full analysis, **asked by designer 2026-10-03**: why it is there,
+    its code and lines, what it does on each platform, its size, and
+    what replacing or removing it would take. The 2026-10-02 review
+    (P163) only noted it, unruled.
+86. keyring (saved passwords): full analysis, **asked by designer
+    2026-10-03**: why it is there, its code and lines, what it does on
+    each platform, its size, and what replacing or removing it would
+    take. The 2026-10-02 review (P163) only noted it, unruled.
+87. pyenchant (spell checking): full analysis, **asked by designer
+    2026-10-03**: why it is there, its code and lines, what it does on
+    each platform, its size, and what replacing or removing it would
+    take. The 2026-10-02 review (P163) only noted it, unruled.
+88. pywayland (Wayland windows and idle time): full analysis, **asked by
+    designer 2026-10-03**: why it is there, its code and lines, what it
+    does on each platform, its size, and what replacing or removing it
+    would take. The 2026-10-02 review (P163) only noted it, unruled.
+89. python-dateutil (dates in the CSV import): full analysis, **asked by
+    designer 2026-10-03**: why it is there, its code and lines, what it
+    does on each platform, its size, and what replacing or removing it
+    would take. The 2026-10-02 review (P163) only noted it, unruled.
+90. chardet (the CSV import's encoding guess): full analysis, **asked by
+    designer 2026-10-03**: why it is there, its code and lines, what it
+    does on each platform, its size, and what replacing or removing it
+    would take. The 2026-10-02 review (P163) only noted it, unruled.
+91. pyparsing (the bundled date expressions, `deltaTime`): full
+    analysis, **asked by designer 2026-10-03**: why it is there, its
+    code and lines, what it does on each platform, its size, and what
+    replacing or removing it would take. The 2026-10-02 review (P163)
+    only noted it, unruled.
+92. `dbus-python` to Gio (was To Do 77), **put off by designer
     2026-10-03** to the end of this refactor: no proposal until
     research shows it suits, without a regression, every supported
     system. Three calls use dbus-python: the startup report's tray
