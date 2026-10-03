@@ -123,7 +123,13 @@ class CSVReader(object):
         return reader
 
     def read(self, **kwargs):
-        with open(kwargs["filename"], "r", encoding=kwargs["encoding"]) as fp:
+        # As the wizard's preview showed it
+        with open(
+            kwargs["filename"],
+            "r",
+            encoding=kwargs["encoding"],
+            errors="replace",
+        ) as fp:
             rows = list(
                 self.createReader(fp, kwargs["dialect"], kwargs["hasHeaders"])
             )

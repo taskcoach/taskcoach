@@ -1766,16 +1766,22 @@ each with the recommended action, none ruled yet:
   but English; Japanese, Korean and Vietnamese with DD/MM chosen) on
   dateutil 2.8.1, 2.8.2 and 2.9.0; in the app on English and French
   systems, before and after, each date above.
-- P174. File > Import > CSV garbles Central European and Turkish
-  files on most builds (found 2026-10-03, To Do 90; checked in the app
-  on the branch with chardet 5.2, Debian 13; master's import fails
-  before its first page, P40): a Windows-1250 CSV with "Zapłacić
-  rachunek za prąd" shows and imports as "Zap³aciæ rachunek za pr¹d".
-  chardet 4.0 to 5.2 guess Windows-1252 or ISO-8859-1 for
-  Windows-1250, ISO-8859-2 and Windows-1254 files; 6.0 guesses
-  Windows-1250 for ISO-8859-2; 7.x reads all 36 samples right
-  ([DEPENDENCIES.md](DEPENDENCIES.md#chardet-to-do-90)). The wizard
-  has no encoding choice.
+- P174. ~~File > Import > CSV garbles Central European and Turkish
+  files on most builds~~: fixed 2026-10-03, **ruled by designer**
+  (master's import fails before its first page, P40). A Windows-1250
+  CSV with "Zapłacić rachunek za prąd" showed and imported as
+  "Zap³aciæ rachunek za pr¹d": chardet 4.0 to 6.0 guess wrong for
+  Windows-1250, ISO-8859-2 and Windows-1254 files
+  ([DEPENDENCIES.md](DEPENDENCIES.md#chardet-to-do-90)), and the
+  wizard had no encoding choice. Its first page now has an Encoding
+  choice of 22 encodings, set to chardet's guess (plain ASCII as UTF-8,
+  no guess as the system's, a guess not listed first); choosing one
+  reloads the preview. Preview and import read alike, bytes the
+  encoding cannot read as replacement characters, so a wrong choice
+  shows in the preview and no longer stops the wizard with an error.
+  Checked: `CSVImportWizardTest` (new, 6 tests, all fail before); in
+  the app with chardet 5.2, the file opens on Windows-1252 garbled,
+  Windows-1250 chosen shows and imports the five subjects right.
 - P175. Ubuntu 22.04 cannot run Task Coach from its .deb (found
   2026-10-03, To Do 91): Ubuntu 22.04's python3-pyparsing is 2.4.7,
   and the template grammar needs pyparsing 3 (with 2.4.7 the

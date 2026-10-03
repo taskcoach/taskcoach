@@ -12,6 +12,10 @@ section is the text of its GitHub release page
   file changed and resets the task's recurrence count; changing the
   recurrence keeps the count too, so "Stop after N recurrences"
   counts the recurrences already made.
+- File > Import > CSV has an Encoding choice, set to the guessed
+  encoding: a file that shows garbled in the preview (Central European
+  and Turkish files on most systems) imports right once its encoding
+  is chosen.
 - File > Import > CSV reads month names and AM/PM in the system's
   language as well as English; a date without its day or month
   imports empty instead of taking today's (a missing year is still

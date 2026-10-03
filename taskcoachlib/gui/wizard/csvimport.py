@@ -19,11 +19,68 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import meta
 from taskcoachlib.i18n import _
 import chardet
+import codecs
+import locale
 import wx
 import csv
 import io
 import wx.grid as gridlib
 import wx.adv as wiz
+
+
+def _encodings():
+    """The encodings the wizard offers: (Python codec, name, script)."""
+    return [
+        ("utf-8", "UTF-8", ""),
+        ("utf-8-sig", "UTF-8", _("with byte order mark")),
+        ("utf-16", "UTF-16", ""),
+        ("cp1252", "Windows-1252", _("Western European")),
+        ("iso8859-1", "ISO-8859-1", _("Western European")),
+        ("iso8859-15", "ISO-8859-15", _("Western European")),
+        ("mac-roman", "Mac Roman", _("Western European")),
+        ("cp1250", "Windows-1250", _("Central European")),
+        ("iso8859-2", "ISO-8859-2", _("Central European")),
+        ("cp1251", "Windows-1251", _("Cyrillic")),
+        ("koi8-r", "KOI8-R", _("Cyrillic")),
+        ("cp1253", "Windows-1253", _("Greek")),
+        ("cp1254", "Windows-1254", _("Turkish")),
+        ("cp1255", "Windows-1255", _("Hebrew")),
+        ("cp1256", "Windows-1256", _("Arabic")),
+        ("cp1257", "Windows-1257", _("Baltic")),
+        ("cp1258", "Windows-1258", _("Vietnamese")),
+        ("shift_jis", "Shift JIS", _("Japanese")),
+        ("euc_jp", "EUC-JP", _("Japanese")),
+        ("gb18030", "GB18030", _("Chinese, simplified")),
+        ("big5", "Big5", _("Chinese, traditional")),
+        ("euc_kr", "EUC-KR", _("Korean")),
+    ]
+
+
+def _codec(name):
+    """Python's own name for an encoding, or None if it has none."""
+    try:
+        return codecs.lookup(name).name
+    except (LookupError, TypeError):
+        return None
+
+
+def encoding_choices(guess):
+    """The encodings to offer, as (codec, label), and the guessed one's
+    index: chardet's guess, plain ASCII read as UTF-8, no guess as the
+    system's encoding; a guess not in the list comes first."""
+    choices = [
+        (_codec(codec), "%s (%s)" % (name, script) if script else name)
+        for codec, name, script in _encodings()
+    ]
+    codec = _codec(guess) if guess else None
+    if codec == "ascii":
+        codec = "utf-8"
+    codec = codec or _codec(locale.getpreferredencoding(False)) or "utf-8"
+    codecs_offered = [each for each, label in choices]
+    if codec not in codecs_offered:
+        choices.insert(0, (codec, guess or codec))
+        return choices, 0
+    return choices, codecs_offered.index(codec)
 
 
 class CSVDialect(csv.Dialect):
@@ -52,6 +109,9 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
         self.delimiter.Append(_("Semicolon"))
         self.delimiter.Append(_("Pipe"))
         self.delimiter.SetSelection(0)
+
+        # Chosen by the user when chardet's guess shows garbled
+        self.encoding_choice = wx.Choice(self)
 
         self.date = wx.Choice(self)
         self.date.Append(_("DD/MM (day first)"))
@@ -105,6 +165,14 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
         grid_sizer = wx.FlexGridSizer(0, 2, 0, 0)
 
         grid_sizer.Add(
+            wx.StaticText(self, wx.ID_ANY, _("Encoding")),
+            0,
+            wx.ALIGN_CENTRE_VERTICAL | wx.ALL,
+            3,
+        )
+        grid_sizer.Add(self.encoding_choice, 0, wx.ALL, 3)
+
+        grid_sizer.Add(
             wx.StaticText(self, wx.ID_ANY, _("Delimiter")),
             0,
             wx.ALIGN_CENTRE_VERTICAL | wx.ALL,
@@ -153,8 +221,15 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
 
         self.filename = filename
         with open(filename, "rb") as csv_file:
-            self.encoding = chardet.detect(csv_file.read())["encoding"]
+            guess = chardet.detect(csv_file.read())["encoding"]
+        self.encodings, index = encoding_choices(guess)
+        for codec, label in self.encodings:
+            self.encoding_choice.Append(label)
+        self.encoding_choice.SetSelection(index)
+        self.encoding = self.encodings[index][0]
         self.OnOptionChanged(None)
+
+        self.encoding_choice.Bind(wx.EVT_CHOICE, self.on_encoding_chosen)
 
         self.delimiter.Bind(wx.EVT_CHOICE, self.OnOptionChanged)
         self.quoteChar.Bind(wx.EVT_CHOICE, self.OnOptionChanged)
@@ -162,6 +237,10 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
         self.doubleQuote.Bind(wx.EVT_RADIOBUTTON, self.OnOptionChanged)
         self.escapeQuote.Bind(wx.EVT_RADIOBUTTON, self.OnOptionChanged)
         self.escapeChar.Bind(wx.EVT_TEXT, self.OnOptionChanged)
+
+    def on_encoding_chosen(self, event):
+        self.encoding = self.encodings[self.encoding_choice.GetSelection()][0]
+        self.OnOptionChanged(event)
 
     def OnOptionChanged(self, event):  # pylint: disable=W0613
         self.escapeChar.Enable(self.escapeQuote.GetValue())
@@ -188,7 +267,14 @@ class CSVImportOptionsPage(wiz.WizardPageSimple):
                 escapechar=escapechar,
             )
 
-            with open(self.filename, encoding=self.encoding, newline="") as fp:
+            # As the import reads it: bytes the encoding cannot read
+            # show as replacement characters, asking for another one
+            with open(
+                self.filename,
+                encoding=self.encoding,
+                errors="replace",
+                newline="",
+            ) as fp:
                 text = fp.read()
             reader = csv.reader(io.StringIO(text), dialect=self.dialect)
 

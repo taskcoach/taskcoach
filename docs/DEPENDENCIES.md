@@ -394,9 +394,10 @@ What a replacement loses, file by file (100 rows):
 reads every file chardet reads on any build.
 
 **Separate issue**: P174, Central European and Turkish files garbled
-by chardet 4.0 to 6.0 (every build but Windows, AppImage and Flatpak);
-its fix, an Encoding choice in the import wizard, is not part of this
-decision.
+by chardet 4.0 to 6.0 (every build but Windows, AppImage and
+Flatpak), fixed 2026-10-03: the import wizard has an Encoding choice,
+set to chardet's guess, which the user changes while looking at the
+preview.
 
 ---
 
