@@ -42,7 +42,6 @@ Requires:       python3-chardet
 Requires:       python3-dateutil
 Requires:       python3-pyparsing >= 3.0.0
 Requires:       python3-lxml
-Requires:       python3-pyxdg
 Requires:       python3-keyring
 Requires:       python3-numpy
 Requires:       python3-enchant

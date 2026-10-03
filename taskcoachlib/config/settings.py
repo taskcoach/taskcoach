@@ -27,6 +27,19 @@ import shutil
 from . import defaults
 from taskcoachlib.meta.debug import log_step
 
+
+def _xdg_dir(variable, default, mode=0o777):
+    """The application's folder in an XDG base directory, made when
+    missing: the variable's folder, or the default when it is unset or
+    empty (XDG Base Directory Specification)."""
+    path = os.path.join(
+        os.environ.get(variable) or os.path.expanduser(default), meta.name
+    )
+    if not os.path.isdir(path):
+        os.makedirs(path, mode)
+    return path
+
+
 # Reverse mapping: new namespaced icon IDs -> old legacy names.
 # Used only when legacystatusicons is True, to write old-format ini.
 _LEGACY_REVERSE_MAP = {
@@ -647,9 +660,7 @@ class Settings(CachingConfigParser):
     def pathToConfigDir(self, environ):
         try:
             if operating_system.isGTK():
-                from xdg import BaseDirectory
-
-                path = BaseDirectory.save_config_path(meta.name)
+                path = _xdg_dir("XDG_CONFIG_HOME", "~/.config", 0o700)
             elif operating_system.isMac():
                 path = os.path.expanduser("~/Library/Preferences")
             elif operating_system.isWindows():
@@ -670,9 +681,7 @@ class Settings(CachingConfigParser):
     def _pathToDataDir(self, *args, **kwargs):
         forceGlobal = kwargs.pop("forceGlobal", False)
         if operating_system.isGTK():
-            from xdg import BaseDirectory
-
-            path = BaseDirectory.save_data_path(meta.name)
+            path = _xdg_dir("XDG_DATA_HOME", "~/.local/share")
         elif operating_system.isMac():
             path = os.path.join(
                 os.path.expanduser("~/Library/Application Support"), meta.name

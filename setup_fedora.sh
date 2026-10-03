@@ -80,7 +80,6 @@ if command -v sudo &> /dev/null; then
         python3-chardet \
         python3-keyring \
         python3-pyparsing \
-        python3-pyxdg \
         python3-watchdog \
         libayatana-appindicator-gtk3 \
         libXScrnSaver \

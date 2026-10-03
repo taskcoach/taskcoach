@@ -16,7 +16,6 @@ depends=(
     'python-dateutil>=2.9.0'
     'python-pyparsing>=3.0.0'
     'python-lxml'
-    'python-pyxdg'
     'python-keyring'
     'python-numpy'
     'python-pyenchant'

@@ -132,7 +132,6 @@ def _log_required_packages():
         ("python-dateutil", "dateutil"),
         ("pyparsing", None),
         ("lxml", None),
-        ("pyxdg", "xdg"),
         ("keyring", None),
         ("numpy", None),
         ("squaremap", None),

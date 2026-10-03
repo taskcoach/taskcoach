@@ -53,7 +53,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | chardet (<5.2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | python-dateutil | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | keyring | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| pyxdg | distro | distro | distro | distro | distro | distro | bundled | bundled | — | — |
 | pyenchant | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | optional | — | — |
 | ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | bundled | — | — |

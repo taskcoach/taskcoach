@@ -302,10 +302,12 @@ go at the end. Details live in the sections and documents linked.
     section here, a `CHANGELOG.md`, the pull request). First entry:
     editing cells in place is off by default, after an upgrade too;
     Preferences > Features > Edit cells in place turns it on (To Do 69).
-74. Replace `pyxdg` with a few lines of ours (was P163). **Ruled by
-    designer 2026-10-02.** Two calls: the settings folder
-    (`$XDG_CONFIG_HOME` or `~/.config`) and the data folder
-    (`$XDG_DATA_HOME` or `~/.local/share`), Linux only.
+74. ~~Replace `pyxdg` with a few lines of ours (was P163)~~: done
+    2026-10-02, **ruled by designer**: `_xdg_dir()` in `settings.py`
+    ([SETTINGS.md](SETTINGS.md#persistence)); the package left every
+    build and setup script. Checked in the app against the base, with
+    the variables unset and set: the same folders, the settings one
+    readable by the user only.
 75. Remove `distro` (was P78). **Ruled by designer 2026-10-02.** Only
     `setup.py` imports it, to add the desktop file, AppStream file and
     icon to a Debian or Ubuntu install, which `debian/rules` installs

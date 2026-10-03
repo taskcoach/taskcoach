@@ -85,7 +85,6 @@ jobs:
             python3-dateutil \
             python3-pyparsing \
             python3-lxml \
-            python3-pyxdg \
             python3-keyring \
             python3-numpy
 

@@ -83,7 +83,6 @@ if command -v sudo &> /dev/null; then
         python3-chardet \
         python3-keyring \
         python3-pyparsing \
-        python3-pyxdg \
         python3-watchdog \
         python3-squaremap
     echo -e "${GREEN}✓ System packages installed${NC}"

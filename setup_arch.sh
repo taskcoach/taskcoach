@@ -77,7 +77,6 @@ if command -v sudo &> /dev/null; then
         python-chardet \
         python-keyring \
         python-pyparsing \
-        python-pyxdg \
         python-watchdog \
         libayatana-appindicator \
         libxss \

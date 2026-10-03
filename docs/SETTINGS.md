@@ -140,6 +140,13 @@ The only true defaults are in `defaults.defaults` (the Python dict in
 
 ### Persistence
 
+On Linux the INI file is in `$XDG_CONFIG_HOME/Task Coach`
+(`~/.config/Task Coach` when unset or empty), readable by the user
+only; templates and backups are in `$XDG_DATA_HOME/Task Coach`
+(`~/.local/share/Task Coach`). `_xdg_dir()` in `settings.py` finds
+them, in place of the pyxdg package (To Do 74 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
+
 The INI file is written to disk **once at shutdown** by `Settings.save()`,
 called from `application.py`. All `Settings.set()` / `setboolean()` /
 `setvalue()` calls during the session update the in-memory ConfigParser

@@ -20,8 +20,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import ast
 import gc
+import shutil
+import stat
+import tempfile
 import test, sys, os, configparser, io
 import weakref
+from unittest import mock
 from taskcoachlib import config, meta
 
 
@@ -279,6 +283,51 @@ class SettingsFileLocationTest(SettingsTestCase):
         settings.setboolean("file", "saveinifileinprogramdir", True)
         settings.setboolean("file", "saveinifileinprogramdir", False)
         self.assertFalse(settings.in_program_dir)
+
+
+class XdgFoldersTest(SettingsTestCase):
+    """The settings and data folders on Linux: in the XDG base
+    directories, ~/.config and ~/.local/share when unset."""
+
+    def environment(self, **variables):
+        home = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, home)
+        patcher = mock.patch.dict(os.environ, HOME=home, **variables)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        return home
+
+    def test_settings_folder_in_xdg_config_home(self):
+        home = self.environment(XDG_CONFIG_HOME="")
+        os.environ["XDG_CONFIG_HOME"] = os.path.join(home, "settings")
+        path = self.settings.pathToConfigDir(os.environ)
+        self.assertEqual(os.path.join(home, "settings", meta.name), path)
+        # Readable by the user only
+        self.assertEqual(0o700, stat.S_IMODE(os.stat(path).st_mode))
+
+    def test_settings_folder_without_xdg_config_home(self):
+        home = self.environment(XDG_CONFIG_HOME="")
+        self.assertEqual(
+            os.path.join(home, ".config", meta.name),
+            self.settings.pathToConfigDir(os.environ),
+        )
+
+    def test_data_folder_in_xdg_data_home(self):
+        home = self.environment(XDG_DATA_HOME="")
+        os.environ["XDG_DATA_HOME"] = os.path.join(home, "data")
+        self.assertEqual(
+            os.path.join(home, "data", meta.name, "templates"),
+            self.settings.pathToTemplatesDir(),
+        )
+
+    def test_data_folder_without_xdg_data_home(self):
+        home = self.environment(XDG_DATA_HOME="")
+        path = self.settings.pathToTemplatesDir()
+        self.assertEqual(
+            os.path.join(home, ".local", "share", meta.name, "templates"),
+            path,
+        )
+        self.assertTrue(os.path.isdir(path))
 
 
 class SettingsLifetimeTest(test.TestCase):

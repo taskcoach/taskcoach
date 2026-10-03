@@ -120,7 +120,6 @@ install_dependencies() {
         "python-dateutil>=2.9.0" \
         "pyparsing>=3.0.0" \
         lxml \
-        pyxdg \
         keyring \
         numpy \
         "squaremap>=1.0.5" \

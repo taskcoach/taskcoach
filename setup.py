@@ -92,7 +92,6 @@ install_requires = [
     "python-dateutil",
     "pyparsing>=3.0.0",  # pyparsing 3 API, every supported distro has it
     "lxml",
-    "pyxdg",
     "keyring",
     "numpy",  # Pinned to 1.x in pip-based builds only (see build workflows)
     "pyenchant>=3.2.0",  # Spell checking for text fields

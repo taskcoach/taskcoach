@@ -74,7 +74,6 @@ if command -v sudo &> /dev/null; then
         python3-chardet \
         python3-keyring \
         python3-pyparsing \
-        python3-xdg \
         python3-venv \
         python3-watchdog \
         python3-squaremap

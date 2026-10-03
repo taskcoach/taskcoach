@@ -35,7 +35,6 @@ REQUIREMENTS=(
     "python-dateutil>=2.9.0"
     "pyparsing>=3.0.0"
     "lxml"
-    "pyxdg"
     "keyring"
     # numpy: the other builds pin <2 (numpy 1.26.4, the final 1.x), but that
     # release only ships wheels for Python 3.9-3.12 and the GNOME runtime is
