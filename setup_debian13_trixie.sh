@@ -165,7 +165,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "desktop" "watchdog"; do
+for pkg in "watchdog"; do
     echo -n "  - $pkg... "
     if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"

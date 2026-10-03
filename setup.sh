@@ -300,7 +300,7 @@ main() {
     # Test 3: Test key packages
     echo "Testing key packages..."
     FAILED=0
-    for pkg in "desktop"; do
+    for pkg in "watchdog"; do
         echo -n "  - $pkg... "
         if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
             echo -e "${GREEN}✓${NC}"

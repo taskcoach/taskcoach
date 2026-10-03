@@ -1541,6 +1541,13 @@ each with the recommended action, none ruled yet:
   comes from the window manager or GTK (no Python caller in the
   logged stack). Not traced further.
 - P163. Moved to To Do 74 to 81.
+- P164. ~~Five setup scripts stopped before the end~~: fixed
+  2026-10-02, the same on master. `setup.sh` and the Arch, Debian 13,
+  Ubuntu 22.04 and 24.04 scripts checked that the `desktop` package
+  imports, which #132 removed: after installing everything they
+  printed "desktop... ✗ Failed" and "Some packages failed to import"
+  and exited with an error. They now check `watchdog`, installed on
+  every path (found with To Do 75).
 
 ## Views on the Effective Styles
 
