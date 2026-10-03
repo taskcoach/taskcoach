@@ -1698,6 +1698,17 @@ each with the recommended action, none ruled yet:
   there and rewrites the user's `backups.xml` (the backups of the
   user's own files stay listed). The harness could point the data and
   settings folders to a temporary one for the run.
+- P168. Opening the editor of a task that has recurred changes the task
+  (found 2026-10-03 in the app check of To Do 70; master the same):
+  double-click such a task, change nothing; the Edit menu shows "Undo
+  change recurrence of ..." and the file is marked changed, the task's
+  modification date is now, and a save drops its recurrence count
+  (`count="5"` gone). The count is what "Stop after N recurrences"
+  checks: such a task then recurs N more times. Seen with a yearly task
+  that had recurred 5 times; the code does it for any task whose count
+  is not 0. Cause: the editor's recurrence field builds the recurrence
+  without its count (`RecurrenceEntry.GetValue()`), and an event from
+  it as the editor opens writes that back.
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**
