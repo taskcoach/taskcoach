@@ -945,10 +945,13 @@ each with the recommended action, none ruled yet:
   six at a time all started), reopened the same day: the third of
   three test files run one after another, each under its own
   `xvfb-run -a`, failed this way, as did single files in full runs
-  (`LeakTest.py`, `TaskStatusTest.py`, `ListCtrlTest.py`). Twice in a
-  row again that evening while another program's `xvfb-run -a`
-  displays (:99 to :101) were running; 12 starts right after did not
-  fail. Cause not traced.
+  (`LeakTest.py`, `TaskStatusTest.py`, `ListCtrlTest.py`). That
+  evening, with the machine loaded (load 25), about one test file start
+  in four failed. Xvfb starts without error each time (`xvfb-run -e`
+  log empty); the test process fails creating `test.py`'s `wx.App`,
+  before any test. A bare `wx.App`, alone or after `test.py`'s imports,
+  did not fail in 28 starts, nor `xdpyinfo` in 28: the trigger is in
+  `test.py`'s own start. Not traced further.
 - P91. Editors first open at 400x300, tabs scrolled, fields cut off
   ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md), Left). Pick a first size?
   2026-10-02: the editor's fitted size is 226x297 because its pages
