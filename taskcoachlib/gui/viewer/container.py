@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import taskcoachlib.gui.menu
 from taskcoachlib import patterns
 import wx.lib.agw.aui as aui
 import wx
@@ -76,9 +75,6 @@ class ViewerContainer(object):
         self.containerWidget.Bind(
             aui.EVT_AUI_PANE_ACTIVATED, self.on_page_changed
         )
-        self.containerWidget.Bind(
-            aui.EVT_AUI_PANE_FLOATED, self.on_page_floated
-        )
 
     def __getitem__(self, index):
         return self.viewers[index]
@@ -132,6 +128,9 @@ class ViewerContainer(object):
         pane_info = self.containerWidget.manager.GetPane(viewer_to_activate)
         if pane_info.IsNotebookPage():
             self.containerWidget.manager.ShowPane(viewer_to_activate, True)
+        if pane_info.IsFloating() and pane_info.frame:
+            # Its own window, in front for the keys to reach it
+            pane_info.frame.Raise()
         self.send_viewer_status_event()
 
     def __del__(self):
@@ -235,24 +234,3 @@ class ViewerContainer(object):
                 eventType=viewer.viewer_status_event_type(),
             )
             viewer.detach()
-
-    @staticmethod
-    def on_page_floated(event):
-        """Give floating pane accelerator keys for activating next and previous
-        viewer."""
-        viewer = event.GetPane().window
-        table = wx.AcceleratorTable(
-            [
-                (
-                    wx.ACCEL_CTRL,
-                    wx.WXK_PAGEDOWN,
-                    taskcoachlib.gui.menu.activate_next_viewer_id,
-                ),
-                (
-                    wx.ACCEL_CTRL,
-                    wx.WXK_PAGEUP,
-                    taskcoachlib.gui.menu.activate_previous_viewer_id,
-                ),
-            ]
-        )
-        viewer.SetAcceleratorTable(table)

@@ -1055,41 +1055,23 @@ each with the recommended action, none ruled yet:
   removed `MainWindow.advanceSelection()` as unused, but the PEP 8
   rename had already changed its one caller; the command now calls the
   viewer container directly.
-- P122. Ctrl+PgDn and Ctrl+PgUp (View > Activate next and previous
-  viewer, also in Help) work in few places. Checked in the app
-  2026-10-02 on master and this branch, by where the focus is:
-  - task and category trees, docked or as tabs: taken as Page Down and
-    Page Up, the selection moves a page; neither the view nor the tab
-    changes.
-  - the Effort list, docked or floating: nothing. A floating pane's
-    own shortcuts send ids nothing is bound to (`UICommand` ignores
-    its `id` argument).
-  - the search box: nothing on master, where the command itself
-    failed (`AttributeError`, fixed here by 56eb732e8); on this branch
-    the next view becomes active. An in-place edit box: nothing on
-    master; on this branch the next view becomes active and the edit
-    box ends, keeping the typed text (P154).
-  - calendar, hierarchical calendar, timeline, square map and
-    statistics views: a click does not make them the active view, and
-    a floating one does not take the focus, so the keys move the task
-    view's selection a page.
-  - task editor, effort editor, Preferences: nothing; Ctrl+Tab and
-    Ctrl+Shift+Tab switch the tabs.
-  On this branch the View menu items work (on master they fail the
-  same way): they cycle the views in the order they were opened,
-  docked, tabbed and floating. A rule is proposed, not ruled.
-  Proposed 2026-10-02: the keys go to the next or previous page of the
-  window the focus is in, whatever control has it. In the main window
-  and floating views: the next or previous view, tabs and floating
-  views included, brought to the front with the focus. In tabbed
-  dialogs (editors, Preferences): the next or previous tab, with
-  Ctrl+Tab. Lists and text fields no longer take the keys as Page Down
-  and Page Up. The calendar, timeline, square map and statistics views
-  become the active view, with the focus, on a click. Floating views'
-  shortcuts reach the commands. Practice elsewhere: browsers,
-  spreadsheets and editors switch tabs with Ctrl+PgDn and Ctrl+PgUp;
-  Windows and GTK cycle panes with F6 and Shift+F6. Open: apply it,
-  and add F6 and Shift+F6?
+- P122. ~~Ctrl+PgDn and Ctrl+PgUp (View > Activate next and previous
+  viewer) worked in few places~~: fixed 2026-10-02, **ruled by
+  designer** (option A); the same on master. Lists took them as Page
+  Down and Page Up, text fields and in-place edit boxes swallowed
+  them, a floating view's own shortcuts sent ids nothing was bound
+  to, the editors and Preferences ignored them, and a click in the
+  calendars, timeline, square map or statistics did not make that view
+  the active one. Now the keys go to the next or previous page of the
+  window the focus is in: views in the main window and its floating
+  views, tabs in a dialog; a click with either button activates any
+  view ([MENUS.md](MENUS.md#pages-ctrlpgdn-and-ctrlpgup)). Checked in
+  the app with all views open: from a task row (PgDn alone still
+  pages), the search box (its text kept), an in-place edit box (its
+  text saved), a floating Categories view (and back to it, brought to
+  the front), the task editor and Preferences (both ways, wrapping
+  round); clicks and right-clicks in each view. F6 and Shift+F6 not
+  added: not asked for. Found on the way: P160 to P162.
 - P123. ~~Enter in the search box also opened the editor of the
   selected task~~: fixed 2026-10-01, the same on master. The viewer's
   accelerator table (Return, Ctrl+X/C/V, Ctrl+Del) took those keys
@@ -1457,6 +1439,30 @@ each with the recommended action, none ruled yet:
   2026-10-02). Where the desktop needs AppIndicator (GNOME, KDE on
   Wayland) it runs without a tray icon. Bundle them (GObject
   introspection and the typelibs), or document the limit?
+- P160. Making another view active freezes the window for 0.6 to
+  1.6 s with all views open (Xvfb, the same before this branch's
+  change; master has the same code): clicking from
+  the Tasks list into the Categories list 0.65 s, View > Activate next
+  viewer 1.6 s. AGW AUI's `RefreshCaptions()` repaints each pane
+  caption with `Update()`, about 0.1 s each with seven views, and a
+  switch from the menu or the keys runs it twice: the view's focus
+  activates the pane again. Measured 2026-10-02 (P122) with a timed
+  copy of `RefreshCaptions()`; slower when the machine is loaded.
+- P161. A calendar view squeezed to no height prints
+  `wxAssertionError ... invalid bitmap size` from
+  `wxevents.py` `_on_paint` (`wx.Bitmap(vw, vh)`) on each paint, the
+  same before P122's change (P14, closed as not reproduced): seen
+  2026-10-02 with all views open, six stacked in the right column,
+  the Calendar pane's drawing area 0 px high. Steps on master to
+  write down with the fix.
+- P162. After a click in a floating view the keyboard focus goes
+  back and forth between it and the main window for a second or two
+  (openbox, 2026-10-02, the same before P122's change): a floating
+  Categories list ends with the focus; a floating Timeline, which
+  takes none on a click, ends with the main window's, so the keys
+  reach the main window's active view. The return to the main window
+  comes from the window manager or GTK (no Python caller in the
+  logged stack). Not traced further.
 
 ## Views on the Effective Styles
 

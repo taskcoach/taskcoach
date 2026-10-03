@@ -40,6 +40,9 @@ class MockWxApp(object):
     def SetTopWindow(self, *args):
         pass
 
+    def Bind(self, *args, **kwargs):
+        pass
+
 
 class App(application.Application):
     def __init__(self, args=None):  # pylint: disable=W0231

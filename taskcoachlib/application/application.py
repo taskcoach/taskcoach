@@ -695,6 +695,10 @@ class Application(object, metaclass=patterns.Singleton):
 
         from taskcoachlib.gui.mainwindow import MainWindow
         from taskcoachlib.gui.iocontroller import IOController
+        from taskcoachlib.gui import pagekeys
+
+        # Ctrl+PgDn and Ctrl+PgUp turn the page of the window in use
+        pagekeys.install(self.__wx_app)
 
         # Synthetic icons are now registered during gui.init(), so no
         # separate init is needed

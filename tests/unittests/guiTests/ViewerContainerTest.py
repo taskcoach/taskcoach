@@ -78,6 +78,16 @@ class DummyCloseEvent(DummyEvent):
         super().__init__(DummyPane(window))
 
 
+class ClickableWidget(dummy.DummyWidget):
+    Bind = wx.Frame.Bind  # The viewer's clicks bound on it
+
+
+class ViewerWithClickableWidget(dummy.ViewerWithDummyWidget):
+    def createWidget(self):
+        super().createWidget().Destroy()
+        return ClickableWidget(self)
+
+
 class ViewerContainerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
@@ -96,7 +106,7 @@ class ViewerContainerTest(test.wxTestCase):
 
     def createViewer(self, settingsSection):
         self.settings.add_section(settingsSection)
-        return dummy.ViewerWithDummyWidget(
+        return ViewerWithClickableWidget(
             self.mainWindow,
             self.taskFile,
             self.settings,
@@ -118,6 +128,25 @@ class ViewerContainerTest(test.wxTestCase):
 
     def testChangePage_ChangesActiveViewer(self):
         self.container.activate_viewer(self.viewer2)
+        self.assertEqual(self.viewer2, self.container.active_viewer())
+
+    def click(self, window, event_type=wx.wxEVT_LEFT_DOWN):
+        event = wx.MouseEvent(event_type)
+        event.SetEventObject(window)
+        window.GetEventHandler().ProcessEvent(event)
+        test.settle()
+
+    def test_a_click_in_a_views_widget_makes_it_the_active_view(self):
+        # The calendars, timeline and square map take no focus
+        self.click(self.viewer2.widget)
+        self.assertEqual(self.viewer2, self.container.active_viewer())
+
+    def test_a_right_click_in_a_views_widget_makes_it_the_active_view(self):
+        self.click(self.viewer2.widget, wx.wxEVT_RIGHT_DOWN)
+        self.assertEqual(self.viewer2, self.container.active_viewer())
+
+    def test_a_right_click_beside_the_widget_makes_it_the_active_view(self):
+        self.click(self.viewer2, wx.wxEVT_RIGHT_DOWN)
         self.assertEqual(self.viewer2, self.container.active_viewer())
 
     def paste_as_subitem(self, viewer):

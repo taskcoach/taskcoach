@@ -354,6 +354,31 @@ amount field's (`NumericCtrl`) give the amount.
 Undo and Redo are enabled whenever a text field has focus (it takes the
 key for its own history) or the task history has a step.
 
+### Pages: Ctrl+PgDn and Ctrl+PgUp
+
+**Ruled by designer 2026-10-02** (P122 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)):
+the keys go to the next and previous page of the window the focus is
+in, whatever control has it, so a list no longer takes them as Page
+Down and Page Up and a text field no longer swallows them:
+
+- the main window and its floating views: the next or previous view,
+  in the order the views were opened, docked, tabbed and floating; a
+  floating one is brought to the front with the focus.
+- a dialog with tabs (the editors, Preferences): the next or previous
+  tab, wrapping round, as Ctrl+Tab does.
+
+`gui/pagekeys.py` takes them with `EVT_CHAR_HOOK` on the app, before
+the focused control; the View menu's "Activate next/previous viewer"
+items still show the keys. F6
+and Shift+F6 (the Windows and GTK pane keys) were not added: not asked
+for.
+
+A click with either button anywhere in a view makes it the active
+view (`Viewer._bind_activation_events()`): a list takes the focus on
+a click, the calendars, timeline, square map and statistics take none
+and are made active by the click itself.
+
 ---
 
 ## Key Files
@@ -364,6 +389,7 @@ key for its own history) or the task history has a step.
 | `taskcoachlib/gui/uicommand/uicommand.py` | Concrete commands with `enabled()` overrides |
 | `taskcoachlib/gui/uicommand/mixin_uicommand.py` | `PopupButtonMixin` (toolbar popup menu behavior) |
 | `taskcoachlib/gui/menu.py` | `Menu.DestroyItem()` unbinds an item's handlers |
+| `taskcoachlib/gui/pagekeys.py` | Ctrl+PgDn and Ctrl+PgUp turn the page of the window in use |
 | `taskcoachlib/gui/viewer/base.py` | `has_selection` property, `is_tree_viewer()`, selection signals |
 | `taskcoachlib/gui/toolbar.py` | `_Toolbar.DoIdleUpdate()` skips AGW's idle loop |
 | `taskcoachlib/application/application.py` | `SetUpdateInterval(-1)`: no update events in idle time |
