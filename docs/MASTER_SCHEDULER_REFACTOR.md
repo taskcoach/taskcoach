@@ -335,7 +335,14 @@ go at the end. Details live in the sections and documents linked.
     composed once per size and kept. Timed in the app both ways,
     median of 20 on the loaded machine: numpy 1.3 to 1.8 ms an icon,
     the same on `bytes` 1.05 to 1.4 ms, the same pixels; numpy's probe
-    costs 0.4 to 0.6 s at every start. Replace?
+    costs 0.4 to 0.6 s at every start. Every other icon (the lists'
+    status, category and item icons, toolbars, menus, editors, the
+    icon picker) is a file read by `wx.Image`, no numpy: counted in the
+    app with all views open, Expand all, Preferences, a task editor and
+    the icon picker scrolled through, 1,718 icons were read from files
+    and numpy ran for the two filter buttons shown, once each. No
+    library we use imports numpy (only wx's plot and floatcanvas, which
+    Task Coach does not use). Replace?
 77. `dbus-python` to Gio (was P83). Three calls: the startup report's
     tray check (is `org.kde.StatusNotifierWatcher` on the session
     bus?) and two Idle time notice methods (GNOME's
