@@ -68,7 +68,6 @@ defaults = {
         "calendarviewercount": "0",
         "hierarchicalcalendarviewercount": "0",
         "taskstatsviewercount": "0",
-        "taskinterdepsviewercount": "0",  # Number of interdep viewers in main window
         # Language and locale, maybe set externally (e.g. by PortableApps):
         "language": "",
         # Language and locale as set by user via preferences, overrides language:
@@ -150,22 +149,6 @@ defaults = {
         "hidecompletedtasks": "False",
         "hidecompositetasks": "False",
         "piechartangle": "30",
-    },
-    "taskinterdepsviewer": {
-        "title": "",
-        "toolbarperspective": "Separator,Spacer,ViewerHideTasks_completed,ViewerHideTasks_inactive,ResetFilter,Search",
-        "searchfilterstring": "",
-        "searchfiltermatchcase": "False",
-        "searchfilterincludesubitems": "False",
-        "searchdescription": "False",
-        "regularexpression": "False",
-        "hideinactivetasks": "False",
-        "hidelatetasks": "False",
-        "hideactivetasks": "False",
-        "hideduesoontasks": "False",
-        "hideoverduetasks": "False",
-        "hidecompletedtasks": "False",
-        "hidecompositetasks": "False",
     },
     "prerequisiteviewerintaskeditor": {
         "title": "",  # User supplied viewer title

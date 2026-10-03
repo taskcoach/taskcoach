@@ -213,6 +213,25 @@ class SettingsIOTest(SettingsTestCase):
             ),
         )
 
+    def test_the_retired_dependency_graph_view_is_dropped(self):
+        self.fakeFile.write(
+            "[view]\ntaskinterdepsviewercount = 2\n"
+            "[taskinterdepsviewer]\ntitle = Graph\n"
+            "[taskinterdepsviewer1]\ntitle = Another\n"
+        )
+        self.fakeFile.seek(0)
+        self.settings.read_file(self.fakeFile)
+        self.settings._remove_obsolete_settings()
+        self.assertEqual(
+            (False, False, False, True),
+            (
+                self.settings.has_option("view", "taskinterdepsviewercount"),
+                self.settings.has_section("taskinterdepsviewer"),
+                self.settings.has_section("taskinterdepsviewer1"),
+                self.settings.has_section("taskviewer"),
+            ),
+        )
+
 
 class SettingsObservableTest(SettingsTestCase):
     def setUp(self):

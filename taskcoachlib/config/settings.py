@@ -267,7 +267,10 @@ class Settings(CachingConfigParser):
         ("export", "csv_selectiononly"),
         ("export", "ical_selectiononly"),
         ("export", "todotxt_selectiononly"),
+        ("view", "taskinterdepsviewercount"),
     )
+    # Retired views: their template section and numbered instances
+    _OBSOLETE_VIEWERS = ("taskinterdepsviewer",)
 
     def _remove_obsolete_settings(self):
         """Drop from an old INI file the options nothing reads."""
@@ -277,6 +280,8 @@ class Settings(CachingConfigParser):
         for section in self.sections():
             if section == "effortdialog" or "dialog_with_" in section:
                 self.remove_option(section, "parent_offset")
+            if section.rstrip("0123456789") in self._OBSOLETE_VIEWERS:
+                self.remove_section(section)
 
     def _fixValuesFromOldIniFiles(self, section, option, result):
         """Try to fix settings from old TaskCoach.ini files that are no longer

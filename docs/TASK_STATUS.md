@@ -411,7 +411,7 @@ All subscribe to `statusChangedEventType` for refresh.
 | `hideoverduetasks` | `domain/task/filter.py` | Hides tasks where `computedStatus() == overdue` |
 | `hidecompletedtasks` | `domain/task/filter.py` | Hides tasks where `computedStatus() == completed` |
 
-These are per-viewer settings (taskviewer, taskstatsviewer, taskinterdepsviewer, squaretaskviewer, timelineviewer, calendarviewer, hierarchicalcalendarviewer).
+These are per-viewer settings (taskviewer, taskstatsviewer, squaretaskviewer, timelineviewer, calendarviewer, hierarchicalcalendarviewer).
 
 ### Event Types That Affect Status
 

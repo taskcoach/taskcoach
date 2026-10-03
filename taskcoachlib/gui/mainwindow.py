@@ -446,7 +446,6 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.settings.set("view", "calendarviewercount", "0")
         self.settings.set("view", "hierarchicalcalendarviewercount", "0")
         self.settings.set("view", "taskstatsviewercount", "0")
-        self.settings.set("view", "taskinterdepsviewercount", "0")
 
         # Clear saved perspective
         self.settings.set("view", "perspective", "")
@@ -459,11 +458,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             if pane.IsToolbar():
                 continue
             name = pane.name
-            if (
-                "taskviewer" in name
-                and "stats" not in name
-                and "interdeps" not in name
-            ):
+            if "taskviewer" in name and "stats" not in name:
                 pane.dock_direction = aui.AUI_DOCK_CENTER
                 pane.dock_layer = 0
                 pane.dock_row = 0

@@ -613,21 +613,6 @@ class ViewViewerMenu(Menu):
                 **kwargs
             ),
         ]
-        try:
-            import igraph
-        except ImportError:
-            pass
-        else:
-            viewViewerCommands.append(
-                ViewViewer(
-                    menu_text=_("&Dependency Graph"),
-                    help_text=_(
-                        "Open a new tab with a viewer that dependencies between weighted tasks over time"
-                    ),
-                    viewerClass=taskcoachlib.gui.viewer.TaskInterdepsViewer,
-                    **kwargs
-                )
-            )
         self.appendUICommands(*viewViewerCommands)
 
 

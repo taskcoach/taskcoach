@@ -167,7 +167,9 @@ At startup, `Settings.__init__()` runs:
 3. `_migrateOldSettingNames()` renames options, and
    `_remove_obsolete_settings()` drops the ones no release reads
    (`_OBSOLETE_SETTINGS`), so an old INI file carries neither forward.
-   An option retired from `defaults.py` goes on that list.
+   An option retired from `defaults.py` goes on that list; a retired
+   view goes on `_OBSOLETE_VIEWERS`, which drops its template section
+   and numbered instances (the Dependency Graph's, P82).
 
 After step 2, ConfigParser contains both the original template sections
 (possibly overwritten by INI values from instance 0) and all viewer

@@ -932,22 +932,15 @@ each with the recommended action, none ruled yet:
   build starts `launcher.pyw`). Checked by installing with pip:
   `Requires-Python: >=3.10`, classifiers 3.10 to 3.14.
 - P81. Moved to To Do 79.
-- P82. `igraph` is declared nowhere, so the Dependency Graph viewer is
-  hidden in every package. Analysed 2026-10-02: with `igraph` installed
-  View > New viewer offers Dependency Graph (a picture of the tasks'
-  prerequisites drawn by `igraph.plot`, which also needs a cairo
-  binding), and choosing it shows nothing: `graph.degree(type="in")`
-  raises `TypeError` with the `igraph` Debian 13 ships (0.11.8) and
-  the current 1.0 (the argument is now `mode`); the same on master.
-  igraph 0.9 (Ubuntu 22.04's) still took `type`; 0.10 removed it
-  (Debian 12 ships 0.10.4). Without igraph, as in every package and in
-  the installed 2.0.2.26 here, the menu item does not exist; no test
-  covers the view. It came from upstream 1.4.4 (2016), when upstream's
-  Fedora package required igraph.
-  Options: retire the view (its code, menu entry and settings; the
-  section in users' settings files dropped on load), or fix it and
-  declare `igraph` (5.7 MB) as optional in the packages and bundled
-  builds. Retire it?
+- P82. ~~The Dependency Graph view~~: retired 2026-10-03, **ruled by
+  designer**. It needed `igraph`, which no package installs, so no
+  install offered it, and with the `igraph` of Debian 12 and later
+  (0.10 removed an argument it used) it failed as it opened; the same
+  on master. Its view, menu entry and default settings are gone; an
+  old settings file's sections for it are dropped on load
+  ([SETTINGS.md](SETTINGS.md#persistence)). Checked in the app with a
+  settings file holding it: no error, no menu entry, and the file
+  saved on quit no longer has it.
 - P83. Moved to To Do 77.
 - P84. Build inputs adrift: `scripts/build-*.sh` differ from CI; the
   spec's `Source0` names a `main` branch; PKGBUILD leftovers; an
