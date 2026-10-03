@@ -593,6 +593,46 @@ class MarkCompletedCommandTest(CommandWithChildrenTestCase):
         )
 
 
+class EditRecurrenceCommandTest(TaskCommandTestCase):
+    """A new recurrence keeps how many times each task has recurred:
+    "Stop after N recurrences" counts them (P168)."""
+
+    def setUp(self):
+        super().setUp()
+        self.taskList.append(self.task2)
+        for each, count in ((self.task1, 3), (self.task2, 5)):
+            each.set_recurrence(
+                date.Recurrence("weekly", maximum=10, count=count)
+            )
+        command.EditRecurrenceCommand(
+            self.taskList,
+            [self.task1, self.task2],
+            newValue=date.Recurrence("daily", maximum=10),
+        ).do()
+
+    def test_each_task_keeps_its_count(self):
+        self.assertEqual(
+            [("daily", 3), ("daily", 5)],
+            [
+                (each.recurrence().unit, each.recurrence().count)
+                for each in (self.task1, self.task2)
+            ],
+        )
+
+    def test_each_task_gets_its_own_recurrence(self):
+        self.assertIsNot(self.task1.recurrence(), self.task2.recurrence())
+
+    def test_undo(self):
+        self.undo()
+        self.assertEqual(
+            [("weekly", 3), ("weekly", 5)],
+            [
+                (each.recurrence().unit, each.recurrence().count)
+                for each in (self.task1, self.task2)
+            ],
+        )
+
+
 class EditPercentageCompleteTest(TaskCommandTestCase):
     def testEditPercentageComplete(self):
         self.editPercentageComplete([self.task1])

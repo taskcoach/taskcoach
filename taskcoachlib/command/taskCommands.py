@@ -548,7 +548,10 @@ class EditRecurrenceCommand(base.BaseCommand):
     def do_command(self):
         super().do_command()
         for item in self.items:
-            item.set_recurrence(self.__newRecurrence)
+            # Each task keeps how many times it has recurred
+            recurrence = self.__newRecurrence.copy()
+            recurrence.count = item.recurrence().count
+            item.set_recurrence(recurrence)
 
 
 class EditPercentageCompleteCommand(EffortCommand):

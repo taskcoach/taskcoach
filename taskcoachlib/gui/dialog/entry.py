@@ -823,6 +823,9 @@ class RecurrenceEntry(wx.Panel):
         wx.PostEvent(self, RecurrenceEntryEvent())
 
     def SetValue(self, recurrence):
+        # How many times the task has recurred: no field shows it, and
+        # "Stop after" counts it
+        self._count = recurrence.count
         index = {"": 0, "daily": 1, "weekly": 2, "monthly": 3, "yearly": 4}[
             recurrence.unit
         ]
@@ -869,7 +872,8 @@ class RecurrenceEntry(wx.Panel):
             4: "yearly",
         }
         kwargs = dict(
-            unit=recurrenceDict[self._recurrencePeriodEntry.Selection]
+            unit=recurrenceDict[self._recurrencePeriodEntry.Selection],
+            count=self._count,
         )
         if self._maxRecurrenceCheckBox.IsChecked():
             kwargs["maximum"] = self._maxRecurrenceCountEntry.Value

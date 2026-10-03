@@ -463,6 +463,49 @@ class OpeningChangesNothingTest(TaskEditorTestCase):
         self.assertEqual([], self.history.get_history())
 
 
+class OpeningRecurredTaskChangesNothingTest(OpeningChangesNothingTest):
+    """A task that has recurred keeps how many times when its editor
+    opens: "Stop after N recurrences" counts them (P168)."""
+
+    def createTasks(self):
+        tasks = super().createTasks()
+        self.task.set_recurrence(
+            date.Recurrence("weekly", maximum=10, count=3)
+        )
+        return tasks
+
+    def test_opening_keeps_the_count(self):
+        wx.Yield()
+        self.assertEqual(3, self.task.recurrence().count)
+
+    def test_changing_the_frequency_keeps_the_count(self):
+        entry = self.editor._interior[1]._recurrenceEntry
+        entry._recurrenceFrequencyEntry.Value = 2
+        entry.onRecurrenceEdited()
+        wx.Yield()
+        recurrence = self.task.recurrence()
+        self.assertEqual((2, 3), (recurrence.amount, recurrence.count))
+
+
+class EditRecurrenceOfTwoTasksTest(TaskEditorSetterMixin, TaskEditorTestCase):
+    def getItems(self):
+        return self.tasks
+
+    def createTasks(self):
+        # pylint: disable=W0201
+        self.tasks = [task.Task("Task A"), task.Task("Task B")]
+        for each, count in zip(self.tasks, (3, 5)):
+            each.set_recurrence(date.Recurrence("weekly", count=count))
+        return self.tasks
+
+    def test_each_keeps_its_count(self):
+        self.set_recurrence(date.Recurrence("daily"))
+        self.assertEqual(
+            [("daily", 3), ("daily", 5)],
+            [(t.recurrence().unit, t.recurrence().count) for t in self.tasks],
+        )
+
+
 class AdjustDueModeTest(TaskEditorSetterMixin, TaskEditorTestCase):
     """The duration moves the due date when the start changes: the task
     keeps the duration only in Implicit mode."""

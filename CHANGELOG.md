@@ -8,6 +8,10 @@ section is the text of its GitHub release page
 
 - On Linux, New effort in the tray menu opens the effort editor; it
   did nothing.
+- Opening the editor of a task that has recurred no longer marks the
+  file changed and resets the task's recurrence count; changing the
+  recurrence keeps the count too, so "Stop after N recurrences"
+  counts the recurrences already made.
 - File > Import > CSV reads month names and AM/PM in the system's
   language as well as English; a date without its day or month
   imports empty instead of taking today's (a missing year is still

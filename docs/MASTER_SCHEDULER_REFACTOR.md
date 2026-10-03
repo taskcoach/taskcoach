@@ -1689,17 +1689,23 @@ each with the recommended action, none ruled yet:
   there and rewrites the user's `backups.xml` (the backups of the
   user's own files stay listed). The harness could point the data and
   settings folders to a temporary one for the run.
-- P168. Opening the editor of a task that has recurred changes the task
-  (found 2026-10-03 in the app check of To Do 70; master the same):
-  double-click such a task, change nothing; the Edit menu shows "Undo
-  change recurrence of ..." and the file is marked changed, the task's
-  modification date is now, and a save drops its recurrence count
-  (`count="5"` gone). The count is what "Stop after N recurrences"
-  checks: such a task then recurs N more times. Seen with a yearly task
-  that had recurred 5 times; the code does it for any task whose count
-  is not 0. Cause: the editor's recurrence field builds the recurrence
-  without its count (`RecurrenceEntry.GetValue()`), and an event from
-  it as the editor opens writes that back.
+- P168. ~~Opening the editor of a task that has recurred changes the
+  task~~: fixed 2026-10-03, **ruled by designer** (master the same).
+  A weekly task, "Stop after 10 recurrences", recurred 3 times: open
+  its editor, change nothing, close it; Edit showed "Undo change
+  recurrence", the file was marked changed and saved without
+  `count="3"`, so the task would recur 10 more times. The recurrence
+  field built the recurrence without its count, and the event its stop
+  date control posts as the editor opens wrote that back. The field
+  now keeps the count it was given, and Edit > recurrence keeps each
+  task's own count (several tasks edited at once each get their own
+  copy, no longer one shared object): changing a task's recurrence no
+  longer restarts "Stop after N" from zero, as every release did.
+  Checked: 6 new tests fail before (`TaskEditorTest`,
+  `TaskCommandsTest`); in the app on master and the branch before,
+  the branch after: opening and closing leave no Undo step and the
+  file unchanged; frequency raised to 2 then the task completed: dates
+  moved 2 weeks, count 4 of 10.
 - P169. ~~New effort in the tray menu on Linux does nothing~~: fixed
   2026-10-03, **ruled by designer** (master the same). The menu Linux
   gets (`AppIndicatorTaskBarIcon`, every GTK desktop) made its command
