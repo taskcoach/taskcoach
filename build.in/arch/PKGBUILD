@@ -33,7 +33,7 @@ optdepends=(
     'hunspell-en_us: English spell checking'
     'hunspell-en_gb: British English spell checking'
     'python-dbus: idle-time detection on GNOME/KDE Plasma 5 (Idle time notice)'
-    'python-pywayland: idle-time detection on Wayland/KDE Plasma 6 (Idle time notice)'
+    'python-pywayland: Idle time notice on Wayland (KDE Plasma 6, wlroots, COSMIC); tray hide on KDE Plasma Wayland'
 )
 # Note: squaremap is not in Arch repos, installed via pip at build time
 provides=('taskcoach')

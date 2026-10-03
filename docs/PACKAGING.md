@@ -45,7 +45,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | wxpython | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | pyparsing | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
-| chardet (<5.2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| chardet | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | python-dateutil | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | keyring | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | pyenchant | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
@@ -68,9 +68,12 @@ This table shows how dependencies are handled in **built packages** and **setup 
 - `—` = Not applicable for this platform
 
 **Note: `python3-dbus` / `python3-pywayland` are optional
-idle-detection bindings**, used only by the "Idle time notice"
-feature (off by default; guarded imports, degrade silently; see
-[IDLE.md](IDLE.md) for the binding-vs-C-library distinction). Only
+bindings** (guarded imports, degrade silently), mainly for the "Idle
+time notice" (off by default; see [IDLE.md](IDLE.md) for the
+binding-vs-C-library distinction). `python3-pywayland` also serves the
+tray's hide and restore on KDE Plasma Wayland
+([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)), and
+`python3-dbus` the start-up report's tray check (To Do 92). Only
 **core** `python3-pywayland` is needed: distro packages ship just the
 core `wayland` protocol, so the `ext-idle-notify-v1` binding is
 vendored in-tree (`taskcoachlib/thirdparty/ext_idle_notify_v1`); no

@@ -215,6 +215,7 @@ Key packages:
 - [FLATPAK.md](docs/FLATPAK.md) - Flatpak build details
 - [BUNDLED_TREE_WIDGET.md](docs/BUNDLED_TREE_WIDGET.md) - Task Coach's copy of wxPython's tree widget
 - [THIRD_PARTY_CODE.md](docs/THIRD_PARTY_CODE.md) - All bundled, copied and runtime-patched third-party code
+- [DEPENDENCIES.md](docs/DEPENDENCIES.md) - Why each third-party package is there, its use, size and alternatives
 
 ## Support
 

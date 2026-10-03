@@ -381,46 +381,44 @@ go at the end. Details live in the sections and documents linked.
     source). To analyse before the pull request: a newer Python for
     the Windows build (its Expat, wxPython 4.3.1's wheels, the
     embedded layout).
-83. wxPython (the window toolkit): full analysis, **asked by designer
-    2026-10-03**: why it is there, its code and lines, what it does on
-    each platform, its size, and what replacing or removing it would
-    take. The 2026-10-02 review (P163) only noted it, unruled.
-84. PyGObject, `gi` (the AppIndicator tray, the GTK version in the
-    startup report, the text boxes' padding): full analysis, **asked by
-    designer 2026-10-03**: why it is there, its code and lines, what it
-    does on each platform, its size, and what replacing or removing it
-    would take. The 2026-10-02 review (P163) only noted it, unruled.
-85. pywin32 (Windows calls: Outlook's e-mail drop, Thunderbird
-    Portable's folder, folders and shortcuts, window styles, monitors):
-    full analysis, **asked by designer 2026-10-03**: why it is there,
-    its code and lines, what it does on each platform, its size, and
-    what replacing or removing it would take. The 2026-10-02 review
-    (P163) only noted it, unruled.
-86. keyring (saved passwords): full analysis, **asked by designer
-    2026-10-03**: why it is there, its code and lines, what it does on
-    each platform, its size, and what replacing or removing it would
-    take. The 2026-10-02 review (P163) only noted it, unruled.
-87. pyenchant (spell checking): full analysis, **asked by designer
-    2026-10-03**: why it is there, its code and lines, what it does on
-    each platform, its size, and what replacing or removing it would
-    take. The 2026-10-02 review (P163) only noted it, unruled.
-88. pywayland (Wayland windows and idle time): full analysis, **asked by
-    designer 2026-10-03**: why it is there, its code and lines, what it
-    does on each platform, its size, and what replacing or removing it
-    would take. The 2026-10-02 review (P163) only noted it, unruled.
-89. python-dateutil (dates in the CSV import): full analysis, **asked by
-    designer 2026-10-03**: why it is there, its code and lines, what it
-    does on each platform, its size, and what replacing or removing it
-    would take. The 2026-10-02 review (P163) only noted it, unruled.
-90. chardet (the CSV import's encoding guess): full analysis, **asked by
-    designer 2026-10-03**: why it is there, its code and lines, what it
-    does on each platform, its size, and what replacing or removing it
-    would take. The 2026-10-02 review (P163) only noted it, unruled.
-91. pyparsing (the bundled date expressions, `deltaTime`): full
-    analysis, **asked by designer 2026-10-03**: why it is there, its
-    code and lines, what it does on each platform, its size, and what
-    replacing or removing it would take. The 2026-10-02 review (P163)
-    only noted it, unruled.
+83. wxPython: analysed 2026-10-03, **asked by designer**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#wxpython-to-do-83)): why, code,
+    platforms, size, replacing or removing it. Recommended: keep (the
+    whole interface). Open: the designer's ruling.
+84. PyGObject: analysed 2026-10-03, **asked by designer**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#pygobject-to-do-84)): why, code,
+    platforms, size, replacing or removing it. Recommended: keep (the
+    Linux tray). Open: the designer's ruling.
+85. pywin32: analysed 2026-10-03, **asked by designer**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#pywin32-to-do-85)): why, code,
+    platforms, size, replacing or removing it. Recommended: keep (the
+    Windows calls, the Outlook drop's COM above all). Open: the
+    designer's ruling.
+86. keyring: analysed 2026-10-03, **asked by designer**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#keyring-to-do-86)): why, code,
+    platforms, size, replacing or removing it. Recommended: keep (the
+    stored IMAP password). Open: the designer's ruling.
+87. pyenchant: analysed 2026-10-03, **asked by designer**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#pyenchant-to-do-87)): why, code,
+    platforms, size, replacing or removing it. Recommended: keep (spell
+    checking). Open: the designer's ruling.
+88. pywayland: analysed 2026-10-03, **asked by designer**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)): why, code,
+    platforms, size, replacing or removing it. Recommended: keep (the
+    Idle time notice on KDE 6, wlroots and COSMIC Wayland). Open: the
+    designer's ruling.
+89. python-dateutil: analysed 2026-10-03, **asked by designer**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#python-dateutil-to-do-89)): why,
+    code, platforms, size, replacing or removing it. Recommended: keep
+    (the CSV import's dates). Open: the designer's ruling.
+90. chardet: analysed 2026-10-03, **asked by designer**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#chardet-to-do-90)): why, code,
+    platforms, size, replacing or removing it. Recommended: keep (the
+    CSV import's encoding). Open: the designer's ruling.
+91. pyparsing: analysed 2026-10-03, **asked by designer**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#pyparsing-to-do-91)): why, code,
+    platforms, size, replacing or removing it. Recommended: keep
+    (template date expressions). Open: the designer's ruling.
 92. `dbus-python` to Gio (was To Do 77), **put off by designer
     2026-10-03** to the end of this refactor: no proposal until
     research shows it suits, without a regression, every supported
@@ -1702,6 +1700,16 @@ each with the recommended action, none ruled yet:
   makes its command with `effort_list=`, and `EffortNew` reads
   `effortList`, so it raises `KeyError` before any window opens. Not
   seen in the app: the test display has no tray to click.
+- P170. A template date that is only partly understood gives a wrong
+  date silently (found 2026-10-03 analysing pyparsing, To Do 91; master
+  the same): File > Edit templates, select "New task due tomorrow",
+  type "tomorrow at 15:00" as its due date: the field stays white
+  (accepted); OK, then New > New task from template > New task due
+  tomorrow: the task is due tomorrow at 00:00. "banana" turns the
+  field red. The templates dialog and the template reader take the
+  first expression that parses and ignore the rest
+  (`nlTimeExpression.parse_string` without `parse_all`), so "15:00"
+  alone is rejected while "2026-10-05" is read as today at 20:26.
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**
