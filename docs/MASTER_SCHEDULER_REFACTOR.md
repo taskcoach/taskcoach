@@ -968,12 +968,14 @@ each with the recommended action, none ruled yet:
   `set -e`, `|| true`, PowerShell's last exit code only); 7
   `action-gh-release@v1`, `cache@v4`; `fedora:39`; `checks.yml` on
   Python 3.11, the floor being 3.10. Recommended: fix.
-- P87. `AppTest.testAppProperties` skips unless the language is en_US,
-  and errors there (with 6 more tests). Recommended: rewrite.
-  2026-10-03: here (en_CA) it skips; with `LANG=en_US.UTF-8` it is the
-  one error: the test harness made a translator already and the test
-  builds an Application without dropping it, which the integration
-  tests' mock application does.
+- P87. ~~`AppTest.testAppProperties` skips unless the language is
+  en_US, and errors there~~: fixed 2026-10-03, **ruled by designer**.
+  The test harness made a translator already and the test built an
+  Application without dropping it, as the integration tests' mock
+  application does; it now drops it and runs in every language (en_CA,
+  en_US, fr_FR, de_DE, C). The full suite passes with
+  `LANG=en_US.UTF-8` too (the 6 more errors found in the audit are
+  gone).
 - P88. ~~Tests that checked nothing~~: fixed 2026-10-02, **asked by
   designer**. Four were skipped on GTK, so on the certified platform
   they never ran: the two column header menu tests (the menu waited

@@ -47,26 +47,21 @@ class AppTests(test.TestCase):
         self.settings = config.Settings(load=False)
         self.options = DummyOptions()
 
-    def testAppProperties(self):
-        if i18n.system_language() != "en_US":
-            # Somehow wx displays an error dialog box if en_US is not installed, when
-            # quit_application() calls ProcessIdle and I don't know how to get rid of it.
-            # I don't know how to find out if en_US is installed either, so skip if
-            # it's not the default.
-            self.skipTest("Locale is not en_US")
-        else:
-            # Normally I prefer one assert per test, but creating the app is
-            # expensive, so we do all the queries in one test method.
-            app = application.Application(
-                load_settings=False, load_task_file=False
-            )
-            wxApp = wx.GetApp()
-            self.assertEqual(meta.name, wxApp.GetAppName())
-            self.assertEqual(meta.author, wxApp.GetVendorName())
-            app.mainwindow._idleController.stop()
-            app.quit_application()
-            app.mainwindow.Destroy()
-            application.Application.deleteInstance()
+    def test_app_properties(self):
+        # The harness made a translator for the unit tests; the app
+        # makes its own, as at a real start (its guard stops a second)
+        i18n.Translator.deleteInstance()
+        # Creating the app is expensive: all the queries in one test
+        app = application.Application(
+            load_settings=False, load_task_file=False
+        )
+        wx_app = wx.GetApp()
+        self.assertEqual(meta.name, wx_app.GetAppName())
+        self.assertEqual(meta.author, wx_app.GetVendorName())
+        app.mainwindow._idleController.stop()
+        app.quit_application()
+        app.mainwindow.Destroy()
+        application.Application.deleteInstance()
 
     def assert_language(self, expected_language, locale=None, **environ):
         args = [self.options, self.settings]
