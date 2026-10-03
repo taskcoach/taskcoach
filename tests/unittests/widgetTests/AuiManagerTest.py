@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import weakref
+from unittest import mock
 
 import test
 import wx
@@ -46,6 +47,51 @@ class AuiManagerTestCase(test.wxTestCase):
         pane = Pane(self.window)
         self.window.add_pane(pane, "pane", "pane%d" % self.count, floating)
         return pane
+
+
+class ActivePaneTest(AuiManagerTestCase):
+    """Activating a pane marks the captions for the next paint instead
+    of repainting the window once per caption (docs/AUI.md)."""
+
+    def setUp(self):
+        super().setUp()
+        self.pane = self.add_pane()
+        self.add_pane()
+        test.settle()  # AUI updates the layout later
+        self.refreshed = []
+        for name, record in (
+            ("Refresh", lambda *args: self.refreshed.append(args)),
+            ("Update", mock.Mock()),
+        ):
+            patcher = mock.patch.object(self.window, name, record)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def captions(self):
+        return [
+            part.rect
+            for part in self.manager._uiparts
+            if part.type == part.typeCaption
+        ]
+
+    def test_no_repaint_at_once(self):
+        self.manager.ActivatePane(self.pane)
+        self.window.Update.assert_not_called()
+
+    def test_each_caption_marked_for_the_next_paint(self):
+        self.manager.ActivatePane(self.pane)
+        self.assertTrue(self.captions())
+        self.assertEqual(
+            [(True, rect) for rect in self.captions()], self.refreshed
+        )
+
+    def test_the_pane_is_active(self):
+        self.manager.ActivatePane(self.pane)
+        self.assertTrue(
+            self.manager.GetPane(self.pane).HasFlag(
+                self.manager.GetPane(self.pane).optionActive
+            )
+        )
 
 
 class FloatingPaneTest(AuiManagerTestCase):

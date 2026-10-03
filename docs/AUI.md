@@ -13,7 +13,8 @@ This document covers AUI-related topics for Task Coach, which uses wxPython's AG
 4. [Destroy Event](#destroy-event)
 5. [Managers Never Freed](#managers-never-freed)
 6. [Page Painted Over the Tabs](#page-painted-over-the-tabs)
-7. [Related Documentation](#related-documentation)
+7. [Captions Drawn at the Next Paint](#captions-drawn-at-the-next-paint)
+8. [Related Documentation](#related-documentation)
 
 ---
 
@@ -333,6 +334,39 @@ Found with the geometry trace ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing)).
 |------|---------|
 | `taskcoachlib/widgets/notebook.py` | `Notebook.SetSelection()` - freezes the notebook |
 | `wx/lib/agw/aui/auibook.py` | System file - `SetSelection()`, `AuiTabFrame.DoSizing()` |
+
+---
+
+## Captions Drawn at the Next Paint
+
+### Problem
+
+Making another view active froze the window for a second or more with
+all views open: a click from one list into another, View > Activate
+next viewer, Ctrl+PgDn (P160 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+
+### Root Cause
+
+AGW's `RefreshCaptions()`, run on each activation, repaints the
+window at once (`Update()`) after marking each caption, so seven
+views cost seven full repaints, about 0.1 s each on Xvfb and more on a
+loaded machine. A switch from the menu or the keys runs it twice: the
+view taking the focus activates its pane again.
+
+### Solution
+
+`_AuiManager.RefreshCaptions()` marks the captions only; they are
+drawn at the next paint, a moment later. Its other callers (a
+notebook tab's caption, a floating view activated, a caption drag)
+need no more.
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| `taskcoachlib/widgets/frame.py` | `_AuiManager.RefreshCaptions()` - no repaint at once |
+| `wx/lib/agw/aui/framemanager.py` | System file - `RefreshCaptions()`, `ActivatePane()` |
 
 ---
 

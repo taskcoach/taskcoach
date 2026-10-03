@@ -169,6 +169,14 @@ class _AuiManager(aui.AuiManager):
         if pane is not None and pane.window is window:
             self._action_pane = None
 
+    def RefreshCaptions(self):
+        # Drawn at the next paint: AGW repaints the window at once for
+        # each caption, a second or more with all views open
+        # (docs/AUI.md#captions-drawn-at-the-next-paint)
+        for part in self._uiparts:
+            if part.type == aui.AuiDockUIPart.typeCaption:
+                self._frame.Refresh(True, part.rect)
+
     def OnSysColourChanged(self, event):
         # The manager is pushed onto the frame's event handler stack;
         # without Skip() the frame and its children never see the event.

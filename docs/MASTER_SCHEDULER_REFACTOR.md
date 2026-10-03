@@ -1525,21 +1525,17 @@ each with the recommended action, none ruled yet:
   2026-10-02). Where the desktop needs AppIndicator (GNOME, KDE on
   Wayland) it runs without a tray icon. Bundle them (GObject
   introspection and the typelibs), or document the limit?
-- P160. Making another view active freezes the window for 0.6 to
-  1.6 s with all views open (Xvfb): clicking from the Tasks list into
-  the Categories list 0.65 s, View > Activate next viewer 1.6 s. The
-  same on master: the click 1.6 to 2.1 s on a loaded machine. AGW AUI's `RefreshCaptions()` repaints each pane
-  caption with `Update()`, about 0.1 s each with seven views, and a
-  switch from the menu or the keys runs it twice: the view's focus
-  activates the pane again. Measured 2026-10-02 (P122) with a timed
-  copy of `RefreshCaptions()`; slower when the machine is loaded.
-  Proposed: our AUI manager (`widgets/frame.py`) refreshes the
-  captions without forcing each repaint; they are drawn at the next
-  paint. Prototyped in a scratch copy, Ctrl+PgDn through four views,
-  back to back: 0.57 to 5.2 s per switch before, 0.00 to 0.03 s
-  after; the active caption follows a moment later. AUI's other
-  callers (a notebook tab's caption, a floating view activated, a
-  caption drag) only need that repaint. Apply it?
+- P160. ~~Making another view active froze the window~~: fixed
+  2026-10-02, **ruled by designer**; the same on master. With all
+  views open a click from one list into another, View > Activate next
+  viewer or Ctrl+PgDn froze it for 0.6 to 3 s: AGW's
+  `RefreshCaptions()` repainted the window once per caption, twice per
+  switch from the menu or the keys. Our AUI manager marks the captions
+  for the next paint instead ([AUI.md](AUI.md#captions-drawn-at-the-next-paint)).
+  Checked in the app, Ctrl+PgDn through four views on the loaded
+  machine, back to back: 0.8 to 3.0 s per switch before, 0.00 to
+  0.01 s after; two seconds after each switch the highlighted caption
+  is the active view's.
 - P161. A calendar view squeezed to no height prints
   `wxAssertionError ... invalid bitmap size` from
   `wxevents.py` `_on_paint` (`wx.Bitmap(vw, vh)`) on each paint, the
