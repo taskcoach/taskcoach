@@ -128,7 +128,7 @@ go at the end. Details live in the sections and documents linked.
     freed after the event loop
     ([DEFERRED_CALLS.md](DEFERRED_CALLS.md#end-of-life)).
 55. ~~Renames deferred as too wide~~: moved to
-    [Deferred or Will Not Do](#deferred-or-will-not-do), D1.
+    [Deferred and Will Not Do](#deferred-and-will-not-do), D1.
 56. ~~The macOS editor poll~~: removed 2026-09-29, **ruled by
     designer**. Its cause (Task Coach bug 1438, 2013): wxPython 2.8's
     Carbon port sent a synthetic Cancel that hid a background editor
@@ -331,7 +331,7 @@ go at the end. Details live in the sections and documents linked.
     ms with numpy, 1.05 to 1.4 ms without; the probe 0.4 to 0.6 s at
     each start. Checked in the app with numpy unimportable: the six
     icons byte for byte those of the base, no error.
-77. ~~`dbus-python` to Gio (was P83)~~: parked, D14.
+77. ~~`dbus-python` to Gio (was P83)~~: moved to To Do 82.
 78. ~~`WMI` (Windows) to `pywin32`~~: done 2026-10-02, **ruled by
     designer**. Its one call, finding Thunderbird Portable's folder
     when an e-mail is dropped from it, is now `pywin32`'s own WMI query
@@ -371,11 +371,36 @@ go at the end. Details live in the sections and documents linked.
     lxml, the templates but for their fresh ids. Parsing 10,000 tasks
     takes 152 ms instead of 110 ms, within a 16 s load.
 81. ~~`squaremap`~~: kept, D13.
+82. `dbus-python` to Gio (was To Do 77), **put off by designer
+    2026-10-03** to the end of this refactor: no proposal until
+    research shows it suits, without a regression, every supported
+    system. Three calls use dbus-python: the startup report's tray
+    check and the Idle time notice's GNOME (Mutter IdleMonitor) and KDE
+    Plasma 5 (freedesktop ScreenSaver) idle readings. A Gio prototype
+    matched the current code against stand-in services on a private
+    session bus (2026-10-03), which covers neither a real desktop nor
+    its versions. To research:
+    - each supported desktop and session (GNOME and KDE Plasma 5 and 6
+      on X11 and Wayland, XFCE, Cinnamon, MATE, LXQt, wlroots
+      compositors), on the oldest and newest supported releases, and
+      which idle reading each one gets;
+    - how Gio and dbus-python differ in what other projects that moved
+      report: errors, timeouts, a missing or restarted service, calls
+      from the window's main loop;
+    - the Mutter IdleMonitor and ScreenSaver interfaces across GNOME
+      and Plasma versions;
+    - the Flatpak (it allows `org.gnome.Mutter.IdleMonitor`,
+      `org.freedesktop.ScreenSaver` and
+      `org.kde.StatusNotifierWatcher` and bundles dbus-python), the
+      AppImage (no PyGObject, P159), and the PyGObject of Ubuntu 22.04,
+      the oldest.
 
-## Deferred or Will Not Do
+## Deferred and Will Not Do
 
-Moved out of the To Do list, **ruled by designer 2026-09-29**: pushed
-beyond this refactor or not done, and not reported as outstanding.
+Moved out of the To Do list, **ruled by designer 2026-09-29**: out of
+this refactor, deferred to a later project or not done, and not
+reported as outstanding. An item put off within this refactor goes to
+the end of the To Do list instead (**ruled by designer 2026-10-03**).
 Numbered D1, D2, ...
 
 - D1. Renames too wide for this refactor, from the PEP 8 review of
@@ -466,27 +491,6 @@ Numbered D1, D2, ...
   629-line module (BSD) draws the Task square map view; every build
   already installs or bundles it ([PACKAGING.md](PACKAGING.md)), and a
   copy would be drawing code of ours to maintain.
-- D14. `dbus-python` to Gio (was To Do 77), **parked by designer
-  2026-10-03**: no conclusion until research shows it suits, without a
-  regression, every supported system. Three calls use dbus-python: the
-  startup report's tray check and the Idle time notice's GNOME (Mutter
-  IdleMonitor) and KDE Plasma 5 (freedesktop ScreenSaver) idle
-  readings. A Gio prototype matched the current code against stand-in
-  services on a private session bus (2026-10-03), which covers neither
-  a real desktop nor its versions. To research before any proposal:
-  - each supported desktop and session (GNOME and KDE Plasma 5 and 6
-    on X11 and Wayland, XFCE, Cinnamon, MATE, LXQt, wlroots
-    compositors), on the oldest and newest supported releases, and
-    which idle reading each one gets;
-  - how Gio and dbus-python differ in what other projects that moved
-    report: errors, timeouts, a missing or restarted service, calls
-    from the window's main loop;
-  - the Mutter IdleMonitor and ScreenSaver interfaces across GNOME and
-    Plasma versions;
-  - the Flatpak (it allows `org.gnome.Mutter.IdleMonitor`,
-    `org.freedesktop.ScreenSaver` and `org.kde.StatusNotifierWatcher`
-    and bundles dbus-python), the AppImage (no PyGObject, P159), and
-    the PyGObject of Ubuntu 22.04, the oldest.
 
 ## Pre-existing Issues
 
@@ -562,7 +566,7 @@ In the app:
   it~~: fixed 2026-09-29. It hid only when the mouse moved or left
   the list; opening an editor now hides it and drops a pending one.
 - P16. ~~The GTK warning at every launch~~: not an issue, moved to
-  [Deferred or Will Not Do](#deferred-or-will-not-do), D2.
+  [Deferred and Will Not Do](#deferred-and-will-not-do), D2.
 - P17. ~~Invalid escape sequences in three test files~~: fixed
   2026-09-29, raw strings.
 - P18. ~~The dependency graph viewer's size event method outside its
@@ -1779,7 +1783,7 @@ Sweep, to leave nothing behind in this branch:
 ## Index
 
 - [To Do](#to-do)
-- [Deferred or Will Not Do](#deferred-or-will-not-do)
+- [Deferred and Will Not Do](#deferred-and-will-not-do)
 - [Pre-existing Issues](#pre-existing-issues)
 - [Views on the Effective Styles](#views-on-the-effective-styles)
 - [Master Design](#master-design)

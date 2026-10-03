@@ -33,7 +33,7 @@
 ## TODO
 
 1. **Attachment styling**: deferred, not in this release (D3 in
-   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-or-will-not-do)).
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-and-will-not-do)).
    Attachments draw only their own style, as on master: no categories,
    and `computeDerived` gives them no sources. Open for later: remove
    their Appearance tab and branch, or inherit the owner's style.

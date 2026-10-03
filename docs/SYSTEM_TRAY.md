@@ -28,7 +28,7 @@ This document describes the system tray (notification area) icon implementation 
 
 1. ~~**Extract base class.**~~ Will not be done, **ruled by designer
    2026-09-29** (D4 in
-   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-or-will-not-do)):
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-and-will-not-do)):
    the two classes differ by design and share little
    ([Code Duplication](#code-duplication)).
 

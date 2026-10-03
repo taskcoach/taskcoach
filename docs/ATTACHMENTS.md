@@ -15,7 +15,7 @@ E-mail attachments have their own document:
   ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#decisions)).
 - **Ruled by designer 2026-09-29:** attachment styling is deferred; an
   attachment draws only its own style (D3 in
-  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-or-will-not-do),
+  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-and-will-not-do),
   [APPEARANCE_STYLES.md](APPEARANCE_STYLES.md#todo)).
 
 ## Kinds
