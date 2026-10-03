@@ -331,24 +331,7 @@ go at the end. Details live in the sections and documents linked.
     ms with numpy, 1.05 to 1.4 ms without; the probe 0.4 to 0.6 s at
     each start. Checked in the app with numpy unimportable: the six
     icons byte for byte those of the base, no error.
-77. `dbus-python` to Gio (was P83). Three calls: the startup report's
-    tray check (is `org.kde.StatusNotifierWatcher` on the session
-    bus?) and two Idle time notice methods (GNOME's
-    `org.gnome.Mutter.IdleMonitor`, KDE Plasma 5's
-    `org.freedesktop.ScreenSaver`; [IDLE.md](IDLE.md)). Gio, in
-    PyGObject (required on Linux since P62), makes the same calls.
-    Removes an optional package from the deb (`Recommends:` per
-    codename in `build-deb.yml`), rpm, Arch and Flatpak builds; idle
-    detection on GNOME and Plasma 5 then works without it: today,
-    installed without its recommended packages, the Idle time notice
-    does nothing on GNOME under Wayland. Risk: both methods run only in
-    those sessions; to check here in the app under a private session
-    bus (`dbus-run-session`) with stand-in services answering the same
-    calls. Prototyped 2026-10-03 and run that way next to the current
-    code: with GNOME's idle monitor standing in, both chose it and read
-    the same idle time (12.35 s); without it, both fell back to the X
-    server's; both saw the tray host when it stood in, and not when
-    absent. Only the wording of the "not available" log line differs.
+77. ~~`dbus-python` to Gio (was P83)~~: parked, D14.
 78. ~~`WMI` (Windows) to `pywin32`~~: done 2026-10-02, **ruled by
     designer**. Its one call, finding Thunderbird Portable's folder
     when an e-mail is dropped from it, is now `pywin32`'s own WMI query
@@ -483,6 +466,27 @@ Numbered D1, D2, ...
   629-line module (BSD) draws the Task square map view; every build
   already installs or bundles it ([PACKAGING.md](PACKAGING.md)), and a
   copy would be drawing code of ours to maintain.
+- D14. `dbus-python` to Gio (was To Do 77), **parked by designer
+  2026-10-03**: no conclusion until research shows it suits, without a
+  regression, every supported system. Three calls use dbus-python: the
+  startup report's tray check and the Idle time notice's GNOME (Mutter
+  IdleMonitor) and KDE Plasma 5 (freedesktop ScreenSaver) idle
+  readings. A Gio prototype matched the current code against stand-in
+  services on a private session bus (2026-10-03), which covers neither
+  a real desktop nor its versions. To research before any proposal:
+  - each supported desktop and session (GNOME and KDE Plasma 5 and 6
+    on X11 and Wayland, XFCE, Cinnamon, MATE, LXQt, wlroots
+    compositors), on the oldest and newest supported releases, and
+    which idle reading each one gets;
+  - how Gio and dbus-python differ in what other projects that moved
+    report: errors, timeouts, a missing or restarted service, calls
+    from the window's main loop;
+  - the Mutter IdleMonitor and ScreenSaver interfaces across GNOME and
+    Plasma versions;
+  - the Flatpak (it allows `org.gnome.Mutter.IdleMonitor`,
+    `org.freedesktop.ScreenSaver` and `org.kde.StatusNotifierWatcher`
+    and bundles dbus-python), the AppImage (no PyGObject, P159), and
+    the PyGObject of Ubuntu 22.04, the oldest.
 
 ## Pre-existing Issues
 
@@ -821,6 +825,14 @@ each with the recommended action, none ruled yet:
 - P61. The run-from-source scripts README points to fail: they check
   the removed `desktop` module, install no pyenchant;
   `test_taskcoach.sh` checks files that do not exist. Fix or retire?
+  2026-10-03: the `desktop` check is gone (P164). No setup script
+  installs pyenchant, so spell checking is off in what they set up
+  (the packages declare it). `test_taskcoach.sh` fails 2 of 14 checks,
+  the same on master: the installed wxPython's tree widget for a fix,
+  while Task Coach uses its own copy (To Do 67), and
+  `gui/icons/splash.png`, removed in the icon migration; it also
+  requires Python 3.11 (the minimum is 3.10) and names a
+  `setup_bookworm.sh` that no longer exists.
 - P62. ~~PyGObject (`python3-gi`) was declared in no package~~: fixed
   2026-10-02, **asked by designer**. Debian, Arch and Fedora declared
   the AppIndicator library but not PyGObject, which loads it, and no
@@ -955,6 +967,10 @@ each with the recommended action, none ruled yet:
   Python 3.11, the floor being 3.10. Recommended: fix.
 - P87. `AppTest.testAppProperties` skips unless the language is en_US,
   and errors there (with 6 more tests). Recommended: rewrite.
+  2026-10-03: here (en_CA) it skips; with `LANG=en_US.UTF-8` it is the
+  one error: the test harness made a translator already and the test
+  builds an Application without dropping it, which the integration
+  tests' mock application does.
 - P88. ~~Tests that checked nothing~~: fixed 2026-10-02, **asked by
   designer**. Four were skipped on GTK, so on the certified platform
   they never ran: the two column header menu tests (the menu waited
