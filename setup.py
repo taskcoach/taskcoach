@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from setuptools import setup, find_namespace_packages
-import platform
 import re
 import os
 
@@ -87,6 +86,8 @@ install_requires = [
     "lxml",
     "keyring",
     "pyenchant>=3.2.0",  # Spell checking for text fields
+    # Windows calls: Outlook, folders, windows, monitors, processes
+    "pywin32; sys_platform == 'win32'",
 ]
 
 # Optional/platform-specific dependencies
@@ -94,10 +95,6 @@ extras_require = {
     "squaremap": ["squaremap>=1.0.5"],  # Not in Fedora/Arch repos
     "all": ["squaremap>=1.0.5"],
 }
-
-system = platform.system()
-if system == "Windows":
-    install_requires.append("WMI")
 
 # Long description for PyPI
 long_description = (

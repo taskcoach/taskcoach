@@ -132,7 +132,7 @@ def _log_required_packages():
 
     # Windows-only
     if sys.platform == "win32":
-        packages.append(("WMI", "wmi"))
+        packages.append(("pywin32", "win32api"))
 
     for pkg_name, import_name in packages:
         version = _get_package_version(pkg_name, import_name)

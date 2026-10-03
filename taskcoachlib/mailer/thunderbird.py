@@ -157,9 +157,11 @@ def getDefaultProfileDir():
         if _PORTABLECACHE is not None:
             return _PORTABLECACHE
 
-        import wmi  # pylint: disable=W0404
+        from win32com.client import GetObject  # pylint: disable=F0401
 
-        for process in wmi.WMI().Win32_Process():
+        for process in GetObject("winmgmts:").ExecQuery(
+            "SELECT ExecutablePath FROM Win32_Process"
+        ):
             if (
                 process.ExecutablePath
                 and process.ExecutablePath.lower().endswith(

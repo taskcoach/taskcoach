@@ -55,7 +55,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | optional | — | — |
 | ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | bundled | — | — |
 | hypertreelist, customtreectrl | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** |
-| WMI | — | — | — | — | — | — | — | — | pip | — |
+| pywin32 | — | — | — | — | — | — | — | — | pip | — |
 | python3-dbus | optional | optional | optional | optional | optional | optional | — | bundled | — | — |
 | python3-pywayland | — | — | optional | — | optional | optional | — | — | — | — |
 

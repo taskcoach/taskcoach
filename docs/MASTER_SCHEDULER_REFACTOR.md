@@ -342,15 +342,15 @@ go at the end. Details live in the sections and documents linked.
     detection on GNOME and Plasma 5 then works without it. Risk: both
     methods run only in those sessions; here only against a stand-in
     service on a private session bus.
-78. `WMI` (Windows) to `pywin32`. One call: when an e-mail is dropped
-    from Thunderbird Portable, `mailer/thunderbird.py` finds its folder
-    among the running processes. `pywin32`, shipped in the Windows
-    build, makes the same query
-    (`win32com.client.GetObject("winmgmts:")`). Risk: Windows only, not
-    runnable here, and CI runs no tests (P85). Checked against WMI
-    1.5.1's code: `wmi.WMI()` is `GetObject("winmgmts:")` and its
-    `Win32_Process()` runs `SELECT ... FROM Win32_Process`, the query
-    `GetObject("winmgmts:").ExecQuery(...)` makes directly. Replace?
+78. ~~`WMI` (Windows) to `pywin32`~~: done 2026-10-02, **ruled by
+    designer**. Its one call, finding Thunderbird Portable's folder
+    when an e-mail is dropped from it, is now `pywin32`'s own WMI query
+    (`mailer/thunderbird.py`), the query WMI 1.5.1 made through it.
+    `pywin32` (6.9 MB download, 15 MB installed) stays in every Windows
+    install: Outlook's e-mail drop, the Windows folders, shortcuts,
+    window styles and monitors use it; WMI was a 29 KB layer over it.
+    `setup.py` now declares `pywin32` for Windows, which WMI had
+    pulled in. Not run: Windows only, and CI runs no tests (P85).
 79. `watchdog` (was P81): watches the open task file, so a change by
     another program (a second Task Coach, a sync tool) is merged at
     once. The poller in the code (`filesystem/fs_poller.py`, every
