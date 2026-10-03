@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest import mock
 
 import test
-import wx
 from taskcoachlib.widgets import wxevents
 
 
