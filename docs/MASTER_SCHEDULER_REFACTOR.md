@@ -344,7 +344,11 @@ go at the end. Details live in the sections and documents linked.
     does nothing on GNOME under Wayland. Risk: both methods run only in
     those sessions; to check here in the app under a private session
     bus (`dbus-run-session`) with stand-in services answering the same
-    calls.
+    calls. Prototyped 2026-10-03 and run that way next to the current
+    code: with GNOME's idle monitor standing in, both chose it and read
+    the same idle time (12.35 s); without it, both fell back to the X
+    server's; both saw the tray host when it stood in, and not when
+    absent. Only the wording of the "not available" log line differs.
 78. ~~`WMI` (Windows) to `pywin32`~~: done 2026-10-02, **ruled by
     designer**. Its one call, finding Thunderbird Portable's folder
     when an e-mail is dropped from it, is now `pywin32`'s own WMI query
@@ -374,7 +378,13 @@ go at the end. Details live in the sections and documents linked.
     version line read from `XMLPullParser` events). Risk: every file
     loads through it, and a parser change can treat odd files
     differently (entities, encodings, broken files); gain: one compiled
-    package fewer.
+    package fewer (4 to 9 MB to download, 9 to 20 MB installed, per
+    system). Prototyped 2026-10-03 on the standard library (the
+    version line from `XMLPullParser` events): the reader, writer, task
+    file and template tests pass (638); Welcome.tsk and generated files
+    of 2,000 and 10,000 tasks load and save back byte for byte as with
+    lxml, the templates but for their fresh ids. Parsing 10,000 tasks
+    takes 152 ms instead of 110 ms, within a 16 s load.
 81. ~~`squaremap`~~: kept, D13.
 
 ## Deferred or Will Not Do
@@ -1550,13 +1560,15 @@ each with the recommended action, none ruled yet:
   machine, back to back: 0.8 to 3.0 s per switch before, 0.00 to
   0.01 s after; two seconds after each switch the highlighted caption
   is the active view's.
-- P161. A calendar view squeezed to no height prints
-  `wxAssertionError ... invalid bitmap size` from
-  `wxevents.py` `_on_paint` (`wx.Bitmap(vw, vh)`) on each paint, the
-  same before P122's change (P14, closed as not reproduced): seen
-  2026-10-02 with all views open, six stacked in the right column,
-  the Calendar pane's drawing area 0 px high. Steps on master to
-  write down with the fix.
+- P161. The Hierarchical calendar prints `wxAssertionError ...
+  invalid bitmap size` (`wxevents.py` `_on_paint`) about 20 times as
+  the window lays itself out, when the view is docked in a crowded
+  column: for a moment it gets 2 to 6 pixels of height, less than its
+  scrollbar's 14, and asks for a bitmap of negative height; once laid
+  out it draws normally. The same on master (33 at start with the same
+  settings file, 2026-10-03; P14 had been closed as not reproduced).
+  Proposed: take the paint context first, and draw only when there is
+  room.
 - P162. After a click in a floating view the keyboard focus goes
   back and forth between it and the main window for a second or two
   (openbox, 2026-10-02, the same before P122's change): a floating
