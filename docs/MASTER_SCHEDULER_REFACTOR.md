@@ -917,7 +917,16 @@ each with the recommended action, none ruled yet:
   `Requires-Python: >=3.10`, classifiers 3.10 to 3.14.
 - P81. Moved to To Do 79.
 - P82. `igraph` is declared nowhere, so the Dependency Graph viewer is
-  hidden in every package. Declare it or retire the viewer?
+  hidden in every package. Analysed 2026-10-02: with `igraph` installed
+  View > New viewer offers Dependency Graph (a picture of the tasks'
+  prerequisites drawn by `igraph.plot`, which also needs a cairo
+  binding), and choosing it shows nothing: `graph.degree(type="in")`
+  raises `TypeError` with the `igraph` Debian 13 ships (0.11.8) and
+  the current 1.0 (the argument is now `mode`); the same on master.
+  Options: retire the view (its code, menu entry and settings; the
+  section in users' settings files dropped on load), or fix it and
+  declare `igraph` (5.7 MB) as optional in the packages and bundled
+  builds. Retire it?
 - P83. Moved to To Do 77.
 - P84. Build inputs adrift: `scripts/build-*.sh` differ from CI; the
   spec's `Source0` names a `main` branch; PKGBUILD leftovers; an
