@@ -366,8 +366,12 @@ go at the end. Details live in the sections and documents linked.
     and created events, all much older than 2.0. Checked in the app
     with 2.1.6 (Ubuntu 22.04), 2.2.1 (Debian 12) and 6.0 (installed
     here): a file another program replaces by renaming a new copy over
-    it (sync clients, Task Coach itself) is noticed with all three; one
-    changed in place is now and then missed with all three (P165).
+    it (sync clients, Task Coach itself) or changes in place is noticed
+    with all three (P165). watchdog is an 80 KB package of about 6,000
+    lines: an engine per system (Linux inotify, Windows
+    ReadDirectoryChangesW, macOS FSEvents, BSD kqueue) and a polling
+    one. Every save checks the file on disk first, so the watcher only
+    makes the prompt come early.
     Lower the minimum to 2.1.6, so the Debian 12 and Ubuntu 22.04
     packages and setup scripts use the distribution's watchdog instead
     of bundling one from pip?
@@ -932,6 +936,11 @@ each with the recommended action, none ruled yet:
   binding), and choosing it shows nothing: `graph.degree(type="in")`
   raises `TypeError` with the `igraph` Debian 13 ships (0.11.8) and
   the current 1.0 (the argument is now `mode`); the same on master.
+  igraph 0.9 (Ubuntu 22.04's) still took `type`; 0.10 removed it
+  (Debian 12 ships 0.10.4). Without igraph, as in every package and in
+  the installed 2.0.2.26 here, the menu item does not exist; no test
+  covers the view. It came from upstream 1.4.4 (2016), when upstream's
+  Fedora package required igraph.
   Options: retire the view (its code, menu entry and settings; the
   section in users' settings files dropped on load), or fix it and
   declare `igraph` (5.7 MB) as optional in the packages and bundled
@@ -1579,13 +1588,16 @@ each with the recommended action, none ruled yet:
   printed "desktop... ✗ Failed" and "Some packages failed to import"
   and exited with an error. They now check `watchdog`, installed on
   every path (found with To Do 75).
-- P165. A change another program writes into the open task file in
-  place, rather than by renaming a new copy over it, is now and then not
-  noticed: no "changed on disk" in the log, no prompt. Seen 2026-10-02
-  with watchdog 2.1.6, 2.2.1 and 6.0: 6 of 10 tries missed, while
-  renamed copies were noticed every time (To Do 79). Steps: open a
-  task file, append a line to it from a terminal (`printf '\n' >>
-  file`), wait 10 s. Master not checked yet; cause not traced.
+- P165. ~~A change another program writes into the open task file in
+  place is now and then not noticed~~: closed 2026-10-02, not a miss.
+  6 of 10 tries had shown no "changed on disk" within 10 s, all while
+  the full test suite ran alongside on the loaded machine. Traced with
+  logs: the watcher got the change and its check passed every time;
+  what came late was the check it hands to the user interface thread.
+  Without the suite running, 12 of 12 tries were noticed at once, with
+  the log beside the task file or apart, and with all views or two.
+  Every save checks the file on disk first, so a late notice never
+  lets another program's change be written over.
 
 ## Views on the Effective Styles
 
