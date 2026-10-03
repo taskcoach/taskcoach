@@ -52,7 +52,6 @@ class DefaultsTest(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         new_task = task.Task()
         recurrence = date.Recurrence()
         self.fields = dict(

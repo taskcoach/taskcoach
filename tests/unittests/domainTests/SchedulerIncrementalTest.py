@@ -47,7 +47,6 @@ class IncrementalPassTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         self.now = date.DateTime(2026, 9, 29, 12, 0, 0)
         clock = mock.patch.object(date, "Now", lambda: self.now)
         clock.start()

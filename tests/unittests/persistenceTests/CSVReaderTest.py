@@ -25,7 +25,6 @@ from taskcoachlib.domain import task, category, date
 
 class CSVReaderTestCase(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.taskList = task.TaskList()
         self.categoryList = category.CategoryList()
         self.reader = persistence.CSVReader(self.taskList, self.categoryList)

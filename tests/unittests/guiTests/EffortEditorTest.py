@@ -36,7 +36,7 @@ class EditorUnderTest(gui.dialog.editor.EffortEditor):
 class EffortEditorTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.taskList = self.taskFile.tasks()
         self.effortList = self.taskFile.efforts()

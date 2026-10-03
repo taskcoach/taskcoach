@@ -21,7 +21,7 @@ import wx
 from . import TreeCtrlTest
 from unittests import dummy
 from taskcoachlib import widgets
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 from taskcoachlib.widgets import treectrl
 from taskcoachlib.widgets.treectrl import customtree
 
@@ -239,17 +239,10 @@ class TreeListCtrlInPlaceEditTest(TreeListCtrlTestCase):
             (self.treeCtrl.GetItemPyData(item), column)
         )
 
-    def set_option(self, option, value):
-        settings = settings2._instance._settings
-        old = settings.getboolean("feature", option)
-        settings.setboolean("feature", option, value)
-        settings2.refresh_now()
-        self.addCleanup(self.restore_option, option, old)
-
     @staticmethod
-    def restore_option(option, value):
-        settings2._instance._settings.setboolean("feature", option, value)
-        settings2.refresh_now()
+    def set_option(option, value):
+        # The harness puts the settings back after each test
+        setattr(settings.feature, option, value)
 
     def rows(self):
         return self.treeCtrl.GetItemChildren(recursively=True)

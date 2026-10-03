@@ -96,7 +96,6 @@ class TemplateSavedForOlderReleasesTest(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         self.path = tempfile.mkdtemp()
         self.filename = os.path.join(self.path, "template.tsktmpl")
 

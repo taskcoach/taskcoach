@@ -21,6 +21,7 @@ import time
 import wx
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.meta.debug import log_step
 
@@ -33,9 +34,8 @@ class AutoSaver(object):
     # file stays dirty, so no new "taskfile.dirty" message comes
     RETRY_SECONDS = 60
 
-    def __init__(self, settings, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__settings = settings
         self.__task_files = set()
         self.__bound = False
         self.__failures = {}  # task file: failed autosaves in a row
@@ -65,7 +65,7 @@ class AutoSaver(object):
             task_file.filename()
             and task_file.need_save()
             and not task_file.changed_on_disk()
-            and self.__settings.getboolean("file", "autosave")
+            and settings.file.autosave
         )
 
     def on_idle(self, event):

@@ -357,7 +357,7 @@ class TaskSorterSettingsTest(test.TestCase):
 
 class TaskSorterStatusPriorityTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskList = task.TaskList()
         self.sorter = task.sorter.Sorter(self.taskList)
         self.sorter.sort_by("subject")
@@ -388,7 +388,6 @@ class TaskSorterStatusChangeTest(test.TestCase):
     """A status the clock changes re-sorts after the loop's pass."""
 
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.task_list = task.TaskList()
         self.sorter = task.sorter.Sorter(self.task_list)
         self.sorter.sort_by("subject")
@@ -416,7 +415,6 @@ class TaskSorterStatusColumnTest(test.TestCase):
     urgent first, without "Sort by status first"."""
 
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.task_list = task.TaskList()
         self.sorter = task.sorter.Sorter(self.task_list)
         self.sorter.sort_by_task_status_first(False)
@@ -442,7 +440,6 @@ class TaskSorterStatusColumnTest(test.TestCase):
 
 class TaskSorterTreeModeTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.taskList = task.TaskList()
         self.filter = RecordingFilter(self.taskList, tree_mode=True)
         self.sorter = task.sorter.Sorter(self.filter, tree_mode=True)
@@ -568,7 +565,6 @@ class TaskSorterTreeModeTest(test.TestCase):
 
 class EffortSorterTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.taskList = task.TaskList()
         self.effortList = effort.EffortList(self.taskList)
         self.sorter = effort.EffortSorter(self.effortList)

@@ -74,12 +74,10 @@ th {
 """
 
 
-def viewer2html(
-    viewer, settings, cssFilename=None, selectionOnly=False, columns=None
-):
-    converter = Viewer2HTMLConverter(viewer, settings)
+def viewer2html(viewer, css_filename=None, selection_only=False, columns=None):
+    converter = Viewer2HTMLConverter(viewer)
     columns = columns or viewer.visibleColumns()
-    return converter(cssFilename, columns, selectionOnly)
+    return converter(css_filename, columns, selection_only)
 
 
 class Viewer2HTMLConverter(object):
@@ -93,10 +91,9 @@ class Viewer2HTMLConverter(object):
         '<link href="%s" rel="stylesheet" type="text/css" media="screen">'
     )
 
-    def __init__(self, viewer, settings):
+    def __init__(self, viewer):
         super().__init__()
         self.viewer = viewer
-        self.settings = settings
         self.count = 0
 
     def __call__(self, cssFilename, columns, selectionOnly):

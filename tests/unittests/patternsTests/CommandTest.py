@@ -46,7 +46,6 @@ class HistoryTest(test.TestCase, asserts.CommandAssertsMixin):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         self.commands = patterns.CommandHistory()
         self.item = task.Task(subject="Before")
         self.command = Rename(self.item, "After")
@@ -168,7 +167,6 @@ class EventLoopTest(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         self.commands = patterns.CommandHistory()
         self.item = task.Task(subject="Before")
         self.idle_handlers = []

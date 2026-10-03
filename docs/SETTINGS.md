@@ -149,6 +149,11 @@ settings.get(section, option)            # names computed by the caller
 Each step: tests that fail before and pass after where behaviour is
 fixed, the full suite, and an app check of what it touches.
 
+Status: steps 1 and 2 done 2026-10-03; step 3 done for the widgets,
+the domain (`Task.settings` and `Attachment.settings` are gone), the
+printer, the export writers (whose `settings` parameter nothing read)
+and the automatic save, backup, import and export.
+
 ### Risks
 
 - It touches 65 files and 79 test files. Checks: the full suite after
@@ -496,45 +501,41 @@ stored `Settings` reference (no `wx.GetApp()` dependency).
 
 ## Usage
 
-### New code — use the shim
+Any module reads and writes the one object (To Do 70, [One Settings
+Object](#one-settings-object-to-do-70)):
 
 ```python
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 
-settings2.view.descriptionpopups     # bool
-settings2.window.hoverlinewidth      # int
+settings.view.descriptionpopups          # bool
+settings.window.hoverlinewidth           # int
+settings.window.theme_is_dark            # computed at each read
+settings.view.statusbar = False          # stored, "view.statusbar" sent
+settings.section(self.settingsSection()).sortby
+settings.get("icon", "%stasks" % status) # a name computed by the caller
 ```
 
-No constructor injection. No getter lambdas. No change subscriptions for
-read-only config lookups. See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#settings)
-for the hover/tooltip flow that uses these two settings.
+No constructor parameter, no getter lambda, no copy. A value of another
+type than the option's default is refused (`TypeError`); an option or
+section no defaults name raises `AttributeError`. Before the
+application has its settings (a module reading while it loads), reads
+give the defaults.
 
-### Reading from any module
-
-`settings2.get(section, option)` returns the value the application has
-now, typed as `_TYPES_MAP` says, or the default before `init()` (for a
-module that reads while loading). Only the application makes a
-`Settings` object; `Settings2Test` fails on any other. The date, time
-and amount controls once each made their own, which read the default
-settings file from disk: a file given with `--ini` was ignored, a
-Preferences change reached them only after a restart, and each copy
-stayed in memory (P151, P152 in
+Only the application makes the `Settings` object
+(`config.settings.use()`); `Settings2Test` fails on any other. The
+date, time and amount controls once each made their own, which read
+the default settings file from disk: a file given with `--ini` was
+ignored, a Preferences change reached them only after a restart, and
+each copy stayed in memory (P151, P152 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
 
-### Existing code — unchanged
+Tests use the same object, the harness's: it is reset to the defaults
+after each test (`Settings.reset()`), so a test sets what it needs. A
+test that needs other file locations installs its own object with
+`config.settings.use()`; the harness puts its own back.
 
-The shim is additive. Existing `self.settings.getboolean(...)` calls
-continue to work. Migration is incremental — convert call sites as they
-are touched.
-
-### When NOT to use the shim
-
-- **Writes** — use the existing `Settings` API (see below).
-- **Per-viewer sections** — sections like `"taskviewer1"` are dynamically
-  named via `settingsSection()`. The shim works (`settings2.taskviewer1.treemode`)
-  but the section name must be known at call time. For code that already
-  has `self.settings` and `self.settingsSection()`, the existing API may
-  be clearer.
+Not yet moved (To Do 70, step 3): code that is passed the object or
+reads `settings2` still works on the same object.
 
 ---
 

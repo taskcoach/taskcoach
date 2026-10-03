@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import persistence, patterns
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 import wx
 
@@ -25,8 +26,7 @@ import wx
 class PrinterSettings(object, metaclass=patterns.Singleton):
     edges = ("top", "left", "bottom", "right")
 
-    def __init__(self, settings):
-        self.settings = settings
+    def __init__(self):
         self.printData = wx.PrintData()
         self.pageSetupData = wx.PageSetupDialogData(self.printData)
         self.__initialize_from_settings()
@@ -68,15 +68,17 @@ class PrinterSettings(object, metaclass=patterns.Singleton):
         self.__set_setting("paper_id", self.GetPaperId())
         self.__set_setting("orientation", self.GetOrientation())
 
-    def __get_setting(self, option):
-        return self.settings.getint("printer", option)
+    @staticmethod
+    def __get_setting(option):
+        return settings.get("printer", option)
 
-    def __set_setting(self, option, value):
-        self.settings.set("printer", option, str(value))
+    @staticmethod
+    def __set_setting(option, value):
+        setattr(settings.printer, option, int(value))
 
 
 class HTMLPrintout(wx.html.HtmlPrintout):
-    def __init__(self, html_text, settings):
+    def __init__(self, html_text):
         super().__init__()
         self.SetHtmlText(html_text)
         self.SetFooter(_("Page") + " @PAGENUM@/@PAGESCNT@", wx.html.PAGE_ALL)
@@ -84,7 +86,7 @@ class HTMLPrintout(wx.html.HtmlPrintout):
         # These are typical default sizes used by wxHtmlWindow
         default_font_sizes = [7, 8, 10, 12, 16, 22, 30]
         self.SetFonts("Arial", "Courier", default_font_sizes)
-        printer_settings = PrinterSettings(settings)
+        printer_settings = PrinterSettings()
         left, top = printer_settings.pageSetupData.GetMarginTopLeft()
         right, bottom = printer_settings.pageSetupData.GetMarginBottomRight()
         self.SetMargins(top, bottom, left, right)
@@ -102,24 +104,26 @@ class DCPrintout(wx.Printout):
         return (1, 1, 1, 1)
 
 
-def Printout(viewer, settings, printSelectionOnly=False, twoPrintouts=False):
+def printout(viewer, print_selection_only=False, two_printouts=False):
+    """The printout of the view; a calendar's takes the page
+    settings."""
     widget = viewer.getWidget()
     if hasattr(widget, "GetPrintout"):
         _printout = widget.GetPrintout
     elif hasattr(widget, "Draw"):
 
-        def _printout(settings):
+        def _printout(printer_settings):
             return DCPrintout(widget)
 
     else:
         html_text = persistence.viewer2html(
-            viewer, settings, selectionOnly=printSelectionOnly
+            viewer, selection_only=print_selection_only
         )[0]
 
-        def _printout(settings):
-            return HTMLPrintout(html_text, settings)
+        def _printout(printer_settings):
+            return HTMLPrintout(html_text)
 
-    result = _printout(PrinterSettings(settings))
-    if twoPrintouts:
-        result = (result, _printout(PrinterSettings(settings)))
+    result = _printout(PrinterSettings())
+    if two_printouts:
+        result = (result, _printout(PrinterSettings()))
     return result

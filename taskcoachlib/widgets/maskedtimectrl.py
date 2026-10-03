@@ -75,7 +75,7 @@ import time
 import calendar
 
 from taskcoachlib import patterns
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.tools import wxhelper
 from taskcoachlib.domain import date
@@ -198,7 +198,7 @@ _formats_at_start = {}
 
 def _format_at_start(option):
     if option not in _formats_at_start:
-        _formats_at_start[option] = settings2.get("view", option)
+        _formats_at_start[option] = settings.get("view", option)
     return _formats_at_start[option]
 
 
@@ -284,8 +284,8 @@ def get_default_hour_choices(time_format=None):
     if time_format == "12":
         return list(range(1, 13))
     # 24-hour mode: use working hours from settings
-    start = settings2.get("view", "efforthourstart")
-    end = settings2.get("view", "efforthourend")
+    start = settings.view.efforthourstart
+    end = settings.view.efforthourend
     # Cap at 23 for legacy settings that may hold the sentinel value 24
     return list(range(start, min(end + 1, 24)))
 
@@ -298,7 +298,7 @@ def getDefaultMinuteChoices():
     Returns:
         list of minute values for dropdown
     """
-    interval = settings2.get("view", "effortminuteinterval")
+    interval = settings.view.effortminuteinterval
     return list(range(0, 60, interval))
 
 
@@ -310,7 +310,7 @@ def getDefaultSecondChoices():
     Returns:
         list of second values for dropdown
     """
-    interval = settings2.get("view", "effortsecondinterval")
+    interval = settings.view.effortsecondinterval
     return list(range(0, 60, interval))
 
 
@@ -343,38 +343,20 @@ def getCalendarColours():
     wx.Colour or None (None means use system default).
     """
     try:
-        import ast
-
-        # The application's settings at once: settings2 refreshes a
-        # second after a change, and the popup repaints on it
-        s = wx.GetApp().settings
-        section = (
+        colours = settings.section(
             "calendar_dark"
-            if settings2.window.theme_is_dark
+            if settings.window.theme_is_dark
             else "calendar_light"
         )
-
-        use_system = s.get(section, "other_month_bg_system") == "True"
-        if use_system:
+        if colours.other_month_bg_system:
             other_month_bg = None
         else:
-            other_month_bg = wx.Colour(
-                *ast.literal_eval(s.get(section, "other_month_bg"))
-            )
-
+            other_month_bg = wx.Colour(*colours.other_month_bg)
         return {
-            "weekday_header_bg": wx.Colour(
-                *ast.literal_eval(s.get(section, "weekday_header_bg"))
-            ),
-            "weekday_header_fg": wx.Colour(
-                *ast.literal_eval(s.get(section, "weekday_header_fg"))
-            ),
-            "weekend_day_fg": wx.Colour(
-                *ast.literal_eval(s.get(section, "weekend_day_fg"))
-            ),
-            "today_border": wx.Colour(
-                *ast.literal_eval(s.get(section, "today_border"))
-            ),
+            "weekday_header_bg": wx.Colour(*colours.weekday_header_bg),
+            "weekday_header_fg": wx.Colour(*colours.weekday_header_fg),
+            "weekend_day_fg": wx.Colour(*colours.weekend_day_fg),
+            "today_border": wx.Colour(*colours.today_border),
             "other_month_bg": other_month_bg,
         }
     except Exception:

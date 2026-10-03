@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import widgets, patterns, command, operating_system, render
+from taskcoachlib.config import defaults
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.domain import (
@@ -237,7 +238,7 @@ class SubjectPage(Page):
             else _("Edit to change all subjects")
         )
         self._subjectEntry = widgets.single_line_text_ctrl(
-            self, current_subject, settings=self._settings
+            self, current_subject
         )
         self._subjectSync = attributesync.AttributeSync(
             "subject",
@@ -267,7 +268,7 @@ class SubjectPage(Page):
             else combined_description(self.items)
         )
         self._descriptionEntry = widgets.MultiLineTextCtrl(
-            self, current_description, settings=self._settings
+            self, current_description
         )
         self._descriptionSync = attributesync.AttributeSync(
             "description",
@@ -1451,7 +1452,7 @@ class DatesPage(ScrolledPage):
         task_status, status_source = the_task.computedStatus(explain=True)
 
         # Update icon: the status's, as the rows show it; none if set so
-        icon_id = task_status.icon_id(self.__settings)
+        icon_id = task_status.icon_id()
         bitmap = (
             icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
             if icon_id
@@ -3746,15 +3747,10 @@ class EditBook(widgets.Notebook):
     def __create_settings_section(self, section):
         """Create the section and initialize the options in the section."""
         self.settings.add_section(section)
-        for option, value in list(
-            dict(
-                perspective="",
-                pages=str(self.__pages_to_create()),
-                size="(-1, -1)",
-                position="(-1, -1)",
-                maximized="False",
-            ).items()
-        ):
+        values = dict(
+            defaults.editor_window, pages=str(self.__pages_to_create())
+        )
+        for option, value in values.items():
             self.settings.init(section, option, value)
 
     def close_edit_book(self):
@@ -4735,7 +4731,7 @@ class EffortEditBook(Page):
             else combined_description(self.items)
         )
         self._descriptionEntry = widgets.MultiLineTextCtrl(
-            self, current_description, settings=self._settings
+            self, current_description
         )
         self._descriptionEntry.SetSizeHints(300, 150)
         self._descriptionSync = attributesync.AttributeSync(

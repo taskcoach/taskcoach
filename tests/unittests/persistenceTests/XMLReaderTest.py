@@ -101,7 +101,6 @@ class XMLReaderTestCase(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
 
     def writeAndRead(self, xml_contents):
         # pylint: disable=W0201

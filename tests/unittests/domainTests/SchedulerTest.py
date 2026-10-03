@@ -219,7 +219,6 @@ class MasterTimerListTest(test.wxTestCase):
         super().setUp()
         from taskcoachlib import persistence
 
-        task.Task.settings = config.Settings(load=False)
         self.task_file = persistence.TaskFile()
         self.master = scheduler.MasterScheduler(self.task_file)
         self.passes = []

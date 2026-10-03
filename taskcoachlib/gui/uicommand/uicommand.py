@@ -422,14 +422,14 @@ class PrintPageSetup(
         )
 
     def do_command(self, event):
-        printerSettings = printer.PrinterSettings(self.settings)
+        printer_settings = printer.PrinterSettings()
         pageSetupDialog = wx.PageSetupDialog(
-            self.main_window(), printerSettings.pageSetupData
+            self.main_window(), printer_settings.pageSetupData
         )
         result = pageSetupDialog.ShowModal()
         if result == wx.ID_OK:
             pageSetupData = pageSetupDialog.GetPageSetupData()
-            printerSettings.updatePageSetupData(pageSetupData)
+            printer_settings.updatePageSetupData(pageSetupData)
         pageSetupDialog.Destroy()
 
 
@@ -447,12 +447,10 @@ class PrintPreview(ViewerCommand, settings_uicommand.SettingsCommand):
         )
 
     def do_command(self, event):
-        printout, printout2 = printer.Printout(
-            self.viewer, self.settings, twoPrintouts=True
-        )
-        printerSettings = printer.PrinterSettings(self.settings)
+        printout, printout2 = printer.printout(self.viewer, two_printouts=True)
+        printer_settings = printer.PrinterSettings()
         preview = wx.PrintPreview(
-            printout, printout2, printerSettings.printData
+            printout, printout2, printer_settings.printData
         )
         if not preview.IsOk():
             wx.MessageBox(
@@ -482,25 +480,24 @@ class Print(ViewerCommand, settings_uicommand.SettingsCommand):
         )
 
     def do_command(self, event):
-        printerSettings = printer.PrinterSettings(self.settings)
-        printDialogData = wx.PrintDialogData(printerSettings.printData)
-        printDialogData.EnableSelection(True)
-        wxPrinter = wx.Printer(printDialogData)
-        if not wxPrinter.PrintDialog(self.main_window()):
+        printer_settings = printer.PrinterSettings()
+        print_dialog_data = wx.PrintDialogData(printer_settings.printData)
+        print_dialog_data.EnableSelection(True)
+        wx_printer = wx.Printer(print_dialog_data)
+        if not wx_printer.PrintDialog(self.main_window()):
             return
-        printout = printer.Printout(
+        printout = printer.printout(
             self.viewer,
-            self.settings,
-            printSelectionOnly=wxPrinter.PrintDialogData.Selection,
+            print_selection_only=wx_printer.PrintDialogData.Selection,
         )
         # If the user checks the selection radio button, the ToPage property
         # gets set to 1. Looks like a bug to me. The simple work-around is to
         # reset the ToPage property to the MaxPage value if necessary:
-        if wxPrinter.PrintDialogData.Selection:
-            wxPrinter.PrintDialogData.ToPage = (
-                wxPrinter.PrintDialogData.MaxPage
+        if wx_printer.PrintDialogData.Selection:
+            wx_printer.PrintDialogData.ToPage = (
+                wx_printer.PrintDialogData.MaxPage
             )
-        wxPrinter.Print(self.main_window(), printout, prompt=False)
+        wx_printer.Print(self.main_window(), printout, prompt=False)
 
 
 class FileExportCommand(IOCommand, settings_uicommand.SettingsCommand):
@@ -552,7 +549,7 @@ class FileManageBackups(IOCommand, settings_uicommand.SettingsCommand):
         ):
             return
         dlg = dialog.BackupManagerDialog(
-            self.main_window(), self.settings, self.iocontroller.filename()
+            self.main_window(), self.iocontroller.filename()
         )
         try:
             if dlg.ShowModal() == wx.ID_OK:
@@ -2148,7 +2145,7 @@ class TaskMarkActive(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            icon_id=task.active.icon_id(kwargs["settings"], required=True),
+            icon_id=task.active.icon_id(required=True),
             menu_text=_("Mark task &active\tAlt+RETURN"),
             help_text=_("Mark the selected task(s) active"),
             *args,
@@ -2182,7 +2179,7 @@ class TaskMarkInactive(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            icon_id=task.inactive.icon_id(kwargs["settings"], required=True),
+            icon_id=task.inactive.icon_id(required=True),
             menu_text=_("Mark task &inactive\tCtrl+Alt+RETURN"),
             help_text=_("Mark the selected task(s) inactive"),
             *args,
@@ -2213,7 +2210,7 @@ class TaskMarkCompleted(
 ):
     def __init__(self, *args, **kwargs):
         super().__init__(
-            icon_id=task.completed.icon_id(kwargs["settings"], required=True),
+            icon_id=task.completed.icon_id(required=True),
             menu_text=_("Mark task &completed\tCtrl+RETURN"),
             help_text=_("Mark the selected task(s) completed"),
             *args,

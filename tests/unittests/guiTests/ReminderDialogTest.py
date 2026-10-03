@@ -31,8 +31,7 @@ class DummyEvent(object):
 
 class ReminderDialogTest(test.TestCase):
     def setUp(self):
-        self.settings = config.Settings(load=False)
-        task.Task.settings = self.settings
+        self.settings = config.settings.current()
         self.aTask = task.Task("subject")
         self.taskList = task.TaskList([self.aTask])
         self.effortList = effort.EffortList(self.taskList)

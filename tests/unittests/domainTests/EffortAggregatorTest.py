@@ -25,7 +25,6 @@ class EffortAggregatorTestCase(test.TestCase):
     aggregation = "One of: day, week, or month (override in subclass)"
 
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.taskList = task.TaskList()
         self.effortAggregator = effort.EffortAggregator(
             self.taskList, aggregation=self.aggregation

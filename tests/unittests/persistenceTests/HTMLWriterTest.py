@@ -28,7 +28,7 @@ class HTMLWriterTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.fd = io.StringIO()
         self.writer = persistence.HTMLWriter(self.fd, self.filename)
         self.taskFile = persistence.TaskFile()
@@ -48,7 +48,7 @@ class HTMLWriterTestCase(test.wxTestCase):
         raise NotImplementedError  # pragma: no cover
 
     def __writeAndRead(self, selectionOnly):
-        self.writer.write(self.viewer, self.settings, selectionOnly, True)
+        self.writer.write(self.viewer, selectionOnly, True)
         return self.fd.getvalue()
 
     def expectInHTML(self, *htmlFragments, **kwargs):

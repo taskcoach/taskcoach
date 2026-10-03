@@ -25,8 +25,8 @@ from unittests import dummy
 
 class AutoExporterTestCase(test.TestCase):
     def setUp(self):
-        task.Task.settings = self.settings = config.Settings(load=False)
-        self.exporter = persistence.AutoImporterExporter(self.settings)
+        self.settings = config.settings.current()
+        self.exporter = persistence.AutoImporterExporter()
         self.taskFile = persistence.TaskFile()
         self.tskFilename = "autoexport.tsk"
         self.txtFilename = "autoexport.txt"
@@ -48,7 +48,7 @@ class AutoExporterTestCase(test.TestCase):
     def testAddOneTaskWhenAutoSaveIsOn(self):
         self.settings.set("file", "autoexport", '["Todo.txt"]')
         self.settings.set("file", "autosave", "True")
-        autosaver = persistence.AutoSaver(self.settings)
+        autosaver = persistence.AutoSaver()
         theTask = task.Task(subject="Some task")
         self.taskFile.tasks().append(theTask)
         autosaver.on_idle(dummy.Event())
@@ -79,7 +79,7 @@ class AutoExporterTestCase(test.TestCase):
     def testImportOneTaskWhenAutoSaving(self):
         self.settings.set("file", "autoimport", '["Todo.txt"]')
         self.settings.set("file", "autosave", "True")
-        autosaver = persistence.AutoSaver(self.settings)
+        autosaver = persistence.AutoSaver()
         with open(self.txtFilename, "w") as todoTxtFile:
             todoTxtFile.write("Imported task\n")
         self.taskFile.tasks().append(task.Task(subject="Some task"))

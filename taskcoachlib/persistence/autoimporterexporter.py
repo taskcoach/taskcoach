@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from . import todotxt
 
 
@@ -27,9 +28,8 @@ class AutoImporterExporter(object):
     import and/or export is on, AutoImporterExporter imports and/or exports
     the task file."""
 
-    def __init__(self, settings):
+    def __init__(self):
         super().__init__()
-        self.__settings = settings
         register = patterns.Publisher().registerObserver
         register(
             self.on_task_file_about_to_save, eventType="taskfile.aboutToSave"
@@ -56,15 +56,15 @@ class AutoImporterExporter(object):
         self.exportFiles(taskFile)
 
     def importFiles(self, taskFile):
-        importFormats = self.__settings.getlist("file", "autoimport")
-        for importFormat in importFormats:
-            if importFormat == "Todo.txt":
+        import_formats = settings.file.autoimport
+        for import_format in import_formats:
+            if import_format == "Todo.txt":
                 self.importTodoTxt(taskFile)
 
     def exportFiles(self, taskFile):
-        exportFormats = self.__settings.getlist("file", "autoexport")
-        for exportFormat in exportFormats:
-            if exportFormat == "Todo.txt":
+        export_formats = settings.file.autoexport
+        for export_format in export_formats:
+            if export_format == "Todo.txt":
                 self.exportTodoTxt(taskFile)
 
     @classmethod

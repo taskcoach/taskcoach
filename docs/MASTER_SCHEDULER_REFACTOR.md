@@ -264,7 +264,7 @@ go at the end. Details live in the sections and documents linked.
     or module by module; the refresh signal once `ConfigParser` goes;
     how viewer instance 0 stops sharing the template section.
     Started 2026-10-03, **asked by designer**: the analysis, the
-    answers to these questions and the steps are in
+    answers to these questions, the steps and their status are in
     [SETTINGS.md](SETTINGS.md#one-settings-object-to-do-70).
 71. ~~The Publisher cleans up after itself (was P153)~~: done
     2026-10-02, **asked by designer**. It held a subscription's
@@ -1690,6 +1690,14 @@ each with the recommended action, none ruled yet:
   lets another program's change be written over.
 
 - P166. Will not do: D14.
+- P167. The test suite writes into the user's own backups folder
+  (found 2026-10-03; master's harness and mock application are the
+  same): the integration tests save
+  through the application's automatic backup, whose folder is the real
+  `~/.local/share/Task Coach/backups`. A full run adds `SaveTest.tsk`
+  there and rewrites the user's `backups.xml` (the backups of the
+  user's own files stay listed). The harness could point the data and
+  settings folders to a temporary one for the run.
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**

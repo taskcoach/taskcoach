@@ -33,7 +33,7 @@ class SelfHealTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.history = patterns.CommandHistory()
         self.history.clear()
         self.addCleanup(self.history.clear)

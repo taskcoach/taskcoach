@@ -34,8 +34,7 @@ class EffortViewerUnderTest(gui.viewer.EffortViewer):  # pylint: disable=W0223
 class EffortViewerForSpecificTasksTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
-        task.Task.settings = self.settings
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.task1 = task.Task("Task 1")
         self.task2 = task.Task("Task 2")
@@ -91,7 +90,7 @@ class EffortViewerForSpecificTasksTest(test.wxTestCase):
 class EffortViewerStatusMessageTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.task = task.Task()
         self.taskFile.tasks().append(self.task)
@@ -182,7 +181,7 @@ class EffortViewerStatusMessageTest(test.wxTestCase):
 class EffortViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.task = task.Task("task")
         self.taskFile.tasks().append(self.task)
@@ -295,7 +294,7 @@ class EffortViewerAggregationTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.settings.set("effortviewer", "aggregation", self.aggregation)
 
         self.taskFile = persistence.TaskFile()
@@ -356,7 +355,7 @@ class EffortViewerAggregationRoundingTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.settings.set("effortviewer", "aggregation", self.aggregation)
         self.settings.setint("effortviewer", "round", self.roundingValue)
         self.settings.setboolean(
@@ -798,7 +797,7 @@ class EffortViewerRenderTestMixin(object):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.settings.set("effortviewer", "aggregation", self.aggregation)
 
         self.taskFile = persistence.TaskFile()

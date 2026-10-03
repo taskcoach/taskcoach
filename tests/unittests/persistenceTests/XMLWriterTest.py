@@ -39,7 +39,6 @@ _DATES = re.compile(r' (?:creation|modification)DateTime="[^"]*"')
 
 class XMLWriterTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.fd = io.BytesIO()  # The app writes UTF-8 bytes (SafeWriteFile)
         self.fd.name = "testfile.tsk"
         self.writer = persistence.XMLWriter(self.fd)

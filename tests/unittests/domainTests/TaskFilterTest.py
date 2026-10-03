@@ -23,7 +23,6 @@ from taskcoachlib.domain import task, date
 
 class ViewFilterTestCase(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.list = task.TaskList()
         self.filter = task.filter.ViewFilter(
             self.list, tree_mode=self.tree_mode
@@ -210,7 +209,6 @@ class ViewFilterInTreeModeTest(ViewFilterTestsMixin, ViewFilterTestCase):
 
 class HideCompositeTasksTestCase(ViewFilterTestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.list = task.TaskList()
         self.filter = task.filter.ViewFilter(
             self.list, tree_mode=self.tree_mode

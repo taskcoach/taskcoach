@@ -20,7 +20,7 @@ import ast
 import os
 
 import test
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 from taskcoachlib.widgets import currencyctrl, maskedtimectrl, numericctrl
 
 
@@ -28,30 +28,22 @@ class ControlsReadTheApplicationSettingsTest(test.wxTestCase):
     """The date, time and amount controls read the one Settings object
     of the application (P152)."""
 
-    def set(self, option, value):
-        settings = settings2._instance._settings
-        old = settings.get("view", option)
-        self.addCleanup(self.restore, option, old)
-        settings.set("view", option, value)
-        # As the shim's debounce would a second later
-        settings2.refresh_now()
-
     @staticmethod
-    def restore(option, value):
-        settings2._instance._settings.set("view", option, value)
-        settings2.refresh_now()
+    def set(option, value):
+        # The harness puts the settings back after each test
+        setattr(settings.view, option, value)
 
     def test_minute_choices(self):
-        self.set("effortminuteinterval", "20")
+        self.set("effortminuteinterval", 20)
         self.assertEqual([0, 20, 40], maskedtimectrl.getDefaultMinuteChoices())
 
     def test_second_choices(self):
-        self.set("effortsecondinterval", "30")
+        self.set("effortsecondinterval", 30)
         self.assertEqual([0, 30], maskedtimectrl.getDefaultSecondChoices())
 
     def test_hour_choices(self):
-        self.set("efforthourstart", "9")
-        self.set("efforthourend", "11")
+        self.set("efforthourstart", 9)
+        self.set("efforthourend", 11)
         self.assertEqual(
             [9, 10, 11], maskedtimectrl.get_default_hour_choices("24")
         )

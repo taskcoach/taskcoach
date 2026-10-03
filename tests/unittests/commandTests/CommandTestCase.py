@@ -27,7 +27,6 @@ class CommandTestCase(test.wxTestCase, asserts.CommandAssertsMixin):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         # Its lists: the undo log records which items they hold
         self.task_file = persistence.TaskFile()
 

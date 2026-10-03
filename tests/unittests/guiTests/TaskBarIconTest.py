@@ -49,7 +49,7 @@ class MainWindowMock(object):
 class TaskBarIconTestCase(test.TestCase):
     def setUp(self):
         self.taskList = task.TaskList()
-        self.settings = task.Task.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.window = MainWindowMock()
         self.icon = gui.taskbaricon.TaskBarIcon(
             self.window, self.taskList, self.settings

@@ -33,7 +33,6 @@ class CSVWriter(object):
     def write(
         self,
         viewer,
-        settings,
         selectionOnly=False,
         separateDateAndTimeColumns=False,
         columns=None,

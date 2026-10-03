@@ -29,7 +29,7 @@ class VCalTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.fd = io.StringIO()  # The app writes text (codecs.open)
         self.writer = persistence.iCalendarWriter(self.fd)
         self.taskFile = persistence.TaskFile()
@@ -40,7 +40,7 @@ class VCalTestCase(test.wxTestCase):
         self.taskFile.stop()
 
     def writeAndRead(self):
-        self.writer.write(self.viewer, self.settings, self.selectionOnly)
+        self.writer.write(self.viewer, self.selectionOnly)
         return self.fd.getvalue()
 
     def selectItems(self, items):

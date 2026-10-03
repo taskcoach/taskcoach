@@ -37,7 +37,7 @@ class EditorUnderTest(gui.dialog.editor.NoteEditor):
 class EditorTestCase(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.items = base.filter.SearchFilter(self.taskFile.notes())
         self.item = note.Note(subject="item")

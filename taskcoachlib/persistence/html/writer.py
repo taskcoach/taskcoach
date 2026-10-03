@@ -101,7 +101,6 @@ class HTMLWriter(object):
     def write(
         self,
         viewer,
-        settings,
         selectionOnly=False,
         separateCSS=False,
         columns=None,
@@ -115,7 +114,7 @@ class HTMLWriter(object):
             os.path.basename(self.__cssFilename) if separateCSS else ""
         )
         htmlText, count = generator.viewer2html(
-            viewer, settings, cssFilename, selectionOnly, columns
+            viewer, cssFilename, selectionOnly, columns
         )
         self.__fd.write(htmlText)
         if separateCSS:

@@ -64,7 +64,7 @@ class DummyWindow(wx.Frame):
 
 class ReminderControllerTestCase(test.TestCase):
     def setUp(self):
-        task.Task.settings = settings = config.Settings(load=False)
+        settings = config.settings.current()
         self.taskList = task.TaskList()
         self.effortList = effort.EffortList(self.taskList)
         self.dummyWindow = DummyWindow()

@@ -587,10 +587,10 @@ W3C WCAG C40 technique used by Chrome/Edge focus indicators. An inner line uses
 visibility on any background including selected, custom-colored, and unfocused
 rows. Line thickness is configurable via **Preferences > Theme > Hoverover
 Highlight** (default 1, 0 to disable). Read directly via
-`settings2.window.hoverlinewidth` at every use site — no cached attribute,
+`settings.window.hoverlinewidth` at every use site — no cached attribute,
 changes take effect immediately without restart.
 
-Tooltips are controlled by `settings2.view.descriptionpopups` (bool), read
+Tooltips are controlled by `settings.view.descriptionpopups` (bool), read
 directly on every mouse-move in `ToolTipMixin.__on_motion`. The expensive
 `OnBeforeShowToolTip()` call (HitTest + full tooltip data extraction traversing
 notes, categories, attachments, descriptions) runs 200ms after the last move
@@ -618,12 +618,12 @@ EVT_MOUSE_EVENTS on TreeListMainWindow
     │       ├── Same row (Y-bounds cache hit) → return (zero work)
     │       └── New row → HitTest → SetHoverItem(item)
     │           ├── _refresh_hover_row(prevItem)      ← padded invalidation
-    │           │   └── settings2.window.hoverlinewidth  ← direct read
+    │           │   └── settings.window.hoverlinewidth  ← direct read
     │           └── _refresh_hover_row(newItem)       ← padded invalidation
-    │               └── settings2.window.hoverlinewidth  ← direct read
+    │               └── settings.window.hoverlinewidth  ← direct read
     │
     └── event.Skip() → tooltip __on_motion fires (tooltip.py)
-        └── settings2.view.descriptionpopups        ← direct read
+        └── settings.view.descriptionpopups        ← direct read
             └── start 200ms timer → OnBeforeShowToolTip
 ```
 
@@ -657,14 +657,14 @@ EVT_MOTION on VirtualListCtrl
     │
     ├── _on_hover_motion()
     │   └── HitTest → row != _hover_row?
-    │       ├── settings2.window.hoverlinewidth?   ← direct read
+    │       ├── settings.window.hoverlinewidth?   ← direct read
     │       │   ├── _refresh_hover_row(old)   ← padded invalidation
     │       │   └── _refresh_hover_row(new)   ← padded invalidation
     │       │   └── patterns.later.soon(_draw_hover_outline)
-    │       │       └── settings2.window.hoverlinewidth  ← direct read
+    │       │       └── settings.window.hoverlinewidth  ← direct read
     │
     └── event.Skip() → tooltip __on_motion fires (tooltip.py)
-        └── settings2.view.descriptionpopups        ← direct read
+        └── settings.view.descriptionpopups        ← direct read
             └── start 200ms timer → OnBeforeShowToolTip
 ```
 
@@ -685,14 +685,14 @@ to survive native repaints.
 
 ### Settings
 
-Both hover and tooltip settings are read directly via the `settings2` shim
-(see [SETTINGS.md](SETTINGS.md)) — no cached attributes, no getter lambdas,
-no change subscriptions.
+Both hover and tooltip settings are read directly from the one settings
+object ([SETTINGS.md](SETTINGS.md#usage)): no cached attributes, no getter
+lambdas, no change subscriptions.
 
-- `settings2.window.hoverlinewidth` — integer, default 1. 0 disables hover,
+- `settings.window.hoverlinewidth` — integer, default 1. 0 disables hover,
   >0 enables the two-tone outline. User-facing: **Preferences > Theme >
   Hoverover Highlight**.
-- `settings2.view.descriptionpopups` — boolean, default True. Enables/disables
+- `settings.view.descriptionpopups` — boolean, default True. Enables/disables
   tooltip popups. User-facing: **Preferences > View > Description popups**.
 
 ---
@@ -703,8 +703,8 @@ Only two handlers fire on mouse motion. Both call `event.Skip()` so the chain is
 
 | Handler | File | Purpose |
 |---------|------|---------|
-| `OnMouse` fast-path | `hypertreelist.py` | Row-bounds cache → HitTest only on row change → update `_hoverItem`, read `settings2.window.hoverlinewidth` |
-| `__on_motion` (ToolTipMixin) | `tooltip.py` | Read `settings2.view.descriptionpopups`, store position, restart the 200ms debounced call |
+| `OnMouse` fast-path | `hypertreelist.py` | Row-bounds cache → HitTest only on row change → update `_hoverItem`, read `settings.window.hoverlinewidth` |
+| `__on_motion` (ToolTipMixin) | `tooltip.py` | Read `settings.view.descriptionpopups`, store position, restart the 200ms debounced call |
 | `__show_pending_tip` (ToolTipMixin) | `tooltip.py` | Call `OnBeforeShowToolTip()` → build tooltip |
 
 **Hover fast-path:** `OnMouse` short-circuits for `event.Moving()` before the

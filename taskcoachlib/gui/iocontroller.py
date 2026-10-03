@@ -634,7 +634,7 @@ class IOController(object):
                 return False
             with fd:
                 count = writer_class(fd, filename).write(
-                    viewer, self.__settings, selectionOnly, **kwargs
+                    viewer, selectionOnly, **kwargs
                 )
             self.__message_callback(
                 _("Exported %(count)d items to " "%(filename)s")
@@ -877,7 +877,7 @@ class IOController(object):
             traceback.format_exception(*sys.exc_info(), limit=10)
         )
         message = _("Error while reading %s:\n") % filename + limited_exception
-        man = persistence.BackupManifest(self.__settings)
+        man = persistence.BackupManifest()
         if show_backups and man.hasBackups(filename):
             message += "\n" + _(
                 "The backup manager will now open to allow you to restore\n"
@@ -886,7 +886,7 @@ class IOController(object):
         showerror(message, **self.__error_message_options)
 
         if show_backups and man.hasBackups(filename):
-            dlg = BackupManagerDialog(None, self.__settings, filename)
+            dlg = BackupManagerDialog(None, filename)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
                     patterns.later.soon(

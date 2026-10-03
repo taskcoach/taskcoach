@@ -94,7 +94,7 @@ class TaskEditorTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         for section, name, value in self.extraSettings:
             self.settings.set(section, name, value)
         self.today = date.Now()

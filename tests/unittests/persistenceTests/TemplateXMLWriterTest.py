@@ -24,7 +24,6 @@ from unittests.asserts import sorted_attributes
 
 class TemplateXMLWriterTestCase(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.fd = io.BytesIO()  # The app writes UTF-8 bytes (SafeWriteFile)
         self.fd.name = "testfile.tsk"
         self.writer = persistence.TemplateXMLWriter(self.fd)

@@ -26,7 +26,6 @@ from taskcoachlib.domain import task, category, note
 
 class PerformanceTest(test.TestCase):
     def createTestFile(self):
-        task.Task.settings = config.Settings(load=False)
         taskList = task.TaskList(
             [task.Task("test") for _ in range(self.nrTasks)]
         )

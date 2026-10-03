@@ -27,7 +27,6 @@ from taskcoachlib.domain import task, category, effort, date, note, attachment
 
 class IntegrationTestCase(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.fd = io.BytesIO()  # The app writes UTF-8 bytes (SafeWriteFile)
         self.fd.name = "testfile.tsk"
         self.writer = persistence.XMLWriter(self.fd)

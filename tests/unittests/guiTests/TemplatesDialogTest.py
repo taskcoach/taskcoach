@@ -23,7 +23,7 @@ from taskcoachlib import gui, config
 class TemplatesDialogTestCase(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
 
         # Monkey-patching
         self.path = os.path.join(os.path.split(__file__)[0], "tmpl")

@@ -67,7 +67,7 @@ class ExportDialogTest(test.wxTestCase):
     def testCreate(self):
         self.frame.viewer = DummyViewerContainer()
         self.set_main_window_task_file(self.frame)
-        settings = config.Settings(load=False)
+        settings = config.settings.current()
         dialog.export.ExportAsHTMLDialog(self.frame, settings=settings)
 
 

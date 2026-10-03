@@ -19,7 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import test
 import wx
 from unittest import mock
-from taskcoachlib import config, patterns, widgets
+from taskcoachlib import patterns, widgets
+from taskcoachlib.config import settings
 
 
 class MultiLineTextCtrlTest(test.wxTestCase):
@@ -45,14 +46,18 @@ class MultiLineTextCtrlTest(test.wxTestCase):
         self.assertEqual(0, textctrl.GetInsertionPoint())
 
     def test_squiggle_colour_follows_preferences(self):
-        settings = config.Settings(load=False)
-        textctrl = widgets.MultiLineTextCtrl(self.frame, settings=settings)
-        for section in ("spellcheck_light", "spellcheck_dark"):
-            settings.setvalue(section, "squiggle_color", (1, 2, 3))
-        patterns.Event("spellcheck.colours.changed", settings).send()
+        textctrl = widgets.MultiLineTextCtrl(self.frame)
+        settings.spellcheck_light.squiggle_color = (1, 2, 3)
+        settings.spellcheck_dark.squiggle_color = (1, 2, 3)
+        patterns.Event("spellcheck.colours.changed", settings.current()).send()
         self.assertEqual(
             wx.Colour(1, 2, 3),
             textctrl._textCtrl.IndicatorGetForeground(
                 widgets.textctrl.SPELLCHECK_INDICATOR
             ),
         )
+
+    def test_spell_checking_follows_preferences(self):
+        settings.spellcheck.enabled = False
+        textctrl = widgets.MultiLineTextCtrl(self.frame)
+        self.assertFalse(textctrl._textCtrl._spellCheckEnabled)

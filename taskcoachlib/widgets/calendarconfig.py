@@ -21,6 +21,7 @@ import wx
 import wx.lib.colourselect as csel
 from wx.lib import sized_controls
 from taskcoachlib.i18n import _
+from taskcoachlib.config import settings
 from taskcoachlib.thirdparty.wxScheduler import (
     wxSCHEDULER_DAILY,
     wxSCHEDULER_WEEKLY,
@@ -41,9 +42,8 @@ class CalendarConfigDialog(sized_controls.SizedDialog):
         (True, True, True),
     ]
 
-    def __init__(self, settings, settingsSection, *args, **kwargs):
-        self._settings = settings
-        self._settingsSection = settingsSection
+    def __init__(self, settings_section, *args, **kwargs):
+        self._options = settings.section(settings_section)
         kwargs.setdefault("style", wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         super().__init__(*args, **kwargs)
         pane = self.GetContentsPane()
@@ -80,12 +80,8 @@ class CalendarConfigDialog(sized_controls.SizedDialog):
             panel, choices=periods
         )  # pylint: disable=W0201
         self._spanType.SetSizerProps(valign="center")
-        self._spanCount.SetValue(
-            self._settings.getint(self._settingsSection, "periodcount")
-        )
-        selection = self.VIEWTYPES.index(
-            self._settings.getint(self._settingsSection, "viewtype")
-        )
+        self._spanCount.SetValue(self._options.periodcount)
+        selection = self.VIEWTYPES.index(self._options.viewtype)
         self._spanType.SetSelection(selection)
         panel.SetSizerProps(valign="center")
         panel.Fit()
@@ -99,9 +95,7 @@ class CalendarConfigDialog(sized_controls.SizedDialog):
             pane, choices=orientations
         )  # pylint: disable=W0201
         self._orientation.SetSizerProps(valign="center")
-        selection = self.VIEWORIENTATIONS.index(
-            self._settings.getint(self._settingsSection, "vieworientation")
-        )
+        selection = self.VIEWORIENTATIONS.index(self._options.vieworientation)
         self._orientation.SetSelection(selection)
 
     def createDisplayEntry(self, pane):
@@ -118,16 +112,9 @@ class CalendarConfigDialog(sized_controls.SizedDialog):
             pane, choices=choices
         )  # pylint: disable=W0201
         self._display.SetSizerProps(valign="center")
+        options = self._options
         selection = self.VIEWFILTERS.index(
-            (
-                self._settings.getboolean(
-                    self._settingsSection, "shownostart"
-                ),
-                self._settings.getboolean(self._settingsSection, "shownodue"),
-                self._settings.getboolean(
-                    self._settingsSection, "showunplanned"
-                ),
-            )
+            (options.shownostart, options.shownodue, options.showunplanned)
         )
         self._display.SetSelection(selection)
 
@@ -138,16 +125,14 @@ class CalendarConfigDialog(sized_controls.SizedDialog):
         label.SetSizerProps(valign="center")
         self._shownow = wx.CheckBox(pane)  # pylint: disable=W0201
         self._shownow.SetSizerProps(valign="center")
-        self._shownow.SetValue(
-            self._settings.getboolean(self._settingsSection, "shownow")
-        )
+        self._shownow.SetValue(self._options.shownow)
 
     def createColorEntry(self, pane):
         label = wx.StaticText(
             pane, label=_("Color used to highlight the current day")
         )
         label.SetSizerProps(valign="center")
-        hcolor = self._settings.get(self._settingsSection, "highlightcolor")
+        hcolor = self._options.highlightcolor
         if not hcolor:
             # The highlight color is too dark
             color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
@@ -177,29 +162,22 @@ class CalendarConfigDialog(sized_controls.SizedDialog):
             self._spanCount.Enable(True)
 
     def ok(self, event=None):  # pylint: disable=W0613
-        settings, section = self._settings, self._settingsSection
-        settings.set(section, "periodcount", str(self._spanCount.GetValue()))
-        settings.set(
-            section,
-            "viewtype",
-            str(self.VIEWTYPES[self._spanType.GetSelection()]),
-        )
-        settings.set(
-            section,
-            "vieworientation",
-            str(self.VIEWORIENTATIONS[self._orientation.GetSelection()]),
-        )
-        shownostart, shownodue, showunplanned = self.VIEWFILTERS[
-            self._display.GetSelection()
+        options = self._options
+        options.periodcount = self._spanCount.GetValue()
+        options.viewtype = self.VIEWTYPES[self._spanType.GetSelection()]
+        options.vieworientation = self.VIEWORIENTATIONS[
+            self._orientation.GetSelection()
         ]
-        settings.set(section, "shownostart", str(shownostart))
-        settings.set(section, "shownodue", str(shownodue))
-        settings.set(section, "showunplanned", str(showunplanned))
-        settings.set(section, "shownow", str(self._shownow.GetValue()))
+        (
+            options.shownostart,
+            options.shownodue,
+            options.showunplanned,
+        ) = self.VIEWFILTERS[self._display.GetSelection()]
+        options.shownow = self._shownow.GetValue()
         color = self._highlight.GetColour()
-        settings.set(
-            section,
-            "highlightcolor",
-            "%d,%d,%d" % (color.Red(), color.Green(), color.Blue()),
+        options.highlightcolor = "%d,%d,%d" % (
+            color.Red(),
+            color.Green(),
+            color.Blue(),
         )
         self.EndModal(wx.ID_OK)

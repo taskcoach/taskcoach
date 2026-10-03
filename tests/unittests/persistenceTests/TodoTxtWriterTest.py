@@ -25,7 +25,7 @@ from taskcoachlib.domain import task, category, date
 
 class TodoTxtWriterTestCase(test.wxTestCase):
     def setUp(self):
-        self.settings = task.Task.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.file = io.StringIO()
         self.writer = persistence.TodoTxtWriter(self.file, "whatever.tsk")
         self.settings.set("taskviewer", "treemode", "False")
@@ -35,13 +35,13 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         )
 
     def testNoTasksAndCategories(self):
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual("", self.file.getvalue())
 
     def testOneTask(self):
         theTask = task.Task(subject="Get cheese")
         self.taskFile.tasks().append(theTask)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Get cheese tcid:%s\n" % theTask.id(), self.file.getvalue()
         )
@@ -51,7 +51,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         theTask2 = task.Task(subject="Paint house")
         self.taskFile.tasks().append(theTask1)
         self.taskFile.tasks().append(theTask2)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Get cheese tcid:%s\nPaint house tcid:%s\n"
             % (theTask1.id(), theTask2.id()),
@@ -61,7 +61,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
     def testNonAsciiSubject(self):
         theTask = task.Task(subject="Call Jérôme")
         self.taskFile.tasks().append(theTask)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Call Jérôme tcid:%s\n" % theTask.id(), self.file.getvalue()
         )
@@ -73,7 +73,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         self.taskFile.tasks().append(theTask2)
         self.viewer.sortBy("subject")
         self.viewer.setSortOrderAscending(False)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Paint house tcid:%s\nGet cheese tcid:%s\n"
             % (theTask2.id(), theTask1.id()),
@@ -83,7 +83,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
     def testTaskPriorityIsWrittenAsLetter(self):
         theTask = task.Task(subject="Get cheese", priority=1)
         self.taskFile.tasks().append(theTask)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "(A) Get cheese tcid:%s\n" % theTask.id(), self.file.getvalue()
         )
@@ -91,7 +91,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
     def testTaskPriorityHigherThanZIsIgnored(self):
         theTask = task.Task(subject="Get cheese", priority=27)
         self.taskFile.tasks().append(theTask)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Get cheese tcid:%s\n" % theTask.id(), self.file.getvalue()
         )
@@ -102,7 +102,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
             plannedStartDateTime=date.DateTime(2027, 1, 23, 15, 34, 12),
         )
         self.taskFile.tasks().append(theTask)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "2027-01-23 Get cheese tcid:%s\n" % theTask.id(),
             self.file.getvalue(),
@@ -114,7 +114,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
             completionDateTime=date.DateTime(2027, 1, 23, 15, 34, 12),
         )
         self.taskFile.tasks().append(theTask)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "X 2027-01-23 Get cheese tcid:%s\n" % theTask.id(),
             self.file.getvalue(),
@@ -126,7 +126,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         pizza = task.Task(subject="Order pizza")
         self.taskFile.tasks().append(pizza)
         pizza.addCategory(phone)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Order pizza @phone tcid:%s\n" % pizza.id(), self.file.getvalue()
         )
@@ -137,7 +137,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         dishes = task.Task(subject="Do dishes")
         self.taskFile.tasks().append(dishes)
         dishes.addCategory(at_home)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Do dishes @at_home tcid:%s\n" % dishes.id(), self.file.getvalue()
         )
@@ -150,7 +150,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         discuss_proposal = task.Task(subject="Discuss the proposal")
         self.taskFile.tasks().append(discuss_proposal)
         discuss_proposal.addCategory(staff_meeting)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Discuss the proposal @Work->Staff_meeting tcid:%s\n"
             % discuss_proposal.id(),
@@ -165,7 +165,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         self.taskFile.tasks().append(pizza)
         pizza.addCategory(phone)
         pizza.addCategory(food)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Order pizza @food @phone tcid:%s\n" % pizza.id(),
             self.file.getvalue(),
@@ -177,7 +177,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         pizza = task.Task(subject="Order pizza")
         self.taskFile.tasks().append(pizza)
         pizza.addCategory(alive)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Order pizza +Stay_alive tcid:%s\n" % pizza.id(),
             self.file.getvalue(),
@@ -189,7 +189,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         pizza = task.Task(subject="Order pizza")
         self.taskFile.tasks().append(pizza)
         pizza.addCategory(phone)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Order pizza tcid:%s\n" % pizza.id(), self.file.getvalue()
         )
@@ -201,7 +201,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
         activity = task.Task(subject="Some activity")
         project.addChild(activity)
         self.taskFile.tasks().append(project)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Project tcid:%s\nProject -> Some activity tcid:%s\n"
             % (project.id(), activity.id()),
@@ -214,7 +214,7 @@ class TodoTxtWriterTestCase(test.wxTestCase):
             dueDateTime=date.DateTime(2011, 1, 1, 16, 50, 10),
         )
         self.taskFile.tasks().append(theTask)
-        self.writer.write(self.viewer, self.settings, False)
+        self.writer.write(self.viewer, False)
         self.assertEqual(
             "Export due date due:2011-01-01 tcid:%s\n" % theTask.id(),
             self.file.getvalue(),

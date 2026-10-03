@@ -59,14 +59,13 @@ class Fixture(CategoryFilterHelpersMixin):
     tree_mode = False
 
     def setUp(self):
-        self.settings = task.Task.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.categories = category.CategoryList(self.createCategories())
         self.tasks = task.TaskList(self.createTasks())
         self.categorize()
         self.filter = category.filter.CategoryFilter(
             self.tasks,
             categories=self.categories,
-            settings=self.settings,
             tree_mode=self.tree_mode,
         )
 
@@ -861,7 +860,6 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
     CategoryFilterHelpersMixin
 ):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.parent = task.Task("parent task")
         self.parent.set_should_mark_completed_when_all_children_completed(
             False
@@ -879,7 +877,6 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
         self.categoryFilter = category.filter.CategoryFilter(
             self.viewFilter,
             categories=self.categories,
-            settings=task.Task.settings,
             tree_mode=self.tree_mode,
         )
 
@@ -943,7 +940,6 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
     tree_mode = True
 
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         # Parent task with no category
         self.parent = task.Task("parent task")
         self.parent.set_should_mark_completed_when_all_children_completed(
@@ -961,7 +957,6 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
         self.categoryFilter = category.filter.CategoryFilter(
             self.tasks,
             categories=self.categories,
-            settings=task.Task.settings,
             tree_mode=self.tree_mode,
         )
         self.viewFilter = task.filter.ViewFilter(

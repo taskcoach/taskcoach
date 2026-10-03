@@ -30,7 +30,7 @@ class DummyEvent(object):
 class CategoryEditorTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.categories = self.taskFile.categories()
         self.categories.extend(self.createCategories())

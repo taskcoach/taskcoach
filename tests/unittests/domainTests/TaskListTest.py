@@ -23,7 +23,6 @@ from taskcoachlib.domain import task, effort, date
 
 class TaskListTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.taskList = task.TaskList()
         year = date.Now().year
         self.task1 = task.Task(dueDateTime=date.DateTime(year + 1, 1, 1))

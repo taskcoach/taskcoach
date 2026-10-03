@@ -39,7 +39,7 @@ class CommonTestsMixin(object):
 
 class VersionDialogTestCase(test.TestCase):
     def setUp(self):
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.dialog = self.createDialog()
 
     def createDialog(self):

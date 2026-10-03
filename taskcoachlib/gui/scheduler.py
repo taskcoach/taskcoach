@@ -47,6 +47,7 @@ import time
 
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.config.settings import Settings
 from taskcoachlib.domain import attachment, base, category, effort, note
 from taskcoachlib.domain import date as datemodule
@@ -361,7 +362,7 @@ class MasterScheduler:
 
     @staticmethod
     def _due_soon_hours():
-        return Task.settings.getint("behavior", "duesoonhours")
+        return settings.behavior.duesoonhours
 
     def _rebuild(self):
         """Every task's timer entries, and the full loop at the next

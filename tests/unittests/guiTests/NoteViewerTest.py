@@ -25,7 +25,7 @@ from taskcoachlib.domain import note, attachment, category
 class NoteViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.note = note.Note()
         self.taskFile.notes().append(self.note)

@@ -24,7 +24,7 @@ from taskcoachlib.domain import category
 class CategoryViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.categories = self.taskFile.categories()
         self.viewer = gui.viewer.CategoryViewer(
@@ -46,7 +46,6 @@ class CategoryViewerTest(test.wxTestCase):
         # The file stores the category's side of the link
         from taskcoachlib.domain import task
 
-        task.Task.settings = self.settings
         cat1, cat2 = self.addTwoCategories()
         paint = task.Task(subject="paint")
         self.taskFile.tasks().append(paint)

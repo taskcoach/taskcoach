@@ -24,7 +24,6 @@ from taskcoachlib.domain import task, effort, date
 class EffortListTest(test.TestCase):
     def setUp(self):
         self.events = []
-        task.Task.settings = config.Settings(load=False)
         self.task = task.Task()
         self.taskList = task.TaskList()
         self.effortList = effort.EffortList(self.taskList)

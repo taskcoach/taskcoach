@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.widgets import itemctrl
 import wx.lib.mixins.listctrl
 from taskcoachlib import patterns
@@ -84,10 +85,8 @@ class VirtualListCtrl(
             rect = self.GetItemRect(row)
         except Exception:
             return
-        from taskcoachlib.config import settings2
-
         pad = (
-            settings2.window.hoverlinewidth + 1
+            settings.window.hoverlinewidth + 1
         )  # both lines inside row, small safety
         rect.Inflate(pad, pad)
         self.RefreshRect(rect)
@@ -95,11 +94,9 @@ class VirtualListCtrl(
     def _on_hover_motion(self, event):
         row, flags = super().HitTest(event.GetPosition())
         if row != self._hover_row:
-            from taskcoachlib.config import settings2
-
             old = self._hover_row
             self._hover_row = row
-            if settings2.window.hoverlinewidth:
+            if settings.window.hoverlinewidth:
                 if old >= 0:
                     self._refresh_hover_row(old)
                 if row >= 0:
@@ -139,9 +136,7 @@ class VirtualListCtrl(
 
     def _draw_hover_outline(self):
         """Two-tone hover outline: fgcolor inner + bgcolor outer."""
-        from taskcoachlib.config import settings2
-
-        pw = settings2.window.hoverlinewidth
+        pw = settings.window.hoverlinewidth
         if self._hover_row < 0 or not pw:
             return
         if self.__row_under_pointer() != self._hover_row:
@@ -341,10 +336,7 @@ class VirtualListCtrl(
     def _auto_scroll_enabled(self):
         """Whether the view may scroll by itself to follow the
         selection."""
-        settings = getattr(self.__parent, "settings", None)
-        if settings is None:
-            return True
-        return settings.getboolean("view", "autoscrollselection")
+        return settings.view.autoscrollselection
 
     def ensureSelectionVisible(self):
         if not self._auto_scroll_enabled():

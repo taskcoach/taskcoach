@@ -32,7 +32,6 @@ class AnonymizeTest(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         directory = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, directory)
         self.filename = os.path.join(directory, "tasks.tsk")

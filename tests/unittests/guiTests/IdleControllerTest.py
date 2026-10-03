@@ -30,7 +30,7 @@ class IdleControllerTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.task_file = persistence.TaskFile()
         self.controller = idlecontroller.IdleController(
             self.settings, self.task_file.efforts()

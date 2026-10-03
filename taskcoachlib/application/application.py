@@ -664,7 +664,6 @@ class Application(object, metaclass=patterns.Singleton):
         # wxApp creation
 
         self.__init_language()
-        self.__init_domain_objects()
         self.__init_application()
 
         # Check file lock BEFORE creating main window to avoid dialog/focus
@@ -695,9 +694,9 @@ class Application(object, metaclass=patterns.Singleton):
         # pylint: disable=W0201
         self.taskFile = persistence.LockedTaskFile()
         self.__wx_app.taskFile = self.taskFile
-        self.__auto_saver = persistence.AutoSaver(self.settings)
-        self.__auto_exporter = persistence.AutoImporterExporter(self.settings)
-        self.__auto_backup = persistence.AutoBackup(self.settings)
+        self.__auto_saver = persistence.AutoSaver()
+        self.__auto_exporter = persistence.AutoImporterExporter()
+        self.__auto_backup = persistence.AutoBackup()
         self.iocontroller = IOController(
             self.taskFile, self.display_message, self.settings
         )
@@ -757,6 +756,8 @@ class Application(object, metaclass=patterns.Singleton):
         ini_file = self._options.inifile if self._options else None
         # pylint: disable=W0201
         self.settings = config.Settings(load_settings, ini_file)
+        # The one every module reads (docs/SETTINGS.md)
+        config.settings.use(self.settings)
         from taskcoachlib.config import settings2
 
         settings2.init(self.settings)
@@ -799,13 +800,6 @@ class Application(object, metaclass=patterns.Singleton):
             # Fall back on what the majority of our users use
             language = "en_US"
         return language
-
-    def __init_domain_objects(self):
-        """Provide relevant domain objects with access to the settings."""
-        from taskcoachlib.domain import task, attachment
-
-        task.Task.settings = self.settings
-        attachment.Attachment.settings = self.settings
 
     def __init_application(self):
         from taskcoachlib import meta

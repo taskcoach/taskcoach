@@ -12,6 +12,7 @@ DnD cursor overlays create wx.Cursor objects from catalog icons with
 centered hotspot, cached per-size (static source, never invalidated).
 """
 
+from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
 
 # SSOT: all synthetic icons and their configuration.
@@ -135,7 +136,6 @@ class SyntheticIconGenerator:
 
         OVERLAY_ICON_ID = "nuvola_status_dialog-error"
         option = route["option_id"]
-        settings = wx.GetApp().settings
         base_icon_id = settings.get("icon", option)
         if not base_icon_id:
             log_step(

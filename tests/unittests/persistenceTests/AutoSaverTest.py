@@ -80,9 +80,9 @@ class DummyTaskFile(persistence.TaskFile):
 
 class AutoSaverTestCase(test.TestCase):
     def setUp(self):
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = DummyTaskFile()
-        self.autoSaver = persistence.AutoSaver(self.settings)
+        self.autoSaver = persistence.AutoSaver()
 
     def tearDown(self):
         super().tearDown()
@@ -170,9 +170,9 @@ class AutoSaverTestCase(test.TestCase):
 class AutoSaverRetryTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = DummyTaskFile()
-        self.autoSaver = persistence.AutoSaver(self.settings)
+        self.autoSaver = persistence.AutoSaver()
         self.autoSaver.RETRY_SECONDS = 0
         self.messages = []
         self.autoSaver._tell_user = self.messages.append
@@ -229,7 +229,7 @@ class AutoSaverChangedOnDiskTest(test.TestCase):
         directory = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, directory)
         self.filename = os.path.join(directory, "tasks.tsk")
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.settings.set("file", "autosave", "True")
         self.task_file = persistence.TaskFile()
         self.addCleanup(self.task_file.stop)
@@ -238,7 +238,7 @@ class AutoSaverChangedOnDiskTest(test.TestCase):
         self.task_file.tasks().append(self.task)
         self.task_file.setFilename(self.filename)
         self.task_file.save()
-        self.auto_saver = persistence.AutoSaver(self.settings)
+        self.auto_saver = persistence.AutoSaver()
         self.noticed = test.ChangeRecorder("taskfile.changed")
 
     def add_their_task(self):

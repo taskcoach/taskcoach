@@ -34,7 +34,7 @@ says), the other options as they are now.
 Example (date format):
 ```
 getDetectedLocaleDateFormat()     # Layer 1: strftime("%x") probe
-getDateFormatFromSettings()       # Layer 2: settings2.get("view", "dateformat"), as at start
+getDateFormatFromSettings()       # Layer 2: settings.get("view", "dateformat"), as at start
 getEffectiveDateFormat()          # Layer 3: setting → detection → ISO default
 ```
 

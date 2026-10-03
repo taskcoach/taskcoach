@@ -25,7 +25,7 @@ from taskcoachlib.domain import date, task
 class TreeViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.viewer = gui.viewer.TaskViewer(
             self.frame, self.taskFile, self.settings

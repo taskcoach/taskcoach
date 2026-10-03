@@ -31,7 +31,7 @@ class ToolBar(gui.toolbar.ToolBar):
 class ToolBarTest(test.wxTestCase):
     def testAppendUICommand(self):
         gui.init()
-        settings = config.Settings(load=False)
+        settings = config.settings.current()
         toolbar = ToolBar(self.frame, settings)
         uiCommand = dummy.DummyUICommand(menu_text="undo", bitmap="undo")
         toolId = toolbar.append_ui_command(uiCommand)
@@ -52,7 +52,7 @@ class ToolBarSizeTest(test.wxTestCase):
         self.createToolBarAndTestSize((32, 32))
 
     def createToolBarAndTestSize(self, size, expectedSize=None):
-        settings = config.Settings(load=False)
+        settings = config.settings.current()
         toolbarArgs = [self.frame, settings]
         if size:
             toolbarArgs.append(size)
@@ -79,7 +79,7 @@ class ToolBarPerspectiveTest(test.wxTestCase):
                 return [Test1(), Separator(), Test2(), Spacer()]
 
         self.tbFrame = TestFrame()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
 
     def tearDown(self):
         self.tbFrame.Close()

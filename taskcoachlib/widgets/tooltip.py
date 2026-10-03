@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import operating_system, patterns
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 import wx
 import textwrap
@@ -102,7 +102,7 @@ class ToolTipMixin(object):
     def __on_motion(self, event):
         x, y = event.GetPosition()
         self.cancel_tip()
-        if settings2.view.descriptionpopups:
+        if settings.view.descriptionpopups:
             self.__position = (x + 20, y + 10)
             self.__pending_xy = (x, y)
             self.__tip_later()

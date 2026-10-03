@@ -20,13 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.domain import date, categorizable, note, attachment
 from taskcoachlib.domain.base import is_restoring
 from taskcoachlib.domain.base.attribute import Attribute, SetAttribute
 from taskcoachlib.patterns.field import ListField
 from taskcoachlib.tools import wxhelper
 from . import status
-import ast
 import wx
 
 
@@ -75,9 +75,7 @@ class Task(
         self.__status_text = ""
         self.__status_icon_id = ""
         self.__status_source = ""  # Explanation of why task has this status
-        self.__dueSoonHours = self.settings.getint(
-            "behavior", "duesoonhours"
-        )  # pylint: disable=E1101
+        self.__dueSoonHours = settings.behavior.duesoonhours
         maxDateTime = self.maxDateTime
         self.__dueDateTime = Attribute(
             dueDateTime or maxDateTime, self, self._on_due_date_time_changed
@@ -519,9 +517,8 @@ class Task(
         marked completed when 1) it's not completed, 2) all of its children
         are completed, 3) its setting says it should be completed when
         all of its children are completed."""
-        shouldMarkCompletedAccordingToSetting = self.settings.getboolean(
-            "behavior",  # pylint: disable=E1101
-            "markparentcompletedwhenallchildrencompleted",
+        mark_by_setting = settings.get(
+            "behavior", "markparentcompletedwhenallchildrencompleted"
         )
         shouldMarkCompletedAccordingToTask = (
             self.shouldMarkCompletedWhenAllChildrenCompleted()
@@ -531,7 +528,7 @@ class Task(
                 (shouldMarkCompletedAccordingToTask == True)
                 or (
                     (shouldMarkCompletedAccordingToTask == None)
-                    and shouldMarkCompletedAccordingToSetting
+                    and mark_by_setting
                 )
             )
             and (not self.completed())
@@ -557,7 +554,7 @@ class Task(
             ),
         ):
             patterns.Publisher().registerObserver(
-                handler, eventType=event_type, eventSource=self.settings
+                handler, eventType=event_type
             )
 
     def on_mark_parent_completed_setting_changed(self, event=None):
@@ -753,7 +750,7 @@ class Task(
             .replace("tasks", "")
             .strip()
         )
-        self.__status_icon_id = new_status.icon_id(self.settings)
+        self.__status_icon_id = new_status.icon_id()
         self.__status_source = new_source
 
         # Fire event if status changed
@@ -819,7 +816,7 @@ class Task(
         patterns.Event("task.reminder.trigger", self).send()
 
     def on_due_soon_hours_changed(self, event=None):  # pylint: disable=W0613
-        self.__dueSoonHours = self.settings.getint("behavior", "duesoonhours")
+        self.__dueSoonHours = settings.behavior.duesoonhours
         # The status at once; the master loop moves the timer seconds
         # (docs/SCHEDULERS.md)
         self._update_status()
@@ -1116,11 +1113,7 @@ class Task(
     @classmethod
     def fgColorForStatus(class_, taskStatus):
         section = class_._themedSection("fgcolor")
-        return wx.Colour(
-            *ast.literal_eval(
-                class_.settings.get(section, "%stasks" % taskStatus)
-            )
-        )  # pylint: disable=E1101
+        return wx.Colour(*settings.get(section, "%stasks" % taskStatus))
 
     def statusBgColor(self):
         return self.bgColorForStatus(self.computedStatus())
@@ -1128,11 +1121,7 @@ class Task(
     @classmethod
     def bgColorForStatus(class_, taskStatus):
         section = class_._themedSection("bgcolor")
-        return wx.Colour(
-            *ast.literal_eval(
-                class_.settings.get(section, "%stasks" % taskStatus)
-            )
-        )  # pylint: disable=E1101
+        return wx.Colour(*settings.get(section, "%stasks" % taskStatus))
 
     def statusFont(self):
         return self.fontForStatus(self.computedStatus())
@@ -1140,10 +1129,8 @@ class Task(
     @classmethod
     def fontForStatus(class_, taskStatus):
         section = class_._themedSection("font")
-        nativeInfoString = class_.settings.get(
-            section, "%stasks" % taskStatus
-        )  # pylint: disable=E1101
-        return wxhelper.font_from_native_info(nativeInfoString)
+        native_info = settings.get(section, "%stasks" % taskStatus)
+        return wxhelper.font_from_native_info(native_info)
 
     def _update_status(self, recursive=False):
         """The status at once after a change of what it reads, without
@@ -1159,8 +1146,7 @@ class Task(
     def percentageComplete(self, recursive=False):
         if recursive:
             if self.shouldMarkCompletedWhenAllChildrenCompleted() is None:
-                # pylint: disable=E1101
-                ignore_me = self.settings.getboolean(
+                ignore_me = settings.get(
                     "behavior", "markparentcompletedwhenallchildrencompleted"
                 )
             else:
@@ -1261,9 +1247,7 @@ class Task(
         """The Status column's order: the sort priorities of
         Preferences > Statuses, highest first, as sorting by status
         first does (docs/TASK_STATUS_SORT.md)."""
-        return lambda task: -task.computedStatus().get_sort_priority(
-            task.settings
-        )
+        return lambda task: -task.computedStatus().get_sort_priority()
 
     @staticmethod
     def prioritySortFunction(**kwargs):
@@ -1750,8 +1734,7 @@ class Task(
 
     @classmethod
     def suggested_date_time(cls, default_date_time_setting, now=date.Now):
-        # pylint: disable=E1101,W0142
-        default_date_time = cls.settings.get("view", default_date_time_setting)
+        default_date_time = settings.get("view", default_date_time_setting)
         dummy_prefix, default_date, default_time = default_date_time.split("_")
         date_time = now()
         current_time = dict(
@@ -1779,18 +1762,15 @@ class Task(
         if default_time == "startofday":
             return date_time.startOfDay()
         elif default_time == "startofworkingday":
-            start_hour = cls.settings.getint("view", "efforthourstart")
+            start_hour = settings.view.efforthourstart
             return date_time.replace(hour=start_hour, minute=0, second=0)
         elif default_time == "currenttime":
             return date_time
         elif default_time == "endofworkingday":
-            end_hour = cls.settings.getint("view", "efforthourend")
+            end_hour = settings.view.efforthourend
             # 24 is how older versions said "end of day" (Preferences
             # migrates it only when saved); replace() rejects hour 24.
-            if (
-                cls.settings.getboolean("view", "efforthourend_endofday")
-                or end_hour >= 24
-            ):
+            if settings.view.efforthourend_endofday or end_hour >= 24:
                 end_hour, minute, second = 23, 59, 59
             else:
                 minute, second = 0, 0

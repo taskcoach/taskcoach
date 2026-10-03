@@ -55,7 +55,7 @@ class TaskViewerTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         # Late: planned a second ago, dates being whole seconds
         started = date.Now() - date.ONE_SECOND
         self.task = task.Task(subject="task", plannedStartDateTime=started)
@@ -805,24 +805,24 @@ class CommonTestsMixin(object):
     def testIconUpdatesWhenPlannedStartDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.set_planned_start_date_time(date.Now() + date.ONE_DAY)
-        self.assertIcon(task.inactive.icon_id(self.settings))
+        self.assertIcon(task.inactive.icon_id())
 
     def testIconUpdatesWhenDueDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.set_due_date_time(date.Now() + date.ONE_HOUR)
-        self.assertIcon(task.duesoon.icon_id(self.settings))
+        self.assertIcon(task.duesoon.icon_id())
 
     def testIconUpdatesWhenCompletionDateTimeChanges(self):
         self.taskList.append(self.task)
         self.task.set_completion_date_time(date.Now())
-        self.assertIcon(task.completed.icon_id(self.settings))
+        self.assertIcon(task.completed.icon_id())
 
     def testIconUpdatesWhenPrerequisiteIsAdded(self):
         prerequisite = task.Task("zzz")
         self.taskList.extend([prerequisite, self.task])
         self.task.add_prerequisites([prerequisite])
         prerequisite.add_dependencies([self.task])
-        self.assertIcon(task.inactive.icon_id(self.settings))
+        self.assertIcon(task.inactive.icon_id())
 
     def testIconUpdatesWhenPrerequisiteIsCompleted(self):
         prerequisite = task.Task(subject="zzz")
@@ -830,7 +830,7 @@ class CommonTestsMixin(object):
         self.task.add_prerequisites([prerequisite])
         prerequisite.add_dependencies([self.task])
         prerequisite.set_completion_date_time(date.Now())
-        self.assertIcon(task.late.icon_id(self.settings))
+        self.assertIcon(task.late.icon_id())
 
     def testIconUpdatesWhenEffortTrackingStarts(self):
         self.taskList.append(self.task)
@@ -841,18 +841,18 @@ class CommonTestsMixin(object):
         self.taskList.append(self.task)
         self.task.addEffort(effort.Effort(self.task))
         self.task.stopTracking()
-        self.assertIcon(task.active.icon_id(self.settings))
+        self.assertIcon(task.active.icon_id())
 
     def testIconUpdatesWhenTaskBecomesOverdue(self):
         dueDateTime = date.Now() + date.TimeDelta(seconds=10)
         self.task.set_due_date_time(dueDateTime)
         self.taskList.append(self.task)
-        self.assertIcon(task.duesoon.icon_id(self.settings))
+        self.assertIcon(task.duesoon.icon_id())
         now = dueDateTime + date.ONE_SECOND
         oldNow = date.Now
         date.Now = lambda: now
         self.task.compute_stored_status()
-        self.assertIcon(task.overdue.icon_id(self.settings))
+        self.assertIcon(task.overdue.icon_id())
         date.Now = oldNow
 
     def testModeIsSavedInSettings(self):
@@ -1663,7 +1663,7 @@ class TaskViewerInListModeTest(CommonTestsMixin, TaskViewerTestCase):
 class TaskCalendarViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.frame.taskFile = self.taskFile
         self.viewer = gui.viewer.task.CalendarViewer(
@@ -1727,7 +1727,7 @@ class TaskCalendarViewerTest(test.wxTestCase):
 
 class TaskSquareMapViewerTest(test.wxTestCase):
     def testCreate(self):
-        task.Task.settings = settings = config.Settings(load=False)
+        settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         gui.viewer.task.SquareTaskViewer(self.frame, self.taskFile, settings)
 
@@ -1740,7 +1740,7 @@ class TaskSquareMapViewerTest(test.wxTestCase):
 class TaskTimelineViewerTest(test.wxTestCase):
     def testCreate(self):
         # pylint: disable-msg=W0201
-        task.Task.settings = settings = config.Settings(load=False)
+        settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.viewer = gui.viewer.task.TimelineViewer(
             self.frame, self.taskFile, settings
@@ -1762,7 +1762,7 @@ class DatesTiedTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.settings.set("view", "datestied", "duestart")
         self.taskFile = persistence.TaskFile()
         self.addCleanup(self.taskFile.stop)
@@ -1801,7 +1801,7 @@ class DatesTiedTest(test.wxTestCase):
 
 class TaskStatisticsViewerTest(test.wxTestCase):
     def create_viewer(self):
-        task.Task.settings = settings = config.Settings(load=False)
+        settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         return gui.viewer.task.TaskStatsViewer(
             self.frame, self.taskFile, settings

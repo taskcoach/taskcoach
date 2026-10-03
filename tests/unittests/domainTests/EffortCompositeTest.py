@@ -40,7 +40,6 @@ class FakeEffortAggregator(object):
 
 class CompositeEffortWithRoundingTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.task = task.Task(subject="task")
         self.effort1 = effort.Effort(
             self.task,
@@ -89,7 +88,6 @@ class CompositeEffortWithRoundingTest(test.TestCase):
 
 class CompositeEffortTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.task = task.Task(subject="task")
         self.effort1 = effort.Effort(
             self.task,
@@ -346,7 +344,6 @@ class CompositeEffortTest(test.TestCase):
 
 class CompositeEffortWithSubTasksTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.task = task.Task(subject="task")
         self.child = task.Task(subject="child")
         self.child2 = task.Task(subject="child2")
@@ -506,7 +503,6 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
 
 class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.task = task.Task(subject="task")
         self.child = task.Task(subject="child")
         self.task.addChild(self.child)

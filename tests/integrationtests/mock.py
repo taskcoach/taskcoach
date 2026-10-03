@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import application, config, i18n
-from taskcoachlib.config import settings2
 from taskcoachlib.domain import task
 
 
@@ -50,8 +49,8 @@ class App(application.Application):
         self._args = args or []
         self._Application__wx_app = MockWxApp()
         # Application.__init__() loads the settings before init()
-        self.settings = config.Settings(load=False)
-        settings2.init(self.settings)
+        # The one the harness installed (docs/SETTINGS.md)
+        self.settings = config.settings.current()
         self.init()
         self.sessionMonitor = None
         application.Application.instance = self

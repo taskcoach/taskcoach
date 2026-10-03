@@ -36,7 +36,6 @@ NOW = date.DateTime(2026, 9, 30, 9, 30, 0)
 class UndoTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         self.history = patterns.CommandHistory()
         self.history.clear()
         self.addCleanup(self.history.clear)
@@ -264,7 +263,6 @@ class WhatUndoTellsTest(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         self.history = patterns.CommandHistory()
         self.history.clear()
         self.addCleanup(self.history.clear)

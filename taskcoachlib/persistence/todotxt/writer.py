@@ -28,7 +28,7 @@ class TodoTxtWriter(object):
         self.__fd = fd
         self.__filename = filename
 
-    def write(self, viewer, settings, selectionOnly, taskFile=None, **kwargs):
+    def write(self, viewer, selectionOnly, taskFile=None, **kwargs):
         if isinstance(viewer, str) and viewer == self.ALL_TASKS:
             tasks = list(taskFile.tasks()) if taskFile else []
         else:

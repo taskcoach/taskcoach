@@ -217,10 +217,26 @@ class TestCase(unittest.TestCase, object):
 
         patterns.Publisher().clear()
         patterns.CommandHistory().clear()
+        self.__reset_settings(app)
         patterns.NumberedInstances.count = dict()
         if hasattr(self, "events"):
             del self.events
         super().tearDown()
+
+    @staticmethod
+    def __reset_settings(app):
+        """The next test starts from the harness's settings: the one
+        every module reads, at its defaults (docs/SETTINGS.md)."""
+        from taskcoachlib import config
+        from taskcoachlib.config import settings2
+
+        settings = getattr(app, "settings", None)
+        if settings is None:
+            return
+        config.settings.use(settings)
+        settings.reset()
+        settings.init("window", "theme", "light")
+        settings2.refresh_now()
 
 
 class TestCaseFrame(wx.Frame):
@@ -242,7 +258,10 @@ class wxTestCase(TestCase):
     app.quitting = False
     from taskcoachlib import config
 
-    app.settings = config.Settings(load=False)
+    # The one every module reads, as the application's; test.py runs
+    # twice, as the program and as the module "test", with one
+    app.settings = config.settings.current() or config.Settings(load=False)
+    config.settings.use(app.settings)
     # Light, so colours do not follow the desktop theme
     app.settings.settext("window", "theme", "light")
     from taskcoachlib.config import settings2

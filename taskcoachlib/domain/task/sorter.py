@@ -111,13 +111,11 @@ class Sorter(base.TreeSorter):
             if self.is_ascending():
                 # Negate priority so higher priority (more urgent) sorts first
                 return lambda task: [
-                    -task.computedStatus().get_sort_priority(task.settings)
+                    -task.computedStatus().get_sort_priority()
                 ]
             else:
                 # For descending, use priority directly (higher sorts first)
-                return lambda task: [
-                    task.computedStatus().get_sort_priority(task.settings)
-                ]
+                return lambda task: [task.computedStatus().get_sort_priority()]
         else:
             return lambda task: []
 

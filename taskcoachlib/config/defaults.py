@@ -675,4 +675,14 @@ defaults = {
     },
 }
 
+# An editor window's section, named after its tabs
+# ("taskdialog_with_dates_subject"), made when it first opens
+editor_window = {
+    "perspective": "",
+    "pages": "[]",
+    "size": "(-1, -1)",
+    "position": "(-1, -1)",
+    "maximized": "False",
+}
+
 minimum = {"view": {"taskviewercount": "1"}}

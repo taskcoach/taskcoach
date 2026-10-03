@@ -23,7 +23,7 @@ import contextlib
 import time
 import wx
 from taskcoachlib import patterns
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 
 # A slow double click: a second click on the same cell, after the
 # system's double-click time and within this time of the first
@@ -595,10 +595,7 @@ class TreeListCtrl(
     def _auto_scroll_enabled(self):
         """Whether the view may scroll by itself to follow the
         selection."""
-        settings = getattr(self.__adapter, "settings", None)
-        if settings is None:
-            return True
-        return settings.getboolean("view", "autoscrollselection")
+        return settings.view.autoscrollselection
 
     @contextlib.contextmanager
     def stable_viewport(self):
@@ -961,7 +958,7 @@ class TreeListCtrl(
     def __can_edit(self, cell):
         """Editing in place is on, the cell's row is still selected, and
         its column can be edited."""
-        if cell is None or not settings2.get("feature", "in_place_editing"):
+        if cell is None or not settings.feature.in_place_editing:
             return False
         item, column = cell
         try:
@@ -1058,7 +1055,7 @@ class TreeListCtrl(
         slow, self.__slow_double_click = self.__slow_double_click, False
         return (
             slow
-            and settings2.get("feature", "in_place_slow_double_click")
+            and settings.feature.in_place_slow_double_click
             and self.__can_edit(self.__focused_cell)
             and self.__same_cell(
                 self.__focused_cell, (event.GetItem(), event.GetInt())

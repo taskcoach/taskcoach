@@ -30,7 +30,7 @@ class DummyEvent(object):
 class AttachmentEditorTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.attachment = attachment.FileAttachment("Attachment")
         self.attachments = attachment.AttachmentList()
@@ -94,7 +94,7 @@ class MailAttachmentEditorTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.mail = attachment.MailAttachment(
             "mid:1@example.com",

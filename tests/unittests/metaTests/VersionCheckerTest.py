@@ -49,7 +49,7 @@ class VersionCheckerUnderTest(meta.VersionChecker):
 
 class VersionCheckerTest(test.TestCase):
     def setUp(self):
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
 
     def checkVersion(
         self, version, retrievalException=None, parseException=None

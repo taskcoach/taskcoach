@@ -27,7 +27,7 @@ class CSVWriterTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.fd = io.StringIO()
         self.writer = persistence.CSVWriter(self.fd)
         self.taskFile = persistence.TaskFile()
@@ -52,7 +52,6 @@ class CSVWriterTestCase(test.wxTestCase):
     ):
         self.writer.write(
             self.viewer,
-            self.settings,
             selectionOnly,
             separateDateAndTimeColumns=separateDateAndTimeColumns,
             columns=columns,

@@ -27,7 +27,7 @@ from taskcoachlib import gui, config, operating_system
 class WindowDimensionsTrackerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.section = "window"
         self.settings.setvalue(self.section, "position", (50, 50))
         # A frame per test: the shared one keeps earlier trackers bound
@@ -107,7 +107,7 @@ class WindowGeometryTrackerFirstShowTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.settings.setvalue("window", "position", (10, 10))
         self.settings.setvalue("window", "size", (620, 450))
         self.window = wx.Frame(self.frame)
@@ -250,7 +250,7 @@ class PlacementTest(test.wxTestCase):
         )
         patcher.start()
         self.addCleanup(patcher.stop)
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.settings.setvalue("window", "position", (300, 200))
         self.settings.setvalue("window", "size", (1000, 700))
 
@@ -393,7 +393,7 @@ class DirectPlacementTest(test.wxTestCase):
         )
         patcher.start()
         self.addCleanup(patcher.stop)
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.settings.setvalue("window", "position", (300, 200))
         self.settings.setvalue("window", "size", (1000, 700))
 
@@ -447,7 +447,7 @@ class WaylandTest(test.wxTestCase):
         ):
             patcher.start()
             self.addCleanup(patcher.stop)
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
 
     def test_main_window_keeps_size_and_maximized(self):
         self.settings.setvalue("window", "position", (300, 200))
@@ -517,7 +517,7 @@ class EditorPlacementTest(test.wxTestCase):
         ):
             patcher.start()
             self.addCleanup(patcher.stop)
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.parent = FakeWindow()
         self.parent.position = (100, 100)
         self.parent.size = (1200, 800)

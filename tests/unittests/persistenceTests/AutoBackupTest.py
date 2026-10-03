@@ -81,11 +81,12 @@ class AutoBackupTest(test.TestCase):
     # pylint: disable=E1101,E1002,W0232
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = LocalSettings(load=False)
+        # Backups in the test's folder; the harness puts its settings
+        # back after the test
+        self.settings = LocalSettings(load=False)
+        config.settings.use(self.settings)
         self.taskFile = DummyTaskFile()
-        self.backup = persistence.AutoBackup(
-            self.settings, copyfile=self.onCopyFile
-        )
+        self.backup = persistence.AutoBackup(copyfile=self.onCopyFile)
         self.copyCalled = False
 
     def tearDown(self):
@@ -269,7 +270,8 @@ class RestoreBackupTest(test.TestCase):
         self.directory = tempfile.mkdtemp()
         self.filename = os.path.join(self.directory, "tasks.tsk")
         self.write(self.filename, b"current")
-        self.manifest = persistence.BackupManifest(LocalSettings(load=False))
+        config.settings.use(LocalSettings(load=False))
+        self.manifest = persistence.BackupManifest()
         self.backup_time = date.DateTime(2026, 9, 1, 12, 0, 0)
         self.backup = os.path.join(
             self.manifest.backupPath(self.filename),

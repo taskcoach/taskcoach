@@ -39,7 +39,7 @@ class Window(AuiManagedFrameWithDynamicCenterPane):
 class ViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.task = task.Task("task")
         self.taskFile.tasks().append(self.task)
@@ -212,7 +212,7 @@ class ViewerTest(test.wxTestCase):
 
 class SortableViewerTest(test.TestCase):
     def setUp(self):
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.viewer = self.createViewer()
 
     def createViewer(self):
@@ -277,7 +277,7 @@ class SortableViewerTest(test.TestCase):
 
 class SortableViewerForTasksTest(test.TestCase):
     def setUp(self):
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
 
         class ViewerUnderTest(gui.viewer.mixin.SortableViewerForTasksMixin):
             pass
@@ -312,7 +312,7 @@ class SearchableViewerUnderTest(
 
 class SearchableViewerTest(test.TestCase):
     def setUp(self):
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.viewer = self.createViewer()
 
     def createViewer(self):
@@ -418,8 +418,7 @@ class FilterableViewerForTasksUnderTest(
 
 class FilterableViewerForTasks(test.TestCase):
     def setUp(self):
-        self.settings = config.Settings(load=False)
-        task.Task.settings = self.settings
+        self.settings = config.settings.current()
         self.viewer = self.createViewer()
 
     def tearDown(self):
@@ -675,8 +674,7 @@ class ViewerIteratorTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
-        task.Task.settings = self.settings
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.taskList = self.taskFile.tasks()
         self.window = AuiManagedFrameWithDynamicCenterPane(self.frame)
@@ -744,7 +742,7 @@ class ListViewerIteratorTest(ViewerIteratorTestCase, ViewerIteratorTestsMixin):
 
 class ViewerWithColumnsTest(test.wxTestCase):
     def setUp(self):
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.viewer = gui.viewer.TaskViewer(
             self.frame, self.taskFile, self.settings

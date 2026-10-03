@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.domain import base
 from .category import Category
 
@@ -24,10 +25,6 @@ from .category import Category
 class CategoryFilter(base.Filter):
     def __init__(self, *args, **kwargs):
         self.__categories = kwargs.pop("categories")
-        self.__settings = kwargs.pop("settings")
-        self.__filterOnlyWhenAllCategoriesMatch = kwargs.pop(
-            "filterOnlyWhenAllCategoriesMatch", False
-        )
         for event_type in (
             self.__categories.addItemEventType(),
             self.__categories.removeItemEventType(),
@@ -50,7 +47,6 @@ class CategoryFilter(base.Filter):
         patterns.Publisher().registerObserver(
             self.onFilterMatchingChanged,
             eventType="view.categoryfiltermatchall",
-            eventSource=self.__settings,
         )
         super().__init__(*args, **kwargs)
 
@@ -64,7 +60,7 @@ class CategoryFilter(base.Filter):
         if not filtered_categories:
             return categorizables
 
-        if self.__filterOnlyWhenAllCategoriesMatch:
+        if settings.view.categoryfiltermatchall:
             filtered_categorizables = set(categorizables)
             for category in filtered_categories:
                 filtered_categorizables &= (
@@ -88,9 +84,6 @@ class CategoryFilter(base.Filter):
         return categorizables
 
     def onFilterMatchingChanged(self, event):  # pylint: disable=W0613
-        self.__filterOnlyWhenAllCategoriesMatch = self.__settings.getboolean(
-            "view", "categoryfiltermatchall"
-        )
         self.reset()
 
     def onCategoryChanged(self, event):  # pylint: disable=W0613

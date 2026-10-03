@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import i18n, operating_system, patterns
+from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.tools import text as tools_text
 import functools
@@ -95,7 +96,6 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         parent,
         text="",
         *args,
-        settings=None,
         single_line=False,
         spell_check=True,
         **kwargs
@@ -104,7 +104,6 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         kwargs.pop("style", None)
         super().__init__(parent, style=wx.BORDER_NONE)
 
-        self._settings = settings
         self._single_line = single_line
         self._spell_check_requested = spell_check  # User requested spell check
         self._spellCheckEnabled = False
@@ -259,17 +258,13 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
 
     def _getSquiggleColor(self):
         """Get the squiggle color from settings, respecting light/dark theme."""
-        if self._settings is None:
-            return wx.RED
         try:
-            from taskcoachlib.config import settings2
-
             section = (
                 "spellcheck_dark"
-                if settings2.window.theme_is_dark
+                if settings.window.theme_is_dark
                 else "spellcheck_light"
             )
-            color_tuple = self._settings.getvalue(section, "squiggle_color")
+            color_tuple = settings.get(section, "squiggle_color")
             return wx.Colour(*color_tuple)
         except Exception as e:
             log_step(
@@ -302,25 +297,8 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         if not ENCHANT_AVAILABLE or not self._spell_check_requested:
             return
 
-        # Load settings
-        if self._settings:
-            try:
-                self._spellCheckEnabled = self._settings.getboolean(
-                    "spellcheck", "enabled"
-                )
-                self._spellCheckLanguage = (
-                    self._settings.get("spellcheck", "language") or None
-                )
-            except Exception as e:
-                log_step(
-                    "spellcheck settings load failed, using defaults: %s" % e,
-                    prefix="SPELL",
-                )
-                self._spellCheckEnabled = True
-                self._spellCheckLanguage = None
-        else:
-            # No settings passed - enable spell check by default if requested
-            self._spellCheckEnabled = True
+        self._spellCheckEnabled = settings.spellcheck.enabled
+        self._spellCheckLanguage = settings.spellcheck.language or None
 
         if self._spellCheckEnabled:
             self._highlight_later = patterns.later.debounced(
@@ -674,7 +652,6 @@ class MultiLineTextCtrl(wx.Panel):
         parent,
         text="",
         *args,
-        settings=None,
         single_line=False,
         spell_check=True,
         **kwargs
@@ -691,7 +668,6 @@ class MultiLineTextCtrl(wx.Panel):
             self,
             text,
             *args,
-            settings=settings,
             single_line=single_line,
             spell_check=spell_check,
             style=style,
@@ -833,9 +809,7 @@ class MultiLineTextCtrl(wx.Panel):
         return self._textCtrl.setSpellCheckLanguage(language)
 
 
-def single_line_text_ctrl(
-    parent, value="", settings=None, spell_check=True, **kwargs
-):
+def single_line_text_ctrl(parent, value="", spell_check=True, **kwargs):
     """Single-line text control with optional spell checking.
 
     This is a convenience wrapper that creates a MultiLineTextCtrl with
@@ -846,12 +820,7 @@ def single_line_text_ctrl(
             for fields like file paths or URLs.
     """
     return MultiLineTextCtrl(
-        parent,
-        value,
-        settings=settings,
-        single_line=True,
-        spell_check=spell_check,
-        **kwargs
+        parent, value, single_line=True, spell_check=spell_check, **kwargs
     )
 
 

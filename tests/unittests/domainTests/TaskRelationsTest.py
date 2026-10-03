@@ -23,7 +23,7 @@ import test
 
 class CommonTaskRelationshipManagerTestsMixin(object):
     def setUp(self):
-        task.Task.settings = settings = config.Settings(load=False)
+        settings = config.settings.current()
         now = self.now = date.Now()
         self.yesterday = now - date.ONE_DAY
         self.tomorrow = now + date.ONE_DAY

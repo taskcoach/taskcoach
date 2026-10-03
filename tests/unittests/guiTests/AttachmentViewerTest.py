@@ -25,7 +25,7 @@ from taskcoachlib.domain import attachment, date
 
 class AttachmentViewerTest(test.wxTestCase):
     def setUp(self):
-        settings = config.Settings(load=False)
+        settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         attachments = attachment.AttachmentList()
         self.viewer = gui.viewer.AttachmentViewer(
@@ -78,7 +78,7 @@ class AttachmentViewerMailColumnsTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = persistence.TaskFile()
         self.early = attachment.MailAttachment(
             "mid:2@example.com",

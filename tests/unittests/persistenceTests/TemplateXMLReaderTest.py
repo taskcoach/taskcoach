@@ -27,7 +27,6 @@ class TemplateXMLReaderTestCase(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
 
         self.fd = io.StringIO()
         self.fd.name = "testfile.tsk"

@@ -100,7 +100,6 @@ class StackedFilterTest(test.TestCase):
 
 class SearchFilterTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.parent = task.Task(
             subject="*ABC$D", description="Parent description"
         )
@@ -221,7 +220,6 @@ class SearchFilterTest(test.TestCase):
 
 class SelectedItemsFilterTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.task = task.Task()
         self.child = task.Task(parent=self.task)
         self.list = task.TaskList([self.task])

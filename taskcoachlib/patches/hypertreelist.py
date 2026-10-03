@@ -3115,8 +3115,8 @@ class TreeListMainWindow(CustomTreeCtrl):
         """Like RefreshLine but inflated by pen width so the full outline is erased."""
         if self._dirty or self._freezeCount:
             return
-        from taskcoachlib.config import settings2
-        pad = settings2.window.hoverlinewidth + 1  # both lines inside row, small safety
+        from taskcoachlib.config import settings
+        pad = settings.window.hoverlinewidth + 1  # both lines inside row, small safety
         x, y = self.CalcScrolledPosition(0, item.GetY())
         w = self.GetClientSize().x
         h = self.GetLineHeight(item)
@@ -3722,8 +3722,8 @@ class TreeListMainWindow(CustomTreeCtrl):
             # Two-tone hover outline: fgcolor inner + bgcolor outer.
             # Both drawn inside the row rect so adjacent rows don't
             # overwrite.  W3C WCAG C40 technique.
-            from taskcoachlib.config import settings2
-            pw = settings2.window.hoverlinewidth
+            from taskcoachlib.config import settings
+            pw = settings.window.hoverlinewidth
             if pw > 0 and item == self._hoverItem and item != self._dragItem:
                 row_off = 1 if draw_row_lines else 0
                 hover_w = self._owner.GetHeaderWindow().GetWidth()

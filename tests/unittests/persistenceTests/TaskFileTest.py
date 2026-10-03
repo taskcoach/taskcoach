@@ -55,7 +55,7 @@ class FakeAttachment(base.Object):
 
 class TaskFileTestCase(test.TestCase):
     def setUp(self):
-        self.settings = task.Task.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.createTaskFiles()
         self.task = task.Task(subject="task")
         self.taskFile.tasks().append(self.task)

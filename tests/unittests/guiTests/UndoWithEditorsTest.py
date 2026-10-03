@@ -33,7 +33,7 @@ class UndoWithEditorsTest(UndoTest.UndoTest, test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        settings = config.Settings(load=False)
+        settings = config.settings.current()
         task_file = self.task_file
         self.editors = [
             editor.TaskEditor(

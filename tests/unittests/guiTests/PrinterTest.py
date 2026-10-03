@@ -24,9 +24,9 @@ from taskcoachlib import gui, config
 class PrinterTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.margins = dict(top=1, left=2, bottom=3, right=4)
-        self.printerSettings = gui.printer.PrinterSettings(self.settings)
+        self.printerSettings = gui.printer.PrinterSettings()
         self.pageSetupData = wx.PageSetupDialogData()
 
     def tearDown(self):
@@ -37,10 +37,10 @@ class PrinterTest(test.TestCase):
         gui.printer.PrinterSettings.deleteInstance()  # pylint: disable=E1101
 
     def testInitialSettings(self):
-        printerSettings = self.printerSettings
-        self.assertEqual(wx.Point(0, 0), printerSettings.GetMarginTopLeft())
-        self.assertEqual(0, printerSettings.GetPaperId())
-        self.assertEqual(wx.PORTRAIT, printerSettings.GetOrientation())
+        printer_settings = self.printerSettings
+        self.assertEqual(wx.Point(0, 0), printer_settings.GetMarginTopLeft())
+        self.assertEqual(0, printer_settings.GetPaperId())
+        self.assertEqual(wx.PORTRAIT, printer_settings.GetOrientation())
 
     def testSetMargin(self):
         self.pageSetupData.SetMarginTopLeft(wx.Point(10, 1))
@@ -104,25 +104,25 @@ class PrinterTest(test.TestCase):
             self.settings.set(
                 "printer", "margin_" + margin, str(self.margins[margin])
             )
-        printerSettings = gui.printer.PrinterSettings(self.settings)
-        self.assertEqual(wx.Point(2, 1), printerSettings.GetMarginTopLeft())
+        printer_settings = gui.printer.PrinterSettings()
+        self.assertEqual(wx.Point(2, 1), printer_settings.GetMarginTopLeft())
         self.assertEqual(
-            wx.Point(4, 3), printerSettings.GetMarginBottomRight()
+            wx.Point(4, 3), printer_settings.GetMarginBottomRight()
         )
 
     def testPaperIdInPageSetupDataIsUpdatedFromSettings(self):
         self.resetPrinterSettings()
         self.settings.set("printer", "paper_id", "1")
-        printerSettings = gui.printer.PrinterSettings(self.settings)
-        self.assertEqual(1, printerSettings.GetPaperId())
+        printer_settings = gui.printer.PrinterSettings()
+        self.assertEqual(1, printer_settings.GetPaperId())
 
     def testOrientationInPageSetupDataIsUpdatedFromSettings(self):
         self.resetPrinterSettings()
         self.settings.set("printer", "orientation", str(wx.LANDSCAPE))
-        printerSettings = gui.printer.PrinterSettings(self.settings)
-        self.assertEqual(wx.LANDSCAPE, printerSettings.GetOrientation())
+        printer_settings = gui.printer.PrinterSettings()
+        self.assertEqual(wx.LANDSCAPE, printer_settings.GetOrientation())
 
 
 class HTMLPrintoutTest(test.TestCase):
     def testCreate(self):
-        gui.printer.HTMLPrintout("<html></html>", config.Settings(load=False))
+        gui.printer.HTMLPrintout("<html></html>")

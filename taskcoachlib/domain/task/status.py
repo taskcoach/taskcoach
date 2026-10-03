@@ -17,21 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib.i18n import _
-from taskcoachlib.config import defaults
+from taskcoachlib.config import defaults, settings
 
 
 def themed_section(section):
     """The settings section of a status style in the current theme:
     its _dark twin in a dark one."""
-    try:
-        from taskcoachlib.config import settings2
-
-        return section + "_dark" if settings2.window.theme_is_dark else section
-    except Exception as e:
-        from taskcoachlib.meta.debug import log_step
-
-        log_step("themed_section(%s): %s" % (section, e), prefix="THEME")
-        return section
+    return section + "_dark" if settings.window.theme_is_dark else section
 
 
 class TaskStatus(object):
@@ -49,12 +41,12 @@ class TaskStatus(object):
         self.hide_menu_text = hide_menu_text
         self.hide_help_text = hide_help_text
 
-    def get_sort_priority(self, settings):
-        return int(
-            settings.get("statussortpriority", "%stasks" % self.status_string)
+    def get_sort_priority(self):
+        return settings.get(
+            "statussortpriority", "%stasks" % self.status_string
         )
 
-    def icon_id(self, settings, required=False):
+    def icon_id(self, required=False):
         """The status's icon in the current theme (Preferences >
         Statuses), empty when set to none; required gives the default
         then (a toolbar button needs one)."""

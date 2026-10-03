@@ -890,7 +890,6 @@ class HierarchicalCalendarViewer(
 
     def configure(self):
         dialog = HierarchicalCalendarConfigDialog(
-            self.settings,
             self.settingsSection(),
             self,
             title=_("Hierarchical calendar viewer configuration"),
@@ -1202,7 +1201,6 @@ class CalendarViewer(
 
     def configure(self):
         dialog = CalendarConfigDialog(
-            self.settings,
             self.settingsSection(),
             self,
             title=_("Calendar viewer configuration"),

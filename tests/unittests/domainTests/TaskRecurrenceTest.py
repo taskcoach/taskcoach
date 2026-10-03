@@ -23,7 +23,7 @@ from taskcoachlib.domain import task, date
 
 class RecurringTaskTestCase(test.TestCase):
     def setUp(self):
-        self.settings = task.Task.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.now = date.Now()
         self.yesterday = self.now - date.ONE_DAY
         self.tomorrow = self.now + date.ONE_DAY

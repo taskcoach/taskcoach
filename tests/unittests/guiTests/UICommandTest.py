@@ -92,7 +92,7 @@ class UICommandTest(test.wxTestCase):
 
 class wxTestCaseWithFrameAsTopLevelWindow(test.wxTestCase):
     def setUp(self):
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         wx.GetApp().SetTopWindow(self.frame)
         self.taskFile = self.frame.taskFile = persistence.TaskFile()
 
@@ -255,7 +255,7 @@ class MarkActiveTest(test.TestCase):
     def assertMarkActiveIsEnabled(self, selection, shouldBeEnabled=True):
         viewer = DummyViewer(selection)
         markActive = gui.uicommand.TaskMarkActive(
-            viewer=viewer, settings=config.Settings(load=False)
+            viewer=viewer, settings=config.settings.current()
         )
         isEnabled = markActive.enabled(None)
         if shouldBeEnabled:
@@ -285,7 +285,7 @@ class MarkInactiveTest(test.TestCase):
     def assertMarkInactiveIsEnabled(self, selection, shouldBeEnabled=True):
         viewer = DummyViewer(selection)
         markInactive = gui.uicommand.TaskMarkInactive(
-            viewer=viewer, settings=config.Settings(load=False)
+            viewer=viewer, settings=config.settings.current()
         )
         isEnabled = markInactive.enabled(None)
         if shouldBeEnabled:
@@ -316,7 +316,7 @@ class MarkCompletedTest(test.TestCase):
     def assertMarkCompletedIsEnabled(self, selection, shouldBeEnabled=True):
         viewer = DummyViewer(selection)
         markCompleted = gui.uicommand.TaskMarkCompleted(
-            viewer=viewer, settings=config.Settings(load=False)
+            viewer=viewer, settings=config.settings.current()
         )
         isEnabled = markCompleted.enabled(None)
         if shouldBeEnabled:
@@ -451,7 +451,7 @@ class EffortNewTest(wxTestCaseWithFrameAsTopLevelWindow):
 
 class EditPreferencesTest(test.TestCase):
     def testEditPreferences(self):
-        settings = config.Settings(load=False)
+        settings = config.settings.current()
         self.set_main_window_task_file()
         editPreferences = gui.uicommand.EditPreferences(settings=settings)
         editPreferences.do_command(None, show=False)
@@ -460,7 +460,7 @@ class EditPreferencesTest(test.TestCase):
 
 class EffortViewerAggregationChoiceTest(test.TestCase):
     def setUp(self):
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.choice = gui.uicommand.EffortViewerAggregationChoice(
             viewer=self, settings=self.settings
         )
@@ -528,7 +528,7 @@ class EffortViewerAggregationChoiceTest(test.TestCase):
 
 class OpenAllAttachmentsTest(test.TestCase):
     def setUp(self):
-        settings = config.Settings(load=False)
+        settings = config.settings.current()
         self.viewer = DummyViewer([task.Task("Task")])
         self.openAll = gui.uicommand.OpenAllAttachments(
             settings=settings, viewer=self.viewer
@@ -630,7 +630,6 @@ class ToggleCategoryTest(test.TestCase):
 class EffortStopTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         self.taskList = task.TaskList()
         self.task = task.Task("Task")
         self.task2 = task.Task("Task 2")
@@ -741,7 +740,6 @@ class AttachmentTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
 
-        task.Task.settings = config.Settings(load=False)
         taskFile = persistence.TaskFile()
         self.task = task.Task()
         taskFile.tasks().extend([self.task])
@@ -750,7 +748,7 @@ class AttachmentTest(test.wxTestCase):
         self.viewer = gui.dialog.editor.LocalAttachmentViewer(
             self.frame,
             taskFile,
-            task.Task.settings,
+            config.settings.current(),
             owner=self.task,
             settingsSection="attachmentviewer",
         )
@@ -900,7 +898,7 @@ class SameWindowThrottleTest(test.wxTestCase):
     def new_task_key(self, **keywords):
         command = gui.uicommand.TaskNew(
             taskList=task.TaskList(),
-            settings=config.Settings(load=False),
+            settings=config.settings.current(),
             taskKeywords=keywords,
         )
         return command.same_window_key()

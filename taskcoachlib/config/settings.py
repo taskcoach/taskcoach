@@ -89,6 +89,9 @@ class CachingConfigParser(UnicodeAwareConfigParser):
             cache[key] = super().get(*key, **kwargs)  # pylint: disable=W0142
         return cache[key]
 
+    def clear_cache(self):
+        self.__cachedValues = dict()
+
 
 class Settings(CachingConfigParser):
     def __init__(self, load=True, iniFile=None, *args, **kwargs):
@@ -191,12 +194,21 @@ class Settings(CachingConfigParser):
         self.set("file", "inifileloaded", "False" if message else "True")
         self.set("file", "inifileloaderror", message)
 
+    # Not shown when the settings are not loaded, in tests
+    _QUIET = (("window", "tips", "False"),)
+
     def __beQuiet(self):
-        noisySettings = [
-            ("window", "tips", "False"),
-        ]
-        for section, setting, value in noisySettings:
+        for section, setting, value in self._QUIET:
             self.set(section, setting, value)
+
+    def reset(self):
+        """The defaults again, telling no listener: a test's settings
+        for the next test."""
+        self.initializeWithDefaults()
+        self.clear_cache()
+        if not self.__loadAndSave:
+            for section, setting, value in self._QUIET:
+                self.init(section, setting, value)
 
     def add_section(
         self, section, copyFromSection=None
@@ -827,5 +839,178 @@ class Settings(CachingConfigParser):
         except OSError:
             pass
 
+    def get_typed(self, section, option):
+        """The option's value as its type (docs/SETTINGS.md, One
+        Settings Object)."""
+        return getattr(self, _READERS[option_type(section, option)])(
+            section, option
+        )
+
+    def set_typed(self, section, option, value):
+        """Store the value, of the option's type, and tell the
+        listeners when it changed."""
+        kind = option_type(section, option)
+        if not _ACCEPTS[kind](value):
+            raise TypeError(
+                "%s.%s takes %s, not %r" % (section, option, kind, value)
+            )
+        getattr(self, _WRITERS[kind])(section, option, value)
+
     def __hash__(self) -> int:
         return id(self)
+
+
+# Each option's type comes from its default: "True" or "False", a
+# whole number, a Python literal (list, tuple, dict), or text. These
+# defaults look like a number but are text.
+_TEXT_OPTIONS = {("view", "timeformat")}
+
+_READERS = dict(
+    bool="getboolean", int="getint", literal="getvalue", text="gettext"
+)
+_WRITERS = dict(
+    bool="setboolean", int="setint", literal="setvalue", text="settext"
+)
+
+
+def _is_literal(value):
+    try:
+        ast.literal_eval(str(value))
+    except (ValueError, SyntaxError):
+        return False
+    return True
+
+
+_ACCEPTS = dict(
+    bool=lambda value: isinstance(value, bool),
+    int=lambda value: isinstance(value, int) and not isinstance(value, bool),
+    literal=lambda value: not isinstance(value, str) and _is_literal(value),
+    text=lambda value: isinstance(value, str),
+)
+
+
+def template(section):
+    """The defaults of the section: its own, a viewer instance's
+    template's (taskviewer1: taskviewer), or an editor window's."""
+    if section in defaults.defaults:
+        return defaults.defaults[section]
+    base = section.rstrip("0123456789")
+    if base in defaults.defaults:
+        return defaults.defaults[base]
+    if "dialog_with_" in section:
+        return defaults.editor_window
+    raise KeyError(section)
+
+
+def option_type(section, option):
+    """The option's type: "bool", "int", "literal" or "text";
+    KeyError for an option no defaults name."""
+    default = template(section)[option]
+    if (section.rstrip("0123456789"), option) in _TEXT_OPTIONS:
+        return "text"
+    if default in ("True", "False"):
+        return "bool"
+    if default.lstrip("-").isdigit():
+        return "int"
+    if default[:1] in ("[", "(", "{") and _is_literal(default):
+        return "literal"
+    return "text"
+
+
+_PARSE = dict(
+    bool=lambda text: text == "True",
+    int=int,
+    literal=ast.literal_eval,
+    text=str,
+)
+
+
+def _default(section_name, option):
+    """The option's default as its type: what a module reads while it
+    loads, before the application has its settings."""
+    kind = option_type(section_name, option)
+    return _PARSE[kind](template(section_name)[option])
+
+
+def _theme_is_dark():
+    """Whether the colours are the dark ones: the theme chosen, or the
+    system's when automatic."""
+    theme = get("window", "theme")
+    if theme in ("dark", "light"):
+        return theme == "dark"
+    from taskcoachlib.application.application import detect_dark_theme
+
+    return detect_dark_theme()
+
+
+# Read like options, computed at each read from the settings and the
+# system (1.3 microseconds for the theme on GTK)
+_COMPUTED = {("window", "theme_is_dark"): _theme_is_dark}
+
+
+class _Section:
+    """One section's options as attributes: read as their type, and
+    written, which tells the listeners."""
+
+    __slots__ = ("_name",)
+
+    def __init__(self, name):
+        object.__setattr__(self, "_name", name)
+
+    def __getattr__(self, option):
+        computed = _COMPUTED.get((self._name, option))
+        if computed:
+            return computed()
+        try:
+            if _current is None:
+                return _default(self._name, option)
+            return _current.get_typed(self._name, option)
+        except KeyError:
+            raise AttributeError("%s.%s" % (self._name, option)) from None
+
+    def __setattr__(self, option, value):
+        try:
+            option_type(self._name, option)
+        except KeyError:
+            raise AttributeError("%s.%s" % (self._name, option)) from None
+        _current.set_typed(self._name, option, value)
+
+    def __repr__(self):
+        return "<settings section %s>" % self._name
+
+
+# The one Settings object: the application's, in tests the harness's
+_current = None
+_sections = {}
+
+
+def use(settings):
+    """Make settings the object every module reads and writes."""
+    global _current  # pylint: disable=W0603
+    _current = settings
+
+
+def current():
+    """The Settings object every module reads and writes."""
+    return _current
+
+
+def section(name):
+    """The section's options as attributes, for a section named while
+    running (settings.section("taskviewer1").sortby)."""
+    try:
+        return _sections[name]
+    except KeyError:
+        return _sections.setdefault(name, _Section(name))
+
+
+def get(section_name, option):
+    """The option's value as its type, for names the caller computes."""
+    return getattr(section(section_name), option)
+
+
+def __getattr__(name):
+    """settings.view and the other declared sections (PEP 562)."""
+    if name in defaults.defaults:
+        return section(name)
+    raise AttributeError(name)

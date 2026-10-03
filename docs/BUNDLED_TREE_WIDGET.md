@@ -81,7 +81,7 @@ In `hypertreelist.py`; the commit first making each change.
 | `PaintItem` | the dragged row drawn like a selected one | `6a7681e9d` |
 | `PaintItem`, `TreeListItem.SetImages()`/`GetImages()` | several icons in one column (the categories' icons) | `5ce0adef8` |
 | `SetImageList` | no greyed copy of the image list (3,000+ icons); otherwise upstream's, rows marked for recalculation | `1c6d5d3a7` |
-| `SetHoverItem`, `_refresh_hover_row`, `PaintLevel`, `OnMouse` | the two-tone hover outline (`settings2.window.hoverlinewidth`); mouse moves within a row do nothing | `78533ffab`, `a20c9164c` |
+| `SetHoverItem`, `_refresh_hover_row`, `PaintLevel`, `OnMouse` | the two-tone hover outline (`settings.window.hoverlinewidth`); mouse moves within a row do nothing | `78533ffab`, `a20c9164c` |
 | `OnMouse` | a drag starts after 3 pixels, without the timer; a fast double-click opens the row clicked | `a1dad34df` |
 | `OnMouse` | no drop target highlighted outside the window; the drag image hidden before a refresh | `def3832cf` |
 | `TreeListHeaderWindow.OnMouse`, `IsColumnResizable` | in auto-resize mode the resize column cannot be dragged (Task Coach's not-allowed cursor) | `af844f2e6` |

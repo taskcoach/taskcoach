@@ -20,6 +20,7 @@ import wx
 import wx.lib.buttons as buttons
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.gui.icons.icon_library import LIST_ICON_SIZE
 from taskcoachlib.gui.icons import image_list_cache
@@ -157,11 +158,9 @@ class _IconListCtrl(wx.ListCtrl):
 
         searchable = icon_id + " " + label + " " + hints
 
-        from taskcoachlib.config import settings2
-
-        if settings2.iconpicker.search_include_theme:
+        if settings.iconpicker.search_include_theme:
             searchable += " " + theme
-        if settings2.iconpicker.search_include_context:
+        if settings.iconpicker.search_include_context:
             searchable += " " + context
 
         return all(term in searchable for term in terms)
@@ -328,7 +327,6 @@ class _IconDialog(wx.Dialog):
         if self._exclude is None:
             return set()
         app = wx.GetApp()
-        settings = app.settings
         if self._exclude == "status":
             excluded = set()
             for key in [
@@ -339,8 +337,8 @@ class _IconDialog(wx.Dialog):
                 "inactivetasks",
                 "duesoontasks",
             ]:
-                excluded.add(settings.gettext("icon", key))
-                excluded.add(settings.gettext("icon_dark", key))
+                excluded.add(settings.get("icon", key))
+                excluded.add(settings.get("icon_dark", key))
             excluded.discard("")
             return excluded
         if self._exclude == "data":
@@ -374,20 +372,18 @@ class _IconDialog(wx.Dialog):
         excluded_icons = self._get_excluded_icons()
 
         # Get enabled themes from settings (legacy always enabled)
-        from taskcoachlib.config import settings2
-
         enabled_themes = {"legacy"}
-        if settings2.iconpicker.theme_nuvola:
+        if settings.iconpicker.theme_nuvola:
             enabled_themes.add("nuvola")
-        if settings2.iconpicker.theme_oxygen:
+        if settings.iconpicker.theme_oxygen:
             enabled_themes.add("oxygen")
-        if settings2.iconpicker.theme_papirus:
+        if settings.iconpicker.theme_papirus:
             enabled_themes.add("papirus")
-        if settings2.iconpicker.theme_breeze:
+        if settings.iconpicker.theme_breeze:
             enabled_themes.add("breeze")
-        if settings2.iconpicker.theme_noto_emoji:
+        if settings.iconpicker.theme_noto_emoji:
             enabled_themes.add("noto-emoji")
-        if settings2.iconpicker.theme_taskcoach:
+        if settings.iconpicker.theme_taskcoach:
             enabled_themes.add("taskcoach")
 
         # Load icons from catalog, sort by label

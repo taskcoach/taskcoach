@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import locale
 import wx
-from taskcoachlib.config import settings2
+from taskcoachlib.config import settings
 from taskcoachlib.widgets.maskedtimectrl import ValueChangedEvent
 
 
@@ -32,7 +32,7 @@ def _get_configured_decimal_char():
 
     Fallback chain: configured pref -> locale -> "."
     """
-    val = settings2.get("view", "decimal_separator")
+    val = settings.view.decimal_separator
     if val:
         return val
     return _get_locale_decimal_char()

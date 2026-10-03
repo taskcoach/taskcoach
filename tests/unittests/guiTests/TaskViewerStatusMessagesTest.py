@@ -39,7 +39,6 @@ class DummyViewer(object):
 class TaskViewerStatusMessagesTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         self.taskList = task.filter.ViewFilter(task.TaskList())
         self.task = task.Task("Task")
         self.viewer = DummyViewer(self.taskList)

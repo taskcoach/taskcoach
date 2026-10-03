@@ -29,7 +29,6 @@ class CalendarMoveTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         self.task_file = persistence.TaskFile()
         self.addCleanup(self.task_file.stop)
         self.addCleanup(self.task_file.close)

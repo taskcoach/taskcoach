@@ -51,7 +51,7 @@ def select_file_once(test_case, filename):
 
 class IOControllerTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = dummy.TaskFile()
         self.iocontroller = gui.iocontroller.IOController(
             self.taskFile, lambda *args: None, self.settings
@@ -430,7 +430,7 @@ class IOControllerOverwriteExistingFileTest(test.TestCase):
             return wx.CANCEL
 
         wx.MessageBox = messageBox
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.taskFile = dummy.TaskFile()
         self.iocontroller = gui.iocontroller.IOController(
             self.taskFile, lambda *args: None, self.settings
@@ -485,7 +485,7 @@ class IOControllerReplaceFileTest(test.TestCase):
         original = wx.MessageBox
         wx.MessageBox = lambda *args, **kwargs: wx.YES
         self.addCleanup(setattr, wx, "MessageBox", original)
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.settings.setlist("file", "autoexport", ["Todo.txt"])
         self.task_file = dummy.TaskFile()
         self.addCleanup(self.task_file.stop)
@@ -520,7 +520,7 @@ class IOControllerReplaceFileTest(test.TestCase):
 class IOControllerCloseTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.task_file = persistence.TaskFile()
         self.addCleanup(self.task_file.stop)
         self.addCleanup(self.task_file.close)
@@ -547,7 +547,7 @@ class IOControllerChangedOnDiskTest(test.TestCase):
         self.addCleanup(shutil.rmtree, directory)
         self.filename = os.path.join(directory, "tasks.tsk")
         self.other_filename = os.path.join(directory, "other.tsk")
-        task.Task.settings = self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.task_file = persistence.TaskFile()
         self.addCleanup(self.task_file.stop)
         self.addCleanup(self.task_file.close)

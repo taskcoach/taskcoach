@@ -25,7 +25,6 @@ import wx
 
 class EffortTest(test.TestCase, asserts.Mixin):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.task = task.Task()
         self.effort = effort.Effort(
             self.task,

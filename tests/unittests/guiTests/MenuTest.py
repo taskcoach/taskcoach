@@ -157,7 +157,7 @@ class MenuWithOptionalItemsTest(MenuTestCase):
 class MenuWithBooleanMenuItemsTestCase(MenuTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.commands = self.createCommands()
 
     def createCommands(self):
@@ -225,7 +225,7 @@ class RecentFilesMenuTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
         self.ioController = MockIOController()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.initialFileMenuLength = len(self.createFileMenu())
         self.filename1 = "c:/Program Files/TaskCoach/test.tsk"
         self.filename2 = "c:/two.tsk"
@@ -305,7 +305,7 @@ class RecentFilesMenuTest(test.wxTestCase):
 class ViewMenuTestCase(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
         self.viewerContainer = MockViewerContainer()
         self.menuBar = wx.MenuBar()
         self.parentMenu = wx.Menu()
@@ -349,7 +349,6 @@ class ViewMenuTestCase(test.wxTestCase):
 
 class StartEffortForTaskMenuTest(test.wxTestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.tasks = task.TaskList()
         self.menu = gui.menu.StartEffortForTaskMenu(self.frame, self.tasks)
 
@@ -535,7 +534,7 @@ class TaskTemplateMenuTest(test.wxTestCase):
                 return uicommands
 
         self.menu_class = TaskTemplateMenu
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
 
     def open_menu(self, menu):
         self.frame.ProcessEvent(wx.MenuEvent(wx.wxEVT_MENU_OPEN, menu=menu))
