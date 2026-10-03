@@ -70,16 +70,11 @@ _meta = _read_metadata()
 #
 # IMPORTANT: Some packages have minimum version requirements:
 # - pyparsing>=3.0.0: the pyparsing 3 API of delta_time.py
-# - watchdog>=3.0.0: Required for file monitoring API
-#
-# Debian Bookworm note: watchdog (2.2.1) is too old, must pip install a
-# newer version. See docs/DEBIAN_BOOKWORM_SETUP.md
 #
 # Optional dependencies (in extras_require):
 # - squaremap: Hierarchic data visualization (not in Fedora/Arch repos)
 
 install_requires = [
-    "watchdog>=3.0.0",  # File monitoring - Bookworm too old, needs pip
     "chardet",
     "python-dateutil",
     "pyparsing>=3.0.0",  # pyparsing 3 API, every supported distro has it

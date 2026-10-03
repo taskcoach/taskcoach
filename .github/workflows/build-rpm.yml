@@ -79,7 +79,6 @@ jobs:
           # Runtime dependencies - ALL from Fedora repos
           dnf install -y \
             python3-wxpython4 \
-            python3-watchdog \
             python3-chardet \
             python3-dateutil \
             python3-pyparsing \

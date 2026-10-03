@@ -115,32 +115,6 @@ jobs:
           echo "Updated debian/changelog:"
           cat debian/changelog
 
-      - name: Bundle pip packages for distros with old versions
-        run: |
-          # ============================================================
-          # Bookworm/Jammy Dependency Bundling
-          # These distros have an old version of a package:
-          # - watchdog: need >=3.0.0 (Bookworm has 2.2.1, Jammy has 2.1.6)
-          # Bundle newer versions via pip, like Fedora does with squaremap.
-          # ============================================================
-
-          CODENAME="${{ matrix.codename }}"
-          DESTDIR="debian/taskcoach/usr/lib/python3/dist-packages"
-
-          case "$CODENAME" in
-            bookworm|jammy)
-              echo "Bundling pip packages for $CODENAME (old watchdog)..."
-              mkdir -p "$DESTDIR"
-              pip3 install --no-cache-dir --no-deps --target="$DESTDIR" \
-                "watchdog>=3.0.0"
-              echo "Bundled packages:"
-              ls -la "$DESTDIR"
-              ;;
-            *)
-              echo "Distro $CODENAME has new enough packages, no bundling needed"
-              ;;
-          esac
-
       - name: Declare per-distro idle-detection bindings
         run: |
           # ============================================================

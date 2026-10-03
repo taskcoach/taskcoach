@@ -15,7 +15,6 @@ Architecture: all
 Depends: ${python3:Depends},
          ${misc:Depends},
          python3-wxgtk4.0,
-         python3-watchdog,
          python3-chardet,
          python3-dateutil,
          python3-pyparsing (>= 3.0.0),

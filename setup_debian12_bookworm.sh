@@ -104,12 +104,7 @@ echo
 
 # Install Python dependencies not available in Debian repos or with version issues
 echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
-echo "Installing: watchdog>=3.0.0"
-
-source "$VENV_PATH/bin/activate"
-# Note: watchdog>=3.0.0 for file system monitoring (Bookworm has 2.2.1)
-pip install --quiet 'watchdog>=3.0.0'
-deactivate
+echo "Nothing to install: every dependency comes from the Debian repositories"
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
@@ -150,35 +145,6 @@ else
     exit 1
 fi
 
-# Test 3: Test venv packages individually
-echo "Testing virtual environment packages..."
-source "$VENV_PATH/bin/activate"
-
-VENV_FAILED=0
-
-# Test venv packages
-for pkg in "watchdog"; do
-    echo -n "  - $pkg... "
-    if python3 -c "import $pkg" 2>/dev/null; then
-        echo -e "${GREEN}✓${NC}"
-    else
-        echo -e "${RED}✗ Failed${NC}"
-        VENV_FAILED=1
-    fi
-done
-
-deactivate
-
-if [ $VENV_FAILED -eq 1 ]; then
-    echo -e "${RED}✗ Some packages failed to import${NC}"
-    echo "Try recreating the virtual environment:"
-    echo "  rm -rf $VENV_PATH"
-    echo "  python3 -m venv --system-site-packages $VENV_PATH"
-    echo "  source $VENV_PATH/bin/activate"
-    echo "  pip install 'watchdog>=3.0.0'"
-    exit 1
-fi
-
 # Test 4: Run help
 echo -n "Testing application help... "
 if "$SCRIPT_DIR/taskcoach-run.sh" --help &>/dev/null; then
@@ -208,7 +174,6 @@ echo
 echo "TaskCoach has been set up with:"
 echo "  • System packages from Debian repos (wxPython, lxml, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (watchdog)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"

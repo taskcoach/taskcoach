@@ -115,7 +115,6 @@ install_dependencies() {
     # Install TaskCoach dependencies
     echo "Installing TaskCoach dependencies..."
     $PYTHON -m pip install \
-        "watchdog>=3.0.0" \
         "chardet>=5.2.0" \
         "python-dateutil>=2.9.0" \
         "pyparsing>=3.0.0" \

@@ -29,11 +29,8 @@ from taskcoachlib.domain import note, task
 from taskcoachlib.i18n import _
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.patterns.snapshot import register_collection
-from taskcoachlib.filesystem import (
-    FilesystemNotifier,
-    FilesystemPollerNotifier,
-    resourcelock,
-)
+from taskcoachlib.filesystem import resourcelock
+from taskcoachlib.filesystem.watcher import FilesystemNotifier
 
 
 class ChangedOnDiskError(Exception):
@@ -54,15 +51,6 @@ def _isCloud(path):
 
 
 class TaskCoachFilesystemNotifier(FilesystemNotifier):
-    def __init__(self, taskFile):
-        self.__taskFile = taskFile
-        super().__init__()
-
-    def on_file_changed(self):
-        self.__taskFile.on_file_changed()
-
-
-class TaskCoachFilesystemPollerNotifier(FilesystemPollerNotifier):
     def __init__(self, taskFile):
         self.__taskFile = taskFile
         super().__init__()
@@ -244,10 +232,7 @@ class TaskFile(patterns.Observer):
             # are not (docs/UNDO_REDO.md, Architecture)
             for each in (self.__tasks, self.__categories, self.__notes):
                 register_collection(each)
-        if kwargs.pop("poll", False):
-            self.__notifier = TaskCoachFilesystemPollerNotifier(self)
-        else:
-            self.__notifier = TaskCoachFilesystemNotifier(self)
+        self.__notifier = TaskCoachFilesystemNotifier(self)
         self.__saving = False
         super().__init__(*args, **kwargs)
         # Unsaved (dirty) when saved data changes: an item's own data
@@ -360,7 +345,7 @@ class TaskFile(patterns.Observer):
             return
         self.__lastFilename = filename or self.__filename
         self.__filename = filename
-        self.__notifier.setFilename(filename)
+        self.__notifier.set_filename(filename)
         self._publish("taskfile.filenameChanged", filename)
 
     def _publish(self, event_type, *value):

@@ -727,15 +727,6 @@ class SavePage(SettingsPage):
         )
         self.addBooleanSetting(
             "file",
-            "fspoll",
-            _("Use polling for file monitoring"),
-            _(
-                "Use slow polling (every 10s) instead of efficient OS notifications. Enable this if your task file is on a network share. You must restart %s after changing this."
-            )
-            % meta.name,
-        )
-        self.addBooleanSetting(
-            "file",
             "saveinifileinprogramdir",
             _("Save settings (%s.ini) in the same " "directory as the program")
             % meta.filename,

@@ -82,7 +82,6 @@ if command -v sudo &> /dev/null; then
         python3-chardet \
         python3-keyring \
         python3-pyparsing \
-        python3-watchdog \
         python3-squaremap
     echo -e "${GREEN}✓ System packages installed${NC}"
 else
@@ -160,26 +159,7 @@ else
     exit 1
 fi
 
-# Test 3: Test key packages
-echo "Testing key packages..."
-FAILED=0
-
-for pkg in "watchdog"; do
-    echo -n "  - $pkg... "
-    if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
-        echo -e "${GREEN}✓${NC}"
-    else
-        echo -e "${RED}✗ Failed${NC}"
-        FAILED=1
-    fi
-done
-
 deactivate
-
-if [ $FAILED -eq 1 ]; then
-    echo -e "${RED}✗ Some packages failed to import${NC}"
-    exit 1
-fi
 
 # Test 4: Run help
 echo -n "Testing application help... "
@@ -209,7 +189,7 @@ echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Debian 13 (Trixie) with:"
 echo "  • Python: $PYTHON_CMD ($PYTHON_VERSION)"
-echo "  • System packages from Debian repos (wxPython, lxml, watchdog, squaremap, etc.)"
+echo "  • System packages from Debian repos (wxPython, lxml, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo
 echo "You can now run TaskCoach with:"

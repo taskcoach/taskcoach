@@ -14,27 +14,4 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-File system monitoring module.
-
-Uses the cross-platform watchdog library for all platforms:
-- Linux: inotify
-- macOS: FSEvents
-- Windows: ReadDirectoryChangesW
-- Other: Polling fallback
 """
-
-import logging
-
-from .fs_poller import *
-
-try:
-    from .fs_watchdog import *
-except ImportError:
-    logging.warning(
-        "watchdog library not installed. File monitoring will use polling fallback "
-        "(less efficient). Install watchdog for better performance: pip install watchdog"
-    )
-
-    class FilesystemNotifier(FilesystemPollerNotifier):
-        pass

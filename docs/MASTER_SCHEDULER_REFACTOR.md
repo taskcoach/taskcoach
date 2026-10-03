@@ -354,38 +354,19 @@ go at the end. Details live in the sections and documents linked.
     window styles and monitors use it; WMI was a 29 KB layer over it.
     `setup.py` now declares `pywin32` for Windows, which WMI had
     pulled in. Not run: Windows only, and CI runs no tests (P85).
-79. `watchdog` (was P81): watches the open task file, so a change by
-    another program (a second Task Coach, a sync tool) is merged at
-    once. The poller in the code (`filesystem/fs_poller.py`, every
-    10 s) takes over when it is missing or with Preferences > Files >
-    "Use polling for file monitoring" (for network shares, where the
-    system's notices fail). Options: keep it and lower `>=3.0.0`, which
-    has no recorded reason, to what Bookworm (2.2.1) and Jammy (2.1.6)
-    ship, after testing them, so their packages stop bundling it; or
-    drop it and always poll (every 1 or 2 s): another program's change
-    then shows up within that time, and the released preference no
-    longer changes anything. Analysed 2026-10-02: our watcher uses only
-    an observer, a watch of the file's folder and the modified, moved
-    and created events, all much older than 2.0. Checked in the app
-    with 2.1.6 (Ubuntu 22.04), 2.2.1 (Debian 12) and 6.0 (installed
-    here): a file another program replaces by renaming a new copy over
-    it (sync clients, Task Coach itself) or changes in place is noticed
-    with all three (P165). watchdog is an 80 KB package of about 6,000
-    lines: an engine per system (Linux inotify, Windows
-    ReadDirectoryChangesW, macOS FSEvents, BSD kqueue) and a polling
-    one. Every save checks the file on disk first, so the watcher only
-    makes the prompt come early. Cost of polling, measured in the app
-    2026-10-03: one check (does the file exist, its modification time)
-    takes 12 to 30 microseconds and read 0 bytes from the disk in
-    10,000 tries (the kernel keeps file details in memory); the 10 s
-    poller wakes 6 times a minute, while Task Coach's window thread
-    wakes 72 to 89 times a minute anyway. watchdog's three threads woke
-    0 times with nothing changing, but wake for every change of any
-    file in the task file's folder, and see no change made from another
-    computer on a network share.
-    Lower the minimum to 2.1.6, so the Debian 12 and Ubuntu 22.04
-    packages and setup scripts use the distribution's watchdog instead
-    of bundling one from pip?
+79. ~~`watchdog` (was P81)~~: replaced 2026-10-03, **ruled by
+    designer** (option B): Task Coach checks the open file's
+    modification time and size every 5 s in a thread of its own
+    (`filesystem/watcher.py`), the same on every system and on network
+    shares ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#watching-the-file),
+    with the measured cost). The watcher runs only while a file is
+    open, notices an older time too, and survives a file made after it
+    started (the old poller's thread died there). Preferences > Files
+    lost "Use polling for file monitoring" (dropped from settings files
+    on load); watchdog left every package, build and setup script.
+    Checked in the app: a change in place and a copy renamed over the
+    file prompted within 3 s; our own save did not; the old setting was
+    gone from the file saved on quit.
 80. `lxml`: parses the task file (`persistence/xml/reader.py`) and
     Help > Anonymize's file; the writer already uses the standard
     library's ElementTree, which drops the `<?taskcoach?>` version line

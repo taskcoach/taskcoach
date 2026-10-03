@@ -8,6 +8,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 - [Overview](#overview)
 - [Defaults](#defaults)
 - [Saving](#saving)
+  - [Watching the File](#watching-the-file)
 - [Merging](#merging)
 - [Category Membership](#category-membership)
 - [IDs](#ids)
@@ -126,12 +127,12 @@ Locking is described in [FILE_LOCKING.md](FILE_LOCKING.md).
 
 **Changed on disk (ruling, 2026-09-28).** Another program's change to
 the open file (a sync client, an editor) is never replaced unasked.
-The file watcher (`filesystem/`) reports a change, also a file
-renamed over it (how editors, sync clients and Task Coach itself
-write); `TaskFile.check_disk()` compares the file's size and
-modification time with those at the last load or save, so our own
-saves do not count. Every save checks too, before writing: the
-watcher can report late, or not at all (some network drives).
+The file watcher ([below](#watching-the-file)) reports a change within
+seconds, also a file renamed over it (how editors, sync clients and
+Task Coach itself write); `TaskFile.check_disk()` compares the file's
+size and modification time with those at the last load or save, so
+our own saves do not count. Every save checks too, before writing,
+so a change the watcher has not reported yet is never written over.
 
 - Saving raises `ChangedOnDiskError` and autosave pauses until the
   changes are merged in, the file is reloaded, or saved under another
@@ -147,6 +148,37 @@ watcher can report late, or not at all (some network drives).
 - A forced close (the session ends; nobody can be asked) saves the
   changes to a copy beside the file (`copy_name()`, "Tasks copy.tsk")
   and keeps the file as the other program left it.
+
+### Watching the File
+
+**Ruled by designer 2026-10-03** (To Do 79 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)):
+Task Coach checks the open file's modification time and size every 5
+seconds (`filesystem/watcher.py`), in a thread that runs while a file
+is open. Any difference from what it last saw, an older time too (a
+restored copy), goes to `TaskFile.check_disk()` on the user interface
+thread, which asks as above. It is the same on every system and on
+network shares, where a change made from another computer counts too.
+It replaced the watchdog package and the Preferences option "Use
+polling for file monitoring", dropped from settings files on load.
+
+Measured in the app, 2026-10-03:
+
+- A check takes 12 to 30 microseconds and reads nothing from the
+  disk: the system keeps a file's details in memory, and a check does
+  not change its access time, so a sleeping drive stays asleep.
+- It wakes 12 times a minute; Task Coach's window thread wakes 72 to
+  89 times a minute anyway (its clock for timers and reminders). It
+  keeps nothing awake: a suspended laptop runs no thread.
+- On a network share, a check is one small request.
+
+watchdog, used before, reported a change at once through each
+system's notices (inotify, FSEvents, ReadDirectoryChangesW), but woke
+for every change to any file in the task file's folder, did not see
+changes made from another computer on a network share, and differed
+per system (about 6,000 lines, a compiled part on macOS). A notice up
+to 5 s later changes nothing that matters: every save checks the file
+first.
 
 ## Merging
 

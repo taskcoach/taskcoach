@@ -33,7 +33,6 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 | wxPython | >=4.2.0 | HyperTreeList stability | — |
 | wxPython | >=4.3.0 | Native dark mode on Windows (optional, see [WINDOWS.md](WINDOWS.md#dark-mode)) | Windows builds pin 4.3.1 |
 | pyparsing | >=3.0.0 | pyparsing 3 API (`deltaTime.py`); 3.0.0 to 3.1.2 tested alike | none (Ubuntu 22.04 has 3.0.7) |
-| watchdog | >=3.0.0 | File monitoring API | Debian Bookworm (2.2.1) |
 
 **Note**: the tree views run on Task Coach's own copy of wxPython's tree widget (`taskcoachlib/patches/`) on every wxPython version, so the installed wxPython's (4.0.7 to 4.3.1 across the builds) does not matter for them ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)).
 
@@ -45,7 +44,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 |---------|:--------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|:-------:|:-------:|:-----:|
 | wxpython | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | pyparsing | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| watchdog | **pip** | **pip** | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
 | lxml | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | chardet (<5.2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
@@ -96,9 +94,9 @@ backends.
 
 | Target | ID | Python | wxPython | Setup Script | GitHub Workflow | Notes |
 |--------|:--:|:------:|:--------:|--------------|-----------------|-------|
-| [Debian 12 Bookworm](#debianubuntu-packaging) | debian12 | 3.11 | 4.2.0 | `setup_debian12_bookworm.sh` | `build-deb.yml` | pip: watchdog |
+| [Debian 12 Bookworm](#debianubuntu-packaging) | debian12 | 3.11 | 4.2.0 | `setup_debian12_bookworm.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Debian 13 Trixie](#debianubuntu-packaging) | debian13 | 3.12 | 4.2.3 | `setup_debian13_trixie.sh` | `build-deb.yml` | Distro deps sufficient |
-| [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.0.7 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | pip: watchdog |
+| [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.0.7 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Ubuntu 24.04 Noble](#debianubuntu-packaging) | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
 | [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |

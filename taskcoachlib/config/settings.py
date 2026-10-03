@@ -268,6 +268,7 @@ class Settings(CachingConfigParser):
         ("export", "ical_selectiononly"),
         ("export", "todotxt_selectiononly"),
         ("view", "taskinterdepsviewercount"),
+        ("file", "fspoll"),
     )
     # Retired views: their template section and numbered instances
     _OBSOLETE_VIEWERS = ("taskinterdepsviewer",)

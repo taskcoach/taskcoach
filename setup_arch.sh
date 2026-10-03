@@ -76,7 +76,6 @@ if command -v sudo &> /dev/null; then
         python-chardet \
         python-keyring \
         python-pyparsing \
-        python-watchdog \
         libayatana-appindicator \
         libxss \
         xdg-utils
@@ -199,26 +198,7 @@ else
     exit 1
 fi
 
-# Test 3: Test key packages
-echo "Testing key packages..."
-FAILED=0
-
-for pkg in "watchdog"; do
-    echo -n "  - $pkg... "
-    if python3 -c "import $pkg" 2>/dev/null; then
-        echo -e "${GREEN}✓${NC}"
-    else
-        echo -e "${RED}✗ Failed${NC}"
-        FAILED=1
-    fi
-done
-
 deactivate
-
-if [ $FAILED -eq 1 ]; then
-    echo -e "${RED}✗ Some packages failed to import${NC}"
-    exit 1
-fi
 
 # Test 4: Run help
 echo -n "Testing application help... "
@@ -235,7 +215,7 @@ echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Arch/Manjaro Linux with:"
-echo "  • System packages from official repos (wxPython, lxml, watchdog, etc.)"
+echo "  • System packages from official repos (wxPython, lxml, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo
 echo "Optional packages (install from AUR if needed):"

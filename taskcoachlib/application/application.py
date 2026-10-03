@@ -121,7 +121,6 @@ def _log_required_packages():
 
     # Core packages (package_name, import_name if different)
     packages = [
-        ("watchdog", None),
         ("chardet", None),
         ("python-dateutil", "dateutil"),
         ("pyparsing", None),
@@ -695,9 +694,7 @@ class Application(object, metaclass=patterns.Singleton):
         # Synthetic icons are now registered during gui.init(), so no
         # separate init is needed
         # pylint: disable=W0201
-        self.taskFile = persistence.LockedTaskFile(
-            poll=self.settings.getboolean("file", "fspoll")
-        )
+        self.taskFile = persistence.LockedTaskFile()
         self.__wx_app.taskFile = self.taskFile
         self.__auto_saver = persistence.AutoSaver(self.settings)
         self.__auto_exporter = persistence.AutoImporterExporter(self.settings)

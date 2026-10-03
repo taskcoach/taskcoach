@@ -145,8 +145,6 @@ get_system_packages() {
             if [ "$PYTHON_CMD" = "python3.12" ]; then
                 SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3.12-venv"
             fi
-            # Trixie has python3-watchdog in repos
-            SYSTEM_PACKAGES="$SYSTEM_PACKAGES python3-watchdog"
             ;;
         bookworm)
             # Bookworm needs some packages from pip (older versions in repos)
@@ -168,11 +166,11 @@ get_pip_packages() {
             ;;
         bookworm)
             # Bookworm needs more packages from pip
-            echo "squaremap 'watchdog>=3.0.0'"
+            echo "squaremap"
             ;;
         *)
             # Default: install most from pip to be safe
-            echo "'pyparsing>=3.0.0' squaremap 'watchdog>=3.0.0'"
+            echo "'pyparsing>=3.0.0' squaremap"
             ;;
     esac
 }
@@ -297,25 +295,7 @@ main() {
         exit 1
     fi
 
-    # Test 3: Test key packages
-    echo "Testing key packages..."
-    FAILED=0
-    for pkg in "watchdog"; do
-        echo -n "  - $pkg... "
-        if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
-            echo -e "${GREEN}✓${NC}"
-        else
-            echo -e "${RED}✗ Failed${NC}"
-            FAILED=1
-        fi
-    done
-
     deactivate
-
-    if [ $FAILED -eq 1 ]; then
-        echo -e "${RED}✗ Some packages failed to import${NC}"
-        exit 1
-    fi
 
     # Test 4: Run help
     echo -n "Testing application help... "

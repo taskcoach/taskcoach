@@ -76,7 +76,6 @@ jobs:
             python-chardet \
             python-keyring \
             python-pyparsing \
-            python-watchdog \
             libxss \
             xdg-utils
 

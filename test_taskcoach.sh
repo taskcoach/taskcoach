@@ -2,7 +2,6 @@
 # Quick test script for TaskCoach
 # Tests various functionality to ensure proper operation
 #
-# Note: Twisted replaced with watchdog in PR #39
 
 # Colors
 GREEN='\033[0;32m'
@@ -72,9 +71,6 @@ run_test "wxPython patch (background fix)" \
     "python3 -c 'import wx.lib.agw.hypertreelist as ht; import inspect; s=inspect.getsource(ht.TreeListMainWindow.PaintItem); exit(0 if \"Fix from Issue #2081 (Roland171281)\" in s else 1)'"
 
 # Test 5: Dependencies
-run_test "watchdog dependency" \
-    "python3 -c 'import watchdog'"
-
 run_test "lxml dependency" \
     "python3 -c 'import lxml'"
 

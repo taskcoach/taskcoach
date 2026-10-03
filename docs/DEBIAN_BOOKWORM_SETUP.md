@@ -144,7 +144,8 @@ sudo apt-get install -y \
 
 #### Step 2: Create Virtual Environment
 
-For packages not available in Debian repos or with version requirements:
+Every dependency comes from the Debian repositories; the virtual
+environment only runs Task Coach with them:
 
 ```bash
 cd /path/to/taskcoach
@@ -152,14 +153,6 @@ cd /path/to/taskcoach
 # Create virtual environment with access to system packages
 python3 -m venv --system-site-packages .venv
 
-# Activate it
-source .venv/bin/activate
-
-# Install remaining dependencies
-pip install 'watchdog>=3.0.0'
-
-# Deactivate when done
-deactivate
 ```
 
 **Note**: The `--system-site-packages` flag allows the virtual environment to access system-installed packages (like wxPython and lxml) while keeping pip-installed packages isolated.
@@ -282,7 +275,7 @@ Run from a terminal: the log goes to its output
 - ✅ python3-squaremap
 
 ### From PyPI (pip in venv, for development):
-- 📦 watchdog>=3.0.0 (Bookworm's 2.2.1 is too old)
+- none
 
 ---
 

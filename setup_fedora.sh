@@ -79,7 +79,6 @@ if command -v sudo &> /dev/null; then
         python3-chardet \
         python3-keyring \
         python3-pyparsing \
-        python3-watchdog \
         libayatana-appindicator-gtk3 \
         libXScrnSaver \
         xdg-utils
@@ -167,7 +166,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "watchdog" "squaremap"; do
+for pkg in "squaremap"; do
     echo -n "  - $pkg... "
     if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
