@@ -147,10 +147,7 @@ echo
 # Install Python dependencies not available in Arch repos
 echo -e "${BLUE}[5/7] Installing Python dependencies in venv...${NC}"
 # Most packages are available in Arch repos, only install what's missing
-echo "Installing: distro"
-
 source "$VENV_PATH/bin/activate"
-pip install --quiet distro
 
 # Install optional packages if not available from system
 if ! python3 -c "import squaremap" 2>/dev/null; then
@@ -207,7 +204,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "desktop" "distro" "watchdog"; do
+for pkg in "desktop" "watchdog"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -241,7 +238,6 @@ echo
 echo "TaskCoach has been set up for Arch/Manjaro Linux with:"
 echo "  • System packages from official repos (wxPython, numpy, lxml, watchdog, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (distro)"
 echo
 echo "Optional packages (install from AUR if needed):"
 echo "  • python-squaremap: Hierarchical data visualization"

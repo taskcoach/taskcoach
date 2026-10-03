@@ -64,13 +64,6 @@ def _read_metadata():
 # Read metadata without importing
 _meta = _read_metadata()
 
-# Try to import distro for platform detection, but don't fail if unavailable
-try:
-    import distro
-except ImportError:
-    distro = None
-
-
 # Dependency Installation Strategy
 # ================================
 # On Linux distros: Use distro packages where available, pip fallback for missing.
@@ -165,19 +158,7 @@ setupOptions = {
 }
 
 system = platform.system()
-if system == "Linux" and distro is not None:
-    # Add data files for Debian-based systems:
-    current_dist = distro.id().lower()
-    if "debian" in current_dist or "ubuntu" in current_dist:
-        setupOptions["data_files"] = [
-            (
-                "share/applications",
-                ["build.in/linux_common/taskcoach.desktop"],
-            ),
-            ("share/appdata", ["build.in/debian/taskcoach.appdata.xml"]),
-            ("share/pixmaps", ["icons.in/taskcoach.png"]),
-        ]
-elif system == "Windows":
+if system == "Windows":
     setupOptions["scripts"].append("taskcoach.pyw")
 
 

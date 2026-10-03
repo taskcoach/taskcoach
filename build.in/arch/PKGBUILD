@@ -29,7 +29,6 @@ makedepends=(
     'python-installer'
     'python-wheel'
     'python-setuptools'
-    'python-distro'
     'python-pip'
 )
 optdepends=(

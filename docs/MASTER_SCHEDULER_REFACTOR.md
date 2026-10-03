@@ -308,10 +308,15 @@ go at the end. Details live in the sections and documents linked.
     build and setup script. Checked in the app against the base, with
     the variables unset and set: the same folders, the settings one
     readable by the user only.
-75. Remove `distro` (was P78). **Ruled by designer 2026-10-02.** Only
-    `setup.py` imports it, to add the desktop file, AppStream file and
-    icon to a Debian or Ubuntu install, which `debian/rules` installs
-    itself; the builds and setup scripts install it for nothing.
+75. ~~Remove `distro` (was P78)~~: done 2026-10-02, **ruled by
+    designer**. Only `setup.py` imported it, to add the desktop file,
+    AppStream file and icon on Debian and Ubuntu, which `debian/rules`
+    installs itself; the builds and setup scripts installed it for
+    nothing. Checked by installing the base and this branch with pip
+    into a scratch root on Debian: the base added those three files,
+    this branch none; the .deb only loses the AppStream file's copy in
+    the old `/usr/share/appdata` (the one in `/usr/share/metainfo`
+    stays).
 76. `numpy` (was P79): combines the transparency of an icon and its
     overlay (`tools/wxhelper.py`,
     `gui/icons/synthetic_icon_generator.py`).

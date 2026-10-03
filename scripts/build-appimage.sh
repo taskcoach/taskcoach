@@ -122,8 +122,7 @@ install_dependencies() {
         lxml \
         keyring \
         numpy \
-        "squaremap>=1.0.5" \
-        distro
+        "squaremap>=1.0.5"
 
     cd "$PROJECT_ROOT"
 }

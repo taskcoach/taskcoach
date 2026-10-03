@@ -116,10 +116,9 @@ echo
 echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
 echo "Fedora has most packages, pip install for:"
 echo "  - squaremap: Not in Fedora repos"
-echo "  - distro: Distribution detection"
 
 source "$VENV_PATH/bin/activate"
-pip install --quiet squaremap distro
+pip install --quiet squaremap
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -169,7 +168,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "distro" "watchdog" "squaremap"; do
+for pkg in "watchdog" "squaremap"; do
     echo -n "  - $pkg... "
     if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -216,7 +215,7 @@ echo "TaskCoach has been set up for Fedora with:"
 echo "  - Python: $PYTHON_CMD ($PYTHON_VERSION)"
 echo "  - System packages from Fedora repos (wxPython, numpy, lxml, etc.)"
 echo "  - Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  - Additional packages in venv (squaremap, distro)"
+echo "  - Additional packages in venv (squaremap)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"

@@ -84,7 +84,6 @@ jobs:
             dh-python \
             python3-all \
             python3-setuptools \
-            python3-distro \
             python3-pip \
             devscripts \
             lintian \

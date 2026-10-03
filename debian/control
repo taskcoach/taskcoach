@@ -5,8 +5,7 @@ Maintainer: Réal Carbonneau <contact@realcarbonneau.com>
 Build-Depends: debhelper-compat (= 13),
                dh-python,
                python3-all,
-               python3-setuptools,
-               python3-distro
+               python3-setuptools
 Standards-Version: 4.6.2
 Homepage: https://github.com/taskcoach/taskcoach
 Rules-Requires-Root: no

@@ -78,7 +78,6 @@ jobs:
             python-keyring \
             python-pyparsing \
             python-watchdog \
-            python-distro \
             libxss \
             xdg-utils
 

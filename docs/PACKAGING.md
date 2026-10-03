@@ -206,7 +206,7 @@ debian/
 ```bash
 # Install build dependencies
 sudo apt install build-essential debhelper dh-python \
-    python3-all python3-setuptools python3-distro devscripts
+    python3-all python3-setuptools devscripts
 
 # Build binary package (no orig tarball needed)
 dpkg-buildpackage -us -uc -b
@@ -348,7 +348,7 @@ build.in/arch/
 
 ```bash
 # Install build dependencies
-sudo pacman -S base-devel python python-setuptools python-distro
+sudo pacman -S base-devel python python-setuptools
 
 # Build package using the build script
 ./scripts/build-arch.sh

@@ -107,12 +107,7 @@ echo
 
 # Install Python dependencies not available in Ubuntu repos
 echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
-# Ubuntu 24.04 has most packages in repos, only need a few from pip
-echo "Installing: distro"
-
-source "$VENV_PATH/bin/activate"
-pip install --quiet distro
-deactivate
+echo "Nothing to install: every dependency comes from the Ubuntu repositories"
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
@@ -161,7 +156,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "desktop" "distro" "watchdog"; do
+for pkg in "desktop" "watchdog"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -195,7 +190,6 @@ echo
 echo "TaskCoach has been set up for Ubuntu 24.04 (Noble) with:"
 echo "  • System packages from Ubuntu repos (wxPython, numpy, lxml, watchdog, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (distro)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"

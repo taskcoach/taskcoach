@@ -164,15 +164,15 @@ get_pip_packages() {
     case "$DISTRO_CODENAME" in
         trixie|sid)
             # Trixie has most packages in repos, only need a few from pip
-            echo "distro squaremap"
+            echo "squaremap"
             ;;
         bookworm)
             # Bookworm needs more packages from pip
-            echo "distro squaremap 'watchdog>=3.0.0'"
+            echo "squaremap 'watchdog>=3.0.0'"
             ;;
         *)
             # Default: install most from pip to be safe
-            echo "distro 'pyparsing>=3.0.0' squaremap 'watchdog>=3.0.0'"
+            echo "'pyparsing>=3.0.0' squaremap 'watchdog>=3.0.0'"
             ;;
     esac
 }
@@ -300,7 +300,7 @@ main() {
     # Test 3: Test key packages
     echo "Testing key packages..."
     FAILED=0
-    for pkg in "desktop" "distro"; do
+    for pkg in "desktop"; do
         echo -n "  - $pkg... "
         if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
             echo -e "${GREEN}✓${NC}"

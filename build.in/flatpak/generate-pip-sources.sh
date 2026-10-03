@@ -47,7 +47,6 @@ REQUIREMENTS=(
     "squaremap>=1.0.5"
     "pyenchant>=3.2.0"
     "dbus-python>=1.3.2"
-    "distro"
 )
 
 # Python build backends the OFFLINE build needs but pip cannot fetch from PyPI

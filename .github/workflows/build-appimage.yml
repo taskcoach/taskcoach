@@ -136,8 +136,7 @@ jobs:
             keyring \
             "numpy>=1.26,<2" \
             "squaremap>=1.0.5" \
-            "pyenchant>=3.2.0" \
-            distro
+            "pyenchant>=3.2.0"
 
           # Clean up pip cache to reduce AppImage size
           rm -rf ./usr/lib/python*/site-packages/pip

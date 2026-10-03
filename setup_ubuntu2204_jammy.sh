@@ -105,11 +105,11 @@ echo
 
 # Install Python dependencies not available in Ubuntu repos or with version issues
 echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
-echo "Installing: distro, watchdog>=3.0.0"
+echo "Installing: watchdog>=3.0.0"
 
 source "$VENV_PATH/bin/activate"
 # Note: watchdog>=3.0.0 for file system monitoring (Jammy has 2.1.6)
-pip install --quiet distro 'watchdog>=3.0.0'
+pip install --quiet 'watchdog>=3.0.0'
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
@@ -159,7 +159,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "desktop" "distro"; do
+for pkg in "desktop" "watchdog"; do
     echo -n "  - $pkg... "
     if python3 -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -193,7 +193,7 @@ echo
 echo "TaskCoach has been set up for Ubuntu 22.04 (Jammy) with:"
 echo "  • System packages from Ubuntu repos (wxPython, numpy, lxml, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (distro, watchdog)"
+echo "  • Additional packages in venv (watchdog)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"

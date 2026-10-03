@@ -157,7 +157,7 @@ python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 
 # Install remaining dependencies
-pip install distro 'watchdog>=3.0.0'
+pip install 'watchdog>=3.0.0'
 
 # Deactivate when done
 deactivate
@@ -284,8 +284,6 @@ Run from a terminal: the log goes to its output
 - ✅ python3-squaremap
 
 ### From PyPI (pip in venv, for development):
-- 📦
-- 📦 distro
 - 📦 watchdog>=3.0.0 (Bookworm's 2.2.1 is too old)
 
 ---
