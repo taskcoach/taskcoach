@@ -243,7 +243,6 @@ class DateTimeCtrl(
         kwargs.pop("relative", False)
         kwargs.pop("startDateTime", None)
         super().__init__(parent, wxId, item, column, owner)
-        settings = kwargs["settings"]
 
         # Convert empty DateTime to None for DateTimeComboCtrl (unchecked state)
         combo_value = None if value == date.DateTime() else value
@@ -251,8 +250,8 @@ class DateTimeCtrl(
         self._dateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=combo_value,
-            hour_choices=lambda: get_suggested_hour_choices(settings),
-            minute_choices=lambda: get_suggested_minute_choices(settings),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
         )
 
         # Get widgets directly (they're children of self) - don't use CreateRowPanel

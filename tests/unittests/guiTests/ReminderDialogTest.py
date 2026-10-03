@@ -54,7 +54,7 @@ class ReminderDialogTest(test.TestCase):
 
     def createReminderDialog(self):
         reminder_dialog = dialog.reminder.ReminderDialog(
-            self.aTask, self.taskList, self.effortList, self.settings, None
+            self.aTask, self.taskList, self.effortList, None
         )
         # Past the pause that blocks an accidental close
         reminder_dialog._isFrozen = False

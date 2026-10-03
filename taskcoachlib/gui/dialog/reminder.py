@@ -23,6 +23,7 @@ from taskcoachlib import (
     render,
     speak,
 )
+from taskcoachlib.config import settings
 from taskcoachlib.domain import date
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.i18n import _
@@ -53,9 +54,7 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
                         return True
         return False
 
-    def __init__(
-        self, task, taskList, effortList, settings, parent, *args, **kwargs
-    ):
+    def __init__(self, task, task_list, effort_list, parent, *args, **kwargs):
         kwargs["title"] = _("%(name)s reminder - %(task)s") % dict(
             name=meta.name, task=task.subject(recursive=True)
         )
@@ -66,9 +65,8 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             icon_catalog.get_wx_icon("nuvola_apps_korganizer", LIST_ICON_SIZE)
         )
         self.task = task
-        self.taskList = taskList
-        self.effortList = effortList
-        self.settings = settings
+        self.taskList = task_list
+        self.effortList = effort_list
         # Self-heal: whatever changes the task, the file or its
         # reminder, the window checks it is still due
         # (docs/UNDO_REDO.md, Windows)
@@ -138,17 +136,15 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT,
         )
         self.snoozeOptions = wx.Choice(self)
-        snoozeTimesUserWantsToSee = [0] + self.settings.getlist(
-            "view", "snoozetimes"
-        )
-        defaultSnoozeTime = self.settings.getint("view", "defaultsnoozetime")
+        snooze_times = [0] + settings.view.snoozetimes
+        default_snooze_time = settings.view.defaultsnoozetime
         selectionIndex = 1
         for minutes, label in date.snoozeChoices:
-            if minutes in snoozeTimesUserWantsToSee:
+            if minutes in snooze_times:
                 self.snoozeOptions.Append(
                     label, date.TimeDelta(minutes=minutes)
                 )
-                if minutes == defaultSnoozeTime:
+                if minutes == default_snooze_time:
                     selectionIndex = self.snoozeOptions.Count - 1
         self.snoozeOptions.SetSelection(
             min(selectionIndex, self.snoozeOptions.Count - 1)
@@ -165,7 +161,7 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             ),
         )
         self.replaceDefaultSnoozeTime.SetValue(
-            self.settings.getboolean("view", "replacedefaultsnoozetime")
+            settings.view.replacedefaultsnoozetime
         )
         grid.Add(self.replaceDefaultSnoozeTime, flag=wx.EXPAND)
 
@@ -213,9 +209,9 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         # Play reminder sound
         from taskcoachlib import sounds
 
-        sounds.play(self.settings.get("feature", "reminder_sound"))
+        sounds.play(settings.feature.reminder_sound)
         # Speak the reminder text
-        if self.settings.getboolean("feature", "sayreminder"):
+        if settings.feature.sayreminder:
             speak.Speaker().say('"%s: %s"' % (_("Reminder"), task.subject()))
 
     def _freeze_dialog(self):
@@ -307,10 +303,8 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         if replace_default_snooze_time:
             selection = self.snoozeOptions.Selection
             minutes = self.snoozeOptions.GetClientData(selection).minutes()
-            self.settings.set("view", "defaultsnoozetime", str(int(minutes)))
-        self.settings.setboolean(
-            "view", "replacedefaultsnoozetime", replace_default_snooze_time
-        )
+            settings.view.defaultsnoozetime = int(minutes)
+        settings.view.replacedefaultsnoozetime = replace_default_snooze_time
         self.removeInstance()
 
     def onOK(self, event):

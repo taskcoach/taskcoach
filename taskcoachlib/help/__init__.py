@@ -20,7 +20,7 @@ import os
 
 from taskcoachlib import meta
 from taskcoachlib.i18n import _
-from .tips import showTips
+from .tips import show_tips
 from .uicommand import *
 
 _MSURL = "https://www.microsoft.com/en-us/download/details.aspx?id=5638"

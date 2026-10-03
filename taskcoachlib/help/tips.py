@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import meta
+from taskcoachlib.config import settings
 from taskcoachlib.gui.icons.icon_library import icon_catalog, NOTIFICATION_ICON_SIZE
 from taskcoachlib.i18n import _
 from wx.lib import sized_controls
@@ -88,7 +89,6 @@ class TipDialog(sized_controls.SizedDialog):
 
     def __init__(self, *args, **kwargs):
         self.__tip_provider = kwargs.pop("tip_provider")
-        self.__settings = kwargs.pop("settings")
         super().__init__(title=_("Tip of the day"), *args, **kwargs)
         pane = self.GetContentsPane()
         pane.SetSizerType("horizontal")
@@ -125,7 +125,7 @@ class TipDialog(sized_controls.SizedDialog):
         """Create a check box for users to indicate whether they want to
         see tips on startup."""
         checkbox = wx.CheckBox(pane, label=_("Show tips on startup"))
-        checkbox.SetValue(self.__settings.getboolean("window", "tips"))
+        checkbox.SetValue(settings.window.tips)
         return checkbox
 
     def on_next_tip(self, event):
@@ -138,12 +138,10 @@ class TipDialog(sized_controls.SizedDialog):
         """When users close the dialog, remember whether they want to
         see tips and what the last displayed tip was."""
         event.Skip()
-        self.__settings.setboolean("window", "tips", self.__check.GetValue())
-        self.__settings.setint(
-            "window", "tipsindex", self.__tip_provider.GetCurrentTip()
-        )
+        settings.window.tips = self.__check.GetValue()
+        settings.window.tipsindex = self.__tip_provider.GetCurrentTip()
 
 
-def showTips(parent, settings):
-    tip_provider = TipProvider(settings.getint("window", "tipsindex"))
-    TipDialog(parent, tip_provider=tip_provider, settings=settings).Show()
+def show_tips(parent):
+    tip_provider = TipProvider(settings.window.tipsindex)
+    TipDialog(parent, tip_provider=tip_provider).Show()

@@ -48,27 +48,19 @@ class VersionDialogTestCase(test.TestCase):
 
 class NewVersionDialogTest(CommonTestsMixin, VersionDialogTestCase):
     def createDialog(self):
-        return version.NewVersionDialog(
-            None, version="0.0", message="", settings=self.settings
-        )
+        return version.NewVersionDialog(None, version="0.0", message="")
 
 
 class VersionUpToDateDialogTest(CommonTestsMixin, VersionDialogTestCase):
     def createDialog(self):
-        return version.VersionUpToDateDialog(
-            None, version="0.0", message="", settings=self.settings
-        )
+        return version.VersionUpToDateDialog(None, version="0.0", message="")
 
 
 class NoVersionDialogTest(CommonTestsMixin, VersionDialogTestCase):
     def createDialog(self):
-        return version.NoVersionDialog(
-            None, version="0.0", message="", settings=self.settings
-        )
+        return version.NoVersionDialog(None, version="0.0", message="")
 
 
 class PrereleaseVersionDialogTest(CommonTestsMixin, VersionDialogTestCase):
     def createDialog(self):
-        return version.PrereleaseVersionDialog(
-            None, version="0.0", message="", settings=self.settings
-        )
+        return version.PrereleaseVersionDialog(None, version="0.0", message="")

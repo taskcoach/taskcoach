@@ -121,7 +121,6 @@ class BaseTaskViewer(
             and hasattr(wx.GetTopLevelParent(self), "AddBalloonTip")
         ):
             wx.GetTopLevelParent(self).AddBalloonTip(
-                self.settings,
                 "filtershiftclick",
                 self.toolbar,
                 getRect=lambda: self.toolbar.GetToolRect(
@@ -1231,7 +1230,6 @@ class TaskViewer(
     def activate(self):
         if hasattr(wx.GetTopLevelParent(self), "AddBalloonTip"):
             wx.GetTopLevelParent(self).AddBalloonTip(
-                self.settings,
                 "manualordering",
                 self.widget,
                 title=_("Manual ordering"),

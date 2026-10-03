@@ -22,6 +22,7 @@ from taskcoachlib.command import (
     NewEffortCommand,
     EditEffortStopDateTimeCommand,
 )
+from taskcoachlib.config import settings
 from taskcoachlib.domain import effort, date
 from taskcoachlib.i18n import _
 from taskcoachlib.meta.debug import log_step
@@ -98,8 +99,7 @@ class WakeFromIdleFrame(NotificationFrameBase):
 
 
 class IdleController(Observer, IdleNotifier):
-    def __init__(self, settings, effort_list):
-        self._settings = settings
+    def __init__(self, effort_list):
         self._effort_list = effort_list
         self._displayed = set()
         self._went_idle_at = None
@@ -119,7 +119,6 @@ class IdleController(Observer, IdleNotifier):
         self.registerObserver(
             self._on_min_idle_time_changed,
             eventType="feature.minidletime",
-            eventSource=settings,
         )
 
         self._log_backend_if_enabled()
@@ -190,7 +189,7 @@ class IdleController(Observer, IdleNotifier):
         self._on_tracked_changed()
 
     def get_min_idle_time(self):
-        return self._settings.getint("feature", "minidletime") * 60
+        return settings.feature.minidletime * 60
 
     def sleep(self):
         log_step("Idle threshold reached while tracking effort", prefix="IDLE")

@@ -399,10 +399,10 @@ class FileEditTemplates(
         )
 
     def do_command(self, event):
-        templateDialog = dialog.templates.TemplatesDialog(
-            self.settings, self.main_window(), title=_("Edit templates")
+        template_dialog = dialog.templates.TemplatesDialog(
+            self.main_window(), title=_("Edit templates")
         )
-        templateDialog.Show()
+        template_dialog.Show()
 
 
 class PrintPageSetup(
@@ -3282,7 +3282,7 @@ class Tips(settings_uicommand.SettingsCommand):
         )
 
     def do_command(self, event):
-        help.showTips(self.main_window(), self.settings)
+        help.show_tips(self.main_window())
 
 
 class Anonymize(IOCommand):

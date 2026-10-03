@@ -22,7 +22,7 @@ docs/REMINDERS.md.
 
 import test
 import wx
-from taskcoachlib import gui, config, patterns, persistence
+from taskcoachlib import gui, patterns, persistence
 from taskcoachlib.domain import task, date, effort
 
 
@@ -64,12 +64,11 @@ class DummyWindow(wx.Frame):
 
 class ReminderControllerTestCase(test.TestCase):
     def setUp(self):
-        settings = config.settings.current()
         self.taskList = task.TaskList()
         self.effortList = effort.EffortList(self.taskList)
         self.dummyWindow = DummyWindow()
         self.reminderController = ReminderControllerUnderTest(
-            self.dummyWindow, self.taskList, self.effortList, settings
+            self.dummyWindow, self.taskList, self.effortList
         )
         self.nowDateTime = date.DateTime.now()
         self.reminderDateTime = self.nowDateTime + date.ONE_HOUR

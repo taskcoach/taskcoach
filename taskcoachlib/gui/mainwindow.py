@@ -82,7 +82,7 @@ class MainWindow(
         if operating_system.isWindows():
             turn_on_double_buffering_on_windows(self)
         self.__dimensions_tracker = (
-            windowdimensionstracker.WindowDimensionsTracker(self, settings)
+            windowdimensionstracker.WindowDimensionsTracker(self)
         )
         self.iocontroller = iocontroller
         self.taskFile = taskFile
@@ -99,7 +99,7 @@ class MainWindow(
         self.__register_for_window_component_changes()
 
         self._idleController = idlecontroller.IdleController(
-            self.settings, self.taskFile.efforts()
+            self.taskFile.efforts()
         )
 
         # Follow system light/dark switches, see docs/SETTINGS.md
@@ -163,7 +163,7 @@ class MainWindow(
     def __create_reminder_controller(self):
         # pylint: disable=W0201
         self.reminderController = remindercontroller.ReminderController(
-            self, self.taskFile.tasks(), self.taskFile.efforts(), self.settings
+            self, self.taskFile.tasks(), self.taskFile.efforts()
         )
 
     def add_pane(self, page, caption, floating=False):  # pylint: disable=W0221

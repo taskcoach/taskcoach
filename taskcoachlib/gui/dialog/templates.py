@@ -21,6 +21,7 @@ from taskcoachlib.tools import wxhelper
 import wx
 from taskcoachlib.domain.task import Task
 from taskcoachlib import persistence, operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.thirdparty.deltaTime import nlTimeExpression
 from wx.lib import sized_controls
@@ -55,8 +56,7 @@ class TimeExpressionEntry(wx.TextCtrl):
 
 
 class TemplatesDialog(sized_controls.SizedDialog):
-    def __init__(self, settings, *args, **kwargs):
-        self.settings = settings
+    def __init__(self, *args, **kwargs):
         self._changing = False
         super().__init__(
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER, *args, **kwargs
@@ -90,7 +90,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
             wx.EVT_TREE_SEL_CHANGED, self.OnSelectionChanged
         )
         self._templates = persistence.TemplateList(
-            self.settings.pathToTemplatesDir()
+            settings.current().pathToTemplatesDir()
         )
         self._root = self._templateList.AddRoot("Root")
         for task in self._templates.tasks():

@@ -21,6 +21,7 @@ fires, which MasterScheduler calls in its pass at a reminder's second
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.gui.dialog import reminder, editor
 from taskcoachlib.tools import wxhelper
@@ -39,13 +40,12 @@ class ReminderController(object):
     External notification system support (KNotify, Growl) has been removed.
     """
 
-    def __init__(self, mainWindow, taskList, effortList, settings):
+    def __init__(self, main_window, task_list, effort_list):
         super().__init__()
-        self.__mainWindow = mainWindow
+        self.__mainWindow = main_window
         self.__mainWindowWasHidden = False
-        self.settings = settings
-        self.taskList = taskList
-        self.effortList = effortList
+        self.taskList = task_list
+        self.effortList = effort_list
 
         # Subscribe to reminder trigger events from Task.processReminder()
         patterns.Publisher().registerObserver(
@@ -79,7 +79,6 @@ class ReminderController(object):
             taskWithReminder,
             self.taskList,
             self.effortList,
-            self.settings,
             None,
         )
         # Position on app's monitor even though it has no parent
@@ -107,7 +106,7 @@ class ReminderController(object):
             editTask = editor.TaskEditor(
                 self.__mainWindow,
                 [taskWithReminder],
-                self.settings,
+                settings.current(),
                 self.taskList,
                 self.__mainWindow.taskFile,
                 icon_id="nuvola_actions_edit",

@@ -151,8 +151,12 @@ fixed, the full suite, and an app check of what it touches.
 
 Status: steps 1 and 2 done 2026-10-03; step 3 done for the widgets,
 the domain (`Task.settings` and `Attachment.settings` are gone), the
-printer, the export writers (whose `settings` parameter nothing read)
-and the automatic save, backup, import and export.
+printer, the export writers (whose `settings` parameter nothing read),
+the automatic save, backup, import and export, the tips and balloon
+tips, the version check, the reminders, the idle time notice, the
+window size tracker, the templates dialog, the date and time entry
+helpers and the list columns (which handed the object to the in-place
+editors).
 
 ### Risks
 

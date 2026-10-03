@@ -55,7 +55,6 @@ class VersionCheckerTest(test.TestCase):
         self, version, retrievalException=None, parseException=None
     ):
         checker = VersionCheckerUnderTest(
-            self.settings,
             version=version,
             retrievalException=retrievalException,
             parseException=parseException,
@@ -119,6 +118,6 @@ class VersionCheckerTest(test.TestCase):
             def Show(self):
                 self.shown = True
 
-        checker = meta.VersionChecker(self.settings)
+        checker = meta.VersionChecker()
         dialog = checker.showDialog(DummyDialog, "1.0")
         self.assertTrue(dialog.shown)

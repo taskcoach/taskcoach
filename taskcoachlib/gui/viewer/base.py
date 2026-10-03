@@ -130,7 +130,6 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             wx.GetTopLevelParent(self), "AddBalloonTip"
         ):
             wx.GetTopLevelParent(self).AddBalloonTip(
-                self.settings,
                 "customizabletoolbars",
                 self.toolbar,
                 title=_("Toolbars are customizable"),
@@ -1290,7 +1289,6 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         # Tree mode. Only allow drag if all selected items are siblings.
         if len(set([item.parent() for item in dragItems])) >= 2:
             wx.GetTopLevelParent(self).AddBalloonTip(
-                self.settings,
                 "treemanualordering",
                 self,
                 title=_("Reordering in tree mode"),
@@ -1306,7 +1304,6 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             None if dropItem is None else dropItem.parent()
         ):
             wx.GetTopLevelParent(self).AddBalloonTip(
-                self.settings,
                 "treechildrenmanualordering",
                 self,
                 title=_("Reordering in tree mode"),

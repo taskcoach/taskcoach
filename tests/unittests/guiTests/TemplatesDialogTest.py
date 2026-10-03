@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test, os, shutil
+from unittest import mock
 from taskcoachlib import gui, config
 
 
@@ -30,10 +31,14 @@ class TemplatesDialogTestCase(test.wxTestCase):
         self.safelyRemove(self.path)
         os.mkdir(self.path)
 
-        self.settings.pathToTemplatesDir = lambda: self.path
+        patcher = mock.patch.object(
+            self.settings, "pathToTemplatesDir", lambda: self.path
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
         self.editor = gui.dialog.templates.TemplatesDialog(
-            self.settings, self.frame, title="title"
+            self.frame, title="title"
         )
 
     def tearDown(self):

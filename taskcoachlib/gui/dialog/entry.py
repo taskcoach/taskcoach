@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import widgets, operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.domain import date
 from taskcoachlib.i18n import _
 from wx.lib import combotreebox, newevent
@@ -29,14 +30,13 @@ import wx.adv
 # These are used by both entry.py and editor.py for datetime controls
 #
 # For dynamic updates when preferences change, pass as lambda:
-#   hour_choices=lambda: get_suggested_hour_choices(settings)
+#   hour_choices=get_suggested_hour_choices
 
 
-def get_suggested_hour_choices(settings, override=None):
+def get_suggested_hour_choices(override=None):
     """Get hour choices list for dropdowns.
 
     Args:
-        settings: Settings object for reading preferences
         override: Optional override value:
             - None (default): Use preferences (efforthourstart to efforthourend)
             - list: Use that specific list of hours
@@ -58,17 +58,16 @@ def get_suggested_hour_choices(settings, override=None):
     if getEffectiveTimeFormat() == "12":
         return list(range(1, 13))
     # 24-hour mode: use working hours from preferences
-    start = settings.getint("view", "efforthourstart")
-    end = settings.getint("view", "efforthourend")
+    start = settings.view.efforthourstart
+    end = settings.view.efforthourend
     # Cap at 23 to handle legacy settings that may have sentinel value 24
     return list(range(start, min(end + 1, 24)))
 
 
-def get_suggested_minute_choices(settings, override=None):
+def get_suggested_minute_choices(override=None):
     """Get minute choices list for dropdowns.
 
     Args:
-        settings: Settings object for reading preferences
         override: Optional override value:
             - None (default): Use preferences (based on effortminuteinterval)
             - list: Use that specific list of minutes
@@ -81,15 +80,14 @@ def get_suggested_minute_choices(settings, override=None):
         return None
     if override is not None:
         return override
-    interval = settings.getint("view", "effortminuteinterval")
+    interval = settings.view.effortminuteinterval
     return list(range(0, 60, interval))
 
 
-def get_suggested_second_choices(settings, override=None):
+def get_suggested_second_choices(override=None):
     """Get second choices list for dropdowns.
 
     Args:
-        settings: Settings object for reading preferences
         override: Optional override value:
             - None (default): Use preferences (based on effortsecondinterval)
             - list: Use that specific list of seconds
@@ -102,7 +100,7 @@ def get_suggested_second_choices(settings, override=None):
         return None
     if override is not None:
         return override
-    interval = settings.getint("view", "effortsecondinterval")
+    interval = settings.view.effortsecondinterval
     return list(range(0, 60, interval))
 
 
@@ -586,9 +584,8 @@ RecurrenceEntryEvent, EVT_RECURRENCEENTRY = newevent.NewEvent()
 class RecurrenceEntry(wx.Panel):
     horizontalSpace = (3, -1)
 
-    def __init__(self, parent, recurrence, settings, *args, **kwargs):
+    def __init__(self, parent, recurrence, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self._settings = settings  # Store for later use
         recurrenceFrequencyPanel = wx.Panel(self)
         self._recurrencePeriodEntry = wx.Choice(
             recurrenceFrequencyPanel,
@@ -738,10 +735,8 @@ class RecurrenceEntry(wx.Panel):
         self._recurrenceStopDateTimeCombo = widgets.DateTimeComboCtrl(
             stopPanel,
             value=None,  # unchecked by default
-            hour_choices=lambda: get_suggested_hour_choices(self._settings),
-            minute_choices=lambda: get_suggested_minute_choices(
-                self._settings
-            ),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
         )
         # Bind value change — fires on checkbox toggle AND date/time edits
         self._recurrenceStopDateTimeCombo.Bind(

@@ -66,7 +66,7 @@ class ReminderWindowTest(SelfHealTestCase):
         patcher.start()
         self.addCleanup(patcher.stop)
         self.controller = gui.remindercontroller.ReminderController(
-            self.frame, self.tasks, self.task_file.efforts(), self.settings
+            self.frame, self.tasks, self.task_file.efforts()
         )
         self.addCleanup(self.controller.shutdown)
         self.controller.showReminderMessage(self.task)

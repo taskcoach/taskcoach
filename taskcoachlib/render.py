@@ -151,9 +151,9 @@ _DISPLAY_ONLY_DATE_FORMATS = {
 
 
 def _get_display_override_from_settings():
-    from taskcoachlib.config import settings2
+    from taskcoachlib.config import settings
 
-    return settings2.get("view", "dateformat_display_override")
+    return settings.view.dateformat_display_override
 
 
 try:

@@ -577,7 +577,7 @@ class Application(object, metaclass=patterns.Singleton):
         from taskcoachlib import meta
 
         if self.settings.getboolean("version", "notify"):
-            self.__version_checker = meta.VersionChecker(self.settings)
+            self.__version_checker = meta.VersionChecker()
             self.__version_checker.start()
         self.__copy_default_templates()
 
@@ -905,7 +905,7 @@ class Application(object, metaclass=patterns.Singleton):
         if self.settings.getboolean("window", "tips"):
             from taskcoachlib import help  # pylint: disable=W0622
 
-            help.showTips(self.mainwindow, self.settings)
+            help.show_tips(self.mainwindow)
 
     def __warn_user_that_ini_file_was_not_loaded(self):
         from taskcoachlib import meta

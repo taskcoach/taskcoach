@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 from wx.lib.agw import hyperlink
 from taskcoachlib import meta
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from wx.lib import sized_controls
 from taskcoachlib.tools import wxhelper
@@ -31,7 +32,6 @@ class VersionDialog(sized_controls.SizedDialog):  # pylint: disable=R0904,R0901
     title = ""
 
     def __init__(self, *args, **kwargs):
-        self.settings = kwargs.pop("settings")
         self.message = kwargs.pop("message")
         version = kwargs.pop("version")
         super().__init__(title=self.title, *args, **kwargs)
@@ -44,7 +44,7 @@ class VersionDialog(sized_controls.SizedDialog):  # pylint: disable=R0904,R0901
         )
         self.createInterior(pane)
         self.check = wx.CheckBox(pane, label=_("Notify me of new versions."))
-        self.check.SetValue(self.settings.getboolean("version", "notify"))
+        self.check.SetValue(settings.version.notify)
         buttonSizer = self.CreateStdDialogButtonSizer(wx.OK)
         self.SetButtonSizer(buttonSizer)
         self.Fit()
@@ -62,7 +62,7 @@ class VersionDialog(sized_controls.SizedDialog):  # pylint: disable=R0904,R0901
         """When the user closes the dialog, remember whether (s)he wants to be
         notified of new versions."""
         event.Skip()
-        self.settings.set("version", "notify", str(self.check.GetValue()))
+        settings.version.notify = self.check.GetValue()
 
 
 class NewVersionDialog(VersionDialog):

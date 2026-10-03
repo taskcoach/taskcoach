@@ -1512,12 +1512,8 @@ class DatesPage(ScrolledPage):
             self,
             value=value,
             suggested_value=task.Task.suggestedPlannedStartDateTime(),
-            hour_choices=lambda: get_suggested_hour_choices(
-                self._DatesPage__settings
-            ),
-            minute_choices=lambda: get_suggested_minute_choices(
-                self._DatesPage__settings
-            ),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
         )
         # Use AttributeSync for automatic external update handling
         # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
@@ -1685,12 +1681,8 @@ class DatesPage(ScrolledPage):
             self,
             value=value,
             suggested_value=task.Task.suggestedDueDateTime(),
-            hour_choices=lambda: get_suggested_hour_choices(
-                self._DatesPage__settings
-            ),
-            minute_choices=lambda: get_suggested_minute_choices(
-                self._DatesPage__settings
-            ),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
         )
         # Use AttributeSync for automatic external update handling
         # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
@@ -1740,12 +1732,8 @@ class DatesPage(ScrolledPage):
             self,
             value=value,
             suggested_value=task.Task.suggestedActualStartDateTime(),
-            hour_choices=lambda: get_suggested_hour_choices(
-                self._DatesPage__settings
-            ),
-            minute_choices=lambda: get_suggested_minute_choices(
-                self._DatesPage__settings
-            ),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
         )
         # Use AttributeSync for automatic external update handling
         # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
@@ -1784,12 +1772,8 @@ class DatesPage(ScrolledPage):
             self,
             value=value,
             suggested_value=task.Task.suggestedCompletionDateTime(),
-            hour_choices=lambda: get_suggested_hour_choices(
-                self._DatesPage__settings
-            ),
-            minute_choices=lambda: get_suggested_minute_choices(
-                self._DatesPage__settings
-            ),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
         )
 
         # Use AttributeSync for automatic external update handling
@@ -2236,12 +2220,8 @@ class DatesPage(ScrolledPage):
             self,
             value=value,
             suggested_value=task.Task.suggestedReminderDateTime(),
-            hour_choices=lambda: get_suggested_hour_choices(
-                self._DatesPage__settings
-            ),
-            minute_choices=lambda: get_suggested_minute_choices(
-                self._DatesPage__settings
-            ),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
         )
         # Use AttributeSync for automatic external update handling
         # Sync on EVT_VALUE_CHANGED — fires on checkbox toggle AND date/time edits
@@ -2268,9 +2248,7 @@ class DatesPage(ScrolledPage):
             if len(self.items) == 1
             else date.Recurrence()
         )
-        self._recurrenceEntry = entry.RecurrenceEntry(
-            self, current_recurrence, self.__settings
-        )
+        self._recurrenceEntry = entry.RecurrenceEntry(self, current_recurrence)
         self._recurrenceSync = attributesync.AttributeSync(
             "recurrence",
             self._recurrenceEntry,
@@ -3912,13 +3890,9 @@ class EffortEditBook(Page):
             self,
             value=current_start_date_time,
             show_seconds=True,
-            hour_choices=lambda: get_suggested_hour_choices(self._settings),
-            minute_choices=lambda: get_suggested_minute_choices(
-                self._settings
-            ),
-            second_choices=lambda: get_suggested_second_choices(
-                self._settings
-            ),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
+            second_choices=get_suggested_second_choices,
         )
         # Hide checkbox - start is always required
         self._start_date_time_combo.HideCheckBox()
@@ -4103,13 +4077,9 @@ class EffortEditBook(Page):
             self,
             value=current_stop_date_time,
             show_seconds=True,
-            hour_choices=lambda: get_suggested_hour_choices(self._settings),
-            minute_choices=lambda: get_suggested_minute_choices(
-                self._settings
-            ),
-            second_choices=lambda: get_suggested_second_choices(
-                self._settings
-            ),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
+            second_choices=get_suggested_second_choices,
         )
 
         self._stop_date_time_sync = attributesync.AttributeSync(
@@ -4836,7 +4806,6 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self.__dimensions_tracker = (
             windowdimensionstracker.WindowGeometryTracker(
                 self,
-                settings,
                 self._interior.settings_section(),
                 parent=parent,
             )

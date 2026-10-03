@@ -365,9 +365,6 @@ class Column(object):
         self.__editCallback = kwargs.get("editCallback", None)
         self.__editControlClass = kwargs.get("editControl", None)
         self.__parse = kwargs.get("parse", lambda value: value)
-        self.__settings = kwargs.get(
-            "settings", None
-        )  # FIXME: Column shouldn't need to know about settings
 
     def name(self):
         return self.__name
@@ -433,10 +430,8 @@ class Column(object):
 
     def editControl(self, parent, item, columnIndex, domainObject):
         value = self.value(domainObject)
-        kwargs = dict(settings=self.__settings) if self.__settings else dict()
-        # pylint: disable=W0142
         return self.__editControlClass(
-            parent, wx.ID_ANY, item, columnIndex, parent, value, **kwargs
+            parent, wx.ID_ANY, item, columnIndex, parent, value
         )
 
     def parse(self, value):

@@ -21,6 +21,7 @@ import time
 import wx
 
 from taskcoachlib import operating_system, patterns
+from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
 
 # Windows and macOS apply position, size and maximize during the call,
@@ -111,9 +112,8 @@ class WindowGeometryTracker:
     since the tracker started, until the window has settled.
     """
 
-    def __init__(self, window, settings, section, parent=None):
+    def __init__(self, window, section, parent=None):
         self._window = window
-        self._settings = settings
         self._section = section
         self._parent = parent
         # Editor sections name every tab; the type is enough to trace
@@ -208,10 +208,10 @@ class WindowGeometryTracker:
     # === Settings I/O ===
 
     def _get_setting(self, setting):
-        return self._settings.getvalue(self._section, setting)
+        return settings.get(self._section, setting)
 
     def _set_setting(self, setting, value):
-        self._settings.setvalue(self._section, setting, value)
+        setattr(settings.section(self._section), setting, value)
 
     # === State persistence ===
 
@@ -653,8 +653,8 @@ class WindowGeometryTracker:
 class WindowDimensionsTracker(WindowGeometryTracker):
     """Track the dimensions of the main window in the settings."""
 
-    def __init__(self, window, settings):
-        super().__init__(window, settings, "window")
+    def __init__(self, window):
+        super().__init__(window, "window")
 
     def save_position(self):
         """Save the position of the window in the settings."""

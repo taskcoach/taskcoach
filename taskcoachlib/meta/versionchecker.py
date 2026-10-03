@@ -31,8 +31,7 @@ class VersionChecker(threading.Thread):
     background; a newer one is shown once (docs/PACKAGING.md, Version
     Check)."""
 
-    def __init__(self, settings, verbose=False):
-        self.settings = settings
+    def __init__(self, verbose=False):
         self.verbose = verbose
         # Don't block application exit
         super().__init__(daemon=True)
@@ -44,7 +43,7 @@ class VersionChecker(threading.Thread):
             latest_version_string = self.getLatestVersion()
             latest_version = self.tupleVersion(latest_version_string)
             last_version_notified = self.tupleVersion(
-                self.getLastVersionNotified()
+                self.get_last_version_notified()
             )
             current_version = self.tupleVersion(data.version_full)
         except Exception as error:
@@ -76,11 +75,11 @@ class VersionChecker(threading.Thread):
                 self.verbose or latest_version > last_version_notified
             ):
                 if threading.current_thread() is threading.main_thread():
-                    self.setLastVersionNotified(latest_version_string)
+                    self.set_last_version_notified(latest_version_string)
                 else:  # Settings are for the GUI thread
                     patterns.later.soon(
                         None,
-                        self.setLastVersionNotified,
+                        self.set_last_version_notified,
                         latest_version_string,
                     )
                 self.notifyUser(
@@ -104,16 +103,22 @@ class VersionChecker(threading.Thread):
             wx.GetApp().GetTopWindow(),
             version=latestVersion,
             message=message,
-            settings=self.settings,
         )
         dialog.Show()
         return dialog
 
-    def getLastVersionNotified(self):
-        return self.settings.get("version", "notified")
+    @staticmethod
+    def get_last_version_notified():
+        # Here: the settings module imports meta, which imports this
+        from taskcoachlib.config import settings
 
-    def setLastVersionNotified(self, lastVersionNotifiedString):
-        self.settings.set("version", "notified", lastVersionNotifiedString)
+        return settings.version.notified
+
+    @staticmethod
+    def set_last_version_notified(version):
+        from taskcoachlib.config import settings
+
+        settings.version.notified = version
 
     @staticmethod
     def parse_release(answer):
