@@ -784,11 +784,12 @@ In the app:
   website generator (`website.in/`; its screenshots stay, the Flatpak
   metadata links them).
 - P46. ~~The pyparsing minimum, 3.1.3 "for `pp.Tag`"~~: lowered to
-  3.0.0 on 2026-09-30, **ruled by designer**: 3.0.0, 3.0.7 (Ubuntu
-  22.04), 3.0.9 (Debian 12), 3.1.1 and 3.1.2 pass the template tests
-  and parse 21 sample expressions alike. The builds use each distro's
-  package instead of bundling it
-  ([PACKAGING.md](PACKAGING.md#minimum-version-requirements)).
+  3.0.0 on 2026-09-30, **ruled by designer**: 3.0.0, 3.0.7, 3.0.9
+  (Debian 12), 3.1.1 and 3.1.2 pass the template tests and parse 21
+  sample expressions alike. The builds use each distro's package
+  instead of bundling it
+  ([PACKAGING.md](PACKAGING.md#minimum-version-requirements)). Wrong
+  for Ubuntu 22.04, found 2026-10-03: it has 2.4.7, not 3.0.7 (P175).
 - P47. Deferred: D5.
 - P48. ~~`thirdparty/wxScheduler` without author or licence~~: closed
   2026-09-30, no code change. Its licence was known: the wxWindows
@@ -856,8 +857,10 @@ each with the recommended action, none ruled yet:
   open in 0.1 to 0.4 s.
 - P59. ~~Calls Python 3.14 removed or deprecates~~: replaced
   2026-10-01, **ruled by designer**; every replacement exists in every
-  Python, pyparsing and wxPython released (Python 3.10, pyparsing
-  3.0.7 and wxPython 4.0.7 on Ubuntu 22.04 the oldest).
+  Python, pyparsing and wxPython released (Python 3.10 and wxPython
+  4.0.7 on Ubuntu 22.04 the oldest; pyparsing 3.0.0, the oldest the
+  template grammar runs on: Ubuntu 22.04's 2.4.7 runs neither master's
+  nor this branch's, P175).
   - `ast.Num`/`ast.Str`, removed in 3.14 (Arch 3.14.7, Fedora 43): old
     template dates (file format before 32) failed to convert; five
     `XMLReaderTest` tests failed on 3.14 and pass now.
@@ -1710,6 +1713,21 @@ each with the recommended action, none ruled yet:
   first expression that parses and ignore the rest
   (`nlTimeExpression.parse_string` without `parse_all`), so "15:00"
   alone is rejected while "2026-10-05" is read as today at 20:26.
+- P175. Ubuntu 22.04 cannot run Task Coach from its .deb (found
+  2026-10-03, To Do 91): Ubuntu 22.04's python3-pyparsing is 2.4.7,
+  and the template grammar needs pyparsing 3 (with 2.4.7 the
+  application stops at start: `CaselessKeyword.__init__() got an
+  unexpected keyword argument 'ident_chars'`, checked with master and
+  pyparsing 2.4.7). Master's .deb installs and does not start: its
+  workflow put pyparsing 3 in `debian/taskcoach` before
+  `dpkg-buildpackage`, whose `dh_clean` and `dh_prep` delete that
+  folder (checked with debhelper 13.24.2: a master build's package
+  tree had no pyparsing). This branch's .deb does not install: P46
+  made it depend on `python3-pyparsing (>= 3.0.0)` on the false
+  premise that Ubuntu 22.04 has 3.0.7. P46 had also taken pyparsing
+  out of `setup_ubuntu2204_jammy.sh`'s virtual environment, which
+  master installed; put back 2026-10-03 (not run on Ubuntu 22.04).
+  The .deb's fix depends on To Do 91.
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**

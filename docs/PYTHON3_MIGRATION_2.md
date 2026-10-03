@@ -90,9 +90,11 @@ Upstream's `delta_time.py` used `pp.Tag()`, new in pyparsing 3.1.3, so
 the minimum became 3.1.3 and pyparsing was installed with pip where the
 distro's was older. `deltaTime.py` has since replaced `pp.Tag()` with
 `pp.Empty()` and a parse action; on 2026-09-30 the minimum went back to
-3.0.0 (the pyparsing 3 API): 3.0.0, 3.0.7 (Ubuntu 22.04), 3.0.9
-(Debian 12), 3.1.1 and 3.1.2 (Debian 13) pass the template tests and
-parse 21 sample expressions alike, so every distro's package is used.
+3.0.0 (the pyparsing 3 API): 3.0.0, 3.0.7, 3.0.9 (Debian 12), 3.1.1
+and 3.1.2 (Debian 13) pass the template tests and parse 21 sample
+expressions alike, so every distro's package is used but Ubuntu
+22.04's, 2.4.7 (P175 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
 
 #### Files Modified
 

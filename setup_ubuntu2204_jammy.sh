@@ -104,7 +104,12 @@ echo
 
 # Install Python dependencies not available in Ubuntu repos or with version issues
 echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
-echo "Nothing to install: every dependency comes from the Ubuntu repositories"
+echo "Installing: pyparsing>=3.0.0"
+
+source "$VENV_PATH/bin/activate"
+# Jammy's python3-pyparsing is 2.4.7; the template dates need 3
+pip install --quiet 'pyparsing>=3.0.0'
+deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
@@ -168,6 +173,7 @@ echo
 echo "TaskCoach has been set up for Ubuntu 22.04 (Jammy) with:"
 echo "  • System packages from Ubuntu repos (wxPython, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
+echo "  • pyparsing 3 in the virtual environment"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"
