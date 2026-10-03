@@ -511,6 +511,15 @@ Numbered D1, D2, ...
   629-line module (BSD) draws the Task square map view; every build
   already installs or bundles it ([PACKAGING.md](PACKAGING.md)), and a
   copy would be drawing code of ours to maintain.
+- D14. The Calendar view's `invalid bitmap size` traceback when it has
+  no room (P166), **ruled by designer 2026-10-03**: not done, an edge
+  case with no effect on use (a log line, nothing on screen).
+- D15. Text cut without "..." in a too-narrow column of the task,
+  category and note lists (P95), **ruled by designer 2026-10-03**: not
+  done, no relevant effect on use.
+- D16. The empty `papirus-dark/` and `papirus-light/` icon folders and
+  monochrome icons (P105), **ruled by designer 2026-10-03**: not done,
+  no effect on use.
 
 ## Pre-existing Issues
 
@@ -1049,8 +1058,7 @@ each with the recommended action, none ruled yet:
   only after a change (10), a backup and restore review (4), speech
   through pyttsx3 (6), autosave on losing focus (3). Keep, defer or
   strike each?
-- P95. Right and centre aligned columns truncate on the wrong side
-  (the patched tree control). Fix?
+- P95. Will not do: D15.
 - P96. Toolbar icons on the right jitter while a sash is dragged
   ("deferred to a separate branch", not ruled). Fix or defer? Its demo
   moved 2026-10-02, **ruled by designer**, from the root
@@ -1091,8 +1099,7 @@ each with the recommended action, none ruled yet:
 - P104. Long-term items in the migration docs: Blinker or psygnal for
   the Publisher, gettext `.mo` files, the `SetSizerAndFit` review, an
   "audit all string handling". Strike or defer?
-- P105. Symbolic icons ([ICON_LIBRARY.md](ICON_LIBRARY.md) 1) and the
-  empty `papirus-*` placeholders. Defer, and remove the placeholders?
+- P105. Will not do: D16.
 - P106. Window geometry left to check on LXDE: the "to test" rows, a
   resize jitter (the toolbar resized at every `EVT_SIZE`), a
   "Description" window seen once. Check?
@@ -1639,13 +1646,7 @@ each with the recommended action, none ruled yet:
   Every save checks the file on disk first, so a late notice never
   lets another program's change be written over.
 
-- P166. The Calendar view prints `invalid bitmap size` tracebacks
-  when it has no room (found 2026-10-03 in To Do 80's app check; the
-  same on master). Docked in a crowded column, about 150 pixels tall,
-  its toolbar and day header take all of it and the schedule area is
-  0 pixels tall; it is drawn anyway (`wxSchedulerPaint.DrawBuffer`, a
-  600x0 picture), at start and whenever tasks change (File > Merge).
-  Nothing visible; a traceback in the log each time. Like P161.
+- P166. Will not do: D14.
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**
