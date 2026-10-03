@@ -6,6 +6,11 @@ section is the text of its GitHub release page
 
 ## 2.0.3.0
 
+- File > Import > CSV reads month names and AM/PM in the system's
+  language as well as English; a date without its day or month
+  imports empty instead of taking today's (a missing year is still
+  this year); "Due: 2026-10-05" is year-month-day with day first
+  chosen; a number too long to be a date no longer stops the import.
 - Editing cells in place is off by default, after an upgrade too;
   Preferences > Features > Edit cells in place turns it on.
 - Preferences > Files no longer has "Use polling for file monitoring":

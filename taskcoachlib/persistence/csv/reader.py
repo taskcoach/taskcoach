@@ -21,18 +21,100 @@ from taskcoachlib.domain.date import DateTime, TimeDelta
 from taskcoachlib.domain.task import Task
 from taskcoachlib.i18n import _
 from dateutil import parser as dparser
+import calendar
 import csv
+import datetime
 import io
 import re
 import math
 
-_YEAR_FIRST = re.compile(r"\s*\d{4}[-/.]")
+_YEAR_FIRST = re.compile(r"(?<!\d)\d{4}[-/.]\d")
+# Task Coach's own "2026-Mar-28-Sat"; its weekday adds nothing and may
+# read as a month ("mar." is Tuesday in French)
+_OWN_ABBREVIATED = re.compile(r"^\s*(\d{4})-([^-]+)-(\d{1,2})-\S+")
+_LETTERS = re.compile(r"[^\W\d_]+")
+_NUMBER = re.compile(r"\d+")
+_LETTER_DOT = re.compile(r"(?<=[^\W\d_])\.")
+# Two defaults that differ in every part: a part the text lacks shows
+_DEFAULTS = (datetime.datetime(2001, 1, 1), datetime.datetime(2002, 2, 2))
+
+
+def _system_names():
+    """The system language's month names, full and short, and AM and
+    PM: what Task Coach's own export writes."""
+    months = [
+        (calendar.month_name[number], calendar.month_abbr[number])
+        for number in range(1, 13)
+    ]
+    ampm = [datetime.time(hour).strftime("%p") for hour in (1, 13)]
+    return months, ampm
+
+
+def _local_word(name):
+    """The word dateutil sees for a name: its last run of letters ("de
+    gener", "d’abril", "janv."), or None for a name with a number
+    ("1月")."""
+    words = _LETTERS.findall(name.lower())
+    if words and not _NUMBER.search(name):
+        return words[-1]
+    return None
+
+
+def _is_known(info, word):
+    lookups = (info.weekday, info.month, info.hms, info.ampm, info.tzoffset)
+    return (
+        info.jump(word)
+        or info.pertain(word)
+        or info.utczone(word)
+        or any(lookup(word) is not None for lookup in lookups)
+    )
+
+
+def _with_local(english, names, info):
+    words = list(english)
+    for name in names:
+        word = _local_word(name)
+        if word and word not in words and not _is_known(info, word):
+            words.append(word)
+    return tuple(words)
+
+
+def _parser_info():
+    """dateutil's English month names and AM/PM plus the system
+    language's; a word dateutil already reads otherwise is left out."""
+    english = dparser.parserinfo()
+    months, ampm = _system_names()
+    return type(
+        "SystemLanguage",
+        (dparser.parserinfo,),
+        dict(
+            MONTHS=[
+                _with_local(names, local, english)
+                for names, local in zip(dparser.parserinfo.MONTHS, months)
+            ],
+            AMPM=[
+                _with_local(names, (local,), english)
+                for names, local in zip(dparser.parserinfo.AMPM, ampm)
+            ],
+        ),
+    )()
+
+
+def _own_abbreviated(match):
+    """Year, month and day of Task Coach's own form; a month written
+    with a number ("1月", "Thg 1") is that number."""
+    year, month, day = match.groups()
+    number = _NUMBER.search(month)
+    words = _LETTERS.findall(month)
+    month = number.group() if number else (words[-1] if words else month)
+    return "%s-%s-%s" % (year, month, day)
 
 
 class CSVReader(object):
     def __init__(self, taskList, categoryList):
         self.taskList = taskList
         self.categoryList = categoryList
+        self.__parser_info = _parser_info()
 
     def createReader(self, fp, dialect, hasHeaders):
         reader = csv.reader(fp, dialect=dialect)
@@ -96,23 +178,23 @@ class CSVReader(object):
                     except ValueError:
                         pass
                 elif kwargs["mappings"][idx] == _("Actual start date"):
-                    actualStartDateTime = self.parseDateTime(
+                    actualStartDateTime = self.parse_date_time(
                         fieldValue, dayfirst=dayfirst
                     )
                 elif kwargs["mappings"][idx] == _("Planned start date"):
-                    plannedStartDateTime = self.parseDateTime(
+                    plannedStartDateTime = self.parse_date_time(
                         fieldValue, dayfirst=dayfirst
                     )
                 elif kwargs["mappings"][idx] == _("Due date"):
-                    dueDateTime = self.parseDateTime(
+                    dueDateTime = self.parse_date_time(
                         fieldValue, 23, 59, 59, dayfirst=dayfirst
                     )
                 elif kwargs["mappings"][idx] == _("Completion date"):
-                    completionDateTime = self.parseDateTime(
+                    completionDateTime = self.parse_date_time(
                         fieldValue, 12, 0, 0, dayfirst=dayfirst
                     )
                 elif kwargs["mappings"][idx] == _("Reminder date"):
-                    reminderDateTime = self.parseDateTime(
+                    reminderDateTime = self.parse_date_time(
                         fieldValue, dayfirst=dayfirst
                     )
                 elif kwargs["mappings"][idx] == _("Budget"):
@@ -216,39 +298,52 @@ class CSVReader(object):
         self.categoryList.append(newCategory)
         return newCategory
 
-    def parseDateTime(
+    def parse_date_time(
         self,
-        fieldValue,
-        defaultHour=0,
-        defaultMinute=0,
-        defaultSecond=0,
+        text,
+        default_hour=0,
+        default_minute=0,
+        default_second=0,
         dayfirst=False,
     ):
-        if not fieldValue:
+        """The date and time in text, or None when it lacks its day or
+        its month: no part comes from today but a missing year."""
+        if not text:
             return None
-        # A date starting with the year is year-month-day (ISO 8601);
+        text = _OWN_ABBREVIATED.sub(_own_abbreviated, text)
+        # A date with the year first is year-month-day (ISO 8601);
         # dateutil would read it year-day-month when day first
-        dayfirst = dayfirst and not _YEAR_FIRST.match(fieldValue)
+        dayfirst = dayfirst and not _YEAR_FIRST.search(text)
+        # "janv." in "2026-janv.-06": the dot is no separator
+        text = _LETTER_DOT.sub("", text)
         try:
-            dateTime = dparser.parse(
-                fieldValue, dayfirst=dayfirst, fuzzy=True
-            ).replace(tzinfo=None)
-            hour, minute, second = (
-                dateTime.hour,
-                dateTime.minute,
-                dateTime.second,
+            first, second = (
+                dparser.parse(
+                    text,
+                    self.__parser_info,
+                    default=default,
+                    dayfirst=dayfirst,
+                    fuzzy=True,
+                )
+                for default in _DEFAULTS
             )
-            if 0 == hour == minute == second:
-                hour = defaultHour
-                minute = defaultMinute
-                second = defaultSecond
-            return DateTime(
-                dateTime.year,
-                dateTime.month,
-                dateTime.day,
-                hour,
-                minute,
-                second,
-            )
-        except (ValueError, AttributeError):
+            if (first.month, first.day) != (second.month, second.day):
+                return None
+            if first.year != second.year:
+                first = first.replace(year=datetime.date.today().year)
+        # dateutil 2.8.1 (Ubuntu 22.04) raises TypeError for some
+        # out-of-range months
+        except (ValueError, OverflowError, TypeError, AttributeError):
             return None
+        if (first.hour, first.minute, first.second) == (0, 0, 0):
+            first = first.replace(
+                hour=default_hour, minute=default_minute, second=default_second
+            )
+        return DateTime(
+            first.year,
+            first.month,
+            first.day,
+            first.hour,
+            first.minute,
+            first.second,
+        )

@@ -280,10 +280,10 @@ for idle time only (corrected 2026-10-03).
 actual start, completion, reminder), with the wizard's day-first or
 month-first choice. CSV import since 1.2.11 (2011).
 
-**Code**: 1 module, `persistence/csv/reader.py`: one call
-(`parser.parse(..., fuzzy=True)`) reached from 5 fields, about 8
-lines; 15 date tests in `CSVReaderTest`. Nothing else Task Coach uses
-needs it.
+**Code**: 1 module, `persistence/csv/reader.py`: `parse_date_time`
+and its reading rules (about 110 lines), reached from 5 fields; 27
+date tests in `CSVReaderTest`. Nothing else Task Coach uses needs
+it.
 
 **Platforms**: required everywhere; imported unguarded at start-up
 (through `persistence`), so the app does not start without it.
@@ -295,54 +295,31 @@ dateutil needs. Last releases: 2.8.2 (2021), 2.9.0 (2024).
 **Size**: 684 KB (`python3-dateutil` 324 KB installed); pip: 844 KB
 plus `six` 36 KB.
 
-**Measured**: 118 date strings: the 88 Task Coach's CSV export writes
-(5 numeric date formats, 12- and 24-hour times, the two display
-overrides in English and French, at 4 moments) and 30 that other
-programs write (ISO 8601 with and without zone, US, UK, German,
-RFC 2822, month names, a time alone, a number, words). Today's call,
-on any system:
+**Keep or replace**: the alternative is a reader of our own on the
+standard library (a 93-line prototype). Both measured on every date
+Task Coach's CSV export writes (every day of 2026, 3 times, 7 date
+forms, 12- and 24-hour), exported and imported in 34 system
+languages, and on forms other programs write:
 
-- 96 as expected.
-- 6 wrong dates: French month names with a day of 12 or less,
-  "samedi, 07 mars 2026" read as 2026-07-03 (P173).
-- 12 empty: other French and German forms ("23 octobre 2026").
-- 4 dates where the text has none: "5" (the 5th of this month),
-  "2:30 PM" (today), "week 12" (the 12th), "next Monday".
+| | dateutil | Our own reader |
+|---|---|---|
+| Languages reading every exported date back | 31 of 34 (Japanese, Korean, Vietnamese need DD/MM chosen) | 23 of 34 |
+| Wrong dates | none | none |
+| A date among words ("Due: 2026-10-05", "around Oct 5, 2026") | read | empty |
+| A date without its year ("5 Oct") | this year | empty |
+| Code Task Coach owns | the reading rules in `reader.py` | a date parser, more than 93 lines to match dateutil |
+| Package | 324 KB, in every distribution; same results on 2.8.1, 2.8.2, 2.9.0 | none |
 
-Fuzzy mode also reads a date among words ("Due: 2026-10-05", "around
-Oct 5, 2026", "2026-10-05 (approx)"), and fills a missing day, month
-or year from today ("Oct 2026" is 2026-10-03).
+**Recommendation**: keep. Replacing it saves one small package that
+every build already gets, and costs reading fewer dates and owning a
+parser.
 
-**Options**:
-
-- A. Keep as is. P173 stays.
-- B. Add the system language's month names to dateutil's: a
-  `parserinfo` built from `calendar`, about 12 lines in `reader.py`.
-  An English system reads all 118 as today. A French system: 109 as
-  expected (was 96), no wrong date (was 6); the French
-  "2026-oct.-23-ven." form stays empty. Weekday names are left out:
-  French "mar" (Tuesday, Spanish and Italian the same) hides English
-  "Mar" ("Mar 7, 2026" read as 2026-07-07). Left: a month name in a
-  third language, day 12 or less, is still wrong ("7 März 2026" on a
-  French system: 2026-07-03).
-- C. Drop fuzzy mode: 1 line. No wrong date in any language: all
-  French forms import empty, as do dates among words, "week 12" and
-  "next Monday".
-- D. Replace dateutil with a standard-library reader: a prototype of
-  93 lines; dateutil out of every build, `six` out of the pip builds.
-  It reads ISO 8601, three numbers in the chosen order (year first is
-  year-month-day), month and weekday names in English and the
-  system's language, 12- and 24-hour times; any other word gives no
-  date. English system: 100 as expected, none wrong or invented (the
-  18 empty are French and German names); French system: 117. Unlike
-  today, a date among words, a date without its year ("5 Oct") and a
-  partial one ("Oct 2026") import empty. Risk: forms outside the 118
-  that dateutil reads.
-
-**Recommendation**: B: it ends the wrong dates for the user's own
-language and changes nothing on an English system. Effort: the
-`parserinfo`, tests giving it French names (no French locale needed),
-an app check with a French locale.
+**Wrong dates**: fixed 2026-10-03 (P173 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)):
+the import reads month names and AM/PM in the system's language too,
+gives no date where the text lacks its day or month instead of taking
+today's, reads a year-first date as year-month-day anywhere in the
+text, and a number too long to be a date no longer stops the import.
 
 ---
 

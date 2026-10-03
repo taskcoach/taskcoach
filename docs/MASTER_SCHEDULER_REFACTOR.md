@@ -394,12 +394,11 @@ go at the end. Details live in the sections and documents linked.
 88. ~~pywayland~~: moved to To Do 97, **parked by designer
     2026-10-03**.
 89. python-dateutil, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#python-dateutil-to-do-89)).
-    Proposed 2026-10-03 (with P173): keep it; the CSV import reads the
-    system language's month names and AM/PM, gives no date where the
-    text lacks its day or month (today's are taken now), and reads a
-    year-first date as year-month-day anywhere in the text. Prototyped
-    in a scratch copy with its tests; open: the designer's ruling.
+    ([DEPENDENCIES.md](DEPENDENCIES.md#python-dateutil-to-do-89)):
+    keep or replace it with a reader of our own. Recommended: keep
+    (31 of 34 languages read every exported date back, against 23, and
+    dates among words). Open: the designer's ruling. Its wrong dates,
+    a separate issue, were fixed 2026-10-03 (P173).
 90. ~~chardet~~: moved to To Do 98, **parked by designer
     2026-10-03**.
 91. ~~pyparsing~~: moved to To Do 99, **parked by designer
@@ -1739,16 +1738,26 @@ each with the recommended action, none ruled yet:
   the log. The grammar takes `calendar.day_name`, which follows the
   locale set before it is imported; the Help says expressions are in
   English.
-- P173. File > Import > CSV reads a month name in another language as
-  a wrong date (found 2026-10-03, To Do 89; checked in the app on the
-  branch; master's import fails before its first page, P40, with the
-  same date call): a CSV with due date "samedi, 07 mars 2026" imports
-  due 2026-07-03 (the day number becomes the month, today's day the
-  day); "23 octobre 2026" imports with no due date. Task Coach's own
-  CSV export writes such dates on a French system with Preferences >
-  Regional > Display override "Saturday, 28 March 2026" (inferred
-  from `render.py`, not run). dateutil knows only English month
-  names, and its fuzzy mode skips the word.
+- P173. ~~File > Import > CSV puts wrong dates on tasks~~: fixed
+  2026-10-03, **ruled by designer** (found analysing To Do 89;
+  master's import fails before its first page, P40). A due date
+  "samedi, 07 mars 2026" imported as 2026-07-03 (the day as the month,
+  today's day as the day), "Due: 2026-10-05" with day first chosen as
+  2026-05-10, "5" and "2:30 PM" as dates made from today, and a number
+  too long to be a date ("99999999999999999999") stopped the whole
+  file without a message (`OverflowError` in the log). dateutil knew
+  English month names only and filled what it did not read from
+  today. `parse_date_time` now gives dateutil the system language's
+  month names and AM/PM, reads the text with two different defaults
+  and gives no date when the day or month differs (a missing year is
+  this year, as before), applies year first anywhere in the text, and
+  turns dateutil's errors into no date (2.8.1, Ubuntu 22.04's, raises
+  `TypeError` for some months). Checked: 10 of 12 new `CSVReaderTest`
+  tests fail before; every date the CSV export writes (2026, 7 forms,
+  12- and 24-hour) reads back in 31 of 34 system languages (was none
+  but English; Japanese, Korean and Vietnamese with DD/MM chosen) on
+  dateutil 2.8.1, 2.8.2 and 2.9.0; in the app on English and French
+  systems, before and after, each date above.
 - P174. File > Import > CSV garbles Central European and Turkish
   files on most builds (found 2026-10-03, To Do 90; checked in the app
   on the branch with chardet 5.2, Debian 13; master's import fails
