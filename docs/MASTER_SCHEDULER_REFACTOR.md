@@ -381,10 +381,8 @@ go at the end. Details live in the sections and documents linked.
     source). To analyse before the pull request: a newer Python for
     the Windows build (its Expat, wxPython 4.3.1's wheels, the
     embedded layout).
-83. wxPython: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#wxpython-to-do-83)): why, code,
-    platforms, size, replacing or removing it. Recommended: keep (the
-    whole interface). Open: the designer's ruling.
+83. ~~wxPython~~: kept, **ruled by designer 2026-10-03**
+    ([DEPENDENCIES.md](DEPENDENCIES.md#wxpython-to-do-83)).
 84. PyGObject: analysed 2026-10-03, **asked by designer**
     ([DEPENDENCIES.md](DEPENDENCIES.md#pygobject-to-do-84)): why, code,
     platforms, size, replacing or removing it. Recommended: keep (the
@@ -408,17 +406,20 @@ go at the end. Details live in the sections and documents linked.
     Idle time notice on KDE 6, wlroots and COSMIC Wayland). Open: the
     designer's ruling.
 89. python-dateutil: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#python-dateutil-to-do-89)): why,
-    code, platforms, size, replacing or removing it. Recommended: keep
-    (the CSV import's dates). Open: the designer's ruling.
+    ([DEPENDENCIES.md](DEPENDENCIES.md#python-dateutil-to-do-89)):
+    118 dates measured, P173 found; options A to D. Recommended: B,
+    keep it and add the system language's month names. Open: the
+    designer's ruling.
 90. chardet: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#chardet-to-do-90)): why, code,
-    platforms, size, replacing or removing it. Recommended: keep (the
-    CSV import's encoding). Open: the designer's ruling.
+    ([DEPENDENCIES.md](DEPENDENCIES.md#chardet-to-do-90)): 5 versions
+    measured on 36 files, P174 found; options A to D. Recommended: B,
+    keep it and add an Encoding choice to the import wizard. Open: the
+    designer's ruling.
 91. pyparsing: analysed 2026-10-03, **asked by designer**
-    ([DEPENDENCIES.md](DEPENDENCIES.md#pyparsing-to-do-91)): why, code,
-    platforms, size, replacing or removing it. Recommended: keep
-    (template date expressions). Open: the designer's ruling.
+    ([DEPENDENCIES.md](DEPENDENCIES.md#pyparsing-to-do-91)): a
+    standard-library parser compared on 202,380 cases, P171, P172 and
+    P175 found; options A to D. Recommended: B, replace it with that
+    parser. Open: the designer's ruling.
 92. `dbus-python` to Gio (was To Do 77), **put off by designer
     2026-10-03** to the end of this refactor: no proposal until
     research shows it suits, without a regression, every supported
@@ -1713,6 +1714,45 @@ each with the recommended action, none ruled yet:
   first expression that parses and ignore the rest
   (`nlTimeExpression.parse_string` without `parse_all`), so "15:00"
   alone is rejected while "2026-10-05" is read as today at 20:26.
+- P171. A template date "N days before a weekday" goes the wrong way
+  (found 2026-10-03 analysing pyparsing, To Do 91; checked in the app
+  on master and the branch): on Saturday 2026-10-03, File > Edit
+  templates, "New task due tomorrow", due date "2 days before sunday",
+  OK; New > New task from template > New task due tomorrow: due
+  2026-10-06 (Tuesday), not 2026-10-02. The same for "before next
+  <weekday>" and "from" or "after last <weekday>": the grammar takes
+  the weekday's direction (-1 with "last", else 1) for that of
+  "before", "from" or "after" (both are results named `dir`).
+- P172. Template weekday names follow the system's language (found
+  2026-10-03, To Do 91; checked in the app on master and the branch,
+  with a French locale): on a French system "next saturday", the
+  Help's own example, turns the field red and "next samedi" is
+  accepted; a template saved with "2 days before sunday" is missing
+  from New > New task from template, with `[TEMPLATE] ERROR! Reading
+  template ...: Expected CaselessKeyword 'today', found 'sunday'` in
+  the log. The grammar takes `calendar.day_name`, which follows the
+  locale set before it is imported; the Help says expressions are in
+  English.
+- P173. File > Import > CSV reads a month name in another language as
+  a wrong date (found 2026-10-03, To Do 89; checked in the app on the
+  branch; master's import fails before its first page, P40, with the
+  same date call): a CSV with due date "samedi, 07 mars 2026" imports
+  due 2026-07-03 (the day number becomes the month, today's day the
+  day); "23 octobre 2026" imports with no due date. Task Coach's own
+  CSV export writes such dates on a French system with Preferences >
+  Regional > Display override "Saturday, 28 March 2026" (inferred
+  from `render.py`, not run). dateutil knows only English month
+  names, and its fuzzy mode skips the word.
+- P174. File > Import > CSV garbles Central European and Turkish
+  files on most builds (found 2026-10-03, To Do 90; checked in the app
+  on the branch with chardet 5.2, Debian 13; master's import fails
+  before its first page, P40): a Windows-1250 CSV with "Zapłacić
+  rachunek za prąd" shows and imports as "Zap³aciæ rachunek za pr¹d".
+  chardet 4.0 to 5.2 guess Windows-1252 or ISO-8859-1 for
+  Windows-1250, ISO-8859-2 and Windows-1254 files; 6.0 guesses
+  Windows-1250 for ISO-8859-2; 7.x reads all 36 samples right
+  ([DEPENDENCIES.md](DEPENDENCIES.md#chardet-to-do-90)). The wizard
+  has no encoding choice.
 - P175. Ubuntu 22.04 cannot run Task Coach from its .deb (found
   2026-10-03, To Do 91): Ubuntu 22.04's python3-pyparsing is 2.4.7,
   and the template grammar needs pyparsing 3 (with 2.4.7 the

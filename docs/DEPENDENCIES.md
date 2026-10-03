@@ -59,7 +59,7 @@ behaviour to verify again. Not a candidate.
 stability"), but the tree views run on the bundled copy on every
 version, and Ubuntu 22.04, a supported build, ships 4.0.7.
 
-**Recommendation**: keep.
+**Ruling**: keep, **ruled by designer 2026-10-03**.
 
 ---
 
@@ -286,25 +286,63 @@ lines; 15 date tests in `CSVReaderTest`. Nothing else Task Coach uses
 needs it.
 
 **Platforms**: required everywhere; imported unguarded at start-up
-(through `persistence`), so the app does not start without it. Pip
-builds also get `six`, which dateutil needs, although Task Coach
-dropped its own use of `six` (2026-10-01).
+(through `persistence`), so the app does not start without it.
+Ubuntu 22.04 has 2.8.1, Debian 12 and Ubuntu 24.04 2.8.2, Debian 13
+and Arch 2.9.0, Fedora 43 and the pip builds 2.9.0.post0; the call
+and its options are the same in all. Pip builds also get `six`, which
+dateutil needs. Last releases: 2.8.2 (2021), 2.9.0 (2024).
 
 **Size**: 684 KB (`python3-dateutil` 324 KB installed); pip: 844 KB
 plus `six` 36 KB.
 
-**Replacing or removing it**: a parser of about 25 lines (regular
-expressions and `datetime`) in place of about 6: a prototype read 22 of
-27 sample dates as dateutil does (the test values, Task Coach's own
-display formats, ISO with a zone). The rest are where dateutil's fuzzy
-mode makes a date up ("5", "week 12", "next Monday" become dates);
-the prototype leaves them empty. Neither reads non-English month
-names. `datetime.fromisoformat` alone rejects 22 of the 26 samples
-("2011-6-30" included). Risk: date forms in users' files the
-prototype does not know would import empty.
+**Measured**: 118 date strings: the 88 Task Coach's CSV export writes
+(5 numeric date formats, 12- and 24-hour times, the two display
+overrides in English and French, at 4 moments) and 30 that other
+programs write (ISO 8601 with and without zone, US, UK, German,
+RFC 2822, month names, a time alone, a number, words). Today's call,
+on any system:
 
-**Recommendation**: keep: one call, 324 KB, and it reads date forms a
-small parser would miss.
+- 96 as expected.
+- 6 wrong dates: French month names with a day of 12 or less,
+  "samedi, 07 mars 2026" read as 2026-07-03 (P173).
+- 12 empty: other French and German forms ("23 octobre 2026").
+- 4 dates where the text has none: "5" (the 5th of this month),
+  "2:30 PM" (today), "week 12" (the 12th), "next Monday".
+
+Fuzzy mode also reads a date among words ("Due: 2026-10-05", "around
+Oct 5, 2026", "2026-10-05 (approx)"), and fills a missing day, month
+or year from today ("Oct 2026" is 2026-10-03).
+
+**Options**:
+
+- A. Keep as is. P173 stays.
+- B. Add the system language's month names to dateutil's: a
+  `parserinfo` built from `calendar`, about 12 lines in `reader.py`.
+  An English system reads all 118 as today. A French system: 109 as
+  expected (was 96), no wrong date (was 6); the French
+  "2026-oct.-23-ven." form stays empty. Weekday names are left out:
+  French "mar" (Tuesday, Spanish and Italian the same) hides English
+  "Mar" ("Mar 7, 2026" read as 2026-07-07). Left: a month name in a
+  third language, day 12 or less, is still wrong ("7 März 2026" on a
+  French system: 2026-07-03).
+- C. Drop fuzzy mode: 1 line. No wrong date in any language: all
+  French forms import empty, as do dates among words, "week 12" and
+  "next Monday".
+- D. Replace dateutil with a standard-library reader: a prototype of
+  93 lines; dateutil out of every build, `six` out of the pip builds.
+  It reads ISO 8601, three numbers in the chosen order (year first is
+  year-month-day), month and weekday names in English and the
+  system's language, 12- and 24-hour times; any other word gives no
+  date. English system: 100 as expected, none wrong or invented (the
+  18 empty are French and German names); French system: 117. Unlike
+  today, a date among words, a date without its year ("5 Oct") and a
+  partial one ("Oct 2026") import empty. Risk: forms outside the 118
+  that dateutil reads.
+
+**Recommendation**: B: it ends the wrong dates for the user's own
+language and changes nothing on an English system. Effort: the
+`parserinfo`, tests giving it French names (no French locale needed),
+an app check with a French locale.
 
 ---
 
@@ -318,63 +356,149 @@ attachments, no longer); the CSV import's since 2011.
 file, about 3 lines; no tests. Nothing else Task Coach uses needs it.
 
 **Platforms**: required everywhere; imported unguarded at start-up, so
-the app does not start without it. The macOS build pins `<5.2.0`
-(py2app could not find 5.2's compiled modules, PACKAGING.md), the
-Windows and AppImage builds `>=5.2.0`, which now gets 7.x (inferred).
+the app does not start without it. Each build gets another major
+version:
 
-**Size**: 2.3 MB (`python3-chardet` 1.1 MB installed; 41,288 lines), no
-dependencies. Guessing takes 2.1 s for a 0.8 MB file, on the window's
-thread when the file is chosen.
+| chardet | Builds |
+|---------|--------|
+| 4.0.0 | Ubuntu 22.04 |
+| 5.1.0 | Debian 12; macOS, pinned `<5.2.0` (py2app cannot find 5.2's compiled modules, PACKAGING.md) |
+| 5.2.0 | Debian 13, Ubuntu 24.04, Fedora 43 |
+| 6.0.0 | Arch, Fedora 44, openSUSE Tumbleweed |
+| 7.x | Windows, AppImage, Flatpak (pip `>=5.2.0`; 7.4.3 in the June Flatpak build) |
 
-**Replacing or removing it**: a guess of about 10 lines: a byte order
-mark (UTF-8, UTF-16, UTF-32), else strict UTF-8, else the system's
-code page. Tried on samples: the same results for ASCII, UTF-8 with
-and without a mark, UTF-16 and Windows-1252; wrong for Mac Roman and
-for Cyrillic files on a non-Russian system, where chardet is right; a
-Japanese file chardet gives up on reads right only with a Japanese
-system code page. An Encoding choice in the wizard (about 10 to 15
-lines) would cover the misses.
+7.x is under the 0BSD licence (4.0 to 6.0: LGPL 2.1 or later) and
+needs Python 3.10; 17 releases since 2023.
 
-**Found**: PACKAGING.md's matrix row says "chardet (<5.2)", true of
-macOS only.
+**Size**: `python3-chardet` 5.2: 1.1 MB installed (2.3 MB with its
+files); pip: 4.0 2.1 MB, 6.0 24 MB, 7.6 3.2 MB plus an 864 KB compiled
+module.
 
-**Recommendation**: keep: it reads legacy encodings a short guess
-misses; the 2 s guess can be limited to the file's start if it
-matters.
+**Measured**: 36 CSV files, 13 languages in their usual encodings
+(UTF-8 with and without mark, UTF-16, Windows-1250 to 1255,
+ISO-8859-1 and 2, Mac Roman, KOI8-R, Shift JIS, EUC-JP, GBK, Big5), 5
+and 100 rows. Read right, of 36:
+
+| chardet | Right | Wrong |
+|---------|:-----:|-------|
+| 4.0.0 | 29 | Polish and Czech Windows-1250 and ISO-8859-2, Turkish Windows-1254, French and German Mac Roman (one cannot be decoded: the wizard stops with an error, inferred) |
+| 5.1.0, 5.2.0 | 31 | Polish and Czech Windows-1250 and ISO-8859-2, Turkish Windows-1254 (P174) |
+| 6.0.0 | 32 | Polish and Czech ISO-8859-2 (read as Windows-1250), French and German Mac Roman |
+| 7.6.0 | 36 | |
+
+French text with typographic quotes, dashes and "œ" in Windows-1252:
+right on all. A wrong guess shows garbled in the preview and imports
+garbled. Guessing runs on the window's thread when the file is
+chosen; for a 430 KB file: 4.0 1.4 to 1.6 s, 5.1 2.0 to 2.8 s, 5.2
+1.3 s, 6.0 2.0 to 2.3 s, 7.6 under 0.1 s. Guessing from the first
+64 KB gave the same answer for all 36 at 8,000 rows, 6 times faster;
+a file plain ASCII in its first 64 KB would then be guessed ASCII
+(inferred).
+
+A standard-library guess (a byte order mark, else strict UTF-8, else
+the system's code page) reads 21 of the 36 right with Windows-1252
+(Western), 20 with Windows-1250 (Central European), 17 with
+Windows-1251.
+
+**Options**:
+
+- A. Keep as is. P174 stays on every build but Windows, AppImage and
+  Flatpak.
+- B. Keep chardet and add an Encoding choice to the wizard's first
+  page, set to chardet's guess; changing it reloads the preview.
+  About 20 lines in `csvimport.py`. Fixes P174 on every build: the
+  preview shows the garbling, the user picks the encoding.
+- C. Replace chardet by the standard-library guess and the same
+  Encoding choice: about 30 lines; chardet out of every build, the
+  macOS pin with it. ASCII, UTF-8, UTF-16 and the system code page's
+  files read as today; a file in another legacy encoding (Russian,
+  Greek, Hebrew, Japanese, Chinese, Central European on a Western
+  system) previews garbled until the user picks its encoding, which
+  chardet guesses today.
+- D. Require chardet 7 on every build: no distribution packages it,
+  so each would bundle it (P175's problem).
+
+**Recommendation**: B: it fixes P174 on all builds and loses none of
+chardet's guesses. C if fewer packages matter more than the guess for
+other languages' legacy files. Effort for B: the choice and its
+reload, a test with a Windows-1250 file, an app check.
 
 ---
 
 ## pyparsing (To Do 91)
 
 **Why**: the date expressions of task templates ("tomorrow", "3pm
-tomorrow", "next saturday", "noon"; English only): File > Edit
-templates checks them (an invalid one turns red), and New task from
-template (menu, toolbar, tray) evaluates them. Save task as template
-writes "N minutes from now". Since 1.2.20 (2011); the grammar is the
-2024 upstream example, `thirdparty/deltaTime.py`.
+tomorrow", "next saturday", "noon"; English, says the Help): File >
+Edit templates checks them (an invalid one turns red), and New task
+from template (menu, toolbar, tray) evaluates them. Save task as
+template writes "N minutes from now". Since 1.2.20 (2011); the grammar
+is the 2024 upstream example, `thirdparty/deltaTime.py`.
 
 **Code**: 1 importing module, `thirdparty/deltaTime.py` (424 lines,
-47 of them a self-test), used by `gui/dialog/templates.py` and
-`persistence/xml/reader.py`; about 437 lines in all. Tests: the
-template reader and writer, the old-format conversion, the templates
-dialog.
+47 of them a self-test), one call each in `gui/dialog/templates.py`
+and `persistence/xml/reader.py`. Tests: the template reader and
+writer, the old-format conversion, the templates dialog.
 
-**Platforms**: required everywhere (`>= 3.0.0`; Ubuntu 22.04 has
-3.0.7); imported unguarded at start-up. A template whose expression
-does not parse is skipped with a log line.
+**Platforms**: required everywhere (`>= 3.0.0`); imported unguarded
+at start-up. Ubuntu 22.04 has 2.4.7, with which the app does not start
+(P175); Debian 12 3.0.9, Ubuntu 24.04 3.1.1, Debian 13 and Fedora 43
+3.1.2, Arch and the pip builds 3.3.x. 3.3 warns on the old names
+2.4.7 has (`PyparsingDeprecationWarning`), so one grammar cannot use
+the same names on both.
 
-**Size**: 888 KB (`python3-pyparsing` 472 KB installed), no
-dependencies; 50 ms of every start-up to import it and build the
-grammar.
+**Size**: 888 KB (`python3-pyparsing` 472 KB installed); importing it
+and building the grammar takes 48 to 132 ms of each start (7 starts,
+this machine under load), the prototype below 6 ms.
 
-**Replacing or removing it**: a hand parser of the same grammar, about
-90 to 120 lines for 424: a 75-line prototype matched 44 of 46
-expressions (all self-tests, the generated forms, the help examples),
-missing compound forms such as "20 seconds before noon tomorrow".
-Removing it loses template dates.
+**Measured**: a parser of the same grammar on the standard library
+(prototype of 237 lines, black-formatted), compared with deltaTime on
+20,238 expressions (each form with quantities, units, weekdays with
+next and last, times, combinations, noise, invalid text) at 5
+reference times, as a prefix and as the whole text: the same date or
+the same refusal in 171,360 of 202,380. Every other is "N days or
+weeks from, before or after [next or last] <weekday>": the prototype
+is right in all 23,040 checked against a separate calculation,
+deltaTime in 13,455 (P171). deltaTime's 35 self-tests and Task
+Coach's own forms ("N minutes from now", the old-format conversions):
+the same at 3 reference times.
 
-**Found**: P170: a partly understood expression is accepted and
-evaluated wrong.
+**Found**: P171 (a wrong direction), P172 (weekday names follow the
+system's language), P175 (Ubuntu 22.04), besides P170 (a partly read
+expression accepted).
 
-**Recommendation**: keep; P170 is fixed in Task Coach's use of it, not
-by replacing it.
+**Options**:
+
+- A. Keep pyparsing and repair Ubuntu 22.04's .deb: that package
+  carries pyparsing 3 in a folder of its own, added to `sys.path` at
+  start, installed after `dh_auto_install` (where `dh_clean` and
+  `dh_prep` do not remove it), with no `python3-pyparsing`
+  dependency; not in `/usr/lib/python3/dist-packages`, where it would
+  hide Ubuntu's `pyparsing.py` from every program (python3-packaging
+  depends on it). About 20 lines in the workflow, `debian/rules` and
+  `taskcoach.py`; checked only by the CI's Ubuntu 22.04 build, whose
+  install test must then start the app (it imports only
+  `taskcoachlib`, which does not load the grammar). P171 and P172
+  need about 5 lines in the grammar (one `dir` renamed, English
+  weekday names).
+- B. Replace deltaTime and pyparsing by the parser above, as Task
+  Coach's own module: about 240 lines added, 424 removed, the 2 calls
+  and their tests (the self-tests, P171, P172); pyparsing out of
+  `setup.py`, `debian/control`, the RPM spec, the PKGBUILD, 5 build
+  workflows (macOS's py2app list among them), the AppImage and
+  Flatpak scripts, 7 setup scripts, the start-up package log and the
+  docs. Fixes P171, P172 and P175 (nothing to bundle); every other
+  date as today. The prototype follows the grammar rule by rule (the
+  first alternative that matches, keywords not inside words), quirks
+  included ("10minutes ago" refused, "1230pm" read as 18:00). P170's
+  choice (whole text or not) stays its own: the parser offers both.
+  Risk: forms outside the 20,238 read differently.
+- C. Make the grammar run on 2.4.7 too: it would use the names 3.3
+  deprecates. Not proposed.
+- D. Drop Ubuntu 22.04 (Launchpad: still supported): the decider's
+  call; P171 and P172 stay.
+
+**Recommendation**: B: it fixes three found issues, the Ubuntu 22.04
+package among them, removes a package from every build and 50 ms or
+more from each start, and reads every other date as today. Effort: the
+module, its tests, the packaging and docs, an app check of the
+templates dialog and New task from template on master and the branch.
