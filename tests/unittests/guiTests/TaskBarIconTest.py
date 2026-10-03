@@ -16,9 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import meta, gui, operating_system, patterns
+from unittest import mock
+from taskcoachlib import meta, gui, operating_system, patterns, persistence
 from taskcoachlib.domain import task, effort, date
 from taskcoachlib.config import settings
+from taskcoachlib.gui import uicommand
 import test
 
 
@@ -187,3 +189,34 @@ class TaskBarIconTooltipWithTrackedTaskTest(TaskBarIconTooltipTestCase):
         self.task.efforts()[0].setStop(date.DateTime(2000, 1, 1, 10, 0, 0))
         self.task.setSubject("New subject")
         self.assertTooltip("")
+
+
+class AppIndicatorMenuCommandTest(test.TestCase):
+    """The New commands of the Linux tray menu (AppIndicator), with a
+    stand-in indicator: no tray icon registers on the session bus."""
+
+    def setUp(self):
+        super().setUp()
+        self.window = MainWindowMock()
+        self.window.taskFile = persistence.TaskFile()
+        with mock.patch.object(gui.taskbaricon, "_APPINDICATOR_MODULE"):
+            self.icon = gui.taskbaricon.AppIndicatorTaskBarIcon(
+                self.window, self.window.taskFile.tasks()
+            )
+
+    def assert_runs(self, command_class, menu_item):
+        with mock.patch.object(command_class, "do_command") as do_command:
+            menu_item()
+        do_command.assert_called_once_with(None)
+
+    def test_new_effort(self):
+        self.assert_runs(uicommand.EffortNew, self.icon._do_new_effort)
+
+    def test_new_task(self):
+        self.assert_runs(uicommand.TaskNew, self.icon._do_new_task)
+
+    def test_new_category(self):
+        self.assert_runs(uicommand.CategoryNew, self.icon._do_new_category)
+
+    def test_new_note(self):
+        self.assert_runs(uicommand.NoteNew, self.icon._do_new_note)

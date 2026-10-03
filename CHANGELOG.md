@@ -6,6 +6,8 @@ section is the text of its GitHub release page
 
 ## 2.0.3.0
 
+- On Linux, New effort in the tray menu opens the effort editor; it
+  did nothing.
 - File > Import > CSV reads month names and AM/PM in the system's
   language as well as English; a date without its day or month
   imports empty instead of taking today's (a missing year is still

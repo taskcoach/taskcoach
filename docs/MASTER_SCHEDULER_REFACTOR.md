@@ -1700,12 +1700,17 @@ each with the recommended action, none ruled yet:
   is not 0. Cause: the editor's recurrence field builds the recurrence
   without its count (`RecurrenceEntry.GetValue()`), and an event from
   it as the editor opens writes that back.
-- P169. New effort in the tray menu on Linux does nothing (found
-  2026-10-03 reading the tray icon for To Do 70; master the same): the
-  menu Linux gets (`AppIndicatorTaskBarIcon`, on every GTK desktop)
-  makes its command with `effort_list=`, and `EffortNew` reads
-  `effortList`, so it raises `KeyError` before any window opens. Not
-  seen in the app: the test display has no tray to click.
+- P169. ~~New effort in the tray menu on Linux does nothing~~: fixed
+  2026-10-03, **ruled by designer** (master the same). The menu Linux
+  gets (`AppIndicatorTaskBarIcon`, every GTK desktop) made its command
+  with `effort_list=`, and `EffortNew` reads `effortList`: a `KeyError`
+  before any window opened. Checked in the app through a stand-in tray
+  (a StatusNotifierWatcher on a private session bus, the item clicked
+  through its dbusmenu): before, the `KeyError` in the log and no
+  window, on master and the branch; after, the effort editor opens.
+  The tray's New task, New category, New note, New task from template
+  and start, stop and resume tracking worked before and after;
+  `TaskBarIconTest` now runs the New commands of the Linux menu.
 - P170. A template date that is only partly understood gives a wrong
   date silently (found 2026-10-03 analysing pyparsing, To Do 91; master
   the same): File > Edit templates, select "New task due tomorrow",

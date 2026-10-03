@@ -790,7 +790,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
         efforts = self.__window.taskFile.efforts()
         tasks = self.__window.taskFile.tasks()
-        cmd = uicommand.EffortNew(effort_list=efforts, taskList=tasks)
+        cmd = uicommand.EffortNew(effortList=efforts, taskList=tasks)
         cmd.do_command(None)
 
     def _on_stop_tracking(self, widget):
