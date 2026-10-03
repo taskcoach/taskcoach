@@ -339,9 +339,12 @@ go at the end. Details live in the sections and documents linked.
     PyGObject (required on Linux since P62), makes the same calls.
     Removes an optional package from the deb (`Recommends:` per
     codename in `build-deb.yml`), rpm, Arch and Flatpak builds; idle
-    detection on GNOME and Plasma 5 then works without it. Risk: both
-    methods run only in those sessions; here only against a stand-in
-    service on a private session bus.
+    detection on GNOME and Plasma 5 then works without it: today,
+    installed without its recommended packages, the Idle time notice
+    does nothing on GNOME under Wayland. Risk: both methods run only in
+    those sessions; to check here in the app under a private session
+    bus (`dbus-run-session`) with stand-in services answering the same
+    calls.
 78. ~~`WMI` (Windows) to `pywin32`~~: done 2026-10-02, **ruled by
     designer**. Its one call, finding Thunderbird Portable's folder
     when an e-mail is dropped from it, is now `pywin32`'s own WMI query
