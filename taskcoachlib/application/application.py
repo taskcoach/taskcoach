@@ -85,12 +85,6 @@ def _log_environment():
     # Log required package versions
     _log_required_packages()
 
-    # Probe numpy at startup for diagnostic logging. The subprocess probe
-    # tests numpy import and logs the result with [NUMPY] prefix. This
-    # aids troubleshooting from user-submitted logs. NumPy is pinned to
-    # 1.x (no SSE4.2 requirement), so this is informational only.
-    from taskcoachlib.tools._numpy_probe import numpy_usable  # noqa: F401
-
     # Platform-specific environment info (no wx needed)
     log_message("=" * 60)
     if sys.platform == "linux":
@@ -133,7 +127,6 @@ def _log_required_packages():
         ("pyparsing", None),
         ("lxml", None),
         ("keyring", None),
-        ("numpy", None),
         ("squaremap", None),
     ]
 

@@ -85,7 +85,6 @@ jobs:
             "pyparsing>=3.0.0" \
             lxml \
             keyring \
-            "numpy>=1.26,<2" \
             "squaremap>=1.0.5" \
             "pyenchant>=3.2.0"
 
@@ -156,7 +155,7 @@ jobs:
                       }
                   ],
               },
-              'packages': ['taskcoachlib', 'wx', 'watchdog', 'lxml', 'keyring', 'numpy', 'dateutil', 'chardet', 'pyparsing', 'squaremap'],
+              'packages': ['taskcoachlib', 'wx', 'watchdog', 'lxml', 'keyring', 'dateutil', 'chardet', 'pyparsing', 'squaremap'],
               'includes': ['ctypes', 'ctypes.util'],
               'excludes': ['tkinter', 'test'],  # unittest needed by pyparsing.testing import
           }

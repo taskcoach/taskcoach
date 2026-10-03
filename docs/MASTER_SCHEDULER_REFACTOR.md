@@ -320,29 +320,17 @@ go at the end. Details live in the sections and documents linked.
     this branch none; the .deb only loses the AppStream file's copy in
     the old `/usr/share/appdata` (the one in `/usr/share/metainfo`
     stays).
-76. `numpy` (was P79): combines the transparency of an icon and its
-    overlay (`tools/wxhelper.py`,
-    `gui/icons/synthetic_icon_generator.py`).
-    It also costs a subprocess probe at each start
-    ([NUMPY.md](NUMPY.md)), the `<2` pin of the pip builds and, from
-    numpy 2.4, a crash on processors without SSE4.2. Options: keep it,
-    or the same operations on `bytes` (Python's own C loops, such as
-    `bytes(map(max, a, b))`) or `wx.Image`'s calls. **The designer's
-    concern 2026-10-02**: speed with many icons. Analysed 2026-10-02:
-    only the six status filter buttons' icons go through it (Hide
-    inactive, late, active, due soon, overdue and completed tasks, in
-    the views' toolbars and the Customise toolbar dialog, 16 px), each
-    composed once per size and kept. Timed in the app both ways,
-    median of 20 on the loaded machine: numpy 1.3 to 1.8 ms an icon,
-    the same on `bytes` 1.05 to 1.4 ms, the same pixels; numpy's probe
-    costs 0.4 to 0.6 s at every start. Every other icon (the lists'
-    status, category and item icons, toolbars, menus, editors, the
-    icon picker) is a file read by `wx.Image`, no numpy: counted in the
-    app with all views open, Expand all, Preferences, a task editor and
-    the icon picker scrolled through, 1,718 icons were read from files
-    and numpy ran for the two filter buttons shown, once each. No
-    library we use imports numpy (only wx's plot and floatcanvas, which
-    Task Coach does not use). Replace?
+76. ~~`numpy` (was P79)~~: removed 2026-10-02, **ruled by designer**.
+    It served only the six status filter buttons' icons (a badge over
+    the status icon); every other icon is a file read by `wx.Image`.
+    The badge's transparency is now merged on `bytes`
+    (`synthetic_icon_generator.py`); the startup probe, the `<2` pin,
+    `NUMPY.md` and the package in every build and setup script went
+    with it. Counted and timed in the app before ruling: 1,718 icons
+    read from files and two composed with numpy; per icon 1.3 to 1.8
+    ms with numpy, 1.05 to 1.4 ms without; the probe 0.4 to 0.6 s at
+    each start. Checked in the app with numpy unimportable: the six
+    icons byte for byte those of the base, no error.
 77. `dbus-python` to Gio (was P83). Three calls: the startup report's
     tray check (is `org.kde.StatusNotifierWatcher` on the session
     bus?) and two Idle time notice methods (GNOME's

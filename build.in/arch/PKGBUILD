@@ -17,7 +17,6 @@ depends=(
     'python-pyparsing>=3.0.0'
     'python-lxml'
     'python-keyring'
-    'python-numpy'
     'python-pyenchant'
     'python-gobject'
     'libayatana-appindicator'

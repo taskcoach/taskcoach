@@ -78,9 +78,6 @@ run_test "watchdog dependency" \
 run_test "lxml dependency" \
     "python3 -c 'import lxml'"
 
-run_test "numpy dependency" \
-    "python3 -c 'import numpy'"
-
 run_test "dateutil dependency" \
     "python3 -c 'import dateutil'"
 

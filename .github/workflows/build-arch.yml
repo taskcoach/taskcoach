@@ -72,7 +72,6 @@ jobs:
             python-wheel \
             python-wxpython \
             python-lxml \
-            python-numpy \
             python-dateutil \
             python-chardet \
             python-keyring \

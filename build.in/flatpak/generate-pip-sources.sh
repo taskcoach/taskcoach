@@ -36,14 +36,6 @@ REQUIREMENTS=(
     "pyparsing>=3.0.0"
     "lxml"
     "keyring"
-    # numpy: the other builds pin <2 (numpy 1.26.4, the final 1.x), but that
-    # release only ships wheels for Python 3.9-3.12 and the GNOME runtime is
-    # Python 3.13, so <2 is unsatisfiable here. The real constraint behind that
-    # pin is avoiding numpy 2.4+, which raised its CPU baseline to SSE4.2 and
-    # crashes older CPUs with ILLEGAL INSTRUCTION (see docs/NUMPY.md). numpy
-    # 2.1-2.3 have cp313 wheels and keep the old baseline, and Task Coach's use
-    # (uint8 array ops) is numpy-2.x-safe, so pin <2.4 for the flatpak.
-    "numpy>=1.26,<2.4"
     "squaremap>=1.0.5"
     "pyenchant>=3.2.0"
     "dbus-python>=1.3.2"
@@ -76,7 +68,7 @@ wget -q "$GENERATOR_URL" -O "$TMP/flatpak-pip-generator"
 python3 -m pip install --quiet --user requirements-parser packaging || true
 
 # --runtime makes the generator read the TARGET Python's version/ABI tags from
-# the GNOME Sdk, so numpy/lxml/cryptography resolve to the correct cp3xx
+# the GNOME Sdk, so lxml/cryptography resolve to the correct cp3xx
 # manylinux wheels (generating on the host would pin the wrong ABI).
 # --prefer-wheels avoids compiling those heavy binary deps from sdist;
 # dbus-python is intentionally left off it (no wheels exist) and builds from its
@@ -93,7 +85,7 @@ IGNORE_INSTALLED="$(printf '%s\n' "${REQUIREMENTS[@]}" | sed -E 's/[<>=!~,].*//'
 echo "Generating $OUT ..."
 python3 "$TMP/flatpak-pip-generator" \
     --runtime "org.gnome.Sdk//$RUNTIME_VERSION" \
-    --prefer-wheels=numpy,lxml,cryptography,cffi \
+    --prefer-wheels=lxml,cryptography,cffi \
     --ignore-installed="$IGNORE_INSTALLED" \
     --output "$SCRIPT_DIR/python3-sources" \
     "${REQUIREMENTS[@]}"

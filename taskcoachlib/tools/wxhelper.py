@@ -2,7 +2,6 @@
 
 from typing import Union
 import wx
-import numpy as np
 
 from taskcoachlib import patterns
 
@@ -100,78 +99,3 @@ def _delete(handler, release):
     if release is not None:
         release(handler)
     handler.Destroy()
-
-
-def getAlphaDataFromImage(image: wx.Image):
-    """Get image alpha data as a NumPy uint8 array."""
-    return np.frombuffer(image.GetAlpha(), dtype=np.uint8)
-
-
-def setAlphaDataToImage(image: wx.Image, data):
-    """Set alpha data on image. Supports NumPy arrays, bytes, lists."""
-    if not image.HasAlpha():
-        image.InitAlpha()
-
-    width = image.GetWidth()
-    height = image.GetHeight()
-    expected_size = width * height
-
-    if isinstance(data, np.ndarray):
-        data_array = data.astype(np.uint8).flatten()
-    elif isinstance(data, (list, tuple)):
-        data_array = np.array(data, dtype=np.uint8)
-    elif isinstance(data, (bytes, bytearray)):
-        data_array = np.frombuffer(data, dtype=np.uint8)
-    else:
-        raise TypeError(f"Unsupported data type: {type(data)}")
-
-    if data_array.size != expected_size:
-        if data_array.size > expected_size:
-            data_array = data_array[:expected_size]
-        else:
-            padded_data = np.zeros(expected_size, dtype=np.uint8)
-            padded_data[: data_array.size] = data_array
-            data_array = padded_data
-
-    data_array = np.clip(data_array, 0, 255)
-    image.SetAlpha(data_array.tobytes())
-
-
-def mergeImagesWithAlpha(main_image, overlay_image, overlay_position):
-    """Merge alpha channels of two images."""
-    main_width, main_height = main_image.GetWidth(), main_image.GetHeight()
-    overlay_width, overlay_height = (
-        overlay_image.GetWidth(),
-        overlay_image.GetHeight(),
-    )
-    overlay_x, overlay_y = overlay_position
-
-    y_start, y_end = overlay_y, min(overlay_y + overlay_height, main_height)
-    x_start, x_end = overlay_x, min(overlay_x + overlay_width, main_width)
-    actual_overlay_height = y_end - y_start
-    actual_overlay_width = x_end - x_start
-
-    main_alpha = getAlphaDataFromImage(main_image).reshape(
-        main_height, main_width
-    )
-    overlay_alpha = np.frombuffer(
-        overlay_image.GetAlphaBuffer(), dtype=np.uint8
-    ).reshape(overlay_height, overlay_width)
-
-    if (
-        actual_overlay_height < overlay_height
-        or actual_overlay_width < overlay_width
-    ):
-        overlay_alpha = overlay_alpha[
-            :actual_overlay_height, :actual_overlay_width
-        ]
-
-    result_alpha = main_alpha.copy()
-    result_alpha[y_start:y_end, x_start:x_end] = np.maximum(
-        result_alpha[y_start:y_end, x_start:x_end], overlay_alpha
-    )
-
-    result_image = main_image.Copy()
-    setAlphaDataToImage(result_image, result_alpha)
-
-    return result_image

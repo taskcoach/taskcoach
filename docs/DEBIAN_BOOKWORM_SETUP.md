@@ -135,7 +135,6 @@ sudo apt-get update
 sudo apt-get install -y \
     python3-wxgtk4.0 \
     python3-lxml \
-    python3-numpy \
     python3-dateutil \
     python3-chardet \
     python3-keyring \
@@ -163,7 +162,7 @@ pip install 'watchdog>=3.0.0'
 deactivate
 ```
 
-**Note**: The `--system-site-packages` flag allows the virtual environment to access system-installed packages (like wxPython, lxml, numpy) while keeping pip-installed packages isolated.
+**Note**: The `--system-site-packages` flag allows the virtual environment to access system-installed packages (like wxPython and lxml) while keeping pip-installed packages isolated.
 
 #### Step 3: Run TaskCoach
 
@@ -276,7 +275,6 @@ Run from a terminal: the log goes to its output
 ### From Debian Repositories (apt):
 - ✅ python3-wxgtk4.0 (4.2.0)
 - ✅ python3-lxml (4.9.2)
-- ✅ python3-numpy (1.24.2)
 - ✅ python3-dateutil (2.8.2)
 - ✅ python3-chardet (5.1.0)
 - ✅ python3-keyring (23.13.1)

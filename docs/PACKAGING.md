@@ -34,7 +34,6 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 | wxPython | >=4.3.0 | Native dark mode on Windows (optional, see [WINDOWS.md](WINDOWS.md#dark-mode)) | Windows builds pin 4.3.1 |
 | pyparsing | >=3.0.0 | pyparsing 3 API (`deltaTime.py`); 3.0.0 to 3.1.2 tested alike | none (Ubuntu 22.04 has 3.0.7) |
 | watchdog | >=3.0.0 | File monitoring API | Debian Bookworm (2.2.1) |
-| numpy | >=1.26,<2 | NumPy 2.4+ requires SSE4.2 (crashes old CPUs, see [NUMPY.md](NUMPY.md)) | — |
 
 **Note**: the tree views run on Task Coach's own copy of wxPython's tree widget (`taskcoachlib/patches/`) on every wxPython version, so the installed wxPython's (4.0.7 to 4.3.1 across the builds) does not matter for them ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)).
 
@@ -49,8 +48,6 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | watchdog | **pip** | **pip** | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
 | lxml | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| numpy (<2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| ↳ version | 1.24.2 | 1.21.5 | 2.2.4 | 1.26.4 | 2.4.0 | 2.3.3 | 1.26.4 | 1.26.4 | 1.26.4 | 1.26.4 |
 | chardet (<5.2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | python-dateutil | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | keyring | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
@@ -591,7 +588,6 @@ Task Coach builds native macOS .app bundles using py2app for both Intel and Appl
 |---------|-----------|--------|
 | chardet | `<5.2.0` | chardet >=5.2.0 uses mypyc-compiled C extensions with hashed filenames (`*__mypyc.cpython-*.so`) that py2app cannot discover. Results in `ModuleNotFoundError: No module named '...__mypyc'` at runtime. Pure-Python chardet (<5.2.0) works identically. |
 | setuptools | `<71.0.2` | py2app compatibility issue ([py2app#531](https://github.com/ronaldoussoren/py2app/issues/531)) |
-| numpy | `<2` | NumPy 2.x API changes; see [NUMPY.md](NUMPY.md) |
 
 ### Code Signing
 

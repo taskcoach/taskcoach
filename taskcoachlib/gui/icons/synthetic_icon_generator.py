@@ -12,28 +12,51 @@ DnD cursor overlays create wx.Cursor objects from catalog icons with
 centered hotspot, cached per-size (static source, never invalidated).
 """
 
-import numpy as np
-
 from taskcoachlib.meta.debug import log_step
-from taskcoachlib.tools import wxhelper
-
 
 # SSOT: all synthetic icons and their configuration.
 _ROUTES = {
     # Cursor: icon_id is the catalog icon to convert to a cursor.
-    "synthetic_dnd_cursor_link": {"method": "_dnd_cursor_overlay", "icon_id": "taskcoach_actions_link_icon"},
-    "synthetic_dnd_cursor_home": {"method": "_dnd_cursor_overlay", "icon_id": "nuvola_places_user-home"},
+    "synthetic_dnd_cursor_link": {
+        "method": "_dnd_cursor_overlay",
+        "icon_id": "taskcoach_actions_link_icon",
+    },
+    "synthetic_dnd_cursor_home": {
+        "method": "_dnd_cursor_overlay",
+        "icon_id": "nuvola_places_user-home",
+    },
     # A refused drop, a column that cannot be resized: the "prohibited"
     # sign, from Task Coach's icons, not the cursor theme's
-    "synthetic_cursor_not_allowed": {"method": "_dnd_cursor_overlay", "icon_id": "noto-emoji_symbols_u1f6ab"},
+    "synthetic_cursor_not_allowed": {
+        "method": "_dnd_cursor_overlay",
+        "icon_id": "noto-emoji_symbols_u1f6ab",
+    },
     # Status filter overlay: option is the settings key for the base icon.
     # Base icon ID read from settings.get("icon", option) at runtime.
-    "synthetic_hide_inactive":   {"method": "_status_filter_overlay", "option_id": "inactivetasks"},
-    "synthetic_hide_late":       {"method": "_status_filter_overlay", "option_id": "latetasks"},
-    "synthetic_hide_active":     {"method": "_status_filter_overlay", "option_id": "activetasks"},
-    "synthetic_hide_duesoon":    {"method": "_status_filter_overlay", "option_id": "duesoontasks"},
-    "synthetic_hide_overdue":    {"method": "_status_filter_overlay", "option_id": "overduetasks"},
-    "synthetic_hide_completed":  {"method": "_status_filter_overlay", "option_id": "completedtasks"},
+    "synthetic_hide_inactive": {
+        "method": "_status_filter_overlay",
+        "option_id": "inactivetasks",
+    },
+    "synthetic_hide_late": {
+        "method": "_status_filter_overlay",
+        "option_id": "latetasks",
+    },
+    "synthetic_hide_active": {
+        "method": "_status_filter_overlay",
+        "option_id": "activetasks",
+    },
+    "synthetic_hide_duesoon": {
+        "method": "_status_filter_overlay",
+        "option_id": "duesoontasks",
+    },
+    "synthetic_hide_overdue": {
+        "method": "_status_filter_overlay",
+        "option_id": "overduetasks",
+    },
+    "synthetic_hide_completed": {
+        "method": "_status_filter_overlay",
+        "option_id": "completedtasks",
+    },
 }
 
 
@@ -48,11 +71,13 @@ class SyntheticIconGenerator:
     def __init__(self, icon_id):
         route = _ROUTES.get(icon_id)
         if not route:
-            log_step(f"ERROR: Unknown synthetic icon '{icon_id}'", prefix="ICON")
+            log_step(
+                f"ERROR: Unknown synthetic icon '{icon_id}'", prefix="ICON"
+            )
             return
         self.icon_id = icon_id
         self._route = route
-        self._bitmaps = {}         # {size: wx.Bitmap or wx.Cursor}
+        self._bitmaps = {}  # {size: wx.Bitmap or wx.Cursor}
         self._last_base_icon_id = None  # last seen base icon ID (overlay only)
 
     def render_bitmap(self, size):
@@ -64,13 +89,18 @@ class SyntheticIconGenerator:
         if method == "_status_filter_overlay":
             return self._status_filter_overlay(self._route, size)
         elif method == "_dnd_cursor_overlay":
-            log_step(f"ERROR: render_bitmap() called on cursor route "
-                     f"'{self.icon_id}', call render_cursor() instead.",
-                     prefix="ICON")
+            log_step(
+                f"ERROR: render_bitmap() called on cursor route "
+                f"'{self.icon_id}', call render_cursor() instead.",
+                prefix="ICON",
+            )
             return None
         else:
-            log_step(f"ERROR: Unknown route method '{method}' "
-                     f"for synthetic icon '{self.icon_id}'", prefix="ICON")
+            log_step(
+                f"ERROR: Unknown route method '{method}' "
+                f"for synthetic icon '{self.icon_id}'",
+                prefix="ICON",
+            )
             return None
 
     def render_cursor(self, size):
@@ -82,13 +112,18 @@ class SyntheticIconGenerator:
         if method == "_dnd_cursor_overlay":
             return self._dnd_cursor_overlay(self._route, size)
         elif method == "_status_filter_overlay":
-            log_step(f"ERROR: render_cursor() called on bitmap route "
-                     f"'{self.icon_id}', call render_bitmap() instead.",
-                     prefix="ICON")
+            log_step(
+                f"ERROR: render_cursor() called on bitmap route "
+                f"'{self.icon_id}', call render_bitmap() instead.",
+                prefix="ICON",
+            )
             return None
         else:
-            log_step(f"ERROR: Unknown route method '{method}' "
-                     f"for synthetic icon '{self.icon_id}'", prefix="ICON")
+            log_step(
+                f"ERROR: Unknown route method '{method}' "
+                f"for synthetic icon '{self.icon_id}'",
+                prefix="ICON",
+            )
             return None
 
     def _status_filter_overlay(self, route, size):
@@ -97,13 +132,15 @@ class SyntheticIconGenerator:
         Reads settings directly — no stored settings reference.
         """
         import wx
+
         OVERLAY_ICON_ID = "nuvola_status_dialog-error"
         option = route["option_id"]
         settings = wx.GetApp().settings
         base_icon_id = settings.get("icon", option)
         if not base_icon_id:
-            log_step(f"ERROR: Setting 'icon.{option}' is empty.",
-                     prefix="ICON")
+            log_step(
+                f"ERROR: Setting 'icon.{option}' is empty.", prefix="ICON"
+            )
             return None
         # Invalidate cache if base icon changed
         if base_icon_id != self._last_base_icon_id:
@@ -111,7 +148,8 @@ class SyntheticIconGenerator:
             self._last_base_icon_id = base_icon_id
         if size not in self._bitmaps:
             self._bitmaps[size] = self._compose(
-                base_icon_id, OVERLAY_ICON_ID, size)
+                base_icon_id, OVERLAY_ICON_ID, size
+            )
         return self._bitmaps[size]
 
     def _dnd_cursor_overlay(self, route, size):
@@ -136,13 +174,13 @@ class SyntheticIconGenerator:
         if not main_bmp or not main_bmp.IsOk():
             log_step(
                 f"Synthetic compose: base '{base_icon_id}' not found at {size}px.",
-                prefix="ICON"
+                prefix="ICON",
             )
             return None
         if not overlay_bmp or not overlay_bmp.IsOk():
             log_step(
                 f"Synthetic compose: overlay '{overlay_icon_id}' not found at {size}px.",
-                prefix="ICON"
+                prefix="ICON",
             )
             return None
 
@@ -155,7 +193,8 @@ class SyntheticIconGenerator:
         if not overlay_image.HasAlpha():
             overlay_image.InitAlpha()
 
-        original_main_alpha = wxhelper.getAlphaDataFromImage(main_image).copy()
+        # The base icon's transparency stays outside the badge
+        alpha = bytearray(main_image.GetAlpha())
 
         main_bitmap = main_image.ConvertToBitmap()
 
@@ -165,24 +204,28 @@ class SyntheticIconGenerator:
             )
 
         result_image = main_bitmap.ConvertToImage()
-        result_image = wxhelper.mergeImagesWithAlpha(
-            result_image, overlay_image, (size // 2, size // 2)
-        )
-
-        main_w, main_h = main_image.GetWidth(), main_image.GetHeight()
-        ov_w, ov_h = overlay_image.GetWidth(), overlay_image.GetHeight()
-        ov_x, ov_y = size // 2, size // 2
-
-        result_alpha = wxhelper.getAlphaDataFromImage(result_image).copy()
-        result_alpha_2d = result_alpha.reshape(main_h, main_w)
-        original_alpha_2d = original_main_alpha.reshape(main_h, main_w)
-
-        mask = np.ones((main_h, main_w), dtype=bool)
-        mask[ov_y:min(ov_y + ov_h, main_h),
-             ov_x:min(ov_x + ov_w, main_w)] = False
-        result_alpha_2d[mask] = original_alpha_2d[mask]
-
-        wxhelper.setAlphaDataToImage(result_image, result_alpha_2d)
+        if not result_image.HasAlpha():
+            result_image.InitAlpha()
+        drawn = result_image.GetAlpha()
+        badge = overlay_image.GetAlpha()
+        width = main_image.GetWidth()
+        badge_width = overlay_image.GetWidth()
+        x = y = size // 2
+        columns = min(badge_width, width - x)
+        rows = min(overlay_image.GetHeight(), main_image.GetHeight() - y)
+        for row in range(rows):
+            # Under the badge, opaque where either the drawing or the
+            # badge is
+            start = (y + row) * width + x
+            badge_start = row * badge_width
+            alpha[start : start + columns] = bytes(
+                map(
+                    max,
+                    drawn[start : start + columns],
+                    badge[badge_start : badge_start + columns],
+                )
+            )
+        result_image.SetAlpha(bytes(alpha))
         return result_image.ConvertToBitmap()
 
     def _make_cursor(self, icon_id, size):
@@ -192,7 +235,10 @@ class SyntheticIconGenerator:
 
         bitmap = icon_catalog.get_bitmap(icon_id, size)
         if not bitmap or not bitmap.IsOk():
-            log_step(f"Cursor icon '{icon_id}' not found at {size}px.", prefix="ICON")
+            log_step(
+                f"Cursor icon '{icon_id}' not found at {size}px.",
+                prefix="ICON",
+            )
             return None
         image = bitmap.ConvertToImage()
         hotspot = size // 2
@@ -205,10 +251,10 @@ class SyntheticIconGenerator:
 # Module-level functions
 # ============================================================================
 
+
 def get_icon_defs():
     """Return metadata dict derived from _ROUTES for catalog registration.
 
     Returns _ROUTES directly — each entry is {icon_id: {method, icon_id/option_id}}.
     """
     return _ROUTES
-

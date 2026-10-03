@@ -75,7 +75,6 @@ if command -v sudo &> /dev/null; then
         python3-virtualenv \
         python3-wxpython4 \
         python3-lxml \
-        python3-numpy \
         python3-dateutil \
         python3-chardet \
         python3-keyring \
@@ -213,7 +212,7 @@ echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Fedora with:"
 echo "  - Python: $PYTHON_CMD ($PYTHON_VERSION)"
-echo "  - System packages from Fedora repos (wxPython, numpy, lxml, etc.)"
+echo "  - System packages from Fedora repos (wxPython, lxml, etc.)"
 echo "  - Virtual environment at: $SCRIPT_DIR/.venv"
 echo "  - Additional packages in venv (squaremap)"
 echo

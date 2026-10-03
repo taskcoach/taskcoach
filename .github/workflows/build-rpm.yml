@@ -84,8 +84,7 @@ jobs:
             python3-dateutil \
             python3-pyparsing \
             python3-lxml \
-            python3-keyring \
-            python3-numpy
+            python3-keyring
 
           # NOT in Fedora repos - install via pip during RPM build:
           # - squaremap (bundled in RPM via pip install in spec file)

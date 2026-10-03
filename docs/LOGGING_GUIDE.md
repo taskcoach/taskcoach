@@ -43,7 +43,6 @@ Startup:
 - `[DISPLAY]`: GTK version, displays and scaling.
 - `[TRAY]`: tray icon and AppIndicator setup, tray clicks and menu
   ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)).
-- `[NUMPY]`: the numpy probe ([NUMPY.md](NUMPY.md)).
 - `[IDLE]`: the idle-detection backend, only while the idle notice is
   on ([IDLE.md](IDLE.md)).
 

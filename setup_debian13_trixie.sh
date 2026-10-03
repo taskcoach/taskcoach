@@ -78,7 +78,6 @@ if command -v sudo &> /dev/null; then
         python3-venv \
         python3-wxgtk4.0 \
         python3-lxml \
-        python3-numpy \
         python3-dateutil \
         python3-chardet \
         python3-keyring \
@@ -210,7 +209,7 @@ echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Debian 13 (Trixie) with:"
 echo "  • Python: $PYTHON_CMD ($PYTHON_VERSION)"
-echo "  • System packages from Debian repos (wxPython, numpy, lxml, watchdog, squaremap, etc.)"
+echo "  • System packages from Debian repos (wxPython, lxml, watchdog, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
 echo
 echo "You can now run TaskCoach with:"

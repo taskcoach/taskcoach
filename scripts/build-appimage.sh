@@ -121,7 +121,6 @@ install_dependencies() {
         "pyparsing>=3.0.0" \
         lxml \
         keyring \
-        numpy \
         "squaremap>=1.0.5"
 
     cd "$PROJECT_ROOT"
