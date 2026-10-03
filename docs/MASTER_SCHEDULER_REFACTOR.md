@@ -1709,6 +1709,12 @@ each with the recommended action, none ruled yet:
   is not 0. Cause: the editor's recurrence field builds the recurrence
   without its count (`RecurrenceEntry.GetValue()`), and an event from
   it as the editor opens writes that back.
+- P169. New effort in the tray menu on Linux does nothing (found
+  2026-10-03 reading the tray icon for To Do 70; master the same): the
+  menu Linux gets (`AppIndicatorTaskBarIcon`, on every GTK desktop)
+  makes its command with `effort_list=`, and `EffortNew` reads
+  `effortList`, so it raises `KeyError` before any window opens. Not
+  seen in the app: the test display has no tray to click.
 ## Views on the Effective Styles
 
 To do 35. **Decided before this refactor**
