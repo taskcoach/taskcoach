@@ -43,7 +43,7 @@ else
 fi
 
 # Check Python version
-echo -e "${BLUE}[1/7] Checking Python version...${NC}"
+echo -e "${BLUE}[1/5] Checking Python version...${NC}"
 PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
 PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
 PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
@@ -59,7 +59,7 @@ fi
 echo
 
 # Install system dependencies
-echo -e "${BLUE}[2/7] Installing system dependencies...${NC}"
+echo -e "${BLUE}[2/5] Installing system dependencies...${NC}"
 echo "This will install system packages from Ubuntu repos."
 echo "Ubuntu 24.04 has newer packages available."
 echo "Requires sudo privileges."
@@ -68,17 +68,11 @@ if command -v sudo &> /dev/null; then
     sudo apt-get update -qq
     sudo apt-get install -y \
         python3-wxgtk4.0 \
-        python3-six \
-        python3-lxml \
-        python3-numpy \
         python3-dateutil \
         python3-chardet \
         python3-keyring \
-        python3-pyparsing \
-        python3-xdg \
+        python3-enchant \
         python3-venv \
-        python3-watchdog \
-        python3-pubsub \
         python3-squaremap
     echo -e "${GREEN}✓ System packages installed${NC}"
 else
@@ -88,7 +82,7 @@ fi
 echo
 
 # Create virtual environment
-echo -e "${BLUE}[3/7] Creating virtual environment...${NC}"
+echo -e "${BLUE}[3/5] Creating virtual environment...${NC}"
 VENV_PATH="$SCRIPT_DIR/.venv"
 
 if [ -d "$VENV_PATH" ]; then
@@ -109,19 +103,14 @@ fi
 echo
 
 # Install Python dependencies not available in Ubuntu repos
-echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
-# Ubuntu 24.04 has most packages in repos, only need a few from pip
-echo "Installing: distro"
-
-source "$VENV_PATH/bin/activate"
-pip install --quiet distro
-deactivate
+echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
+echo "Nothing to install: every dependency comes from the Ubuntu repositories"
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
 
 # Check launch script
-echo -e "${BLUE}[5/7] Checking launch script...${NC}"
+echo -e "${BLUE}[5/5] Checking launch script...${NC}"
 if [ -f "$SCRIPT_DIR/taskcoach-run.sh" ]; then
     chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
     echo -e "${GREEN}✓ Launch script is ready: taskcoach-run.sh${NC}"
@@ -160,35 +149,7 @@ else
     exit 1
 fi
 
-# Test 3: Test key packages
-echo "Testing key packages..."
-FAILED=0
-
-for pkg in "desktop" "distro" "watchdog"; do
-    echo -n "  - $pkg... "
-    if python3 -c "import $pkg" 2>/dev/null; then
-        echo -e "${GREEN}✓${NC}"
-    else
-        echo -e "${RED}✗ Failed${NC}"
-        FAILED=1
-    fi
-done
-
-# pypubsub package provides 'pubsub' module
-echo -n "  - pypubsub... "
-if python3 -c "from pubsub import pub" 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
-    FAILED=1
-fi
-
 deactivate
-
-if [ $FAILED -eq 1 ]; then
-    echo -e "${RED}✗ Some packages failed to import${NC}"
-    exit 1
-fi
 
 # Test 4: Run help
 echo -n "Testing application help... "
@@ -200,29 +161,13 @@ else
 fi
 
 echo
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}[6/7] Applying wxPython patch...${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo
-
-# Apply the wxPython background color patch automatically
-if [ -f "$SCRIPT_DIR/apply-wxpython-patch.sh" ]; then
-    "$SCRIPT_DIR/apply-wxpython-patch.sh"
-else
-    echo -e "${YELLOW}⚠ Warning: apply-wxpython-patch.sh not found${NC}"
-    echo "  Category row background coloring may not work correctly"
-fi
-
-echo
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Ubuntu 24.04 (Noble) with:"
-echo "  • System packages from Ubuntu repos (wxPython, numpy, lxml, watchdog, squaremap, etc.)"
+echo "  • System packages from Ubuntu repos (wxPython, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (distro)"
-echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"

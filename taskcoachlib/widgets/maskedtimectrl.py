@@ -14,9 +14,7 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
 
-"""
 Simple time/duration controls with explicit subfields and translatable labels.
 
 Visually identical to smartdatetimectrl Entry controls - single painted field
@@ -39,10 +37,10 @@ Dropdown Choices - Static or Dynamic:
     Choices can be a list or a callable (for dynamic updates):
 
     # Static choices (evaluated once at creation):
-    hourChoices=[8, 9, 10, 17, 18]
+    hour_choices=[8, 9, 10, 17, 18]
 
     # Dynamic choices (evaluated each time dropdown opens):
-    hourChoices=lambda: get_hour_choices_from_settings(settings)
+    hour_choices=lambda: get_hour_choices_from_settings(settings)
 
     Dynamic choices are useful when preferences may change while the control
     is open (e.g., user changes "Minutes between suggested times" in prefs).
@@ -75,13 +73,15 @@ import time
 import calendar
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
+from taskcoachlib.tools import wxhelper
 from taskcoachlib.domain import date
-
 
 # =============================================================================
 # Helper Functions
 # =============================================================================
+
 
 def getTextCtrlContentOffset():
     """Get the content offset for custom-painted controls that use DrawTextCtrl.
@@ -136,7 +136,7 @@ def getLocaleDateFormat(override=None):
     # e.g. "YMD-", "MDY/". Raises IndexError/KeyError on malformed input
     # rather than silently falling back, so bad settings surface loudly.
     if override:
-        field_map = {'Y': 'year', 'M': 'month', 'D': 'date_day'}
+        field_map = {"Y": "year", "M": "month", "D": "date_day"}
         order_str = override[:3].upper()
         separator = override[3]
         field_order = [field_map[c] for c in order_str]
@@ -158,22 +158,22 @@ def getLocaleDateFormat(override=None):
 
     # If we can't find all components, fall back to ISO format
     if year_pos == -1 or month_pos == -1 or day_pos == -1:
-        return (['year', 'month', 'date_day'], '-')
+        return (["year", "month", "date_day"], "-")
 
     # Sort by position to get the order
     components = [
-        (year_pos, 'year'),
-        (month_pos, 'month'),
-        (day_pos, 'date_day'),
+        (year_pos, "year"),
+        (month_pos, "month"),
+        (day_pos, "date_day"),
     ]
     components.sort(key=lambda x: x[0])
     field_order = [comp[1] for comp in components]
 
     # Detect the separator by finding the first non-digit character after the first field
     # Common separators: '/', '-', '.'
-    separator = '-'  # Default to ISO style
+    separator = "-"  # Default to ISO style
     for char in formatted:
-        if char in '/-. ':
+        if char in "/-. ":
             separator = char
             break
 
@@ -188,16 +188,24 @@ def getDetectedLocaleDateFormat():
     return getLocaleDateFormat(override=None)
 
 
+# The date and time formats as the application started with them, as
+# the lists show dates (render.py): a change applies after a restart,
+# as Preferences says
+_formats_at_start = {}
+
+
+def _format_at_start(option):
+    if option not in _formats_at_start:
+        _formats_at_start[option] = settings.get("view", option)
+    return _formats_at_start[option]
+
+
 def getDateFormatFromSettings():
     """Get the date format override from user settings.
 
     Returns the format string (e.g., "YMD-", "MDY/") or empty string for automatic.
     """
-    try:
-        from taskcoachlib.config import settings
-        return settings.Settings().get("view", "dateformat")
-    except Exception:
-        return ""
+    return _format_at_start("dateformat")
 
 
 def getEffectiveDateFormat():
@@ -207,32 +215,6 @@ def getEffectiveDateFormat():
     """
     override = getDateFormatFromSettings()
     return getLocaleDateFormat(override=override if override else None)
-
-
-def getDateFormatFunctionForOldControl():
-    """Get a format function suitable for the old smartdatetimectrl DateEntry.
-
-    Returns a function that takes a date and returns a formatted string,
-    which DateEntry parses to understand field order.
-
-    If no override is set, returns None (use default locale detection).
-    """
-    override = getDateFormatFromSettings()
-    if not override or len(override) < 4:
-        return None  # Use default
-
-    # Build format string from override (e.g., "YMD-" -> "%Y-%m-%d")
-    order_str = override[:3].upper()
-    separator = override[3]
-
-    format_map = {'Y': '%Y', 'M': '%m', 'D': '%d'}
-    format_parts = [format_map.get(c, '%Y') for c in order_str]
-    strftime_format = separator.join(format_parts)
-
-    def format_func(d):
-        return d.strftime(strftime_format)
-
-    return format_func
 
 
 def getDetectedLocaleTimeFormat():
@@ -264,11 +246,7 @@ def getTimeFormatFromSettings():
 
     Returns "24", "12", or "" for automatic.
     """
-    try:
-        from taskcoachlib.config import settings
-        return settings.Settings().get("view", "timeformat")
-    except Exception:
-        return ""
+    return _format_at_start("timeformat")
 
 
 def getEffectiveTimeFormat():
@@ -286,47 +264,28 @@ def getEffectiveTimeFormat():
     return getDetectedLocaleTimeFormat()
 
 
-def getHourRangeForTimeFormat(timeFormat=None):
-    """Get the appropriate hour range for dropdown choices based on time format.
-
-    Args:
-        timeFormat: "24", "12", or None to use effective format from settings
-
-    Returns:
-        list: [0, 1, ..., 23] for 24-hour mode, [1, 2, ..., 12] for 12-hour mode
-    """
-    if timeFormat is None:
-        timeFormat = getEffectiveTimeFormat()
-    if timeFormat == "12":
-        return list(range(1, 13))
-    return list(range(24))
-
-
-def getDefaultHourChoices(timeFormat=None):
+def get_default_hour_choices(time_format=None):
     """Get default hour choices for TimeCtrl dropdowns.
 
-    In 24-hour mode: returns working hours from settings (efforthourstart to efforthourend)
-    In 12-hour mode: returns 1-12
+    In 24-hour mode: the working hours from settings (efforthourstart
+    to efforthourend); in 12-hour mode: 1 to 12.
 
     Args:
-        timeFormat: "24", "12", or None to use effective format from settings
+        time_format: "24", "12", or None for the format the settings
+            give
 
     Returns:
         list of hour values for dropdown
     """
-    if timeFormat is None:
-        timeFormat = getEffectiveTimeFormat()
-    if timeFormat == "12":
+    if time_format is None:
+        time_format = getEffectiveTimeFormat()
+    if time_format == "12":
         return list(range(1, 13))
     # 24-hour mode: use working hours from settings
-    try:
-        from taskcoachlib.config import settings
-        start = settings.Settings().getint("view", "efforthourstart")
-        end = settings.Settings().getint("view", "efforthourend")
-        # Cap at 23 to handle legacy settings that may have sentinel value 24
-        return list(range(start, min(end + 1, 24)))
-    except Exception:
-        return list(range(8, 18))  # Fallback: 8 AM to 5 PM
+    start = settings.view.efforthourstart
+    end = settings.view.efforthourend
+    # Cap at 23 for legacy settings that may hold the sentinel value 24
+    return list(range(start, min(end + 1, 24)))
 
 
 def getDefaultMinuteChoices():
@@ -337,12 +296,8 @@ def getDefaultMinuteChoices():
     Returns:
         list of minute values for dropdown
     """
-    try:
-        from taskcoachlib.config import settings
-        interval = settings.Settings().getint("view", "effortminuteinterval")
-        return list(range(0, 60, interval))
-    except Exception:
-        return [0, 15, 30, 45]  # Fallback: 15-minute intervals
+    interval = settings.view.effortminuteinterval
+    return list(range(0, 60, interval))
 
 
 def getDefaultSecondChoices():
@@ -353,12 +308,8 @@ def getDefaultSecondChoices():
     Returns:
         list of second values for dropdown
     """
-    try:
-        from taskcoachlib.config import settings
-        interval = settings.Settings().getint("view", "effortsecondinterval")
-        return list(range(0, 60, interval))
-    except Exception:
-        return [0, 15, 30, 45]  # Fallback: 15-second intervals
+    interval = settings.view.effortsecondinterval
+    return list(range(0, 60, interval))
 
 
 def getDefaultDayChoices():
@@ -390,35 +341,29 @@ def getCalendarColours():
     wx.Colour or None (None means use system default).
     """
     try:
-        import ast
-        app = wx.GetApp()
-        s = getattr(app, 'settings', None)
-        if s is None:
-            from taskcoachlib.config import settings as settings_mod
-            s = settings_mod.Settings()
-        from taskcoachlib.config import settings2
-        section = "calendar_dark" if settings2.window.theme_is_dark else "calendar_light"
-
-        use_system = s.get(section, "other_month_bg_system") == "True"
-        if use_system:
+        colours = settings.section(
+            "calendar_dark"
+            if settings.window.theme_is_dark
+            else "calendar_light"
+        )
+        if colours.other_month_bg_system:
             other_month_bg = None
         else:
-            other_month_bg = wx.Colour(*ast.literal_eval(s.get(section, "other_month_bg")))
-
+            other_month_bg = wx.Colour(*colours.other_month_bg)
         return {
-            'weekday_header_bg': wx.Colour(*ast.literal_eval(s.get(section, "weekday_header_bg"))),
-            'weekday_header_fg': wx.Colour(*ast.literal_eval(s.get(section, "weekday_header_fg"))),
-            'weekend_day_fg': wx.Colour(*ast.literal_eval(s.get(section, "weekend_day_fg"))),
-            'today_border': wx.Colour(*ast.literal_eval(s.get(section, "today_border"))),
-            'other_month_bg': other_month_bg,
+            "weekday_header_bg": wx.Colour(*colours.weekday_header_bg),
+            "weekday_header_fg": wx.Colour(*colours.weekday_header_fg),
+            "weekend_day_fg": wx.Colour(*colours.weekend_day_fg),
+            "today_border": wx.Colour(*colours.today_border),
+            "other_month_bg": other_month_bg,
         }
     except Exception:
         return {
-            'weekday_header_bg': wx.LIGHT_GREY,
-            'weekday_header_fg': wx.BLUE,
-            'weekend_day_fg': wx.RED,
-            'today_border': wx.RED,
-            'other_month_bg': None,
+            "weekday_header_bg": wx.LIGHT_GREY,
+            "weekday_header_fg": wx.BLUE,
+            "weekend_day_fg": wx.RED,
+            "today_border": wx.RED,
+            "other_month_bg": None,
         }
 
 
@@ -480,9 +425,6 @@ EVT_POPUP_DISMISS = wx.PyEventBinder(wxEVT_POPUP_DISMISS)
 wxEVT_CHOICE_SELECTED = wx.NewEventType()
 EVT_CHOICE_SELECTED = wx.PyEventBinder(wxEVT_CHOICE_SELECTED)
 
-wxEVT_CHOICE_PREVIEW = wx.NewEventType()
-EVT_CHOICE_PREVIEW = wx.PyEventBinder(wxEVT_CHOICE_PREVIEW)
-
 wxEVT_VALUE_CHANGED = wx.NewEventType()
 EVT_VALUE_CHANGED = wx.PyEventBinder(wxEVT_VALUE_CHANGED, 1)
 
@@ -515,21 +457,10 @@ class ChoiceSelectedEvent(wx.PyCommandEvent):
         return self.__value
 
 
-class ChoicePreviewEvent(wx.PyCommandEvent):
-    """Event fired when navigating choices in popup (live preview)."""
-
-    def __init__(self, owner, value):
-        super().__init__(wxEVT_CHOICE_PREVIEW)
-        self.__value = value
-        self.SetEventObject(owner)
-
-    def GetValue(self):
-        return self.__value
-
-
 # =============================================================================
 # Popup Window Classes
 # =============================================================================
+
 
 class _PopupWindow(wx.Dialog):
     """Popup window base class. wx.PopupWindow doesn't work well cross-platform."""
@@ -590,14 +521,7 @@ class _PopupWindow(wx.Dialog):
         except RuntimeError:
             pass
         self.ProcessEvent(PopupDismissEvent(self))
-        wx.CallLater(100, self._safeDestroy)
-
-    def _safeDestroy(self):
-        try:
-            if self:
-                self.Destroy()
-        except RuntimeError:
-            pass
+        patterns.later.call(self, 100, self.Destroy)
 
     def _onChar(self, event):
         if not self.HandleKey(event):
@@ -618,8 +542,9 @@ class _ChoicesPopup(_PopupWindow):
 
     def __init__(self, choices, value, minWidth, font, *args, **kwargs):
         self.__choices = choices
-        self.__originalValue = value  # Value when popup opened
-        self.__highlightedValue = value  # Currently highlighted (mouse or keys)
+        self.__highlightedValue = (
+            value  # Currently highlighted (mouse or keys)
+        )
         self.__minWidth = minWidth  # Minimum width to match field
         self.__font = font  # Font from parent control
         super().__init__(*args, **kwargs)
@@ -643,8 +568,9 @@ class _ChoicesPopup(_PopupWindow):
             tw, th = dc.GetTextExtent(str(label))
             maxW = max(tw, maxW)
             totH += th + vPad * 2  # Add vertical padding per item
-        self.__itemHeight = None  # Will be set during paint
-        return wx.Size(maxW + hPad * 2 + contentOffsetX * 2, totH + contentOffsetY * 2)
+        return wx.Size(
+            maxW + hPad * 2 + contentOffsetX * 2, totH + contentOffsetY * 2
+        )
 
     def _onPaint(self, event):
         dc = wx.PaintDC(event.GetEventObject())
@@ -666,29 +592,35 @@ class _ChoicesPopup(_PopupWindow):
         for label, value in self.__choices:
             tw, th = dc.GetTextExtent(label)
             itemH = th + vPad * 2
-            itemRect = wx.Rect(contentOffsetX, y, w - contentOffsetX * 2, itemH)
+            item_rect = wx.Rect(
+                contentOffsetX, y, w - contentOffsetX * 2, itemH
+            )
 
-            isHighlighted = (value == self.__highlightedValue)
+            is_highlighted = value == self.__highlightedValue
 
-            if isHighlighted:
+            if is_highlighted:
                 # Use native selection rectangle rendering (fully highlighted)
                 renderer.DrawItemSelectionRect(
-                    win, dc, itemRect,
-                    wx.CONTROL_SELECTED | wx.CONTROL_FOCUSED
+                    win,
+                    dc,
+                    item_rect,
+                    wx.CONTROL_SELECTED | wx.CONTROL_FOCUSED,
                 )
 
             # Draw text right-aligned with padding, vertically centered
             textY = y + vPad
             textX = w - contentOffsetX - hPad - tw
-            if isHighlighted:
-                dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT))
+            if is_highlighted:
+                dc.SetTextForeground(
+                    wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+                )
             else:
-                dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOXTEXT))
+                dc.SetTextForeground(
+                    wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOXTEXT)
+                )
             dc.DrawText(label, textX, textY)
 
             y += itemH
-
-        self.__itemHeight = itemH if self.__choices else 0
 
     def __highlightedIndex(self):
         for idx, (label, value) in enumerate(self.__choices):
@@ -700,7 +632,8 @@ class _ChoicesPopup(_PopupWindow):
         keyCode = event.GetKeyCode()
         if keyCode == wx.WXK_UP:
             self.__highlightedValue = self.__choices[
-                (self.__highlightedIndex() + len(self.__choices) - 1) % len(self.__choices)
+                (self.__highlightedIndex() + len(self.__choices) - 1)
+                % len(self.__choices)
             ][1]
             self.Refresh()
             return True
@@ -713,7 +646,9 @@ class _ChoicesPopup(_PopupWindow):
             return True
 
         if keyCode == wx.WXK_RETURN:
-            self.ProcessEvent(ChoiceSelectedEvent(self, self.__highlightedValue))
+            self.ProcessEvent(
+                ChoiceSelectedEvent(self, self.__highlightedValue)
+            )
             return True
 
         if keyCode == wx.WXK_ESCAPE:
@@ -751,7 +686,10 @@ class _ChoicesPopup(_PopupWindow):
                 newHighlight = value
                 break
             y += itemH
-        if newHighlight is not None and newHighlight != self.__highlightedValue:
+        if (
+            newHighlight is not None
+            and newHighlight != self.__highlightedValue
+        ):
             self.__highlightedValue = newHighlight
             self.Refresh()
 
@@ -760,11 +698,10 @@ class _ChoicesPopup(_PopupWindow):
         # Don't clear highlight when mouse leaves - standard dropdown behavior
 
 
-
-
 # =============================================================================
 # Drawing Helpers
 # =============================================================================
+
 
 def drawFocusRect(win, dc, x, y, w, h):
     """Draw focus highlight rectangle using native rendering."""
@@ -777,15 +714,25 @@ def drawFocusRect(win, dc, x, y, w, h):
 class NumericField:
     """A numeric subfield within a MaskedFieldsCtrl."""
 
-    def __init__(self, name, width, minVal, maxVal, value, choices, observer, padZeros=True):
+    def __init__(
+        self,
+        name,
+        width,
+        min_val,
+        max_val,
+        value,
+        choices,
+        observer,
+        pad_zeros=True,
+    ):
         self.__name = name
         self.__width = width
-        self.__minVal = minVal
-        self.__maxVal = maxVal
-        self.__value = max(minVal, min(maxVal, value))
+        self.__minVal = min_val
+        self.__maxVal = max_val
+        self.__value = max(min_val, min(max_val, value))
         self.__choices = None  # Will be set by SetChoices
         self.__observer = observer
-        self.__padZeros = padZeros
+        self.__padZeros = pad_zeros
         self.__digitCount = 0  # Number of digits typed in current entry
         self.__lastKeyTime = 0  # Timestamp of last digit keystroke
         self._negativePrefix = False  # If True, paint "-" before value
@@ -826,7 +773,9 @@ class NumericField:
         Choices are returned in tuple format: [(label, value), ...]
         If the source provides simple values [1, 2, 3], they are converted automatically.
         """
-        choices = self.__choices() if callable(self.__choices) else self.__choices
+        choices = (
+            self.__choices() if callable(self.__choices) else self.__choices
+        )
         if not choices:
             return choices
         # Convert simple list [1, 2, 3] to tuple format [("1", 1), ...]
@@ -854,7 +803,11 @@ class NumericField:
     def GetExtent(self, dc):
         """Get the pixel size needed for this field."""
         # Use observer's font if available, otherwise system default
-        font = self.__observer.GetFont() if self.__observer else wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        font = (
+            self.__observer.GetFont()
+            if self.__observer
+            else wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        )
         dc.SetFont(font)
         # Special handling for AM/PM period field
         if self.__name == "period":
@@ -875,7 +828,11 @@ class NumericField:
         Period field (AM/PM): displays text instead of number
         """
         # Use observer's font if available, otherwise system default
-        font = self.__observer.GetFont() if self.__observer else wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        font = (
+            self.__observer.GetFont()
+            if self.__observer
+            else wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        )
         dc.SetFont(font)
         # Special handling for AM/PM period field
         if self.__name == "period":
@@ -906,25 +863,25 @@ class NumericField:
         keyCode = event.GetKeyCode()
 
         if keyCode == wx.WXK_UP:
-            newVal = self.__value + 1
-            if newVal > self.__maxVal:
-                newVal = self.__minVal
-            self.SetValue(newVal)
+            new_val = self.__value + 1
+            if new_val > self.__maxVal:
+                new_val = self.__minVal
+            self.SetValue(new_val)
             return True
 
         if keyCode == wx.WXK_DOWN:
-            newVal = self.__value - 1
-            if newVal < self.__minVal:
-                newVal = self.__maxVal
-            self.SetValue(newVal)
+            new_val = self.__value - 1
+            if new_val < self.__minVal:
+                new_val = self.__maxVal
+            self.SetValue(new_val)
             return True
 
         # Special handling for AM/PM period field
         if self.__name == "period":
-            if keyCode in (ord('A'), ord('a')):
+            if keyCode in (ord("A"), ord("a")):
                 self.SetValue(0)  # AM
                 return True
-            if keyCode in (ord('P'), ord('p')):
+            if keyCode in (ord("P"), ord("p")):
                 self.SetValue(1)  # PM
                 return True
             # Space bar toggles AM/PM
@@ -936,8 +893,8 @@ class NumericField:
         # Handle numeric input
         if wx.WXK_NUMPAD0 <= keyCode <= wx.WXK_NUMPAD9:
             number = keyCode - wx.WXK_NUMPAD0
-        elif ord('0') <= keyCode <= ord('9'):
-            number = keyCode - ord('0')
+        elif ord("0") <= keyCode <= ord("9"):
+            number = keyCode - ord("0")
         else:
             number = -1
 
@@ -952,13 +909,17 @@ class NumericField:
                 # First digit: replace value entirely (no clamp during typing)
                 self.SetRawValue(number)
             else:
-                newVal = (self.__value * 10 + number) % int(math.pow(10, self.__width))
-                self.SetRawValue(newVal)
+                new_val = (self.__value * 10 + number) % int(
+                    math.pow(10, self.__width)
+                )
+                self.SetRawValue(new_val)
             self.__digitCount += 1
             self.__observer.DismissPopup()
             # Auto-advance to next field after all digits typed
             if self.__digitCount >= self.__width:
-                self.SetValue(self.__value)  # Clamp + validate before advancing
+                self.SetValue(
+                    self.__value
+                )  # Clamp + validate before advancing
                 self.__digitCount = 0
                 self.__lastKeyTime = 0
                 # Advance unless this is the last field
@@ -1014,9 +975,13 @@ class MaskedFieldsCtrl(wx.Panel):
         self._popup = None
         self._focusStamp = 0  # Time when focus was gained
         self._returningFromPopup = False  # Flag to preserve focus after popup
-        self._popupDismissedWidget = None  # Widget whose popup was just dismissed
+        self._popupDismissedWidget = (
+            None  # Widget whose popup was just dismissed
+        )
         self._popupDismissedTime = 0  # When popup was dismissed
-        self._readOnly = False  # Read-only mode: show values greyed, not editable
+        self._readOnly = (
+            False  # Read-only mode: show values greyed, not editable
+        )
 
         # Build widgets from elements
         curX = self.MARGIN
@@ -1045,15 +1010,21 @@ class MaskedFieldsCtrl(wx.Panel):
                 value = elem[1] if len(elem) > 1 else 0
                 customChoices = elem[2] if len(elem) > 2 else None
 
-                width, minVal, maxVal, padZeros = FIELD_TYPES[fieldType]
+                width, min_val, max_val, pad_zeros = FIELD_TYPES[fieldType]
 
                 # Pass choices to NumericField - it handles conversion and callables
                 # Choices can be: None, list of values, list of tuples, or callable
                 choices = customChoices
 
                 field = NumericField(
-                    fieldType, width, minVal, maxVal,
-                    value, choices, self, padZeros
+                    fieldType,
+                    width,
+                    min_val,
+                    max_val,
+                    value,
+                    choices,
+                    self,
+                    pad_zeros,
                 )
                 self._fields[fieldType] = field
                 self._fieldList.append(field)
@@ -1092,7 +1063,9 @@ class MaskedFieldsCtrl(wx.Panel):
                 flags |= wx.CONTROL_FOCUSED
             if not self.IsEnabled() or self._readOnly:
                 flags |= wx.CONTROL_DISABLED
-            wx.RendererNative.Get().DrawTextCtrl(self, dc, wx.Rect(0, 0, w, h), flags)
+            wx.RendererNative.Get().DrawTextCtrl(
+                self, dc, wx.Rect(0, 0, w, h), flags
+            )
 
         dc.SetFont(self.GetFont())
 
@@ -1111,7 +1084,9 @@ class MaskedFieldsCtrl(wx.Panel):
                     if widget == self._focus and hasFocus:
                         drawFocusRect(self, dc, x + xOff, y + yOff, ww, hh)
                         dc.SetTextForeground(
-                            wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+                            wx.SystemSettings.GetColour(
+                                wx.SYS_COLOUR_HIGHLIGHTTEXT
+                            )
                         )
                     else:
                         dc.SetTextForeground(textColour)
@@ -1122,12 +1097,16 @@ class MaskedFieldsCtrl(wx.Panel):
             # Matches old SmartDateTimeCtrl behavior (smartdatetimectrl.py:667-671)
             text = "N/A"
             tw, th = dc.GetTextExtent(text)
-            dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            dc.SetTextForeground(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+            )
             dc.DrawText(text, (w - tw) // 2, (h - th) // 2)
         else:
             # Read-only mode (inactive) - show values greyed but visible
             # This is for SetEditable(False) state where values should be visible
-            dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            dc.SetTextForeground(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+            )
             for widget, x, y, ww, hh in self._widgets:
                 if isinstance(widget, str):
                     dc.DrawText(widget, int(x + xOff), int(y + yOff))
@@ -1227,7 +1206,9 @@ class MaskedFieldsCtrl(wx.Panel):
             if widget == self._focus:
                 choices = self._focus.GetChoices()
                 if choices:
-                    self._showPopup(self._focus, choices, x + xOff, y + yOff, w, h)
+                    self._showPopup(
+                        self._focus, choices, x + xOff, y + yOff, w, h
+                    )
                 break
 
     # Time thresholds for focus and popup behavior (in seconds)
@@ -1254,7 +1235,9 @@ class MaskedFieldsCtrl(wx.Panel):
         # Find which widget was clicked
         for widget, x, y, w, h in self._widgets:
             if isinstance(widget, NumericField):
-                if (x + xOff) <= pt.x <= (x + xOff) + w and (y + yOff) <= pt.y <= (y + yOff) + h:
+                if (x + xOff) <= pt.x <= (x + xOff) + w and (
+                    y + yOff
+                ) <= pt.y <= (y + yOff) + h:
                     # Clamp + validate old field before leaving
                     if self._focus and self._focus != widget:
                         self._focus.SetValue(self._focus.GetValue())
@@ -1269,7 +1252,8 @@ class MaskedFieldsCtrl(wx.Panel):
                     # Check if popup was just dismissed for this widget (toggle case)
                     elif (
                         self._popupDismissedWidget == widget
-                        and time.time() - self._popupDismissedTime < self.POPUP_TOGGLE_DELAY
+                        and time.time() - self._popupDismissedTime
+                        < self.POPUP_TOGGLE_DELAY
                     ):
                         # Popup was just closed by click, don't reopen (toggle off)
                         self._popupDismissedWidget = None
@@ -1280,7 +1264,9 @@ class MaskedFieldsCtrl(wx.Panel):
                         if time.time() - self._focusStamp >= self.FOCUS_DELAY:
                             choices = widget.GetChoices()
                             if choices:
-                                self._showPopup(widget, choices, x + xOff, y + yOff, w, h)
+                                self._showPopup(
+                                    widget, choices, x + xOff, y + yOff, w, h
+                                )
 
                     self.Refresh()
                     return
@@ -1296,7 +1282,9 @@ class MaskedFieldsCtrl(wx.Panel):
         currentValue = field.GetValue()
 
         # Create popup with field width as minimum width and same font
-        popup = _ChoicesPopup(choices, currentValue, fieldW, self.GetFont(), self)
+        popup = _ChoicesPopup(
+            choices, currentValue, fieldW, self.GetFont(), self
+        )
         self._popup = (popup, field)
 
         # Center popup horizontally on the field
@@ -1307,7 +1295,6 @@ class MaskedFieldsCtrl(wx.Panel):
         popup.Popup(pos)
         popup.Bind(EVT_POPUP_DISMISS, self._onPopupDismiss)
         popup.Bind(EVT_CHOICE_SELECTED, self._onChoiceSelected)
-        popup.Bind(EVT_CHOICE_PREVIEW, self._onChoicePreview)
 
     def _onPopupDismiss(self, event):
         """Handle popup dismissal - track for toggle behavior and preserve focus."""
@@ -1318,13 +1305,6 @@ class MaskedFieldsCtrl(wx.Panel):
         self._returningFromPopup = True
         self.SetFocus()  # Return focus to control
         event.Skip()
-
-    def _onChoicePreview(self, event):
-        """Handle preview of choice (arrow key navigation in popup)."""
-        if self._popup:
-            popup, field = self._popup
-            field.SetValue(event.GetValue())
-            self.Refresh()
 
     def _onChoiceSelected(self, event):
         """Handle choice selection from popup."""
@@ -1384,9 +1364,6 @@ class MaskedFieldsCtrl(wx.Panel):
         """Override in subclasses to validate field changes (e.g., clamp day for month)."""
         return value
 
-    def GetField(self, name):
-        return self._fields.get(name)
-
     def GetFieldValue(self, name):
         field = self._fields.get(name)
         return field.GetValue() if field else 0
@@ -1428,77 +1405,87 @@ class DurationCtrl(MaskedFieldsCtrl):
     Args:
         parent: Parent window
         days, hours, minutes, seconds: Initial values
-        dayChoices: Dropdown choices for days:
+        day_choices: Dropdown choices for days:
             - None (default): Use defaults [0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]
             - list: Use that specific list
             - False: No dropdown
-        hourChoices: Dropdown choices for hours:
+        hour_choices: Dropdown choices for hours:
             - None (default): Use defaults [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]
             - list: Use that specific list
             - False: No dropdown
-        minuteChoices: Dropdown choices for minutes:
+        minute_choices: Dropdown choices for minutes:
             - None (default): Use defaults from settings (based on effortminuteinterval)
             - list: Use that specific list
             - False: No dropdown
-        showSeconds: If True, include seconds field (default False)
-        secondChoices: Dropdown choices for seconds:
+        show_seconds: If True, include seconds field (default False)
+        second_choices: Dropdown choices for seconds:
             - None (default): Use defaults from settings (based on effortsecondinterval)
             - list: Use that specific list
             - False: No dropdown
     """
 
-    def __init__(self, parent, days=0, hours=0, minutes=0, seconds=0,
-                 dayChoices=None, hourChoices=None, minuteChoices=None,
-                 showSeconds=False, secondChoices=None):
-        self._showSeconds = showSeconds
+    def __init__(
+        self,
+        parent,
+        days=0,
+        hours=0,
+        minutes=0,
+        seconds=0,
+        day_choices=None,
+        hour_choices=None,
+        minute_choices=None,
+        show_seconds=False,
+        second_choices=None,
+    ):
+        self._showSeconds = show_seconds
 
         # Resolve day choices: None=defaults, False=no dropdown, list=use as-is
-        if dayChoices is None:
-            dayChoices = getDefaultDayChoices()
-        elif dayChoices is False:
-            dayChoices = None
+        if day_choices is None:
+            day_choices = getDefaultDayChoices()
+        elif day_choices is False:
+            day_choices = None
 
         # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
-        if hourChoices is None:
-            hourChoices = getDefaultDurationHourChoices()
-        elif hourChoices is False:
-            hourChoices = None
+        if hour_choices is None:
+            hour_choices = getDefaultDurationHourChoices()
+        elif hour_choices is False:
+            hour_choices = None
 
         # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
-        if minuteChoices is None:
-            minuteChoices = getDefaultMinuteChoices()
-        elif minuteChoices is False:
-            minuteChoices = None
+        if minute_choices is None:
+            minute_choices = getDefaultMinuteChoices()
+        elif minute_choices is False:
+            minute_choices = None
 
         # Resolve second choices: None=defaults, False=no dropdown, list=use as-is
-        if secondChoices is None:
-            secondChoices = getDefaultSecondChoices()
-        elif secondChoices is False:
-            secondChoices = None
+        if second_choices is None:
+            second_choices = getDefaultSecondChoices()
+        elif second_choices is False:
+            second_choices = None
 
         elements = [
-            ("day", days, dayChoices),
+            ("day", days, day_choices),
             ("literal", _("d") + " "),
-            ("hour", hours, hourChoices),
+            ("hour", hours, hour_choices),
             ("literal", ":"),
-            ("minute", minutes, minuteChoices),
+            ("minute", minutes, minute_choices),
         ]
 
-        if showSeconds:
+        if show_seconds:
             elements.append(("literal", ":"))
-            elements.append(("second", seconds, secondChoices))
+            elements.append(("second", seconds, second_choices))
 
         self._negative = False
         super().__init__(parent, elements)
 
     def GetDuration(self):
         result = date.TimeDelta(
-            days=self.GetFieldValue('day'),
-            hours=self.GetFieldValue('hour'),
-            minutes=self.GetFieldValue('minute')
+            days=self.GetFieldValue("day"),
+            hours=self.GetFieldValue("hour"),
+            minutes=self.GetFieldValue("minute"),
         )
         if self._showSeconds:
-            result += date.TimeDelta(seconds=self.GetFieldValue('second'))
+            result += date.TimeDelta(seconds=self.GetFieldValue("second"))
         if self._negative:
             result = -result
         return result
@@ -1523,19 +1510,15 @@ class DurationCtrl(MaskedFieldsCtrl):
         minutes, seconds = divmod(remainder, 60)
 
         self._negative = negative
-        dayField = self._fields.get('day')
-        if dayField:
-            dayField._negativePrefix = negative
-        self.SetFieldValue('day', days)
-        self.SetFieldValue('hour', hours)
-        self.SetFieldValue('minute', minutes)
+        day_field = self._fields.get("day")
+        if day_field:
+            day_field._negativePrefix = negative
+        self.SetFieldValue("day", days)
+        self.SetFieldValue("hour", hours)
+        self.SetFieldValue("minute", minutes)
         if self._showSeconds:
-            self.SetFieldValue('second', seconds)
+            self.SetFieldValue("second", seconds)
         self.NotifyValueChanged()
-
-    def SetTimeDelta(self, duration):
-        """Alias for SetDuration for consistency with other controls."""
-        self.SetDuration(duration)
 
     def GetValue(self):
         """Alias for GetDuration for AttributeSync compatibility."""
@@ -1549,69 +1532,83 @@ class DurationCtrl(MaskedFieldsCtrl):
 class DurationCtrlVerbose(MaskedFieldsCtrl):
     """Duration control with full word suffixes: 000 days 00 hours 00 mins [00 secs].
 
+    Not used by the application: a test playground, shown in the demo,
+    kept for an option with worded durations
+    (docs/DATETIME_CONTROLS.md#durationctrlverbose).
+
     Args:
         parent: Parent window
         days, hours, minutes, seconds: Initial values
-        dayChoices: Dropdown choices for days:
+        day_choices: Dropdown choices for days:
             - None (default): Use defaults [0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]
             - list: Use that specific list
             - False: No dropdown
-        hourChoices: Dropdown choices for hours:
+        hour_choices: Dropdown choices for hours:
             - None (default): Use defaults [0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]
             - list: Use that specific list
             - False: No dropdown
-        minuteChoices: Dropdown choices for minutes:
+        minute_choices: Dropdown choices for minutes:
             - None (default): Use defaults from settings (based on effortminuteinterval)
             - list: Use that specific list
             - False: No dropdown
-        showSeconds: If True, include seconds field (default False)
-        secondChoices: Dropdown choices for seconds:
+        show_seconds: If True, include seconds field (default False)
+        second_choices: Dropdown choices for seconds:
             - None (default): Use defaults from settings (based on effortsecondinterval)
             - list: Use that specific list
             - False: No dropdown
     """
 
-    def __init__(self, parent, days=0, hours=0, minutes=0, seconds=0,
-                 dayChoices=None, hourChoices=None, minuteChoices=None,
-                 showSeconds=False, secondChoices=None):
-        self._showSeconds = showSeconds
+    def __init__(
+        self,
+        parent,
+        days=0,
+        hours=0,
+        minutes=0,
+        seconds=0,
+        day_choices=None,
+        hour_choices=None,
+        minute_choices=None,
+        show_seconds=False,
+        second_choices=None,
+    ):
+        self._showSeconds = show_seconds
 
         # Resolve day choices: None=defaults, False=no dropdown, list=use as-is
-        if dayChoices is None:
-            dayChoices = getDefaultDayChoices()
-        elif dayChoices is False:
-            dayChoices = None
+        if day_choices is None:
+            day_choices = getDefaultDayChoices()
+        elif day_choices is False:
+            day_choices = None
 
         # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
-        if hourChoices is None:
-            hourChoices = getDefaultDurationHourChoices()
-        elif hourChoices is False:
-            hourChoices = None
+        if hour_choices is None:
+            hour_choices = getDefaultDurationHourChoices()
+        elif hour_choices is False:
+            hour_choices = None
 
         # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
-        if minuteChoices is None:
-            minuteChoices = getDefaultMinuteChoices()
-        elif minuteChoices is False:
-            minuteChoices = None
+        if minute_choices is None:
+            minute_choices = getDefaultMinuteChoices()
+        elif minute_choices is False:
+            minute_choices = None
 
         # Resolve second choices: None=defaults, False=no dropdown, list=use as-is
-        if secondChoices is None:
-            secondChoices = getDefaultSecondChoices()
-        elif secondChoices is False:
-            secondChoices = None
+        if second_choices is None:
+            second_choices = getDefaultSecondChoices()
+        elif second_choices is False:
+            second_choices = None
 
         elements = [
-            ("day", days, dayChoices),
+            ("day", days, day_choices),
             ("literal", " " + _("days") + " "),
-            ("hour", hours, hourChoices),
+            ("hour", hours, hour_choices),
             ("literal", " " + _("hours") + " "),
-            ("minute", minutes, minuteChoices),
+            ("minute", minutes, minute_choices),
             ("literal", " " + _("mins")),
         ]
 
-        if showSeconds:
+        if show_seconds:
             elements.append(("literal", " "))
-            elements.append(("second", seconds, secondChoices))
+            elements.append(("second", seconds, second_choices))
             elements.append(("literal", " " + _("secs")))
 
         self._negative = False
@@ -1619,12 +1616,12 @@ class DurationCtrlVerbose(MaskedFieldsCtrl):
 
     def GetDuration(self):
         result = date.TimeDelta(
-            days=self.GetFieldValue('day'),
-            hours=self.GetFieldValue('hour'),
-            minutes=self.GetFieldValue('minute')
+            days=self.GetFieldValue("day"),
+            hours=self.GetFieldValue("hour"),
+            minutes=self.GetFieldValue("minute"),
         )
         if self._showSeconds:
-            result += date.TimeDelta(seconds=self.GetFieldValue('second'))
+            result += date.TimeDelta(seconds=self.GetFieldValue("second"))
         if self._negative:
             result = -result
         return result
@@ -1649,19 +1646,15 @@ class DurationCtrlVerbose(MaskedFieldsCtrl):
         minutes, seconds = divmod(remainder, 60)
 
         self._negative = negative
-        dayField = self._fields.get('day')
-        if dayField:
-            dayField._negativePrefix = negative
-        self.SetFieldValue('day', days)
-        self.SetFieldValue('hour', hours)
-        self.SetFieldValue('minute', minutes)
+        day_field = self._fields.get("day")
+        if day_field:
+            day_field._negativePrefix = negative
+        self.SetFieldValue("day", days)
+        self.SetFieldValue("hour", hours)
+        self.SetFieldValue("minute", minutes)
         if self._showSeconds:
-            self.SetFieldValue('second', seconds)
+            self.SetFieldValue("second", seconds)
         self.NotifyValueChanged()
-
-    def SetTimeDelta(self, duration):
-        """Alias for SetDuration for consistency with other controls."""
-        self.SetDuration(duration)
 
     def GetValue(self):
         """Alias for GetDuration for AttributeSync compatibility."""
@@ -1681,53 +1674,63 @@ class TimeCtrl(MaskedFieldsCtrl):
     Args:
         parent: Parent window
         hours, minutes: Initial values (always in 24-hour format internally)
-        hourChoices: Dropdown choices for hours:
+        hour_choices: Dropdown choices for hours:
             - None (default): Use defaults from settings (working hours for 24h, 1-12 for 12h)
             - list: Use that specific list
             - False: No dropdown
-        minuteChoices: Dropdown choices for minutes:
+        minute_choices: Dropdown choices for minutes:
             - None (default): Use defaults from settings (based on effortminuteinterval)
             - list: Use that specific list
             - False: No dropdown
-        timeFormat: "24" for 24-hour, "12" for 12-hour with AM/PM, None to use settings
+        time_format: "24" for 24-hour, "12" for 12-hour with AM/PM, None
+            to use settings
     """
 
-    def __init__(self, parent, hours=0, minutes=0,
-                 hourChoices=None, minuteChoices=None, timeFormat=None):
+    def __init__(
+        self,
+        parent,
+        hours=0,
+        minutes=0,
+        hour_choices=None,
+        minute_choices=None,
+        time_format=None,
+    ):
         # Determine time format from parameter or settings
-        if timeFormat is not None:
-            self._timeFormat = timeFormat if timeFormat in ("24", "12") else "24"
+        if time_format is not None:
+            self._timeFormat = (
+                time_format if time_format in ("24", "12") else "24"
+            )
         else:
             self._timeFormat = getEffectiveTimeFormat()
 
         # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
-        if hourChoices is None:
-            hourChoices = getDefaultHourChoices(self._timeFormat)
-        elif hourChoices is False:
-            hourChoices = None
+        if hour_choices is None:
+            hour_choices = get_default_hour_choices(self._timeFormat)
+        elif hour_choices is False:
+            hour_choices = None
 
         # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
-        if minuteChoices is None:
-            minuteChoices = getDefaultMinuteChoices()
-        elif minuteChoices is False:
-            minuteChoices = None
+        if minute_choices is None:
+            minute_choices = getDefaultMinuteChoices()
+        elif minute_choices is False:
+            minute_choices = None
 
         if self._timeFormat == "12":
             # 12-hour format: convert 24h to 12h display
             hour12, period = self._to12Hour(hours)
             elements = [
-                ("hour12", hour12, hourChoices),
+                ("hour12", hour12, hour_choices),
                 ("literal", ":"),
-                ("minute", minutes, minuteChoices),
+                ("minute", minutes, minute_choices),
                 ("literal", " "),
                 ("period", period, [("AM", 0), ("PM", 1)]),
             ]
         else:
             # 24-hour format (default)
             elements = [
-                ("hour", hours, hourChoices),
+                ("hour", hours, hour_choices),
                 ("literal", ":"),
-                ("minute", minutes, minuteChoices),
+                ("minute", minutes, minute_choices),
             ]
 
         super().__init__(parent, elements)
@@ -1752,14 +1755,16 @@ class TimeCtrl(MaskedFieldsCtrl):
 
     def GetTime(self):
         if self._timeFormat == "12":
-            hour12 = self.GetFieldValue('hour12')
-            period = self.GetFieldValue('period')
+            hour12 = self.GetFieldValue("hour12")
+            period = self.GetFieldValue("period")
             hour24 = self._to24Hour(hour12, period)
-            return datetime.time(hour=hour24, minute=self.GetFieldValue('minute'))
+            return datetime.time(
+                hour=hour24, minute=self.GetFieldValue("minute")
+            )
         else:
             return datetime.time(
-                hour=self.GetFieldValue('hour'),
-                minute=self.GetFieldValue('minute')
+                hour=self.GetFieldValue("hour"),
+                minute=self.GetFieldValue("minute"),
             )
 
     def SetTime(self, t):
@@ -1772,11 +1777,11 @@ class TimeCtrl(MaskedFieldsCtrl):
             t = datetime.time()
         if self._timeFormat == "12":
             hour12, period = self._to12Hour(t.hour)
-            self.SetFieldValue('hour12', hour12)
-            self.SetFieldValue('period', period)
+            self.SetFieldValue("hour12", hour12)
+            self.SetFieldValue("period", period)
         else:
-            self.SetFieldValue('hour', t.hour)
-        self.SetFieldValue('minute', t.minute)
+            self.SetFieldValue("hour", t.hour)
+        self.SetFieldValue("minute", t.minute)
 
 
 class TimeWithSecondsCtrl(MaskedFieldsCtrl):
@@ -1788,68 +1793,79 @@ class TimeWithSecondsCtrl(MaskedFieldsCtrl):
     Args:
         parent: Parent window
         hours, minutes, seconds: Initial values (always in 24-hour format internally)
-        hourChoices: Dropdown choices for hours:
+        hour_choices: Dropdown choices for hours:
             - None (default): Use defaults from settings (working hours for 24h, 1-12 for 12h)
             - list: Use that specific list
             - False: No dropdown
-        minuteChoices: Dropdown choices for minutes:
+        minute_choices: Dropdown choices for minutes:
             - None (default): Use defaults from settings (based on effortminuteinterval)
             - list: Use that specific list
             - False: No dropdown
-        secondChoices: Dropdown choices for seconds:
+        second_choices: Dropdown choices for seconds:
             - None (default): Use defaults from settings (based on effortsecondinterval)
             - list: Use that specific list
             - False: No dropdown
-        timeFormat: "24" for 24-hour, "12" for 12-hour with AM/PM, None to use settings
+        time_format: "24" for 24-hour, "12" for 12-hour with AM/PM, None
+            to use settings
     """
 
-    def __init__(self, parent, hours=0, minutes=0, seconds=0,
-                 hourChoices=None, minuteChoices=None, secondChoices=None,
-                 timeFormat=None):
+    def __init__(
+        self,
+        parent,
+        hours=0,
+        minutes=0,
+        seconds=0,
+        hour_choices=None,
+        minute_choices=None,
+        second_choices=None,
+        time_format=None,
+    ):
         # Determine time format from parameter or settings
-        if timeFormat is not None:
-            self._timeFormat = timeFormat if timeFormat in ("24", "12") else "24"
+        if time_format is not None:
+            self._timeFormat = (
+                time_format if time_format in ("24", "12") else "24"
+            )
         else:
             self._timeFormat = getEffectiveTimeFormat()
 
         # Resolve hour choices: None=defaults, False=no dropdown, list=use as-is
-        if hourChoices is None:
-            hourChoices = getDefaultHourChoices(self._timeFormat)
-        elif hourChoices is False:
-            hourChoices = None
+        if hour_choices is None:
+            hour_choices = get_default_hour_choices(self._timeFormat)
+        elif hour_choices is False:
+            hour_choices = None
 
         # Resolve minute choices: None=defaults, False=no dropdown, list=use as-is
-        if minuteChoices is None:
-            minuteChoices = getDefaultMinuteChoices()
-        elif minuteChoices is False:
-            minuteChoices = None
+        if minute_choices is None:
+            minute_choices = getDefaultMinuteChoices()
+        elif minute_choices is False:
+            minute_choices = None
 
         # Resolve second choices: None=defaults, False=no dropdown, list=use as-is
-        if secondChoices is None:
-            secondChoices = getDefaultSecondChoices()
-        elif secondChoices is False:
-            secondChoices = None
+        if second_choices is None:
+            second_choices = getDefaultSecondChoices()
+        elif second_choices is False:
+            second_choices = None
 
         if self._timeFormat == "12":
             # 12-hour format: convert 24h to 12h display
             hour12, period = self._to12Hour(hours)
             elements = [
-                ("hour12", hour12, hourChoices),
+                ("hour12", hour12, hour_choices),
                 ("literal", ":"),
-                ("minute", minutes, minuteChoices),
+                ("minute", minutes, minute_choices),
                 ("literal", ":"),
-                ("second", seconds, secondChoices),
+                ("second", seconds, second_choices),
                 ("literal", " "),
                 ("period", period, [("AM", 0), ("PM", 1)]),
             ]
         else:
             # 24-hour format (default)
             elements = [
-                ("hour", hours, hourChoices),
+                ("hour", hours, hour_choices),
                 ("literal", ":"),
-                ("minute", minutes, minuteChoices),
+                ("minute", minutes, minute_choices),
                 ("literal", ":"),
-                ("second", seconds, secondChoices),
+                ("second", seconds, second_choices),
             ]
 
         super().__init__(parent, elements)
@@ -1874,19 +1890,19 @@ class TimeWithSecondsCtrl(MaskedFieldsCtrl):
 
     def GetTime(self):
         if self._timeFormat == "12":
-            hour12 = self.GetFieldValue('hour12')
-            period = self.GetFieldValue('period')
+            hour12 = self.GetFieldValue("hour12")
+            period = self.GetFieldValue("period")
             hour24 = self._to24Hour(hour12, period)
             return datetime.time(
                 hour=hour24,
-                minute=self.GetFieldValue('minute'),
-                second=self.GetFieldValue('second')
+                minute=self.GetFieldValue("minute"),
+                second=self.GetFieldValue("second"),
             )
         else:
             return datetime.time(
-                hour=self.GetFieldValue('hour'),
-                minute=self.GetFieldValue('minute'),
-                second=self.GetFieldValue('second')
+                hour=self.GetFieldValue("hour"),
+                minute=self.GetFieldValue("minute"),
+                second=self.GetFieldValue("second"),
             )
 
     def SetTime(self, t):
@@ -1899,14 +1915,12 @@ class TimeWithSecondsCtrl(MaskedFieldsCtrl):
             t = datetime.time()
         if self._timeFormat == "12":
             hour12, period = self._to12Hour(t.hour)
-            self.SetFieldValue('hour12', hour12)
-            self.SetFieldValue('period', period)
+            self.SetFieldValue("hour12", hour12)
+            self.SetFieldValue("period", period)
         else:
-            self.SetFieldValue('hour', t.hour)
-        self.SetFieldValue('minute', t.minute)
-        self.SetFieldValue('second', t.second)
-
-
+            self.SetFieldValue("hour", t.hour)
+        self.SetFieldValue("minute", t.minute)
+        self.SetFieldValue("second", t.second)
 
 
 class _CalendarComboPopup(wx.ComboPopup):
@@ -1918,22 +1932,19 @@ class _CalendarComboPopup(wx.ComboPopup):
     window (including Wayland-safe positioning).
     """
 
-    def __init__(self, minDate=None, maxDate=None):
+    def __init__(self, min_date=None, max_date=None):
         super().__init__()
-        self._minDate = minDate
-        self._maxDate = maxDate
+        self._minDate = min_date
+        self._maxDate = max_date
         self._panel = None
         self._selection = datetime.date.today()
         self._highlightedDate = self._selection
-        self._originalDate = self._selection
         self._year = self._selection.year
         self._month = self._selection.month
         self._maxDim = None
         self._font = None
         self._days = []
         self._win = None
-        self._contentOffsetX = 0
-        self._contentOffsetY = 0
 
     def Create(self, parent):
         self._panel = wx.Panel(parent, style=wx.BORDER_NONE)
@@ -1956,7 +1967,7 @@ class _CalendarComboPopup(wx.ComboPopup):
 
     def GetStringValue(self):
         """Return selected date as string."""
-        return str(self._highlightedDate) if self._highlightedDate else ''
+        return str(self._highlightedDate) if self._highlightedDate else ""
 
     def GetAdjustedSize(self, minWidth, prefHeight, maxHeight):
         if self._panel is None:
@@ -1969,7 +1980,9 @@ class _CalendarComboPopup(wx.ComboPopup):
         """Get the DateComboCustomCtrl (ComboCtrl) that owns this popup."""
         combo = self.GetComboCtrl()
         if combo:
-            if hasattr(combo, '_dateCtrl') and hasattr(combo, '_setDateFromCalendar'):
+            if hasattr(combo, "_dateCtrl") and hasattr(
+                combo, "_setDateFromCalendar"
+            ):
                 return combo
         return None
 
@@ -1990,7 +2003,6 @@ class _CalendarComboPopup(wx.ComboPopup):
                         self._selection = datetime.date.fromisoformat(text)
                     except (ValueError, AttributeError):
                         pass
-        self._originalDate = self._selection
         self._highlightedDate = self._selection
         self._year = self._selection.year
         self._month = self._selection.month
@@ -2043,7 +2055,10 @@ class _CalendarComboPopup(wx.ComboPopup):
             wx.Bell()
             return
         self._highlightedDate = newDate
-        if self._highlightedDate.year != self._year or self._highlightedDate.month != self._month:
+        if (
+            self._highlightedDate.year != self._year
+            or self._highlightedDate.month != self._month
+        ):
             self._year = self._highlightedDate.year
             self._month = self._highlightedDate.month
             dc = wx.ClientDC(self._panel)
@@ -2058,7 +2073,9 @@ class _CalendarComboPopup(wx.ComboPopup):
             dc.SetFont(self._font)
         W, H = 0, 0
         for month in range(1, 13):
-            header = datetime.date(year=self._year, month=month, day=11).strftime("%B %Y")
+            header = datetime.date(
+                year=self._year, month=month, day=11
+            ).strftime("%B %Y")
             tw, th = dc.GetTextExtent(header)
             W = max(W, tw)
             H = max(H, th)
@@ -2095,8 +2112,6 @@ class _CalendarComboPopup(wx.ComboPopup):
         if self._font:
             dc.SetFont(self._font)
         self._win = win
-        self._contentOffsetX = contentOffsetX
-        self._contentOffsetY = contentOffsetY
 
         colours = getCalendarColours()
 
@@ -2105,9 +2120,13 @@ class _CalendarComboPopup(wx.ComboPopup):
         dc.SetBrush(wx.Brush(textColour))
         dc.SetTextForeground(textColour)
 
-        header = datetime.date(year=self._year, month=self._month, day=1).strftime("%B %Y")
+        header = datetime.date(
+            year=self._year, month=self._month, day=1
+        ).strftime("%B %Y")
         tw, th = dc.GetTextExtent(header)
-        dc.DrawText(header, contentOffsetX + (contentW - 48 - tw) // 2, contentOffsetY)
+        dc.DrawText(
+            header, contentOffsetX + (contentW - 48 - tw) // 2, contentOffsetY
+        )
 
         buttonDim = min(th, 10)
 
@@ -2124,13 +2143,17 @@ class _CalendarComboPopup(wx.ComboPopup):
             xinf = w - contentOffsetX - 48 + 16 - buttonDim
             xsup = w - contentOffsetX - 48 + 16
             yinf = contentOffsetY + th / 2 + 1 - buttonDim / 2
-            ysup = contentOffsetY + th / 2 + 1 + buttonDim / 2
 
             gp.MoveToPoint(xinf, contentOffsetY + th // 2 + 1)
             gp.AddArc(
-                cx, cy,
-                math.sqrt((xsup - cx) * (xsup - cx) + (yinf - cy) * (yinf - cy)),
-                math.pi * 3 / 4, math.pi * 5 / 4, True,
+                cx,
+                cy,
+                math.sqrt(
+                    (xsup - cx) * (xsup - cx) + (yinf - cy) * (yinf - cy)
+                ),
+                math.pi * 3 / 4,
+                math.pi * 5 / 4,
+                True,
             )
             gc.DrawPath(gp)
 
@@ -2143,9 +2166,14 @@ class _CalendarComboPopup(wx.ComboPopup):
 
             gp.MoveToPoint(xsup, contentOffsetY + th // 2 + 1)
             gp.AddArc(
-                cx, cy,
-                math.sqrt((xinf - cx) * (xinf - cx) + (yinf - cy) * (yinf - cy)),
-                math.pi / 4, -math.pi / 4, False,
+                cx,
+                cy,
+                math.sqrt(
+                    (xinf - cx) * (xinf - cx) + (yinf - cy) * (yinf - cy)
+                ),
+                math.pi / 4,
+                -math.pi / 4,
+                False,
             )
             gc.DrawPath(gp)
 
@@ -2157,16 +2185,18 @@ class _CalendarComboPopup(wx.ComboPopup):
         y = contentOffsetY + th + 2
 
         # Weekday headers
-        hdrBg = colours['weekday_header_bg']
-        dc.SetPen(wx.Pen(hdrBg))
-        dc.SetBrush(wx.Brush(hdrBg))
+        hdr_bg = colours["weekday_header_bg"]
+        dc.SetPen(wx.Pen(hdr_bg))
+        dc.SetBrush(wx.Brush(hdr_bg))
         dc.DrawRectangle(contentOffsetX, y, self._maxDim * 7, self._maxDim)
-        dc.SetTextForeground(colours['weekday_header_fg'])
+        dc.SetTextForeground(colours["weekday_header_fg"])
         for idx, hdr in enumerate(calendar.weekheader(2).split()):
             tw, th_hdr = dc.GetTextExtent(hdr)
             dc.DrawText(
                 hdr,
-                contentOffsetX + self._maxDim * idx + int((self._maxDim - tw) // 2),
+                contentOffsetX
+                + self._maxDim * idx
+                + int((self._maxDim - tw) // 2),
                 y + int((self._maxDim - th_hdr) // 2),
             )
 
@@ -2185,31 +2215,47 @@ class _CalendarComboPopup(wx.ComboPopup):
 
                 dc.SetPen(wx.Pen(textColour))
                 dc.SetTextForeground(
-                    colours['weekend_day_fg'] if (dayIndex + calendar.firstweekday()) % 7 in [5, 6] else textColour
+                    colours["weekend_day_fg"]
+                    if (dayIndex + calendar.firstweekday()) % 7 in [5, 6]
+                    else textColour
                 )
 
                 if not active:
-                    inactiveBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
-                    dc.SetPen(wx.Pen(inactiveBg))
-                    dc.SetBrush(wx.Brush(inactiveBg))
+                    inactive_bg = wx.SystemSettings.GetColour(
+                        wx.SYS_COLOUR_BTNFACE
+                    )
+                    dc.SetPen(wx.Pen(inactive_bg))
+                    dc.SetBrush(wx.Brush(inactive_bg))
                     dc.DrawRectangle(x, y, self._maxDim, self._maxDim)
                 elif not thisMonth:
-                    otherMonthBg = colours['other_month_bg'] if colours['other_month_bg'] is not None else wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
-                    dc.SetPen(wx.Pen(otherMonthBg))
-                    dc.SetBrush(wx.Brush(otherMonthBg))
+                    other_month_bg = (
+                        colours["other_month_bg"]
+                        if colours["other_month_bg"] is not None
+                        else wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+                    )
+                    dc.SetPen(wx.Pen(other_month_bg))
+                    dc.SetBrush(wx.Brush(other_month_bg))
                     dc.DrawRectangle(x, y, self._maxDim, self._maxDim)
 
-                isHighlighted = (dt == self._highlightedDate and active)
+                is_highlighted = dt == self._highlightedDate and active
 
-                if isHighlighted:
-                    drawFocusRect(self._win, dc, x, y, self._maxDim, self._maxDim)
+                if is_highlighted:
+                    drawFocusRect(
+                        self._win, dc, x, y, self._maxDim, self._maxDim
+                    )
                     dc.SetTextForeground(
-                        wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+                        wx.SystemSettings.GetColour(
+                            wx.SYS_COLOUR_HIGHLIGHTTEXT
+                        )
                     )
 
                 now = datetime.datetime.now()
-                if (dt.year, dt.month, dt.day) == (now.year, now.month, now.day):
-                    dc.SetPen(wx.Pen(colours['today_border']))
+                if (dt.year, dt.month, dt.day) == (
+                    now.year,
+                    now.month,
+                    now.day,
+                ):
+                    dc.SetPen(wx.Pen(colours["today_border"]))
                     dc.SetBrush(wx.TRANSPARENT_BRUSH)
                     dc.DrawRectangle(x, y, self._maxDim, self._maxDim)
 
@@ -2233,12 +2279,19 @@ class _CalendarComboPopup(wx.ComboPopup):
         dc = wx.ClientDC(self._panel)
         if self._font:
             dc.SetFont(self._font)
-        header = datetime.date(year=self._year, month=self._month, day=1).strftime("%B %Y")
+        header = datetime.date(
+            year=self._year, month=self._month, day=1
+        ).strftime("%B %Y")
         tw, th = dc.GetTextExtent(header)
 
         # Buttons area (top right)
-        if event.GetY() < contentOffsetY + th + 2 and event.GetX() > w - contentOffsetX - 48:
-            if event.GetX() < w - contentOffsetX - 48 + 16 and (self._month != 1 or self._year != 1):
+        if (
+            event.GetY() < contentOffsetY + th + 2
+            and event.GetX() > w - contentOffsetX - 48
+        ):
+            if event.GetX() < w - contentOffsetX - 48 + 16 and (
+                self._month != 1 or self._year != 1
+            ):
                 if self._month == 1:
                     self._year -= 1
                     self._month = 12
@@ -2309,8 +2362,17 @@ class DateCtrl(MaskedFieldsCtrl):
     - Click only changes subfield focus (no popup toggle)
     """
 
-    def __init__(self, parent, comboCtrl, year=None, month=None, day=None,
-                 minDate=None, maxDate=None, dateFormat=None):
+    def __init__(
+        self,
+        parent,
+        combo_ctrl,
+        year=None,
+        month=None,
+        day=None,
+        min_date=None,
+        max_date=None,
+        date_format=None,
+    ):
         # Default to today's date
         today = datetime.date.today()
         if year is None:
@@ -2320,21 +2382,23 @@ class DateCtrl(MaskedFieldsCtrl):
         if day is None:
             day = today.day
 
-        self._minDate = minDate
-        self._maxDate = maxDate
-        self._comboCtrl = comboCtrl
+        self._minDate = min_date
+        self._maxDate = max_date
+        self._comboCtrl = combo_ctrl
 
         # Get date format: use explicit override, or read from settings, or detect from locale
-        if dateFormat is not None:
-            field_order, separator = getLocaleDateFormat(override=dateFormat if dateFormat else None)
+        if date_format is not None:
+            field_order, separator = getLocaleDateFormat(
+                override=date_format if date_format else None
+            )
         else:
             field_order, separator = getEffectiveDateFormat()
 
         # Map field names to their values
         field_values = {
-            'year': year,
-            'month': month,
-            'date_day': day,
+            "year": year,
+            "month": month,
+            "date_day": day,
         }
 
         # Build elements list based on locale order
@@ -2364,7 +2428,9 @@ class DateCtrl(MaskedFieldsCtrl):
 
         if self._readOnly:
             # Read-only: greyed values (standalone or inside disabled ComboCtrl)
-            dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            dc.SetTextForeground(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+            )
             for widget, x, y, ww, hh in self._widgets:
                 if isinstance(widget, str):
                     dc.DrawText(widget, int(x + xOff), int(y + yOff))
@@ -2374,7 +2440,9 @@ class DateCtrl(MaskedFieldsCtrl):
             # Disabled (checkbox unchecked): show "N/A" centered
             text = "N/A"
             tw, th = dc.GetTextExtent(text)
-            dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            dc.SetTextForeground(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+            )
             dc.DrawText(text, (w - tw) // 2, (h - th) // 2)
         else:
             # Normal editable
@@ -2388,7 +2456,9 @@ class DateCtrl(MaskedFieldsCtrl):
                     if widget == self._focus and hasFocus:
                         drawFocusRect(self, dc, x + xOff, y + yOff, ww, hh)
                         dc.SetTextForeground(
-                            wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
+                            wx.SystemSettings.GetColour(
+                                wx.SYS_COLOUR_HIGHLIGHTTEXT
+                            )
                         )
                     else:
                         dc.SetTextForeground(textColour)
@@ -2447,7 +2517,9 @@ class DateCtrl(MaskedFieldsCtrl):
 
         for widget, x, y, w, h in self._widgets:
             if isinstance(widget, NumericField):
-                if (x + xOff) <= pt.x <= (x + xOff) + w and (y + yOff) <= pt.y <= (y + yOff) + h:
+                if (x + xOff) <= pt.x <= (x + xOff) + w and (
+                    y + yOff
+                ) <= pt.y <= (y + yOff) + h:
                     # Clamp + validate old field before leaving
                     if self._focus and self._focus != widget:
                         self._focus.SetValue(self._focus.GetValue())
@@ -2469,23 +2541,23 @@ class DateCtrl(MaskedFieldsCtrl):
 
     def ValidateChange(self, field, value):
         """Validate date changes, adjusting day if needed for month/year changes."""
-        year = self.GetFieldValue('year')
-        month = self.GetFieldValue('month')
-        day = self.GetFieldValue('date_day')
+        year = self.GetFieldValue("year")
+        month = self.GetFieldValue("month")
+        day = self.GetFieldValue("date_day")
 
         max_day = calendar.monthrange(year, month)[1]
         if day > max_day:
             day = max_day
-            self.SetFieldValue('date_day', day)
+            self.SetFieldValue("date_day", day)
 
         return value
 
     def GetDate(self):
         """Get the current date value."""
         return datetime.date(
-            year=self.GetFieldValue('year'),
-            month=self.GetFieldValue('month'),
-            day=self.GetFieldValue('date_day')
+            year=self.GetFieldValue("year"),
+            month=self.GetFieldValue("month"),
+            day=self.GetFieldValue("date_day"),
         )
 
     def SetDate(self, d):
@@ -2496,9 +2568,9 @@ class DateCtrl(MaskedFieldsCtrl):
         """
         if d is None:
             d = datetime.date.today()
-        self.SetFieldValue('year', d.year)
-        self.SetFieldValue('month', d.month)
-        self.SetFieldValue('date_day', d.day)
+        self.SetFieldValue("year", d.year)
+        self.SetFieldValue("month", d.month)
+        self.SetFieldValue("date_day", d.day)
 
 
 class DateComboCustomCtrl(wx.ComboCtrl):
@@ -2509,20 +2581,34 @@ class DateComboCustomCtrl(wx.ComboCtrl):
     manages popup positioning.
     """
 
-    def __init__(self, parent, year=None, month=None, day=None,
-                 minDate=None, maxDate=None, dateFormat=None):
+    def __init__(
+        self,
+        parent,
+        year=None,
+        month=None,
+        day=None,
+        min_date=None,
+        max_date=None,
+        date_format=None,
+    ):
         super().__init__(parent)
 
         # Calendar popup via ComboPopup interface
         self._calendarPopup = _CalendarComboPopup(
-            minDate=minDate, maxDate=maxDate
+            min_date=min_date, max_date=max_date
         )
         self.SetPopupControl(self._calendarPopup)
 
         # Clean embedded DateCtrl — no monkey-patches needed
         self._dateCtrl = DateCtrl(
-            self, comboCtrl=self, year=year, month=month, day=day,
-            minDate=minDate, maxDate=maxDate, dateFormat=dateFormat
+            self,
+            combo_ctrl=self,
+            year=year,
+            month=month,
+            day=day,
+            min_date=min_date,
+            max_date=max_date,
+            date_format=date_format,
         )
 
         # Derive horizontal padding from the vertical padding the ComboCtrl
@@ -2546,14 +2632,16 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         # so _onTextCtrlFocus knows to pass focus through instead of
         # redirecting back to DateCtrl.
         origNavigate = self._dateCtrl.Navigate
+
         def _navigateWithFlag(forward=True):
             if not forward:
                 self._tabbingOut = True
             return origNavigate(forward)
+
         self._dateCtrl.Navigate = _navigateWithFlag
 
         # Intercept any text the ComboCtrl auto-inserts (e.g. on popup dismiss)
-        self.Bind(wx.EVT_TEXT, self._onComboText)
+        self.Bind(wx.EVT_TEXT, self._on_combo_text)
 
         # Track when popup opens (covers both F4/Enter and button click)
         self.Bind(wx.EVT_COMBOBOX_DROPDOWN, self._onPopupOpen)
@@ -2561,7 +2649,7 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         # Position the DateCtrl on resize
         self.Bind(wx.EVT_SIZE, self._onSize)
         # Also do initial positioning after layout settles
-        wx.CallAfter(self._positionDateCtrl)
+        patterns.later.soon(self, self._positionDateCtrl)
 
     def _onTextCtrlFocus(self, event):
         """Redirect focus from ComboCtrl's text control to inner DateCtrl."""
@@ -2569,7 +2657,9 @@ class DateComboCustomCtrl(wx.ComboCtrl):
             return
         if self._tabbingOut:
             self._tabbingOut = False
-            wx.CallAfter(self.GetTextCtrl().Navigate, False)
+            patterns.later.soon(
+                self.GetTextCtrl(), self.GetTextCtrl().Navigate, False
+            )
             return
         if self._popupWasShown:
             self._dateCtrl._returningFromPopup = True
@@ -2578,10 +2668,12 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         self._dateCtrl.SetFocus()
         self._redirectingFocus = False
 
-    def _onComboText(self, event):
+    def _on_combo_text(self, event):
         """Clear any text the ComboCtrl auto-inserts on popup dismiss."""
+        if not self:
+            return  # Sent once more while the control is destroyed
         if self.GetValue():
-            self.ChangeValue('')
+            self.ChangeValue("")
 
     def _positionDateCtrl(self):
         """Center the DateCtrl over the ComboCtrl's text area."""
@@ -2608,9 +2700,9 @@ class DateComboCustomCtrl(wx.ComboCtrl):
     def _setDateFromCalendar(self, date):
         """Called by _CalendarComboPopup when user selects a date."""
         self._dateCtrl.SetDate(date)
-        self.ChangeValue('')
+        self.ChangeValue("")
         self._dateCtrl._returningFromPopup = True
-        wx.CallAfter(self._dateCtrl.SetFocus)
+        patterns.later.soon(self._dateCtrl, self._dateCtrl.SetFocus)
 
     def DismissPopup(self):
         """Dismiss any open popup."""
@@ -2642,18 +2734,24 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         """Return True if the calendar popup is currently shown."""
         return self.IsPopupShown()
 
-    def Bind(self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+    def Bind(
+        self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
+    ):
         """Forward UI events to inner DateCtrl.
 
         Events like EVT_VALUE_CHANGED, EVT_KEY_DOWN, EVT_KILL_FOCUS, and
         EVT_SET_FOCUS fire on the inner control, not the ComboCtrl wrapper.
         Other events (e.g. EVT_SIZE) go to the ComboCtrl itself.
         """
-        if eventType in (EVT_VALUE_CHANGED, wx.EVT_KEY_DOWN,
-                         wx.EVT_KILL_FOCUS, wx.EVT_SET_FOCUS):
-            self._dateCtrl.Bind(eventType, handler, source, id, id2)
+        if event_type in (
+            EVT_VALUE_CHANGED,
+            wx.EVT_KEY_DOWN,
+            wx.EVT_KILL_FOCUS,
+            wx.EVT_SET_FOCUS,
+        ):
+            self._dateCtrl.Bind(event_type, handler, source, id, id2)
         else:
-            super().Bind(eventType, handler, source, id, id2)
+            super().Bind(event_type, handler, source, id, id2)
 
     def Enable(self, enable=True):
         """Enable or disable the control (shows N/A when disabled)."""
@@ -2677,8 +2775,16 @@ class _NativeDateCtrl(wx.Panel):
     - Built-in dropdown calendar popup
     """
 
-    def __init__(self, parent, year=None, month=None, day=None,
-                 minDate=None, maxDate=None, dateFormat=None):
+    def __init__(
+        self,
+        parent,
+        year=None,
+        month=None,
+        day=None,
+        min_date=None,
+        max_date=None,
+        date_format=None,
+    ):
         super().__init__(parent)
 
         today = datetime.date.today()
@@ -2699,14 +2805,22 @@ class _NativeDateCtrl(wx.Panel):
         )
 
         # Set date range if specified
-        if minDate is not None or maxDate is not None:
-            wxMin = self._date_to_wxdt(minDate) if minDate else wx.DefaultDateTime
-            wxMax = self._date_to_wxdt(maxDate) if maxDate else wx.DefaultDateTime
-            self._picker.SetRange(wxMin, wxMax)
+        if min_date is not None or max_date is not None:
+            wx_min = (
+                self._date_to_wxdt(min_date)
+                if min_date
+                else wx.DefaultDateTime
+            )
+            wx_max = (
+                self._date_to_wxdt(max_date)
+                if max_date
+                else wx.DefaultDateTime
+            )
+            self._picker.SetRange(wx_min, wx_max)
 
         # Apply custom date format via Win32 DTM_SETFORMATW
-        if dateFormat is not None:
-            self.SetDateFormat(dateFormat)
+        if date_format is not None:
+            self.set_date_format(date_format)
 
         # Bridge native EVT_DATE_CHANGED → app's EVT_VALUE_CHANGED
         self._picker.Bind(wx.adv.EVT_DATE_CHANGED, self._onDateChanged)
@@ -2726,7 +2840,9 @@ class _NativeDateCtrl(wx.Panel):
     @staticmethod
     def _wxdt_to_date(wxdt):
         """wx.DateTime → datetime.date"""
-        return datetime.date(wxdt.GetYear(), wxdt.GetMonth() + 1, wxdt.GetDay())
+        return datetime.date(
+            wxdt.GetYear(), wxdt.GetMonth() + 1, wxdt.GetDay()
+        )
 
     @staticmethod
     def _date_to_wxdt(d):
@@ -2742,12 +2858,14 @@ class _NativeDateCtrl(wx.Panel):
             return
         dc = wx.PaintDC(self)
         w, h = self.GetClientSize()
-        dc.SetBackground(wx.Brush(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)))
+        dc.SetBackground(
+            wx.Brush(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        )
         dc.Clear()
         dc.SetFont(self._picker.GetFont())
         dc.SetTextForeground(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
         text = "N/A"
         tw, th = dc.GetTextExtent(text)
         dc.DrawText(text, (w - tw) // 2, (h - th) // 2)
@@ -2804,35 +2922,42 @@ class _NativeDateCtrl(wx.Panel):
         """No-op — native control manages its own popup."""
         pass
 
-    def Bind(self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+    def Bind(
+        self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
+    ):
         """Route EVT_VALUE_CHANGED to this panel; others to super()."""
-        if eventType in (EVT_VALUE_CHANGED, wx.EVT_KEY_DOWN,
-                         wx.EVT_KILL_FOCUS, wx.EVT_SET_FOCUS):
+        if event_type in (
+            EVT_VALUE_CHANGED,
+            wx.EVT_KEY_DOWN,
+            wx.EVT_KILL_FOCUS,
+            wx.EVT_SET_FOCUS,
+        ):
             # These fire on the inner picker — bind there
-            if eventType == EVT_VALUE_CHANGED:
+            if event_type == EVT_VALUE_CHANGED:
                 # EVT_VALUE_CHANGED fires on this panel (posted by _onDateChanged)
-                super().Bind(eventType, handler, source, id, id2)
+                super().Bind(event_type, handler, source, id, id2)
             else:
-                self._picker.Bind(eventType, handler, source, id, id2)
+                self._picker.Bind(event_type, handler, source, id, id2)
         else:
-            super().Bind(eventType, handler, source, id, id2)
+            super().Bind(event_type, handler, source, id, id2)
 
-    def SetDateFormat(self, dateFormat):
+    def set_date_format(self, date_format):
         """Set display format using Win32 DTM_SETFORMATW message.
 
         Args:
-            dateFormat: 4-char format string (e.g. "YMD-", "MDY/", "DMY.")
-                       as used by getLocaleDateFormat().
+            date_format: 4-char format string (e.g. "YMD-", "MDY/",
+                "DMY.") as used by getLocaleDateFormat().
         """
-        if wx.Platform != '__WXMSW__':
+        if wx.Platform != "__WXMSW__":
             return  # DTM_SETFORMATW is Windows-only
 
-        field_order, separator = getLocaleDateFormat(override=dateFormat)
-        dtp_map = {'year': 'yyyy', 'month': 'MM', 'date_day': 'dd'}
+        field_order, separator = getLocaleDateFormat(override=date_format)
+        dtp_map = {"year": "yyyy", "month": "MM", "date_day": "dd"}
         fmt = separator.join(dtp_map[f] for f in field_order)
 
         try:
             import ctypes
+
             DTM_SETFORMATW = 0x1032  # DTM_FIRST (0x1000) + 50
             hwnd = self._picker.GetHandle()
             ctypes.windll.user32.SendMessageW(hwnd, DTM_SETFORMATW, 0, fmt)
@@ -2847,7 +2972,7 @@ def DateComboRouterCtrl(*args, **kwargs):
     - Elsewhere (Linux, macOS): DateComboCustomCtrl (custom masked fields
       + calendar popup)
     """
-    if wx.Platform == '__WXMSW__':
+    if wx.Platform == "__WXMSW__":
         return _NativeDateCtrl(*args, **kwargs)
     return DateComboCustomCtrl(*args, **kwargs)
 
@@ -2878,40 +3003,63 @@ class DateTimeComboCtrl(wx.EvtHandler):
     Args:
         parent: Parent window for the widgets
         value: datetime.datetime object, or None for unchecked state
-        hourChoices, minuteChoices: Dropdown choices for time fields
-        showSeconds: If True, use TimeWithSecondsCtrl (default False)
-        secondChoices: Dropdown choices for seconds field
+        hour_choices, minute_choices: Dropdown choices for time fields
+        show_seconds: If True, use TimeWithSecondsCtrl (default False)
+        second_choices: Dropdown choices for seconds field
     """
 
-    def __init__(self, parent, value=None, suggestedValue=None,
-                 hourChoices=None, minuteChoices=None,
-                 showSeconds=False, secondChoices=None):
+    def __init__(
+        self,
+        parent,
+        value=None,
+        suggested_value=None,
+        hour_choices=None,
+        minute_choices=None,
+        show_seconds=False,
+        second_choices=None,
+    ):
         wx.EvtHandler.__init__(self)
         self._parent = parent
-        self._showSeconds = showSeconds
-        self._suggestedValue = suggestedValue
+        self._showSeconds = show_seconds
+        self._suggestedValue = suggested_value
 
         checked = value is not None
-        display_value = value if value is not None else (suggestedValue or datetime.datetime.now())
+        # Whole seconds, as every date in Task Coach
+        now = datetime.datetime.now().replace(microsecond=0)
+        display_value = (
+            value if value is not None else (suggested_value or now)
+        )
 
         self._checkbox = wx.CheckBox(parent)
         self._checkbox.SetValue(checked)
         self._checkbox.Bind(wx.EVT_CHECKBOX, self._onCheckboxChanged)
+        # Not a window: it goes with its widgets
+        wxhelper.delete_with_window(self, self._checkbox)
 
-        self._dateCtrl = DateComboRouterCtrl(parent, year=display_value.year,
-                                   month=display_value.month, day=display_value.day)
+        self._dateCtrl = DateComboRouterCtrl(
+            parent,
+            year=display_value.year,
+            month=display_value.month,
+            day=display_value.day,
+        )
 
-        if showSeconds:
+        if show_seconds:
             self._timeCtrl = TimeWithSecondsCtrl(
-                parent, hours=display_value.hour, minutes=display_value.minute,
+                parent,
+                hours=display_value.hour,
+                minutes=display_value.minute,
                 seconds=display_value.second,
-                hourChoices=hourChoices, minuteChoices=minuteChoices,
-                secondChoices=secondChoices
+                hour_choices=hour_choices,
+                minute_choices=minute_choices,
+                second_choices=second_choices,
             )
         else:
             self._timeCtrl = TimeCtrl(
-                parent, hours=display_value.hour, minutes=display_value.minute,
-                hourChoices=hourChoices, minuteChoices=minuteChoices
+                parent,
+                hours=display_value.hour,
+                minutes=display_value.minute,
+                hour_choices=hour_choices,
+                minute_choices=minute_choices,
             )
 
         self._readOnly = False
@@ -2946,9 +3094,14 @@ class DateTimeComboCtrl(wx.EvtHandler):
         # Do NOT call event.Skip() — intentionally consumed
 
     def NotifyValueChanged(self):
-        """Fire EVT_VALUE_CHANGED on self (DTC is a wx.EvtHandler)."""
-        event = ValueChangedEvent(self)
-        wx.PostEvent(self, event)
+        """Fire EVT_VALUE_CHANGED on self (DTC is a wx.EvtHandler) once
+        the current event is done. Not a window, DTC outlives its
+        widgets: its checkbox owns the call, which is skipped once they
+        are gone (docs/DEFERRED_CALLS.md)."""
+        patterns.later.soon(self._checkbox, self._send_value_changed)
+
+    def _send_value_changed(self):
+        self.ProcessEvent(ValueChangedEvent(self))
 
     def _onCheckboxChanged(self, event):
         """Handle checkbox state change — route through abstraction."""
@@ -2998,9 +3151,6 @@ class DateTimeComboCtrl(wx.EvtHandler):
     def GetTimeCtrl(self):
         return self._timeCtrl
 
-    def GetWidgets(self):
-        return (self._checkbox, self._dateCtrl, self._timeCtrl)
-
     def HideCheckBox(self):
         """Hide the checkbox for always-active controls (e.g. effort start)."""
         self._checkbox.Hide()
@@ -3032,20 +3182,22 @@ class DateTimeComboCtrl(wx.EvtHandler):
 
         return panel
 
-    def ContainsControl(self, ctrl):
-        return ctrl in (self._checkbox, self._dateCtrl, self._timeCtrl)
-
     def HasOpenPopup(self):
         """Return True if any child control has an open popup."""
         # DateComboCustomCtrl provides public HasOpenPopup()
         if self._dateCtrl.HasOpenPopup():
             return True
         # TimeCtrl uses MaskedFieldsCtrl._popup (same module, acceptable)
-        if hasattr(self._timeCtrl, '_popup') and self._timeCtrl._popup is not None:
+        if (
+            hasattr(self._timeCtrl, "_popup")
+            and self._timeCtrl._popup is not None
+        ):
             return True
         return False
 
-    def Bind(self, eventType, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
+    def Bind(
+        self, event_type, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY
+    ):
         """Bind event handler.
 
         Routing:
@@ -3057,12 +3209,12 @@ class DateTimeComboCtrl(wx.EvtHandler):
         Note: EVT_CHECKBOX is NOT exposed — the checkbox is an internal
         implementation detail.
         """
-        if eventType == EVT_VALUE_CHANGED:
-            super().Bind(eventType, handler, source, id, id2)
+        if event_type == EVT_VALUE_CHANGED:
+            super().Bind(event_type, handler, source, id, id2)
         else:
-            self._checkbox.Bind(eventType, handler, source, id, id2)
-            self._dateCtrl.Bind(eventType, handler, source, id, id2)
-            self._timeCtrl.Bind(eventType, handler, source, id, id2)
+            self._checkbox.Bind(event_type, handler, source, id, id2)
+            self._dateCtrl.Bind(event_type, handler, source, id, id2)
+            self._timeCtrl.Bind(event_type, handler, source, id, id2)
 
     # --- State transitions ---
 
@@ -3128,9 +3280,16 @@ class DateTimeComboCtrl(wx.EvtHandler):
         if newValue is None or newValue == date.DateTime():
             self.DeactivateValue()
         else:
-            self.ActivateValue(datetime.datetime(
-                newValue.year, newValue.month, newValue.day,
-                newValue.hour, newValue.minute, newValue.second))
+            self.ActivateValue(
+                datetime.datetime(
+                    newValue.year,
+                    newValue.month,
+                    newValue.day,
+                    newValue.hour,
+                    newValue.minute,
+                    newValue.second,
+                )
+            )
 
     def GetDate(self):
         return self._dateCtrl.GetDate()
@@ -3177,5 +3336,3 @@ class DateTimeComboCtrl(wx.EvtHandler):
             self._dateCtrl.SetFocus()
         else:
             self._checkbox.SetFocus()
-
-

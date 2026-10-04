@@ -9,6 +9,7 @@ Supports a readOnly parameter to display a color without allowing changes.
 """
 
 import wx
+from taskcoachlib import patterns
 
 
 class ColourPickerCtrl(wx.ColourPickerCtrl):
@@ -45,12 +46,12 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
     def _onRejectFocus(self, event):
         """Reject focus by navigating away, preserving Shift+Tab direction."""
         forward = not wx.GetKeyState(wx.WXK_SHIFT)
-        wx.CallAfter(self.Navigate, forward)
+        patterns.later.soon(self, self.Navigate, forward)
 
     def _onIntercept(self, event):
         if self._readOnly:
             return  # Swallow click when read-only
-        if wx.Platform == '__WXGTK__':
+        if wx.Platform == "__WXGTK__":
             self._showColourDialog()
         else:
             event.Skip()  # Let native handle it
@@ -60,7 +61,7 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
         if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_SPACE):
             if self._readOnly:
                 return  # Swallow when read-only
-            if wx.Platform == '__WXGTK__':
+            if wx.Platform == "__WXGTK__":
                 self._showColourDialog()
             else:
                 event.Skip()  # Let native handle it
@@ -70,7 +71,7 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
     def _onButtonIntercept(self, event):
         if self._readOnly:
             return  # Swallow when read-only
-        if wx.Platform == '__WXGTK__':
+        if wx.Platform == "__WXGTK__":
             pass  # Swallow to prevent native GTK dialog
         else:
             event.Skip()  # Let native handle it

@@ -3452,8 +3452,8 @@ msgid "Insert a new note with the selected categories checked"
 msgstr "向选定目录添加一条新的注释"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1936
-msgid "&Add attachment...\tShift-Ctrl-A"
-msgstr "添加附件(&A)...\tShift-Ctrl-A"
+msgid "&Add attachment..."
+msgstr "添加附件(&A)..."
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1960
 msgid "Error opening attachment"

@@ -62,7 +62,6 @@ class NewSubNoteCommand(base.NewSubItemCommand):
             )
             for parent in self.__parents
         ]
-        self.save_modification_datetimes()
 
     @patterns.eventSource
     def do_command(self, event=None):
@@ -72,14 +71,6 @@ class NewSubNoteCommand(base.NewSubItemCommand):
         # will handle both adding to the container AND calling addChild via
         # _addCompositesToParent, so we just call the parent implementation.
         base.NewItemCommand.do_command(self, event=event)
-
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        base.NewItemCommand.undo_command(self, event=event)
-
-    @patterns.eventSource
-    def redo_command(self, event=None):
-        base.NewItemCommand.redo_command(self, event=event)
 
 
 class DeleteNoteCommand(base.DeleteCommand):
@@ -99,15 +90,13 @@ class AddNoteCommand(base.BaseCommand):
     Otherwise, new empty notes are created. This allows the command to be
     used both for creating new notes and for paste operations.
     """
+
     plural_name = _("Add note")
     singular_name = _('Add note to "%s"')
 
     def __init__(self, *args, **kwargs):
         self.owners = []
-        self.__notes = kwargs.pop(
-            "notes",
-            None
-        )
+        self.__notes = kwargs.pop("notes", None)
         super().__init__(*args, **kwargs)
         self.owners = self.items
         if self.__notes is None:
@@ -115,10 +104,6 @@ class AddNoteCommand(base.BaseCommand):
                 note.Note(subject=_("New note")) for dummy in self.items
             ]
         self.items = self.__notes
-        self.save_modification_datetimes()
-
-    def modified_items(self):
-        return self.owners
 
     def name_subject(self, newNote):  # pylint: disable=W0613
         # Override to use the subject of the owner of the new note instead
@@ -133,23 +118,10 @@ class AddNoteCommand(base.BaseCommand):
         ):  # pylint: disable=W0621
             owner.addNote(note, event=event)
 
-    @patterns.eventSource
-    def removeNotes(self, event=None):
-        for owner, note in zip(
-            self.owners, self.__notes
-        ):  # pylint: disable=W0621
-            owner.removeNote(note, event=event)
-
     def do_command(self):
         super().do_command()
-        self.addNotes()
-
-    def undo_command(self):
-        super().undo_command()
-        self.removeNotes()
-
-    def redo_command(self):
-        super().redo_command()
+        for each in self.__notes:
+            each.set_parent(None)  # The owner's top-level notes
         self.addNotes()
 
 
@@ -170,10 +142,6 @@ class AddSubNoteCommand(base.BaseCommand):
             ],
         )
         self.items = self.__notes
-        self.save_modification_datetimes()
-
-    def modified_items(self):
-        return self.__parents
 
     @patterns.eventSource
     def addNotes(self, event=None):
@@ -185,23 +153,8 @@ class AddSubNoteCommand(base.BaseCommand):
         # The viewer will pick up the subnote from parent.children().
         self.__owner.notesChangedEvent(event, *self.__notes)
 
-    @patterns.eventSource
-    def removeNotes(self, event=None):
-        for parent, subnote in zip(self.__parents, self.__notes):
-            parent.removeChild(subnote, event=event)
-        # Notify the owner that notes changed so the viewer refreshes.
-        self.__owner.notesChangedEvent(event, *self.__notes)
-
     def do_command(self):
         super().do_command()
-        self.addNotes()
-
-    def undo_command(self):
-        super().undo_command()
-        self.removeNotes()
-
-    def redo_command(self):
-        super().redo_command()
         self.addNotes()
 
 
@@ -212,12 +165,6 @@ class RemoveNoteCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__notes = kwargs.pop("notes")
         super().__init__(*args, **kwargs)
-
-    @patterns.eventSource
-    def addNotes(self, event=None):
-        kwargs = dict(event=event)
-        for item in self.items:
-            item.addNotes(*self.__notes, **kwargs)  # pylint: disable=W0142
 
     @patterns.eventSource
     def removeNotes(self, event=None):
@@ -231,12 +178,4 @@ class RemoveNoteCommand(base.BaseCommand):
 
     def do_command(self):
         super().do_command()
-        self.removeNotes()
-
-    def undo_command(self):
-        super().undo_command()
-        self.addNotes()
-
-    def redo_command(self):
-        super().redo_command()
         self.removeNotes()

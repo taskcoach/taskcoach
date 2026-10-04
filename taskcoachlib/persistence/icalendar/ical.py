@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib.domain import date
 
+import datetime
 import time
 
 # { Utility functions
@@ -28,7 +29,9 @@ import time
 def fmt_date_time(dt):
     """Formats a L{taskcoachlib.domain.date.DateTime} object to a string
     suitable for inclusion in an iCalendar file."""
-    dt = dt.utcfromtimestamp(time.mktime(dt.timetuple()))
+    dt = datetime.datetime.fromtimestamp(
+        time.mktime(dt.timetuple()), datetime.timezone.utc
+    )
     return "%04d%02d%02dT%02d%02d%02dZ" % (
         dt.year,
         dt.month,

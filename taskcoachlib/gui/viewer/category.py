@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from taskcoachlib import command, widgets
+from taskcoachlib.config import settings
 from taskcoachlib.domain import category
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, dialog
@@ -53,13 +54,11 @@ class BaseCategoryViewer(
         super().__init__(*args, **kwargs)
         for eventType in [
             category.Category.subjectChangedEventType(),
-            category.Category.appearanceChangedEventType(),
             category.Category.exclusiveSubcategoriesChangedEventType(),
             category.Category.filterChangedEventType(),
+            *category.Category.effective_style_event_types(),
         ]:
-            self.registerObserver(
-                self.onAttributeChanged_Deprecated, eventType
-            )
+            self.registerObserver(self.on_attribute_changed, eventType)
 
     def domainObjectsToView(self):
         return self.taskFile.categories()
@@ -67,7 +66,7 @@ class BaseCategoryViewer(
     def getSupportedPasteTypes(self):
         return (category.Category,)
 
-    def createWidget(self):
+    def create_widget(self):
         imageList = self.createImageList()  # Has side-effects
         self._columns = self._createColumns()
         itemPopupMenu = self.createCategoryPopupMenu()
@@ -95,7 +94,7 @@ class BaseCategoryViewer(
 
     def createCategoryPopupMenu(self, localOnly=False):
         return taskcoachlib.gui.menu.CategoryPopupMenu(
-            self.parent, self.settings, self.taskFile, self, localOnly
+            self.parent, self.taskFile, self, localOnly
         )
 
     def _createColumns(self):
@@ -146,7 +145,9 @@ class BaseCategoryViewer(
                 width=self.getColumnWidth("attachments"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.attachmentImageIndices,
-                headerImageIndex=image_list_cache.get_index("nuvola_status_mail-attachment"),
+                headerImageIndex=image_list_cache.get_index(
+                    "nuvola_status_mail-attachment"
+                ),
                 renderCallback=lambda category: "",
                 **kwargs
             ),
@@ -159,7 +160,9 @@ class BaseCategoryViewer(
                 width=self.getColumnWidth("notes"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.noteImageIndices,
-                headerImageIndex=image_list_cache.get_index("nuvola_apps_knotes"),
+                headerImageIndex=image_list_cache.get_index(
+                    "nuvola_apps_knotes"
+                ),
                 renderCallback=lambda category: "",
                 **kwargs
             )
@@ -180,12 +183,12 @@ class BaseCategoryViewer(
             widgets.Column(
                 "modificationDateTime",
                 _("Modification date"),
+                category.Category.modification_datetime_changed_event_type(),
                 width=self.getColumnWidth("modificationDateTime"),
                 renderCallback=self.renderModificationDateTime,
                 sortCallback=uicommand.ViewerSortByCommand(
                     viewer=self, value="modificationDateTime"
                 ),
-                *category.Category.modificationEventTypes(),
                 **kwargs
             )
         )
@@ -205,9 +208,7 @@ class BaseCategoryViewer(
 
     def createCreationToolBarUICommands(self):
         return (
-            uicommand.CategoryNew(
-                categories=self.presentation(), settings=self.settings
-            ),
+            uicommand.CategoryNew(categories=self.presentation()),
             uicommand.NewSubItem(viewer=self),
         )
 
@@ -225,9 +226,7 @@ class BaseCategoryViewer(
 
     def createColumnUICommands(self):
         commands = [
-            uicommand.ToggleAutoColumnResizing(
-                viewer=self, settings=self.settings
-            ),
+            uicommand.ToggleAutoColumnResizing(viewer=self),
             uicommand.Separator(),
             uicommand.ViewColumn(
                 menu_text=_("&Manual ordering"),
@@ -282,10 +281,7 @@ class BaseCategoryViewer(
         )
         return commands
 
-    def onAttributeChanged(self, newValue, sender):
-        super().onAttributeChanged(newValue, sender)
-
-    def onAttributeChanged_Deprecated(self, event):
+    def on_attribute_changed(self, event):
         if (
             category.Category.exclusiveSubcategoriesChangedEventType()
             in event.types()
@@ -298,7 +294,7 @@ class BaseCategoryViewer(
                 items |= set(item.children())
             self.widget.RefreshItems(*items)  # pylint: disable=W0142
         else:
-            super().onAttributeChanged_Deprecated(event)
+            super().on_attribute_changed(event)
 
     def onCheck(self, event, final):
         categoryToFilter = self.widget.GetItemPyData(event.GetItem())
@@ -342,13 +338,9 @@ class BaseCategoryViewer(
 class CategoryViewer(BaseCategoryViewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.filterUICommand.set_choice(
-            self.settings.getboolean("view", "categoryfiltermatchall")
-        )
+        self.filterUICommand.set_choice(settings.view.categoryfiltermatchall)
 
     def createModeToolBarUICommands(self):
         # pylint: disable=W0201
-        self.filterUICommand = uicommand.CategoryViewerFilterChoice(
-            settings=self.settings
-        )
+        self.filterUICommand = uicommand.CategoryViewerFilterChoice()
         return super().createModeToolBarUICommands() + (self.filterUICommand,)

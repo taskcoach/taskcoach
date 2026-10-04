@@ -25,7 +25,7 @@ from taskcoachlib import meta, render
 
 
 class BackupManagerDialog(wx.Dialog):
-    def __init__(self, parent, settings, selectedFile=None):
+    def __init__(self, parent, selected_file=None):
         super().__init__(
             parent, wx.ID_ANY, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         )
@@ -71,10 +71,10 @@ class BackupManagerDialog(wx.Dialog):
         mainSizer.Add(btnPanel, 0, wx.EXPAND | wx.ALL, 3)
         self.SetSizer(mainSizer)
 
-        self.__filename = selectedFile
+        self.__filename = selected_file
         self.__selection = (None, None)
 
-        self.__manifest = BackupManifest(settings)
+        self.__manifest = BackupManifest()
         self.__filenames = self.__manifest.listFiles()
         selection = None
         for filename in self.__filenames:
@@ -82,7 +82,7 @@ class BackupManagerDialog(wx.Dialog):
                 self.__files.GetItemCount(), os.path.split(filename)[-1]
             )
             self.__files.SetItem(item, 1, filename)
-            if filename == selectedFile:
+            if filename == selected_file:
                 selection = item
 
         btnClose.Bind(wx.EVT_BUTTON, self.DoClose)

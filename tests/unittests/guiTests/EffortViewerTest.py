@@ -16,15 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import gui, config, persistence, render
-from taskcoachlib.domain import task, effort, date
+from taskcoachlib import gui, patterns, persistence, render
+from taskcoachlib.domain import category, task, effort, date
+from taskcoachlib.config import settings
 from unittests import dummy
 import test
 import wx
 
 
 class EffortViewerUnderTest(gui.viewer.EffortViewer):  # pylint: disable=W0223
-    def createWidget(self):
+    def create_widget(self):
         return dummy.DummyWidget(self)
 
     def columns(self):
@@ -34,8 +35,6 @@ class EffortViewerUnderTest(gui.viewer.EffortViewer):  # pylint: disable=W0223
 class EffortViewerForSpecificTasksTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
-        task.Task.settings = self.settings
         self.taskFile = persistence.TaskFile()
         self.task1 = task.Task("Task 1")
         self.task2 = task.Task("Task 2")
@@ -51,7 +50,6 @@ class EffortViewerForSpecificTasksTest(test.wxTestCase):
         self.viewer = EffortViewerUnderTest(
             self.frame,
             self.taskFile,
-            self.settings,
             tasksToShowEffortFor=task.TaskList([self.task1]),
         )
 
@@ -91,7 +89,6 @@ class EffortViewerForSpecificTasksTest(test.wxTestCase):
 class EffortViewerStatusMessageTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
         self.taskFile = persistence.TaskFile()
         self.task = task.Task()
         self.taskFile.tasks().append(self.task)
@@ -101,9 +98,7 @@ class EffortViewerStatusMessageTest(test.wxTestCase):
         self.effort2 = effort.Effort(
             self.task, date.DateTime(2006, 1, 2), date.DateTime(2006, 1, 3)
         )
-        self.viewer = EffortViewerUnderTest(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = EffortViewerUnderTest(self.frame, self.taskFile)
 
     def tearDown(self):
         super().tearDown()
@@ -141,12 +136,18 @@ class EffortViewerStatusMessageTest(test.wxTestCase):
             "Status: 0 tracking",
         )
 
-    def testStatusMessage_OneTaskOneActiveEffort(self):
+    def test_status_message_one_task_one_active_effort(self):
         self.task.addEffort(effort.Effort(self.task))
-        self.assertStatusMessages(
-            "Effort: 0 selected, 1 visible, 1 total. Time spent: 0:00:00 selected, 0:00:00 visible, 0:00:00 total",
-            "Status: 1 tracking",
-        )
+        # Just started: a second may pass before the message is made
+        expected = [
+            (
+                "Effort: 0 selected, 1 visible, 1 total. Time spent: "
+                "0:00:00 selected, %s visible, %s total" % (spent, spent),
+                "Status: 1 tracking",
+            )
+            for spent in ("0:00:00", "0:00:01")
+        ]
+        self.assertIn(self.viewer.statusMessages(), expected)
 
     def testStatusMessageInAggregatedMode_OneTaskNoEffort(self):
         self.viewer.set_aggregation("day")
@@ -176,7 +177,6 @@ class EffortViewerStatusMessageTest(test.wxTestCase):
 class EffortViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
         self.taskFile = persistence.TaskFile()
         self.task = task.Task("task")
         self.taskFile.tasks().append(self.task)
@@ -186,9 +186,7 @@ class EffortViewerTest(test.wxTestCase):
         self.effort2 = effort.Effort(
             self.task, date.DateTime(2006, 1, 2), date.DateTime(2006, 1, 3)
         )
-        self.viewer = gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def tearDown(self):
         super().tearDown()
@@ -211,6 +209,35 @@ class EffortViewerTest(test.wxTestCase):
         self.task.setBackgroundColor(wx.RED)
         self.assertEqual(wx.RED, self.viewer.widget.GetItemBackgroundColour(0))
 
+    def record_refreshes(self):
+        refreshed = []
+        self.viewer.refreshItems = lambda *items: refreshed.extend(items)
+        return refreshed
+
+    def test_task_rename_refreshes_its_effort_rows(self):
+        self.task.addEffort(self.effort1)
+        refreshed = self.record_refreshes()
+        self.task.setSubject("renamed")
+        self.assertIn(self.effort1, refreshed)
+
+    def test_task_category_refreshes_its_effort_rows(self):
+        self.task.addEffort(self.effort1)
+        refreshed = self.record_refreshes()
+        self.task.addCategory(category.Category("category"))
+        self.assertIn(self.effort1, refreshed)
+
+    def test_a_pass_refreshes_its_tasks_effort_rows_once_after_it(self):
+        self.task.addEffort(self.effort1)
+        self.task.addEffort(self.effort2)
+        refreshes = []
+        self.viewer.refreshItems = lambda *items: refreshes.append(set(items))
+        patterns.Event("scheduler.aboutToPass", self).send()
+        for event_type in task.Task.effective_style_event_types():
+            patterns.Event(event_type, self.task, None).send()
+        self.assertEqual([], refreshes)
+        patterns.Event("scheduler.pass", self).send()
+        self.assertEqual([{self.effort1, self.effort2}], refreshes)
+
     def testSearch(self):
         self.task.addEffort(self.effort1)
         self.viewer.presentation().setSearchFilter("no such task")
@@ -222,7 +249,7 @@ class EffortViewerTest(test.wxTestCase):
         self.task.addEffort(self.effort1)
         child = task.Task("child")
         self.task.addChild(child)
-        child.setParent(self.task)
+        child.set_parent(self.task)
         self.taskFile.tasks().append(child)
         child.addEffort(effort.Effort(child))
         self.assertEqual(2, len(self.viewer.presentation()))
@@ -254,14 +281,11 @@ class EffortViewerAggregationTestCase(test.wxTestCase):
     aggregation = "Subclass responsibility"
 
     def createViewer(self):
-        return gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        return gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
-        self.settings.set("effortviewer", "aggregation", self.aggregation)
+        settings.set("effortviewer", "aggregation", self.aggregation)
 
         self.taskFile = persistence.TaskFile()
         self.viewer = self.createViewer()
@@ -315,19 +339,14 @@ class EffortViewerAggregationRoundingTestCase(test.wxTestCase):
     consolidateEffortsPerTask = None
 
     def createViewer(self):
-        return gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        return gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
-        self.settings.set("effortviewer", "aggregation", self.aggregation)
-        self.settings.setint("effortviewer", "round", self.roundingValue)
-        self.settings.setboolean(
-            "effortviewer", "alwaysroundup", self.alwaysRoundUp
-        )
-        self.settings.setboolean(
+        settings.set("effortviewer", "aggregation", self.aggregation)
+        settings.set("effortviewer", "round", self.roundingValue)
+        settings.set("effortviewer", "alwaysroundup", self.alwaysRoundUp)
+        settings.set(
             "effortviewer",
             "consolidateeffortspertask",
             self.consolidateEffortsPerTask,
@@ -540,6 +559,19 @@ class EffortViewerAggregationRoundingMonthUpConsolidationTest(
 
 
 class CommonTestsMixin(object):
+    def test_stop_change_refreshes_its_row(self):
+        changed = self.task.efforts()[0]
+        rows = [
+            each
+            for each in self.viewer.presentation()
+            if each is changed
+            or changed in getattr(each, "_getEfforts", list)()
+        ]
+        refreshed = []
+        self.viewer.refreshItems = lambda *items: refreshed.extend(items)
+        changed.setStop(changed.getStop() + date.ONE_HOUR)
+        self.assertTrue([each for each in rows if each in refreshed])
+
     def testNumberOfItems(self):
         self.assertEqual(self.expectedNumberOfItems, self.viewer.size())
 
@@ -559,7 +591,7 @@ class CommonTestsMixin(object):
     def testAggregationIsSavedInSettings(self):
         self.assertEqual(
             self.aggregation,
-            self.settings.get(self.viewer.settingsSection(), "aggregation"),
+            settings.get(self.viewer.settingsSection(), "aggregation"),
         )
 
     def testToolbarChoiceCtrlShowsAggegrationMode(self):
@@ -744,14 +776,11 @@ class EffortViewerRenderTestMixin(object):
     aggregation = "Subclass responsibility"
 
     def createViewer(self):
-        return gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        return gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
-        self.settings.set("effortviewer", "aggregation", self.aggregation)
+        settings.set("effortviewer", "aggregation", self.aggregation)
 
         self.taskFile = persistence.TaskFile()
         self.task = task.Task("task")

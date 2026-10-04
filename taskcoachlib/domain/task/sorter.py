@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib.domain import base
-from pubsub import pub
 from . import task
 
 
@@ -44,16 +43,39 @@ class Sorter(base.TreeSorter):
             task.Task.actualStartDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
         ):
-            pub.subscribe(self.onAttributeChanged, event_type)
+            self.registerObserver(
+                self.on_attribute_changed, eventType=event_type
+            )
         # Sent once after Preferences saved all the priorities
         self.registerObserver(
             self._on_status_sort_priority_changed,
             eventType="settings.statussortpriority.changed",
         )
+        # The clock changes statuses without a date event: re-sort once
+        # after the loop's pass, not for each task
+        self.registerObserver(
+            self.__on_status_changed,
+            eventType=task.Task.statusChangedEventType(),
+        )
+        self.registerObserver(self.__on_pass, eventType="scheduler.pass")
 
     def _on_status_sort_priority_changed(self, event):  # pylint: disable=W0613
         """Re-sort when status sort priorities change in settings."""
         self.reset()
+
+    def __on_status_changed(self, event):  # pylint: disable=W0613
+        self.__status_changed = True
+
+    def __on_pass(self, event):  # pylint: disable=W0613
+        if self.__status_changed and (
+            self.__sort_by_task_status_first
+            or any(key.lstrip("-") == "status" for key in self.sort_keys())
+        ):
+            self.reset()
+
+    def reset(self, *args, **kwargs):  # pylint: disable=W0221
+        self.__status_changed = False
+        return super().reset(*args, **kwargs)
 
     def set_tree_mode(self, tree_mode=True):
         self.__tree_mode = tree_mode
@@ -62,8 +84,12 @@ class Sorter(base.TreeSorter):
             observable.set_tree_mode(tree_mode)
         else:
             from taskcoachlib.meta.debug import log_step
-            log_step("set_tree_mode: Sorter observable is %s, expected Filter"
-                     % type(observable).__name__, prefix="FILTER")
+
+            log_step(
+                "set_tree_mode: Sorter observable is %s, expected Filter"
+                % type(observable).__name__,
+                prefix="FILTER",
+            )
         self.reset(force_event=True)
 
     def tree_mode(self):
@@ -84,21 +110,23 @@ class Sorter(base.TreeSorter):
         if self.__sort_by_task_status_first:
             if self.is_ascending():
                 # Negate priority so higher priority (more urgent) sorts first
-                return lambda task: [-task.computedStatus().getSortPriority(task.settings)]
+                return lambda task: [
+                    -task.computedStatus().get_sort_priority()
+                ]
             else:
                 # For descending, use priority directly (higher sorts first)
-                return lambda task: [task.computedStatus().getSortPriority(task.settings)]
+                return lambda task: [task.computedStatus().get_sort_priority()]
         else:
             return lambda task: []
 
-    def _registerObserverForAttribute(self, attribute):
+    def _register_observer_for_attribute(self, attribute):
         # Sorter is always observing task dates and prerequisites because
         # sorting by status depends on those attributes. Hence we don't need
         # to subscribe to these attributes when they become the sort key.
         if attribute not in self.TaskStatusAttributes:
-            super()._registerObserverForAttribute(attribute)
+            super()._register_observer_for_attribute(attribute)
 
-    def _removeObserverForAttribute(self, attribute):
-        # See comment at _registerObserverForAttribute.
+    def _remove_observer_for_attribute(self, attribute):
+        # See comment at _register_observer_for_attribute.
         if attribute not in self.TaskStatusAttributes:
-            super()._removeObserverForAttribute(attribute)
+            super()._remove_observer_for_attribute(attribute)

@@ -19,8 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test, io, time
-from taskcoachlib import persistence, gui, config, meta
+import datetime
+from taskcoachlib import persistence, gui, meta
 from taskcoachlib.domain import task, effort, date
+from taskcoachlib.config import settings
 
 
 class VCalTestCase(test.wxTestCase):
@@ -28,7 +30,6 @@ class VCalTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
         self.fd = io.StringIO()  # The app writes text (codecs.open)
         self.writer = persistence.iCalendarWriter(self.fd)
         self.taskFile = persistence.TaskFile()
@@ -39,7 +40,7 @@ class VCalTestCase(test.wxTestCase):
         self.taskFile.stop()
 
     def writeAndRead(self):
-        self.writer.write(self.viewer, self.settings, self.selectionOnly)
+        self.writer.write(self.viewer, self.selectionOnly)
         return self.fd.getvalue()
 
     def selectItems(self, items):
@@ -85,9 +86,7 @@ class VCalEffortWriterTestCase(VCalTestCase):
         self.task1.addEffort(self.effort1)
         self.task1.addEffort(self.effort2)
         self.taskFile.tasks().extend([self.task1])
-        self.viewer = gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        self.viewer = gui.viewer.EffortViewer(self.frame, self.taskFile)
         self.viewer.widget.select([self.effort1])
         self.viewer.updateSelection()
         self.vcalFile = self.writeAndRead()
@@ -112,34 +111,38 @@ class VCalEffortCommonTestsMixin(VCalendarCommonTestsMixin):
 
     def testEffortStart(self):
         startLocal = date.DateTime(2000, 1, 1, 1, 1, 1)
-        startUTC = startLocal.utcfromtimestamp(
-            time.mktime(startLocal.timetuple())
+        start_utc = datetime.datetime.fromtimestamp(
+            time.mktime(startLocal.timetuple()), datetime.timezone.utc
         )
-        self.assertTrue(
+        self.assertIn(
             "DTSTART:%04d%02d%02dT%02d%02d%02dZ"
             % (
-                startUTC.year,
-                startUTC.month,
-                startUTC.day,
-                startUTC.hour,
-                startUTC.minute,
-                startUTC.second,
-            )
+                start_utc.year,
+                start_utc.month,
+                start_utc.day,
+                start_utc.hour,
+                start_utc.minute,
+                start_utc.second,
+            ),
+            self.vcalFile,
         )
 
     def testEffortEnd(self):
         endLocal = date.DateTime(2000, 2, 2, 2, 2, 2)
-        endUTC = endLocal.utcfromtimestamp(time.mktime(endLocal.timetuple()))
-        self.assertTrue(
+        end_utc = datetime.datetime.fromtimestamp(
+            time.mktime(endLocal.timetuple()), datetime.timezone.utc
+        )
+        self.assertIn(
             "DTEND:%04d%02d%02dT%02d%02d%02dZ"
             % (
-                endUTC.year,
-                endUTC.month,
-                endUTC.day,
-                endUTC.hour,
-                endUTC.minute,
-                endUTC.second,
-            )
+                end_utc.year,
+                end_utc.month,
+                end_utc.day,
+                end_utc.hour,
+                end_utc.minute,
+                end_utc.second,
+            ),
+            self.vcalFile,
         )
 
     def testEffortId(self):
@@ -181,10 +184,8 @@ class VCalTaskWriterTestCase(VCalTestCase):
             modificationDateTime=date.DateTime(2012, 1, 1),
         )
         self.taskFile.tasks().extend([self.task1, self.task2])
-        self.settings.set("taskviewer", "treemode", self.tree_mode)
-        self.viewer = gui.viewer.TaskViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        settings.set("taskviewer", "treemode", self.tree_mode)
+        self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
         self.selectItems([self.task2])
         self.vcalFile = self.writeAndRead()
 
@@ -237,11 +238,11 @@ class TestSelectionOnlyMixin(VCalTaskCommonTestsMixin):
 
 
 class TestSelectionList(TestSelectionOnlyMixin, VCalTaskWriterTestCase):
-    tree_mode = "False"
+    tree_mode = False
 
 
 class TestSelectionTree(TestSelectionOnlyMixin, VCalTaskWriterTestCase):
-    tree_mode = "True"
+    tree_mode = True
 
 
 class TestNotSelectionOnlyMixin(VCalTaskCommonTestsMixin):
@@ -255,11 +256,11 @@ class TestNotSelectionOnlyMixin(VCalTaskCommonTestsMixin):
 
 
 class TestNotSelectionList(TestNotSelectionOnlyMixin, VCalTaskWriterTestCase):
-    tree_mode = "False"
+    tree_mode = False
 
 
 class TestNotSelectionTree(TestNotSelectionOnlyMixin, VCalTaskWriterTestCase):
-    tree_mode = "True"
+    tree_mode = True
 
 
 class FoldTest(test.TestCase):

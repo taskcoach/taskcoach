@@ -6,6 +6,7 @@ This document describes the system tray (notification area) icon implementation 
 
 - [TODO](#todo)
 - [Overview](#overview)
+- [Minimize and Hide](#minimize-and-hide)
 - [Implementation Architecture](#implementation-architecture)
 - [Platform Behavior Matrix](#platform-behavior-matrix)
 - [Windows Quit-from-Tray Safety](#windows-quit-from-tray-safety)
@@ -25,28 +26,52 @@ This document describes the system tray (notification area) icon implementation 
 
 ## TODO
 
-1. **Extract base class.** `TaskBarIcon` and `AppIndicatorTaskBarIcon` duplicate
-   ~100 lines of identical logic (see [Code Duplication](#code-duplication)).
-   Extract shared logic into `TaskBarIconBase(patterns.Observer)`. Subclasses
-   override only `_set_icon()` and menu handling. `TaskBarIcon` additionally
-   inherits from `wx.adv.TaskBarIcon`.
+1. ~~**Extract base class.**~~ Will not be done, **ruled by designer
+   2026-09-29** (D4 in
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-and-will-not-do)):
+   the two classes differ by design and share little
+   ([Code Duplication](#code-duplication)).
 
 ---
 
 ## Overview
 
 Task Coach displays a system tray icon that allows users to:
-- Show/hide the main window
+- Minimize and restore the main window
 - Access common actions (new task, new effort, etc.)
 - Start/stop effort tracking
 - See tracking status via icon animation
+
+## Minimize and Hide
+
+Task Coach does not tell iconized, minimized and hidden apart: the
+tray's Hide minimizes, and the window keeps its taskbar or dock entry,
+wherever the platform lets an app minimize itself. The window's own
+buttons keep their meaning: Close quits (asking to save any changes),
+Minimize minimizes. The options to start minimized, to hide the window
+when minimized and to minimize it when closed were removed 2026-09-30,
+**ruled by designer** (why: [Modern best practice](#modern-best-practice-2025-2026));
+old settings files lose them on load.
+
+| Session | Tray Hide | Taskbar entry | Tray restore |
+|---------|-----------|---------------|--------------|
+| Windows, X11 (any desktop) | Minimizes (`Iconize()`) | Kept | Yes |
+| macOS | Menu: minimizes to the Dock; double click: raises only | Kept | Yes |
+| KDE Plasma, Wayland | Minimizes through `org_kde_plasma_window_management` if KWin offers it to Task Coach, else hides; untested (D5) | Kept, or lost when hidden | Yes |
+| Other Wayland (GNOME, wlroots, COSMIC) | **Hides** (`Hide()`) | **Lost** until restored | Yes, the only way back |
+
+Wayland is the one exception: it gives an app no minimize it can undo
+([Window Show/Hide on Wayland](#window-showhide-on-wayland)), so
+without a desktop protocol the tray hides the window instead. The
+window's own Minimize button is the compositor's and minimizes as
+usual there.
 
 ## Implementation Architecture
 
 ### Platform Detection Flow
 
 ```
-create_taskbar_icon(mainwindow, taskList, settings)
+create_taskbar_icon(mainwindow, task_list)
   │
   ├─ Linux/GTK + AppIndicator available → AppIndicatorTaskBarIcon
   │   .__init__()
@@ -85,20 +110,20 @@ Size constants: `TRAY_ICON_SIZE_MACOS` (128) and `LIST_ICON_SIZE` (16) in
 
 | OS | Distro | Desktop | Session | Implementation | Left-Click | Right-Click | Notes |
 |----|--------|---------|---------|----------------|------------|-------------|-------|
-| Windows | — | — | — | wx.adv.TaskBarIcon | Show/hide | Popup menu | Full support |
-| macOS | — | — | — | wx.adv.TaskBarIcon | Show/hide | Popup menu | Full support |
-| Linux | — | GNOME | X11 | AppIndicator | Menu | Menu | Requires extension [1] |
-| Linux | — | GNOME | Wayland | AppIndicator | Menu | Menu | Requires extension [1] |
+| Windows | - | - | - | wx.adv.TaskBarIcon | Minimize/restore | Popup menu | Full support |
+| macOS | - | - | - | wx.adv.TaskBarIcon | Double click: raise/restore | Popup menu | Full support |
+| Linux | - | GNOME | X11 | AppIndicator | Menu | Menu | Requires extension [1] |
+| Linux | - | GNOME | Wayland | AppIndicator | Menu | Menu | Requires extension [1] |
 | Linux | Ubuntu | GNOME | X11 | AppIndicator | Menu | Menu | Extension pre-installed |
 | Linux | Ubuntu | GNOME | Wayland | AppIndicator | Menu | Menu | Extension pre-installed |
-| Linux | — | KDE Plasma | X11 | AppIndicator | Menu | Conflict [2] | Use left-click |
-| Linux | — | KDE Plasma | Wayland | AppIndicator | Menu | Menu | |
-| Linux | — | XFCE | X11 | AppIndicator | Menu | Menu | wx may work [3] |
-| Linux | — | LXDE | X11 | AppIndicator | Menu | Menu | wx right-click broken [4] |
-| Linux | — | LXQt | X11 | AppIndicator | Menu | Menu | |
-| Linux | — | LXQt | Wayland | AppIndicator | Menu | Menu | |
-| Linux | — | MATE | X11 | AppIndicator | Menu | Menu | |
-| Linux | — | Cinnamon | X11 | AppIndicator | Menu | Menu | wx may work [3] |
+| Linux | - | KDE Plasma | X11 | AppIndicator | Menu | Conflict [2] | Use left-click |
+| Linux | - | KDE Plasma | Wayland | AppIndicator | Menu | Menu | |
+| Linux | - | XFCE | X11 | AppIndicator | Menu | Menu | wx may work [3] |
+| Linux | - | LXDE | X11 | AppIndicator | Menu | Menu | wx right-click broken [4] |
+| Linux | - | LXQt | X11 | AppIndicator | Menu | Menu | |
+| Linux | - | LXQt | Wayland | AppIndicator | Menu | Menu | |
+| Linux | - | MATE | X11 | AppIndicator | Menu | Menu | |
+| Linux | - | Cinnamon | X11 | AppIndicator | Menu | Menu | wx may work [3] |
 
 **Notes:**
 
@@ -124,16 +149,19 @@ user dismisses the menu. When the user clicks Quit from the tray menu:
 
 ### The Fix
 
-`FileQuit.do_command()` uses `wx.CallAfter()` to defer the `Close()` call:
+`FileQuit.do_command()` defers the `Close()` call to the next idle
+moment with `patterns.later.soon()` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)):
 
 ```python
 def do_command(self, event):
-    wx.CallAfter(self.main_window().Close, force=True)
+    patterns.later.soon(
+        self.main_window(), self.main_window().Close, force=True
+    )
 ```
 
 This lets `PopupMenu()` return cleanly before `quit_application()` tears
-down the tray icon. The AppIndicator implementation already uses this
-pattern (line 546: `lambda w: wx.CallAfter(self.__window.Close)`).
+down the tray icon. The AppIndicator menu's Quit item does the same
+(`lambda w: patterns.later.soon(self.__window, self.__window.Close)`).
 
 ### Best Practices (from wxPython docs)
 
@@ -146,18 +174,19 @@ The wxPython documentation recommends:
 3. **`Destroy()` on TaskBarIcon schedules delayed destruction** for the next
    event loop iteration, but this doesn't help when `quit_application()`
    immediately tears everything down in the same call chain.
-4. **Always defer quit actions with `wx.CallAfter`** when triggered from a
-   tray popup menu, so the modal menu loop exits first.
+4. **Always defer quit actions to the next idle moment** when triggered
+   from a tray popup menu, so the modal menu loop exits first.
 
-Task Coach uses manual `PopupMenu()` + `wx.CallAfter` for the quit action,
-which is safe and avoids the need to restructure the menu system.
+Task Coach uses manual `PopupMenu()` + `patterns.later.soon()` for the
+quit action, which is safe and avoids the need to restructure the menu
+system.
 
 ## Tested Configurations
 
 | OS | Distro | Desktop | Session | wx.adv.TaskBarIcon | AppIndicator |
 |----|--------|---------|---------|-------------------|--------------|
-| Windows | — | — | — | Full support | N/A |
-| macOS | — | — | — | Full support | N/A |
+| Windows | - | - | - | Full support | N/A |
+| macOS | - | - | - | Full support | N/A |
 | Linux | Debian | LXDE | X11 | Left-click only | Full support |
 | Linux | Kubuntu | KDE Plasma | X11 | Left-click only | Left-click only (right conflict) |
 | Linux | Kubuntu | KDE Plasma | Wayland | N/A (no XEmbed) | Full support |
@@ -347,7 +376,7 @@ Synthesis of current upstream guidance (KDE, freedesktop):
 | Concern | Best practice | Task Coach status |
 |---------|---------------|-------------------|
 | Tray presence | StatusNotifierItem over D-Bus | Have it (libayatana) |
-| Going hidden | App owns hide/show itself (self-tracked); prefer **close-to-background** over intercepting the minimize button (the latter is now an anti-pattern, flagged for GNOME) | The self-tracked tray Show/Hide toggle is exactly this |
+| Going hidden | App owns hide/show itself (self-tracked), from the tray; the window's buttons keep their meaning: Close closes, Minimize minimizes. Neither intercepting Minimize to hide nor turning Close into minimize or hide is recommended (see below) | The self-tracked tray Show/Hide toggle is exactly this |
 | "Running in background" declaration | `org.freedesktop.portal.Background` (XDG portal; KDE/GNOME/Cinnamon/Deepin). Future-proof, but *indication only* - it does **not** restore the window | Optional future add-on; does not solve restore |
 | Restore / raise | Use the `xdg-activation-v1` token the SNI host passes on tray `Activate` | Limited: libayatana is menu-centric and does not forward the token, so `Raise()` is best-effort. Full compliance needs raw-SNI or Qt/KStatusNotifierItem, not GTK3+libayatana |
 
@@ -363,7 +392,23 @@ Best-practice references:
 [KDE - On Window Activation (Broulik, 2025)](https://blog.broulik.de/2025/08/on-window-activation/),
 [Betterbird - System tray on Linux/Wayland (2026)](https://blog.betterbird.eu/2026/01/system-tray-support-on-linux-and-windows-and-wayland),
 [Liferea - use the Background portal](https://github.com/lwindolf/liferea/issues/1418),
-[Spotube - minimize-to-tray anti-pattern](https://github.com/KRTirtho/spotube/issues/1330).
+[Spotube - close-to-tray leaves the app unreachable on GNOME](https://github.com/KRTirtho/spotube/issues/1330).
+
+The window's own buttons (checked 2026-09-30):
+
+- Windows: minimizing to the notification area "is no longer recommended"
+  (Windows 7 on); where offered, opt in only, and "Use the Minimize
+  button on the application's title bar, not the Close button"
+  ([Notification Area](https://learn.microsoft.com/en-us/windows/win32/uxguide/winenv-notification)).
+- macOS: closing a single-window app's window quits it (after saving);
+  a multi-window app keeps running with its menu bar, never minimized.
+- GNOME: Close closes the window, Ctrl+Q quits; an app that keeps
+  running without windows goes through the Background portal, which
+  lists it in the system menu with a button to stop it.
+- KDE leaves it to each app; its usability discussions proposed a
+  separate "to tray" button rather than overloading Close.
+- Chat apps that close to the tray by default (Discord, Slack) draw
+  steady reports of users thinking the app quit.
 
 #### Coverage matrix: where "minimize to tray, keep taskbar entry" can work
 
@@ -387,11 +432,12 @@ session type explicitly.
 The last row is the single irreducible dead end: the user has a
 taskbar, but Mutter exposes no client window-management protocol and
 its extension taskbars are driven by GNOME Shell's internal JS APIs
-that an external app cannot reach (and GTK3 `Iconize()` is a no-op on
-Wayland anyway). It cannot be solved from application code; it is
-documented here as a known limitation. On that configuration the tray
-"Hide" is unavoidably tray-only, by Mutter's design - not a Task
-Coach defect.
+that an external app cannot reach. GTK3 `Iconize()` does ask for the
+minimize (`xdg_toplevel_set_minimized`, `gdk_wayland_window_iconify()`
+in GTK 3.24.38), but nothing lets the app undo it or learn that the
+user did; only unmapping and remapping the window (`Hide()`, `Show()`)
+brings it back. So the tray "Hide" is tray-only there, by Mutter's
+design.
 
 Consequence for implementation: a single "out-of-band toplevel
 manager" abstraction with two protocol backends
@@ -434,7 +480,7 @@ fallback. KDE Wayland runtime behaviour requires on-box verification
 
 ## Menu Contents
 
-Both `TaskBarMenu` (Windows/macOS) and `AppIndicatorTaskBarIcon._buildGtkMenu`
+Both `TaskBarMenu` (Windows/macOS) and `AppIndicatorTaskBarIcon._build_gtk_menu`
 (Linux) provide the same items:
 
 1. **Hide / Restore** - Toggle main window visibility (dynamic label)
@@ -460,9 +506,15 @@ in `popup_taskbar_menu()` each time the menu is shown.
 
 ### Hide / Restore Toggle
 
-`MainWindowRestore` (in `uicommand.py`) is a state-aware UICommand:
-- When the window is visible: label is **"Hide"**, action calls `Iconize()`
-- When the window is hidden/iconized: label is **"Restore"**, action calls `restore()`
+`MainWindowRestore` (in `uicommand.py`, the wx menu on Windows, macOS
+and X11 desktops with a working wx tray) is a state-aware UICommand:
+- When the window is shown: label is **"Hide"**, action calls
+  `Iconize()`, which minimizes ([Minimize and Hide](#minimize-and-hide))
+- When the window is minimized: label is **"Restore"**, action calls
+  `restore()`
+
+The AppIndicator item calls `on_taskbar_click`, the controller's
+minimize or restore.
 
 The label is updated dynamically via `get_menu_text()`: `popup_taskbar_menu()`
 calls `item._command.get_menu_text()` and applies `SetItemLabel()` before
@@ -473,21 +525,27 @@ as a static label (GTK menus don't support per-show label changes as easily).
 
 ### Linux
 
-AppIndicator requires GObject Introspection bindings:
+AppIndicator requires GObject Introspection bindings, and PyGObject
+to load them from Python; the .deb, .rpm and Arch packages declare
+both. Without PyGObject the log says "No working tray backend
+available" and Task Coach runs without a tray icon where the desktop
+needs AppIndicator (P62 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+The Flatpak's GNOME runtime has it; the AppImage bundles neither.
 
 **Debian/Ubuntu:**
 ```bash
-sudo apt install gir1.2-ayatanaappindicator3-0.1
+sudo apt install python3-gi gir1.2-ayatanaappindicator3-0.1
 ```
 
 **Fedora:**
 ```bash
-sudo dnf install libayatana-appindicator-gtk3
+sudo dnf install python3-gobject libayatana-appindicator-gtk3
 ```
 
 **Arch Linux:**
 ```bash
-sudo pacman -S libayatana-appindicator
+sudo pacman -S python-gobject libayatana-appindicator
 ```
 
 ### GNOME Shell Note
@@ -531,19 +589,38 @@ Key log messages:
 
 ## Code Duplication
 
-`TaskBarIcon` and `AppIndicatorTaskBarIcon` in `taskbaricon.py` duplicate
-~100 lines of identical logic. Only `__set_icon()` and menu handling differ.
+`TaskBarIcon` and `AppIndicatorTaskBarIcon` in `taskbaricon.py` share
+little: measured 2026-09-29, 31 lines are identical (six small
+methods: ticking, the tracking icon, the default icon, the tooltip
+getter); about 90 more are alike but differ; the rest (about 400 of
+the AppIndicator's 560) is platform specific. They stay separate
+(D4), because they differ by design:
 
-### Shared (duplicated)
+- **Different objects.** `TaskBarIcon` is a `wx.adv.TaskBarIcon`, a wx
+  object with wx's lifetime; `AppIndicatorTaskBarIcon` is a plain
+  object driving GTK through AppIndicator over D-Bus, with stubs to
+  look like a wx one, so even its deferred calls name the main window
+  as their owner ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+- **Different icons.** Catalog icons, sized by wx, against icon names
+  in the `tray/hicolor` theme.
+- **Different menus.** A wx menu built when clicked, with left and
+  right click apart, against a GTK menu rebuilt on every change,
+  shown on any click (the SNI protocol is menu-centric).
+- **Platforms apart.** A shared base would couple Windows/macOS code
+  with Linux code, so a change for one risks the other, which cannot
+  be tested on the same machine; for about 30 lines saved.
+
+The tables below compare them.
+
+### In Both Classes
 
 | Code | Description |
 |------|-------------|
-| Observer registration | `registerObserver`, `pub.subscribe` for task/tracking/due events |
+| Observer registration | `registerObserver` for task/tracking/due events |
 | `on_task_list_changed` | Tooltip + start/stop ticking |
 | `on_tracking_changed` | Register/remove subject observer, tooltip, start/stop |
 | `on_change_subject` | Tooltip update |
-| `on_change_due_date_time` | Tooltip update |
-| `on_change_due_date_time_deprecated` | Tooltip update |
+| `on_change_due_date_time` | Tooltip update; during a bulk command or a scheduler pass once, after it (`_OnceAfterBursts`, shared) |
 | `on_every_second` | Blink setting check, toggle icon, set icon |
 | `tool_tip_messages` | Status message templates |
 | `__set_tooltip_text` | Build tooltip from tracked tasks / status counts |
@@ -552,7 +629,7 @@ Key log messages:
 | `__start_or_stop_ticking` | Dispatch to start/stop |
 | `__start_ticking` / `__stop_ticking` | Clock + icon control |
 | `start_clock` / `stop_clock` / `_on_timer_second` | `timer.second` subscription |
-| Getters | `tooltip()`, `icon_id()` / `tray_icon_id()`, `default_icon_id()` / `default_tray_icon_id()` |
+| Getters | `tooltip()`; the wx icon also `icon_id()`, `default_icon_id()` |
 
 ### Platform-specific (different)
 

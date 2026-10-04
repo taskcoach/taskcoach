@@ -17,12 +17,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import time
+
 import wx
 from taskcoachlib import operating_system, patterns
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.meta.debug import log_step
-
 
 """ User interface commands (subclasses of UICommand) are actions that can
     be invoked by the user via the user interface (menu's, toolbar, etc.).
@@ -31,27 +32,58 @@ from taskcoachlib.meta.debug import log_step
 """  # pylint: disable=W0105
 
 
+# A window a command opened opens again at most once a second
+_SAME_WINDOW_INTERVAL = 1.0
+
+
+class _SameWindowThrottle:
+    """Keeps a command from opening the same window again within
+    _SAME_WINDOW_INTERVAL of its opening: a held key, or presses queued
+    while the system is busy, would open one per press
+    (docs/MENUS.md#the-same-window-once-a-second). Other windows, and
+    commands that open none, are not held back."""
+
+    def __init__(self):
+        # same_window_key() -> [when that window was open, skip logged]
+        self.__opened = {}
+
+    def too_soon(self, key):
+        entry = self.__opened.get(key)
+        if entry is None:
+            return False
+        since = time.monotonic() - entry[0]
+        if since >= _SAME_WINDOW_INTERVAL:
+            return False
+        if not entry[1]:
+            entry[1] = True
+            log_step(
+                "%s: the same window opened %.2f s ago; skipped for a"
+                " second" % (key[0].__name__, since),
+                prefix="COMMAND",
+            )
+        return True
+
+    def opened(self, key):
+        now = time.monotonic()
+        for old in [
+            each
+            for each, (when, _) in self.__opened.items()
+            if now - when >= _SAME_WINDOW_INTERVAL
+        ]:
+            del self.__opened[old]
+        self.__opened[key] = [now, False]
+
+
+_same_window = _SameWindowThrottle()
+
+
 class MenuItem(wx.MenuItem):
-    """Menu item that knows its command and can update its own enabled state."""
+    """Menu item that knows its command; the command answers wx's
+    EVT_UPDATE_UI for it (UICommand.on_menu_update_ui())."""
 
     def __init__(self, command, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._command = command
-
-    def update_state(self):
-        enabled = bool(self._command.enabled(None))
-        self.Enable(enabled)
-        new_text = self._command.current_menu_text()
-        if new_text is not None:
-            try:
-                self.SetItemLabel(new_text)
-            except Exception as e:
-                log_step("MenuItem.update_state: dead menu item: %s" % e,
-                         prefix="DEAD-OBJ")
-        if enabled and self.IsCheckable():
-            check = self._command.checked()
-            if check is not None:
-                self.Check(check)
 
 
 class UICommand(patterns.Observer):
@@ -118,13 +150,22 @@ class UICommand(patterns.Observer):
                     flags |= dict(Shift=wx.ACCEL_SHIFT, Alt=wx.ACCEL_ALT)[key]
                 else:
                     assert key in ["ENTER", "RETURN"], key
+            if flags == wx.ACCEL_NORMAL:
+                # Plain Enter is the list's (Viewer's accelerator
+                # table): text fields keep it
+                return []
             return [(flags, wx.WXK_NUMPAD_ENTER, self.id)]
         return []
 
     def add_to_menu(self, menu, window, position=None, sub_menu=None):
         menu_item = MenuItem(
-            self, menu, self.id, self.menu_text, self.help_text, self.kind,
-            subMenu=sub_menu
+            self,
+            menu,
+            self.id,
+            self.menu_text,
+            self.help_text,
+            self.kind,
+            subMenu=sub_menu,
         )
         self.menu_items.append(menu_item)
         self.add_bitmap_to_menu_item(menu_item)
@@ -133,7 +174,24 @@ class UICommand(patterns.Observer):
         else:
             menu.Insert(position, menu_item)
         self.bind(window, self.id)
+        # Menu items only: toolbar buttons follow signals, not update
+        # events (docs/MENUS.md)
+        window.Bind(wx.EVT_UPDATE_UI, self.on_menu_update_ui, id=self.id)
         return self.id
+
+    def on_menu_update_ui(self, event):
+        """wx asks a menu item's state when its menu opens, before a
+        popup menu shows and before the item's shortcut acts, which
+        GTK ignores while the item is disabled (docs/MENUS.md)."""
+        # Enabled and checked change no menu geometry; labels change
+        # while the menu is closed (docs/PUBLISHER_OBSERVER.md, GTK3
+        # Dynamic Menu Item Sizing)
+        enabled = bool(self.enabled(None))
+        event.Enable(enabled)
+        if enabled and event.IsCheckable():
+            check = self.checked()
+            if check is not None:
+                event.Check(check)
 
     def add_bitmap_to_menu_item(self, menu_item):
         if (
@@ -151,8 +209,11 @@ class UICommand(patterns.Observer):
             bitmap = icon_catalog.get_bitmap(self.icon_id, LIST_ICON_SIZE)
             if not bitmap.IsOk():
                 # TRAP: icon_id given but invalid - this is an error
-                log_step("ERROR: invalid icon '%s' for menu item '%s'" %
-                         (self.icon_id, menu_item.GetItemLabelText()), prefix="ICON")
+                log_step(
+                    "ERROR: invalid icon '%s' for menu item '%s'"
+                    % (self.icon_id, menu_item.GetItemLabelText()),
+                    prefix="ICON",
+                )
                 return
 
             menu_item.SetBitmap(bitmap)
@@ -167,6 +228,7 @@ class UICommand(patterns.Observer):
                 break
         if menu_id is not None:
             self.unbind(window, menu_id)
+            window.Unbind(wx.EVT_UPDATE_UI, id=menu_id)
 
     def append_to_toolbar(self, toolbar):
         self.toolbar = toolbar
@@ -196,8 +258,24 @@ class UICommand(patterns.Observer):
         the command is possible even when not enabled, so we need an
         explicit check here. Otherwise hitting return on an empty
         selection in the ListCtrl would bring up the TaskEditor."""
-        if self.enabled(event):
-            return self.do_command(event, *args, **kwargs)
+        if not self.enabled(event):
+            return None
+        key = self.same_window_key()
+        if _same_window.too_soon(key):
+            return None
+        windows = len(wx.GetTopLevelWindows())
+        result = self.do_command(event, *args, **kwargs)
+        if len(wx.GetTopLevelWindows()) > windows:
+            _same_window.opened(key)
+        return result
+
+    def same_window_key(self):
+        """What makes a window this command opens the same as the last
+        one: the kind of command, for a viewer command the items it
+        acts on, and the parameters a command was made with (a
+        calendar slot's dates). Not the command object: the calendar
+        makes a new one for each edit."""
+        return (type(self),)
 
     def __call__(self, *args, **kwargs):
         return self.on_command_activate(*args, **kwargs)
@@ -208,12 +286,6 @@ class UICommand(patterns.Observer):
     def enabled(self, event):  # pylint: disable=W0613
         """Can be overridden in a subclass."""
         return True
-
-    def current_menu_text(self):
-        """Return updated menu text, or None to keep current. Override in
-        subclasses whose menu text changes based on context (e.g. selection
-        type)."""
-        return None
 
     def checked(self):
         """Return True/False for checkable items, or None to skip.
@@ -239,8 +311,10 @@ class UICommand(patterns.Observer):
             try:
                 menu_item.SetItemLabel(menu_text)
             except Exception as e:
-                log_step("update_menu_text: dead menu item: %s" % e,
-                         prefix="DEAD-OBJ")
+                log_step(
+                    "update_menu_text: dead menu item: %s" % e,
+                    prefix="DEAD-OBJ",
+                )
 
     def main_window(self):
         return wx.GetApp().TopWindow
@@ -250,4 +324,3 @@ class UICommand(patterns.Observer):
 
     def get_help_text(self):
         return self.help_text
-

@@ -19,160 +19,54 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.domain.attribute import icon
-from taskcoachlib.domain.date import DateTime, Now
-from pubsub import pub
+from taskcoachlib.domain.date import Timestamp
+from taskcoachlib.patterns.snapshot import is_restoring, register_item
+from taskcoachlib.tools import text
 from . import attribute
-from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE
+from .appearance import FIELD_DEFAULTS, FIELD_NO_VALUE_SOURCE, shown
 import functools
 import uuid
 import re
 
 
-def fresh_state(parent, instance):
-    """The state the next __getstate__ in the MRO (parent, a super()
-    object) returns, as a dict the caller may update.
-
-    Python 3.11 added object.__getstate__, which returns the instance's
-    live __dict__ (None when empty): updating that would write shadow
-    attributes onto the instance."""
-    # Python < 3.11 has no object.__getstate__
-    getstate = getattr(parent, "__getstate__", None)
-    state = getstate() if getstate else None
-    if state is None or state is instance.__dict__:
-        return dict()
-    return state
-
-
-class SynchronizedObject(object):
-    STATUS_NONE = 0
-    STATUS_NEW = 1
-    STATUS_CHANGED = 2
-    STATUS_DELETED = 3
-
-    def __init__(self, *args, **kwargs):
-        self.__status = kwargs.pop("status", self.STATUS_NEW)
-        super().__init__(*args, **kwargs)
-
-    @classmethod
-    def markDeletedEventType(class_):
-        return "object.markdeleted"
-
-    @classmethod
-    def markNotDeletedEventType(class_):
-        return "object.marknotdeleted"
-
-    def __getstate__(self):
-        # The bases' state (Composite: parent and children; NoteOwner:
-        # notes) is needed by their __setstate__
-        state = fresh_state(super(), self)
-        state["status"] = self.__status
-        return state
-
-    @patterns.eventSource
-    def __setstate__(self, state, event=None):
-        # object does not define __setstate__; only invoke super if available.
-        if hasattr(super(), "__setstate__"):
-            super().__setstate__(state, event=event)
-        new_status = state["status"]
-        if new_status == self.__status:
-            return
-        if new_status == self.STATUS_CHANGED:
-            self.markDirty(event=event)
-        elif new_status == self.STATUS_DELETED:
-            self.markDeleted(event=event)
-        elif new_status == self.STATUS_NEW:
-            self.markNew(event=event)
-        elif new_status == self.STATUS_NONE:
-            self.cleanDirty(event=event)
-        else:
-            from taskcoachlib.meta.debug import log_step
-
-            log_step(
-                "unknown status value %r in __setstate__" % (new_status,),
-                prefix="SYNC-OBJ",
-            )
-
-    def getStatus(self):
-        return self.__status
-
-    @patterns.eventSource
-    def markDirty(self, force=False, event=None):
-        if not self.setStatusDirty(force):
-            return
-        event.addSource(
-            self, self.__status, type=self.markNotDeletedEventType()
-        )
-
-    def setStatusDirty(self, force=False):
-        oldStatus = self.__status
-        if self.__status == self.STATUS_NONE or force:
-            self.__status = self.STATUS_CHANGED
-            return oldStatus == self.STATUS_DELETED
-        else:
-            return False
-
-    @patterns.eventSource
-    def markNew(self, event=None):
-        if not self.setStatusNew():
-            return
-        event.addSource(
-            self, self.__status, type=self.markNotDeletedEventType()
-        )
-
-    def setStatusNew(self):
-        oldStatus = self.__status
-        self.__status = self.STATUS_NEW
-        return oldStatus == self.STATUS_DELETED
-
-    @patterns.eventSource
-    def markDeleted(self, event=None):
-        self.setStatusDeleted()
-        event.addSource(self, self.__status, type=self.markDeletedEventType())
-
-    def setStatusDeleted(self):
-        self.__status = self.STATUS_DELETED
-
-    @patterns.eventSource
-    def cleanDirty(self, event=None):
-        if not self.setStatusNone():
-            return
-        event.addSource(
-            self, self.__status, type=self.markNotDeletedEventType()
-        )
-
-    def setStatusNone(self):
-        oldStatus = self.__status
-        self.__status = self.STATUS_NONE
-        return oldStatus == self.STATUS_DELETED
-
-    def isNew(self):
-        return self.__status == self.STATUS_NEW
-
-    def isModified(self):
-        return self.__status == self.STATUS_CHANGED
-
-    def isDeleted(self):
-        return self.__status == self.STATUS_DELETED
+def new_id():
+    """A new item's ID: a random UUID (version 4) from the operating
+    system's cryptographic source, no machine data
+    (docs/PERSISTENCE_XML.md, IDs)."""
+    return str(uuid.uuid4())
 
 
 @functools.total_ordering
-class Object(SynchronizedObject):
+class Object:
     rx_attributes = re.compile(r"\[(\w+):(.+)\]")
 
     _long_zero = 0
 
     def __init__(self, *args, **kwargs):
         Attribute = attribute.Attribute
-        self.__creationDateTime = kwargs.pop("creationDateTime", None) or Now()
-        self.__modificationDateTime = kwargs.pop(
-            "modificationDateTime", DateTime.min
+        self.__creationDateTime = (
+            kwargs.pop("creationDateTime", None) or Timestamp.now()
+        )
+        # A new item was last modified when it was created. The date
+        # itself dates nothing
+        self.__modificationDateTime = Attribute(
+            kwargs.pop("modificationDateTime", None)
+            or self.__creationDateTime,
+            self,
+            self._on_modification_datetime_changed,
+            dates=False,
         )
         self.__subject = Attribute(
-            kwargs.pop("subject", ""), self, self.subjectChangedEvent
+            kwargs.pop("subject", ""),
+            self,
+            self.subject_changed_event,
+            normalize=text.single_line,
         )
         self.__description = Attribute(
-            kwargs.pop("description", ""), self, self.descriptionChangedEvent
+            kwargs.pop("description", ""),
+            self,
+            self.descriptionChangedEvent,
+            normalize=text.multi_line,
         )
         self.__fgColor = Attribute(
             kwargs.pop("fgColor", None), self, self.appearanceChangedEvent
@@ -190,78 +84,77 @@ class Object(SynchronizedObject):
             self,
             self.appearanceChangedEvent,
         )
-        self.__selected_icon_id = Attribute(
-            kwargs.pop("selectedIcon", ""), self, self.appearanceChangedEvent
-        )
         self.__ordering = Attribute(
             kwargs.pop("ordering", Object._long_zero),
             self,
             self.orderingChangedEvent,
         )
-        self.__id = kwargs.pop("id", None) or str(uuid.uuid1())
+        self.__id = kwargs.pop("id", None) or new_id()
 
         # Derived SSOT fields (value + source for each appearance type)
         self.__derivedFgColorValue = Attribute(
-            None, self, self._onDerivedFgColorChanged
+            None, self, self._on_derived_fg_color_changed, volatile=True
         )
         self.__derivedFgColorSource = Attribute(
-            None, self, self._onDerivedFgColorChanged
+            None, self, self._on_derived_fg_color_changed, volatile=True
         )
         self.__derivedBgColorValue = Attribute(
-            None, self, self._onDerivedBgColorChanged
+            None, self, self._on_derived_bg_color_changed, volatile=True
         )
         self.__derivedBgColorSource = Attribute(
-            None, self, self._onDerivedBgColorChanged
+            None, self, self._on_derived_bg_color_changed, volatile=True
         )
         self.__derivedIconValue = Attribute(
-            None, self, self._onDerivedIconChanged
+            None, self, self._on_derived_icon_changed, volatile=True
         )
         self.__derivedIconSource = Attribute(
-            None, self, self._onDerivedIconChanged
+            None, self, self._on_derived_icon_changed, volatile=True
         )
         self.__derivedFontValue = Attribute(
-            None, self, self._onDerivedFontChanged
+            None, self, self._on_derived_font_changed, volatile=True
         )
         self.__derivedFontSource = Attribute(
-            None, self, self._onDerivedFontChanged
+            None, self, self._on_derived_font_changed, volatile=True
         )
 
         # Effective SSOT fields (value + source + default for colors/font, value + source for icon)
         self.__effectiveFgColorValue = Attribute(
-            None, self, self._onEffectiveFgColorChanged
+            None, self, self._on_effective_fg_color_changed, volatile=True
         )
         self.__effectiveFgColorSource = Attribute(
-            None, self, self._onEffectiveFgColorChanged
+            None, self, self._on_effective_fg_color_changed, volatile=True
         )
         self.__effectiveFgColorDefault = Attribute(
-            None, self, self._onEffectiveFgColorChanged
+            None, self, self._on_effective_fg_color_changed, volatile=True
         )
         self.__effectiveBgColorValue = Attribute(
-            None, self, self._onEffectiveBgColorChanged
+            None, self, self._on_effective_bg_color_changed, volatile=True
         )
         self.__effectiveBgColorSource = Attribute(
-            None, self, self._onEffectiveBgColorChanged
+            None, self, self._on_effective_bg_color_changed, volatile=True
         )
         self.__effectiveBgColorDefault = Attribute(
-            None, self, self._onEffectiveBgColorChanged
+            None, self, self._on_effective_bg_color_changed, volatile=True
         )
         self.__effectiveIconValue = Attribute(
-            None, self, self._onEffectiveIconChanged
+            None, self, self._on_effective_icon_changed, volatile=True
         )
         self.__effectiveIconSource = Attribute(
-            None, self, self._onEffectiveIconChanged
+            None, self, self._on_effective_icon_changed, volatile=True
         )
         self.__effectiveFontValue = Attribute(
-            None, self, self._onEffectiveFontChanged
+            None, self, self._on_effective_font_changed, volatile=True
         )
         self.__effectiveFontSource = Attribute(
-            None, self, self._onEffectiveFontChanged
+            None, self, self._on_effective_font_changed, volatile=True
         )
         self.__effectiveFontDefault = Attribute(
-            None, self, self._onEffectiveFontChanged
+            None, self, self._on_effective_font_changed, volatile=True
         )
 
         super().__init__(*args, **kwargs)
+        # Its stored fields are in the undo log's snapshots
+        register_item(self)
 
     def __repr__(self):
         return self.subject()
@@ -279,49 +172,12 @@ class Object(SynchronizedObject):
     def __hash__(self):
         return hash(self.id())
 
-    def __getstate__(self):
-        state = super().__getstate__()
-        state.update(
-            dict(
-                id=self.__id,
-                creationDateTime=self.__creationDateTime,
-                modificationDateTime=self.__modificationDateTime,
-                subject=self.__subject.get(),
-                description=self.__description.get(),
-                fgColor=self.__fgColor.get(),
-                bgColor=self.__bgColor.get(),
-                font=self.__font.get(),
-                icon=self.__icon_id.get(),
-                ordering=self.__ordering.get(),
-                selectedIcon=self.__selected_icon_id.get(),
-            )
-        )
-        return state
-
-    @patterns.eventSource
-    def __setstate__(self, state, event=None):
-        super().__setstate__(state, event=event)
-        self.__id = state["id"]
-        self.setSubject(state["subject"], event=event)
-        self.setDescription(state["description"], event=event)
-        self.setForegroundColor(state["fgColor"], event=event)
-        self.setBackgroundColor(state["bgColor"], event=event)
-        self.setFont(state["font"], event=event)
-        self.set_icon_id(state["icon"], event=event)
-        self.set_selected_icon_id(state["selectedIcon"], event=event)
-        self.setOrdering(state["ordering"], event=event)
-        self.__creationDateTime = state["creationDateTime"]
-        # Set modification date/time last to overwrite changes made by the
-        # setters above
-        self.__modificationDateTime = state["modificationDateTime"]
-
     def __getcopystate__(self):
         """Return a dictionary that can be passed to __init__ when creating
         a copy of the object.
 
         E.g. copy = obj.__class__(**original.__getcopystate__())"""
-        # SynchronizedObject does not define __getcopystate__; only invoke
-        # super if some other class in the MRO provides it.
+        # Only invoke super if another class in the MRO provides it
         if hasattr(super(), "__getcopystate__"):
             state = super().__getcopystate__()
         else:
@@ -336,7 +192,6 @@ class Object(SynchronizedObject):
                 bgColor=self.__bgColor.get(),
                 font=self.__font.get(),
                 icon=self.__icon_id.get(),
-                selectedIcon=self.__selected_icon_id.get(),
                 ordering=self.__ordering.get(),
             )
         )
@@ -345,10 +200,6 @@ class Object(SynchronizedObject):
     def copy(self):
         state = self.__getcopystate__()
         return self.__class__(**state)
-
-    @classmethod
-    def monitoredAttributes(class_):
-        return ["ordering", "subject", "description", "appearance"]
 
     # Id:
 
@@ -370,10 +221,38 @@ class Object(SynchronizedObject):
         return self.__creationDateTime
 
     def modificationDateTime(self):
-        return self.__modificationDateTime
+        return self.__modificationDateTime.get()
 
-    def setModificationDateTime(self, dateTime):
-        self.__modificationDateTime = dateTime
+    def set_modification_datetime(self, date_time, event=None):
+        """Set by the stored fields' Attributes when they change, and
+        restored from the file when loading."""
+        self.__modificationDateTime.set(date_time, event=event)
+
+    def modified_now(self, event=None):
+        """A stored field changed: the item is dated now, except while
+        values are put back (undo, redo, merging), which edits
+        nothing."""
+        if not is_restoring():
+            self.set_modification_datetime(Timestamp.now(), event=event)
+
+    def _on_modification_datetime_changed(self, event):
+        event.addSource(
+            self,
+            self.modificationDateTime(),
+            type=self.modification_datetime_changed_event_type(),
+        )
+
+    @classmethod
+    def modification_datetime_changed_event_type(cls):
+        """Not a stored field's change: it does not mark the file
+        unsaved."""
+        return "%s.modificationDateTime" % cls
+
+    @classmethod
+    def modificationDateTimeSortEventTypes(cls):
+        # Found by name, from the sort key
+        # (Sorter._get_sort_event_types)
+        return (cls.modification_datetime_changed_event_type(),)
 
     @staticmethod
     def modificationDateTimeSortFunction(**kwargs):
@@ -391,7 +270,7 @@ class Object(SynchronizedObject):
     def setSubject(self, subject, event=None):
         self.__subject.set(subject, event=event)
 
-    def subjectChangedEvent(self, event):
+    def subject_changed_event(self, event):
         event.addSource(
             self, self.subject(), type=self.subjectChangedEventType()
         )
@@ -472,44 +351,23 @@ class Object(SynchronizedObject):
 
     def setForegroundColor(self, color, event=None):
         self.__fgColor.set(color, event=event)
-        # Trigger computeEffective after SSOT update
-        from . import appearance
 
-        appearance.computeEffective(self, "fgColor")
-
-    def foregroundColor(self, recursive=False):  # pylint: disable=W0613
-        # The 'recursive' argument isn't actually used here, but some
-        # code assumes composite objects where there aren't. This is
-        # the simplest workaround.
+    def foregroundColor(self):
         return self.__fgColor.get()
 
     def setBackgroundColor(self, color, event=None):
         self.__bgColor.set(color, event=event)
-        # Trigger computeEffective after SSOT update
-        from . import appearance
 
-        appearance.computeEffective(self, "bgColor")
-
-    def backgroundColor(self, recursive=False):  # pylint: disable=W0613
-        # The 'recursive' argument isn't actually used here, but some
-        # code assumes composite objects where there aren't. This is
-        # the simplest workaround.
+    def backgroundColor(self):
         return self.__bgColor.get()
 
     # Font:
 
-    def font(self, recursive=False):  # pylint: disable=W0613
-        # The 'recursive' argument isn't actually used here, but some
-        # code assumes composite objects where there aren't. This is
-        # the simplest workaround.
+    def font(self):
         return self.__font.get()
 
     def setFont(self, font, event=None):
         self.__font.set(font, event=event)
-        # Trigger computeEffective after SSOT update
-        from . import appearance
-
-        appearance.computeEffective(self, "font")
 
     # Icons:
 
@@ -522,16 +380,6 @@ class Object(SynchronizedObject):
         self.__icon_id.set(
             icon_catalog.normalize_icon_id(icon_id), event=event
         )
-        # Trigger computeEffective after SSOT update
-        from . import appearance
-
-        appearance.computeEffective(self, "icon")
-
-    def selected_icon_id(self):
-        return self.__selected_icon_id.get()
-
-    def set_selected_icon_id(self, icon_id, event=None):
-        self.__selected_icon_id.set(icon_id, event=event)
 
     # Event types:
 
@@ -541,6 +389,12 @@ class Object(SynchronizedObject):
 
     def appearanceChangedEvent(self, event):
         event.addSource(self, type=self.appearanceChangedEventType())
+        # What the item shows follows at once, when set and when undo
+        # or redo puts a style back
+        from . import appearance
+
+        for field_type in appearance.FIELD_TYPES:
+            appearance.computeEffective(self, field_type)
 
     # --- Derived SSOT Getters ---
 
@@ -575,35 +429,40 @@ class Object(SynchronizedObject):
         return self.__derivedFontSource.get() or FIELD_NO_VALUE_SOURCE["font"]
 
     # --- Derived SSOT Setters (for use by computeDerived) ---
+    # Each sends one event for its value and source together
 
+    @patterns.eventSource
     def setDerivedFgColor(self, value, source, event=None):
         self.__derivedFgColorValue.set(value, event=event)
         self.__derivedFgColorSource.set(source, event=event)
 
+    @patterns.eventSource
     def setDerivedBgColor(self, value, source, event=None):
         self.__derivedBgColorValue.set(value, event=event)
         self.__derivedBgColorSource.set(source, event=event)
 
+    @patterns.eventSource
     def setDerivedIcon(self, value, source, event=None):
         self.__derivedIconValue.set(value, event=event)
         self.__derivedIconSource.set(source, event=event)
 
+    @patterns.eventSource
     def setDerivedFont(self, value, source, event=None):
         self.__derivedFontValue.set(value, event=event)
         self.__derivedFontSource.set(source, event=event)
 
     # --- Derived Event Handlers ---
 
-    def _onDerivedFgColorChanged(self, event):
+    def _on_derived_fg_color_changed(self, event):
         event.addSource(self, type=self.derivedFgColorChangedEventType())
 
-    def _onDerivedBgColorChanged(self, event):
+    def _on_derived_bg_color_changed(self, event):
         event.addSource(self, type=self.derivedBgColorChangedEventType())
 
-    def _onDerivedIconChanged(self, event):
+    def _on_derived_icon_changed(self, event):
         event.addSource(self, type=self.derivedIconChangedEventType())
 
-    def _onDerivedFontChanged(self, event):
+    def _on_derived_font_changed(self, event):
         event.addSource(self, type=self.derivedFontChangedEventType())
 
     # --- Derived Event Types ---
@@ -673,23 +532,43 @@ class Object(SynchronizedObject):
     def effectiveFontDefault(self):
         return self.__effectiveFontDefault.get() or FIELD_DEFAULTS["font"]
 
-    # --- Effective SSOT Setters (for use by computeEffective) ---
+    # --- Shown styles: what every view draws, the effective styles the
+    # master loop computes (docs/MASTER_SCHEDULER_REFACTOR.md, To Do 35)
 
+    def shown_fg_color(self):
+        return shown(self.effectiveFgColor())
+
+    def shown_bg_color(self):
+        return shown(self.effectiveBgColor())
+
+    def shown_font(self):
+        return shown(self.effectiveFont())
+
+    def shown_icon_id(self):
+        return self.effectiveIcon()
+
+    # --- Effective SSOT Setters (for use by computeEffective) ---
+    # Each sends one event for its value, default and source together
+
+    @patterns.eventSource
     def setEffectiveFgColor(self, value, default, source, event=None):
         self.__effectiveFgColorValue.set(value, event=event)
         self.__effectiveFgColorDefault.set(default, event=event)
         self.__effectiveFgColorSource.set(source, event=event)
 
+    @patterns.eventSource
     def setEffectiveBgColor(self, value, default, source, event=None):
         self.__effectiveBgColorValue.set(value, event=event)
         self.__effectiveBgColorDefault.set(default, event=event)
         self.__effectiveBgColorSource.set(source, event=event)
 
+    @patterns.eventSource
     def setEffectiveIcon(self, value, source, event=None):
         # Icon has no default
         self.__effectiveIconValue.set(value, event=event)
         self.__effectiveIconSource.set(source, event=event)
 
+    @patterns.eventSource
     def setEffectiveFont(self, value, default, source, event=None):
         self.__effectiveFontValue.set(value, event=event)
         self.__effectiveFontDefault.set(default, event=event)
@@ -697,16 +576,16 @@ class Object(SynchronizedObject):
 
     # --- Effective Event Handlers ---
 
-    def _onEffectiveFgColorChanged(self, event):
+    def _on_effective_fg_color_changed(self, event):
         event.addSource(self, type=self.effectiveFgColorChangedEventType())
 
-    def _onEffectiveBgColorChanged(self, event):
+    def _on_effective_bg_color_changed(self, event):
         event.addSource(self, type=self.effectiveBgColorChangedEventType())
 
-    def _onEffectiveIconChanged(self, event):
+    def _on_effective_icon_changed(self, event):
         event.addSource(self, type=self.effectiveIconChangedEventType())
 
-    def _onEffectiveFontChanged(self, event):
+    def _on_effective_font_changed(self, event):
         event.addSource(self, type=self.effectiveFontChangedEventType())
 
     # --- Effective Event Types ---
@@ -728,9 +607,18 @@ class Object(SynchronizedObject):
         return "effective.font"
 
     @classmethod
+    def effective_style_event_types(cls):
+        """The events of the styles the views draw."""
+        return (
+            cls.effectiveFgColorChangedEventType(),
+            cls.effectiveBgColorChangedEventType(),
+            cls.effectiveFontChangedEventType(),
+            cls.effectiveIconChangedEventType(),
+        )
+
+    @classmethod
     def modificationEventTypes(class_):
-        # SynchronizedObject does not define modificationEventTypes; only
-        # invoke super if some other class in the MRO provides it.
+        # Only invoke super if another class in the MRO provides it
         parent = super(Object, class_)
         if hasattr(parent, "modificationEventTypes"):
             eventTypes = parent.modificationEventTypes()
@@ -749,14 +637,19 @@ class CompositeObject(Object, patterns.ObservableComposite):
         self.__expandedContexts = set(kwargs.pop("expandedContexts", []))
         super().__init__(*args, **kwargs)
 
+    def set_parent(self, parent):
+        # The item's own link; its parent's children are the reverse.
+        # Changing it sets the item's date (docs/ATTRIBUTE_PATTERN.md,
+        # Modification Date)
+        changed = parent is not self.parent()
+        super().set_parent(parent)
+        if changed:
+            self.modified_now()
+
     def __getcopystate__(self):
         state = super().__getcopystate__()
         state.update(dict(expandedContexts=self.expandedContexts()))
         return state
-
-    @classmethod
-    def monitoredAttributes(class_):
-        return Object.monitoredAttributes() + ["expandedContexts"]
 
     # Subject:
 
@@ -769,10 +662,10 @@ class CompositeObject(Object, patterns.ObservableComposite):
             )
         return subject
 
-    def subjectChangedEvent(self, event):
-        super().subjectChangedEvent(event)
+    def subject_changed_event(self, event):
+        super().subject_changed_event(event)
         for child in self.children():
-            child.subjectChangedEvent(event)
+            child.subject_changed_event(event)
 
     @staticmethod
     def subjectSortFunction(**kwargs):
@@ -816,85 +709,15 @@ class CompositeObject(Object, patterns.ObservableComposite):
         else:
             self.__expandedContexts.discard(context)
         if notify:
-            pub.sendMessage(
-                self.expansionChangedEventType(), newValue=expand, sender=self
-            )
+            patterns.Event(
+                self.expansionChangedEventType(), self, expand
+            ).send()
 
     @classmethod
     def expansionChangedEventType(cls):
         """The event type used for notifying changes in the expansion state
         of a composite object."""
-        return "pubsub.%s.expandedContexts" % cls.__name__.lower()
-
-    def expansionChangedEvent(self, event):
-        event.addSource(self, type=self.expansionChangedEventType())
-
-    # The ChangeMonitor expects this...
-    @classmethod
-    def expandedContextsChangedEventType(class_):
-        return class_.expansionChangedEventType()
-
-    # Appearance:
-
-    def appearanceChangedEvent(self, event):
-        super().appearanceChangedEvent(event)
-        # Assume that most of the times our children change appearance too
-        for child in self.children():
-            child.appearanceChangedEvent(event)
-
-    def foregroundColor(self, recursive=False):
-        myFgColor = super().foregroundColor()
-        if not myFgColor and recursive and self.parent():
-            return self.parent().foregroundColor(recursive=True)
-        else:
-            return myFgColor
-
-    def backgroundColor(self, recursive=False):
-        myBgColor = super().backgroundColor()
-        if not myBgColor and recursive and self.parent():
-            return self.parent().backgroundColor(recursive=True)
-        else:
-            return myBgColor
-
-    def font(self, recursive=False):
-        myFont = super().font()
-        if not myFont and recursive and self.parent():
-            return self.parent().font(recursive=True)
-        else:
-            return myFont
-
-    def icon_id(self, recursive=False):
-        icon_id = super().icon_id()
-        if not recursive:
-            return icon_id
-        if not icon_id and self.parent():
-            icon_id = self.parent().icon_id(recursive=True)
-        return self.pluralOrSingularIcon(
-            icon_id, native=super().icon_id() == ""
-        )
-
-    def selected_icon_id(self, recursive=False):
-        icon_id = super().selected_icon_id()
-        if not recursive:
-            return icon_id
-        if not icon_id and self.parent():
-            icon_id = self.parent().selected_icon_id(recursive=True)
-        return self.pluralOrSingularIcon(
-            icon_id, native=super().selected_icon_id() == ""
-        )
-
-    def pluralOrSingularIcon(self, icon_id, native=True):
-        hasChildren = any(
-            child for child in self.children() if not child.isDeleted()
-        )
-        mapping = (
-            icon.itemImagePlural if hasChildren else icon.itemImageSingular
-        )
-        # If the icon comes from the user settings, only pluralize it; this is probably
-        # the Way of the Least Astonishment
-        if native or hasChildren:
-            return mapping.get(icon_id, icon_id)
-        return icon_id
+        return "%s.expandedContexts" % cls.__name__.lower()
 
     # Event types:
 
@@ -903,29 +726,3 @@ class CompositeObject(Object, patterns.ObservableComposite):
         return super(CompositeObject, class_).modificationEventTypes() + [
             class_.expansionChangedEventType()
         ]
-
-    # Override SynchronizedObject methods to also mark child objects
-
-    @patterns.eventSource
-    def markDeleted(self, event=None):
-        super().markDeleted(event=event)
-        for child in self.children():
-            child.markDeleted(event=event)
-
-    @patterns.eventSource
-    def markNew(self, event=None):
-        super().markNew(event=event)
-        for child in self.children():
-            child.markNew(event=event)
-
-    @patterns.eventSource
-    def markDirty(self, force=False, event=None):
-        super().markDirty(force, event=event)
-        for child in self.children():
-            child.markDirty(force, event=event)
-
-    @patterns.eventSource
-    def cleanDirty(self, event=None):
-        super().cleanDirty(event=event)
-        for child in self.children():
-            child.cleanDirty(event=event)

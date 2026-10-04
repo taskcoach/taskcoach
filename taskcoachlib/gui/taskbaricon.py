@@ -23,13 +23,13 @@ import wx
 import os
 import logging
 from taskcoachlib import meta, patterns, operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.gui.toplevelcontroller import (
     create_toplevel_controller,
 )
 from taskcoachlib.i18n import _
-from taskcoachlib.domain import base, task
-from pubsub import pub
+from taskcoachlib.domain import task
 import wx.adv
 from .icons.icon_library import icon_catalog, LIST_ICON_SIZE
 
@@ -67,12 +67,48 @@ if operating_system.isGTK():
         )
 
 
+class _OnceAfterBursts:
+    """Calls back at once, or once after the bulk command or the
+    scheduler pass under way, as the viewers refresh their rows
+    (docs/SCHEDULERS.md): the tool tip counts every task, and a burst
+    changes many."""
+
+    _BURSTS = (
+        ("command.aboutToBulkModify", "command.justBulkModified"),
+        ("scheduler.aboutToPass", "scheduler.pass"),
+    )
+
+    def __init__(self, observer, callback):
+        self.__callback = callback
+        self.__under_way = set()  # The begin events of the bursts
+        self.__due = False
+        for begin, end in self._BURSTS:
+            observer.registerObserver(self.__on_begin, eventType=begin)
+            observer.registerObserver(self.__on_end, eventType=end)
+
+    def __call__(self):
+        if self.__under_way:
+            self.__due = True
+        else:
+            self.__callback()
+
+    def __on_begin(self, event):
+        self.__under_way.update(event.types())
+
+    def __on_end(self, event):
+        for begin, end in self._BURSTS:
+            if end in event.types():
+                self.__under_way.discard(begin)
+        if self.__due and not self.__under_way:
+            self.__due = False
+            self.__callback()
+
+
 class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def __init__(
         self,
         mainwindow,
-        taskList,
-        settings,
+        task_list,
         default_icon_id="nuvola_apps_korganizer",
         tick_icon_id="nuvola_apps_clock",
         tack_icon_id="nuvola_apps_ktimer",
@@ -85,41 +121,38 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         super().__init__(*args, **kwargs)
         self.__window = mainwindow
         self.__toplevel = None
-        self.__task_list = taskList
-        self.__settings = settings
+        self.__task_list = task_list
         self.__icon_id = self.__default_icon_id = default_icon_id
         self.__current_icon_id = self.__icon_id
         self.__tooltip_text = ""
         self.__current_text = self.__tooltip_text
         self.__tick_icon_id = tick_icon_id
         self.__tack_icon_id = tack_icon_id
+        self.__update_tooltip = _OnceAfterBursts(self, self.__set_tooltip_text)
         self.registerObserver(
             self.on_task_list_changed,
-            eventType=taskList.addItemEventType(),
-            eventSource=taskList,
+            eventType=task_list.addItemEventType(),
+            eventSource=task_list,
         )
         self.registerObserver(
             self.on_task_list_changed,
-            eventType=taskList.removeItemEventType(),
-            eventSource=taskList,
+            eventType=task_list.removeItemEventType(),
+            eventSource=task_list,
         )
-        pub.subscribe(
-            self.on_tracking_changed, task.Task.trackingChangedEventType()
+        self.registerObserver(
+            self.on_tracking_changed,
+            eventType=task.Task.trackingChangedEventType(),
         )
-        pub.subscribe(
+        self.registerObserver(
             self.on_change_due_date_time,
-            task.Task.dueDateTimeChangedEventType(),
+            eventType=task.Task.dueDateTimeChangedEventType(),
         )
-        # When the user chances the due soon hours preferences it may cause
-        # a task to change appearance. That also means the number of due soon
-        # tasks has changed, so we need to change the tool tip text.
-        # Note that directly subscribing to the setting (behavior.duesoonhours)
-        # is not reliable. The TaskBarIcon may get the event before the tasks
-        # do. When that happens the tasks haven't changed their status yet and
-        # we would use the wrong status count.
+        # The tool tip counts statuses: follow their changes, sent once
+        # the tasks have changed (the due soon hours setting's own event
+        # can come before the tasks change)
         self.registerObserver(
-            self.on_change_due_date_time_deprecated,
-            eventType=task.Task.appearanceChangedEventType(),
+            self.on_change_due_date_time,
+            eventType=task.Task.statusChangedEventType(),
         )
         if operating_system.isGTK():
             events = [wx.adv.EVT_TASKBAR_LEFT_DOWN]
@@ -167,20 +200,22 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         self.__set_tooltip_text()
         self.__start_or_stop_ticking()
 
-    def on_tracking_changed(self, newValue, sender):
-        if newValue:
-            self.registerObserver(
-                self.on_change_subject,
-                eventType=sender.subjectChangedEventType(),
-                eventSource=sender,
-            )
-        else:
-            self.removeObserver(
-                self.on_change_subject,
-                eventType=sender.subjectChangedEventType(),
-            )
+    def on_tracking_changed(self, event):
+        for sender in event.sources():
+            if event.value(sender):
+                self.registerObserver(
+                    self.on_change_subject,
+                    eventType=sender.subjectChangedEventType(),
+                    eventSource=sender,
+                )
+            else:
+                self.removeObserver(
+                    self.on_change_subject,
+                    eventType=sender.subjectChangedEventType(),
+                )
         self.__set_tooltip_text()
-        if newValue:
+        # The task and its ancestors, all with the same value
+        if any(event.value(sender) for sender in event.sources()):
             self.__start_ticking()
         else:
             self.__stop_ticking()
@@ -188,18 +223,11 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def on_change_subject(self, event):  # pylint: disable=W0613
         self.__set_tooltip_text()
 
-    def on_change_due_date_time(
-        self, newValue, sender
-    ):  # pylint: disable=W0613
-        self.__set_tooltip_text()
-
-    def on_change_due_date_time_deprecated(self, event):
-        self.__set_tooltip_text()
+    def on_change_due_date_time(self, event):  # pylint: disable=W0613
+        self.__update_tooltip()
 
     def on_every_second(self):
-        if self.__settings.getboolean(
-            "window", "blinktaskbariconwhentrackingeffort"
-        ):
+        if settings.window.blinktaskbariconwhentrackingeffort:
             self.__toggle_tracking_icon()
             self.__set_icon()
 
@@ -229,7 +257,7 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
     def popup_taskbar_menu(self, event):  # pylint: disable=W0613
         # Update dynamic submenus (e.g. StartEffortForTaskMenu) before showing.
         # TaskBarMenu itself is a static Menu, but its DynamicMenu children
-        # need refreshing since registerForMenuUpdate is a no-op.
+        # need refreshing since register_for_menu_update is a no-op.
         for item in self.popupmenu.GetMenuItems():
             submenu = item.GetSubMenu()
             if submenu and hasattr(submenu, "updateMenu"):
@@ -371,8 +399,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def __init__(
         self,
         mainwindow,
-        taskList,
-        settings,
+        task_list,
         default_tray_icon_id="taskcoach-app",
         tick_tray_icon_id="taskcoach-clock",
         tack_tray_icon_id="taskcoach-timer",
@@ -382,9 +409,8 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         super().__init__()
         self.__window = mainwindow
         self.__toplevel = None
-        self.__task_list = taskList
-        self.__trackable_tasks = base.filter.DeletedFilter(taskList)
-        self.__settings = settings
+        self.__task_list = task_list
+        self.__trackable_tasks = task_list
         self.__menu_rebuild_pending = False
 
         # Under Flatpak the SNI host runs outside the sandbox and cannot
@@ -415,6 +441,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             default_tray_icon_id
         )
         self.__tooltip_text = ""
+        self.__update_tooltip = _OnceAfterBursts(self, self.__set_tooltip_text)
         self.__tick_tray_icon_id = tick_tray_icon_id
         self.__tack_tray_icon_id = tack_tray_icon_id
         self.__popupmenu = None
@@ -431,31 +458,32 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         # Set up observers
         self.registerObserver(
             self.on_task_list_changed,
-            eventType=taskList.addItemEventType(),
-            eventSource=taskList,
+            eventType=task_list.addItemEventType(),
+            eventSource=task_list,
         )
         self.registerObserver(
             self.on_task_list_changed,
-            eventType=taskList.removeItemEventType(),
-            eventSource=taskList,
-        )
-        pub.subscribe(
-            self.on_tracking_changed, task.Task.trackingChangedEventType()
-        )
-        pub.subscribe(
-            self.on_change_due_date_time,
-            task.Task.dueDateTimeChangedEventType(),
+            eventType=task_list.removeItemEventType(),
+            eventSource=task_list,
         )
         self.registerObserver(
-            self.on_change_due_date_time_deprecated,
-            eventType=task.Task.appearanceChangedEventType(),
+            self.on_tracking_changed,
+            eventType=task.Task.trackingChangedEventType(),
+        )
+        self.registerObserver(
+            self.on_change_due_date_time,
+            eventType=task.Task.dueDateTimeChangedEventType(),
+        )
+        self.registerObserver(
+            self.on_change_due_date_time,
+            eventType=task.Task.statusChangedEventType(),
         )
         # The tray host shows the GTK menu, so it cannot be filled when
         # it opens: rebuild it when what it lists changes (besides adds
         # and removes above)
-        pub.subscribe(
+        self.registerObserver(
             self._on_completion_changed,
-            task.Task.completionDateTimeChangedEventType(),
+            eventType=task.Task.completionDateTimeChangedEventType(),
         )
         self.registerObserver(
             self._on_any_subject_changed,
@@ -472,28 +500,28 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__start_or_stop_ticking()
         self._rebuild_gtk_menu()  # Update menu with new task list
 
-    def _on_completion_changed(
-        self, newValue, sender
-    ):  # pylint: disable=W0613
+    def _on_completion_changed(self, event):  # pylint: disable=W0613
         self._rebuild_gtk_menu()
 
     def _on_any_subject_changed(self, event):  # pylint: disable=W0613
         self._rebuild_gtk_menu()
 
-    def on_tracking_changed(self, newValue, sender):
-        if newValue:
-            self.registerObserver(
-                self.on_change_subject,
-                eventType=sender.subjectChangedEventType(),
-                eventSource=sender,
-            )
-        else:
-            self.removeObserver(
-                self.on_change_subject,
-                eventType=sender.subjectChangedEventType(),
-            )
+    def on_tracking_changed(self, event):
+        for sender in event.sources():
+            if event.value(sender):
+                self.registerObserver(
+                    self.on_change_subject,
+                    eventType=sender.subjectChangedEventType(),
+                    eventSource=sender,
+                )
+            else:
+                self.removeObserver(
+                    self.on_change_subject,
+                    eventType=sender.subjectChangedEventType(),
+                )
         self.__set_tooltip_text()
-        if newValue:
+        # The task and its ancestors, all with the same value
+        if any(event.value(sender) for sender in event.sources()):
             self.__start_ticking()
         else:
             self.__stop_ticking()
@@ -503,18 +531,11 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__set_tooltip_text()
         self._rebuild_gtk_menu()  # Update menu with new task subject
 
-    def on_change_due_date_time(
-        self, newValue, sender
-    ):  # pylint: disable=W0613
-        self.__set_tooltip_text()
-
-    def on_change_due_date_time_deprecated(self, event):
-        self.__set_tooltip_text()
+    def on_change_due_date_time(self, event):  # pylint: disable=W0613
+        self.__update_tooltip()
 
     def on_every_second(self):
-        if self.__settings.getboolean(
-            "window", "blinktaskbariconwhentrackingeffort"
-        ):
+        if settings.window.blinktaskbariconwhentrackingeffort:
             self.__toggle_tracking_icon()
             self.__set_icon()
 
@@ -554,11 +575,11 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         burst of changes (e.g. a task and its ancestors completing).
 
         Called when task list, tracking state, or task subjects change.
-        Uses wx.CallAfter to ensure it runs on the main thread.
+        Runs later, on the main thread.
         """
         if self.__indicator and not self.__menu_rebuild_pending:
             self.__menu_rebuild_pending = True
-            wx.CallAfter(self._build_gtk_menu)
+            patterns.later.soon(self.__window, self._build_gtk_menu)
 
     def _build_gtk_menu(self):
         """Build a GTK menu for the AppIndicator."""
@@ -580,7 +601,10 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         # Show/Hide main window (acts as left-click replacement)
         show_item = Gtk.MenuItem(label=_("Show/Hide Task Coach"))
         show_item.connect(
-            "activate", lambda w: wx.CallAfter(self.on_taskbar_click)
+            "activate",
+            lambda w: patterns.later.soon(
+                self.__window, self.on_taskbar_click
+            ),
         )
         menu.append(show_item)
 
@@ -643,8 +667,8 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
                 stop_item = Gtk.MenuItem(label=label)
                 stop_item.connect(
                     "activate",
-                    lambda w, t=most_recent: wx.CallAfter(
-                        self._do_start_tracking, t
+                    lambda w, t=most_recent: patterns.later.soon(
+                        self.__window, self._do_start_tracking, t
                     ),
                 )
                 menu.append(stop_item)
@@ -655,7 +679,8 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         # Quit
         quit_item = Gtk.MenuItem(label=_("Quit"))
         quit_item.connect(
-            "activate", lambda w: wx.CallAfter(self.__window.Close)
+            "activate",
+            lambda w: patterns.later.soon(self.__window, self.__window.Close),
         )
         menu.append(quit_item)
 
@@ -666,7 +691,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         """Build submenu for task templates."""
         from taskcoachlib import persistence
 
-        path = self.__settings.pathToTemplatesDir()
+        path = settings.templates_dir()
         try:
             template_list = persistence.TemplateList(path)
             templates = list(zip(template_list.tasks(), template_list.names()))
@@ -687,8 +712,8 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             # Use default argument to capture template_path in closure
             item.connect(
                 "activate",
-                lambda w, p=template_path: wx.CallAfter(
-                    self._do_new_task_from_template, p
+                lambda w, p=template_path: patterns.later.soon(
+                    self.__window, self._do_new_task_from_template, p
                 ),
             )
             submenu.append(item)
@@ -712,12 +737,12 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             subject = task_item.subject() or _("(No subject)")
             if trackable:
                 item = self._image_menu_item(
-                    gtk, subject, task_item.icon_id(recursive=True)
+                    gtk, subject, task_item.shown_icon_id()
                 )
                 item.connect(
                     "activate",
-                    lambda w, t=task_item: wx.CallAfter(
-                        self._do_start_tracking, t
+                    lambda w, t=task_item: patterns.later.soon(
+                        self.__window, self._do_start_tracking, t
                     ),
                 )
                 gtk_menu.append(item)
@@ -745,19 +770,19 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
     def _on_new_task(self, widget):
         """Handle New Task menu item."""
-        wx.CallAfter(self._do_new_task)
+        patterns.later.soon(self.__window, self._do_new_task)
 
     def _do_new_task(self):
         """Create a new task (called from wx main thread)."""
         from taskcoachlib.gui import uicommand
 
         tasks = self.__window.taskFile.tasks()
-        cmd = uicommand.TaskNew(taskList=tasks, settings=self.__settings)
+        cmd = uicommand.TaskNew(taskList=tasks)
         cmd.do_command(None)
 
     def _on_new_effort(self, widget):
         """Handle New Effort menu item."""
-        wx.CallAfter(self._do_new_effort)
+        patterns.later.soon(self.__window, self._do_new_effort)
 
     def _do_new_effort(self):
         """Create a new effort (called from wx main thread)."""
@@ -765,44 +790,41 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
         efforts = self.__window.taskFile.efforts()
         tasks = self.__window.taskFile.tasks()
-        cmd = uicommand.EffortNew(
-            effort_list=efforts, taskList=tasks, settings=self.__settings
-        )
+        cmd = uicommand.EffortNew(effortList=efforts, taskList=tasks)
         cmd.do_command(None)
 
     def _on_stop_tracking(self, widget):
         """Handle Stop Tracking menu item."""
-        wx.CallAfter(self._do_stop_tracking)
+        patterns.later.soon(self.__window, self._do_stop_tracking)
 
     def _do_stop_tracking(self):
         """Stop tracking all efforts (called from wx main thread)."""
-        for tracked_task in self.__task_list.tasks_being_tracked():
-            tracked_task.stopTracking()
+        with patterns.CommandHistory().action(_("Stop tracking")):
+            for tracked_task in self.__task_list.tasks_being_tracked():
+                tracked_task.stopTracking()
 
     def _on_new_category(self, widget):
         """Handle New Category menu item."""
-        wx.CallAfter(self._do_new_category)
+        patterns.later.soon(self.__window, self._do_new_category)
 
     def _do_new_category(self):
         """Create a new category (called from wx main thread)."""
         from taskcoachlib.gui import uicommand
 
         categories = self.__window.taskFile.categories()
-        cmd = uicommand.CategoryNew(
-            categories=categories, settings=self.__settings
-        )
+        cmd = uicommand.CategoryNew(categories=categories)
         cmd.do_command(None)
 
     def _on_new_note(self, widget):
         """Handle New Note menu item."""
-        wx.CallAfter(self._do_new_note)
+        patterns.later.soon(self.__window, self._do_new_note)
 
     def _do_new_note(self):
         """Create a new note (called from wx main thread)."""
         from taskcoachlib.gui import uicommand
 
         notes = self.__window.taskFile.notes()
-        cmd = uicommand.NoteNew(notes=notes, settings=self.__settings)
+        cmd = uicommand.NoteNew(notes=notes)
         cmd.do_command(None)
 
     def _do_new_task_from_template(self, template_path):
@@ -810,9 +832,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         from taskcoachlib.gui import uicommand
 
         tasks = self.__window.taskFile.tasks()
-        cmd = uicommand.TaskNewFromTemplate(
-            template_path, taskList=tasks, settings=self.__settings
-        )
+        cmd = uicommand.TaskNewFromTemplate(template_path, taskList=tasks)
         cmd.do_command(None)
 
     def _do_start_tracking(self, task_to_track):
@@ -842,22 +862,15 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
                 max_stop = stop
                 most_recent_task = effort.task()
 
-        # Only return if task is not completed and not deleted
+        # Only return if task is not completed
         if most_recent_task and not most_recent_task.completed():
-            if not getattr(most_recent_task, "isDeleted", lambda: False)():
-                return most_recent_task
+            return most_recent_task
         return None
 
     # Getters:
 
     def tooltip(self):
         return self.__tooltip_text
-
-    def tray_icon_id(self):
-        return self.__tray_icon_id
-
-    def default_tray_icon_id(self):
-        return self.__default_tray_icon_id
 
     # Private methods:
 
@@ -1019,7 +1032,7 @@ def _needs_appindicator():
     return False
 
 
-def create_taskbar_icon(mainwindow, taskList, settings):
+def create_taskbar_icon(mainwindow, task_list):
     """Factory function to create the appropriate taskbar icon.
 
     Uses wx.adv.TaskBarIcon when available (preferred for full click event support).
@@ -1029,8 +1042,7 @@ def create_taskbar_icon(mainwindow, taskList, settings):
 
     Args:
         mainwindow: The main application window
-        taskList: The task list
-        settings: Application settings
+        task_list: The task list
 
     Returns:
         TaskBarIcon or AppIndicatorTaskBarIcon instance
@@ -1055,17 +1067,17 @@ def create_taskbar_icon(mainwindow, taskList, settings):
     # Use AppIndicator if needed and available
     if needs_appindicator and _APPINDICATOR_AVAILABLE:
         log_step("Using AppIndicator (desktop requires it)", prefix="TRAY")
-        return AppIndicatorTaskBarIcon(mainwindow, taskList, settings)
+        return AppIndicatorTaskBarIcon(mainwindow, task_list)
 
     # Use native wx.adv.TaskBarIcon if available
     if wx_taskbar_available:
         log_step("Using wx.adv.TaskBarIcon (native)", prefix="TRAY")
-        return TaskBarIcon(mainwindow, taskList, settings)
+        return TaskBarIcon(mainwindow, task_list)
 
     # Last resort: try AppIndicator on GTK
     if operating_system.isGTK() and _APPINDICATOR_AVAILABLE:
         log_step("Using AppIndicator (fallback)", prefix="TRAY")
-        return AppIndicatorTaskBarIcon(mainwindow, taskList, settings)
+        return AppIndicatorTaskBarIcon(mainwindow, task_list)
 
     # No working tray backend: the native tray is unavailable (e.g. GNOME on
     # Wayland, which has no XEmbed system tray) and the AppIndicator bindings

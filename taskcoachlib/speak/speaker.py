@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import operating_system, patterns
 import subprocess
-import wx
 
 if operating_system.isWindows():
 
@@ -64,7 +63,7 @@ else:
                 )
             if self.__texts_to_say:
                 self.__retry_pending = True
-                wx.CallLater(1000, self.__say_next_text)
+                patterns.later.call(None, 1000, self.__say_next_text)
 
         def __is_speaking(self):
             """Return whether the computer is currently speaking."""

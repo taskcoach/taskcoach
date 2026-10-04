@@ -17,10 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
+import wx
 from unittests import dummy
-from taskcoachlib import gui, config, persistence, widgets
+from taskcoachlib import gui, persistence, widgets
+from taskcoachlib.i18n import _
 from taskcoachlib.domain import task
-from pubsub import pub
+from taskcoachlib import patterns
+from taskcoachlib.config import settings
 
 
 class DummyMainWindow(widgets.AuiManagedFrameWithDynamicCenterPane):
@@ -76,32 +79,37 @@ class DummyCloseEvent(DummyEvent):
         super().__init__(DummyPane(window))
 
 
+class ClickableWidget(dummy.DummyWidget):
+    Bind = wx.Frame.Bind  # The viewer's clicks bound on it
+
+
+class ViewerWithClickableWidget(dummy.ViewerWithDummyWidget):
+    def create_widget(self):
+        super().create_widget().Destroy()
+        return ClickableWidget(self)
+
+
 class ViewerContainerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
         self.events = 0
-        task.Task.settings = self.settings = config.Settings(load=False)
-        self.settings.set("view", "viewerwithdummywidgetcount", "2", new=True)
         self.taskFile = persistence.TaskFile()
         self.mainWindow = DummyMainWindow()
-        self.container = gui.viewer.ViewerContainer(
-            self.mainWindow, self.settings
-        )
+        self.container = gui.viewer.ViewerContainer(self.mainWindow)
         self.viewer1 = self.createViewer("taskviewer1")
         self.container.add_viewer(self.viewer1)
         self.viewer2 = self.createViewer("taskviewer2")
         self.container.add_viewer(self.viewer2)
 
     def createViewer(self, settingsSection):
-        self.settings.add_section(settingsSection)
-        return dummy.ViewerWithDummyWidget(
+        settings.add_section(settingsSection)
+        return ViewerWithClickableWidget(
             self.mainWindow,
             self.taskFile,
-            self.settings,
             settingsSection=settingsSection,
         )
 
-    def onEvent(self):
+    def on_event(self, event):  # pylint: disable=W0613
         self.events += 1
 
     def testCreate(self):
@@ -118,8 +126,70 @@ class ViewerContainerTest(test.wxTestCase):
         self.container.activate_viewer(self.viewer2)
         self.assertEqual(self.viewer2, self.container.active_viewer())
 
-    def testChangePage_NotifiesObserversAboutNewActiveViewer(self):
-        pub.subscribe(self.onEvent, "viewer.status")
+    def click(self, window, event_type=wx.wxEVT_LEFT_DOWN):
+        event = wx.MouseEvent(event_type)
+        event.SetEventObject(window)
+        window.GetEventHandler().ProcessEvent(event)
+        test.settle()
+
+    def test_a_click_in_a_views_widget_makes_it_the_active_view(self):
+        # The calendars, timeline and square map take no focus
+        self.click(self.viewer2.widget)
+        self.assertEqual(self.viewer2, self.container.active_viewer())
+
+    def test_a_right_click_in_a_views_widget_makes_it_the_active_view(self):
+        self.click(self.viewer2.widget, wx.wxEVT_RIGHT_DOWN)
+        self.assertEqual(self.viewer2, self.container.active_viewer())
+
+    def test_a_right_click_beside_the_widget_makes_it_the_active_view(self):
+        self.click(self.viewer2, wx.wxEVT_RIGHT_DOWN)
+        self.assertEqual(self.viewer2, self.container.active_viewer())
+
+    def paste_as_subitem(self, viewer):
+        # The tasks and the categories viewers
+        self.viewer1.coreObjectType = "tasks"
+        self.viewer2.coreObjectType = "categories"
+        command = gui.uicommand.EditPasteAsSubItem(viewer=viewer)
+        # Its menu goes with the test
+        self.addCleanup(command.removeInstance)
+        return command
+
+    def in_a_menu(self, command):
+        # Kept as the main window keeps its menus: a freed menu's items
+        # are gone
+        self.menu = wx.Menu()
+        command.add_to_menu(self.menu, self.mainWindow)
+        return self.menu.FindItemById(command.id)
+
+    def test_paste_as_subitem_names_the_items_of_the_active_viewer(self):
+        command = self.paste_as_subitem(self.container)
+        item = self.in_a_menu(command)
+        self.container.activate_viewer(self.viewer2)
+        # Before the menu opens: GTK sizes it for the label it has
+        self.assertEqual(
+            _("P&aste as subcategory") + "\tShift+Ctrl+V",
+            item.GetItemLabel(),
+        )
+
+    def test_its_label_is_not_set_as_the_menu_opens(self):
+        command = self.paste_as_subitem(self.container)
+        self.in_a_menu(command)
+        self.container.activate_viewer(self.viewer2)
+        event = wx.UpdateUIEvent(command.id)
+        command.on_menu_update_ui(event)
+        self.assertFalse(event.GetSetText())
+
+    def test_a_popup_menus_paste_as_subitem_names_its_viewers_items(self):
+        command = self.paste_as_subitem(self.viewer2)
+        self.container.activate_viewer(self.viewer1)
+        self.assertEqual(
+            _("P&aste as subcategory") + "\tShift+Ctrl+V", command.menu_text
+        )
+
+    def test_change_page_notifies_observers_about_new_active_viewer(self):
+        patterns.Publisher().registerObserver(
+            self.on_event, eventType=self.container.status_event_type()
+        )
         self.container.on_page_changed(DummyChangeEvent(self.viewer2))
         self.assertTrue(self.events > 0)
 
@@ -132,8 +202,16 @@ class ViewerContainerTest(test.wxTestCase):
         self.container.on_page_closed(DummyCloseEvent(self.viewer2))
         self.assertEqual(self.viewer1, self.container.active_viewer())
 
-    def testCloseViewer_NotifiesObserversAboutNewActiveViewer(self):
+    def test_close_viewer_notifies_observers_about_new_active_viewer(self):
         self.container.activate_viewer(self.viewer2)
-        pub.subscribe(self.onEvent, "viewer.status")
+        patterns.Publisher().registerObserver(
+            self.on_event, eventType=self.container.status_event_type()
+        )
         self.container.close_viewer(self.viewer2)
         self.assertTrue(self.events > 0)
+
+    def test_activate_next_viewer(self):
+        gui.uicommand.ActivateViewer(
+            viewer=self.container, forward=True
+        ).do_command(None)
+        self.assertEqual(self.viewer2, self.container.active_viewer())

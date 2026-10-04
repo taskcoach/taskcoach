@@ -48,7 +48,7 @@ Flathub review:
 
 | Grant | Why |
 |-------|-----|
-| `--socket=x11`, `--share=ipc`, `--device=dri`, `--env=GDK_BACKEND=x11` | Display and rendering. X11-only: wxPython's AUI docking is unusable on native Wayland ([AUI_WAYLAND_ISSUES.md](AUI_WAYLAND_ISSUES.md)), so Task Coach declares as an X11 app and runs via XWayland on Wayland sessions. Per Flathub, an app without native Wayland support uses `--socket=x11`; also granting `--socket=wayland` is a lint error (`finish-args-contains-both-x11-and-wayland`) and would not provide X11 on Wayland anyway. |
+| `--socket=x11`, `--share=ipc`, `--device=dri`, `--env=GDK_BACKEND=x11` | Display and rendering. X11-only: wxPython's AUI docking is unusable on native Wayland ([WAYLAND_ISSUES.md](WAYLAND_ISSUES.md#aui-docking)), so Task Coach declares as an X11 app and runs via XWayland on Wayland sessions. Per Flathub, an app without native Wayland support uses `--socket=x11`; also granting `--socket=wayland` is a lint error (`finish-args-contains-both-x11-and-wayland`) and would not provide X11 on Wayland anyway. |
 | `--filesystem=home` | Read/write `.tsk` files (plus attachments and HTML/CSV/iCal exports) at arbitrary paths; wx 3.2.x's file dialogs don't use the XDG portal. Migrating to the portal to drop this is a **postponed** TODO — see [File access and the file-chooser portal](#file-access-and-the-file-chooser-portal). |
 | `--talk-name=org.kde.StatusNotifierWatcher` | System-tray icon |
 | `--talk-name=org.freedesktop.ScreenSaver`, `--talk-name=org.gnome.Mutter.IdleMonitor` | Optional idle detection ([IDLE.md](IDLE.md)) |
@@ -74,7 +74,7 @@ not a direct grant.
 > TODO is tracked, because it is relevant only to the Flatpak build.
 
 Task Coach reads and writes user-chosen files in **one** place:
-`__askUserForFile()` in `taskcoachlib/gui/iocontroller.py`, which calls
+`__ask_user_for_file()` in `taskcoachlib/gui/iocontroller.py`, which calls
 `wx.FileSelector` (a thin wrapper over `wxFileDialog`). Everything funnels
 through it — open / save / save-as / save-selection / save-as-template and **all**
 exports (`exportAsHTML` / `exportAsCSV` / `exportAsICalendar` / `exportAsTodoTxt`
@@ -226,12 +226,12 @@ Checksums in the manifest are real (verified against the GLU and PyPI artifacts)
 
 The generated runtime-deps module (`python3-sources.json`) installs with
 `pip3 ... --ignore-installed` (injected by `generate-pip-sources.sh`). The build
-runs against `org.gnome.Sdk`, which ships some of these modules (notably
-`python3-lxml`). Without `--ignore-installed`, pip treats them as already
-satisfied (from the SDK) and skips installing them into `/app`, so they are
-**missing at runtime** against `org.gnome.Platform` (which does not include
-them). This manifested as `ModuleNotFoundError: No module named 'lxml'` on first
-launch even though the build succeeded.
+runs against `org.gnome.Sdk`, which ships some Python modules. Without
+`--ignore-installed`, pip treats them as already satisfied (from the SDK) and
+skips installing them into `/app`, so they are **missing at runtime** against
+`org.gnome.Platform` (which does not include them). This showed as
+`ModuleNotFoundError: No module named 'lxml'` on first launch, when Task Coach
+still used lxml, even though the build succeeded.
 
 The set also includes **`dbus-python`**, which enables the optional idle-time
 detection feature (its D-Bus backend does `import dbus`); the matching

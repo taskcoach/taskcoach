@@ -7,9 +7,11 @@
 3. [Architecture](#architecture)
 4. [MenuItem Subclass](#menuitem-subclass)
 5. [Menu State Update Flow](#menu-state-update-flow)
-6. [Toolbar vs Menu Strategy](#toolbar-vs-menu-strategy)
-7. [Migrated Commands](#migrated-commands)
-8. [Key Files](#key-files)
+6. [The Same Window Once a Second](#the-same-window-once-a-second)
+7. [Toolbar vs Menu Strategy](#toolbar-vs-menu-strategy)
+8. [Migrated Commands](#migrated-commands)
+9. [Keyboard Shortcuts](#keyboard-shortcuts)
+10. [Key Files](#key-files)
 
 ---
 
@@ -17,11 +19,11 @@
 
 1. ~~PEP 8 renames (separate commit): `append_to_toolbar`, `add_to_menu`, etc.~~ — **DONE.** All UICommand methods and constructor kwargs renamed to snake_case.
 2. ~~GTK menu width not recalculated on first open after `SetItemLabel()` changes
-   text during `EVT_MENU_OPEN`. Second open sizes correctly.~~ — **Partially fixed.**
-   EditUndo/EditRedo now update labels proactively via Publisher event from
-   `CommandHistory`; `current_menu_text()` returns `None` so `SetItemLabel` is
-   skipped during `EVT_MENU_OPEN`. **Remaining:** EditPasteAsSubItem still
-   changes label during `EVT_MENU_OPEN`.
+   text during `EVT_MENU_OPEN`. Second open sizes correctly.~~ **Done**
+   2026-10-02: no label changes as a menu opens. Undo and Redo follow the
+   `CommandHistory` event; Paste as subitem and New subitem follow the
+   active viewer (`_KindLabelMixin`), P99 in
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues).
    See [PUBLISHER_OBSERVER.md — GTK3 Dynamic Menu Item Sizing](PUBLISHER_OBSERVER.md#gtk3-dynamic-menu-item-sizing)
    for the full pattern.
 
@@ -33,14 +35,19 @@
 > level methods to modularize. The menu iterates through all items,
 > telling them to set_enabled.
 
-- **Separation of concern**: Each menu item is an encapsulated object
-  that manages its own enabled state.
-- **No polling**: The old system polled ~30 buttons every 200ms via
-  `EVT_UPDATE_UI`. The new system updates on demand (menu open, signals).
+- **Separation of concern**: Each menu item's command owns its enabled
+  state, check mark and label.
+- **No polling**: Toolbar buttons follow signals. Menu items answer wx's
+  `EVT_UPDATE_UI`, which wx sends only when a menu opens, before a popup
+  menu shows and before an item's shortcut acts. Update events in idle
+  time are off (`wx.UpdateUIEvent.SetUpdateInterval(-1)`), and the
+  toolbar skips AGW's own idle loop over its tools
+  (`_Toolbar.DoIdleUpdate()`).
 - **Dependency injection**: Each `MenuItem` receives its `UICommand` at
   creation. The item only depends on the `enabled()` interface.
-- **Menu as orchestrator**: The menu iterates its items and tells each
-  to update. It does not compute enabled state itself.
+- **Menu as orchestrator**: The menu (`wx.Menu.UpdateUI()`) iterates its
+  items and submenus and asks each command. It does not compute enabled
+  state itself.
 - **Command owns its check**: Each command's `enabled()` is the SSOT for
   that command's enabled state. It queries its own references (`self.viewer`,
   `self.iocontroller`, `self.taskList`, etc.) directly. No intermediary.
@@ -50,40 +57,91 @@
 ## Architecture
 
 ```
-Menu open event
-    └── MainMenu._on_menu_open(event)          [EVT_MENU_OPEN]
-        └── menu._update_menu_state()
-            └── for each MenuItem:
-                └── item.update_enabled_state()
-                    └── item.Enable(item._command.enabled())
-                        └── command determines its own state
+A menu opens, a popup menu shows, or an item's shortcut is pressed
+    └── wx: menu.UpdateUI()
+        └── EVT_UPDATE_UI for each item, submenus included
+            └── UICommand.on_menu_update_ui(event)
+                └── event.Enable(enabled()), Check(checked())
 ```
 
-For popup (context) menus:
-```
-Right-click
-    └── _updateMenuUI()
-        └── popup_menu._update_menu_state()
-            └── (same per-item flow as above)
-```
+Every platform asks for an item's state just before its shortcut acts,
+and wx turns that into the same update events: GTK's can-activate-accel
+signal, Windows' `WM_INITMENUPOPUP` (sent for an accelerator as for a
+menu opening), macOS's item validation. All three skip a disabled
+item's shortcut, so without these answers an item disabled when its
+menu last opened blocked its shortcut until the menu opened again
+(P130 in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md)).
 
 ---
 
 ## MenuItem Subclass
 
-`MenuItem(wx.MenuItem)` in `base_uicommand.py` — each item receives its
-`UICommand` at creation (dependency injection) and owns its enabled state
-via `update_enabled_state()`. Created in `UICommand.add_to_menu()`.
+`MenuItem(wx.MenuItem)` in `base_uicommand.py` keeps the `UICommand` it
+was created with (`UICommand.add_to_menu()`). `add_to_menu()` binds the
+command's `on_menu_update_ui()` for the item's id, for menu items only,
+never toolbar buttons; `remove_from_menu()` and `Menu.DestroyItem()`
+unbind it.
 
 ---
 
 ## Menu State Update Flow
 
-- **Main menus**: `EVT_MENU_OPEN` → `MainMenu._on_menu_open()` →
-  `menu._update_menu_state()` → each item's `update_enabled_state()`.
-  Fires per menu/submenu on GTK.
-- **Popup menus**: `_updateMenuUI()` in `itemctrl.py` →
-  `popup._update_menu_state()` → same per-item flow.
+- **Main menus**: wx's frame sends the update events when a menu opens,
+  and before an item's shortcut acts.
+- **Popup menus**: `PopupMenu()` sends them before showing the menu.
+  A command with a `visible()` method (Edit in place) is placed only
+  then, by `Menu.show_visible_items()`, and left out while it says no;
+  it is not asked while the menu is built, when what it reads (a view's
+  list) may not exist yet.
+- **Labels** change only while the menu is closed, when what they show
+  changes (Publisher): Undo/Redo the history, recent files the list,
+  Paste as subitem and New subitem the active viewer (the container's
+  `viewer.status` event; a popup menu's are its viewer's from the
+  start). Enabled and checked states, set as the menu opens, change no
+  menu geometry ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#gtk3-dynamic-menu-item-sizing)).
+- **A global menu bar** (Unity-style) gets no menu-open events; with idle
+  updates off its displayed states are not refreshed, as before, but
+  shortcuts are still checked.
+
+---
+
+## The Same Window Once a Second
+
+**Ruled by designer 2026-10-02:** a command opens the same window at
+most once a second. The same window: the same kind of command, on the
+same items, made with the same parameters (Edit on one task, New task
+for one calendar slot, Preferences). Why: a held key, or presses
+queued while the system is busy, opened one window per press,
+hundreds under heavy load, which loads the system further; once a
+second leaves the user time to see what happens and react. Checked in
+the app: Enter held 2 s while the application was busy opened 14
+editors of one task, now one or two (one a second while the queued
+presses are handled); three double-clicks within a second on a task,
+in the list or the calendar, open one editor.
+
+Not held back, as ruled:
+- another item's window: five tasks opened quickly open five editors,
+  two calendar slots two new tasks;
+- commands that open no window: a held key repeats them (a + button);
+- the keys themselves: a held key's characters still reach the window
+  that opened;
+- the same task's editor asked for again a second or more later: a
+  second editor opens, as before.
+
+Every command passes `UICommand.on_command_activate()`: menus,
+shortcuts, toolbar buttons, a list's Enter, Space or double-click, and
+the calendar and timeline views' edits. A command whose run left a new
+top-level window is held back for a second after it, keyed by
+`same_window_key()`: the command's class, a viewer command's selected
+items (their ids) and a command's own parameters (`TaskNew`'s dates,
+`TaskNewFromTemplate`'s file). Not the command object: the calendar
+and timeline views make a new `Edit` for each edit. A modal dialog is
+closed by the time its command returns, so it is not counted; while
+open it takes the keys. Windows opened outside a command open once per
+action that cannot repeat: a reminder's "open the task", the effort
+editor's task button, a dropped attachment. The first press held back
+is logged (`[COMMAND]`, [LOGGING_GUIDE.md](LOGGING_GUIDE.md)). To Do
+72 in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do).
 
 ---
 
@@ -91,14 +149,15 @@ via `update_enabled_state()`. Created in `UICommand.add_to_menu()`.
 
 | Concern     | Toolbar buttons              | Menu items                    |
 |-------------|------------------------------|-------------------------------|
-| **Trigger** | Publisher signals (per-instance) | Menu open event            |
-| **Pattern** | `_ViewSettingsSync`, `_SelectionSync` | `_update_menu_state()` |
-| **Polling** | None — signal-driven         | None — on-demand on open      |
-| **Update**  | `toolbar.EnableTool(id, bool)` | `menuItem.update_enabled_state()` |
+| **Trigger** | Publisher signals (per-instance) | wx's `EVT_UPDATE_UI`: menu open, popup, shortcut |
+| **Pattern** | `_ViewSettingsSync`, `_SelectionSync` | `UICommand.on_menu_update_ui()` |
+| **Polling** | None: signal-driven          | None: asked on demand         |
+| **Update**  | `toolbar.EnableTool(id, bool)` | `event.Enable()`, `Check()`, `SetText()` |
 
 Toolbar buttons use Publisher/Observer signals because they're always
-visible and must update immediately on state change. Menu items only
-need to be correct when visible (on open).
+visible and must update immediately on state change. Menu items need to
+be correct when visible and when their shortcut acts, which is when wx
+asks.
 
 Toolbar **dropdowns** (`ToolbarChoiceCommandMixin`) also use
 `view_settings_changed_event_type()`. On signal, they read current
@@ -118,82 +177,69 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: command determines its own state (tree mode required)
 - Toolbar: signal-driven via `_ViewSettingsSync`
-- Menu: updated via `_update_menu_state()` on menu open
+- Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### EditCut / EditCopy / ClearSelection / Edit / Delete / Mail
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: command determines its own state (selection required)
 - Toolbar: signal-driven via `_SelectionSync`
-- Menu: updated via `_update_menu_state()` on menu open
+- Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### TaskMarkActive / TaskMarkInactive / TaskMarkCompleted
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: command determines its own state (selection + task state)
 - Toolbar: signal-driven via `_SelectionSync`
-- Menu: updated via `_update_menu_state()` on menu open
+- Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### EffortStart / EffortStartForEffort
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: command determines its own state (selection + type + trackability)
 - Toolbar: signal-driven via `_SelectionSync`
-- Menu: updated via `_update_menu_state()` on menu open
+- Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### EffortNew
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: task list non-empty; in task viewer also requires selection
 - Toolbar: signal-driven via `_SelectionSync` (guarded — no viewer in tray menu)
-- Menu: updated via `_update_menu_state()` on menu open
+- Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### EditPasteAsSubItem
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: selection + clipboard non-empty + type compatibility
-- Menu-only (no toolbar) — updated via `_update_menu_state()` on menu open
-- `current_menu_text()`: dynamically returns "Paste as subtask/subnote/subcategory"
+- Menu-only (no toolbar): `EVT_UPDATE_UI` (menu open, before its shortcut)
+- Label: "Paste as subtask/subnote/subcategory" by the active viewer, set when it becomes active (`_KindLabelMixin`)
 
 ### ResetFilter
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: command determines its own state (`viewer.has_filter()`)
 - Toolbar: signal-driven via `Filter.filter_change_event_type()` (fires on any filter change)
-- Menu: updated via `_update_menu_state()` on menu open
+- Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### SelectAll
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: always True
-- Menu-only (no toolbar) — updated via `_update_menu_state()` on menu open
+- Menu-only (no toolbar): `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### ToggleCategory
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: selection + categorizable type + mutual exclusive ancestor check
 - `checked()`: whether all selected items have this category
-- Menu-only (no toolbar) — updated via `_update_menu_state()` on menu open
+- Menu-only (no toolbar): `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### FileSave
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: `iocontroller.need_save()`
-- Toolbar: signal-driven via `taskfile.dirty` / `taskfile.clean` pubsub
-- Menu: updated via `_update_menu_state()` on menu open
-
-### FileMergeDiskChanges
-
-- No `EVT_UPDATE_UI` polling
-- `enabled()`: `iocontroller.changed_on_disk()`
-- Toolbar: signal-driven via `taskfile.changed` / `taskfile.dirty` / `taskfile.clean` pubsub
-- Menu: updated via `_update_menu_state()` on menu open
-
-### FilePurgeDeletedItems
-
-- No `EVT_UPDATE_UI` polling
-- `enabled()`: `iocontroller.has_deleted_items()`
-- Menu-only (no toolbar) — updated via `_update_menu_state()` on menu open
+- Toolbar: signal-driven via the `taskfile.dirty` / `taskfile.clean` events
+- Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### ViewerHideTasks (task status filter buttons)
 
@@ -201,14 +247,14 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 - `enabled()`: always True (filter buttons are always enabled)
 - `checked()`: via `BooleanSettingsCommand.checked()` → `viewer.is_hiding_task_status()`
 - Toolbar: signal-driven via `Filter.filter_change_event_type()` → `ToggleTool(checked())`
-- Menu: updated via `_update_menu_state()` on menu open
+- Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### ViewerHideCompositeTasks
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: `not viewer.is_tree_viewer()` (list mode only)
 - `checked()`: via `BooleanSettingsCommand.checked()`
-- Menu-only (no toolbar) — updated via `_update_menu_state()` on menu open
+- Menu-only (no toolbar): `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### ToggleAutoScroll (auto-scroll to selection)
 
@@ -217,23 +263,23 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 - Toolbar: stay-pressed check button on the main toolbar and the task
   viewer toolbar; all instances sync via Publisher dispatch
   (`registerObserver`, event type `view.autoscrollselection`,
-  `eventSource=settings`) -> `ToggleTool(checked())`; not pypubsub
-- Menu: View menu check item, updated via `_update_menu_state()` on open
+  `eventSource=settings`) -> `ToggleTool(checked())`
+- Menu: View menu check item, `EVT_UPDATE_UI` on open
 - See LIST_MANAGEMENT.md "Auto-Scroll Toggle" for what the setting gates
 
 ### EditTrackedTasks
 
 - No `EVT_UPDATE_UI` polling
 - `enabled()`: `any(taskList.tasks_being_tracked())`
-- Menu-only (no toolbar) — updated via `_update_menu_state()` on menu open
+- Menu-only (no toolbar): `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### EditUndo / EditRedo
 
 - No `EVT_UPDATE_UI` polling
-- `enabled()`: command determines its own state (CommandHistory or focused TextCtrl)
-- `current_menu_text()`: dynamic text ("Undo *add task*", "Redo *delete*")
+- `enabled()`: true in a text field (it takes the key for its own undo), else the CommandHistory; the toolbar button follows the CommandHistory alone
+- Label: "Undo *add task*", "Redo *delete*", set at the `commandhistory.changed` event
 - Toolbar: signal-driven via the `commandhistory.changed` Publisher event
-- Menu: updated via `_update_menu_state()` on menu open
+- Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 
 ### TaskPriorityParentMenu (parent menu item with submenu)
 
@@ -241,8 +287,8 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 - `do_command()`: no-op (clicking opens the submenu, not a command action)
 - `add_to_menu()` called with `subMenu=TaskPriorityMenu(...)` — creates a
   `MenuItem` that is both a submenu header and a command-backed item
-- `_update_menu_state()` picks it up like any other `MenuItem` via
-  `update_state()` — no special submenu handling needed
+- Its `EVT_UPDATE_UI` answer serves it like any other menu item; no
+  special submenu handling needed
 - This is the pattern for parent menu items that need enable/disable:
   create a UICommand with `enabled()` and pass the submenu via
   `add_to_menu(menu, window, subMenu=...)`. The command owns the text,
@@ -268,6 +314,73 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 
 ---
 
+## Keyboard Shortcuts
+
+Two kinds, reaching keys in opposite order on GTK:
+
+- **Menu shortcuts** (after `\t` in a command's menu text): the
+  focused control gets the key first, the menu only what it leaves.
+- **Accelerator tables** (`SetAcceleratorTable()`): wxGTK checks the
+  tables of the focused window and its parents before the window
+  gets the key, so a table takes its keys from every child.
+
+A viewer's plain keys (Return, numpad Enter, Ctrl+X/C/V, Ctrl+Del)
+are therefore on its list widget, not the viewer, whose toolbar holds
+the search box (`Viewer.createToolBarUICommands()`). The main
+window's table only adds numpad Enter to the menu's Enter shortcuts
+that have a modifier (`UICommand.accelerators()`).
+
+In a text field (`wx.TextCtrl`, `wx.SearchCtrl` or the editors'
+Scintilla fields, `_TEXT_FIELDS` in `uicommand.py`) Undo, Redo, Cut,
+Copy, Paste, Delete and Select All act on its text, from the keyboard,
+the menu or an editor's Ctrl+Z and Ctrl+Y. Undo takes back the typing
+only, never text the program set:
+
+| Field | Undo from | Note |
+|-------|-----------|-------|
+| Scintilla (editor fields) | Scintilla, every platform | history emptied when the program sets the text |
+| `wx.TextCtrl`, `wx.SearchCtrl` on Windows | the native control | `EM_UNDO`, one level |
+| the same on GTK; single-line ones on macOS | Task Coach (`workarounds/textundo.py`) | wxWidgets 3.2.8 leaves `Undo()` unimplemented there; GTK 3's entries have none |
+
+`textundo` records each field's text before every key
+(`EVT_CHAR_HOOK` on the app, which comes before accelerator tables
+and the field), takes Ctrl+Z, Ctrl+Y and Ctrl+Shift+Z, and starts a
+field's history over when the program sets its text (`SetValue`,
+`ChangeValue`, `Clear`). Typing on, and deleting on, join one step;
+password and read-only fields are left alone. It reads and sets the
+text through the wx class's own `GetValue()` and `SetValue()`: an
+amount field's (`NumericCtrl`) give the amount.
+
+Undo and Redo are enabled whenever a text field has focus (it takes the
+key for its own history) or the task history has a step.
+
+### Pages: Ctrl+PgDn and Ctrl+PgUp
+
+**Ruled by designer 2026-10-02** (P122 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)):
+the keys go to the next and previous page of the window the focus is
+in, whatever control has it, so a list no longer takes them as Page
+Down and Page Up and a text field no longer swallows them:
+
+- the main window and its floating views: the next or previous view,
+  in the order the views were opened, docked, tabbed and floating; a
+  floating one is brought to the front with the focus.
+- a dialog with tabs (the editors, Preferences): the next or previous
+  tab, wrapping round, as Ctrl+Tab does.
+
+`gui/pagekeys.py` takes them with `EVT_CHAR_HOOK` on the app, before
+the focused control; the View menu's "Activate next/previous viewer"
+items still show the keys. F6
+and Shift+F6 (the Windows and GTK pane keys) were not added: not asked
+for.
+
+A click with either button anywhere in a view makes it the active
+view (`Viewer._bind_activation_events()`): a list takes the focus on
+a click, the calendars, timeline, square map and statistics take none
+and are made active by the click itself.
+
+---
+
 ## Key Files
 
 | File | Role |
@@ -275,6 +388,8 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 | `taskcoachlib/gui/uicommand/base_uicommand.py` | `MenuItem` subclass, `UICommand` base with `add_to_menu()` |
 | `taskcoachlib/gui/uicommand/uicommand.py` | Concrete commands with `enabled()` overrides |
 | `taskcoachlib/gui/uicommand/mixin_uicommand.py` | `PopupButtonMixin` (toolbar popup menu behavior) |
-| `taskcoachlib/gui/menu.py` | `Menu._update_menu_state()`, `MainMenu._on_menu_open()` |
+| `taskcoachlib/gui/menu.py` | `Menu.DestroyItem()` unbinds an item's handlers |
+| `taskcoachlib/gui/pagekeys.py` | Ctrl+PgDn and Ctrl+PgUp turn the page of the window in use |
 | `taskcoachlib/gui/viewer/base.py` | `has_selection` property, `is_tree_viewer()`, selection signals |
-| `taskcoachlib/widgets/itemctrl.py` | `_updateMenuUI()` for popup menus |
+| `taskcoachlib/gui/toolbar.py` | `_Toolbar.DoIdleUpdate()` skips AGW's idle loop |
+| `taskcoachlib/application/application.py` | `SetUpdateInterval(-1)`: no update events in idle time |

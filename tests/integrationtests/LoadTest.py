@@ -40,8 +40,9 @@ class LoadTest(test.TestCase):
     def tearDown(self):
         wx.CallAfter = self.oldCallAfter
         self.mockApp.quit_application()
-        if os.path.isfile(self.filename):
-            os.remove(self.filename)
+        for filename in [self.filename, self.filename + ".lock"]:
+            if os.path.isfile(filename):
+                os.remove(filename)
         mock.App.deleteInstance()
         super().tearDown()
 

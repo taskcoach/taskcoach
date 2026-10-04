@@ -7,7 +7,7 @@ VENV_PATH="$SCRIPT_DIR/.venv"
 
 if [ ! -d "$VENV_PATH" ]; then
     echo "Error: Virtual environment not found at $VENV_PATH"
-    echo "Please run setup_bookworm.sh first to set up the virtual environment"
+    echo "Please run setup.sh first to set up the virtual environment"
     exit 1
 fi
 

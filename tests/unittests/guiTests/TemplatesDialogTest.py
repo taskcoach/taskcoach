@@ -17,23 +17,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test, os, shutil
+from unittest import mock
 from taskcoachlib import gui, config
 
 
 class TemplatesDialogTestCase(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
+        self.settings = config.settings.current()
 
         # Monkey-patching
         self.path = os.path.join(os.path.split(__file__)[0], "tmpl")
         self.safelyRemove(self.path)
         os.mkdir(self.path)
 
-        self.settings.pathToTemplatesDir = lambda: self.path
+        patcher = mock.patch.object(
+            self.settings, "pathToTemplatesDir", lambda: self.path
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
         self.editor = gui.dialog.templates.TemplatesDialog(
-            self.settings, self.frame, title="title"
+            self.frame, title="title"
         )
 
     def tearDown(self):

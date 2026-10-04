@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 from wx.lib.agw import hyperlink
 from taskcoachlib import meta
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from wx.lib import sized_controls
 from taskcoachlib.tools import wxhelper
@@ -31,7 +32,6 @@ class VersionDialog(sized_controls.SizedDialog):  # pylint: disable=R0904,R0901
     title = ""
 
     def __init__(self, *args, **kwargs):
-        self.settings = kwargs.pop("settings")
         self.message = kwargs.pop("message")
         version = kwargs.pop("version")
         super().__init__(title=self.title, *args, **kwargs)
@@ -40,15 +40,15 @@ class VersionDialog(sized_controls.SizedDialog):  # pylint: disable=R0904,R0901
         self.messageInfo = dict(
             version=version,
             name=meta.data.name,
-            currentVersion=meta.data.version,
+            currentVersion=meta.data.version_full,
         )
         self.createInterior(pane)
         self.check = wx.CheckBox(pane, label=_("Notify me of new versions."))
-        self.check.SetValue(self.settings.getboolean("version", "notify"))
+        self.check.SetValue(settings.version.notify)
         buttonSizer = self.CreateStdDialogButtonSizer(wx.OK)
         self.SetButtonSizer(buttonSizer)
         self.Fit()
-        wxhelper.getButtonFromStdDialogButtonSizer(buttonSizer, wx.ID_OK).Bind(
+        wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.onClose
         )
         self.Bind(wx.EVT_CLOSE, self.onClose)
@@ -62,7 +62,7 @@ class VersionDialog(sized_controls.SizedDialog):  # pylint: disable=R0904,R0901
         """When the user closes the dialog, remember whether (s)he wants to be
         notified of new versions."""
         event.Skip()
-        self.settings.set("version", "notify", str(self.check.GetValue()))
+        settings.version.notify = self.check.GetValue()
 
 
 class NewVersionDialog(VersionDialog):
@@ -81,7 +81,11 @@ class NewVersionDialog(VersionDialog):
             label=_("Version %(version)s of %(name)s is available from")
             % self.messageInfo,
         )
-        hyperlink.HyperLinkCtrl(urlPanel, label=meta.data.url)
+        hyperlink.HyperLinkCtrl(
+            urlPanel,
+            label=meta.data.latest_release_url,
+            URL=meta.data.latest_release_url,
+        )
 
 
 class VersionUpToDateDialog(VersionDialog):

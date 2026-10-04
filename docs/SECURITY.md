@@ -34,18 +34,33 @@ references instead.
 
 ## Audit Results
 
-Full audit of `taskcoachlib/` for dynamic function calls (2026-02-16).
+Full audit of `taskcoachlib/` for dynamic function calls (2026-02-16,
+updated 2026-09-30).
 
 ### Category 1: getattr-as-dispatch (string to function call)
 
+Every name is built from a constant or from Task Coach's own data; the
+only input from outside the code is the INI file, where a sort key can
+reach only methods named `*SortFunction`.
+
 | File | Line | Pattern | Risk | Status |
 |------|------|---------|------|--------|
-| `gui/icons/synthetic_icon_generator.py` | 55-65 | `if/elif` on `method_name` | None | **Fixed** — explicit if/elif |
-| `changes/monitor.py` | 59,112 | `getattr(klass, "%sChangedEventType" % name)()` | Low | Internal: name from hardcoded list |
-| `changes/sync.py` | 208+ | `getattr(memOwner, "add%s" % className)(obj)` | Low | Internal: className from sync protocol |
-| `patches/hypertreelist.py` | 5508 | `getattr(self._main_win, method)(*a, **k)` | Low | Internal: widget method proxy |
-| `viewer/task.py` | 730 | `getattr(task.Task, "%sChangedEventType" % choice)()` | Low | Internal: choice from settings |
-| `editor.py` | 808 | `getattr(self.items[0], "%sColor" % colorType)()` | Low | Internal: colorType is "fg"/"bg" |
+| `gui/icons/synthetic_icon_generator.py` | 55-65 | `if/elif` on `method_name` | None | **Fixed**: explicit if/elif |
+| `changes/monitor.py` | 59,112 | `getattr(klass, "%sChangedEventType" % name)()` | Low | **Removed** 2026-09-27 with the automatic merge ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)) |
+| `changes/sync.py` | 208+ | `getattr(memOwner, "add%s" % className)(obj)` | Low | **Removed** 2026-09-27 with the automatic merge |
+| `patches/hypertreelist.py` | 5784 | `getattr(self._main_win, method)(*a, **k)` | Low | Internal: widget method proxy |
+| `gui/viewer/task.py` | 720, 727 | `getattr(task.Task, "%sChangedEventType" % choice)()` | Low | Internal: a column name |
+| `gui/viewer/task.py` | 1487, 1660 | `getattr(self, "render%s" % name)` | Low | Internal: a column name |
+| `gui/dialog/editor.py` | 1016, 1023 | `"%sColor"`, `"Edit%sColorCommand"` | Low | Internal: `"fg"` or `"bg"` |
+| `domain/base/sorter.py` | 135 | `getattr(klass, "%sSortFunction" % sort_key)` | Low | Sort key from the INI file; an unknown one falls back, logged |
+| `domain/base/sorter.py` | 170 | `getattr(klass, "%sSortEventTypes" % attribute, None)` | Low | Internal: the sort key above |
+| `domain/effort/reducer.py` | 42, 44 | `"startOf%s"`, `"endOf%s" % aggregation` | Low | Internal: day, week or month (asserted) |
+| `domain/base/appearance.py` | 220 | `getattr(parent, effective_getter + "Source")()` | Low | Internal: a style field |
+| `gui/scheduler.py` | 90, 120, 152 | `"effective%sChangedEventType"`, `"%sChangedEventType"` | Low | Internal: the loop's field lists |
+| `widgets/treectrl.py` | 634 | `getattr(self, "_refresh_%s" % aspect)` | Low | Internal: text, image, colors, font |
+| `persistence/merge.py` | 172 | `getattr(owner, "set" + kind.capitalize())` | Low | Internal: a list kind |
+| `persistence/xml/writer.py` | 386 | `getattr(task, name + "tmpl")` | Low | Internal: the template date names |
+| `meta/geometry_trace.py` | 77 | `getattr(gtk, "gtk_widget_" + name)` | Low | Internal: diagnostic, not imported by the app |
 
 ### Category 2: eval/exec
 

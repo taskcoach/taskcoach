@@ -17,7 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import i18n, operating_system, patterns
+from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
+from taskcoachlib.tools import text as tools_text
 import functools
 import wx
 import wx.stc as stc
@@ -27,7 +29,6 @@ import re
 # Try to import enchant for spell checking
 try:
     import enchant
-    from enchant.checker import SpellChecker
 
     ENCHANT_AVAILABLE = True
 except ImportError:
@@ -47,15 +48,7 @@ class SpellCheckMixin:
     @classmethod
     def _detectLanguage(cls):
         """Detect the system language for spell checking."""
-        import locale
-
-        try:
-            lang, _ = locale.getdefaultlocale()
-            if lang:
-                return lang
-        except (ValueError, TypeError):
-            pass
-        return "en_US"  # Default fallback
+        return i18n.system_language() or "en_US"
 
     @classmethod
     def getAvailableLanguages(cls):
@@ -71,116 +64,6 @@ class SpellCheckMixin:
         except Exception as e:
             log_step("enchant.list_languages() failed: %s" % e, prefix="SPELL")
             return []
-
-
-UNICODE_CONTROL_CHARACTERS_TO_WEED = {}
-for ordinal in range(0x20):
-    if chr(ordinal) not in "\t\r\n":
-        UNICODE_CONTROL_CHARACTERS_TO_WEED[ordinal] = None
-
-
-class BaseTextCtrl(wx.TextCtrl):
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__(parent, -1, *args, **kwargs)
-        self.__data = None
-        if operating_system.isGTK() or operating_system.isMac():
-            if operating_system.isGTK():
-                self.Bind(wx.EVT_KEY_DOWN, self.__on_key_down)
-            self.Bind(wx.EVT_KILL_FOCUS, self.__on_kill_focus)
-            self.__initial_value = self.GetValue()
-            self.__undone_value = None
-
-    def GetValue(self, *args, **kwargs):
-        value = super().GetValue(*args, **kwargs)
-        # Don't allow unicode control characters:
-        return value.translate(UNICODE_CONTROL_CHARACTERS_TO_WEED)
-
-    def SetValue(self, *args, **kwargs):
-        super().SetValue(*args, **kwargs)
-        if operating_system.isGTK() or operating_system.isMac():
-            self.__initial_value = self.GetValue()
-
-    def AppendText(self, *args, **kwargs):
-        super().AppendText(*args, **kwargs)
-        if operating_system.isGTK() or operating_system.isMac():
-            self.__initial_value = self.GetValue()
-
-    def SetData(self, data):
-        self.__data = data
-
-    def GetData(self):
-        return self.__data
-
-    def CanUndo(self):
-        if operating_system.isMac():
-            return self.__can_undo()
-        return super().CanUndo()
-
-    def Undo(self):
-        if operating_system.isMac():
-            self.__undo()
-        else:
-            super().Undo()
-
-    def CanRedo(self):
-        if operating_system.isMac():
-            return self.__can_redo()
-        return super().CanRedo()
-
-    def Redo(self):
-        if operating_system.isMac():
-            self.__redo()
-        else:
-            super().Redo()
-
-    def __on_key_down(self, event):
-        """Check whether the user pressed Ctrl-Z (or Ctrl-Y) and if so,
-        undo (or redo) the editing."""
-        if self.__ctrl_z_pressed(event) and self.__can_undo():
-            self.__undo()
-        elif self.__ctrl_y_pressed(event) and self.__can_redo():
-            self.__redo()
-        else:
-            event.Skip()
-
-    @staticmethod
-    def __ctrl_z_pressed(event):
-        """Did the user press Ctrl-Z (for undo)?"""
-        return event.GetKeyCode() == ord("Z") and event.ControlDown()
-
-    def __can_undo(self):
-        """Is there a change to be undone?"""
-        return self.GetValue() != self.__initial_value
-
-    def __undo(self):
-        """Undo the last change."""
-        insertion_point = self.GetInsertionPoint()
-        self.__undone_value = self.GetValue()
-        super().SetValue(self.__initial_value)
-        insertion_point = min(insertion_point, self.GetLastPosition())
-        self.SetInsertionPoint(insertion_point)
-
-    @staticmethod
-    def __ctrl_y_pressed(event):
-        """Did the user press Ctrl-Y (for redo)?"""
-        return event.GetKeyCode() == ord("Y") and event.ControlDown()
-
-    def __can_redo(self):
-        """Is there an undone change to be redone?"""
-        return self.__undone_value not in (self.GetValue(), None)
-
-    def __redo(self):
-        """Redo the last undone change."""
-        insertion_point = self.GetInsertionPoint()
-        super().SetValue(self.__undone_value)
-        self.__undone_value = None
-        insertion_point = min(insertion_point, self.GetLastPosition())
-        self.SetInsertionPoint(insertion_point)
-
-    def __on_kill_focus(self, event):
-        """Reset the edit history."""
-        self.__initial_value = self.GetValue()
-        self.__undone_value = None
 
 
 class _StyledTextCtrl(stc.StyledTextCtrl):
@@ -213,7 +96,6 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         parent,
         text="",
         *args,
-        settings=None,
         single_line=False,
         spell_check=True,
         **kwargs
@@ -222,7 +104,6 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         kwargs.pop("style", None)
         super().__init__(parent, style=wx.BORDER_NONE)
 
-        self._settings = settings
         self._single_line = single_line
         self._spell_check_requested = spell_check  # User requested spell check
         self._spellCheckEnabled = False
@@ -242,9 +123,11 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             self.SetText(text)
             self.SetCurrentPos(0)
             self.SetAnchor(0)
+        # Undo takes back the user's typing, not the text loaded
+        self.EmptyUndoBuffer()
 
         # Initialize spell checking
-        self._initSpellCheck()
+        self._init_spell_check()
 
         # URL handling
         try:
@@ -315,7 +198,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         event.Skip()
 
     def _pasteWithoutNewlines(self):
-        """Paste clipboard text with newlines replaced by spaces."""
+        """Paste clipboard text as one line."""
         if wx.TheClipboard.Open():
             try:
                 if wx.TheClipboard.IsSupported(
@@ -323,15 +206,10 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                 ):
                     data = wx.TextDataObject()
                     wx.TheClipboard.GetData(data)
-                    text = data.GetText()
-                    # Replace newlines with spaces
-                    text = (
-                        text.replace("\r\n", " ")
-                        .replace("\r", " ")
-                        .replace("\n", " ")
-                    )
                     # Insert at current position (replacing selection if any)
-                    self.ReplaceSelection(text)
+                    self.ReplaceSelection(
+                        tools_text.single_line(data.GetText())
+                    )
             finally:
                 wx.TheClipboard.Close()
 
@@ -380,17 +258,13 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
 
     def _getSquiggleColor(self):
         """Get the squiggle color from settings, respecting light/dark theme."""
-        if self._settings is None:
-            return wx.RED
         try:
-            from taskcoachlib.config import settings2
-
             section = (
                 "spellcheck_dark"
-                if settings2.window.theme_is_dark
+                if settings.window.theme_is_dark
                 else "spellcheck_light"
             )
-            color_tuple = self._settings.getvalue(section, "squiggle_color")
+            color_tuple = settings.get(section, "squiggle_color")
             return wx.Colour(*color_tuple)
         except Exception as e:
             log_step(
@@ -418,36 +292,22 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         self.SetHotspotActiveForeground(True, wx.BLUE)
         self.Bind(stc.EVT_STC_HOTSPOT_CLICK, self._onHotspotClick)
 
-    def _initSpellCheck(self):
+    def _init_spell_check(self):
         """Initialize spell checking."""
         if not ENCHANT_AVAILABLE or not self._spell_check_requested:
             return
 
-        # Load settings
-        if self._settings:
-            try:
-                self._spellCheckEnabled = self._settings.getboolean(
-                    "spellcheck", "enabled"
-                )
-                self._spellCheckLanguage = (
-                    self._settings.get("spellcheck", "language") or None
-                )
-            except Exception as e:
-                log_step(
-                    "spellcheck settings load failed, using defaults: %s" % e,
-                    prefix="SPELL",
-                )
-                self._spellCheckEnabled = True
-                self._spellCheckLanguage = None
-        else:
-            # No settings passed - enable spell check by default if requested
-            self._spellCheckEnabled = True
+        self._spellCheckEnabled = settings.spellcheck.enabled
+        self._spellCheckLanguage = settings.spellcheck.language or None
 
         if self._spellCheckEnabled:
+            self._highlight_later = patterns.later.debounced(
+                self, 300, self._performHighlighting
+            )
             self.Bind(stc.EVT_STC_MODIFIED, self._onTextModified)
             self.Bind(wx.EVT_CONTEXT_MENU, self._onSpellCheckContextMenu)
             # Initial spell check and URL detection
-            wx.CallAfter(self._performHighlighting)
+            patterns.later.soon(self, self._performHighlighting)
 
     def _onTextModified(self, event):
         """Handle text changes - schedule spell check and URL detection."""
@@ -455,13 +315,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         if event.GetModificationType() & (
             stc.STC_MOD_INSERTTEXT | stc.STC_MOD_DELETETEXT
         ):
-            # Debounce highlighting
-            if (
-                hasattr(self, "_highlightTimer")
-                and self._highlightTimer.IsRunning()
-            ):
-                self._highlightTimer.Stop()
-            self._highlightTimer = wx.CallLater(300, self._performHighlighting)
+            self._highlight_later()
 
     def _getSpellDict(self):
         """Get spell dictionary for current language."""
@@ -470,12 +324,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
 
         language = self._spellCheckLanguage
         if language is None:
-            import locale
-
-            try:
-                language, _ = locale.getdefaultlocale()
-            except (ValueError, TypeError):
-                language = "en_US"
+            language = SpellCheckMixin._detectLanguage()
 
         if language not in self._spell_dicts:
             try:
@@ -682,7 +531,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         new_text = text[:start] + replacement + text[end:]
         self.SetText(new_text)
         self.SetSelection(start + len(replacement), start + len(replacement))
-        wx.CallAfter(self._performHighlighting)
+        patterns.later.soon(self, self._performHighlighting)
 
     def _addToDictionary(self, word):
         """Add word to personal dictionary."""
@@ -690,7 +539,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         if spell_dict:
             try:
                 spell_dict.add(word)
-                wx.CallAfter(self._performHighlighting)
+                patterns.later.soon(self, self._performHighlighting)
             except Exception as e:
                 log_step(
                     "add word to dictionary failed: %s" % e, prefix="SPELL"
@@ -699,17 +548,18 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
     # Compatibility methods to match wx.TextCtrl interface
     def GetValue(self):
         """Get the text value (TextCtrl compatibility)."""
-        return self.GetText().translate(UNICODE_CONTROL_CHARACTERS_TO_WEED)
+        return tools_text.multi_line(self.GetText())
 
     def SetValue(self, value):
         """Set the text value (TextCtrl compatibility)."""
         self.SetText(value)
-        wx.CallAfter(self._performHighlighting)
+        self.EmptyUndoBuffer()
+        patterns.later.soon(self, self._performHighlighting)
 
     def AppendText(self, text):
         """Append text (TextCtrl compatibility)."""
         self.AddText(text)
-        wx.CallAfter(self._performHighlighting)
+        patterns.later.soon(self, self._performHighlighting)
 
     def GetInsertionPoint(self):
         """Get cursor position (TextCtrl compatibility)."""
@@ -802,7 +652,6 @@ class MultiLineTextCtrl(wx.Panel):
         parent,
         text="",
         *args,
-        settings=None,
         single_line=False,
         spell_check=True,
         **kwargs
@@ -819,7 +668,6 @@ class MultiLineTextCtrl(wx.Panel):
             self,
             text,
             *args,
-            settings=settings,
             single_line=single_line,
             spell_check=spell_check,
             style=style,
@@ -876,7 +724,9 @@ class MultiLineTextCtrl(wx.Panel):
         windowBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         if self._lastWindowBg != windowBg:
             self._lastWindowBg = windowBg
-            wx.CallAfter(self._textCtrl._applyThemeColours)
+            patterns.later.soon(
+                self._textCtrl, self._textCtrl._applyThemeColours
+            )
 
     # Proxy common TextCtrl methods to the inner control
     def GetValue(self, *args, **kwargs):
@@ -935,16 +785,11 @@ class MultiLineTextCtrl(wx.Panel):
     def Bind(self, event, handler, *args, **kwargs):
         # Text and focus events go to inner control; others to panel
         if event in (
-            wx.EVT_TEXT,
             wx.EVT_TEXT_URL,
             wx.EVT_TEXT_ENTER,
             wx.EVT_SET_FOCUS,
             wx.EVT_KILL_FOCUS,
         ):
-            if event == wx.EVT_TEXT:
-                return self._textCtrl.Bind(
-                    stc.EVT_STC_CHANGE, handler, *args, **kwargs
-                )
             return self._textCtrl.Bind(event, handler, *args, **kwargs)
         return super().Bind(event, handler, *args, **kwargs)
 
@@ -964,9 +809,7 @@ class MultiLineTextCtrl(wx.Panel):
         return self._textCtrl.setSpellCheckLanguage(language)
 
 
-def single_line_text_ctrl(
-    parent, value="", settings=None, spell_check=True, **kwargs
-):
+def single_line_text_ctrl(parent, value="", spell_check=True, **kwargs):
     """Single-line text control with optional spell checking.
 
     This is a convenience wrapper that creates a MultiLineTextCtrl with
@@ -977,17 +820,22 @@ def single_line_text_ctrl(
             for fields like file paths or URLs.
     """
     return MultiLineTextCtrl(
-        parent,
-        value,
-        settings=settings,
-        single_line=True,
-        spell_check=spell_check,
-        **kwargs
+        parent, value, single_line=True, spell_check=spell_check, **kwargs
     )
 
 
-class StaticTextWithToolTip(wx.StaticText):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        label = kwargs["label"]
-        self.SetToolTip(wx.ToolTip(label))
+def read_only_text(parent, value="", multiline=False):
+    """A value the user cannot change, drawn as the window's text, not
+    in an input box (docs/DEVELOPMENT.md, Design, "Read-only looks
+    read-only"). One line is a label, cut at the end when too long, with
+    the whole value as its tooltip. Several lines scroll in a read-only
+    box with the window's colour."""
+    if multiline:
+        style = wx.TE_READONLY | wx.TE_MULTILINE | wx.TE_DONTWRAP
+        ctrl = wx.TextCtrl(parent, value=value, style=style)
+        ctrl.SetBackgroundColour(parent.GetBackgroundColour())
+        return ctrl
+    ctrl = wx.StaticText(parent, label=value, style=wx.ST_ELLIPSIZE_END)
+    if value:
+        ctrl.SetToolTip(value)
+    return ctrl

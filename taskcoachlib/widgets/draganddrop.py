@@ -18,23 +18,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx
-import urllib.request, urllib.parse, urllib.error
+from taskcoachlib import mailer, patterns
 from taskcoachlib.mailer import thunderbird, outlook
+from taskcoachlib.mailer.outlook import OUTLOOK_FORMAT
 from taskcoachlib.i18n import _
 
 
 def _getLinkCursor(window=None):
     """Get or create a link cursor for prereq/dep column drag."""
     from taskcoachlib.gui.icons.icon_library import icon_catalog
+
     return icon_catalog.get_cursor("synthetic_dnd_cursor_link", window)
 
 
 def _getHomeCursor(window=None):
     """Get or create a home folder cursor for root drop locations."""
     from taskcoachlib.gui.icons.icon_library import icon_catalog
+
     return icon_catalog.get_cursor("synthetic_dnd_cursor_home", window)
 
 
+def not_allowed_cursor(window=None):
+    """Task Coach's own "not allowed" cursor: wx's no-entry cursor is
+    a skull where the cursor theme has no picture for it."""
+    from taskcoachlib.gui.icons.icon_library import icon_catalog
+
+    return icon_catalog.get_cursor("synthetic_cursor_not_allowed", window)
 
 
 class FileDropTarget(wx.FileDropTarget):
@@ -73,43 +82,38 @@ class TextDropTarget(wx.TextDropTarget):
 class DropTarget(wx.DropTarget):
     def __init__(
         self,
-        onDropURLCallback,
-        onDropFileCallback,
-        onDropMailCallback,
+        on_drop_url,
+        on_drop_files,
+        on_drop_mail,
         onDragOverCallback=None,
     ):
         super().__init__()
-        self.__onDropURLCallback = onDropURLCallback
-        self.__onDropFileCallback = onDropFileCallback
-        self.__onDropMailCallback = onDropMailCallback
+        self.__on_drop_url = on_drop_url
+        self.__on_drop_files = on_drop_files
+        self.__on_drop_mail = on_drop_mail
         self.__onDragOverCallback = onDragOverCallback
         self.reinit()
 
     def reinit(self):
         # pylint: disable=W0201
-        self.__compositeDataObject = wx.DataObjectComposite()
-        self.__urlDataObject = wx.TextDataObject()
-        self.__fileDataObject = wx.FileDataObject()
-        self.__thunderbirdMailDataObject = wx.CustomDataObject(
-            "text/x-moz-message"
-        )
-        self.__urilistDataObject = wx.CustomDataObject("text/uri-list")
-        self.__outlookDataObject = wx.CustomDataObject("Object Descriptor")
-        # Starting with Snow Leopard, mail.app supports the message: protocol
-        self.__macMailObject = wx.CustomDataObject("public.url")
-        for dataObject in (
-            self.__thunderbirdMailDataObject,
-            self.__urilistDataObject,
-            self.__macMailObject,
-            self.__outlookDataObject,
-            self.__urlDataObject,
-            self.__fileDataObject,
+        self._text_data = wx.TextDataObject()
+        self._file_data = wx.FileDataObject()
+        # Only Outlook drags this format (docs/EMAIL_ATTACHMENTS.md)
+        self._outlook_data = wx.CustomDataObject(OUTLOOK_FORMAT)
+        # A macOS drag's link: an Apple Mail or Thunderbird message
+        self._url_data = wx.CustomDataObject("public.url")
+        self.__composite = wx.DataObjectComposite()
+        # On Windows and macOS the first format here that the source
+        # offers is taken, so Outlook's comes before text; GTK takes
+        # the source's first format we accept
+        for data_object in (
+            self._url_data,
+            self._outlook_data,
+            self._text_data,
+            self._file_data,
         ):
-            # Note: The first data object added is the preferred data object.
-            # We add urlData after outlookData so that Outlook messages are not
-            # interpreted as text objects.
-            self.__compositeDataObject.Add(dataObject)
-        self.SetDataObject(self.__compositeDataObject)
+            self.__composite.Add(data_object)
+        self.SetDataObject(self.__composite)
 
     def OnDragOver(self, x, y, result):  # pylint: disable=W0221
         if self.__onDragOverCallback is None:
@@ -122,118 +126,138 @@ class DropTarget(wx.DropTarget):
 
     def OnData(self, x, y, result):  # pylint: disable=W0613
         self.GetData()
-        formatType, formatId = self.getReceivedFormatTypeAndId()
-
-        if formatId == "text/x-moz-message":
-            self.onThunderbirdDrop(x, y)
-        elif formatId == "text/uri-list" and formatType == wx.DF_FILENAME:
-            # GetData() returns memoryview in wxPython 4, convert to string
-            data = self.__urilistDataObject.GetData()
-            if isinstance(data, memoryview):
-                data = bytes(data).decode("utf-8", errors="replace")
-            elif isinstance(data, bytes):
-                data = data.decode("utf-8", errors="replace")
-            urls = data.strip().split("\n")
-            for url in urls:
-                url = url.strip()
-                if url.startswith("#"):
-                    continue
-                if self.__tmp_mail_file_url(url) and self.__onDropMailCallback:
-                    filename = urllib.parse.unquote(url[len("file://") :])
-                    self.__onDropMailCallback(x, y, filename)
-                elif url.startswith("file://") and self.__onDropFileCallback:
-                    # file:// URLs should be treated as files, not links
-                    filename = urllib.request.url2pathname(
-                        urllib.parse.unquote(url[7:])
-                    )
-                    self.__onDropFileCallback(x, y, [filename])
-                elif self.__onDropURLCallback:
-                    self.__onDropURLCallback(x, y, url)
-        elif formatId == "Object Descriptor":
-            self.onOutlookDrop(x, y)
-        elif formatId == "public.url":
-            # GetData() returns memoryview in wxPython 4, convert to string
-            url = self.__macMailObject.GetData()
-            if isinstance(url, memoryview):
-                url = bytes(url).decode("utf-8", errors="replace")
-            elif isinstance(url, bytes):
-                url = url.decode("utf-8", errors="replace")
-            if (
-                url.startswith("imap:") or url.startswith("mailbox:")
-            ) and self.__onDropMailCallback:
-                try:
-                    self.__onDropMailCallback(x, y, thunderbird.getMail(url))
-                except thunderbird.ThunderbirdCancelled:
-                    pass
-                except thunderbird.ThunderbirdError as e:
-                    wx.MessageBox(str(e), _("Error"), wx.OK)
-            elif self.__onDropURLCallback:
-                self.__onDropURLCallback(x, y, url)
-        elif formatType in (wx.DF_TEXT, wx.DF_UNICODETEXT):
-            self.onUrlDrop(x, y)
-        elif formatType == wx.DF_FILENAME:
-            self.onFileDrop(x, y)
-
+        self.dispatch(x, y, *self.get_received_format_type_and_id())
         self.reinit()
         return wx.DragCopy
 
-    def getReceivedFormatTypeAndId(self):
-        receivedFormat = self.__compositeDataObject.GetReceivedFormat()
-        formatType = receivedFormat.GetType()
+    def get_received_format_type_and_id(self):
+        received_format = self.__composite.GetReceivedFormat()
         try:
-            formatId = receivedFormat.GetId()
+            format_id = received_format.GetId()
         except RuntimeError:
-            formatId = None  # Format ID not available
-        return formatType, formatId
+            format_id = None  # Format ID not available
+        return received_format.GetType(), format_id
 
-    @staticmethod
-    def __tmp_mail_file_url(url):
-        """Return whether the url is a dropped mail message."""
-        return url.startswith("file:") and (
-            "/.cache/evolution/tmp/drag-n-drop" in url
-            or "/.claws-mail/tmp/" in url
+    def dispatch(self, x, y, format_type, format_id):
+        """Hand the dropped data, as the data objects hold it, to its
+        callback: a mail program's mails, files, a link or text."""
+        if format_id == OUTLOOK_FORMAT:
+            self.on_outlook_drop(x, y)
+        elif format_id == "public.url":
+            self.on_mac_url_drop(x, y)
+        elif format_type in (wx.DF_TEXT, wx.DF_UNICODETEXT):
+            self.on_url_drop(x, y)
+        elif format_type == wx.DF_FILENAME:
+            self.on_file_drop(x, y)
+
+    def __drop_mails(self, x, y, mails):
+        if mails and self.__on_drop_mail:
+            self.__on_drop_mail(x, y, mails)
+
+    def __thunderbird_mails(self, uris):
+        try:
+            return [thunderbird.get_mail(uri) for uri in uris]
+        except thunderbird.ThunderbirdCancelled:
+            return []
+        except thunderbird.ThunderbirdError as reason:
+            wx.MessageBox(str(reason), _("Error"), wx.OK | wx.ICON_ERROR)
+            return []
+
+    def on_outlook_drop(self, x, y):
+        self.__drop_mails(x, y, outlook.get_current_selection())
+
+    def on_mac_url_drop(self, x, y):
+        url = bytes(self._url_data.GetData()).decode("utf-8", "replace")
+        url = url.strip("\x00\r\n ")
+        if url.startswith(("imap:", "mailbox:")):
+            # Thunderbird's message
+            self.__drop_mails(x, y, self.__thunderbird_mails([url]))
+        elif self.__on_drop_url:
+            self.__on_drop_url(x, y, url)
+
+    def on_url_drop(self, x, y):
+        text = self._text_data.GetText()
+        # Thunderbird drags its messages' URIs as text
+        uris = thunderbird.message_uris(text)
+        if uris:
+            self.__drop_mails(x, y, self.__thunderbird_mails(uris))
+        elif self.__on_drop_url:
+            url = text if ":" in text else "http://" + text  # No scheme
+            self.__on_drop_url(x, y, url)
+
+    def on_file_drop(self, x, y):
+        # A mail program drags its mails as files in a temporary
+        # folder (docs/EMAIL_ATTACHMENTS.md, The Drop). On GTK a dropped
+        # uri-list comes here too, as file names; wx refuses web links
+        # in it
+        filenames, mails = [], []
+        for filename in self._file_data.GetFilenames():
+            dropped = mailer.dropped_mails(filename)
+            if dropped and self.__on_drop_mail:
+                mails.extend(dropped)
+            else:
+                filenames.append(filename)
+        self.__drop_mails(x, y, mails)
+        if filenames and self.__on_drop_files:
+            self.__on_drop_files(x, y, filenames)
+
+
+class HoverExpander:
+    """Expands the collapsed item a drag hovers over: after 500 ms, or
+    at once on its expand button. One per control (hover_expander()),
+    for drags within the tree and drops from outside alike."""
+
+    def __init__(self, ctrl):
+        self.__ctrl = ctrl
+        self.__item = None
+        self.__expand_later = patterns.later.debounced(
+            ctrl, 500, self.__expand
         )
 
-    def onThunderbirdDrop(self, x, y):
-        if self.__onDropMailCallback:
-            data = self.__thunderbirdMailDataObject.GetData()
-            # We expect the data to be encoded with 'unicode_internal',
-            # but on Fedora it can also be 'utf-16', be prepared:
-            try:
-                data = data.decode("unicode_internal")
-            except UnicodeDecodeError:
-                data = data.decode("utf-16")
+    def hover(self, item, flags):
+        if flags & wx.TREE_HITTEST_ONITEMBUTTON:
+            self.stop()
+            self.__expand_now(item)
+        elif not self.__is_expandable(item):
+            self.stop()
+        elif item != self.__item:
+            self.__item = item
+            self.__expand_later()
 
-            try:
-                email = thunderbird.getMail(data)
-            except thunderbird.ThunderbirdCancelled:
-                pass
-            except thunderbird.ThunderbirdError as e:
-                wx.MessageBox(e.args[0], _("Error"), wx.OK | wx.ICON_ERROR)
-            else:
-                self.__onDropMailCallback(x, y, email)
+    def stop(self):
+        self.__expand_later.cancel()
+        self.__item = None
 
-    def onClawsDrop(self, x, y):
-        if self.__onDropMailCallback:
-            for filename in self.__fileDataObject.GetFilenames():
-                self.__onDropMailCallback(x, y, filename)
+    def __is_expandable(self, item):
+        ctrl = self.__ctrl
+        try:
+            return bool(
+                item
+                and item != ctrl.GetRootItem()
+                and ctrl.ItemHasChildren(item)
+                and not ctrl.IsExpanded(item)
+            )
+        except (RuntimeError, AttributeError):
+            return False  # A deleted item, or a list control
 
-    def onOutlookDrop(self, x, y):
-        if self.__onDropMailCallback:
-            for mail in outlook.getCurrentSelection():
-                self.__onDropMailCallback(x, y, mail)
+    def __expand(self):
+        item, self.__item = self.__item, None
+        if self.__is_expandable(item):
+            self.__expand_now(item)
 
-    def onUrlDrop(self, x, y):
-        if self.__onDropURLCallback:
-            url = self.__urlDataObject.GetText()
-            if ":" not in url:  # No protocol; assume http
-                url = "http://" + url
-            self.__onDropURLCallback(x, y, url)
+    def __expand_now(self, item):
+        try:
+            self.__ctrl.Expand(item)
+        except (RuntimeError, AttributeError):
+            pass  # A deleted item, or a list control
 
-    def onFileDrop(self, x, y):
-        if self.__onDropFileCallback:
-            filenames = self.__fileDataObject.GetFilenames()
-            self.__onDropFileCallback(x, y, filenames)
+
+def hover_expander(ctrl):
+    """The control's HoverExpander, made on first use."""
+    expander = getattr(ctrl, "_hover_expander", None)
+    if expander is None:
+        expander = ctrl._hover_expander = HoverExpander(ctrl)
+    return expander
 
 
 class TreeHelperMixin(object):
@@ -281,7 +305,7 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         )
         self._validateDragCallback = kwargs.pop("validateDrag", None)
         super().__init__(*args, **kwargs)
-        wx.CallAfter(self.__safeLateInit)
+        patterns.later.soon(self, self.__safeLateInit)
 
     def __safeLateInit(self):
         """Safely perform late initialization, guarding against deleted C++ objects."""
@@ -297,11 +321,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         self._dragStartPos = None
         self.GetMainWindow().Bind(wx.EVT_LEFT_DOWN, self._OnLeftDown)
         self._dragItems = []
-        # Hover-expand timer: auto-expand collapsed items after hover delay
-        self._hoverExpandTimerId = wx.NewIdRef()
-        self._hoverExpandTimer = wx.Timer(self, self._hoverExpandTimerId)
-        self._hoverExpandItem = None  # Item currently being hovered for expansion
-        self.Bind(wx.EVT_TIMER, self._onHoverExpandTimer, id=self._hoverExpandTimerId)
 
     def OnDrop(self, dropItem, dragItems, part, column):
         """This function must be overloaded in the derived class. dragItems
@@ -361,19 +380,23 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         hitItem, flags, dropColumn = self.HitTest(event.GetPoint())
 
         # Check if drop is outside items (left, right, above, below, or nowhere)
-        outsideFlags = (wx.TREE_HITTEST_TOLEFT | wx.TREE_HITTEST_TORIGHT |
-                       wx.TREE_HITTEST_ABOVE | wx.TREE_HITTEST_BELOW |
-                       wx.TREE_HITTEST_NOWHERE)
-        if not hitItem or (flags & outsideFlags):
+        outside_flags = (
+            wx.TREE_HITTEST_TOLEFT
+            | wx.TREE_HITTEST_TORIGHT
+            | wx.TREE_HITTEST_ABOVE
+            | wx.TREE_HITTEST_BELOW
+            | wx.TREE_HITTEST_NOWHERE
+        )
+        if not hitItem or (flags & outside_flags):
             # Drop outside items - make root task
             dropTarget = self.GetRootItem()
         else:
             dropTarget = hitItem
 
         if self.IsValidDropTarget(dropTarget):
-            self.UnselectAll()
-            if dropTarget != self.GetRootItem():
-                self.SelectItem(dropTarget)
+            # The drop target is not selected: as the current row it
+            # would take the button's release for a second click on it,
+            # which opens the editor of the row current by then
             part = 0
             if flags & wx.TREE_HITTEST_ONITEMUPPERPART:
                 part = -1
@@ -387,10 +410,12 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             # Work around an issue with HyperTreeList. HyperTreeList will
             # restore the selection to the last item highlighted by the drag,
             # after we have processed the end drag event. That's not what we
-            # want, so use wx.CallAfter to clear the selection after
+            # want, so clear the selection later, after
             # HyperTreeList did its (wrong) thing and reselect the previously
             # dragged item.
-            wx.CallAfter(self.__safeSelect, self._dragItems)
+            patterns.later.soon(
+                self, self.__safeSelect, self.__dragged_objects()
+            )
         self._dragItems = []
 
     def __safeSelect(self, items):
@@ -402,8 +427,12 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             # wrapped C/C++ object has been deleted
             pass
 
-    def selectDraggedItems(self):
-        self.select(reversed(self._dragItems))
+    def select_dragged_items(self):
+        self.select(self.__dragged_objects())
+
+    def __dragged_objects(self):
+        """The dragged rows' objects, which select() takes."""
+        return [self.GetItemPyData(item) for item in self._dragItems]
 
     def OnDragging(self, event):
         if not event.Dragging():
@@ -422,80 +451,15 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
                 self.SetCursorToLink()
             else:
                 self.SetCursorToDragging()
-            # Update drop visual feedback
-            self._UpdateDropFeedback(item, flags, column, point)
         else:
             self.SetCursorToDroppingImpossible()
-            self._ClearDropFeedback()
         # Auto-expand collapsed items on hover (modern UX behavior)
-        self._handleHoverExpand(item, flags)
+        hover_expander(self).hover(item, flags)
         if self.GetSelections() != [item]:
             self.UnselectAll()
             if item != self.GetRootItem():
                 self.SelectItem(item)
         event.Skip()
-
-    def _handleHoverExpand(self, item, flags):
-        """Handle auto-expand of collapsed items during drag hover.
-
-        Expands collapsed items after a brief hover delay (500ms) for better UX.
-        Immediate expand when hovering directly on the expand button.
-        """
-        # Immediate expand when on the expand/collapse button
-        if flags & wx.TREE_HITTEST_ONITEMBUTTON:
-            self._hoverExpandTimer.Stop()
-            self._hoverExpandItem = None
-            self.Expand(item)
-            return
-
-        # Check if item is expandable (has children and is collapsed)
-        if item and item != self.GetRootItem():
-            try:
-                isExpandable = self.ItemHasChildren(item) and not self.IsExpanded(item)
-            except RuntimeError:
-                isExpandable = False
-        else:
-            isExpandable = False
-
-        if isExpandable:
-            # Start or continue timer for this item
-            if item != self._hoverExpandItem:
-                self._hoverExpandItem = item
-                self._hoverExpandTimer.Start(500, oneShot=True)
-        else:
-            # Not over an expandable item, cancel any pending expand
-            self._hoverExpandTimer.Stop()
-            self._hoverExpandItem = None
-
-    def _onHoverExpandTimer(self, event):
-        """Timer fired - expand the hovered item."""
-        if self._hoverExpandItem:
-            try:
-                if self.ItemHasChildren(self._hoverExpandItem) and not self.IsExpanded(self._hoverExpandItem):
-                    self.Expand(self._hoverExpandItem)
-            except RuntimeError:
-                pass  # Item may have been deleted
-        self._hoverExpandItem = None
-
-    def _UpdateDropFeedback(self, item, flags, column, point):
-        """Update visual feedback during drag based on drop position."""
-        mainWin = self.GetMainWindow()
-
-        if not item or item == self.GetRootItem():
-            mainWin.ClearDropHighlight()
-            return
-
-        # Highlight cell if on prereq/dep column
-        try:
-            mainWin.SetDropHighlight(item, column)
-        except (AttributeError, RuntimeError):
-            mainWin.ClearDropHighlight()
-
-    def _ClearDropFeedback(self):
-        """Clear all drop visual feedback."""
-        mainWin = self.GetMainWindow()
-        if hasattr(mainWin, 'ClearDropHighlight'):
-            mainWin.ClearDropHighlight()
 
     def StartDragging(self):
         self.GetMainWindow().Bind(wx.EVT_MOTION, self.OnDragging)
@@ -507,7 +471,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             headerWin.Bind(wx.EVT_MOTION, self.OnDraggingOverHeader)
             headerWin.Bind(wx.EVT_LEFT_UP, self.OnDropOnHeader)
         self.SetCursorToDragging()
-        self._droppedOnHeader = False
 
     def StopDragging(self):
         self.GetMainWindow().Unbind(wx.EVT_MOTION)
@@ -519,19 +482,17 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             headerWin.Unbind(wx.EVT_MOTION)
             headerWin.Unbind(wx.EVT_LEFT_UP)
         # Cancel any pending hover-expand
-        self._hoverExpandTimer.Stop()
-        self._hoverExpandItem = None
+        hover_expander(self).stop()
         # Clean up HyperTreeList's internal drag state
         mainWin = self.GetMainWindow()
-        if hasattr(mainWin, '_dragImage') and mainWin._dragImage:
+        if hasattr(mainWin, "_dragImage") and mainWin._dragImage:
             mainWin._dragImage.EndDrag()
             mainWin._dragImage = None
-        if hasattr(mainWin, '_isDragging'):
+        if hasattr(mainWin, "_isDragging"):
             mainWin._isDragging = False
         self.ResetCursor()
         self._ResetHeaderCursor()
-        self._ClearDropFeedback()
-        self.selectDraggedItems()
+        self.select_dragged_items()
         # Refresh to clear any visual artifacts
         mainWin.Refresh()
 
@@ -555,7 +516,9 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         self.GetMainWindow().SetCursor(_getHomeCursor(self.GetMainWindow()))
 
     def SetCursorToDroppingImpossible(self):
-        self.GetMainWindow().SetCursor(wx.Cursor(wx.CURSOR_NO_ENTRY))
+        self.GetMainWindow().SetCursor(
+            not_allowed_cursor(self.GetMainWindow())
+        )
 
     def ResetCursor(self):
         self.GetMainWindow().SetCursor(wx.NullCursor)
@@ -575,8 +538,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         headerWin = self.GetHeaderWindow()
         if headerWin:
             headerWin.SetCursor(_getHomeCursor(headerWin))
-        # Clear drop feedback in main window since we're over header
-        self._ClearDropFeedback()
         event.Skip()
 
     def OnDropOnHeader(self, event):
@@ -597,7 +558,6 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
         # Only the main column (first column, index 0) makes task a root
         # For other columns, we could add different behaviors later
         if column == 0:
-            self._droppedOnHeader = True
             # Make tasks root tasks by dropping on hidden root
             dropTarget = self.GetRootItem()
             self.OnDrop(dropTarget, self._dragItems, 0, 0)
@@ -612,11 +572,11 @@ class TreeCtrlDragAndDropMixin(TreeHelperMixin):
             return False
         try:
             # Try to get column name via _getColumn (available in TreeListCtrl)
-            if hasattr(self, '_getColumn'):
+            if hasattr(self, "_getColumn"):
                 col = self._getColumn(column)
-                if hasattr(col, 'name'):
+                if hasattr(col, "name"):
                     name = col.name()
-                    return name in ('prerequisites', 'dependencies')
+                    return name in ("prerequisites", "dependencies")
         except (IndexError, AttributeError):
             pass
         return False

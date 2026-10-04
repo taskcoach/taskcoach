@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib.domain import base
+from taskcoachlib.domain import base, date
 from taskcoachlib import patterns
 
 
@@ -25,7 +25,7 @@ class OwnerUnderTest(base.Object, metaclass=base.DomainObjectOwnerMetaclass):
     __ownedType__ = "Foo"
 
 
-class Foo(object):
+class Foo(base.Object):
     pass
 
 
@@ -52,6 +52,16 @@ class OwnerTest(test.TestCase):
         )
         self.owner.setFoos([Foo()])
         self.assertEqual(1, len(self.events))
+
+    def test_owner_change_sets_the_owned_objects_date(self):
+        foo = Foo(modificationDateTime=date.DateTime(2020, 1, 1))
+        self.owner.addFoo(foo)
+        self.assertTrue(date.DateTime(2020, 1, 1) < foo.modificationDateTime())
+
+    def test_owner_change_keeps_the_owners_date(self):
+        before = self.owner.modificationDateTime()
+        self.owner.addFoo(Foo())
+        self.assertEqual(before, self.owner.modificationDateTime())
 
     def testRemoveNoObjects(self):
         self.owner.removeFoos()

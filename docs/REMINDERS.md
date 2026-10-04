@@ -10,6 +10,17 @@ dialog (`taskcoachlib/gui/dialog/reminder.py`) that:
 3. Plays the configured reminder sound
 4. Optionally speaks the reminder text via text-to-speech
 
+**Ruling, 2026-09-28:** every due reminder gets its own window, also
+when many are due at once as a file opens. Task Coach is busy while
+they open (about 140 ms each: 19 s for 134); that is accepted.
+Reminders matter, and windows opened later, one by one, would pop up
+while the user is already clicking elsewhere.
+
+A reminder window closes by itself, snoozing nothing, once its reminder
+no longer stands: its task deleted or completed, its reminder snoozed,
+changed or cleared, elsewhere or by undo or redo
+([UNDO_REDO.md](UNDO_REDO.md#windows)).
+
 ## Reminder Sound
 
 ### Settings
@@ -135,7 +146,7 @@ datetime presets.
 ## Related Documentation
 
 - [SCHEDULERS.md](SCHEDULERS.md) - How reminders are triggered
-  (MasterScheduler polls tasks every second, fires
+  (MasterScheduler's pass at a reminder's second fires
   `task.reminder.trigger`, ReminderController shows the dialog)
 - [DATETIME_PRESETS.md](DATETIME_PRESETS.md) - Default reminder
   datetime presets, reminder scheduling on file load
@@ -152,7 +163,7 @@ datetime presets.
 | `taskcoachlib/gui/dialog/preferences.py` | `TaskReminderPage` - preferences UI |
 | `taskcoachlib/config/defaults.py` | Default `reminder_sound` value |
 | `taskcoachlib/speak/speaker.py` | Text-to-speech |
-| `taskcoachlib/gui/remindercontroller.py` | Polling + dialog trigger |
+| `taskcoachlib/gui/remindercontroller.py` | Subscribes to `task.reminder.trigger`, shows the dialog |
 
 ## Known Limitations
 

@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import meta, persistence, patterns, operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.filesystem import resourcelock
 from taskcoachlib.meta.debug import log_step
@@ -29,8 +30,10 @@ import os
 import re
 import gc
 import sys
-import codecs
 import traceback
+
+# The duplicate IDs listed after opening a file; the log has them all
+_MAX_CORRECTED_LISTED = 20
 
 
 def copy_name(path, file_exists=os.path.exists):
@@ -61,16 +64,21 @@ def copy_name(path, file_exists=os.path.exists):
         number += 1
 
 
+def open_text(filename, mode, encoding):
+    """A text file written as is, without newline translation: the
+    iCalendar and CSV exports write their own CRLF line ends."""
+    return open(filename, mode, encoding=encoding, newline="")
+
+
 class IOController(object):
     """IOController is responsible for opening, closing, loading,
     saving, and exporting files. It also presents the necessary dialogs
     to let the user specify what file to load/save/etc."""
 
-    def __init__(self, task_file, message_callback, settings):
+    def __init__(self, task_file, message_callback):
         super().__init__()
         self.__task_file = task_file
         self.__message_callback = message_callback
-        self.__settings = settings
         default_path = os.path.expanduser("~")
         self.__tsk_file_save_dialog_opts = {
             "default_path": default_path,
@@ -116,26 +124,14 @@ class IOController(object):
         # A task file the user agreed to replace; _save_save removes its
         # auto import/export files once it holds the lock
         self.__replacing = None
+        patterns.Publisher().registerObserver(
+            self.on_changed_on_disk,
+            eventType="taskfile.changed",
+            eventSource=task_file,
+        )
 
     def need_save(self):
         return self.__task_file.need_save()
-
-    def changed_on_disk(self):
-        return self.__task_file.changed_on_disk()
-
-    def has_deleted_items(self):
-        return bool(
-            [task for task in self.__task_file.tasks() if task.isDeleted()]
-            + [note for note in self.__task_file.notes() if note.isDeleted()]
-        )
-
-    def purge_deleted_items(self):
-        self.__task_file.tasks().removeItems(
-            [task for task in self.__task_file.tasks() if task.isDeleted()]
-        )
-        self.__task_file.notes().removeItems(
-            [note for note in self.__task_file.notes() if note.isDeleted()]
-        )
 
     def open_after_start(self, command_line_args, early_lock_result=None):
         """Open either the file specified on the command line, or the file
@@ -151,9 +147,9 @@ class IOController(object):
         if command_line_args:
             filename = command_line_args[0]
         else:
-            filename = self.__settings.get("file", "lastfile")
+            filename = settings.file.lastfile
         if filename and early_lock_result != "skip":
-            wx.CallAfter(self.open, filename)
+            patterns.later.soon(None, self.open, filename)
 
     def open(
         self,
@@ -185,6 +181,8 @@ class IOController(object):
                 )
                 return
             try:
+                if self.__holds_lock(lock):
+                    self.__task_file.pass_lock()  # Reopening: held on
                 self.__close_unconditionally()
             except BaseException:
                 if not self.__holds_lock(lock):
@@ -218,18 +216,63 @@ class IOController(object):
                     filename=self.__task_file.filename(),
                 )
             )
+            self.__report_corrected_ids(showerror)
         else:
             error_message = (
                 _("Cannot open %s because it doesn't exist") % filename
             )
-            # Use CallAfter on Mac OS X because otherwise the app will hang:
+            # Later on macOS, where showing it now hangs the app
             if operating_system.isMac():
-                wx.CallAfter(
-                    showerror, error_message, **self.__error_message_options
+                patterns.later.soon(
+                    None,
+                    showerror,
+                    error_message,
+                    **self.__error_message_options
                 )
             else:
                 showerror(error_message, **self.__error_message_options)
             self.__remove_recent_file(filename)
+
+    def __report_corrected_ids(self, showerror):
+        """The log is not shown to everyone: list the items that had
+        another item's ID and say how to keep or drop the correction."""
+        corrected = self.__task_file.corrected_ids()
+        if not corrected:
+            return
+        lines = []
+        for locations in corrected.values():
+            lines.append(_("Kept its ID: %s") % locations[0][1])
+            lines.extend(
+                _("New ID: %s") % path for _kind, path in locations[1:]
+            )
+        shown = lines[:_MAX_CORRECTED_LISTED]
+        if len(lines) > len(shown):
+            shown.append(
+                _("... and %d more, listed in the log")
+                % (len(lines) - len(shown))
+            )
+        if settings.file.autosave:
+            keep_or_drop = _(
+                "Autosave saves the correction; the file as it was can be "
+                "restored with File > Manage backups."
+            )
+        else:
+            keep_or_drop = _(
+                "Save to keep the correction, Save as to keep it in "
+                "another file, or close without saving to leave the file "
+                "as it was."
+            )
+        message = "%s\n\n%s\n\n%s" % (
+            _(
+                "Some items in %s had the same ID, which must be unique. "
+                "They have been separated: the first item with each ID "
+                "kept it, the others got new IDs."
+            )
+            % self.__task_file.filename(),
+            "\n".join(shown),
+            keep_or_drop,
+        )
+        showerror(message, caption=_("Duplicate IDs"), style=wx.ICON_WARNING)
 
     def merge(self, filename=None, showerror=wx.MessageBox):
         if not filename:
@@ -250,8 +293,102 @@ class IOController(object):
             )
             self.__add_recent_file(filename)
 
+    def on_changed_on_disk(self, event):  # pylint: disable=W0613
+        """Another program changed the open file. Saving would replace
+        its changes, so it waits until they are merged in, the file is
+        reloaded, or saved under another name (docs/PERSISTENCE_XML.md,
+        Saving)."""
+        if self.__task_file.need_save():
+            self.__resolve_changes_on_disk(save=False)
+            return
+        choice = self._ask(
+            _(
+                "%s was changed by another program.\n"
+                "Reload it, or merge its changes into what is open?"
+            )
+            % self.__task_file.filename(),
+            (_("&Reload"), _("&Merge"), _("&Later")),
+        )
+        if choice == 0:
+            self.__reload()
+        elif choice == 1:
+            self.__merge_changes_on_disk()
+
+    def __resolve_changes_on_disk(self, save):
+        """Return whether the conflict is resolved (and, if save, the
+        file saved)."""
+        choice = self._ask(
+            _(
+                "%s was changed by another program.\n"
+                "Saving would replace its changes: merge them into yours "
+                "first, or save yours under another name."
+            )
+            % self.__task_file.filename(),
+            (
+                _("&Merge and save") if save else _("&Merge"),
+                _("Save &as..."),
+                _("&Cancel") if save else _("&Later"),
+            ),
+        )
+        if choice == 0:
+            if not self.__merge_changes_on_disk():
+                return False
+            return self.save() if save else True
+        if choice == 1:
+            return self.save_as()
+        return False
+
+    def _ask(self, message, labels):
+        """Ask with three buttons; return the chosen one's index."""
+        dialog = wx.MessageDialog(
+            None,
+            message,
+            _("%s: file changed on disk") % meta.name,
+            style=wx.YES_NO | wx.CANCEL | wx.ICON_WARNING | wx.YES_DEFAULT,
+        )
+        dialog.SetYesNoCancelLabels(*labels)
+        try:
+            result = dialog.ShowModal()
+        finally:
+            dialog.Destroy()
+        return {wx.ID_YES: 0, wx.ID_NO: 1}.get(result, 2)
+
+    def __merge_changes_on_disk(self, showerror=wx.MessageBox):
+        filename = self.__task_file.filename()
+        try:
+            self.__task_file.merge_changes_on_disk()
+        except Exception:  # pylint: disable=W0703
+            self.__show_generic_error_message(filename, showerror)
+            return False
+        self.__message_callback(
+            _("Merged the changes on disk of %s") % filename
+        )
+        return True
+
+    def __reload(self, showerror=wx.MessageBox):
+        """Open the file again as File > Open does, closing first:
+        loading over the open items would leave them in the viewers,
+        as equal copies (same ids) of the loaded ones."""
+        filename = self.__task_file.filename()
+        # Read first: a file that cannot be read leaves what is open
+        on_disk = persistence.TaskFile(read_only=True)
+        try:
+            on_disk.load(filename)
+        except Exception:  # pylint: disable=W0703
+            self.__show_generic_error_message(filename, showerror)
+            return
+        finally:
+            on_disk.close()
+            on_disk.stop()
+        log_step("reloading %s" % filename, prefix="FILE")
+        self.open(filename, showerror=showerror, ask_to_save=False)
+
     def save(self, showerror=wx.MessageBox):
         if self.__task_file.filename():
+            # Also when the watcher did not report it (yet)
+            self.__task_file.check_disk(notify=False)
+            if self.__task_file.changed_on_disk():
+                return self.__resolve_changes_on_disk(save=True)
             if self._save_save(self.__task_file, showerror):
                 return True
             else:
@@ -267,18 +404,6 @@ class IOController(object):
         if self.__task_file.need_save():
             return self.__save_unsaved_changes(question)
         return True
-
-    def merge_disk_changes(self):
-        try:
-            self.__task_file.merge_disk_changes()
-        except Exception as reason:  # pylint: disable=W0703
-            filename = self.__task_file.filename()
-            log_step("cannot merge %s" % filename, prefix="FILE", exc=True)
-            wx.MessageBox(
-                _("Cannot merge the changes on disk of %s\n%s")
-                % (filename, str(reason) or type(reason).__name__),
-                **self.__error_message_options
-            )
 
     def save_as(
         self,
@@ -391,7 +516,7 @@ class IOController(object):
             )
             return False
         except Exception as reason:  # pylint: disable=W0703
-            # Not only OSError: e.g. merging a corrupt file on disk
+            # Not only OSError: e.g. the file changed on disk
             log_step("cannot save %s" % filename, prefix="FILE", exc=True)
             error_message = _("Cannot save %s\n%s") % (
                 filename,
@@ -414,10 +539,7 @@ class IOController(object):
         """Remove the auto import/export files of the task file that
         filename replaces, so they are not imported into the new one."""
         extensions = {"Todo.txt": ".txt"}
-        for auto in set(
-            self.__settings.getlist("file", "autoimport")
-            + self.__settings.getlist("file", "autoexport")
-        ):
+        for auto in set(settings.file.autoimport + settings.file.autoexport):
             auto_name = os.path.splitext(filename)[0] + extensions[auto]
             if os.path.exists(auto_name):
                 os.remove(auto_name)
@@ -425,10 +547,8 @@ class IOController(object):
                 os.remove(auto_name + "-meta")
 
     def save_as_template(self, task):
-        templates = persistence.TemplateList(
-            self.__settings.pathToTemplatesDir()
-        )
-        templates.addTemplate(task)
+        templates = persistence.TemplateList(settings.templates_dir())
+        templates.add_template(task)
         templates.save()
 
     def import_template(self, showerror=wx.MessageBox):
@@ -441,9 +561,7 @@ class IOController(object):
             },
         )
         if filename:
-            templates = persistence.TemplateList(
-                self.__settings.pathToTemplatesDir()
-            )
+            templates = persistence.TemplateList(settings.templates_dir())
             try:
                 templates.copyTemplate(filename)
             except Exception as reason:  # pylint: disable=W0703
@@ -458,9 +576,7 @@ class IOController(object):
             if force:
                 # No user interaction, since we're forced to close right now.
                 if self.__task_file.filename():
-                    self._save_save(
-                        self.__task_file, lambda *args, **kwargs: None
-                    )
+                    self.__save_unasked()
                 else:
                     pass  # No filename, we cannot ask, give up...
             else:
@@ -469,6 +585,23 @@ class IOController(object):
         self.__close_unconditionally()
         return True
 
+    def __save_unasked(self):
+        """Save when nobody can be asked (the session ends). If another
+        program changed the file, it is kept and the changes go to a
+        copy beside it rather than being lost
+        (docs/PERSISTENCE_XML.md, Saving)."""
+        filename = self.__task_file.filename()
+        self.__task_file.check_disk(notify=False)
+        if self.__task_file.changed_on_disk():
+            folder = os.path.dirname(os.path.abspath(filename))
+            filename = os.path.join(folder, copy_name(filename))
+            log_step("changed on disk, saving to %s" % filename, prefix="FILE")
+            self._save_save(
+                self.__task_file, lambda *args, **kwargs: None, filename
+            )
+        else:
+            self._save_save(self.__task_file, lambda *args, **kwargs: None)
+
     def export(
         self,
         title,
@@ -476,7 +609,7 @@ class IOController(object):
         writer_class,
         viewer,
         selectionOnly,
-        openfile=codecs.open,
+        openfile=open_text,
         showerror=wx.MessageBox,
         filename=None,
         file_exists=os.path.exists,
@@ -492,10 +625,10 @@ class IOController(object):
             fd = self.__open_file_for_writing(filename, openfile, showerror)
             if fd is None:
                 return False
-            count = writer_class(fd, filename).write(
-                viewer, self.__settings, selectionOnly, **kwargs
-            )
-            fd.close()
+            with fd:
+                count = writer_class(fd, filename).write(
+                    viewer, selectionOnly, **kwargs
+                )
             self.__message_callback(
                 _("Exported %(count)d items to " "%(filename)s")
                 % dict(count=count, filename=filename)
@@ -510,7 +643,7 @@ class IOController(object):
         selectionOnly=False,
         separateCSS=False,
         columns=None,
-        openfile=codecs.open,
+        openfile=open_text,
         showerror=wx.MessageBox,
         filename=None,
         file_exists=os.path.exists,
@@ -602,14 +735,16 @@ class IOController(object):
         )
 
     def import_csv(self, **kwargs):
-        persistence.CSVReader(
-            self.__task_file.tasks(), self.__task_file.categories()
-        ).read(**kwargs)
+        with patterns.CommandHistory().action(_("Import CSV")):
+            persistence.CSVReader(
+                self.__task_file.tasks(), self.__task_file.categories()
+            ).read(**kwargs)
 
     def import_todo_txt(self, filename):
-        persistence.TodoTxtReader(
-            self.__task_file.tasks(), self.__task_file.categories()
-        ).read(filename)
+        with patterns.CommandHistory().action(_("Import Todo.txt")):
+            persistence.TodoTxtReader(
+                self.__task_file.tasks(), self.__task_file.categories()
+            ).read(filename)
 
     def filename(self):
         return self.__task_file.filename()
@@ -628,21 +763,19 @@ class IOController(object):
             return None
 
     def __add_recent_file(self, file_name):
-        recent_files = self.__settings.getlist("file", "recentfiles")
+        recent_files = settings.file.recentfiles
         if file_name in recent_files:
             recent_files.remove(file_name)
         recent_files.insert(0, file_name)
-        maximum_number_of_recent_files = self.__settings.getint(
-            "file", "maxrecentfiles"
-        )
-        recent_files = recent_files[:maximum_number_of_recent_files]
-        self.__settings.setlist("file", "recentfiles", recent_files)
+        settings.file.recentfiles = recent_files[
+            : settings.file.maxrecentfiles
+        ]
 
     def __remove_recent_file(self, file_name):
-        recent_files = self.__settings.getlist("file", "recentfiles")
+        recent_files = settings.file.recentfiles
         if file_name in recent_files:
             recent_files.remove(file_name)
-            self.__settings.setlist("file", "recentfiles", recent_files)
+            settings.file.recentfiles = recent_files
 
     def __ask_user_for_file(
         self,
@@ -735,7 +868,7 @@ class IOController(object):
             traceback.format_exception(*sys.exc_info(), limit=10)
         )
         message = _("Error while reading %s:\n") % filename + limited_exception
-        man = persistence.BackupManifest(self.__settings)
+        man = persistence.BackupManifest()
         if show_backups and man.hasBackups(filename):
             message += "\n" + _(
                 "The backup manager will now open to allow you to restore\n"
@@ -744,10 +877,12 @@ class IOController(object):
         showerror(message, **self.__error_message_options)
 
         if show_backups and man.hasBackups(filename):
-            dlg = BackupManagerDialog(None, self.__settings, filename)
+            dlg = BackupManagerDialog(None, filename)
             try:
                 if dlg.ShowModal() == wx.ID_OK:
-                    wx.CallAfter(self.open, dlg.restoredFilename())
+                    patterns.later.soon(
+                        None, self.open, dlg.restoredFilename()
+                    )
             finally:
                 dlg.Destroy()
 

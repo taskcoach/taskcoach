@@ -28,12 +28,25 @@ MAIN_TOOLBAR_ICON_SIZE_MEDIUM = 22
 MAIN_TOOLBAR_ICON_SIZE_LARGE = 32
 MAIN_TOOLBAR_ICON_SIZE_DEFAULT = MAIN_TOOLBAR_ICON_SIZE_MEDIUM
 
+# Every attachment column but the ID (docs/ATTACHMENTS.md)
+_ATTACHMENT_COLUMNS = str(
+    [
+        "location",
+        "fromName",
+        "fromAddress",
+        "sentDateTime",
+        "description",
+        "notes",
+        "creationDateTime",
+        "modificationDateTime",
+    ]
+)
+
 defaults = {
     "balloontips": {
         "customizabletoolbars": "True",
         "customizabletoolbars_dnd": "True",
         "filtershiftclick": "True",
-        "autosavehint": "True",
         "manualordering": "True",
         "treemanualordering": "True",
         "treechildrenmanualordering": "True",
@@ -45,8 +58,6 @@ defaults = {
         "autoscrollselection": "True",
         "toolbar": str((MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2),
         "toolbarperspective": "FileOpen,Print,Separator,EditUndo,EditRedo,Separator,EffortStartButton,EffortStop,Separator,ToggleAutoScroll",
-        # Index of the active effort viewer in task editor:
-        "effortviewerintaskeditor": "0",
         "taskviewercount": "1",  # Number of task viewers in main window
         "categoryviewercount": "1",  # Number of category viewers in main window
         "noteviewercount": "0",  # Number of note viewers in main window
@@ -57,7 +68,6 @@ defaults = {
         "calendarviewercount": "0",
         "hierarchicalcalendarviewercount": "0",
         "taskstatsviewercount": "0",
-        "taskinterdepsviewercount": "0",  # Number of interdep viewers in main window
         # Language and locale, maybe set externally (e.g. by PortableApps):
         "language": "",
         # Language and locale as set by user via preferences, overrides language:
@@ -140,24 +150,7 @@ defaults = {
         "hidecompositetasks": "False",
         "piechartangle": "30",
     },
-    "taskinterdepsviewer": {
-        "title": "",
-        "toolbarperspective": "Separator,Spacer,ViewerHideTasks_completed,ViewerHideTasks_inactive,ResetFilter,Search",
-        "searchfilterstring": "",
-        "searchfiltermatchcase": "False",
-        "searchfilterincludesubitems": "False",
-        "searchdescription": "False",
-        "regularexpression": "False",
-        "hideinactivetasks": "False",
-        "hidelatetasks": "False",
-        "hideactivetasks": "False",
-        "hideduesoontasks": "False",
-        "hideoverduetasks": "False",
-        "hidecompletedtasks": "False",
-        "hidecompositetasks": "False",
-    },
     "prerequisiteviewerintaskeditor": {
-        "title": "",  # User supplied viewer title
         "toolbarperspective": "TaskNew,NewSubItem,TaskNewFromTemplateButton,Separator,Edit,Delete,Separator,TaskMarkInactive,TaskMarkActive,TaskMarkCompleted,Separator,EffortStart,EffortStop,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ViewerHideTasks_completed,ViewerHideTasks_inactive,ResetFilter,Search",
         "treemode": "True",  # True = tree mode, False = list mode
         "sortby": '["subject"]',
@@ -283,7 +276,6 @@ defaults = {
         "columnautoresizing": "True",
     },
     "categoryviewerintaskeditor": {
-        "title": "",
         "toolbarperspective": "CategoryNew,NewSubItem,Separator,Edit,Delete,Separator,CategoryCheckAll,CategoryUncheckAll,Separator,ViewExpandAll,ViewCollapseAll,Spacer,ResetFilter,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -298,7 +290,6 @@ defaults = {
         "columnautoresizing": "True",
     },
     "categoryviewerinnoteeditor": {
-        "title": "",
         "toolbarperspective": "CategoryNew,NewSubItem,Separator,Edit,Delete,Spacer,ResetFilter,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -434,7 +425,6 @@ defaults = {
         "consolidateeffortspertask": "False",
     },
     "attachmentviewer": {
-        "title": "",
         "toolbarperspective": "AttachmentNew,Separator,Edit,Delete,Separator,AttachmentOpen,Spacer,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -443,13 +433,12 @@ defaults = {
         "searchfilterincludesubitems": "False",
         "searchdescription": "False",
         "regularexpression": "False",
-        "columns": "[]",
+        "columns": _ATTACHMENT_COLUMNS,
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
     },
     "attachmentviewerintaskeditor": {
-        "title": "",
         "toolbarperspective": "AttachmentNew,Separator,Edit,Delete,Separator,AttachmentOpen,Spacer,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -458,13 +447,12 @@ defaults = {
         "searchfilterincludesubitems": "False",
         "searchdescription": "False",
         "regularexpression": "False",
-        "columns": "[]",
+        "columns": _ATTACHMENT_COLUMNS,
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
     },
     "attachmentviewerinnoteeditor": {
-        "title": "",
         "toolbarperspective": "AttachmentNew,Separator,Edit,Delete,Separator,AttachmentOpen,Spacer,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -473,13 +461,12 @@ defaults = {
         "searchfilterincludesubitems": "False",
         "searchdescription": "False",
         "regularexpression": "False",
-        "columns": "[]",
+        "columns": _ATTACHMENT_COLUMNS,
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
     },
     "attachmentviewerincategoryeditor": {
-        "title": "",
         "toolbarperspective": "AttachmentNew,Separator,Edit,Delete,Separator,AttachmentOpen,Spacer,Search",
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
@@ -488,7 +475,7 @@ defaults = {
         "searchfilterincludesubitems": "False",
         "searchdescription": "False",
         "regularexpression": "False",
-        "columns": "[]",
+        "columns": _ATTACHMENT_COLUMNS,
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
@@ -496,13 +483,7 @@ defaults = {
     "window": {
         "size": "(900, 500)",  # Default size of the main window
         "position": "(-1, -1)",  # Position of the main window, undefined by default
-        "monitor_index": "-1",  # Monitor the window was on, -1 means unknown/default
-        "iconized": "False",  # Don't start up iconized by default
         "maximized": "False",  # Don't start up maximized by default
-        # Possible strticonized values: 'Never', 'Always', 'WhenClosedIconized'
-        "starticonized": "WhenClosedIconized",
-        "hidewheniconized": "False",  # Don't hide the window from the task bar
-        "hidewhenclosed": "False",  # Close window quits the application
         "tips": "True",  # Show tips after starting up
         "tipsindex": "0",  # Start at the first tip
         "blinktaskbariconwhentrackingeffort": "True",
@@ -513,7 +494,6 @@ defaults = {
     "effortdialog": {
         "size": "(-1, -1)",  # Size of the dialogs, calculated by default
         "position": "(-1, -1)",  # Position of the dialog, undefined by default
-        "parent_offset": "(-1, -1)",  # Offset from parent window for multi-monitor support
         "maximized": "False",  # Don't open the dialog maximized by default
     },
     "file": {
@@ -521,14 +501,12 @@ defaults = {
         "maxrecentfiles": "9",
         "lastfile": "",
         "autosave": "True",
-        "autoload": "False",
         # Formats to automatically import from, only "Todo.txt" supported at this
         # time:
         "autoimport": "[]",
         # Formats to automatically export to, only "Todo.txt" supported at this
         # time:
         "autoexport": "[]",
-        "fspoll": "False",  # Use polling instead of watchdog for file monitoring
         "saveinifileinprogramdir": "False",
         "attachmentbase": "",
         "lastattachmentpath": "",
@@ -614,7 +592,7 @@ defaults = {
         "wxpython": "",  # Idem
         "pythonfrozen": "",  # Idem
         "current": meta.data.version,
-        "notified": meta.data.version,
+        "notified": meta.data.version_full,
         "notify": "True",
     },
     "behavior": {
@@ -629,6 +607,11 @@ defaults = {
         "effort_duration_presets": "300,900,1800,3600,7200",  # Seconds: 5m, 15m, 30m, 1h, 2h
         # New settings should use snake_case naming convention (PEP 8)
         "decimal_time": "False",  # Render effort as decimal hours (1.25) instead of 1:15
+        # Edit a list's cells in place: F2 on the cell just clicked, the
+        # right-click menu, and with the second option a slow double
+        # click
+        "in_place_editing": "False",
+        "in_place_slow_double_click": "False",
     },
     "printer": {
         "margin_left": "0",
@@ -639,12 +622,8 @@ defaults = {
         "orientation": str(wx.PORTRAIT),
     },
     "export": {
-        "html_selectiononly": "False",
         "html_separatecss": "False",
-        "csv_selectiononly": "False",
         "csv_separatedateandtimecolumns": "False",
-        "ical_selectiononly": "False",
-        "todotxt_selectiononly": "False",
     },
     "spellcheck": {
         # Enable spell checking for subject and description fields
@@ -687,6 +666,16 @@ defaults = {
         "search_include_theme": "False",
         "search_include_context": "False",
     },
+}
+
+# An editor window's section, named after its tabs
+# ("taskdialog_with_dates_subject"), made when it first opens
+editor_window = {
+    "perspective": "",
+    "pages": "[]",
+    "size": "(-1, -1)",
+    "position": "(-1, -1)",
+    "maximized": "False",
 }
 
 minimum = {"view": {"taskviewercount": "1"}}

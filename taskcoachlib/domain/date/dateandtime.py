@@ -16,13 +16,20 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import datetime, re, time
+import datetime
+import re
+import time
 from . import timedelta
 from .date import Date
 from .fix import StrftimeFix
 
 
 class DateTime(StrftimeFix, datetime.datetime):
+    """A date and time in whole seconds: every way of making one (now,
+    parsing, arithmetic, replace) drops the microseconds. Only logs keep
+    fractions of a second (docs/MASTER_SCHEDULER_REFACTOR.md, Time
+    Resolution). DateTime() is the unset date, the latest one."""
+
     secondsPerMinute = 60
     minutesPerHour = 60
     hoursPerDay = 24
@@ -39,8 +46,10 @@ class DateTime(StrftimeFix, datetime.datetime):
                 max.hour,
                 max.minute,
                 max.second,
-                max.microsecond,
             )
+        elif len(args) > 6 and not isinstance(args[0], (bytes, str)):
+            args = args[:6] + (0,) + args[7:]  # Whole seconds
+        kwargs.pop("microsecond", None)
         return datetime.datetime.__new__(class_, *args, **kwargs)
 
     @staticmethod
@@ -52,7 +61,6 @@ class DateTime(StrftimeFix, datetime.datetime):
             hour=dateTime.hour,
             minute=dateTime.minute,
             second=dateTime.second,
-            microsecond=dateTime.microsecond,
         )
 
     def date(self):
@@ -76,10 +84,10 @@ class DateTime(StrftimeFix, datetime.datetime):
         return ordinal + (seconds / float(self.secondsPerDay))
 
     def startOfDay(self):
-        return self.replace(hour=0, minute=0, second=0, microsecond=0)
+        return self.replace(hour=0, minute=0, second=0)
 
     def endOfDay(self):
-        return self.replace(hour=23, minute=59, second=59, microsecond=999999)
+        return self.replace(hour=23, minute=59, second=59)
 
     def startOfWeek(self):
         days = self.weekday()
@@ -113,22 +121,14 @@ class DateTime(StrftimeFix, datetime.datetime):
             except ValueError:
                 pass
 
-    def startOfYear(self):
-        return DateTime(self.year, 1, 1).startOfDay()
-
-    def endOfYear(self):
-        return DateTime(self.year, 12, 31).endOfDay()
-
     def __sub__(self, other):
         """Make sure substraction returns instances of the right classes."""
         if self == DateTime() and isinstance(other, datetime.datetime):
             max = timedelta.TimeDelta.max  # pylint: disable=W0622
-            return timedelta.TimeDelta(max.days, max.seconds, max.microseconds)
+            return timedelta.TimeDelta(max.days, max.seconds)
         result = super().__sub__(other)
         if isinstance(result, datetime.timedelta):
-            result = timedelta.TimeDelta(
-                result.days, result.seconds, result.microseconds
-            )
+            result = timedelta.TimeDelta(result.days, result.seconds)
         elif isinstance(result, datetime.datetime):
             result = self.__class__(
                 result.year,
@@ -137,7 +137,6 @@ class DateTime(StrftimeFix, datetime.datetime):
                 result.hour,
                 result.minute,
                 result.second,
-                result.microsecond,
             )
         return result
 
@@ -150,12 +149,37 @@ class DateTime(StrftimeFix, datetime.datetime):
             result.hour,
             result.minute,
             result.second,
-            result.microsecond,
         )
 
 
 DateTime.max = DateTime(datetime.datetime.max.year, 12, 31).endOfDay()
 DateTime.min = DateTime(datetime.datetime.min.year, 1, 1).startOfDay()
+
+
+class Timestamp(DateTime):
+    """A moment with the logs' precision, microseconds kept: the
+    creation and modification dates, metadata rather than functional
+    times. Merging keeps the newest copy of an item, so changes within
+    one second must still be ordered (docs/MASTER_SCHEDULER_REFACTOR.md,
+    Time Resolution)."""
+
+    def __new__(cls, *args, **kwargs):
+        return datetime.datetime.__new__(cls, *args, **kwargs)
+
+    @classmethod
+    def parse(cls, text):
+        """Read one as the task file has it: 2026-09-27 21:00:43.123456,
+        or whole seconds."""
+        moment = datetime.datetime.fromisoformat(text)
+        return cls(
+            moment.year,
+            moment.month,
+            moment.day,
+            moment.hour,
+            moment.minute,
+            moment.second,
+            moment.microsecond,
+        )
 
 
 def parseDateTime(string, *timeDefaults):
@@ -174,7 +198,7 @@ def Now():
 
 def Today():
     # For backwards compatibility: "Today()" may be used in templates
-    return Now().replace(hour=0, minute=0, second=0, microsecond=0)
+    return Now().replace(hour=0, minute=0, second=0)
 
 
 def Tomorrow():

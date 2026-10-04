@@ -16,14 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import command, gui, patterns, persistence
 from taskcoachlib.domain import task, note, category
 from taskcoachlib.filesystem import resourcelock
+from taskcoachlib.config import settings
 from unittests import dummy
-from pubsub import pub
 import os
 import shutil
 import tempfile
+from unittest import mock
 import wx
 import test
 
@@ -51,10 +52,9 @@ def select_file_once(test_case, filename):
 
 class IOControllerTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = self.settings = config.Settings(load=False)
         self.taskFile = dummy.TaskFile()
         self.iocontroller = gui.iocontroller.IOController(
-            self.taskFile, lambda *args: None, self.settings
+            self.taskFile, lambda *args: None
         )
         self.filename1 = "whatever.tsk"
         self.filename2 = "another.tsk"
@@ -67,8 +67,6 @@ class IOControllerTest(test.TestCase):
                 os.remove(filename)
             if os.path.exists(filename + ".lock"):
                 os.remove(filename + ".lock")
-            if os.path.exists(filename + ".delta"):
-                os.remove(filename + ".delta")
         super().tearDown()
 
     def doIOAndCheckRecentFiles(
@@ -102,9 +100,8 @@ class IOControllerTest(test.TestCase):
 
     def checkRecentFiles(self, expectedFilenames):
         expectedFilenames.reverse()
-        expectedFilenames = str(expectedFilenames)
         self.assertEqual(
-            expectedFilenames, self.settings.get("file", "recentfiles")
+            expectedFilenames, settings.get("file", "recentfiles")
         )
 
     def testOpenFileAddsItToRecentFiles(self):
@@ -130,15 +127,13 @@ class IOControllerTest(test.TestCase):
         self.doIOAndCheckRecentFiles(saveselection=[self.filename1])
 
     def testMaximumNumberOfRecentFiles(self):
-        maximumNumberOfRecentFiles = self.settings.getint(
-            "file", "maxrecentfiles"
-        )
+        maximum_number_of_recent_files = settings.get("file", "maxrecentfiles")
         # Opening leaves lock files, which are never deleted
         directory = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, directory)
         filenames = [
             os.path.join(directory, "filename %d" % index)
-            for index in range(maximumNumberOfRecentFiles + 1)
+            for index in range(maximum_number_of_recent_files + 1)
         ]
         self.doIOAndCheckRecentFiles(
             filenames, expectedFilenames=filenames[1:]
@@ -198,7 +193,6 @@ class IOControllerTest(test.TestCase):
         self.taskFile.categories().append(aCategory)
         for eachTask in self.taskFile.tasks():
             eachTask.addCategory(aCategory)
-            aCategory.addCategorizable(eachTask)
         self.iocontroller.save_selection(
             tasks=self.taskFile.tasks(), filename=self.filename1
         )
@@ -219,7 +213,6 @@ class IOControllerTest(test.TestCase):
         aCategory.addChild(aSubCategory)
         self.taskFile.categories().append(aCategory)
         task1.addCategory(aSubCategory)
-        aSubCategory.addCategorizable(task1)
         self.iocontroller.save_selection(
             tasks=self.taskFile.tasks(), filename=self.filename1
         )
@@ -282,13 +275,7 @@ class IOControllerTest(test.TestCase):
         self.iocontroller.save_selection([selected], self.filename1)
         with open(self.filename1 + ".lock", "rb") as lock_file:
             self.assertEqual(b"", lock_file.read())
-        dirty = []
-
-        def on_dirty(taskFile):
-            dirty.append(taskFile)
-
-        pub.subscribe(on_dirty, "taskfile.dirty")
-        self.addCleanup(pub.unsubscribe, on_dirty, "taskfile.dirty")
+        dirty = test.ChangeRecorder("taskfile.dirty")
         selected.setSubject("changed")
         self.assertEqual(
             [],
@@ -306,7 +293,7 @@ class IOControllerTest(test.TestCase):
         open_file.setFilename(self.filename1)
         open_file.save()
         iocontroller = gui.iocontroller.IOController(
-            open_file, lambda *args: None, self.settings
+            open_file, lambda *args: None
         )
         select_file_once(self, "")
         messages = []
@@ -327,6 +314,27 @@ class IOControllerTest(test.TestCase):
         on_disk.close()
         on_disk.stop()
 
+    def test_reopening_the_open_file_keeps_it_locked(self):
+        open_file = persistence.LockedTaskFile()
+        open_file.tasks().append(task.Task())
+        open_file.setFilename(self.filename1)
+        open_file.save()
+        self.addCleanup(open_file.stop)
+        self.addCleanup(open_file.close)  # Before tearDown's removal
+        iocontroller = gui.iocontroller.IOController(
+            open_file, lambda *args: None
+        )
+        released = []
+        release = resourcelock.ResourceLock.release
+
+        def record(lock):
+            released.append(lock)
+            release(lock)
+
+        with mock.patch.object(resourcelock.ResourceLock, "release", record):
+            iocontroller.open(self.filename1)
+        self.assertEqual(([], True), (released, open_file.is_locked()))
+
     def testIOErrorOnExport(self):
         self.taskFile.setFilename(self.filename1)
         self.taskFile.tasks().append(task.Task())
@@ -342,54 +350,6 @@ class IOControllerTest(test.TestCase):
         )
         self.assertTrue(self.showerrorCalled)
 
-    def testNothingDeleted(self):
-        self.taskFile.tasks().append(task.Task(subject="Task"))
-        self.taskFile.notes().append(note.Note(subject="Note"))
-        self.assertFalse(self.iocontroller.has_deleted_items())
-
-    def testNoteDeleted(self):
-        self.taskFile.tasks().append(task.Task(subject="Task"))
-        myNote = note.Note(subject="Note")
-        myNote.markDeleted()
-        self.taskFile.notes().append(myNote)
-        self.assertTrue(self.iocontroller.has_deleted_items())
-
-    def testTaskDeleted(self):
-        myTask = task.Task(subject="Task")
-        myTask.markDeleted()
-        self.taskFile.tasks().append(myTask)
-        self.taskFile.notes().append(note.Note(subject="Note"))
-        self.assertTrue(self.iocontroller.has_deleted_items())
-
-    def testPurgeNothing(self):
-        myTask = task.Task(subject="Task")
-        myNote = note.Note(subject="Note")
-        self.taskFile.tasks().append(myTask)
-        self.taskFile.notes().append(myNote)
-        self.iocontroller.purge_deleted_items()
-        self.assertEqual(self.taskFile.tasks(), [myTask])
-        self.assertEqual(self.taskFile.notes(), [myNote])
-
-    def testPurgeNote(self):
-        myTask = task.Task(subject="Task")
-        myNote = note.Note(subject="Note")
-        self.taskFile.tasks().append(myTask)
-        self.taskFile.notes().append(myNote)
-        myNote.markDeleted()
-        self.iocontroller.purge_deleted_items()
-        self.assertEqual(self.taskFile.tasks(), [myTask])
-        self.assertEqual(self.taskFile.notes(), [])
-
-    def testPurgeTask(self):
-        myTask = task.Task(subject="Task")
-        myNote = note.Note(subject="Note")
-        self.taskFile.tasks().append(myTask)
-        self.taskFile.notes().append(myNote)
-        myTask.markDeleted()
-        self.iocontroller.purge_deleted_items()
-        self.assertEqual(self.taskFile.tasks(), [])
-        self.assertEqual(self.taskFile.notes(), [myNote])
-
     def testMerge(self):
         mergeFile = persistence.TaskFile()
         mergeFile.setFilename(self.filename2)
@@ -398,7 +358,7 @@ class IOControllerTest(test.TestCase):
         mergeFile.close()
         targetFile = persistence.TaskFile()
         iocontroller = gui.iocontroller.IOController(
-            targetFile, lambda *args: None, self.settings
+            targetFile, lambda *args: None
         )
         iocontroller.merge(self.filename2)
         try:
@@ -410,6 +370,35 @@ class IOControllerTest(test.TestCase):
             mergeFile.stop()
             targetFile.close()
             targetFile.stop()
+
+    def test_open_lists_the_duplicate_ids_it_corrected(self):
+        with open(self.filename1, "w", encoding="utf-8") as fd:
+            fd.write(
+                '<?taskcoach release="2.0.3" tskversion="37"?>\n'
+                '<tasks><task id="1" subject="first"/>'
+                '<task id="1" subject="second"/></tasks>'
+            )
+        task_file = persistence.TaskFile()
+        iocontroller = gui.iocontroller.IOController(
+            task_file, lambda *args: None
+        )
+        messages = []
+        try:
+            iocontroller.open(
+                self.filename1,
+                showerror=lambda message, **kwargs: messages.append(message),
+            )
+        finally:
+            task_file.close()
+            task_file.stop()
+        self.assertEqual(
+            (1, True, True),
+            (
+                len(messages),
+                "Kept its ID: Task: first" in messages[0],
+                "New ID: Task: second" in messages[0],
+            ),
+        )
 
     def test_open_when_in_use(self):
         self.taskFile.raiseError = resourcelock.LockInUse(
@@ -438,10 +427,9 @@ class IOControllerOverwriteExistingFileTest(test.TestCase):
             return wx.CANCEL
 
         wx.MessageBox = messageBox
-        task.Task.settings = self.settings = config.Settings(load=False)
         self.taskFile = dummy.TaskFile()
         self.iocontroller = gui.iocontroller.IOController(
-            self.taskFile, lambda *args: None, self.settings
+            self.taskFile, lambda *args: None
         )
 
     def tearDown(self):
@@ -493,12 +481,11 @@ class IOControllerReplaceFileTest(test.TestCase):
         original = wx.MessageBox
         wx.MessageBox = lambda *args, **kwargs: wx.YES
         self.addCleanup(setattr, wx, "MessageBox", original)
-        task.Task.settings = self.settings = config.Settings(load=False)
-        self.settings.setlist("file", "autoexport", ["Todo.txt"])
+        settings.set("file", "autoexport", ["Todo.txt"])
         self.task_file = dummy.TaskFile()
         self.addCleanup(self.task_file.stop)
         self.iocontroller = gui.iocontroller.IOController(
-            self.task_file, lambda *args: None, self.settings
+            self.task_file, lambda *args: None
         )
         self.messages = []
 
@@ -523,3 +510,163 @@ class IOControllerReplaceFileTest(test.TestCase):
             None, openfile=openfile, showerror=self.showerror
         )
         self.assertTrue(os.path.exists(self.name + ".txt"))
+
+
+class IOControllerCloseTest(test.TestCase):
+    def setUp(self):
+        super().setUp()
+        self.task_file = persistence.TaskFile()
+        self.addCleanup(self.task_file.stop)
+        self.addCleanup(self.task_file.close)
+        self.addCleanup(patterns.CommandHistory().clear)
+        self.iocontroller = gui.iocontroller.IOController(
+            self.task_file, lambda *args: None
+        )
+
+    def test_undo_back_to_the_empty_file_after_close_needs_no_save(self):
+        command.NewTaskCommand(self.task_file.tasks()).do()
+        self.iocontroller.close(force=True)  # No file name: not saved
+        command.NewTaskCommand(self.task_file.tasks()).do()
+        patterns.CommandHistory().undo()
+        self.assertFalse(self.task_file.need_save())
+
+
+class IOControllerChangedOnDiskTest(test.TestCase):
+    """Another program changed the open file: nothing replaces its
+    changes unasked (docs/PERSISTENCE_XML.md, Saving)."""
+
+    def setUp(self):
+        super().setUp()
+        directory = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, directory)
+        self.filename = os.path.join(directory, "tasks.tsk")
+        self.other_filename = os.path.join(directory, "other.tsk")
+        self.task_file = persistence.TaskFile()
+        self.addCleanup(self.task_file.stop)
+        self.addCleanup(self.task_file.close)
+        self.task = task.Task(subject="ours")
+        self.task_file.tasks().append(self.task)
+        self.task_file.setFilename(self.filename)
+        self.task_file.save()
+        self.iocontroller = gui.iocontroller.IOController(
+            self.task_file, lambda *args: None
+        )
+        self.iocontroller._ask = self.ask
+        self.answers = []
+        self.questions = 0
+
+    def ask(self, message, labels):
+        self.questions += 1
+        return self.answers.pop(0)
+
+    def change_on_disk(self, *answers):
+        """Another program adds a task, reported by the watcher;
+        answers are for the questions that follow."""
+        self.answers.extend(answers)
+        self.add_their_task()
+        self.task_file.check_disk()
+
+    def add_their_task(self):
+        theirs = persistence.TaskFile(read_only=True)
+        try:
+            theirs.load(self.filename)
+            theirs.tasks().append(task.Task(subject="theirs"))
+            theirs.save()
+        finally:
+            theirs.close()
+            theirs.stop()
+
+    def subjects(self, task_file):
+        return sorted(each.subject() for each in task_file.tasks())
+
+    def subjects_on_disk(self, filename=None):
+        on_disk = persistence.TaskFile(read_only=True)
+        try:
+            on_disk.load(filename or self.filename)
+            return self.subjects(on_disk)
+        finally:
+            on_disk.close()
+            on_disk.stop()
+
+    def open_copy_kept(self):
+        return any(each is self.task for each in self.task_file.tasks())
+
+    def test_a_forced_close_saves_to_a_copy_when_changed_on_disk(self):
+        # The session ends: nobody can choose, nothing is lost
+        self.task.setSubject("ours, edited")
+        self.add_their_task()
+        copy = os.path.join(
+            os.path.dirname(self.filename),
+            gui.iocontroller.copy_name(self.filename),
+        )
+        self.iocontroller.close(force=True)
+        self.assertEqual(
+            (["ours", "theirs"], ["ours, edited"]),
+            (self.subjects_on_disk(), self.subjects_on_disk(copy)),
+        )
+
+    def test_reload(self):
+        self.change_on_disk(0)
+        self.assertEqual(
+            (["ours", "theirs"], False, False),
+            (
+                self.subjects(self.task_file),
+                self.open_copy_kept(),
+                self.task_file.changed_on_disk(),
+            ),
+        )
+
+    def test_merge(self):
+        self.change_on_disk(1)
+        self.assertEqual(
+            (["ours", "theirs"], True, False),
+            (
+                self.subjects(self.task_file),
+                self.open_copy_kept(),
+                self.task_file.changed_on_disk(),
+            ),
+        )
+
+    def test_later(self):
+        self.change_on_disk(2)
+        self.assertEqual(
+            (["ours"], True),
+            (self.subjects(self.task_file), self.task_file.changed_on_disk()),
+        )
+
+    def test_save_merges_first(self):
+        self.task.setSubject("ours, changed")
+        self.change_on_disk(2)  # Later
+        self.answers.append(0)  # Merge and save
+        self.assertTrue(self.iocontroller.save())
+        self.assertEqual(
+            (["ours, changed", "theirs"], 2),
+            (self.subjects_on_disk(), self.questions),
+        )
+
+    def test_save_asks_once_about_an_unreported_change(self):
+        self.task.setSubject("ours, changed")
+        self.add_their_task()
+        self.answers.append(2)  # Cancel
+        self.assertFalse(self.iocontroller.save())
+        self.assertEqual(
+            (1, ["ours", "theirs"]), (self.questions, self.subjects_on_disk())
+        )
+
+    def test_save_as_leaves_the_changed_file(self):
+        self.task.setSubject("ours, changed")
+        select_file_once(self, self.other_filename)
+        self.change_on_disk(1)  # Save as
+        self.assertEqual(
+            (["ours", "theirs"], ["ours, changed"]),
+            (
+                self.subjects_on_disk(),
+                self.subjects_on_disk(self.other_filename),
+            ),
+        )
+
+    def test_cancel_saves_nothing(self):
+        self.task.setSubject("ours, changed")
+        self.change_on_disk(2, 2)  # Later, then Cancel
+        self.assertFalse(self.iocontroller.save())
+        self.assertEqual(["ours", "theirs"], self.subjects_on_disk())

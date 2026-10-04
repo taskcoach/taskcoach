@@ -16,13 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import ast
 import os
 import shutil
 import tempfile
+import time
+from unittest import mock
+
 import wx, test
-from taskcoachlib import gui, config, persistence, meta, operating_system
+from taskcoachlib import gui, persistence, meta, operating_system
+from taskcoachlib import patterns
 from taskcoachlib.domain import task
+from taskcoachlib.config import settings
 
 
 class MockViewer(wx.Frame):
@@ -51,19 +55,14 @@ class DummyIOController(object):
     def need_save(self, *args, **kwargs):  # pylint: disable=W0613
         return False  # pragma: no cover
 
-    def changed_on_disk(self):
-        return False  # pragme: no cover
-
 
 class MainWindowTestCase(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
         self.setSettings()
-        task.Task.settings = self.settings
         self.taskFile = persistence.TaskFile()
         self.mainwindow = MainWindowUnderTest(
-            DummyIOController(), self.taskFile, self.settings
+            DummyIOController(), self.taskFile
         )
 
     def setSettings(self):
@@ -86,12 +85,21 @@ class MainWindowTestCase(test.wxTestCase):
 
 class MainWindowTest(MainWindowTestCase):
     def testStatusBar_Show(self):
-        self.settings.setboolean("view", "statusbar", True)
+        settings.set("view", "statusbar", True)
         self.assertTrue(self.mainwindow.GetStatusBar().IsShown())
 
     def testStatusBar_Hide(self):
-        self.settings.setboolean("view", "statusbar", False)
+        settings.set("view", "statusbar", False)
         self.assertFalse(self.mainwindow.GetStatusBar().IsShown())
+
+    def test_a_task_status_change_refreshes_the_status_bar(self):
+        # The status bar counts the statuses; the clock changes them
+        refresh = self.mainwindow.GetStatusBar()._StatusBar__status_later
+        refresh.cancel()
+        patterns.Event(
+            task.Task.statusChangedEventType(), task.Task(), None
+        ).send()
+        self.assertTrue(refresh.pending)
 
     def testTitle_Default(self):
         self.assertEqual(meta.name, self.mainwindow.GetTitle())
@@ -133,7 +141,17 @@ class MainWindowMaximizeTestCase(MainWindowTestCase):
             self.mainwindow.Show()  # Or IsMaximized() returns always False...
 
     def setSettings(self):
-        self.settings.setboolean("window", "maximized", self.maximized)
+        settings.set("window", "maximized", self.maximized)
+
+    def placed(self):
+        """The window's tracker once the placement is quiet
+        (docs/WINDOW_GEOMETRY.md)."""
+        tracker = self.mainwindow._MainWindow__dimensions_tracker
+        deadline = time.monotonic() + 5
+        while not tracker.ready and time.monotonic() < deadline:
+            wx.Yield()
+            time.sleep(0.01)
+        return tracker
 
 
 class MainWindowNotMaximizedTest(MainWindowMaximizeTestCase):
@@ -142,59 +160,32 @@ class MainWindowNotMaximizedTest(MainWindowMaximizeTestCase):
     def testCreate(self):
         self.assertFalse(self.mainwindow.IsMaximized())
 
-    @test.skipOnPlatform("__WXGTK__")
-    def testMaximize(self):  # pragma: no cover
-        # Skipping this test under wxGTK. I don't know how it managed
-        # to pass before but according to
-        # http://trac.wxwidgets.org/ticket/9167 and to my own tests,
-        # EVT_MAXIMIZE is a noop under this platform.
-        self.mainwindow.Maximize()
-        if operating_system.isWindows():
-            wx.Yield()
+    def test_maximize(self):
+        # The window manager's answer, which a test display without one
+        # never sends
+        self.assertTrue(self.placed().ready)
+        with mock.patch.object(
+            self.mainwindow, "IsMaximized", return_value=True
+        ):
+            self.mainwindow.GetEventHandler().ProcessEvent(
+                wx.MaximizeEvent(self.mainwindow.GetId())
+            )
         self.mainwindow.save_settings()  # Geometry is written on close
-        self.assertTrue(self.settings.getboolean("window", "maximized"))
+        self.assertTrue(settings.get("window", "maximized"))
 
 
 class MainWindowMaximizedTest(MainWindowMaximizeTestCase):
     maximized = True
 
     @test.skipOnPlatform("__WXMAC__")
-    def testCreate(self):
-        self.assertTrue(self.mainwindow.IsMaximized())  # pragma: no cover
-
-
-class MainWindowIconizedTest(MainWindowTestCase):
-    def setUp(self):
-        super().setUp()
-        if operating_system.isGTK():
-            wx.SafeYield()  # pragma: no cover
-
-    def setSettings(self):
-        self.settings.set("window", "starticonized", "Always")
-
-    def expectedHeight(self):
-        return 500
-
-    @test.skipOnPlatform(
-        "__WXGTK__"
-    )  # Test fails on Fedora, don't know why nor how to fix it
-    def testIsIconized(self):
-        self.assertTrue(self.mainwindow.IsIconized())  # pragma: no cover
-
-    def testWindowSize(self):
-        self.assertEqual(
-            (900, self.expectedHeight()),
-            ast.literal_eval(self.settings.get("window", "size")),
-        )
-
-    def testWindowSizeShouldnotChangeWhenReceivingChangeSizeEvent(self):
-        event = wx.SizeEvent((100, 20))
-        process = self.mainwindow.ProcessEvent
-        if operating_system.isWindows():
-            process(event)  # pragma: no cover
-        else:
-            wx.CallAfter(process, event)  # pragma: no cover
-        self.assertEqual(
-            (900, self.expectedHeight()),
-            ast.literal_eval(self.settings.get("window", "size")),
+    def test_create(self):  # pragma: no cover
+        # The maximize comes once the placement is quiet, and a window
+        # manager grants it
+        tracker = self.placed()
+        if not tracker.maximized:
+            self.skipTest("no window manager granted the maximize")
+        self.assertTrue(
+            self.mainwindow.IsMaximized(),
+            "ready %s, phase %s, %s attempts"
+            % (tracker.ready, tracker._phase, tracker._attempts),
         )

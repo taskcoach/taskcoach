@@ -19,10 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from setuptools import setup, find_namespace_packages
-import platform
 import re
 import os
-import sys
 
 
 def _read_metadata():
@@ -65,48 +63,21 @@ def _read_metadata():
 # Read metadata without importing
 _meta = _read_metadata()
 
-# Try to import distro for platform detection, but don't fail if unavailable
-try:
-    import distro
-except ImportError:
-    distro = None
-
-
-def majorAndMinorPythonVersion():
-    info = sys.version_info
-    try:
-        return info.major, info.minor
-    except AttributeError:
-        return info[0], info[1]
-
-
 # Dependency Installation Strategy
 # ================================
 # On Linux distros: Use distro packages where available, pip fallback for missing.
 # On Windows/macOS: Use pip for all dependencies.
 #
-# IMPORTANT: Some packages have minimum version requirements:
-# - pyparsing>=3.1.3: Required for pp.Tag() in delta_time.py
-# - watchdog>=3.0.0: Required for file monitoring API
-#
-# Debian Bookworm note: pyparsing (3.0.9) and watchdog (2.2.1) are too old,
-# must pip install newer versions. See docs/DEBIAN_BOOKWORM_SETUP.md
-#
 # Optional dependencies (in extras_require):
 # - squaremap: Hierarchic data visualization (not in Fedora/Arch repos)
 
 install_requires = [
-    "six",
-    "pypubsub",
-    "watchdog>=3.0.0",  # File monitoring - Bookworm too old, needs pip
     "chardet",
     "python-dateutil",
-    "pyparsing>=3.1.3",  # For pp.Tag() - Bookworm too old, needs pip
-    "lxml",
-    "pyxdg",
     "keyring",
-    "numpy",  # Pinned to 1.x in pip-based builds only (see build workflows)
     "pyenchant>=3.2.0",  # Spell checking for text fields
+    # Windows calls: Outlook, folders, windows, monitors, processes
+    "pywin32; sys_platform == 'win32'",
 ]
 
 # Optional/platform-specific dependencies
@@ -114,12 +85,6 @@ extras_require = {
     "squaremap": ["squaremap>=1.0.5"],  # Not in Fedora/Arch repos
     "all": ["squaremap>=1.0.5"],
 }
-
-system = platform.system()
-if system == "Windows":
-    install_requires.append("WMI")
-
-tests_requires = []
 
 # Long description for PyPI
 long_description = (
@@ -129,8 +94,7 @@ long_description = (
     "prerequisites, prioritizing, effort tracking, category tags, budgets, "
     "notes, and many other features. However, users are not forced to use all "
     "these features; Task Coach can be as simple or complex as you need it to be. "
-    "Task Coach is available for Windows, Mac OS X, and GNU/Linux; and there is a "
-    "companion iOS app."
+    "Task Coach is available for Windows, Mac OS X, and GNU/Linux."
 )
 
 setupOptions = {
@@ -144,7 +108,8 @@ setupOptions = {
     "license": _meta["license"],
     "install_requires": install_requires,
     "extras_require": extras_require,
-    "tests_require": tests_requires,
+    # Ubuntu 22.04's, the oldest of the supported distributions
+    "python_requires": ">=3.10",
     "packages": find_namespace_packages(
         include=["taskcoachlib", "taskcoachlib.*"]
     ),
@@ -156,8 +121,6 @@ setupOptions = {
         "License :: OSI Approved :: GNU General Public License (GPL)",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
@@ -175,63 +138,6 @@ setupOptions = {
         "Natural Language :: Spanish",
     ],
 }
-
-system = platform.system()
-if system == "Linux" and distro is not None:
-    # Add data files for Debian-based systems:
-    current_dist = distro.id().lower()
-    if "debian" in current_dist or "ubuntu" in current_dist:
-        setupOptions["data_files"] = [
-            (
-                "share/applications",
-                ["build.in/linux_common/taskcoach.desktop"],
-            ),
-            ("share/appdata", ["build.in/debian/taskcoach.appdata.xml"]),
-            ("share/pixmaps", ["icons.in/taskcoach.png"]),
-        ]
-elif system == "Windows":
-    setupOptions["scripts"].append("taskcoach.pyw")
-    # ...
-    # ModuleFinder can't handle runtime changes to __path__, but win32com uses them
-    try:
-        # py2exe 0.6.4 introduced a replacement modulefinder.
-        # This means we have to add package paths there, not to the built-in
-        # one.  If this new modulefinder gets integrated into Python, then
-        # we might be able to revert this some day.
-        # if this doesn't work, try import modulefinder
-        try:
-            import py2exe.mf as modulefinder
-        except ImportError:
-            import modulefinder
-        import win32com
-
-        for p in win32com.__path__[1:]:
-            modulefinder.AddPackagePath("win32com", p)
-        for extra in ["win32com.shell"]:  # ,"win32com.mapi"
-            __import__(extra)
-            m = sys.modules[extra]
-            for p in m.__path__[1:]:
-                modulefinder.AddPackagePath(extra, p)
-    except ImportError:
-        # no build path setup, no worries.
-        pass
-elif system == "Darwin":
-    # When packaging for MacOS, choose the right binary depending on
-    # the platform word size. Actually, we're always packaging on 32
-    # bits.
-    import struct
-
-    wordSize = "32" if struct.calcsize("L") == 4 else "64"
-    sys.path.insert(
-        0, os.path.join("taskcoachlib", "bin.in", "macos", "IA%s" % wordSize)
-    )
-    sys.path.insert(
-        0, os.path.join("extension", "macos", "bin-ia%s" % wordSize)
-    )
-    # pylint: disable=F0401,W0611
-    import _powermgt  # noqa: F401
-    import _idle  # noqa: F401
-
 
 if __name__ == "__main__":
     setup(**setupOptions)  # pylint: disable=W0142

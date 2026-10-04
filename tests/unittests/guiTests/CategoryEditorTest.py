@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import test
-from taskcoachlib import gui, config, persistence, operating_system
+from taskcoachlib import gui, persistence, operating_system, render
 from taskcoachlib.domain import category, attachment
 
 
@@ -30,14 +30,12 @@ class DummyEvent(object):
 class CategoryEditorTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
         self.taskFile = persistence.TaskFile()
         self.categories = self.taskFile.categories()
         self.categories.extend(self.createCategories())
         self.editor = gui.dialog.editor.CategoryEditor(
             self.frame,
             list(self.categories),
-            self.settings,
             self.categories,
             self.taskFile,
         )
@@ -93,7 +91,7 @@ class CategoryEditorTest(test.wxTestCase):
         self.assertEqual("Description", self.category.description())
 
     def testAddAttachment(self):
-        self.editor._interior[2].viewer.onDropFiles(
+        self.editor._interior[2].viewer.on_drop_files(
             self.category, ["filename"]
         )
         self.assertTrue(
@@ -116,6 +114,18 @@ class CategoryEditorTest(test.wxTestCase):
             DummyEvent()
         )
         self.assertTrue(self.category.hasExclusiveSubcategories())
+
+    def test_style_priority_edit_shows_the_new_modification_date(self):
+        page = self.editor._interior[0]
+        page._stylePriorityEntry.SetValue(3)
+        page._stylePrioritySync.onAttributeEdited(DummyEvent())
+        self.assertEqual(3, self.category.stylePriority())
+        self.assertEqual(
+            render.dateTime(
+                self.category.modificationDateTime(), human_readable=True
+            ),
+            page._modificationTextEntry.GetLabel(),
+        )
 
     def testAddNote(self):
         viewer = self.editor._interior[1].viewer

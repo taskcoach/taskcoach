@@ -18,7 +18,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import datetime
 import re
 
 # pylint: disable=C0103
@@ -43,12 +42,12 @@ import re
 #   - Patch: Incremented for each bug fix release
 # =============================================================================
 
-version = "2.0.2"  # Major.Minor.Milestone
-patch = "26"  # Patch number - INCREMENT THIS for each release
-version_full = f"{version}.{patch}"  # Full version: 2.0.2.26
+version = "2.0.3"  # Major.Minor.Milestone
+patch = "0"  # Patch number - INCREMENT THIS for each release
+version_full = f"{version}.{patch}"  # Full version: 2.0.3.0
 
-release_day = "27"  # Day of the release (1-31)
-release_month = "September"  # Month of the release
+release_day = "4"  # Day of the release (1-31)
+release_month = "October"  # Month of the release
 release_year = "2026"  # Year of the release
 
 # =============================================================================
@@ -56,21 +55,17 @@ release_year = "2026"  # Year of the release
 # =============================================================================
 
 
-# Task file format version (37 since release 1.3.23).
+# Task file format versions (docs/PERSISTENCE_XML.md, Versions and
+# Compatibility). The format this release writes and the newest it
+# reads (38 since 2.0.3.0: categories stored on the items):
+tskformat = 38
+# The format a reader needs for this release's files, which releases
+# before 2.0.3.0 check: 37 while the files also hold the forms 2.0.2.0
+# and later read (persistence/xml/legacy.py).
 tskversion = 37
 release_status = "alpha"  # One of 'alpha', 'beta', 'stable'
 
-# Legacy: keep version_with_patch for backwards compatibility
-version_with_patch = version_full
-
 # No editing needed below this line for doing a release.
-
-try:
-    from taskcoachlib.meta.revision import (
-        revision,
-    )  # pylint: disable=F0401,W0611
-except ImportError:
-    revision = None
 
 months = [
     "January",
@@ -87,73 +82,34 @@ months = [
     "December",
 ]
 
-if revision:  # Buildbot sets revision
-    # Decrement version because this version isn't released yet. This
-    # assumes that version components are < 100; 99 will actually mean
-    # pre-major release
-    # pylint: disable=W0141
-    major, inter, minor = list(map(int, version.split(".")))
-    numversion = major * 10000 + inter * 100 + minor
-    numversion -= 1
-    major = numversion // 10000
-    inter = (numversion // 100) % 100
-    minor = numversion % 100
-    version = ".".join(map(str, [major, inter, minor]))
-
-    now = datetime.datetime.today()
-    release_day = str(now.day)
-    release_month = months[now.month - 1]
-    release_year = str(now.year)
-    release_status = "beta"
-    version += "." + revision
-
 assert release_month in months  # Try to prevent typo's
-release_month_nr = "%02d" % (months.index(release_month) + 1)
-release_day_nr = "%02d" % int(release_day)
 date = release_month + " " + release_day + ", " + release_year
 
 name = "Task Coach"
 description = "Your friendly task manager"
-long_description = (
-    "%(name)s is a free open source todo manager. It grew "
-    "out of frustration about other programs not handling composite tasks "
-    "well. In addition to flexible composite tasks, %(name)s has grown to "
-    "include prerequisites, prioritizing, effort tracking, category tags, "
-    "budgets, notes, and many other features. However, users are not forced "
-    "to use all these features; %(name)s can be as simple or complex as you "
-    "need it to be. %(name)s is available for Windows, Mac OS X, and "
-    "GNU/Linux; and there is a companion iOS app." % dict(name=name)
-)
-keywords = "task manager, todo list, pim, time registration, track effort"
-author_first, author_last = "Frank", "Niessink"  # Needed for PAD file
+author_first, author_last = "Frank", "Niessink"
 author = "%s %s, Jerome Laheurte, Aaron Wolf, and Real Carbonneau" % (
-    author_first,
-    author_last,
-)
-author_unicode = "%s %s, Jérôme Laheurte, Aaron Wolf, and Réal Carbonneau" % (
     author_first,
     author_last,
 )
 author_email = "https://github.com/taskcoach/taskcoach/issues"
 
 filename = name.replace(" ", "")
-filename_lower = filename.lower()
 
 url = "https://github.com/taskcoach/taskcoach"  # Project homepage (GitHub)
 github_url = url  # Alias for backwards compatibility
 faq_url = "https://answers.launchpad.net/taskcoach/+faqs"
-bug_report_url = github_url + "/issues"  # GitHub issues for bug reports
 known_bugs_url = github_url + "/issues"  # GitHub issues for known bugs
 support_request_url = github_url + "/issues"  # GitHub issues for support
 # GitHub issues for feature requests
 feature_request_url = github_url + "/issues"
 # GitHub pull requests for translations
 translations_url = github_url + "/pulls"
-
-announcement_addresses = (
-    "taskcoach@yahoogroups.com, python-announce-list@python.org"
+# The latest release, drafts and prereleases left out (version check)
+latest_release_url = github_url + "/releases/latest"
+latest_release_api_url = (
+    "https://api.github.com/repos/taskcoach/taskcoach/releases/latest"
 )
-bcc_announcement_addresses = "johnhaller@portableapps.com"
 
 copyright = "Copyright (C) 2004-%s %s" % (
     release_year,
@@ -165,8 +121,6 @@ license_title_and_version = "%s version %s" % (license_title, license_version)
 license = (
     "%s or any later version" % license_title_and_version
 )  # pylint: disable=W0622
-license_title_and_version_abbrev = "GPLv%s" % license_version
-license_abbrev = "%s+" % license_title_and_version_abbrev
 license_notice = """%(name)s is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -189,15 +143,6 @@ license_notice_html = re.sub(
     license_notice_html,
 )
 
-platform = "Any"
-pythonversion = "3.8"
-wxpythonversionnumber = "4.2.0"
-wxpythonversion = "%s-unicode" % wxpythonversionnumber
-# NOTE (Twisted Removal - 2024): Twisted is no longer required.
-# Replaced with native wxPython event handling, watchdog, and socketserver.
-watchdogversionnumber = "3.0.0"
-igraphversionnumber = "0.7"
-
 languages = {
     "English (US)": (None, True),
     "English (AU)": ("en_AU", True),
@@ -205,7 +150,7 @@ languages = {
     "English (GB)": ("en_GB", True),
     "Arabic": ("ar", False),
     "Basque": ("eu", False),
-    "Belarusian": ("be", False),
+    "Belarusian": ("be", True),
     "Bosnian": ("bs", False),
     "Breton": ("br", False),
     "Bulgarian": ("bg", False),
@@ -213,7 +158,7 @@ languages = {
     "Chinese (Simplified)": ("zh_CN", False),
     "Chinese (Traditional)": ("zh_TW", False),
     "Czech": ("cs", True),
-    "Danish": ("da", False),
+    "Danish": ("da", True),
     "Dutch": ("nl", True),
     "Esperanto": ("eo", False),
     "Estonian": ("et", False),
@@ -225,7 +170,7 @@ languages = {
     "Greek": ("el", False),
     "Hebrew": ("he", False),
     "Hindi": ("hi", False),
-    "Hungarian": ("hu", False),
+    "Hungarian": ("hu", True),
     "Indonesian": ("id", False),
     "Italian": ("it", True),
     "Japanese": ("ja", False),
@@ -247,14 +192,13 @@ languages = {
     "Slovak": ("sk", True),
     "Slovene": ("sl", False),
     "Spanish": ("es", True),
-    "Swedish": ("sv", False),
+    "Swedish": ("sv", True),
     "Telugu": ("te", False),
     "Thai": ("th", False),
     "Turkish": ("tr", True),
     "Ukranian": ("uk", False),
     "Vietnamese": ("vi", False),
 }
-languages_list = ",".join(list(languages.keys()))
 
 
 def __create_dict(locals_dict):

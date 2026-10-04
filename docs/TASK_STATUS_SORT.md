@@ -6,7 +6,7 @@ When "Sort by status first" is enabled (the default), tasks organize by status r
 
 ## Current Implementation
 
-The system uses a numeric priority system where each status has a distinct sort priority via the `statusSortPriority` attribute. These priorities are **user-configurable** via the Preferences > Statuses tab.
+The system uses a numeric priority system where each status has a distinct sort priority, read with `TaskStatus.get_sort_priority(settings)`. These priorities are **user-configurable** via the Preferences > Statuses tab.
 
 ### Default Priorities
 
@@ -34,18 +34,37 @@ Priorities can be changed in Preferences > Statuses using the "Sort Priority" dr
 - **Moving up** (e.g., 6 to 2): all priorities in [2, 6) shift up by 1
 - **Moving down** (e.g., 1 to 4): all priorities in (1, 4] shift down by 1
 
-Priorities are stored in the `[statussortpriority]` section of the settings file and loaded into status singletons at application startup.
+Priorities are stored in the `[statussortpriority]` section of the settings file; `get_sort_priority()` reads them on each call.
 
 ### Sort Key Construction
 
-Each `TaskStatus` object has a `statusSortPriority` attribute. The sorter uses:
+The sorter uses:
 
 ```python
-sort_key = [-status.statusSortPriority] + [column_sort_key]  # ascending
-sort_key = [status.statusSortPriority] + [column_sort_key]   # descending
+sort_key = [-status.get_sort_priority(settings)] + [column_sort_key]  # ascending
+sort_key = [status.get_sort_priority(settings)] + [column_sort_key]   # descending
 ```
 
 For ascending sort, priority is negated to maintain urgency-first ordering.
+
+The Status column sorts by the same key (`Task.statusSortFunction()`,
+since 2026-10-01: until then it sorted by subject).
+
+### Re-sorting
+
+With "Sort by status first", or sorted by the Status column, an edit
+of a date, the completion or the prerequisites re-sorts at once. A status the clock changes (a planned
+start or due time passing, the due soon hours changed) re-sorts once
+after the master loop's pass (`scheduler.pass`), not for each task
+([SCHEDULERS.md](SCHEDULERS.md)).
+
+### Ties
+
+Items with equal sort keys keep their creation order, then their ID
+(`_tie_break_key()` in `domain/base/sorter.py`), so the order is
+deterministic. The tie-break was the ID alone until 2026-09-28, which
+followed creation order only while IDs were time-based
+([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
 
 ## Legacy Sort Algorithm
 
@@ -80,7 +99,7 @@ sort_key = [not completed(), not inactive()] + [column_sort_key]
 ## Core Files
 
 - `taskcoachlib/domain/task/sorter.py` - Composite key logic, subscribes to priority changes
-- `taskcoachlib/domain/task/status.py` - Status definitions with statusSortPriority, `loadSortPrioritiesFromSettings()`
+- `taskcoachlib/domain/task/status.py` - Status definitions, `get_sort_priority(settings)`
 - `taskcoachlib/domain/task/task.py` - Status computation methods
 - `taskcoachlib/config/defaults.py` - Default priorities in `statussortpriority` section
 - `taskcoachlib/gui/dialog/preferences.py` - Statuses tab with priority dropdowns

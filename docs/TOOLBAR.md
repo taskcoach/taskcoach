@@ -71,7 +71,7 @@ has three user-selectable sizes.
   via `SetToolBitmapSize()`.
 - **Viewer toolbar:** `gui/viewer/base.py` — always passes
   `(TOOLBAR_ICON_SIZE,) * 2` (fixed at 16px).
-- **Settings flow:** menu selection → `settings.setvalue()` → pubsub →
+- **Settings flow:** menu selection → `settings.setvalue()` → event →
   `mainwindow.showToolBar(value)` → `MainToolBar(size=value)`.
 
 ---

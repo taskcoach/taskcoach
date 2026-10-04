@@ -21,13 +21,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import command
+from taskcoachlib.config import settings
 from taskcoachlib.domain import base, task, category, attachment
 from taskcoachlib.gui import uicommand
 from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.i18n import _
-from pubsub import pub
-import ast
 import wx
+from taskcoachlib import patterns
 
 
 class SearchableViewerMixin(object):
@@ -65,14 +65,12 @@ class SearchableViewerMixin(object):
         searchDescription=False,
         regularExpression=False,
     ):
-        section = self.settingsSection()
-        self.settings.set(section, "searchfilterstring", searchString)
-        self.settings.set(section, "searchfiltermatchcase", str(matchCase))
-        self.settings.set(
-            section, "searchfilterincludesubitems", str(includeSubItems)
-        )
-        self.settings.set(section, "searchdescription", str(searchDescription))
-        self.settings.set(section, "regularexpression", str(regularExpression))
+        options = self.options
+        options.searchfilterstring = searchString
+        options.searchfiltermatchcase = matchCase
+        options.searchfilterincludesubitems = includeSubItems
+        options.searchdescription = searchDescription
+        options.regularexpression = regularExpression
         self.presentation().setSearchFilter(
             searchString,
             matchCase=matchCase,
@@ -82,32 +80,21 @@ class SearchableViewerMixin(object):
         )
 
     def getSearchFilter(self):
-        section = self.settingsSection()
-        searchString = self.settings.get(section, "searchfilterstring")
-        matchCase = self.settings.getboolean(section, "searchfiltermatchcase")
-        includeSubItems = self.settings.getboolean(
-            section, "searchfilterincludesubitems"
-        )
-        searchDescription = self.settings.getboolean(
-            section, "searchdescription"
-        )
-        regularExpression = self.settings.getboolean(
-            section, "regularexpression"
-        )
+        options = self.options
         return (
-            searchString,
-            matchCase,
-            includeSubItems,
-            searchDescription,
-            regularExpression,
+            options.searchfilterstring,
+            options.searchfiltermatchcase,
+            options.searchfilterincludesubitems,
+            options.searchdescription,
+            options.regularexpression,
         )
 
     def createToolBarUICommands(self):
         """UI commands to put on the toolbar of this viewer."""
-        searchUICommand = uicommand.Search(viewer=self, settings=self.settings)
+        search_command = uicommand.Search(viewer=self)
         return super().createToolBarUICommands() + (
             1,
-            searchUICommand,
+            search_command,
         )
 
 
@@ -135,7 +122,7 @@ class FilterableViewerMixin(object):
     def createFilterUICommands(self):
         return [
             uicommand.ResetFilter(viewer=self),
-            uicommand.CategoryViewerFilterChoice(settings=self.settings),
+            uicommand.CategoryViewerFilterChoice(),
             None,
         ]
 
@@ -194,15 +181,10 @@ class FilterableViewerForCategorizablesMixin(FilterableViewerMixin):
         items = super(
             FilterableViewerForCategorizablesMixin, self
         ).createFilter(items)
-        filter_on_all = self.settings.getboolean(
-            "view", "categoryfiltermatchall"
-        )
         return category.filter.CategoryFilter(
             items,
             categories=self.taskFile.categories(),
-            settings=self.settings,
             tree_mode=self.is_tree_viewer(),
-            filterOnlyWhenAllCategoriesMatch=filter_on_all,
         )
 
 
@@ -210,7 +192,9 @@ class FilterableViewerForTasksMixin(FilterableViewerForCategorizablesMixin):
     def createFilter(self, taskList):
         taskList = super().createFilter(taskList)
         return task.filter.ViewFilter(
-            taskList, tree_mode=self.is_tree_viewer(), **self.viewFilterOptions()
+            taskList,
+            tree_mode=self.is_tree_viewer(),
+            **self.viewFilterOptions(),
         )
 
     def viewFilterOptions(self):
@@ -260,19 +244,17 @@ class FilterableViewerForTasksMixin(FilterableViewerForCategorizablesMixin):
         return (
             super().createFilterUICommands()
             + [
-                uicommand.ViewerHideTasks(
-                    taskStatus, viewer=self, settings=self.settings
-                )
+                uicommand.ViewerHideTasks(taskStatus, viewer=self)
                 for taskStatus in task.Task.possibleStatuses()
             ]
             + [uicommand.ViewerHideCompositeTasks(viewer=self)]
         )
 
     def __getBooleanSetting(self, setting):
-        return self.settings.getboolean(self.settingsSection(), setting)
+        return getattr(self.options, setting)
 
     def __setBooleanSetting(self, setting, booleanValue):
-        self.settings.setboolean(self.settingsSection(), setting, booleanValue)
+        setattr(self.options, setting, booleanValue)
 
 
 class SortableViewerMixin(object):
@@ -287,18 +269,19 @@ class SortableViewerMixin(object):
 
     def register_presentation_observers(self):
         super().register_presentation_observers()
-        pub.subscribe(
-            self.on_sort_order_changed, self.presentation().sort_event_type()
+        self.removeObserver(self.on_sort_order_changed)
+        self.registerObserver(
+            self.on_sort_order_changed,
+            eventType=self.presentation().sort_event_type(),
+            eventSource=self.presentation(),
         )
 
     def detach(self):
         super().detach()
-        pub.unsubscribe(
-            self.on_sort_order_changed, self.presentation().sort_event_type()
-        )
+        self.removeObserver(self.on_sort_order_changed)
 
-    def on_sort_order_changed(self, sender):
-        if sender == self.presentation():
+    def on_sort_order_changed(self, event):
+        if self.presentation() in event.sources():
             self.refresh()
             self.send_viewer_status_event()
 
@@ -312,11 +295,7 @@ class SortableViewerMixin(object):
 
     def sortBy(self, sort_key):
         self.presentation().sort_by(sort_key)
-        self.settings.set(
-            self.settingsSection(),
-            "sortby",
-            str(self.presentation().sort_keys()),
-        )
+        self.options.sortby = self.presentation().sort_keys()
 
     def isSortedBy(self, sort_key):
         sort_keys = self.presentation().sort_keys()
@@ -325,7 +304,7 @@ class SortableViewerMixin(object):
         )
 
     def sortKey(self):
-        return ast.literal_eval(self.settings.get(self.settingsSection(), "sortby"))
+        return self.options.sortby
 
     def isSortOrderAscending(self):
         sort_keys = self.presentation().sort_keys()
@@ -333,22 +312,13 @@ class SortableViewerMixin(object):
 
     def setSortOrderAscending(self, ascending=True):
         self.presentation().sort_ascending(ascending)
-        self.settings.set(
-            self.settingsSection(),
-            "sortby",
-            str(self.presentation().sort_keys()),
-        )
+        self.options.sortby = self.presentation().sort_keys()
 
     def isSortCaseSensitive(self):
-        return self.settings.getboolean(
-            self.settingsSection(), "sortcasesensitive"
-        )
+        return self.options.sortcasesensitive
 
     def setSortCaseSensitive(self, sort_case_sensitive=True):
-        self.settings.set(
-            self.settingsSection(), "sortcasesensitive",
-            str(sort_case_sensitive),
-        )
+        self.options.sortcasesensitive = sort_case_sensitive
         self.presentation().sort_case_sensitive(sort_case_sensitive)
 
     def getSortUICommands(self):
@@ -523,16 +493,10 @@ class SortableViewerForTasksMixin(
         super().sortBy(sortKey)
 
     def isSortByTaskStatusFirst(self):
-        return self.settings.getboolean(
-            self.settingsSection(), "sortbystatusfirst"
-        )
+        return self.options.sortbystatusfirst
 
     def setSortByTaskStatusFirst(self, sort_by_status_first):
-        self.settings.set(
-            self.settingsSection(),
-            "sortbystatusfirst",
-            str(sort_by_status_first),
-        )
+        self.options.sortbystatusfirst = sort_by_status_first
         self.presentation().sort_by_task_status_first(sort_by_status_first)
 
     def sorter_options(self):
@@ -625,69 +589,58 @@ class AttachmentDropTargetMixin(object):
         kwargs = super(
             AttachmentDropTargetMixin, self
         ).widgetCreationKeywordArguments()
-        kwargs["on_drop_url"] = self.onDropURL
-        kwargs["on_drop_files"] = self.onDropFiles
-        kwargs["on_drop_mail"] = self.onDropMail
+        kwargs["on_drop_url"] = self.on_drop_url
+        kwargs["on_drop_files"] = self.on_drop_files
+        kwargs["on_drop_mail"] = self.on_drop_mail
         return kwargs
 
-    def _addAttachments(self, attachments, item, **itemDialogKwargs):
+    def _add_attachments(self, attachments, item, **item_dialog_kwargs):
         """Add attachments. If item refers to an existing domain object,
         add the attachments to that object. If item is None, use the
         newItemDialog to create a new domain object and add the attachments
         to that new object."""
         if item is None:
-            itemDialogKwargs["subject"] = attachments[0].subject()
-            if self.settings.get(
-                "view", "defaultplannedstartdatetime"
-            ).startswith("preset"):
-                itemDialogKwargs["plannedStartDateTime"] = (
+            item_dialog_kwargs["subject"] = attachments[0].subject()
+            if settings.view.defaultplannedstartdatetime.startswith("preset"):
+                item_dialog_kwargs["plannedStartDateTime"] = (
                     task.Task.suggestedPlannedStartDateTime()
                 )
-            if self.settings.get("view", "defaultduedatetime").startswith(
-                "preset"
-            ):
-                itemDialogKwargs["dueDateTime"] = (
+            if settings.view.defaultduedatetime.startswith("preset"):
+                item_dialog_kwargs["dueDateTime"] = (
                     task.Task.suggestedDueDateTime()
                 )
-            if self.settings.get(
-                "view", "defaultactualstartdatetime"
-            ).startswith("preset"):
-                itemDialogKwargs["actualStartDateTime"] = (
+            if settings.view.defaultactualstartdatetime.startswith("preset"):
+                item_dialog_kwargs["actualStartDateTime"] = (
                     task.Task.suggestedActualStartDateTime()
                 )
-            if self.settings.get(
-                "view", "defaultcompletiondatetime"
-            ).startswith("preset"):
-                itemDialogKwargs["completionDateTime"] = (
-                    task.Task.suggestedCompletionDateTime()
-                )
-            if self.settings.get("view", "defaultreminderdatetime").startswith(
-                "preset"
-            ):
-                itemDialogKwargs["reminder"] = (
+            if settings.view.defaultreminderdatetime.startswith("preset"):
+                item_dialog_kwargs["reminder"] = (
                     task.Task.suggestedReminderDateTime()
                 )
             newItemDialog = self.newItemDialog(
-                icon_id="nuvola_actions_document-new", attachments=attachments, **itemDialogKwargs
+                icon_id="nuvola_actions_document-new",
+                attachments=attachments,
+                **item_dialog_kwargs,
             )
             newItemDialog.Show()
-            # Use CallAfter to ensure proper focus after drop completes
-            wx.CallAfter(newItemDialog.Raise)
-            wx.CallAfter(newItemDialog.SetFocus)
+            # Later, so the dialog has the focus once the drop completes
+            patterns.later.soon(newItemDialog, newItemDialog.Raise)
+            patterns.later.soon(newItemDialog, newItemDialog.SetFocus)
         else:
             addAttachment = command.AddAttachmentCommand(
                 self.presentation(), [item], attachments=attachments
             )
             addAttachment.do()
             # Open the item's editor on attachments tab, then open attachment editor
-            self._openItemEditorOnAttachmentsTab(item, attachments)
+            self._open_item_editor_on_attachments_tab(item, attachments)
 
-    def _openItemEditorOnAttachmentsTab(self, item, newAttachments=None):
+    def _open_item_editor_on_attachments_tab(self, item, new_attachments=None):
         """Open the item's editor on the attachments tab.
 
         If an editor for this item is already open, bring it to front and
         switch to the attachments tab. Otherwise, create a new editor.
-        If newAttachments is provided, also open the AttachmentEditor for them.
+        If new_attachments is provided, also open the AttachmentEditor
+        for them.
         """
         from taskcoachlib.gui.dialog import editor
         from taskcoachlib.domain import note
@@ -710,7 +663,7 @@ class AttachmentDropTargetMixin(object):
         for window in wx.GetTopLevelWindows():
             if isinstance(window, EditorClass):
                 # Check if this editor is editing our item
-                if hasattr(window, '_items') and item in window._items:
+                if hasattr(window, "_items") and item in window._items:
                     existingEditor = window
                     break
 
@@ -718,7 +671,7 @@ class AttachmentDropTargetMixin(object):
             # Bring to front and switch to attachments tab
             existingEditor.Raise()
             existingEditor.SetFocus()
-            if hasattr(existingEditor, '_interior'):
+            if hasattr(existingEditor, "_interior"):
                 existingEditor._interior.setFocus("attachments")
             itemEditor = existingEditor
         else:
@@ -726,28 +679,28 @@ class AttachmentDropTargetMixin(object):
             itemEditor = EditorClass(
                 wx.GetTopLevelParent(self),
                 [item],
-                self.settings,
                 container,
                 self.taskFile,
                 icon_id="nuvola_actions_edit",
                 columnName="attachments",
             )
             itemEditor.Show()
-            wx.CallAfter(itemEditor.Raise)
-            wx.CallAfter(itemEditor.SetFocus)
+            patterns.later.soon(itemEditor, itemEditor.Raise)
+            patterns.later.soon(itemEditor, itemEditor.SetFocus)
 
         # Also open the AttachmentEditor for the new attachments
-        if newAttachments:
-            # Use CallAfter to ensure item editor is fully shown first
+        if new_attachments:
+            # Later, once the item editor is shown
             def openAttachmentEditor():
                 # Wrap attachments in AttachmentList container for Editor
                 # (item.attachments() returns a plain list)
-                attachmentContainer = attachment.AttachmentList(item.attachments())
+                attachment_container = attachment.AttachmentList(
+                    item.attachments()
+                )
                 attachmentEditor = editor.AttachmentEditor(
                     itemEditor,  # Parent to the item editor
-                    newAttachments,
-                    self.settings,
-                    attachmentContainer,
+                    new_attachments,
+                    attachment_container,
                     self.taskFile,
                     icon_id="nuvola_actions_edit",
                     columnName="subject",  # Open on Description tab, not Notes
@@ -755,20 +708,22 @@ class AttachmentDropTargetMixin(object):
                 attachmentEditor.Show()
                 attachmentEditor.Raise()
                 attachmentEditor.SetFocus()
-            wx.CallAfter(openAttachmentEditor)
 
-    def onDropURL(self, item, url, **kwargs):
+            patterns.later.soon(itemEditor, openAttachmentEditor)
+
+    def on_drop_url(self, item, url, **kwargs):
         """This method is called by the widget when a URL is dropped on an
         item."""
         attachments = [attachment.URIAttachment(url)]
-        self._addAttachments(attachments, item, **kwargs)
+        self._add_attachments(attachments, item, **kwargs)
 
-    def onDropFiles(self, item, filenames, **kwargs):
+    def on_drop_files(self, item, filenames, **kwargs):
         """This method is called by the widget when one or more files
         are dropped on an item."""
         import os
         import urllib.request
-        attachmentBase = self.settings.get("file", "attachmentbase")
+
+        attachment_base = settings.file.attachmentbase
         attachments = []
         for filename in filenames:
             if os.path.isdir(filename):
@@ -777,28 +732,38 @@ class AttachmentDropTargetMixin(object):
                 attachments.append(attachment.URIAttachment(folder_url))
             else:
                 # Regular files become file attachments
-                if attachmentBase:
-                    filename = attachment.getRelativePath(filename, attachmentBase)
+                if attachment_base:
+                    filename = attachment.getRelativePath(
+                        filename, attachment_base
+                    )
                 attachments.append(attachment.FileAttachment(filename))
-        self._addAttachments(attachments, item, **kwargs)
+        self._add_attachments(attachments, item, **kwargs)
 
-    def onDropMail(self, item, mail, **kwargs):
-        """This method is called by the widget when a mail message is dropped
-        on an item."""
-        att = attachment.MailAttachment(mail)
-        subject, content = att.read()
-        self._addAttachments(
-            [att], item, subject=subject, description=content, **kwargs
+    def on_drop_mail(self, item, mails, **kwargs):
+        """Called by the widget when mails are dropped on an item, with
+        each mail's fields (mailer.mail_fields())."""
+        self._add_attachments(
+            [attachment.MailAttachment(**mail) for mail in mails],
+            item,
+            **kwargs,
         )
 
 
 class NoteColumnMixin(object):
     def noteImageIndices(self, item):
-        index = image_list_cache.get_index("nuvola_apps_knotes") if item.notes() else -1
+        index = (
+            image_list_cache.get_index("nuvola_apps_knotes")
+            if item.notes()
+            else -1
+        )
         return {wx.TreeItemIcon_Normal: index}
 
 
 class AttachmentColumnMixin(object):
     def attachmentImageIndices(self, item):  # pylint: disable=W0613
-        index = image_list_cache.get_index("nuvola_status_mail-attachment") if item.attachments() else -1
+        index = (
+            image_list_cache.get_index("nuvola_status_mail-attachment")
+            if item.attachments()
+            else -1
+        )
         return {wx.TreeItemIcon_Normal: index}

@@ -22,9 +22,16 @@ from .fix import round_fix
 
 
 class TimeDelta(datetime.timedelta):
+    """A duration in whole seconds, as DateTime: every way of making one
+    drops the microseconds (docs/MASTER_SCHEDULER_REFACTOR.md, Time
+    Resolution)."""
+
     millisecondsPerSecond = 1000
     millisecondsPerDay = 24 * 60 * 60 * millisecondsPerSecond
-    millisecondsPerMicroSecond = 1 / 1000.0
+
+    def __new__(cls, *args, **kwargs):
+        value = datetime.timedelta(*args, **kwargs)
+        return datetime.timedelta.__new__(cls, value.days, value.seconds)
 
     def hoursMinutesSeconds(self) -> Tuple[int, int, int]:
         """Return a tuple (hours, minutes, seconds). Note that the caller
@@ -65,7 +72,6 @@ class TimeDelta(datetime.timedelta):
         return round_fix(
             (self.days * self.millisecondsPerDay)
             + (self.seconds * self.millisecondsPerSecond)
-            + (self.microseconds * self.millisecondsPerMicroSecond)
         )
 
     def round(self, hours=0, minutes=0, seconds=0, alwaysUp=False):
@@ -86,22 +92,23 @@ class TimeDelta(datetime.timedelta):
         """Make sure we return a TimeDelta instance and not a
         datetime.timedelta instance"""
         timeDelta = super().__add__(other)
-        return self.__class__(
-            timeDelta.days, timeDelta.seconds, timeDelta.microseconds
-        )
+        return self.__class__(timeDelta.days, timeDelta.seconds)
 
     def __sub__(self, other):
         timeDelta = super().__sub__(other)
-        return self.__class__(
-            timeDelta.days, timeDelta.seconds, timeDelta.microseconds
-        )
+        return self.__class__(timeDelta.days, timeDelta.seconds)
 
     def __neg__(self):
         timeDelta = super().__neg__()
-        return self.__class__(
-            timeDelta.days, timeDelta.seconds, timeDelta.microseconds
-        )
+        return self.__class__(timeDelta.days, timeDelta.seconds)
 
+
+TimeDelta.max = TimeDelta(
+    datetime.timedelta.max.days, datetime.timedelta.max.seconds
+)
+TimeDelta.min = TimeDelta(
+    datetime.timedelta.min.days, datetime.timedelta.min.seconds
+)
 
 ONE_SECOND = TimeDelta(seconds=1)
 ONE_MINUTE = TimeDelta(minutes=1)

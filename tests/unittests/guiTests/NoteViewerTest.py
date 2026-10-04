@@ -17,21 +17,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import command, gui, persistence
+from taskcoachlib.gui.icons import image_list_cache
 from taskcoachlib.domain import note, attachment, category
+from taskcoachlib.config import settings
 
 
 class NoteViewerTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
         self.taskFile = persistence.TaskFile()
         self.note = note.Note()
         self.taskFile.notes().append(self.note)
         self.viewer = gui.viewer.NoteViewer(
             self.frame,
             self.taskFile,
-            self.settings,
             notesToShow=self.taskFile.notes(),
         )
 
@@ -54,10 +54,22 @@ class NoteViewerTest(test.wxTestCase):
         localViewer = gui.viewer.NoteViewer(
             self.frame,
             self.taskFile,
-            self.settings,
             notesToShow=note.NoteContainer(),
         )
         self.assertFalse(localViewer.presentation())
+
+    def test_the_editor_pastes_every_note(self):
+        owner = category.Category("owner")
+        local_viewer = gui.dialog.editor.LocalNoteViewer(
+            self.frame, self.taskFile, owner=owner
+        )
+        copied = [note.Note(subject="a"), note.Note(subject="b")]
+        command.Clipboard().put(copied, self.taskFile.notes())
+        self.addCleanup(command.Clipboard().clear)
+        local_viewer.pasteItemCommand().do()
+        self.assertEqual(
+            ["a", "b"], [each.subject() for each in owner.notes()]
+        )
 
     def testShowDescriptionColumn(self):
         self.note.setDescription("Description")
@@ -68,15 +80,13 @@ class NoteViewerTest(test.wxTestCase):
         newCategory = category.Category("Category")
         self.taskFile.categories().append(newCategory)
         self.note.addCategory(newCategory)
-        newCategory.addCategorizable(self.note)
         self.viewer.showColumnByName("categories")
         self.assertEqual("Category", self.firstItemText(column=3))
 
-    @test.stale("imageIndex was replaced by image_list_cache")
     def testShowAttachmentColumn(self):
         self.note.addAttachments(attachment.FileAttachment("whatever"))
         self.assertEqual(
-            self.viewer.imageIndex["nuvola_status_mail-attachment"],
+            image_list_cache.get_index("nuvola_status_mail-attachment"),
             self.firstItemIcon(column=2),
         )
 
@@ -84,22 +94,20 @@ class NoteViewerTest(test.wxTestCase):
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
         self.note.addCategory(cat1)
-        cat1.addCategorizable(self.note)
         self.taskFile.categories().extend([cat1, cat2])
         cat1.setFiltered(True)
         cat2.setFiltered(True)
         self.assertEqual(1, self.viewer.size())
-        self.settings.setboolean("view", "categoryfiltermatchall", True)
+        settings.set("view", "categoryfiltermatchall", True)
         self.assertEqual(0, self.viewer.size())
 
     def testFilterOnAnyCategory(self):
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
         self.note.addCategory(cat1)
-        cat1.addCategorizable(self.note)
         self.taskFile.categories().extend([cat1, cat2])
         cat1.setFiltered(True)
         cat2.setFiltered(True)
         self.assertEqual(1, self.viewer.size())
-        self.settings.setboolean("view", "categoryfiltermatchall", False)
+        settings.set("view", "categoryfiltermatchall", False)
         self.assertEqual(1, self.viewer.size())

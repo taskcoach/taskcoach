@@ -74,7 +74,7 @@ class ViewerWithDummyWidget(gui.viewer.base.Viewer):  # pylint: disable=W0223
     def domainObjectsToView(self):
         return self.taskFile.tasks()
 
-    def createWidget(self):
+    def create_widget(self):
         self._columns = self._createColumns()  # pylint: disable=W0201
         return DummyWidget(self)
 
@@ -90,7 +90,3 @@ class TaskFile(persistence.TaskFile):
             raise self.raiseError  # pylint: disable=E0702
 
     merge = save = saveas = load
-
-
-class MainWindow:  # pylint: disable=W0232
-    showFindDialog = None

@@ -17,7 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import wx
-from pubsub import pub
+from taskcoachlib import patterns
+from taskcoachlib.domain import task
 
 
 class StatusBar(wx.StatusBar):
@@ -26,11 +27,25 @@ class StatusBar(wx.StatusBar):
         self.SetFieldsCount(2)
         self.parent = parent
         self.viewer = viewer
-        self.__timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.onUpdateStatus, self.__timer)
-        pub.subscribe(self.onViewerStatusChanged, "viewer.status")
-        self.scheduledStatusDisplay = None
-        self.onViewerStatusChanged()
+        # Two waits for one display, kept apart: a temporary message
+        # and the viewer's status each restart their own
+        self.__status_later = patterns.later.debounced(
+            self, 500, self._displayStatus
+        )
+        self.__message_later = patterns.later.debounced(
+            self, 3000, self._displayStatus
+        )
+        patterns.Publisher().registerObserver(
+            self.on_viewer_status_changed,
+            eventType=viewer.status_event_type(),
+            eventSource=viewer,
+        )
+        # The counts of statuses: the clock changes them too
+        patterns.Publisher().registerObserver(
+            self.on_viewer_status_changed,
+            eventType=task.Task.statusChangedEventType(),
+        )
+        self.on_viewer_status_changed()
         self.wxEventTypes = (wx.EVT_MENU_HIGHLIGHT_ALL, wx.EVT_TOOL_ENTER)
         for eventType in self.wxEventTypes:
             parent.Bind(eventType, self.resetStatusBar)
@@ -49,15 +64,10 @@ class StatusBar(wx.StatusBar):
             self._displayStatus()
         event.Skip()
 
-    def onViewerStatusChanged(self):
+    def on_viewer_status_changed(self, event=None):  # pylint: disable=W0613
         # Give viewer a chance to update first and only update when the viewer
         # hasn't changed status for 0.5 seconds.
-        self.__timer.Start(500, oneShot=True)
-
-    def onUpdateStatus(self, event):  # pylint: disable=W0613
-        if self.__timer:
-            self.__timer.Stop()
-        self._displayStatus()
+        self.__status_later()
 
     def _displayStatus(self):
         try:
@@ -67,25 +77,11 @@ class StatusBar(wx.StatusBar):
         super().SetStatusText(status1, 0)
         super().SetStatusText(status2, 1)
 
-    def SetStatusText(
-        self, message, pane=0, delay=3000
-    ):  # pylint: disable=W0221
-        if self.scheduledStatusDisplay:
-            self.scheduledStatusDisplay.Stop()
+    def SetStatusText(self, message, pane=0):  # pylint: disable=W0221
         super().SetStatusText(message, pane)
-        self.scheduledStatusDisplay = wx.CallLater(delay, self._displayStatus)
+        self.__message_later()
 
     def Destroy(self):  # pylint: disable=W0221
         for eventType in self.wxEventTypes:
             self.parent.Unbind(eventType)
-        # Unsubscribe from pubsub to prevent callbacks after destruction
-        try:
-            pub.unsubscribe(self.onViewerStatusChanged, "viewer.status")
-        except Exception:
-            pass  # May already be unsubscribed or topic may not exist
-        # Stop the status update timer to prevent crashes during destruction
-        if self.__timer and self.__timer.IsRunning():
-            self.__timer.Stop()
-        if self.scheduledStatusDisplay:
-            self.scheduledStatusDisplay.Stop()
-        super().Destroy()
+        super().Destroy()  # Its destroy ends its subscriptions

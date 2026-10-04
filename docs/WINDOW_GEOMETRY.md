@@ -8,14 +8,14 @@ Related:
 - Panel layout, including floating panes, is AUI's own saving and
   restoring: [AUI.md](AUI.md).
 - Minimize and hide from the tray: [SYSTEM_TRAY.md](SYSTEM_TRAY.md).
-- Wayland limits: [AUI_WAYLAND_ISSUES.md](AUI_WAYLAND_ISSUES.md).
+- Wayland limits: [WAYLAND_ISSUES.md](WAYLAND_ISSUES.md).
 
 ## Index
 
 - [Decisions](#decisions)
 - [Current Behaviour](#current-behaviour)
   - [Main Window](#main-window)
-  - [Start Minimized](#start-minimized)
+  - [Minimized](#minimized)
   - [Editors](#editors)
   - [Settings](#settings)
   - [Tracing](#tracing)
@@ -92,8 +92,8 @@ Decided with the maintainer, 2026-09-27:
 ## Current Behaviour
 
 `WindowGeometryTracker` (`taskcoachlib/gui/windowdimensionstracker.py`)
-handles both window kinds; `WindowDimensionsTracker` adds start
-minimized for the main window.
+handles both window kinds; `WindowDimensionsTracker` is the main
+window's (section `window`).
 
 ### Main Window
 
@@ -127,7 +127,8 @@ accepted. The same steps run on every window manager.
    maps there (`_resend_lost_request()`).
 3. From the first `EVT_SHOW`, every `EVT_MOVE`, `EVT_SIZE`,
    `EVT_MAXIMIZE` and restore from minimized sent by the platform that
-   changes the geometry restarts the quiet period (one `wx.CallLater`).
+   changes the geometry restarts the quiet period (one
+   `patterns.later.call`, [DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
    Events wx sends during our own requests do not count, nor layouts
    that change nothing (`SendSizeEvent()`). Event handlers never
    correct.
@@ -155,23 +156,17 @@ accepted. The same steps run on every window manager.
 See [Placement Strategy](#placement-strategy) for why, and
 [Trials](#trials) 12 and 13 for the measurements behind the numbers.
 
-### Start Minimized
+### Minimized
 
-With `starticonized` "Always" the main window is shown and minimized at
-start. While minimized:
-
-- Where placement is observed, it is placed like any window (rules 3
-  to 5): openbox honours moves of a mapped window even when minimized,
-  so the restore lands on the saved position directly. A saved
-  maximized window is maximized when it is restored.
-- Where the geometry is set before the show (Windows, macOS),
-  minimizing a window not shown yet drops the `Maximize()` asked
-  before it (wxMSW): a saved maximized window is maximized when first
-  restored.
-- `ViewerContainer` does not focus the active viewer. Focusing a
-  control of a minimized window makes the window manager activate, and
-  so restore, it on X11; this restored every window started minimized.
-  The skipped focus is given on the first restore.
+Task Coach starts with its window shown. The options to start
+minimized, to hide the window when minimized and to minimize it when
+closed were removed 2026-09-30, **ruled by designer**
+([SYSTEM_TRAY.md](SYSTEM_TRAY.md#minimize-and-hide)). A window the
+user minimizes during placement is maximized, if saved so, once
+restored ([Main Window](#main-window) step 6). While it is minimized,
+`ViewerContainer` does not focus the active viewer: focusing a control
+of a minimized window makes the X11 window manager activate, and so
+restore, it. The skipped focus is given on the restore.
 
 ### Editors
 
@@ -224,7 +219,6 @@ measured.
 | Corrections | On every move and resize, including stale ones | Once quiet, at most three, then accepted | Technical |
 | Window manager refuses a position | Fought; the window never counts as placed, so the user's moves and resizes that session are not saved (code) | Accepted after three attempts; changes saved | Technical |
 | Main window not active at start (the user types elsewhere) | Never counts as placed: same loss (code) | Placed whatever the focus | Technical |
-| Start minimized "Always" | Restores itself at once | Stays minimized; maximized on restore | Technical |
 | Saved maximized | Maximized once placed, not checked | Maximized once placed, checked up to three times | Same result |
 | Main window rect on no monitor, or larger than the monitor | Minimum size where the window manager puts it, not maximized | Fitted to the nearest monitor, size and maximized kept | Changed by [Decisions](#decisions) 2 |
 | Editors | Rules 1 to 6 above | Same | Same result |
@@ -236,12 +230,9 @@ measured.
 | Section | Key | Use |
 |---------|-----|-----|
 | `[window]` | `position`, `size`, `maximized` | Main window state |
-| `[window]` | `starticonized`, `hidewheniconized` | [Start Minimized](#start-minimized) |
-| `[window]` | `monitor_index` | Read by `wxhelper.centerOnAppMonitor()`, never written |
-| `[window]` | `iconized` | Not used |
+| `[window]` | `iconized`, `starticonized`, `hidewheniconized`, `hidewhenclosed` | Removed 2026-09-30 ([Minimized](#minimized)); dropped from old settings files on load |
 | `[<type>dialog_with_<tabs>]`, `[effortdialog]` | `position`, `size` | Editor state, one section per editor type and set of tabs |
 | same | `maximized` | Written; editors have a maximize box |
-| same | `parent_offset` | Not used |
 | same | `perspective` | Tab layout, saved but not loaded (see [PYTHON3_MIGRATION_1.md](PYTHON3_MIGRATION_1.md)) |
 
 ### Tracing
@@ -275,7 +266,7 @@ Researched 2026-09-27; "measured" means seen on the real desktop,
 | X11, Xfwm4 (Xfce), Marco (MATE), others | Unknown | Unknown | Yes | Both | All | Untested |
 | X11 tiling (i3 and the like) | Ignored for tiled windows | Ignored for tiled windows | Tiled windows get the tile's size | Depends | All | Untested |
 | Wayland (Mutter, KWin, wlroots/Sway) | Impossible: no protocol for it | Impossible; `GetPosition()` is (0, 0) | Yes: the app picks its size unless maximized, tiled or full screen | Requests only | Maximized, full screen, focus; never minimized (GTK3 `IsIconized()` is always False) | Source (xdg-shell); see [SYSTEM_TRAY.md](SYSTEM_TRAY.md) |
-| XWayland (`GDK_BACKEND=x11` under Wayland) | As X11 with the compositor's X11 rules | As X11 | Yes | Both | All | Not a supported mode ([AUI_WAYLAND_ISSUES.md](AUI_WAYLAND_ISSUES.md)) |
+| XWayland (`GDK_BACKEND=x11` under Wayland) | As X11 with the compositor's X11 rules | As X11 | Yes | Both | All | Not a supported mode ([WAYLAND_ISSUES.md](WAYLAND_ISSUES.md)) |
 
 Consequences for the design:
 
@@ -334,7 +325,7 @@ own way, and Wayland, which has no positions
 - wxWidgets 3.3 renames it `GeometryStore`, and wxPython 4.3 binds it
   as abstract (`etg/toplevel.py`), so a Python subclass backed by the
   settings should work (untested). The Windows and macOS builds use
-  4.3.1; the Linux packages use their distribution's 4.1.1 to 4.2.5
+  4.3.1; the Linux packages use their distribution's 4.0.7 to 4.2.5
   ([PACKAGING.md](PACKAGING.md)), so Linux has to do without it for
   years.
 - What it would replace here: the minimum-size step and sending the
@@ -523,14 +514,15 @@ Other issues:
 
 - Editors after closing one: measured under Xvfb with openbox
   ([Trials](#trials) 16); on the real desktop still to confirm.
-- `MainWindowMaximizedTest` checks right after creation, but on X11 the
-  maximize comes once placement is quiet, and plain `xvfb-run` has no
-  window manager to grant it: it fails there (also on master).
-- Unused settings keys (see [Settings](#settings)).
-- The per-second scheduler blocks the UI thread 60 ms (200 tasks) to
-  600 ms (5000 tasks) every second, so resizing stutters with large
-  files whatever the geometry code does
-  ([SCHEDULERS.md](SCHEDULERS.md)).
+- `MainWindowMaximizedTest` waits for the placement to be quiet; plain
+  `xvfb-run` has no window manager to grant the maximize, so it is
+  skipped there.
+- The scheduler blocked the UI thread 60 ms (200 tasks) to 600 ms
+  (5000 tasks) every second, so resizing stuttered with large files
+  whatever the geometry code did. Since the master scheduler refactor
+  its full pass runs only at the seconds that change something, about
+  once a minute with typical files
+  ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#cost-after)).
 
 ---
 
@@ -547,8 +539,8 @@ quiet period; a layout that changes nothing is not an answer; a lost
 request is sent again before the show, with a step aside when wx
 already holds the position; a window maximized meanwhile is placed; the
 step limit keeps a saved maximized state), direct placement (set and
-maximized before show, placed at once, no quiet checks; started
-minimized, maximized when restored), no saved position keeping the
+maximized before show, placed at once, no quiet checks), no saved
+position keeping the
 saved maximized, Wayland (sizes and maximized kept, positions left
 alone), and the editor rules on two fake monitors.
 
@@ -562,8 +554,7 @@ animations) needs a real desktop. Manual checklist, reading the
 4. Monitor removed (or saved rect on no monitor): nearest monitor, same
    size and state.
 5. Saved size larger than the monitor: reduced to it.
-6. Start minimized "Always": stays minimized; restore lands on the
-   saved position; saved maximized is maximized after the restore.
+6. ~~Start minimized~~: removed 2026-09-30 ([Minimized](#minimized)).
 7. Editor: resize, move, close, reopen; saved on the other monitor:
    centered on the main window's monitor.
 8. Start while typing in another window: the window still gets placed
@@ -582,12 +573,11 @@ Status 2026-09-27; update it as each one is done.
 |---|---|---|
 | Editor reopened after a close about 1 s after opening, real desktop | 10 | Passed under Xvfb with openbox ([Trials](#trials) 16); real desktop to test |
 | Main window on the real desktop: normal, maximized, each monitor | 1 to 3 | Checked with separate settings; to test |
-| Start minimized "Always", saved maximized | 6 | Checked; to test |
 | Editor rules: other monitor, maximized there, too large | 7 | To test |
 | Windows | 9 | To test |
 | macOS, including the size over several restarts | 9 | To test |
 | Another X11 window manager (KWin or Mutter) | 1 to 7, 10 | To test |
-| Wayland: sizes and maximized kept, positions left alone | 1, 2, 6 | To test |
+| Wayland: sizes and maximized kept, positions left alone | 1, 2 | To test |
 
 ---
 
@@ -656,18 +646,15 @@ Left:
   `fit_to_monitors()` already carries the restore rules.
 - **Floating panes:** use `fit_to_monitors()` from the AUI code (see
   [AUI.md](AUI.md#planned-fit-floating-panes-to-the-monitors)).
-- **Maximized after start minimized:** maximize while minimized, to
-  save the resize after the restore.
 - **DPI:** check which DPI awareness the Windows builds run with
   (`application.py` only logs it). If per-monitor, store sizes in DIPs
   (`ToDIP()`/`FromDIP()`) so a window moved between monitors with
   different scaling keeps its size. GTK already uses logical pixels.
-- Remove the unused settings keys.
 
 ### Not Yet Examined
 
 - Jitter while dragging a window border; the trials are about
-  reopening. Candidates: the scheduler blocking above, and
+  reopening. Candidates: the scheduler's passes above, and
   `MainWindow.onResize()`, which sets the toolbar's size and minimum
   sizes on every `EVT_SIZE`.
 - Other window managers (KWin, Mutter on X11) may honour the program

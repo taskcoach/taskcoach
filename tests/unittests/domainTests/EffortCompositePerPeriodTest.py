@@ -18,14 +18,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import config
 from taskcoachlib.domain import task, effort, date
-from pubsub import pub
 from . import EffortCompositeTest
 import test
 
 
 class CompositeEffortPerPeriodTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.taskList = task.TaskList()
         self.effortList = effort.EffortList(self.taskList)
         self.task = task.Task(subject="task")
@@ -116,28 +114,18 @@ class CompositeEffortPerPeriodTest(test.TestCase):
         self.task.removeEffort(self.effort1)
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testRemoveMultipleEffortsFromSamePeriodFromTask(self):
-        events = []
-
-        def onEvent(sender):
-            events.append(sender)
-
-        pub.subscribe(
-            onEvent, effort.CompositeEffort.compositeEmptyEventType()
+    def test_remove_multiple_efforts_from_same_period_from_task(self):
+        events = test.ChangeRecorder(
+            effort.CompositeEffort.compositeEmptyEventType()
         )
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
         self.task.setEfforts([])
         self.assertTrue(events)
 
-    def testRemoveMultipleEffortsFromDifferentPeriodsFromTask(self):
-        events = []
-
-        def onEvent(sender):
-            events.append(sender)
-
-        pub.subscribe(
-            onEvent, effort.CompositeEffort.compositeEmptyEventType()
+    def test_remove_multiple_efforts_from_different_periods_from_task(self):
+        events = test.ChangeRecorder(
+            effort.CompositeEffort.compositeEmptyEventType()
         )
         self.task.addEffort(self.effort3)
         self.task.addEffort(self.effort1)

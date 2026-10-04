@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from taskcoachlib.gui import dialog
-from taskcoachlib import config
 from wx.lib import sized_controls
 
 
@@ -55,8 +54,6 @@ class DummyViewer(object):
 
 
 class DummyViewerContainer(object):
-    def activeViewer(self):
-        return 1
 
     def __getitem__(self, index):
         if index == 0:
@@ -69,8 +66,7 @@ class ExportDialogTest(test.wxTestCase):
     def testCreate(self):
         self.frame.viewer = DummyViewerContainer()
         self.set_main_window_task_file(self.frame)
-        settings = config.Settings(load=False)
-        dialog.export.ExportAsHTMLDialog(self.frame, settings=settings)
+        dialog.export.ExportAsHTMLDialog(self.frame)
 
 
 class ColumnPickerTest(test.wxTestCase):
@@ -78,9 +74,10 @@ class ColumnPickerTest(test.wxTestCase):
         panel = sized_controls.SizedPanel(self.frame)
         dialog.export.ColumnPicker(panel, DummyViewer())
 
-    @test.stale("the column picker is a tree since #306")
-    def testOnlySelectableColumns(self):
+    def test_only_selectable_columns(self):
         panel = sized_controls.SizedPanel(self.frame)
-        dlg = dialog.export.ColumnPicker(panel, DummyViewer())
-        self.assertEqual(dlg.columnPicker.GetCount(), 1)
-        self.assertEqual(dlg.columnPicker.GetClientData(0).name(), "two")
+        picker = dialog.export.ColumnPicker(panel, DummyViewer())
+        picker.populateFromViewer(DummyViewer(), checkAll=True)
+        self.assertEqual(
+            ["two"], [column.name() for column in picker.selectedColumns()]
+        )

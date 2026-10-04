@@ -14,18 +14,14 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
 
-"""
-Reminder Controller - Event-based implementation.
-
-This module responds to reminder trigger events fired by Task.processReminder(),
-which is called by MasterScheduler every second.
-
-See docs/SCHEDULERS.md for architecture documentation.
+Reminder Controller: responds to the reminders Task.processReminder()
+fires, which MasterScheduler calls in its pass at a reminder's second
+(docs/SCHEDULERS.md).
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.i18n import _
 from taskcoachlib.gui.dialog import reminder, editor
 from taskcoachlib.tools import wxhelper
 import wx
@@ -36,19 +32,19 @@ class ReminderController(object):
     Controller for showing task reminders.
 
     Subscribes to task.reminder.trigger events fired by Task.processReminder().
-    MasterScheduler calls processReminder() every second for all tasks.
+    MasterScheduler calls processReminder() for all tasks in its pass,
+    which runs at the seconds its timer list holds (a reminder's too).
 
     Note: As of January 2026, only the built-in Task Coach reminder dialog is used.
     External notification system support (KNotify, Growl) has been removed.
     """
 
-    def __init__(self, mainWindow, taskList, effortList, settings):
+    def __init__(self, main_window, task_list, effort_list):
         super().__init__()
-        self.__mainWindow = mainWindow
+        self.__mainWindow = main_window
         self.__mainWindowWasHidden = False
-        self.settings = settings
-        self.taskList = taskList
-        self.effortList = effortList
+        self.taskList = task_list
+        self.effortList = effort_list
 
         # Subscribe to reminder trigger events from Task.processReminder()
         patterns.Publisher().registerObserver(
@@ -82,15 +78,14 @@ class ReminderController(object):
             taskWithReminder,
             self.taskList,
             self.effortList,
-            self.settings,
             None,
         )
         # Position on app's monitor even though it has no parent
         wxhelper.centerOnAppMonitor(reminderDialog)
-        reminderDialog.Bind(wx.EVT_CLOSE, self.onCloseReminderDialog)
+        reminderDialog.Bind(wx.EVT_CLOSE, self.on_close_reminder_dialog)
         reminderDialog.Show()
 
-    def onCloseReminderDialog(self, event, show=True):
+    def on_close_reminder_dialog(self, event, show=True):
         """Handle reminder dialog close."""
         event.Skip()
         dialog = event.EventObject
@@ -101,17 +96,15 @@ class ReminderController(object):
             snoozeTimeDelta = snoozeOptions.GetClientData(
                 snoozeOptions.Selection
             )
-            taskWithReminder.snoozeReminder(
-                snoozeTimeDelta
-            )  # Note that this is not undoable
-            # Undoing the snoozing makes little sense, because it would set the
-            # reminder back to its original date-time, which is now in the past.
+            # An undo step, as every change to the file
+            # (docs/UNDO_REDO.md, Design Intent)
+            with patterns.CommandHistory().action(_("Snooze")):
+                taskWithReminder.snooze_reminder(snoozeTimeDelta)
 
         if dialog.openTaskAfterClose:
             editTask = editor.TaskEditor(
                 self.__mainWindow,
                 [taskWithReminder],
-                self.settings,
                 self.taskList,
                 self.__mainWindow.taskFile,
                 icon_id="nuvola_actions_edit",

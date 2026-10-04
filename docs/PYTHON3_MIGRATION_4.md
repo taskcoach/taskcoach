@@ -330,7 +330,8 @@ This links the desktop entry to both WM_CLASS (X11) and app_id (Wayland) for pro
 
 #### macOS: CFBundleIdentifier
 
-Set in `pymake.py` for app bundle creation:
+Set by the macOS build (`.github/workflows/build-macos.yml`) for the app
+bundle:
 
 ```python
 "CFBundleIdentifier": "org.taskcoach.TaskCoach"
@@ -353,7 +354,7 @@ if operating_system.isWindows():
 | `taskcoach.py` | g_set_prgname via ctypes (Wayland) |
 | `taskcoachlib/application/application.py` | SetClassName (X11), AppUserModelID (Windows) |
 | `build.in/linux_common/taskcoach.desktop` | StartupWMClass=taskcoach |
-| `pymake.py` | CFBundleIdentifier for macOS |
+| `.github/workflows/build-macos.yml` | CFBundleIdentifier for macOS |
 
 ### Testing
 
@@ -415,7 +416,7 @@ The workaround was reverted - all toolbar buttons now use native AuiToolBar tool
 
 #### Test Application
 
-A minimal test app exists at `test_aui_toolbar_jitter.py` that reproduces the issue and can be used to test fixes.
+A minimal test app exists at `docs/scripts/aui_toolbar_jitter_demo.py` that reproduces the issue and can be used to test fixes.
 
 ---
 
@@ -436,9 +437,9 @@ A minimal test app exists at `test_aui_toolbar_jitter.py` that reproduces the is
    - Ensure consistent use of str vs bytes
    - Review file I/O encoding
 
-4. **Deprecated wxPython APIs**
-   - Review all wx.FONTSTYLE_* usage
-   - Check for other deprecated constants/methods
+4. ~~**Deprecated wxPython APIs**~~: done, no `wx.FONTSTYLE_*` use
+   left; `wx.NewId()` in wxScheduler replaced 2026-09, the rest
+   2026-10-01 (`wx.NewIdRef()`).
 
 5. **Internationalization Modernization**
    - Migrate from custom `po2dict.py` translation system to standard GNU gettext
@@ -461,7 +462,7 @@ During investigation of a segfault on Ubuntu 24.04 with German locale, several i
 
 | Issue | Severity | Status |
 |-------|----------|--------|
-| `locale.getdefaultlocale()` deprecated since Python 3.11 | High | Fixed |
+| `locale.getdefaultlocale()` deprecated since Python 3.11 | High | Fixed; one function, `i18n.system_language()`, since 2026-09 (the spell check still called it) |
 | wx.Locale object lifecycle can cause segfaults | High | Fixed |
 | No diagnostic logging for locale/i18n issues | Medium | Fixed |
 | Custom translation system diverges from standard gettext | Low | Future work |
@@ -688,19 +689,37 @@ taskcoachlib/bin.in/                     # pysyncml binary modules
 
 ### Backwards Compatibility
 
-Old `.tsk` files with `syncmlconfig` nodes can still be read:
+Old `.tsk` files with a `syncml` or `syncmlconfig` section still load:
+the reader reads only the sections it knows (tasks, categories,
+notes), so that one is skipped, as is the GUID since 2026-09-28. Files
+from release 0.72.9 have tags split across lines inside it, which is
+not valid XML; the reader repairs them first (`__fix_broken_lines()`,
+tested by `test_a_file_with_legacy_syncml_nodes_still_loads`). That
+repair must stay.
 
-```python
-def __parse_syncml_node(self, nodes, guid):
-    """Parse the SyncML node from the nodes.
+The XML writer no longer writes the section, so the next save drops
+it.
 
-    SyncML has been removed. This method now returns None but is kept
-    for backwards compatibility with old task files that contain syncmlconfig.
-    """
-    return None
-```
+Removed in 2026-09 as dead code, after checking every caller: the
+reader's `__parse_syncml_node()` stub (it returned `None` and read
+nothing) and its slot in the tuple `read()` returns, the task file's
+`syncMLConfig()`, the writer's `syncMLConfig` parameter, and the delete
+command's shadow path (mark deleted instead of removing), which only a
+test still used. Checked in the real app with a release 0.71.3 file
+(`tests/disttests/win32/test.tsk`, removed with the dist tests; in git
+history): it loads and saves in the current format.
 
-The XML writer no longer writes `syncmlconfig` nodes to new files.
+Also removed in 2026-09: the items' sync status (`SynchronizedObject`:
+new, changed, deleted), saved as their `status` attribute. SyncML used
+it to know what the server still needed: "new" and "changed" items
+were sent at the next sync, and a deleted item was only marked, kept
+hidden until the server had heard of it. Nothing else read it, and
+the deleted items could not be shown or restored. The writer no longer
+writes `status`; the reader ignores it, except that an item saved as
+deleted (`status="3"`, only possible with SyncML enabled) is not
+loaded. File > Purge deleted items went with it: with SyncML gone it
+had nothing left to purge. Deleting removes an item at once; Edit >
+Undo brings it back.
 
 ### Testing
 
@@ -708,7 +727,7 @@ After removal, verify:
 - [ ] Application starts without SyncML-related errors
 - [ ] Old task files with `syncmlconfig` load correctly
 - [ ] New task files save without `syncmlconfig` nodes
-- [ ] "Purge deleted items" menu works (was tied to SyncML shadow deletion)
+- [ ] Old files with items saved as deleted load without them
 - [ ] No "syncml" references in preferences dialog
 
 

@@ -19,7 +19,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # This module works around bugs in third party modules, mostly by
 # monkey-patching so import it first
 from taskcoachlib import workarounds  # noqa: F401
-from taskcoachlib import patterns, operating_system
+from taskcoachlib.workarounds import textundo
+from taskcoachlib import i18n, patterns, operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 import datetime
 import locale
@@ -27,35 +29,13 @@ import os
 import sys
 import wx
 import calendar
-import subprocess
 
-# ============================================================================
-# Logging Functions
-# ============================================================================
-#
-# Simple logging using stdout/stderr. The tee module (initialized in
-# taskcoach.py) captures all output to the log file.
-#
-# Architecture:
-#   - log_message() prints to stdout (informational messages)
-#   - log_error() prints to stderr (errors)
-#   - The tee captures both stdout and stderr to log file
-#   - Any stderr output triggers error popup on exit
-#
-# ============================================================================
-
-# TEMPORARILY DISABLED: TEE module import
-# from taskcoachlib import tee
+# Logging goes to stdout (docs/LOGGING_GUIDE.md).
 
 
 def log_message(msg):
-    """Log a message to stdout (captured by tee to log file)."""
+    """Log a message to stdout."""
     print(msg)
-
-
-def log_error(msg):
-    """Log an error to stderr (captured by tee, triggers exit popup)."""
-    print(msg, file=sys.stderr)
 
 
 def _log_environment():
@@ -106,12 +86,6 @@ def _log_environment():
     # Log required package versions
     _log_required_packages()
 
-    # Probe numpy at startup for diagnostic logging. The subprocess probe
-    # tests numpy import and logs the result with [NUMPY] prefix. This
-    # aids troubleshooting from user-submitted logs. NumPy is pinned to
-    # 1.x (no SSE4.2 requirement), so this is informational only.
-    from taskcoachlib.tools._numpy_probe import numpy_usable  # noqa: F401
-
     # Platform-specific environment info (no wx needed)
     log_message("=" * 60)
     if sys.platform == "linux":
@@ -148,22 +122,15 @@ def _log_required_packages():
 
     # Core packages (package_name, import_name if different)
     packages = [
-        ("six", None),
-        ("pypubsub", "pubsub"),
-        ("watchdog", None),
         ("chardet", None),
         ("python-dateutil", "dateutil"),
-        ("pyparsing", None),
-        ("lxml", None),
-        ("pyxdg", "xdg"),
         ("keyring", None),
-        ("numpy", None),
         ("squaremap", None),
     ]
 
     # Windows-only
     if sys.platform == "win32":
-        packages.append(("WMI", "wmi"))
+        packages.append(("pywin32", "win32api"))
 
     for pkg_name, import_name in packages:
         version = _get_package_version(pkg_name, import_name)
@@ -194,11 +161,7 @@ def _log_locale_info():
             log_message(f"  {var}: {value}")
 
     # Python locale settings
-    try:
-        default_locale = locale_module.getdefaultlocale()
-        log_message(f"  locale.getdefaultlocale(): {default_locale}")
-    except Exception as e:
-        log_message(f"  locale.getdefaultlocale(): ERROR - {e}")
+    log_message(f"  i18n.system_language(): {i18n.system_language()}")
 
     try:
         current_locale = locale_module.getlocale()
@@ -502,121 +465,6 @@ def _log_wx_info():
             log_message("Tray diagnostics failed: %s" % e)
 
 
-def _log_windows_environment():
-    """Log Windows-specific GUI environment info."""
-    import platform
-
-    # Windows version
-    log_message(
-        f"Windows Version: {platform.win32_ver()[0]} {platform.win32_ver()[1]}"
-    )
-    log_message(f"Windows Edition: {platform.win32_edition()}")
-
-    # DPI awareness
-    try:
-        import ctypes
-
-        awareness = ctypes.windll.shcore.GetProcessDpiAwareness(0)
-        awareness_names = {0: "Unaware", 1: "System", 2: "PerMonitor"}
-        log_message(
-            f"DPI Awareness: {awareness_names.get(awareness, awareness)}"
-        )
-    except Exception as e:
-        log_message(f"DPI Awareness: unavailable ({e})")
-
-    # DWM (Desktop Window Manager) composition
-    try:
-        import ctypes
-
-        dwm_enabled = ctypes.c_bool()
-        ctypes.windll.dwmapi.DwmIsCompositionEnabled(ctypes.byref(dwm_enabled))
-        state = "Enabled" if dwm_enabled.value else "Disabled"
-        log_message(f"DWM Composition: {state}")
-    except Exception as e:
-        log_message(f"DWM Composition: unavailable ({e})")
-
-    # System DPI
-    try:
-        import ctypes
-
-        hdc = ctypes.windll.user32.GetDC(0)
-        dpi_x = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)  # LOGPIXELSX
-        dpi_y = ctypes.windll.gdi32.GetDeviceCaps(hdc, 90)  # LOGPIXELSY
-        ctypes.windll.user32.ReleaseDC(0, hdc)
-        log_message(
-            f"System DPI: {dpi_x}x{dpi_y} (scale: {dpi_x/96*100:.0f}%)"
-        )
-    except Exception as e:
-        log_message(f"System DPI: unavailable ({e})")
-
-    # Log locale info on Windows too
-    _log_locale_info()
-
-
-def _log_macos_environment():
-    """Log macOS-specific GUI environment info."""
-    import platform
-
-    # macOS version
-    mac_ver = platform.mac_ver()
-    log_message(f"macOS Version: {mac_ver[0]}")
-    log_message(f"Architecture: {mac_ver[2]}")
-
-    # Check if running under Rosetta (Apple Silicon)
-    try:
-        result = subprocess.run(
-            ["sysctl", "-n", "sysctl.proc_translated"],
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        if result.returncode == 0 and result.stdout.strip() == "1":
-            log_message("Rosetta 2: Yes (x86_64 on ARM)")
-        else:
-            log_message("Rosetta 2: No (native)")
-    except Exception:
-        pass
-
-    # Retina/scaling info via system_profiler (slow but comprehensive)
-    try:
-        result = subprocess.run(
-            ["system_profiler", "SPDisplaysDataType", "-json"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        if result.returncode == 0:
-            import json
-
-            data = json.loads(result.stdout)
-            displays = data.get("SPDisplaysDataType", [{}])[0].get(
-                "spdisplays_ndrvs", []
-            )
-            for i, disp in enumerate(displays):
-                res = disp.get("_spdisplays_resolution", "unknown")
-                retina = disp.get("spdisplays_retina", "unknown")
-                log_message(f"  macOS Display {i}: {res} Retina={retina}")
-    except Exception:
-        pass
-
-    # Window server info
-    try:
-        result = subprocess.run(
-            ["defaults", "read", "com.apple.WindowServer"],
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        # Just check if it runs - detailed parsing would be verbose
-        if result.returncode == 0:
-            log_message("WindowServer: accessible")
-    except Exception:
-        pass
-
-    # Log locale info on macOS too
-    _log_locale_info()
-
-
 # pylint: disable=W0404
 
 
@@ -632,10 +480,9 @@ class WxApp(wx.App):
         self.reopen_callback()
 
     def OnInit(self):
-        # Throttle UpdateUI processing to every 200ms instead of every idle
-        # cycle.  Without this, wx fires 20+ UpdateUI handlers on EVERY idle
-        # event (including between mouse-move events), causing measurable CPU.
-        wx.UpdateUIEvent.SetUpdateInterval(200)
+        # No update events in idle time: menus get theirs when they open
+        # and before a shortcut, toolbars follow signals (docs/MENUS.md)
+        wx.UpdateUIEvent.SetUpdateInterval(-1)
         if operating_system.isWindows():
             self.Bind(wx.EVT_QUERY_END_SESSION, self.on_query_end_session)
         return True
@@ -678,7 +525,8 @@ class Application(object, metaclass=patterns.Singleton):
     - reactor.registerWxApp() → removed (not needed)
     - reactor.run() → wx.App.MainLoop()
     - reactor.stop() → wx.App.ExitMainLoop() via EVT_CLOSE handlers
-    - reactor.callLater() → wx.CallLater() (in scheduler.py)
+    - reactor.callLater() → GlobalTimer, a wx.Timer (gui/scheduler.py),
+      for the 1 s tick; patterns.later for other delayed calls
 
     This simplifies the event loop architecture and eliminates potential
     race conditions between two event loops.
@@ -698,16 +546,10 @@ class Application(object, metaclass=patterns.Singleton):
         self.__wx_app = WxApp(
             self.on_end_session, self.on_reopen_app, redirect=False
         )
-        # Expose settings on wxApp so wx.GetApp().settings works everywhere
-        self.__wx_app.settings = self.settings
-        # Before any window or dialog exists, and before settings2
-        # computes theme_is_dark from the resulting appearance
-        apply_native_appearance(
-            self.__wx_app, self.settings.get("window", "theme")
-        )
-        from taskcoachlib.config import settings2
-
-        settings2.wx_ready()
+        # Undo in the text fields whose platform has none
+        textundo.install(self.__wx_app)
+        # Before any window or dialog exists
+        apply_native_appearance(self.__wx_app, settings.window.theme)
 
         # 4. Log wx-specific info (needs wxApp)
         _log_wx_info()
@@ -719,20 +561,15 @@ class Application(object, metaclass=patterns.Singleton):
         self.init(**kwargs)
 
         calendar.setfirstweekday(
-            dict(monday=0, sunday=6)[self.settings.get("view", "weekstart")]
+            dict(monday=0, sunday=6)[settings.view.weekstart]
         )
-
-    # NOTE: initTwisted(), stopTwisted(), and registerApp() methods removed.
-    # Previously used Twisted's wxreactor for event loop integration.
-    # Now using native wx.App.MainLoop() which is simpler and more reliable.
-    # See class docstring for migration details.
 
     def start(self):
         """Call this to start the Application."""
         from taskcoachlib import meta
 
-        if self.settings.getboolean("version", "notify"):
-            self.__version_checker = meta.VersionChecker(self.settings)
+        if settings.version.notify:
+            self.__version_checker = meta.VersionChecker()
             self.__version_checker.start()
         self.__copy_default_templates()
 
@@ -776,6 +613,11 @@ class Application(object, metaclass=patterns.Singleton):
                 sys.stderr = open(os.devnull, "w")
                 sys.stdout = open(os.devnull, "w")
 
+            # Last of all, with no event loop left to fire them, the
+            # app's own timers are freed (lazy teardown,
+            # docs/DEFERRED_CALLS.md#end-of-life)
+            self.mainwindow.close_global_timer()
+            patterns.later.close()
             # Prevent destructor issues by explicitly destroying the app
             self.__wx_app.Destroy()
 
@@ -804,17 +646,16 @@ class Application(object, metaclass=patterns.Singleton):
                         if isinstance(template, bytes)
                         else template
                     )
-                    open(filename, "w", encoding="utf-8").write(template_str)
+                    with open(filename, "w", encoding="utf-8") as out:
+                        out.write(template_str)
 
     def init(self, load_settings=True, load_task_file=True):
         """Initialize the application. Needs to be called before
         Application.start()."""
-        # Note: tee is initialized in taskcoach.py before any imports
         # Note: Settings and logging already done in __init__ before
         # wxApp creation
 
         self.__init_language()
-        self.__init_domain_objects()
         self.__init_application()
 
         # Check file lock BEFORE creating main window to avoid dialog/focus
@@ -835,25 +676,23 @@ class Application(object, metaclass=patterns.Singleton):
 
         from taskcoachlib.gui.mainwindow import MainWindow
         from taskcoachlib.gui.iocontroller import IOController
+        from taskcoachlib.gui import pagekeys
+
+        # Ctrl+PgDn and Ctrl+PgUp turn the page of the window in use
+        pagekeys.install(self.__wx_app)
 
         # Synthetic icons are now registered during gui.init(), so no
         # separate init is needed
         # pylint: disable=W0201
-        self.taskFile = persistence.LockedTaskFile(
-            poll=self.settings.getboolean("file", "fspoll")
-        )
+        self.taskFile = persistence.LockedTaskFile()
         self.__wx_app.taskFile = self.taskFile
-        self.__auto_saver = persistence.AutoSaver(self.settings)
-        self.__auto_exporter = persistence.AutoImporterExporter(self.settings)
-        self.__auto_backup = persistence.AutoBackup(self.settings)
-        self.iocontroller = IOController(
-            self.taskFile, self.display_message, self.settings
-        )
-        self.mainwindow = MainWindow(
-            self.iocontroller, self.taskFile, self.settings
-        )
+        self.__auto_saver = persistence.AutoSaver()
+        self.__auto_exporter = persistence.AutoImporterExporter()
+        self.__auto_backup = persistence.AutoBackup()
+        self.iocontroller = IOController(self.taskFile, self.display_message)
+        self.mainwindow = MainWindow(self.iocontroller, self.taskFile)
         self.__wx_app.SetTopWindow(self.mainwindow)
-        if not self.settings.getboolean("file", "inifileloaded"):
+        if not settings.file.inifileloaded:
             self.__warn_user_that_ini_file_was_not_loaded()
         if load_task_file:
             self.iocontroller.open_after_start(
@@ -862,7 +701,7 @@ class Application(object, metaclass=patterns.Singleton):
         self.__register_signal_handlers()
         self.__create_mutex()
         self.__create_task_bar_icon()
-        wx.CallAfter(self.__show_tips)
+        patterns.later.soon(self.mainwindow, self.__show_tips)
 
     def __check_file_lock_early(self):
         """Check file lock before main window creation.
@@ -876,7 +715,7 @@ class Application(object, metaclass=patterns.Singleton):
         if self._args:
             filename = self._args[0]
         else:
-            filename = self.settings.get("file", "lastfile")
+            filename = settings.file.lastfile
 
         if not filename or not os.path.exists(filename):
             self.__early_lock_result = None
@@ -905,13 +744,11 @@ class Application(object, metaclass=patterns.Singleton):
         ini_file = self._options.inifile if self._options else None
         # pylint: disable=W0201
         self.settings = config.Settings(load_settings, ini_file)
-        from taskcoachlib.config import settings2
-
-        settings2.init(self.settings)
+        # The one every module reads (docs/SETTINGS.md)
+        settings.use(self.settings)
 
     def __init_language(self):
         """Initialize the current translation."""
-        from taskcoachlib import i18n
         from taskcoachlib.meta.debug import log_step
 
         if i18n.Translator.hasInstance():
@@ -926,52 +763,26 @@ class Application(object, metaclass=patterns.Singleton):
             )
             sys.exit(1)
 
-        i18n.Translator(self.determine_language(self._options, self.settings))
+        i18n.Translator(self.determine_language(self._options))
 
     @staticmethod
-    def determine_language(
-        options, settings, locale=locale
-    ):  # pylint: disable=W0621
+    def determine_language(options, locale=locale):  # pylint: disable=W0621
         language = None
         if options:
             # User specified language or .po file on command line
             language = options.pofile or options.language
         if not language:
             # Get language as set by the user via the preferences dialog
-            language = settings.get("view", "language_set_by_user")
+            language = settings.view.language_set_by_user
         if not language:
             # Get language as set by the user or externally (e.g. PortableApps)
-            language = settings.get("view", "language")
+            language = settings.view.language
         if not language:
-            # Use the user's locale from environment variables
-            # Note: locale.getdefaultlocale() is deprecated since Python 3.11
-            # and doesn't reliably read LANG on Linux. We check env vars
-            # directly.
-            language = os.environ.get("LANG", os.environ.get("LC_ALL", ""))
-            if language:
-                # Strip encoding suffix (e.g., "de_DE.UTF-8" -> "de_DE")
-                language = language.split(".")[0]
-                if not language or language == "C" or language == "POSIX":
-                    language = None
-        if not language:
-            # Fallback to locale.getlocale() which may work after setlocale
-            try:
-                language = locale.getlocale(locale.LC_MESSAGES)[0]
-                if language == "C" or language == "POSIX":
-                    language = None
-            except Exception:
-                language = None
+            language = i18n.system_language(locale)
         if not language:
             # Fall back on what the majority of our users use
             language = "en_US"
         return language
-
-    def __init_domain_objects(self):
-        """Provide relevant domain objects with access to the settings."""
-        from taskcoachlib.domain import task, attachment
-
-        task.Task.settings = self.settings
-        attachment.Attachment.settings = self.settings
 
     def __init_application(self):
         from taskcoachlib import meta
@@ -1005,7 +816,7 @@ class Application(object, metaclass=patterns.Singleton):
         3. Must save settings before exit
 
         Solution:
-        - Custom signal handler uses wx.CallAfter for clean shutdown
+        - The signal handler quits from the event loop, later
         - The GlobalTimer tick runs Python code every second (from
           before these handlers are registered), which lets Python run
           a pending signal handler, so no separate wake-up timer is
@@ -1015,9 +826,8 @@ class Application(object, metaclass=patterns.Singleton):
 
         def handle_signal(signum, frame):
             """Handle SIGINT/SIGTERM by scheduling clean shutdown."""
-            # Use CallAfter to run shutdown in the main event loop
-            # This ensures proper cleanup of wx resources
-            wx.CallAfter(self.quit_application)
+            # Quit on the main thread, from the event loop
+            patterns.later.soon(None, self.quit_application)
 
         # Register SIGINT/SIGTERM handlers for Unix
         if not operating_system.isWindows():
@@ -1050,9 +860,7 @@ class Application(object, metaclass=patterns.Singleton):
             # None when no tray backend can work on this system; in that case
             # we run without a tray icon rather than create a broken one.
             task_bar_icon = taskbaricon.create_taskbar_icon(
-                self.mainwindow,
-                self.taskFile.tasks(),
-                self.settings,
+                self.mainwindow, self.taskFile.tasks()
             )
             if task_bar_icon is None:
                 return
@@ -1060,7 +868,6 @@ class Application(object, metaclass=patterns.Singleton):
             self.taskBarIcon.set_popup_menu(
                 menu.TaskBarMenu(
                     self.taskBarIcon,
-                    self.settings,
                     self.taskFile,
                     self.mainwindow.__dict__.get("viewer"),
                 )
@@ -1075,21 +882,21 @@ class Application(object, metaclass=patterns.Singleton):
             return False  # TaskBarIcon not available on this platform
 
     def __show_tips(self):
-        if self.settings.getboolean("window", "tips"):
+        if settings.window.tips:
             from taskcoachlib import help  # pylint: disable=W0622
 
-            help.showTips(self.mainwindow, self.settings)
+            help.show_tips(self.mainwindow)
 
     def __warn_user_that_ini_file_was_not_loaded(self):
         from taskcoachlib import meta
 
-        reason = self.settings.get("file", "inifileloaderror")
+        reason = settings.file.inifileloaderror
         wx.MessageBox(
             _("Couldn't load settings from TaskCoach.ini:\n%s") % reason,
             _("%s file error") % meta.name,
             style=wx.OK | wx.ICON_ERROR,
         )
-        self.settings.setboolean("file", "inifileloaded", True)  # Reset
+        settings.file.inifileloaded = True  # Reset
 
     def display_message(self, message):
         # Guard against deleted mainwindow during shutdown
@@ -1117,9 +924,7 @@ class Application(object, metaclass=patterns.Singleton):
         try:
             # Remember what the user was working on
             if hasattr(self, "taskFile"):
-                self.settings.set(
-                    "file", "lastfile", self.taskFile.lastFilename()
-                )
+                settings.file.lastfile = self.taskFile.lastFilename()
             # Save window position, size, perspective
             if hasattr(self, "mainwindow"):
                 self.mainwindow.save_settings()
@@ -1131,30 +936,28 @@ class Application(object, metaclass=patterns.Singleton):
             pass  # Best effort - don't prevent exit
 
     def _stop_all_timers(self):
-        """Stop all known timers to prevent crashes during shutdown.
+        """Stop the timers of bundled library code, owned by its
+        windows, before those windows go; the app's own timers run on
+        and are freed after the event loop
+        (docs/DEFERRED_CALLS.md#end-of-life).
 
         Timer events can be delivered after frames are destroyed but before
         the program ends, causing access violations on Windows.
         See: https://github.com/wxWidgets/Phoenix/issues/429
         """
 
-        # Stop all wx.Timer instances we can find
         # Walk through all top-level windows and their children
         def stop_timers_in_window(window):
             if window is None:
                 return
             # Check for timer attributes
             for attr_name in [
-                "__timer",
                 "_timer",
                 "timer",
                 "_sizeTimer",
                 "_dragTimer",
                 "_findTimer",
                 "_editTimer",
-                "__tmr",
-                "scheduledStatusDisplay",
-                "_globalTimer",
             ]:
                 # Try public and name-mangled private attributes;
                 # private names are mangled with the defining class,
@@ -1201,11 +1004,13 @@ class Application(object, metaclass=patterns.Singleton):
         if hasattr(self, "taskBarIcon"):
             self.taskBarIcon.RemoveIcon()
             self.taskBarIcon.Destroy()
-        # Stop notification timers to prevent crashes during shutdown
+        # Open notifications would keep the event loop running
         from taskcoachlib.notify.notifier_universal import NotificationCenter
 
-        NotificationCenter().cleanup()
-        wx.EventLoop.GetActive().ProcessIdle()
+        NotificationCenter().hide_all()
+        loop = wx.EventLoop.GetActive()
+        if loop:  # None when no loop runs (the integration tests)
+            loop.ProcessIdle()
 
         # For PowerStateMixin
         self.mainwindow.OnQuit()

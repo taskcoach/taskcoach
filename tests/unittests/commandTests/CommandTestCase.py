@@ -18,8 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from unittests import asserts
-from taskcoachlib import patterns, command, config
-from taskcoachlib.domain import task
+from taskcoachlib import patterns, command, persistence
 
 
 class CommandTestCase(test.wxTestCase, asserts.CommandAssertsMixin):
@@ -27,11 +26,15 @@ class CommandTestCase(test.wxTestCase, asserts.CommandAssertsMixin):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
+        # Its lists: the undo log records which items they hold
+        self.task_file = persistence.TaskFile()
 
     def tearDown(self):
+        self.task_file.close()
+        self.task_file.stop()
         super().tearDown()
         patterns.CommandHistory().clear()
+        command.Clipboard().clear()  # Shared: a cut must not leak
 
     def undo(self):
         patterns.CommandHistory().undo()

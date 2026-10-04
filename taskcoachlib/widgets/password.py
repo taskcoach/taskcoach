@@ -18,14 +18,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from taskcoachlib.i18n import _
+from taskcoachlib import patterns
 
 
 class KeychainPasswordWidget(wx.Dialog):
     def __init__(self, domain, username, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.domain = domain.encode("UTF-8")
-        self.username = username.encode("UTF-8")
+        self.domain = domain
+        self.username = username
 
         pnl = wx.Panel(self, wx.ID_ANY)
         hsz = wx.BoxSizer(wx.HORIZONTAL)
@@ -34,7 +35,7 @@ class KeychainPasswordWidget(wx.Dialog):
         from keyring import get_password
 
         password = get_password(self.domain, self.username)
-        self.password = (password or "").decode("UTF-8")
+        self.password = password or ""
         self.passwordField = wx.TextCtrl(
             pnl, wx.ID_ANY, self.password, style=wx.TE_PASSWORD
         )
@@ -66,44 +67,31 @@ class KeychainPasswordWidget(wx.Dialog):
         btnCancel.Bind(wx.EVT_BUTTON, self.OnCancel)
 
         self.SetDefaultItem(btnOK)
-        wx.CallAfter(self.RequestUserAttention)
+        patterns.later.soon(self, self.RequestUserAttention)
 
     def OnOK(self, event):
         self.password = self.passwordField.GetValue()
         from keyring import set_password
+        from keyring.errors import KeyringError
 
-        if self.keepInKeychain.GetValue():
-            set_password(
-                self.domain, self.username, self.password.encode("UTF-8")
-            )
-        else:
-            set_password(self.domain, self.username, "")
+        try:
+            if self.keepInKeychain.GetValue():
+                set_password(self.domain, self.username, self.password)
+            else:
+                set_password(self.domain, self.username, "")
+        except KeyringError:
+            pass  # Not stored; it serves this time
         self.EndModal(wx.ID_OK)
 
     def OnCancel(self, event):
         self.EndModal(wx.ID_CANCEL)
 
 
-_PASSWORDCACHE = None
+# Where the keychain cannot be used: asked once until Task Coach quits
+_PASSWORDCACHE = dict()
 
 
 def _GetCachedPassword(domain, username, reset):
-    global _PASSWORDCACHE
-
-    if _PASSWORDCACHE is None:
-        import io, traceback
-
-        bf = io.StringIO()
-        traceback.print_exc(file=bf)
-        wx.MessageBox(
-            _(
-                "There was a problem trying to find out your system's keychain.\nPlease file a bug report (see the Help menu) and attach a screenshot of this message.\nError was:\n\n%s"
-            )
-            % bf.getvalue(),
-            _("Error"),
-            wx.OK,
-        )
-        _PASSWORDCACHE = dict()
     if (domain, username) in _PASSWORDCACHE and reset:
         del _PASSWORDCACHE[(domain, username)]
     if (domain, username) not in _PASSWORDCACHE:
@@ -117,21 +105,21 @@ def _GetCachedPassword(domain, username, reset):
 def GetPassword(domain, username, reset=False):
     try:
         from keyring import set_password, get_password
+        from keyring.errors import KeyringError
     except ImportError:
         # Keychain unavailable.
         return _GetCachedPassword(domain, username, reset)
 
     try:
         if reset:
-            set_password(domain.encode("UTF-8"), username.encode("UTF-8"), "")
+            set_password(domain, username, "")
         else:
-            pwd = get_password(
-                domain.encode("UTF-8"), username.encode("UTF-8")
-            )
+            pwd = get_password(domain, username)
             if pwd:
-                return pwd.decode("UTF-8")
-    except ImportError:
-        # Bug seen on Ubuntu 13.10: secretstorage cannot import ._gi
+                return pwd
+    except (ImportError, KeyringError):
+        # No keychain service, or one that fails (Ubuntu 13.10:
+        # secretstorage cannot import ._gi)
         return _GetCachedPassword(domain, username, reset)
 
     dlg = KeychainPasswordWidget(

@@ -15,55 +15,22 @@ During the Python 3 migration, several bundled third-party libraries were evalua
 
 ### ntlm/ Module
 
-**Date Evaluated:** November 2025
-**Location:** `taskcoachlib/thirdparty/ntlm/`
-**Source:** https://github.com/bendyer/python-ntlm (2011)
-
-#### Analysis Results
-
-| File | Status | Notes |
-|------|--------|-------|
-| `IMAPNtlmAuthHandler.py` | **ACTIVELY USED** | Used in `thunderbird.py:394-406` for IMAP/NTLM auth |
-| `HTTPNtlmAuthHandler.py` | **REMOVED** | Python 2 urllib2-based, never imported anywhere |
-| `ntlm.py` | **REQUIRED** | Core NTLM protocol implementation |
-| `des*.py`, `U32.py` | **REQUIRED** | Dependencies for ntlm.py |
-
-#### Usage in Codebase
-
-The IMAP NTLM handler is used for Exchange/enterprise email authentication:
-
-```python
-# thunderbird.py:394-406
-elif "AUTH=NTLM" in imap.capabilities:
-    domain = wx.GetTextFromUser(
-        _("Please enter the domain for user %s") % self.user
-    )
-    domain_username = "\\".join([domain.upper(), str(self.user)])
-    response, dummy_parameters = imap.authenticate(
-        "NTLM",
-        IMAPNtlmAuthHandler.IMAPNtlmAuthHandler(domain_username, str(pwd)),
-    )
-```
-
-#### Why requests-ntlm Is NOT a Replacement
-
-The `requests-ntlm` PyPI package is for HTTP requests using the `requests` library, not for IMAP protocol authentication. The `IMAPNtlmAuthHandler` is purpose-built for Python's `imaplib.IMAP4.authenticate()` method and must be retained.
-
-#### Action Taken
-
-- **Removed:** `HTTPNtlmAuthHandler.py` (138 lines of dead Python 2 code using `urllib2`)
-- **Kept:** All other files (required for IMAP authentication)
-- **Updated:** `thirdparty/README.txt` to document the removal
-
-#### Potential Future Work
-
-The remaining ntlm module files contain some Python 2 patterns that could be modernized:
-- Print statements (though most are commented out)
-- String handling (`basestring` references)
-
-However, since the code works and is only used for IMAP authentication, these are low priority.
+Removed 2026-09-30, with the `sys.path` entry for `thirdparty/` in
+`taskcoachlib/__init__.py`, which only it needed. The November 2025
+review kept it as "actively used" from its import in `thunderbird.py`,
+but it could not run on Python 3: `import ntlm` found the empty
+`__init__.py`, `ntlm.ntlm` failed to import `des`, and the code mixed
+`str` and `bytes`, called `string.upper()`, used MD4 (refused by
+OpenSSL 3) and `hmac.new()` without a digest. A server offering NTLM
+now gets the plain IMAP login; `pyspnego` (Debian 13) would be the
+replacement if NTLM is wanted ([TODO.md](TODO.md#12-thunderbirdimap-mail-integration-review)).
 
 ### deltaTime.py Module
+
+**Removed:** 2026-10-03, with pyparsing: replaced by
+`taskcoachlib/domain/date/timeexpression.py`
+([DEPENDENCIES.md](DEPENDENCIES.md#pyparsing-to-do-91)). The rest of
+this section is its history.
 
 **Date Updated:** November 2025
 **Location:** `taskcoachlib/thirdparty/deltaTime.py`
@@ -124,16 +91,15 @@ The upstream version adds capabilities not in the old bundled version:
 
 #### pyparsing Version Requirement
 
-The upstream `delta_time.py` uses `pp.Tag()` which was added in pyparsing 3.1.3:
-
-```python
-time_ref_present = pp.Tag("time_ref_present")
-```
-
-**Version availability:**
-- Debian Bookworm apt: pyparsing 3.0.9 (too old)
-- Required: pyparsing >= 3.1.3
-- Solution: Install via pip in virtualenv
+Upstream's `delta_time.py` used `pp.Tag()`, new in pyparsing 3.1.3, so
+the minimum became 3.1.3 and pyparsing was installed with pip where the
+distro's was older. `deltaTime.py` has since replaced `pp.Tag()` with
+`pp.Empty()` and a parse action; on 2026-09-30 the minimum went back to
+3.0.0 (the pyparsing 3 API): 3.0.0, 3.0.7, 3.0.9 (Debian 12), 3.1.1
+and 3.1.2 (Debian 13) pass the template tests and parse 21 sample
+expressions alike, so every distro's package is used but Ubuntu
+22.04's, 2.4.7 (P175 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
 
 #### Files Modified
 
@@ -492,7 +458,7 @@ while time.time() - t0 < 2.0:
     time.sleep(0.05)  # Prevent CPU spin
 ```
 
-The `@test.skipOnTwistedVersions()` decorator is now a no-op but kept for backward compatibility.
+The no-op `@test.skipOnTwistedVersions()` decorator was removed in 2026-09.
 
 ### Dependencies
 

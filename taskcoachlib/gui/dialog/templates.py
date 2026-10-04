@@ -21,8 +21,9 @@ from taskcoachlib.tools import wxhelper
 import wx
 from taskcoachlib.domain.task import Task
 from taskcoachlib import persistence, operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
-from taskcoachlib.thirdparty.deltaTime import nlTimeExpression
+from taskcoachlib.domain.date import timeexpression
 from wx.lib import sized_controls
 
 
@@ -39,10 +40,9 @@ class TimeExpressionEntry(wx.TextCtrl):
     def isValid(value):
         if value:
             try:
-                res = nlTimeExpression.parseString(value)
-            except Exception:
-                return False  # Parsing failed
-            return "calculatedTime" in res
+                timeexpression.parse(value)
+            except ValueError:
+                return False
         return True  # Empty is valid.
 
     def _onTextChanged(self, event):
@@ -55,8 +55,7 @@ class TimeExpressionEntry(wx.TextCtrl):
 
 
 class TemplatesDialog(sized_controls.SizedDialog):
-    def __init__(self, settings, *args, **kwargs):
-        self.settings = settings
+    def __init__(self, *args, **kwargs):
         self._changing = False
         super().__init__(
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER, *args, **kwargs
@@ -68,9 +67,9 @@ class TemplatesDialog(sized_controls.SizedDialog):
         self.SetButtonSizer(self._buttonSizer)
         self.Fit()
         self.SetMinSize(self.GetSize())  # Current size is min size
-        wxhelper.getButtonFromStdDialogButtonSizer(
-            self._buttonSizer, wx.ID_OK
-        ).Bind(wx.EVT_BUTTON, self.ok)
+        wxhelper.get_dialog_button(self._buttonSizer, wx.ID_OK).Bind(
+            wx.EVT_BUTTON, self.ok
+        )
         self.CentreOnParent()
 
     def createInterior(self, pane):
@@ -89,9 +88,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
         self._templateList.Bind(
             wx.EVT_TREE_SEL_CHANGED, self.OnSelectionChanged
         )
-        self._templates = persistence.TemplateList(
-            self.settings.pathToTemplatesDir()
-        )
+        self._templates = persistence.TemplateList(settings.templates_dir())
         self._root = self._templateList.AddRoot("Root")
         for task in self._templates.tasks():
             item = self.appendTemplate(self._root, task)
@@ -113,7 +110,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
         self._btnDown = self.createButton(
             panel, "nuvola_actions_go-down", self.OnDown, enable=False
         )
-        self._btnAdd = self.createButton(panel, "nuvola_actions_list-add", self.OnAdd)
+        self.createButton(panel, "nuvola_actions_list-add", self.OnAdd)
         panel.Fit()
 
     def createButton(self, parent, icon_id, handler, enable=True):
@@ -124,7 +121,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
         return button
 
     def createTemplateEntries(self, pane):
-        panel = self._editPanel = sized_controls.SizedPanel(pane)
+        panel = sized_controls.SizedPanel(pane)
         panel.SetSizerType("form")
         panel.SetSizerProps(expand=True)
         label = wx.StaticText(panel, label=_("Subject"))
@@ -244,9 +241,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
             )
             self._templateList.SetItemData(item, task)
         else:
-            item = self._templateList.PrependItem(
-                self._root, task.subject()
-            )
+            item = self._templateList.PrependItem(self._root, task.subject())
             self._templateList.SetItemData(item, task)
         for child in task.children():
             self.appendTemplate(item, child)
@@ -259,9 +254,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
         next = self._templateList.GetNextSibling(selection)
         task = self._templateList.GetItemData(selection)
         self._templateList.Delete(selection)
-        item = self._templateList.InsertItem(
-            self._root, next, task.subject()
-        )
+        item = self._templateList.InsertItem(self._root, next, task.subject())
         self._templateList.SetItemData(item, task)
         for child in task.children():
             self.appendTemplate(item, child)
@@ -278,8 +271,8 @@ class TemplatesDialog(sized_controls.SizedDialog):
             "remindertmpl",
         ):
             setattr(template, name, None)
-        theTask = self._templates.addTemplate(template)
-        self.appendTemplate(self._root, theTask)
+        the_task = self._templates.add_template(template)
+        self.appendTemplate(self._root, the_task)
 
     def ok(self, event):
         self._templates.save()

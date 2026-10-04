@@ -17,8 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import config
 from taskcoachlib.domain import task, category
+from taskcoachlib.config import settings
 
 # pylint: disable=W0201,E1101
 
@@ -30,13 +30,12 @@ from taskcoachlib.domain import task, category
 
 class CategoryFilterHelpersMixin(object):
     def setFilterOnAnyCategory(self):
-        self.settings.setboolean("view", "categoryfiltermatchall", False)
+        settings.set("view", "categoryfiltermatchall", False)
 
     def setFilterOnAllCategories(self):
-        self.settings.setboolean("view", "categoryfiltermatchall", True)
+        settings.set("view", "categoryfiltermatchall", True)
 
     def link(self, category, categorizable):  # pylint: disable=W0621
-        category.addCategorizable(categorizable)
         categorizable.addCategory(category)
 
     def assertChildTaskIsFiltered(self):
@@ -60,13 +59,13 @@ class Fixture(CategoryFilterHelpersMixin):
     tree_mode = False
 
     def setUp(self):
-        self.settings = task.Task.settings = config.Settings(load=False)
         self.categories = category.CategoryList(self.createCategories())
         self.tasks = task.TaskList(self.createTasks())
         self.categorize()
         self.filter = category.filter.CategoryFilter(
-            self.tasks, categories=self.categories,
-            settings=self.settings, tree_mode=self.tree_mode
+            self.tasks,
+            categories=self.categories,
+            tree_mode=self.tree_mode,
         )
 
     def createTasks(self):
@@ -256,6 +255,30 @@ class OneCategoryAndTwoTasksFixture(Fixture):
         self.link(self.category, self.task2)
         self.assertFilterHidesNothing()
 
+    def count_resets(self):
+        resets = []
+        reset = self.filter.reset
+        self.filter.reset = lambda *args, **kwargs: (
+            resets.append(1),
+            reset(*args, **kwargs),
+        )
+        return resets
+
+    def test_assigning_an_unfiltered_category_refilters_nothing(self):
+        resets = self.count_resets()
+        self.link(self.category, self.task1)
+        self.assertEqual([], resets)
+
+    def test_assigning_a_subcategory_of_a_filtered_one_refilters(self):
+        subcategory = category.Category("subcategory")
+        self.category.addChild(subcategory)
+        self.category.setFiltered()
+        resets = self.count_resets()
+        self.link(subcategory, self.task1)
+        self.assertEqual(
+            (True, [self.task1]), (bool(resets), list(self.filter))
+        )
+
 
 class OneCategoryAndTwoTasksInListModeTest(
     OneCategoryAndTwoTasksFixture, test.TestCase
@@ -423,7 +446,7 @@ class OneCategoryAndParentAndChildTaskFixture(Fixture):
         self.parentTask = task.Task("parent")
         self.childTask = task.Task("child")
         self.parentTask.addChild(self.childTask)
-        self.childTask.setParent(self.parentTask)
+        self.childTask.set_parent(self.parentTask)
         return [self.parentTask, self.childTask]
 
     def testThatFilterContainsChildWhenParentIsCategorizedAndFiltered(self):
@@ -461,7 +484,7 @@ class TwoCategoriesAndParentAndChildTaskFixture(Fixture):
         self.parentTask = task.Task("parent")
         self.childTask = task.Task("child")
         self.parentTask.addChild(self.childTask)
-        self.childTask.setParent(self.parentTask)
+        self.childTask.set_parent(self.parentTask)
         return [self.parentTask, self.childTask]
 
     def categorize(self):
@@ -502,14 +525,14 @@ class ParentAndChildCategoryAndParentAndChildTaskFixture(Fixture):
         self.parentCategory = category.Category("parent")
         self.childCategory = category.Category("child")
         self.parentCategory.addChild(self.childCategory)
-        self.childCategory.setParent(self.parentCategory)
+        self.childCategory.set_parent(self.parentCategory)
         return [self.parentCategory, self.childCategory]
 
     def createTasks(self):
         self.parentTask = task.Task("parent")
         self.childTask = task.Task("child")
         self.parentTask.addChild(self.childTask)
-        self.childTask.setParent(self.parentTask)
+        self.childTask.set_parent(self.parentTask)
         return [self.parentTask, self.childTask]
 
     def testThatFilterContainsBothTasksWhenParentTaskIsInParentCategoryAndFilteringParentCategory(
@@ -604,7 +627,7 @@ class ParentAndChildCategoryAndParentAndGrandChildTaskFixture(Fixture):
         self.parentCategory = category.Category("parent")
         self.childCategory = category.Category("child")
         self.parentCategory.addChild(self.childCategory)
-        self.childCategory.setParent(self.parentCategory)
+        self.childCategory.set_parent(self.parentCategory)
         return [self.parentCategory, self.childCategory]
 
     def createTasks(self):
@@ -612,9 +635,9 @@ class ParentAndChildCategoryAndParentAndGrandChildTaskFixture(Fixture):
         self.childTask = task.Task("child")
         self.grandChildTask = task.Task("grandchild")
         self.parentTask.addChild(self.childTask)
-        self.childTask.setParent(self.parentTask)
+        self.childTask.set_parent(self.parentTask)
         self.childTask.addChild(self.grandChildTask)
-        self.grandChildTask.setParent(self.childTask)
+        self.grandChildTask.set_parent(self.childTask)
         return [self.parentTask, self.childTask, self.grandChildTask]
 
     def testThatFilterContainsAllTasksWhenParentTaskIsInChildCategoryAndFiltered(
@@ -683,9 +706,9 @@ class TwoCategoriesAndParentAndGrandChildTaskFixture(Fixture):
         self.childTask = task.Task("child")
         self.grandChildTask = task.Task("grandchild")
         self.parentTask.addChild(self.childTask)
-        self.childTask.setParent(self.parentTask)
+        self.childTask.set_parent(self.parentTask)
         self.childTask.addChild(self.grandChildTask)
-        self.grandChildTask.setParent(self.childTask)
+        self.grandChildTask.set_parent(self.childTask)
         return [self.parentTask, self.childTask, self.grandChildTask]
 
     def categorize(self):
@@ -732,8 +755,8 @@ class TwoCategoriesAndParentWithTwoChildTasksFixture(Fixture):
         self.child2Task = task.Task("child2")
         self.parentTask.addChild(self.child1Task)
         self.parentTask.addChild(self.child2Task)
-        self.child1Task.setParent(self.parentTask)
-        self.child2Task.setParent(self.parentTask)
+        self.child1Task.set_parent(self.parentTask)
+        self.child2Task.set_parent(self.parentTask)
         return [self.parentTask, self.child1Task, self.child2Task]
 
     def categorize(self):
@@ -778,7 +801,7 @@ class ParentAndChildCategoryAndOneTaskFixture(Fixture):
         self.parentCategory = category.Category("parent")
         self.childCategory = category.Category("child")
         self.parentCategory.addChild(self.childCategory)
-        self.childCategory.setParent(self.parentCategory)
+        self.childCategory.set_parent(self.parentCategory)
         return [self.parentCategory, self.childCategory]
 
     def createTasks(self):
@@ -836,13 +859,14 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
     CategoryFilterHelpersMixin
 ):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.parent = task.Task("parent task")
-        self.parent.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        self.parent.set_should_mark_completed_when_all_children_completed(
+            False
+        )
         self.child = task.Task("child task")
-        self.child.setCompletionDateTime()
+        self.child.set_completion_date_time()
         self.childCategory = category.Category("child category")
-        self.childCategory.addCategorizable(self.child)
+        self.child.addCategory(self.childCategory)
         self.parent.addChild(self.child)
         self.tasks = task.TaskList([self.parent, self.child])
         self.categories = category.CategoryList([self.childCategory])
@@ -850,8 +874,9 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
             self.tasks, tree_mode=self.tree_mode
         )
         self.categoryFilter = category.filter.CategoryFilter(
-            self.viewFilter, categories=self.categories,
-            settings=task.Task.settings, tree_mode=self.tree_mode
+            self.viewFilter,
+            categories=self.categories,
+            tree_mode=self.tree_mode,
         )
 
     def testThatParentIsHiddenWhenHiddenCompletedChildIsFiltered(self):
@@ -910,25 +935,28 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
 
     With the fix, ViewFilter's recursive cleanup removes orphan ancestors.
     """
+
     tree_mode = True
 
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         # Parent task with no category
         self.parent = task.Task("parent task")
-        self.parent.setShouldMarkCompletedWhenAllChildrenCompleted(False)
+        self.parent.set_should_mark_completed_when_all_children_completed(
+            False
+        )
         # Child task with category, completed
         self.child = task.Task("child task")
-        self.child.setCompletionDateTime()
+        self.child.set_completion_date_time()
         self.childCategory = category.Category("child category")
-        self.childCategory.addCategorizable(self.child)
+        self.child.addCategory(self.childCategory)
         self.parent.addChild(self.child)
         self.tasks = task.TaskList([self.parent, self.child])
         self.categories = category.CategoryList([self.childCategory])
         # Filter order: TaskList -> CategoryFilter -> ViewFilter (like the app)
         self.categoryFilter = category.filter.CategoryFilter(
-            self.tasks, categories=self.categories,
-            settings=task.Task.settings, tree_mode=self.tree_mode
+            self.tasks,
+            categories=self.categories,
+            tree_mode=self.tree_mode,
         )
         self.viewFilter = task.filter.ViewFilter(
             self.categoryFilter, tree_mode=self.tree_mode

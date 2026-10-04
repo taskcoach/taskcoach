@@ -43,7 +43,7 @@ else
 fi
 
 # Check Python version
-echo -e "${BLUE}[1/8] Checking Python version...${NC}"
+echo -e "${BLUE}[1/7] Checking Python version...${NC}"
 PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
 PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
 PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
@@ -59,7 +59,7 @@ fi
 echo
 
 # Install system dependencies
-echo -e "${BLUE}[2/8] Installing system dependencies...${NC}"
+echo -e "${BLUE}[2/7] Installing system dependencies...${NC}"
 echo "This will install system packages from Arch/Manjaro repos."
 echo "Requires sudo privileges."
 
@@ -71,15 +71,10 @@ if command -v sudo &> /dev/null; then
     sudo pacman -S --needed --noconfirm \
         python \
         python-wxpython \
-        python-six \
-        python-lxml \
-        python-numpy \
         python-dateutil \
         python-chardet \
         python-keyring \
-        python-pyparsing \
-        python-pyxdg \
-        python-watchdog \
+        python-pyenchant \
         libayatana-appindicator \
         libxss \
         xdg-utils
@@ -92,19 +87,12 @@ fi
 echo
 
 # Check for AUR packages
-echo -e "${BLUE}[3/8] Checking AUR packages...${NC}"
+echo -e "${BLUE}[3/7] Checking AUR packages...${NC}"
 AUR_PACKAGES=""
-
-# Check for python-pypubsub
-if ! pacman -Q python-pypubsub &>/dev/null; then
-    AUR_PACKAGES="$AUR_PACKAGES python-pypubsub"
-fi
 
 # Check for python-squaremap (optional)
 if ! pacman -Q python-squaremap &>/dev/null; then
     echo -e "${YELLOW}Note: python-squaremap is optional (for hierarchical visualization)${NC}"
-fi
-
 fi
 
 if [ -n "$AUR_PACKAGES" ]; then
@@ -133,7 +121,7 @@ fi
 echo
 
 # Create virtual environment
-echo -e "${BLUE}[4/8] Creating virtual environment...${NC}"
+echo -e "${BLUE}[4/7] Creating virtual environment...${NC}"
 VENV_PATH="$SCRIPT_DIR/.venv"
 
 if [ -d "$VENV_PATH" ]; then
@@ -154,24 +142,14 @@ fi
 echo
 
 # Install Python dependencies not available in Arch repos
-echo -e "${BLUE}[5/8] Installing Python dependencies in venv...${NC}"
+echo -e "${BLUE}[5/7] Installing Python dependencies in venv...${NC}"
 # Most packages are available in Arch repos, only install what's missing
-echo "Installing: distro"
-
 source "$VENV_PATH/bin/activate"
-pip install --quiet distro
 
 # Install optional packages if not available from system
-if ! python3 -c "from pubsub import pub" 2>/dev/null; then
-    echo "Installing pypubsub from pip..."
-    pip install --quiet pypubsub
-fi
-
 if ! python3 -c "import squaremap" 2>/dev/null; then
     echo "Installing squaremap from pip (optional)..."
     pip install --quiet squaremap || echo -e "${YELLOW}squaremap install failed (optional)${NC}"
-fi
-
 fi
 
 deactivate
@@ -180,7 +158,7 @@ echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
 
 # Check launch script
-echo -e "${BLUE}[6/8] Checking launch script...${NC}"
+echo -e "${BLUE}[6/7] Checking launch script...${NC}"
 if [ -f "$SCRIPT_DIR/taskcoach-run.sh" ]; then
     chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
     echo -e "${GREEN}✓ Launch script is ready: taskcoach-run.sh${NC}"
@@ -191,18 +169,8 @@ else
 fi
 echo
 
-# Apply wxPython patch
-echo -e "${BLUE}[7/8] Applying wxPython patch...${NC}"
-if [ -f "$SCRIPT_DIR/apply-wxpython-patch.sh" ]; then
-    "$SCRIPT_DIR/apply-wxpython-patch.sh"
-else
-    echo -e "${YELLOW}⚠ Warning: apply-wxpython-patch.sh not found${NC}"
-    echo "  Category row background coloring may not work correctly"
-fi
-echo
-
 # Test installation
-echo -e "${BLUE}[8/8] Testing installation...${NC}"
+echo -e "${BLUE}[7/7] Testing installation...${NC}"
 echo "===================="
 echo
 
@@ -229,35 +197,7 @@ else
     exit 1
 fi
 
-# Test 3: Test key packages
-echo "Testing key packages..."
-FAILED=0
-
-for pkg in "desktop" "distro" "watchdog"; do
-    echo -n "  - $pkg... "
-    if python3 -c "import $pkg" 2>/dev/null; then
-        echo -e "${GREEN}✓${NC}"
-    else
-        echo -e "${RED}✗ Failed${NC}"
-        FAILED=1
-    fi
-done
-
-# pypubsub package provides 'pubsub' module
-echo -n "  - pypubsub... "
-if python3 -c "from pubsub import pub" 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
-    FAILED=1
-fi
-
 deactivate
-
-if [ $FAILED -eq 1 ]; then
-    echo -e "${RED}✗ Some packages failed to import${NC}"
-    exit 1
-fi
 
 # Test 4: Run help
 echo -n "Testing application help... "
@@ -274,10 +214,8 @@ echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Arch/Manjaro Linux with:"
-echo "  • System packages from official repos (wxPython, numpy, lxml, watchdog, etc.)"
+echo "  • System packages from official repos (wxPython, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (distro)"
-echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "Optional packages (install from AUR if needed):"
 echo "  • python-squaremap: Hierarchical data visualization"

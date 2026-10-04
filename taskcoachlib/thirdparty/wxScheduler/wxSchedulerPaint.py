@@ -969,7 +969,9 @@ class wxSchedulerPaint(object):
             day.SetMinute(0)
             day.SetSecond(0)
 
-            daysCount = wx.DateTime.GetNumberOfDaysInMonth(day.GetMonth())
+            daysCount = wx.DateTime.GetNumberOfDays(
+                day.GetMonth(), day.GetYear()
+            )
 
             maxDY = 0
             for idx in range(daysCount):
@@ -988,9 +990,11 @@ class wxSchedulerPaint(object):
                     highlight=color,
                 )
                 self._headerBounds.append(
-                    int((x + (idx + 1) * width / daysCount)),
-                    y + h,
-                    height,
+                    (
+                        int((x + (idx + 1) * width / daysCount)),
+                        y + h,
+                        height,
+                    )
                 )
                 maxDY = max(maxDY, h)
 
@@ -1073,7 +1077,9 @@ class wxSchedulerPaint(object):
             day.SetMinute(0)
             day.SetSecond(0)
 
-            daysCount = wx.DateTime.GetNumberOfDaysInMonth(day.GetMonth())
+            daysCount = wx.DateTime.GetNumberOfDays(
+                day.GetMonth(), day.GetYear()
+            )
 
             minHeight = h
 
@@ -1172,8 +1178,9 @@ class wxSchedulerPaint(object):
                     elif self._viewType == wxSCHEDULER_MONTHLY:
                         return wx.Size(
                             self._periodWidth
-                            * wx.DateTime.GetNumberOfDaysInMonth(
-                                self.GetDate().GetMonth()
+                            * wx.DateTime.GetNumberOfDays(
+                                self.GetDate().GetMonth(),
+                                self.GetDate().GetYear(),
                             ),
                             minH,
                         )

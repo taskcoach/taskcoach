@@ -6,7 +6,7 @@ Simple time and duration input controls with explicit subfields and translatable
 
 - [TODO](#todo)
 - [Location](#location)
-- [Old Control Behavior Reference](#old-control-behavior-reference)
+- [Behavior](#behavior)
   - [N/A Display When Unchecked](#na-display-when-unchecked)
   - [SetNone: Unchecking the Checkbox](#setnone-unchecking-the-checkbox)
   - [Checkbox Checked: Values Appear from Sub-Controls](#checkbox-checked-values-appear-from-sub-controls)
@@ -14,7 +14,8 @@ Simple time and duration input controls with explicit subfields and translatable
   - [Built-in Default to "Now"](#built-in-default-to-now)
   - [Complete Flow Examples](#complete-flow-examples)
   - [External Update Mechanism (AttributeSync)](#external-update-mechanism-attributesync)
-  - [Sync on Focus Loss (Same as Subject Field)](#sync-on-focus-loss-same-as-subject-field)
+  - [Sync via EVT_VALUE_CHANGED](#sync-via-evt_value_changed)
+  - [DateTimeComboCtrl Event Ownership](#datetimecomboctrl-event-ownership)
 - [Design](#design)
   - [Element Format](#element-format)
   - [Dropdown Choices](#dropdown-choices)
@@ -88,26 +89,24 @@ Self-contained module with custom-painted single field and navigable subfields.
    **Superseded:** DateTimeComboCtrl now inherits `wx.EvtHandler` and posts
    `EVT_VALUE_CHANGED` on itself. See
    [DateTimeComboCtrl Event Ownership](#datetimecomboctrl-event-ownership).
-4. **Sub-control stash model and event contract** — The sub-controls are the
-   stash for DateTimeComboCtrl. `ActivateValue()` and `DeactivateValue()` must
-   each fire `EVT_VALUE_CHANGED` when they change the control's
-   externally-visible state. Sub-control events alone are not sufficient —
-   they don't fire when only the checkbox changes. See
+4. ~~**Sub-control stash model and event contract**~~: **Done.**
+   `ActivateValue()` and `DeactivateValue()` always fire
+   `EVT_VALUE_CHANGED`. See
    [Sub-Control Stash Model](#sub-control-stash-model).
 6. ~~**Editor helpers must go through widget API**~~ — **Done.** All task
    calc helpers (`__deactivateStartDate`, `__deactivateDueDate`,
    `__adjDueDate`, `__adjStartDate`, `__adjDuration`, etc.) have been
    inlined into `__syncTaskState` using `ActivateValue()`/`DeactivateValue()`
    /`SetDuration()` on the widget. The effort calc was already inline.
-7. **Migrate remaining `EVT_KILL_FOCUS` AttributeSync sites to
-   `EVT_VALUE_CHANGED`.** All `MaskedFieldsCtrl`-based controls are done —
+7. **Done 2026-09-29: `EVT_KILL_FOCUS` AttributeSync sites to
+   `EVT_VALUE_CHANGED`.** All `MaskedFieldsCtrl`-based controls are done:
    DurationCtrl (task and effort), budget (`MaskedDurationCtrl`), all
    DateTimeComboCtrl fields, hourly fee, and fixed fee now use plain
    `EVT_VALUE_CHANGED` with immediate commit. The control fires only on
    blur or programmatic complete-value write, so every event is a final
-   value. **Remaining:** subject, description, and attachment location
-   use `wx.TextCtrl` (per-keystroke `EVT_TEXT`) — different migration
-   path. See [ATTRIBUTE_PATTERN.md TODO #1](ATTRIBUTE_PATTERN.md#todo).
+   value. Subject, description and attachment location keep
+   `EVT_KILL_FOCUS` by design (ruling, 2026-09-29): see
+   [ATTRIBUTE_PATTERN.md TODO #1](ATTRIBUTE_PATTERN.md#todo).
 8. **Planned: Extract popup from MaskedFieldsCtrl.** MaskedFieldsCtrl currently
    contains popup infrastructure (_ChoicesPopup, _openPopupForFocusedField,
    DismissPopup) that doesn't belong in the base masked field control. The base
@@ -136,147 +135,23 @@ Self-contained module with custom-painted single field and navigable subfields.
 
 `taskcoachlib/widgets/maskedtimectrl.py`
 
-## Old Control Behavior Reference
+## Behavior
 
-The new controls should match the behavior of the old `smartdatetimectrl.py` system. Key behaviors to preserve:
+`DateTimeComboCtrl` keeps the old `smartdatetimectrl` behavior (the
+control it replaced in January 2026):
 
-### N/A Display When Unchecked
-
-When the checkbox is unchecked, the old control shows **"N/A"** centered in light grey, hiding the actual values (which are preserved internally in the date/time sub-controls).
-
-**Code reference:** `taskcoachlib/thirdparty/smartdatetimectrl.py:649-671`
-```python
-def OnPaint(self, event):
-    ...
-    if self.IsEnabled():
-        # Paint actual values
-        for widget, x, y, w, h in self.__widgets:
-            ...
-            widget.PaintValue(dc, x, y, w, h)
-    else:
-        # Disabled: show "N/A" instead of values
-        text = "N/A"
-        tw, th = dc.GetTextExtent(text)
-        dc.SetTextForeground(wx.LIGHT_GREY)
-        dc.DrawText(text, (w - tw) // 2, (h - th) // 2)
-```
-
-### SetNone: Unchecking the Checkbox
-
-When `SetNone()` is called (or checkbox is unchecked), the control:
-1. Sets checkbox to unchecked
-2. Disables date/time sub-controls (triggers "N/A" painting)
-3. **Does NOT clear the values** - they remain stored in the sub-controls
-
-**Code reference:** `taskcoachlib/widgets/datectrl.py:179-181`
-```python
-def SetNone(self):
-    self.__value = None
-    self.__ctrl.SetDateTime(None)  # Calls smartdatetimectrl SetDateTime
-```
-
-**Code reference:** `taskcoachlib/thirdparty/smartdatetimectrl.py:2968-2980`
-```python
-def SetDateTime(self, value, notify=False):
-    ...
-    if value is None:
-        if self.__enableNone:
-            self.__checkbox.SetValue(False)  # Uncheck
-            self.Enable(False)                # Disable (shows "N/A")
-        # NOTE: Date/time sub-control values are NOT cleared!
-```
-
-### Checkbox Checked: Values Appear from Sub-Controls
-
-When user checks the checkbox, the **already-stored values** from the date/time sub-controls become visible. The values were never erased - just hidden behind "N/A".
-
-**Code reference:** `taskcoachlib/thirdparty/smartdatetimectrl.py:3008-3022`
-```python
-def OnToggleNone(self, event):
-    if event.IsChecked():
-        # Read values already stored in sub-controls
-        evt = DateTimeChangeEvent(
-            self,
-            datetime.datetime.combine(
-                self.__dateCtrl.GetDate(),   # Values were preserved!
-                self.__timeCtrl.GetTime()
-            ),
-        )
-    else:
-        evt = DateTimeChangeEvent(self, None)
-    self.ProcessEvent(evt)
-    self.Enable(event.IsChecked())  # Enable/disable sub-controls
-    self.Refresh()
-    if event.IsChecked():
-        self.__dateCtrl.SetFocus()  # Focus date field when checked
-```
-
-### Suggested DateTime Feature
-
-When there is **no prior value** but a `suggestedDateTime` is provided:
-1. Set the sub-control values to the suggested datetime
-2. Call `SetNone()` to put in unchecked state (shows "N/A", values hidden)
-3. When user checks the checkbox, the suggested values appear!
-
-**Code reference:** `taskcoachlib/gui/dialog/entry.py:70-81`
-```python
-class DateTimeEntry(widgets.DateTimeCtrl):
-    def __init__(self, ..., suggestedDateTime=None, ...):
-        ...
-        # If no initial value but suggested datetime provided
-        if initialDateTime == date.DateTime() and suggestedDateTime:
-            self.setSuggested(suggestedDateTime)
-        else:
-            self.SetValue(initialDateTime)
-
-    def setSuggested(self, suggestedDateTime):
-        super().SetValue(suggestedDateTime)  # Set values in sub-controls
-        super().SetNone()                     # Uncheck (shows "N/A", hides values)
-```
-
-### Built-in Default to "Now"
-
-The smartdatetimectrl has a **built-in fallback** when no value is provided - it defaults to "now".
-
-**Code reference:** `taskcoachlib/thirdparty/smartdatetimectrl.py:2837`
-```python
-dateTime = value or datetime.datetime.now()  # Default to "now" if no value
-```
-
-**Code reference:** `taskcoachlib/thirdparty/smartdatetimectrl.py:2878-2879`
-```python
-if self.__enableNone and value is None:
-    self.Enable(False)  # Disable (shows "N/A") but "now" is already stored
-```
-
-So when **NO prior value** and **NO suggested datetime**:
-1. `value=None` passed to SmartDateTimeCtrl
-2. `dateTime = None or datetime.datetime.now()` → sub-controls store "now"
-3. `Enable(False)` called → shows "N/A"
-4. User checks checkbox → "now" appears
-
-The `suggestedDateTime` parameter in `entry.py` is for when a **different** suggestion is wanted (e.g., planned start date as suggestion for actual start date, rather than "now").
-
-### Complete Flow Examples
-
-**Example 1: No prior value, no suggested datetime**
-1. Task has no actual start date, no suggestedDateTime provided
-2. smartdatetimectrl defaults to "now" internally (line 2837)
-3. Control disabled → shows "N/A"
-4. User checks checkbox → "now" appears
-
-**Example 2: No prior value, with suggested datetime**
-1. Task has no actual start date, but `suggestedActualStartDateTime()` returns planned start
-2. `setSuggested(plannedStart)` is called:
-   - `SetValue(plannedStart)` → sub-controls store planned start (overrides "now")
-   - `SetNone()` → checkbox unchecked, disabled, shows "N/A"
-3. User sees "N/A" in the field
-4. User checks checkbox → planned start appears (not "now")
-
-**Example 3: Has prior value**
-1. Task has actual start date set
-2. `SetValue(actualStart)` is called → sub-controls store actual start, checkbox checked
-3. User sees the actual start date/time
+- **Unchecked shows "N/A"**: the date and time fields are disabled and
+  paint "N/A" in grey (`DateCtrl._onPaint()`,
+  `_NativeDateCtrl._onPaintNA()`); their values stay (the stash, see
+  [Sub-Control Stash Model](#sub-control-stash-model)).
+- **Checking shows the stash**: `ActivateValue()` shows the values the
+  fields held, or the suggested value when one is given.
+- **Suggested value**: without a value, `suggested_value` fills the
+  fields behind "N/A" (e.g. the planned start for the actual start);
+  without either, now, to the second.
+- `SetValue(date.DateTime())` unchecks (`DeactivateValue()`); any other
+  date checks and shows it (`ActivateValue()`). `GetValue()` returns
+  `date.DateTime()` when unchecked.
 
 ### External Update Mechanism (AttributeSync)
 
@@ -287,7 +162,7 @@ Controls must update automatically when the underlying data changes from externa
 `AttributeSync` provides bidirectional synchronization between UI controls and domain objects:
 
 1. **User edits control** → `onAttributeEdited()` → executes command → updates domain
-2. **External change to domain** → `onAttributeChanged()` → calls `control.SetValue()` → updates display
+2. **External change to domain** → `on_attribute_changed()` → calls `control.SetValue()` → updates display
 
 **Key methods AttributeSync expects on controls:**
 - `GetValue()` - returns domain-compatible value (e.g., `date.DateTime`)
@@ -316,6 +191,14 @@ external code binds `EVT_VALUE_CHANGED` on the DTC itself, not on sub-controls.
    to `EVT_KILL_FOCUS` on sub-controls and fires its own `EVT_VALUE_CHANGED`.
 2. **State transitions** — `ActivateValue()`, `DeactivateValue()`, checkbox
    click. These call `NotifyValueChanged()` at the end.
+
+The event is sent once the current event is done, through
+`patterns.later.soon()` with the checkbox as owner: DTC is no window,
+so it outlives its widgets, and a change still due when its editor
+closes is dropped ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)). The
+handlers bound on it would keep it, and its editor's page, forever:
+it is deleted once its checkbox is destroyed
+([CRASH_GUARD.md](CRASH_GUARD.md#event-handlers-that-are-not-windows)).
 
 **Sub-control `EVT_VALUE_CHANGED` is trapped and dropped.** DTC binds a handler
 on sub-control `EVT_VALUE_CHANGED` that explicitly consumes the event without
@@ -430,26 +313,26 @@ Compact duration format: `1d 02:30` or with seconds: `1d 02:30:15`
 **Constructor:**
 ```python
 DurationCtrl(parent, days=0, hours=0, minutes=0, seconds=0,
-             dayChoices=None, hourChoices=None, minuteChoices=None,
-             showSeconds=False, secondChoices=None)
+             day_choices=None, hour_choices=None, minute_choices=None,
+             show_seconds=False, second_choices=None)
 ```
 
 **Parameters:**
 - `days, hours, minutes, seconds`: Initial values
-- `dayChoices`: Dropdown choices for days:
+- `day_choices`: Dropdown choices for days:
   - `None` (default): Use defaults `[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]`
   - `list`: Use that specific list
   - `False`: No dropdown
-- `hourChoices`: Dropdown choices for hours:
+- `hour_choices`: Dropdown choices for hours:
   - `None` (default): Use defaults `[0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]`
   - `list`: Use that specific list
   - `False`: No dropdown
-- `minuteChoices`: Dropdown choices for minutes:
+- `minute_choices`: Dropdown choices for minutes:
   - `None` (default): Use defaults from settings (based on `effortminuteinterval`)
   - `list`: Use that specific list
   - `False`: No dropdown
-- `showSeconds`: If True, include seconds field (default False)
-- `secondChoices`: Dropdown choices for seconds:
+- `show_seconds`: If True, include seconds field (default False)
+- `second_choices`: Dropdown choices for seconds:
   - `None` (default): Use defaults from settings (based on `effortsecondinterval`)
   - `list`: Use that specific list
   - `False`: No dropdown
@@ -460,11 +343,11 @@ ctrl = DurationCtrl(parent, days=1, hours=8, minutes=30)
 
 # With seconds (for effort tracking)
 ctrl = DurationCtrl(parent, days=0, hours=2, minutes=30, seconds=15,
-    showSeconds=True)
+    show_seconds=True)
 
 # Explicitly no dropdowns
 ctrl = DurationCtrl(parent, days=1, hours=2, minutes=30,
-    dayChoices=False, hourChoices=False, minuteChoices=False)
+    day_choices=False, hour_choices=False, minute_choices=False)
 
 duration = ctrl.GetDuration()  # date.TimeDelta
 ctrl.SetDuration(date.TimeDelta(days=1, hours=2))
@@ -481,29 +364,36 @@ ctrl.SetDuration(date.TimeDelta(hours=-1, minutes=-30))
 ### DurationCtrlVerbose
 Duration with full word suffixes: `1 days 02 hours 30 mins` or with seconds: `1 days 02 hours 30 mins 15 secs`
 
+**A test playground, not used by the application:** it is shown in the
+demo (`docs/scripts/datetime_controls_demo.py`, row 1.7). Leave both in
+place: they are the starting point if an option for longer, worded
+durations is ever wanted or asked for (P66 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues),
+ruled 2026-10-02). An audit that finds it unused should not remove it.
+
 **Constructor:**
 ```python
 DurationCtrlVerbose(parent, days=0, hours=0, minutes=0, seconds=0,
-                    dayChoices=None, hourChoices=None, minuteChoices=None,
-                    showSeconds=False, secondChoices=None)
+                    day_choices=None, hour_choices=None, minute_choices=None,
+                    show_seconds=False, second_choices=None)
 ```
 
 **Parameters:**
 - `days, hours, minutes, seconds`: Initial values
-- `dayChoices`: Dropdown choices for days:
+- `day_choices`: Dropdown choices for days:
   - `None` (default): Use defaults `[0, 1, 2, 3, 5, 7, 14, 21, 28, 30, 60, 90]`
   - `list`: Use that specific list
   - `False`: No dropdown
-- `hourChoices`: Dropdown choices for hours:
+- `hour_choices`: Dropdown choices for hours:
   - `None` (default): Use defaults `[0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20]`
   - `list`: Use that specific list
   - `False`: No dropdown
-- `minuteChoices`: Dropdown choices for minutes:
+- `minute_choices`: Dropdown choices for minutes:
   - `None` (default): Use defaults from settings (based on `effortminuteinterval`)
   - `list`: Use that specific list
   - `False`: No dropdown
-- `showSeconds`: If True, include seconds field (default False)
-- `secondChoices`: Dropdown choices for seconds:
+- `show_seconds`: If True, include seconds field (default False)
+- `second_choices`: Dropdown choices for seconds:
   - `None` (default): Use defaults from settings (based on `effortsecondinterval`)
   - `list`: Use that specific list
   - `False`: No dropdown
@@ -514,11 +404,11 @@ ctrl = DurationCtrlVerbose(parent, days=0, hours=0, minutes=0)
 
 # With seconds (for effort tracking)
 ctrl = DurationCtrlVerbose(parent, days=0, hours=2, minutes=30, seconds=15,
-    showSeconds=True)
+    show_seconds=True)
 
 # Explicitly no dropdowns
 ctrl = DurationCtrlVerbose(parent, days=0, hours=0, minutes=0,
-    dayChoices=False, hourChoices=False, minuteChoices=False)
+    day_choices=False, hour_choices=False, minute_choices=False)
 
 duration = ctrl.GetDuration()  # date.TimeDelta
 ctrl.SetDuration(date.TimeDelta(hours=1, minutes=30))
@@ -539,15 +429,15 @@ ctrl = TimeCtrl(parent, hours=14, minutes=30)
 
 # With custom dropdowns
 ctrl = TimeCtrl(parent, hours=9, minutes=0,
-    hourChoices=[9, 10, 11, 12, 13, 14, 15, 16, 17],
-    minuteChoices=[0, 15, 30, 45])
+    hour_choices=[9, 10, 11, 12, 13, 14, 15, 16, 17],
+    minute_choices=[0, 15, 30, 45])
 
 # Explicitly no dropdowns
 ctrl = TimeCtrl(parent, hours=14, minutes=30,
-    hourChoices=False, minuteChoices=False)
+    hour_choices=False, minute_choices=False)
 
 # Explicit 12-hour format
-ctrl = TimeCtrl(parent, hours=14, minutes=30, timeFormat="12")
+ctrl = TimeCtrl(parent, hours=14, minutes=30, time_format="12")
 
 time = ctrl.GetTime()  # datetime.time (always 24-hour internally)
 ctrl.SetTime(datetime.time(14, 30))
@@ -569,13 +459,13 @@ ctrl = TimeWithSecondsCtrl(parent, hours=14, minutes=30, seconds=0)
 
 # With custom dropdowns
 ctrl = TimeWithSecondsCtrl(parent, hours=0, minutes=0, seconds=0,
-    hourChoices=list(range(24)),
-    minuteChoices=list(range(60)),
-    secondChoices=[0, 15, 30, 45])
+    hour_choices=list(range(24)),
+    minute_choices=list(range(60)),
+    second_choices=[0, 15, 30, 45])
 
 # Explicitly no dropdowns
 ctrl = TimeWithSecondsCtrl(parent, hours=14, minutes=30, seconds=0,
-    hourChoices=False, minuteChoices=False, secondChoices=False)
+    hour_choices=False, minute_choices=False, second_choices=False)
 ```
 
 ### Locale and Date Format Settings
@@ -620,13 +510,13 @@ Subclass `MaskedFieldsCtrl`:
 ```python
 class MyDurationCtrl(MaskedFieldsCtrl):
     def __init__(self, parent, days=0, hours=0, minutes=0,
-                 dayChoices=None, hourChoices=None, minuteChoices=None):
+                 day_choices=None, hour_choices=None, minute_choices=None):
         elements = [
-            ("day", days, dayChoices),
+            ("day", days, day_choices),
             ("literal", _("d") + " "),
-            ("hour", hours, hourChoices),
+            ("hour", hours, hour_choices),
             ("literal", ":"),
-            ("minute", minutes, minuteChoices),
+            ("minute", minutes, minute_choices),
         ]
         super().__init__(parent, elements)
 
@@ -677,8 +567,8 @@ python3 docs/scripts/datetime_controls_demo.py
 The module is fully self-contained with these components:
 
 - **Helper functions**: `getTextCtrlContentOffset()` (system metrics for custom painting), `monthcalendarex()` (calendar grid generation)
-- **Event types**: `EVT_POPUP_DISMISS`, `EVT_CHOICE_SELECTED`, `EVT_CHOICE_PREVIEW`
-- **Event classes**: `PopupDismissEvent`, `ChoiceSelectedEvent`, `ChoicePreviewEvent`
+- **Event types**: `EVT_POPUP_DISMISS`, `EVT_CHOICE_SELECTED`
+- **Event classes**: `PopupDismissEvent`, `ChoiceSelectedEvent`
 - **Popup classes**: `_PopupWindow` (base), `_ChoicesPopup` (dropdown), `_CalendarPopup` (date selection)
 - **Field class**: `NumericField` (individual editable subfield)
 - **Control classes**: `MaskedFieldsCtrl` (base), `DurationCtrl`, `DurationCtrlVerbose`, `TimeCtrl`, `TimeWithSecondsCtrl`, `DateCtrl`, `DateComboCustomCtrl`, `DateComboRouterCtrl` (router), `DateTimeComboCtrl`
@@ -859,8 +749,7 @@ The dropdown width uses the field width as minimum, ensuring the popup is at lea
 
 ### Events from Popup
 
-The popup fires three events:
-- `EVT_CHOICE_PREVIEW`: Arrow key navigation in dropdown (live update to field)
+The popup fires two events:
 - `EVT_CHOICE_SELECTED`: Enter key or click selection (confirms value)
 - `EVT_POPUP_DISMISS`: Popup closed for any reason (Escape, click outside, selection)
 
@@ -911,14 +800,14 @@ def ValidateChange(self, field, value):
 
 ### Refresh and Update for Visual Sync
 
-After updating field values programmatically (e.g., from `AttributeSync.onAttributeChanged()`), both `Refresh()` and `Update()` are called:
+After updating field values programmatically (e.g., from `AttributeSync.on_attribute_changed()`), both `Refresh()` and `Update()` are called:
 
 ```python
 self.__observer.Refresh()  # Mark for repaint
 self.__observer.Update()   # Force immediate repaint
 ```
 
-`Update()` is necessary because `Refresh()` only schedules a repaint for the next event loop iteration. During synchronous pubsub callbacks, this may not happen quickly enough, causing visual lag. `Update()` forces immediate processing of pending paint events.
+`Update()` is necessary because `Refresh()` only schedules a repaint for the next event loop iteration. During synchronous change callbacks, this may not happen quickly enough, causing visual lag. `Update()` forces immediate processing of pending paint events.
 
 ### Sub-Control Stash Model
 
@@ -931,11 +820,11 @@ are the stash.
 
 At construction, the sub-controls are initialized with either:
 - The domain value (`value` parameter), if the field is active (preset mode), or
-- The preference-suggested datetime (`suggestedValue` parameter), if the field
+- The preference-suggested datetime (`suggested_value` parameter), if the field
   is inactive (propose mode), or
 - `datetime.now()` as a fallback
 
-See [DATETIME_PRESETS.md](DATETIME_PRESETS.md) for how `suggestedValue` is
+See [DATETIME_PRESETS.md](DATETIME_PRESETS.md) for how `suggested_value` is
 computed from user preferences and passed at editor construction time
 ([Propose Mode](DATETIME_PRESETS.md#propose-mode),
 [Suggested DateTime Computation](DATETIME_PRESETS.md#suggested-datetime-computation)).
@@ -1079,7 +968,7 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 
 | Method | Type |
 |--------|------|
-| `GetValue()` / `SetValue()` | `date.DateTime` (domain-compatible for AttributeSync). `SetValue` routes through `ActivateValue`/`DeactivateValue`. |
+| `GetValue()` / `SetValue()` | `date.DateTime` (domain-compatible for AttributeSync). `SetValue` routes through `ActivateValue`/`DeactivateValue`. Unchecked is `date.DateTime()`, the latest date: "not set" ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#dates-not-set-is-the-latest-date)). |
 | `GetDateTime()` | `datetime.datetime` or `None` (read-only) |
 | `GetDate()` | `datetime.date` (read-only) |
 | `GetTime()` | `datetime.time` (read-only) |
@@ -1091,7 +980,6 @@ Use `wx.ComboCtrl` which provides a **native dropdown button** and manages popup
 | `GetCheckBox()` | `wx.CheckBox` |
 | `GetDateCtrl()` | `DateComboCustomCtrl` |
 | `GetTimeCtrl()` | `TimeCtrl` / `TimeWithSecondsCtrl` |
-| `GetWidgets()` | Tuple of all three |
 | `CreateRowPanel(parent)` | `wx.Panel` with all three arranged horizontally |
 
 **Deprecated methods** (log warnings, no-op, prefer semantic methods above):
@@ -1119,7 +1007,7 @@ The ComboCtrl's internal text control is hidden behind the overlaid `DateCtrl`. 
 
 1. **Focus redirection**: `EVT_SET_FOCUS` on the ComboCtrl's text control redirects focus to the inner DateCtrl, with a `_redirectingFocus` guard to prevent recursion.
 2. **Text interception**: `EVT_TEXT` handler clears any text the ComboCtrl auto-inserts.
-3. **Post-selection focus**: After calendar date selection, focus moves to inner DateCtrl via `wx.CallAfter`.
+3. **Post-selection focus**: After calendar date selection, focus moves to inner DateCtrl via `patterns.later.soon` ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
 
 ### Wiring
 
@@ -1203,7 +1091,7 @@ are converted to Win32 date format tokens:
 | `"DMY."` | `dd.MM.yyyy` | 18.01.2026 |
 | `""` (auto) | Detected from locale | varies |
 
-**Live update:** `SetDateFormat(dateFormat)` re-sends `DTM_SETFORMATW` — the
+**Live update:** `set_date_format(date_format)` re-sends `DTM_SETFORMATW` — the
 native control updates instantly without needing to destroy/recreate.
 
 ### macOS — Custom Control (No Native Format Override)
@@ -1238,7 +1126,7 @@ Both implementations expose the same public API:
 |--------|-------------|
 | `GetDate()` | Returns `datetime.date` |
 | `SetDate(d)` | Sets date (`datetime.date` or `None` → today) |
-| `SetDateFormat(fmt)` | Change display format (live on Windows, rebuild on others) |
+| `set_date_format(fmt)` | Change display format (live on Windows, rebuild on others) |
 | `SetReadOnly(bool)` | Grey values, block editing |
 | `IsReadOnly()` | Query read-only state |
 | `HasOpenPopup()` | Whether calendar popup is open |
@@ -1256,10 +1144,10 @@ Both implementations expose the same public API:
 
 The Preferences → Regional date format preview (in `preferences.py`
 `_rebuildDemoDateCtrl()`) destroys and recreates the `DateComboRouterCtrl`.
-On Windows, `_NativeDateCtrl.SetDateFormat()` could update the native control
+On Windows, `_NativeDateCtrl.set_date_format()` could update the native control
 in place via `DTM_SETFORMATW`, but the current rebuild approach works on all
 platforms.
 
-- **Windows:** `DTM_SETFORMATW` updates the native control in place (via `SetDateFormat()`).
+- **Windows:** `DTM_SETFORMATW` updates the native control in place (via `set_date_format()`).
 - **Other platforms:** Destroys and recreates the `DateComboRouterCtrl`
   with the new field order and separator, preserving the current date value.

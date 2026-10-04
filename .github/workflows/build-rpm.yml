@@ -73,23 +73,15 @@ jobs:
             python3-devel \
             python3-setuptools \
             python3-pip \
-            python3-distro \
             desktop-file-utils \
             libappstream-glib
 
           # Runtime dependencies - ALL from Fedora repos
           dnf install -y \
             python3-wxpython4 \
-            python3-six \
-            python3-pypubsub \
-            python3-watchdog \
             python3-chardet \
             python3-dateutil \
-            python3-pyparsing \
-            python3-lxml \
-            python3-pyxdg \
-            python3-keyring \
-            python3-numpy
+            python3-keyring
 
           # NOT in Fedora repos - install via pip during RPM build:
           # - squaremap (bundled in RPM via pip install in spec file)
@@ -207,10 +199,14 @@ jobs:
             ${{ matrix.distro }} \
             bash -c '
               set -e
+              # A failed check fails the job: set -e passes over a
+              # command followed by &&
+              check() { "$@" || { echo "FAILED: $*"; exit 1; }; }
               dnf install -y /packages/*.rpm || {
                 echo "Installing with --skip-broken due to missing optional deps..."
-                dnf install -y --skip-broken /packages/*.rpm || true
+                dnf install -y --skip-broken /packages/*.rpm
               }
+              check rpm -q taskcoach
 
               # Verify installation
               echo "Checking installed files..."
@@ -218,10 +214,7 @@ jobs:
 
               # Check Python import works
               echo "Testing Python import..."
-              python3 -c "import taskcoachlib; print(\"SUCCESS: taskcoachlib imported\")" || {
-                echo "Import failed, checking if package installed..."
-                rpm -q taskcoach
-              }
+              check python3 -c "import taskcoachlib; print(\"SUCCESS: taskcoachlib imported\")"
 
               echo "Installation test complete!"
             '

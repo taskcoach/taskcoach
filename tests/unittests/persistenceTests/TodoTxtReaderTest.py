@@ -23,7 +23,6 @@ from taskcoachlib.domain import task, category, date
 
 class TodoTxtReaderTestCase(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.tasks = task.TaskList()
         self.categories = category.CategoryList()
         self.reader = persistence.TodoTxtReader(self.tasks, self.categories)
@@ -118,7 +117,7 @@ class TodoTxtReaderTestCase(test.TestCase):
         self.assertCategorySubject(("@phone"))
         phone = list(self.categories)[0]
         pizza = list(self.tasks)[0]
-        self.assertEqual(set([pizza]), phone.categorizables())
+        self.assertEqual(set([pizza]), phone.members())
         self.assertEqual(set([phone]), pizza.categories())
 
     def testTaskWithSimpleProject(self):
@@ -126,7 +125,7 @@ class TodoTxtReaderTestCase(test.TestCase):
         self.assertCategorySubject(("+phone"))
         phone = list(self.categories)[0]
         pizza = list(self.tasks)[0]
-        self.assertEqual(set([pizza]), phone.categorizables())
+        self.assertEqual(set([pizza]), phone.members())
         self.assertEqual(set([phone]), pizza.categories())
 
     def testTaskWithPlusSign(self):
@@ -143,7 +142,7 @@ class TodoTxtReaderTestCase(test.TestCase):
         self.read("Order pizza @phone\nCall mom @phone\n")
         self.assertEqual(1, len(self.categories))
         phone = list(self.categories)[0]
-        self.assertEqual(set(self.tasks), phone.categorizables())
+        self.assertEqual(set(self.tasks), phone.members())
         self.assertEqual(
             [set([phone]), set([phone])], [t.categories() for t in self.tasks]
         )
@@ -155,7 +154,7 @@ class TodoTxtReaderTestCase(test.TestCase):
         phone = home.children()[0]
         self.assertEqual("phone", phone.subject())
         pizza = list(self.tasks)[0]
-        self.assertEqual(set([pizza]), phone.categorizables())
+        self.assertEqual(set([pizza]), phone.members())
         self.assertEqual(set([phone]), pizza.categories())
 
     def testTwoTasksWithTheSameSubcategory(self):
@@ -164,7 +163,7 @@ class TodoTxtReaderTestCase(test.TestCase):
         self.assertEqual("@home", home.subject())
         phone = home.children()[0]
         self.assertEqual("phone", phone.subject())
-        self.assertEqual(set(self.tasks), phone.categorizables())
+        self.assertEqual(set(self.tasks), phone.members())
         for eachTask in self.tasks:
             self.assertEqual(set([phone]), eachTask.categories())
 
@@ -188,7 +187,7 @@ class TodoTxtReaderTestCase(test.TestCase):
         self.assertCategorySubject("@phone")
         phone = list(self.categories)[0]
         thankMom = list(self.tasks)[0]
-        self.assertEqual(set([thankMom]), phone.categorizables())
+        self.assertEqual(set([thankMom]), phone.members())
         self.assertEqual(set([phone]), thankMom.categories())
 
     def testPriorityAndProjectAndContextBeforeTask(self):

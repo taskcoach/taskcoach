@@ -16,8 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import meta, config, gui, operating_system
+from unittest import mock
+from taskcoachlib import meta, gui, operating_system, patterns, persistence
 from taskcoachlib.domain import task, effort, date
+from taskcoachlib.config import settings
+from taskcoachlib.gui import uicommand
 import test
 
 
@@ -49,11 +52,8 @@ class MainWindowMock(object):
 class TaskBarIconTestCase(test.TestCase):
     def setUp(self):
         self.taskList = task.TaskList()
-        self.settings = task.Task.settings = config.Settings(load=False)
         self.window = MainWindowMock()
-        self.icon = gui.taskbaricon.TaskBarIcon(
-            self.window, self.taskList, self.settings
-        )
+        self.icon = gui.taskbaricon.TaskBarIcon(self.window, self.taskList)
 
     def tearDown(self):  # pragma: no cover
         if operating_system.isWindows():
@@ -105,7 +105,7 @@ class TaskBarIconTooltipTest(TaskBarIconTooltipTestCase):
 
     def testOneTaskNoLongerDueSoonAfterChangingDueSoonSetting(self):
         self.taskList.append(task.Task(dueDateTime=date.Now() + date.ONE_HOUR))
-        self.settings.setint("behavior", "duesoonhours", 0)
+        settings.set("behavior", "duesoonhours", 0)
         self.assertTooltip("")
 
     def testTwoTasksDueSoon(self):
@@ -139,6 +139,27 @@ class TaskBarIconTooltipTest(TaskBarIconTooltipTestCase):
         self.taskList.remove(overdueTask)
         self.assertTooltip("")
 
+    def assert_counted_once_after(self, begin, end):
+        # The tool tip counts every task: once for a burst of changes
+        tasks = [task.Task(), task.Task()]
+        self.taskList.extend(tasks)
+        patterns.Event(begin, self).send()
+        for each in tasks:
+            each.set_due_date_time(date.Yesterday())
+        self.assertTooltip("")
+        patterns.Event(end, self).send()
+        self.assertTooltip("2 tasks overdue")
+
+    def test_counted_once_after_a_bulk_command(self):
+        self.assert_counted_once_after(
+            "command.aboutToBulkModify", "command.justBulkModified"
+        )
+
+    def test_counted_once_after_a_scheduler_pass(self):
+        self.assert_counted_once_after(
+            "scheduler.aboutToPass", "scheduler.pass"
+        )
+
 
 class TaskBarIconTooltipWithTrackedTaskTest(TaskBarIconTooltipTestCase):
     def setUp(self):
@@ -168,3 +189,34 @@ class TaskBarIconTooltipWithTrackedTaskTest(TaskBarIconTooltipTestCase):
         self.task.efforts()[0].setStop(date.DateTime(2000, 1, 1, 10, 0, 0))
         self.task.setSubject("New subject")
         self.assertTooltip("")
+
+
+class AppIndicatorMenuCommandTest(test.TestCase):
+    """The New commands of the Linux tray menu (AppIndicator), with a
+    stand-in indicator: no tray icon registers on the session bus."""
+
+    def setUp(self):
+        super().setUp()
+        self.window = MainWindowMock()
+        self.window.taskFile = persistence.TaskFile()
+        with mock.patch.object(gui.taskbaricon, "_APPINDICATOR_MODULE"):
+            self.icon = gui.taskbaricon.AppIndicatorTaskBarIcon(
+                self.window, self.window.taskFile.tasks()
+            )
+
+    def assert_runs(self, command_class, menu_item):
+        with mock.patch.object(command_class, "do_command") as do_command:
+            menu_item()
+        do_command.assert_called_once_with(None)
+
+    def test_new_effort(self):
+        self.assert_runs(uicommand.EffortNew, self.icon._do_new_effort)
+
+    def test_new_task(self):
+        self.assert_runs(uicommand.TaskNew, self.icon._do_new_task)
+
+    def test_new_category(self):
+        self.assert_runs(uicommand.CategoryNew, self.icon._do_new_category)
+
+    def test_new_note(self):
+        self.assert_runs(uicommand.NoteNew, self.icon._do_new_note)

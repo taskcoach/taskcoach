@@ -22,17 +22,21 @@ import os
 import shutil
 import stat
 from . import xml
-from taskcoachlib import patterns
-from taskcoachlib.domain import base, task, category, note, effort, attachment
-import uuid
-from taskcoachlib.changes import ChangeMonitor, ChangeSynchronizer
+from .merge import merge_into
+from taskcoachlib import meta, patterns
+from taskcoachlib.domain import attachment, categorizable, category, effort
+from taskcoachlib.domain import note, task
+from taskcoachlib.i18n import _
 from taskcoachlib.meta.debug import log_step
-from taskcoachlib.filesystem import (
-    FilesystemNotifier,
-    FilesystemPollerNotifier,
-    resourcelock,
-)
-from pubsub import pub
+from taskcoachlib.patterns.snapshot import register_collection
+from taskcoachlib.filesystem import resourcelock
+from taskcoachlib.filesystem.watcher import FilesystemNotifier
+
+
+class ChangedOnDiskError(Exception):
+    """Saving would replace changes another program made to the file:
+    merge them in, reload, or save under another name first
+    (docs/PERSISTENCE_XML.md, Saving)."""
 
 
 def _isCloud(path):
@@ -51,17 +55,8 @@ class TaskCoachFilesystemNotifier(FilesystemNotifier):
         self.__taskFile = taskFile
         super().__init__()
 
-    def onFileChanged(self):
-        self.__taskFile.onFileChanged()
-
-
-class TaskCoachFilesystemPollerNotifier(FilesystemPollerNotifier):
-    def __init__(self, taskFile):
-        self.__taskFile = taskFile
-        super().__init__()
-
-    def onFileChanged(self):
-        self.__taskFile.onFileChanged()
+    def on_file_changed(self):
+        self.__taskFile.on_file_changed()
 
 
 def _discard(fd):
@@ -189,6 +184,35 @@ class SafeWriteFile(object):
         return _isCloud(os.path.dirname(self.__filename))
 
 
+# The saved state can no longer be reached by undo or redo
+_UNREACHABLE = object()
+
+_ATTACHMENT_CLASSES = (
+    attachment.FileAttachment,
+    attachment.URIAttachment,
+    attachment.MailAttachment,
+)
+
+
+def _saved_event_types():
+    """The events of saved data changing: an item's modification date,
+    an item added to or removed from another, saved view state (the
+    expanded state, a category's filter)."""
+    composites = (task.Task, category.Category, note.Note)
+    for cls in composites + (effort.Effort,) + _ATTACHMENT_CLASSES:
+        yield cls.modification_datetime_changed_event_type()
+    for cls in composites:
+        yield cls.addChildEventType()
+        yield cls.removeChildEventType()
+        yield cls.expansionChangedEventType()
+    for cls in (task.Task, category.Category) + _ATTACHMENT_CLASSES:
+        yield cls.notesChangedEventType()
+    for cls in composites:
+        yield cls.attachmentsChangedEventType()
+    yield task.Task.effortsChangedEventType()
+    yield category.Category.filterChangedEventType()
+
+
 class TaskFile(patterns.Observer):
     def __init__(self, *args, **kwargs):
         self.__filename = self.__lastFilename = ""
@@ -197,37 +221,23 @@ class TaskFile(patterns.Observer):
         self.__categories = category.CategoryList()
         self.__notes = note.NoteContainer()
         self.__efforts = effort.EffortList(self.tasks())
-        self.__guid = str(uuid.uuid4())
-        self.__syncMLConfig = (
-            None  # SyncML removed - kept for file format compatibility
-        )
-        self.__monitor = ChangeMonitor()
-        self.__changes = dict()
-        self.__changes[self.__monitor.guid()] = self.__monitor
+        self.__corrected_ids = {}
         self.__changedOnDisk = False
-        # A read-only task file writes nothing next to the file it
-        # loads, not even the .delta change log (used for merging).
+        # The file's (mtime, size) when last loaded or saved
+        self.__saved_stat = None
+        # A read-only task file (merge) sends no messages about itself
         self.__read_only = kwargs.pop("read_only", False)
-        if kwargs.pop("poll", False):
-            self.__notifier = TaskCoachFilesystemPollerNotifier(self)
-        else:
-            self.__notifier = TaskCoachFilesystemNotifier(self)
+        if not self.__read_only:
+            # Which items the file holds is stored data; views' lists
+            # are not (docs/UNDO_REDO.md, Architecture)
+            for each in (self.__tasks, self.__categories, self.__notes):
+                register_collection(each)
+        self.__notifier = TaskCoachFilesystemNotifier(self)
         self.__saving = False
-        for collection in [self.__tasks, self.__categories, self.__notes]:
-            self.__monitor.monitorCollection(collection)
-        for domainClass in [
-            task.Task,
-            category.Category,
-            note.Note,
-            effort.Effort,
-            attachment.FileAttachment,
-            attachment.URIAttachment,
-            attachment.MailAttachment,
-        ]:
-            self.__monitor.monitorClass(domainClass)
         super().__init__(*args, **kwargs)
-        # Register for tasks, categories, efforts and notes being changed so we
-        # can monitor when the task file needs saving (i.e. is 'dirty'):
+        # Unsaved (dirty) when saved data changes: an item's own data
+        # (every change sets its modification date), an item added or
+        # removed, saved view state (docs/PERSISTENCE_XML.md, Saving)
         for container in self.tasks(), self.categories(), self.notes():
             for eventType in container.modificationEventTypes():
                 self.registerObserver(
@@ -235,38 +245,12 @@ class TaskFile(patterns.Observer):
                     eventType,
                     eventSource=container,
                 )
-
-        for eventType in (
-            base.Object.markDeletedEventType(),
-            base.Object.markNotDeletedEventType(),
-        ):
-            self.registerObserver(self.onDomainObjectAddedOrRemoved, eventType)
-
-        for eventType in task.Task.modificationEventTypes():
-            if not eventType.startswith("pubsub"):
-                self.registerObserver(self.onTaskChanged_Deprecated, eventType)
-        pub.subscribe(self.onTaskChanged, "pubsub.task")
-        for eventType in effort.Effort.modificationEventTypes():
-            self.registerObserver(self.onEffortChanged, eventType)
-        for eventType in note.Note.modificationEventTypes():
-            if not eventType.startswith("pubsub"):
-                self.registerObserver(self.onNoteChanged_Deprecated, eventType)
-        pub.subscribe(self.onNoteChanged, "pubsub.note")
-        for eventType in category.Category.modificationEventTypes():
-            if not eventType.startswith("pubsub"):
-                self.registerObserver(
-                    self.onCategoryChanged_Deprecated, eventType
-                )
-        pub.subscribe(self.onCategoryChanged, "pubsub.category")
-        for eventType in (
-            attachment.FileAttachment.modificationEventTypes()
-            + attachment.URIAttachment.modificationEventTypes()
-            + attachment.MailAttachment.modificationEventTypes()
-        ):
-            if not eventType.startswith("pubsub"):
-                self.registerObserver(
-                    self.onAttachmentChanged_Deprecated, eventType
-                )
+        for event_type in _saved_event_types():
+            self.registerObserver(self.on_saved_data_changed, event_type)
+        self.__saved_at = None
+        self.registerObserver(
+            self.on_command_history_changed, "commandhistory.changed"
+        )
 
     def __str__(self):
         return self.filename()
@@ -278,9 +262,6 @@ class TaskFile(patterns.Observer):
             or item in self.categories()
             or item in self.efforts()
         )
-
-    def monitor(self):
-        return self.__monitor
 
     def categories(self):
         return self.__categories
@@ -294,14 +275,40 @@ class TaskFile(patterns.Observer):
     def efforts(self):
         return self.__efforts
 
-    def syncMLConfig(self):
-        return self.__syncMLConfig
+    def categorizables(self):
+        """Every item in the file that can have categories."""
+        return categorizable.categorizables_in(
+            self.tasks(), self.notes(), self.categories()
+        )
 
-    def guid(self):
-        return self.__guid
+    def holds(self, item):
+        """Whether the item is this file's now: in its lists, an effort
+        of one of its tasks, or a note or attachment one of them owns,
+        at any depth. By identity: a copy, or an item deleted and kept
+        for undo, is not. A window about an item closes once the file
+        no longer holds it (docs/UNDO_REDO.md, Windows)."""
+        if isinstance(item, effort.Effort):
+            owner = item.task()
+            return (
+                owner is not None
+                and self.holds(owner)
+                and any(each is item for each in owner.efforts())
+            )
+        lists = (self.tasks(), self.categories(), self.notes())
+        if any(each is item for collection in lists for each in collection):
+            return True
+        return any(each is item for each in self.owner_chains())
 
-    def changes(self):
-        return self.__changes
+    def owner_chains(self):
+        """Each owned note and attachment: its owners, from the top."""
+        return categorizable.owner_chains(
+            self.tasks(), self.notes(), self.categories()
+        )
+
+    def corrected_ids(self):
+        """The duplicate IDs the last load corrected: ID -> the items'
+        (type, path), the first kept the ID."""
+        return self.__corrected_ids
 
     def isEmpty(self):
         return (
@@ -314,120 +321,40 @@ class TaskFile(patterns.Observer):
     def onDomainObjectAddedOrRemoved(self, event):  # pylint: disable=W0613
         if self.__loading or self.__saving:
             return
-        self.markDirty()
+        self.mark_dirty(event)
 
-    def onTaskChanged(self, newValue, sender):
+    def on_saved_data_changed(self, event):
         if self.__loading or self.__saving:
             return
-        if sender in self.tasks():
-            self.markDirty()
+        if any(self.__holds(item) for item in event.sources()):
+            self.mark_dirty(event)
 
-    def onTaskChanged_Deprecated(self, event):
-        if self.__loading:
-            return
-        changedTasks = [
-            changedTask
-            for changedTask in event.sources()
-            if changedTask in self.tasks()
-        ]
-        if changedTasks:
-            self.markDirty()
-            for changedTask in changedTasks:
-                changedTask.markDirty()
-
-    def onEffortChanged(self, event):
-        if self.__loading or self.__saving:
-            return
-        changedEfforts = [
-            changedEffort
-            for changedEffort in event.sources()
-            if changedEffort.task() in self.tasks()
-        ]
-        if changedEfforts:
-            self.markDirty()
-            for changedEffort in changedEfforts:
-                changedEffort.markDirty()
-
-    def onCategoryChanged_Deprecated(self, event):
-        if self.__loading or self.__saving:
-            return
-        changedCategories = [
-            changedCategory
-            for changedCategory in event.sources()
-            if changedCategory in self.categories()
-        ]
-        if changedCategories:
-            self.markDirty()
-            # Mark all categorizables belonging to the changed category dirty;
-            # this is needed because in SyncML/vcard world, categories are not
-            # first-class objects. Instead, each task/contact/etc has a
-            # categories property which is a comma-separated list of category
-            # names. So, when a category name changes, every associated
-            # categorizable changes.
-            for changedCategory in changedCategories:
-                for categorizable in changedCategory.categorizables():
-                    categorizable.markDirty()
-
-    def onCategoryChanged(self, newValue, sender):
-        if self.__loading or self.__saving:
-            return
-        changedCategories = [
-            changedCategory
-            for changedCategory in [sender]
-            if changedCategory in self.categories()
-        ]
-        if changedCategories:
-            self.markDirty()
-            # Mark all categorizables belonging to the changed category dirty;
-            # this is needed because in SyncML/vcard world, categories are not
-            # first-class objects. Instead, each task/contact/etc has a
-            # categories property which is a comma-separated list of category
-            # names. So, when a category name changes, every associated
-            # categorizable changes.
-            for changedCategory in changedCategories:
-                for categorizable in changedCategory.categorizables():
-                    categorizable.markDirty()
-
-    def onNoteChanged_Deprecated(self, event):
-        if self.__loading:
-            return
-        # A note may be in self.notes() or it may be a note of another
-        # domain object.
-        self.markDirty()
-        for changedNote in event.sources():
-            changedNote.markDirty()
-
-    def onNoteChanged(self, newValue, sender):
-        if self.__loading:
-            return
-        # A note may be in self.notes() or it may be a note of another
-        # domain object.
-        self.markDirty()
-        sender.markDirty()
-
-    def onAttachmentChanged_Deprecated(self, event):
-        if self.__loading:
-            return
-        # Attachments don't know their owner, so we can't check whether the
-        # attachment is actually in the task file. Assume it is.
-        self.markDirty()
-        for changedAttachment in event.sources():
-            changedAttachment.markDirty()
+    def __holds(self, item):
+        """Whether the item is this file's. Owned notes and attachments
+        do not know their owner, so they are assumed to be."""
+        if isinstance(item, task.Task):
+            return item in self.tasks()
+        if isinstance(item, category.Category):
+            return item in self.categories()
+        if isinstance(item, effort.Effort):
+            return item.task() in self.tasks()
+        return True
 
     def setFilename(self, filename):
         if filename == self.__filename:
             return
         self.__lastFilename = filename or self.__filename
         self.__filename = filename
-        self.__notifier.setFilename(filename)
-        self._publish("taskfile.filenameChanged", filename=filename)
+        self.__notifier.set_filename(filename)
+        self._publish("taskfile.filenameChanged", filename)
 
-    def _publish(self, topic, **kwargs):
-        # A read-only task file (merge) is not the open file: messages
-        # about it would reach listeners of the open file (window title,
-        # backups).
+    def _publish(self, event_type, *value):
+        """An event about this file, the file as source."""
+        # A read-only task file (merge) is not the open file: events
+        # about it would reach listeners of every file (backups,
+        # autosave).
         if not self.__read_only:
-            pub.sendMessage(topic, **kwargs)
+            patterns.Event(event_type, self, *value).send()
 
     def filename(self):
         return self.__filename
@@ -438,49 +365,84 @@ class TaskFile(patterns.Observer):
     def is_dirty(self):
         return self.__needSave
 
-    def markDirty(self, force=False):
+    def mark_dirty(self, event=None, force=False):
+        if not patterns.CommandHistory().is_running():
+            # Changed outside an undo step: undo cannot bring back the
+            # saved state. Only the program's own changes should be
+            # (docs/UNDO_REDO.md, Design Intent 4)
+            self.__saved_at = _UNREACHABLE
+            if event is not None:
+                log_step(
+                    "changed outside an undo step:",
+                    ", ".join(sorted(event.types())),
+                    prefix="UNDO",
+                )
         if force or not self.__needSave:
             self.__needSave = True
-            self._publish("taskfile.dirty", taskFile=self)
+            self._publish("taskfile.dirty")
 
-    def markClean(self):
+    def mark_clean(self):
+        # The saved state is where undo and redo lead to this command
+        self.__saved_at = patterns.CommandHistory().current()
         if self.__needSave:
             self.__needSave = False
-            self._publish("taskfile.clean", taskFile=self)
+            self._publish("taskfile.clean")
 
-    def onFileChanged(self):
-        if not self.__saving:
-            import wx  # Not really clean but we're in another thread...
+    def on_command_history_changed(self, event):
+        """Undo or redo back to the saved state leaves nothing to
+        save. A command that changed nothing (a copy) leaves the file
+        as saved: the saved state moves along with it."""
+        current = patterns.CommandHistory().current()
+        if not self.__needSave:
+            self.__saved_at = current
+        elif (
+            self.__saved_at is not _UNREACHABLE and current is self.__saved_at
+        ):
+            self.mark_clean()
 
-            self.__changedOnDisk = True
-            wx.CallAfter(self._publish, "taskfile.changed", taskFile=self)
+    def on_file_changed(self):
+        # Checked on the main thread, after any save of ours finished
+        patterns.later.soon(None, self.check_disk)
+
+    def check_disk(self, notify=True):
+        """Notice a change by another program: the file differs from
+        what was last loaded or saved. Without notify, the caller tells
+        the user itself."""
+        if self.__saving or self.__read_only or self.__changedOnDisk:
+            return
+        if self.__saved_stat is None:
+            return  # Neither loaded nor saved yet
+        stat = self.__disk_stat()
+        if stat is None or stat == self.__saved_stat:
+            return
+        self.__changedOnDisk = True
+        log_step("%s changed on disk" % self.__filename, prefix="FILE")
+        if notify:
+            self._publish("taskfile.changed")
+
+    def __disk_stat(self):
+        try:
+            stat = os.stat(self.__filename)
+        except (OSError, TypeError):
+            return None
+        return stat.st_mtime_ns, stat.st_size
 
     @patterns.eventSource
-    def clear(self, regenerate=True, event=None):
-        self._publish("taskfile.aboutToClear", taskFile=self)
+    def clear(self, event=None):
+        self._publish("taskfile.aboutToClear")
         try:
             self.tasks().clear(event=event)
             self.categories().clear(event=event)
             self.notes().clear(event=event)
-            if regenerate:
-                self.__guid = str(uuid.uuid4())
-                self.__syncMLConfig = None
         finally:
-            self._publish("taskfile.justCleared", taskFile=self)
+            self._publish("taskfile.justCleared")
 
     def close(self):
-        delta = self.filename() + ".delta"
-        if os.path.exists(self.filename()) and not self.__read_only:
-            changes = xml.ChangesXMLReader(delta).read()
-            del changes[self.__monitor.guid()]
-            xml.ChangesXMLWriter(open(delta, "wb")).write(changes)
-
         self.setFilename("")
-        self.__guid = str(uuid.uuid4())
         self.clear()
-        self.__monitor.reset()
-        self.markClean()
+        self.mark_clean()
         self.__changedOnDisk = False
+        self.__saved_stat = None
 
     def stop(self):
         self.__notifier.stop()
@@ -491,36 +453,31 @@ class TaskFile(patterns.Observer):
         belong to the open file (Save selection). Otherwise it gets
         dirty, and autosaved, whenever they change later."""
         self.stop()
-        self.__monitor.removeInstance()
         self.removeInstance()
 
     def _read(self, fd):
         reader = xml.XMLReader(fd)
         result = reader.read()
         duplicate_ids = reader.get_duplicate_ids()
+        # Saved by this release before it wrote the forms older releases
+        # read: saved again in them (docs/PERSISTENCE_XML.md, Versions
+        # and Compatibility)
+        needed = reader.version_needed()
+        self.__rewrite = needed if needed > meta.data.tskversion else 0
         return result, duplicate_ids
 
     def _log_duplicate_ids(self, duplicate_ids):
-        """Log duplicate IDs found in the task file.
-
-        Duplicate IDs can cause issues with sync and data integrity.
-        To fix: Either manually edit the .tsk XML file to assign unique IDs,
-        or delete and recreate the affected items in Task Coach.
-        """
+        """Log the duplicate IDs the reader corrected: the first item
+        with each kept it, the others got new ones."""
         logger = logging.getLogger(__name__)
         logger.warning("=" * 70)
         logger.warning(
-            "WARNING: Duplicate IDs found in task file: %s", self.__filename
+            "Duplicate IDs corrected in task file: %s", self.__filename
         )
         logger.warning(
-            "This may cause sync issues or data integrity problems."
+            "The first item with each ID keeps it, the others got new"
         )
-        logger.warning("")
-        logger.warning("To fix: Either manually edit the .tsk XML file to")
-        logger.warning(
-            "assign unique IDs, or delete and recreate the affected"
-        )
-        logger.warning("items in Task Coach.")
+        logger.warning("IDs; the file is marked unsaved to keep this.")
         logger.warning("")
         logger.warning("Duplicate IDs and their locations:")
         for obj_id, locations in duplicate_ids.items():
@@ -540,83 +497,63 @@ class TaskFile(patterns.Observer):
         return open(self.__filename, "r", encoding="utf-8")
 
     def load(self, filename=None):
-        self._publish("taskfile.aboutToRead", taskFile=self)
+        self._publish("taskfile.aboutToRead")
         self.__loading = True
         if filename:
             self.setFilename(filename)
+        # Before reading: a change during the read is noticed later
+        stat = self.__disk_stat()
+        duplicate_ids = None
+        self.__corrected_ids = {}
+        self.__rewrite = 0
         try:
             if self.exists():
                 fd = self._openForRead()
                 try:
-                    (
-                        tasks,
-                        categories,
-                        notes,
-                        syncMLConfig,
-                        changes,
-                        guid,
-                    ), duplicate_ids = self._read(fd)
+                    (tasks, categories, notes), duplicate_ids = self._read(fd)
                 finally:
                     fd.close()
                 # Log any duplicate IDs found in the file
                 if duplicate_ids:
                     self._log_duplicate_ids(duplicate_ids)
+                    self.__corrected_ids = duplicate_ids
             else:
                 tasks = []
                 categories = []
                 notes = []
-                changes = dict()
-                guid = str(uuid.uuid4())
             self.clear()
-            self.__monitor.reset()
-            self.__changes = changes
-            self.__changes[self.__monitor.guid()] = self.__monitor
             self.categories().extend(categories)
             self.tasks().extend(tasks)
             self.notes().extend(notes)
-
-            def registerOtherObjects(objects):
-                for obj in objects:
-                    if isinstance(obj, base.CompositeObject):
-                        registerOtherObjects(obj.children())
-                    if isinstance(obj, note.NoteOwner):
-                        registerOtherObjects(obj.notes())
-                    if isinstance(obj, attachment.AttachmentOwner):
-                        registerOtherObjects(obj.attachments())
-                    if isinstance(obj, task.Task):
-                        registerOtherObjects(obj.efforts())
-                    if (
-                        isinstance(obj, note.Note)
-                        or isinstance(obj, attachment.Attachment)
-                        or isinstance(obj, effort.Effort)
-                    ):
-                        self.__monitor.setChanges(obj.id(), set())
-
-            registerOtherObjects(self.categories().rootItems())
-            registerOtherObjects(self.tasks().rootItems())
-            registerOtherObjects(self.notes().rootItems())
-            self.__monitor.resetAllChanges()
-            # syncMLConfig from file is ignored - SyncML removed
-            self.__guid = guid
-
-            if os.path.exists(self.filename()) and not self.__read_only:
-                # We need to reset the changes on disk because we're up to date.
-                xml.ChangesXMLWriter(
-                    open(self.filename() + ".delta", "wb")
-                ).write(self.__changes)
-
         except Exception:
             self.setFilename("")
             raise
         finally:
             self.__loading = False
-            self.markClean()
+            self.mark_clean()
+            if duplicate_ids:
+                # Corrected while reading: saving keeps the new IDs
+                self.mark_dirty()
+            if self.__rewrite and not self.__read_only:
+                log_step(
+                    "%s needs tskversion %d: saved again so that releases "
+                    "reading %d open it"
+                    % (self.__filename, self.__rewrite, meta.data.tskversion),
+                    prefix="FILE",
+                )
+                self.mark_dirty()
             self.__changedOnDisk = False
-            self._publish("taskfile.justRead", taskFile=self)
+            self.__saved_stat = stat
+            self._publish("taskfile.justRead")
 
     def save(self):
+        # Also when the watcher did not report it (yet); callers check
+        # first, to ask the user
+        self.check_disk(notify=False)
+        if self.__changedOnDisk:
+            raise ChangedOnDiskError(self.__filename)
         try:
-            self._publish("taskfile.aboutToSave", taskFile=self)
+            self._publish("taskfile.aboutToSave")
         except Exception:
             pass  # Ignore errors from subscribers
         # When encountering a problem while saving (disk full,
@@ -624,13 +561,7 @@ class TaskFile(patterns.Observer):
         # it's lost. So write to a temporary file and rename it if
         # everything went OK.
         self.__saving = True
-        # Merging consumes the recorded local changes (deletions too);
-        # if the save then fails, restore them, or the next save would
-        # bring deleted items back from the file on disk.
-        monitor_state = self.__monitor.snapshot()
         try:
-            self.merge_disk_changes()
-
             if self.__needSave or not os.path.exists(self.__filename):
                 fd = self._openForWrite()
                 try:
@@ -638,142 +569,51 @@ class TaskFile(patterns.Observer):
                         self.tasks(),
                         self.categories(),
                         self.notes(),
-                        self.syncMLConfig(),
-                        self.guid(),
                     )
                 except BaseException:
                     _discard(fd)
                     raise
                 fd.close()
 
-            self.markClean()
-        except BaseException:
-            self.__restore_local_changes(monitor_state)
-            raise
+            self.mark_clean()
+            self.__saved_stat = self.__disk_stat()
         finally:
             self.__saving = False
             self.__notifier.saved()
 
-    def __restore_local_changes(self, monitor_state):
-        """Put back the local changes a merge consumed, when they did
-        not reach the file (failed save, or a merge without save), so
-        the next save does not bring locally deleted items back."""
-        self.__monitor.restore(monitor_state)
-        recorded = self.__monitor.allChanges()
-        for obj in self.__all_objects():
-            changes = recorded.get(obj.id())
-            if obj.id() not in recorded:
-                # Brought in by the merge: record later edits
-                self.__monitor.resetChanges(obj)
-            elif changes is not None:
-                # In memory, so not deleted, even if the merge brought
-                # it back after a local deletion
-                changes.discard("__del__")
-
-    def __all_objects(self):
-        """Every domain object in memory, owned ones (notes,
-        attachments, efforts) included."""
-        for collection in (self.categories(), self.tasks(), self.notes()):
-            yield from ChangeSynchronizer.allObjects(collection.rootItems())
-
-    def merge_disk_changes(self):
-        # Without a save the local changes do not reach the file, so
-        # they must stay recorded for the next save.
-        monitor_state = None if self.__saving else self.__monitor.snapshot()
-        self.__loading = True
+    def merge_changes_on_disk(self):
+        """Merge the file as another program changed it: the newest
+        copy of each item (docs/PERSISTENCE_XML.md, Merging). Saving is
+        allowed again."""
+        disk_state = self.__changedOnDisk, self.__saved_stat
+        # Before merging: the merge marks the file unsaved, which starts
+        # an autosave. The stat is taken before reading, as in load().
+        self.__changedOnDisk, self.__saved_stat = False, self.__disk_stat()
         try:
-            if os.path.exists(
-                self.__filename
-            ):  # Not using self.exists() because DummyFile.exists returns True
-                # Instead of writing the content of memory, merge changes
-                # with the on-disk version and save the result.
-                self.__monitor.freeze()
-                try:
-                    fd = self._openForRead()
-                    (
-                        tasks,
-                        categories,
-                        notes,
-                        syncml_config,
-                        all_changes,
-                        guid,
-                    ), _duplicate_ids = self._read(fd)
-                    fd.close()
-                    # Don't log duplicates here - already logged on initial load
-
-                    self.__changes = all_changes
-                    # The sync consumes our recorded changes; keep them
-                    # to pass on to the other devices afterwards.
-                    local_changes = self.__monitor.snapshot()
-
-                    sync = ChangeSynchronizer(self.__monitor, all_changes)
-
-                    sync.sync(
-                        [
-                            (
-                                self.categories(),
-                                category.CategoryList(categories),
-                            ),
-                            (self.tasks(), task.TaskList(tasks)),
-                            (self.notes(), note.NoteContainer(notes)),
-                        ]
-                    )
-
-                    if self.__saving:
-                        # Tell the other devices about our changes as
-                        # the sync resolved them: an item it brought
-                        # back after a local deletion (edited elsewhere)
-                        # is not deleted, or they would delete it at
-                        # their save.
-                        for obj in self.__all_objects():
-                            changes = local_changes.get(obj.id())
-                            if changes is not None:
-                                changes.discard("__del__")
-                        for dev_guid, changes in list(self.__changes.items()):
-                            if dev_guid != self.__monitor.guid():
-                                changes.merge_changes(local_changes)
-
-                    self.__changes[self.__monitor.guid()] = self.__monitor
-                finally:
-                    self.__monitor.thaw()
-            else:
-                self.__changes = {self.__monitor.guid(): self.__monitor}
-
-            self.__monitor.resetAllChanges()
-            fd = self._openForWrite(".delta")
-            try:
-                xml.ChangesXMLWriter(fd).write(self.changes())
-            except BaseException:
-                _discard(fd)
-                raise
-            fd.close()
-
-            self.__changedOnDisk = False
-        finally:
-            self.__loading = False
-            if monitor_state is not None:
-                self.__restore_local_changes(monitor_state)
+            self.merge(self.__filename)
+        except BaseException:
+            self.__changedOnDisk, self.__saved_stat = disk_state
+            raise
+        log_step(
+            "merged the changes on disk of %s" % self.__filename,
+            prefix="FILE",
+        )
 
     def saveas(self, filename):
-        # An existing file there (and its change log) must not stay, or
-        # save() would merge it into this one; move it aside rather than
-        # deleting it, so a failed save puts it back.
-        delta = filename + ".delta"
-        had_delta = os.path.exists(delta)
+        # An existing file there is moved aside rather than replaced, so
+        # a failed save puts it back, also where the file is written in
+        # place (cloud folders).
         moved = []
+        disk_state = self.__changedOnDisk, self.__saved_stat
         try:
-            for path in (filename, delta):
-                if os.path.exists(path):
-                    moved.append((_move_aside(path), path))
+            if os.path.exists(filename):
+                moved.append((_move_aside(filename), filename))
             self.setFilename(filename)
+            # Another program's changes to the previous file stay there
+            self.__changedOnDisk, self.__saved_stat = False, None
             self.save()
         except BaseException:
-            if not had_delta:
-                # Written by the failed save for a file that had none
-                try:
-                    os.remove(delta)
-                except OSError:
-                    pass
+            self.__changedOnDisk, self.__saved_stat = disk_state
             for aside, path in moved:
                 try:
                     os.replace(aside, path)
@@ -795,74 +635,26 @@ class TaskFile(patterns.Observer):
         # to it.
         merge_file = TaskFile(read_only=True)
         self.__loading = True
-        try:
-            merge_file.load(filename)
-            category_map = dict()
-            self.tasks().removeItems(
-                self.objectsToOverwrite(self.tasks(), merge_file.tasks())
-            )
-            self.rememberCategoryLinks(category_map, self.tasks())
-            self.tasks().extend(merge_file.tasks().rootItems())
-            self.notes().removeItems(
-                self.objectsToOverwrite(self.notes(), merge_file.notes())
-            )
-            self.rememberCategoryLinks(category_map, self.notes())
-            self.notes().extend(merge_file.notes().rootItems())
-            self.categories().removeItems(
-                self.objectsToOverwrite(
-                    self.categories(), merge_file.categories()
-                )
-            )
-            self.categories().extend(merge_file.categories().rootItems())
-            self.restoreCategoryLinks(category_map)
-        finally:
-            # Also on failure: stop its file watcher, and leave loading
-            merge_file.close()
-            merge_file.stop()
-            self.__loading = False
-        self.markDirty(force=True)
-
-    def objectsToOverwrite(self, originalObjects, objectsToMerge):
-        objectsToOverwrite = []
-        for domainObject in objectsToMerge:
+        # An undo step (docs/UNDO_REDO.md, Design Intent)
+        with patterns.CommandHistory().action(_("Merge")):
             try:
-                objectsToOverwrite.append(
-                    originalObjects.getObjectById(domainObject.id())
-                )
-            except IndexError:
-                pass
-        return objectsToOverwrite
-
-    def rememberCategoryLinks(self, categoryMap, categorizables):
-        for categorizable in categorizables:
-            for categoryToLinkLater in categorizable.categories():
-                categoryMap.setdefault(categoryToLinkLater.id(), []).append(
-                    categorizable
-                )
-
-    def restoreCategoryLinks(self, categoryMap):
-        categories = self.categories()
-        for categoryId, categorizables in categoryMap.items():
-            try:
-                categoryToLink = categories.getObjectById(categoryId)
-            except IndexError:
-                continue  # Subcategory was removed by the merge
-            for categorizable in categorizables:
-                categorizable.addCategory(categoryToLink)
-                categoryToLink.addCategorizable(categorizable)
+                merge_file.load(filename)
+                merge_into(self, merge_file)
+            finally:
+                # Also on failure: stop its file watcher, and leave
+                # loading
+                merge_file.close()
+                merge_file.stop()
+                self.__loading = False
+            self.mark_dirty(force=True)
+        # Items replaced by their copies: the scheduler redoes them all
+        self._publish("taskfile.merged")
 
     def need_save(self):
         return not self.__loading and self.__needSave
 
     def changed_on_disk(self):
         return self.__changedOnDisk
-
-    def beginSync(self):
-        self.__loading = True
-
-    def endSync(self):
-        self.__loading = False
-        self.markDirty()
 
 
 class LockedTaskFile(TaskFile):
@@ -893,6 +685,11 @@ class LockedTaskFile(TaskFile):
         if self.__lock is not None:
             self.__lock.release()
             self.__lock = None
+
+    def pass_lock(self):
+        """Let go of the lock without releasing it: reopening the same
+        file keeps it held through the close, and load() adopts it."""
+        self.__lock = None
 
     def close(self):
         # Released only after closing succeeded: a failed close leaves

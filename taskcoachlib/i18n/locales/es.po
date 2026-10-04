@@ -3547,8 +3547,8 @@ msgid "Insert a new note with the selected categories checked"
 msgstr "Insertar una nueva nota con las categorías seleccionadas marcadas"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1936
-msgid "&Add attachment...\tShift-Ctrl-A"
-msgstr "&Agregar archivo adjunto...\tShift-Ctrl-A"
+msgid "&Add attachment..."
+msgstr "&Agregar archivo adjunto..."
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1960
 msgid "Error opening attachment"
@@ -4337,7 +4337,7 @@ msgstr "Cuadro de tareas"
 
 #: taskcoachlib/gui/viewer/task.py:499
 msgid "Lay out tasks by"
-msgstr ""
+msgstr "Distribuir las tareas por"
 
 #: taskcoachlib/gui/viewer/task.py:604
 msgid "Hierarchical calendar"
@@ -4345,7 +4345,7 @@ msgstr "Calendario jerárquico"
 
 #: taskcoachlib/gui/viewer/task.py:647
 msgid "Hierarchical calendar viewer configuration"
-msgstr ""
+msgstr "Configuración del visor de calendario jerárquico"
 
 #: taskcoachlib/gui/viewer/task.py:861
 msgid "Calendar viewer configuration"
@@ -4459,7 +4459,7 @@ msgstr "Mostar/ocultar columna de prerequisitos"
 
 #: taskcoachlib/gui/viewer/task.py:1194
 msgid "Show/hide dependents column"
-msgstr ""
+msgstr "Mostrar/ocultar columna de dependientes"
 
 #: taskcoachlib/gui/viewer/task.py:1197
 msgid "Show/hide percentage complete column"
@@ -7188,19 +7188,19 @@ msgstr "Encabezados"
 
 #: taskcoachlib/widgets/hcalendarconfig.py:53
 msgid "Week number"
-msgstr ""
+msgstr "Número de semana"
 
 #: taskcoachlib/widgets/hcalendarconfig.py:63
 msgid "Calendar span"
-msgstr ""
+msgstr "Periodo del calendario"
 
 #: taskcoachlib/widgets/hcalendarconfig.py:65
 msgid "Week"
-msgstr ""
+msgstr "Semana"
 
 #: taskcoachlib/widgets/hcalendarconfig.py:65
 msgid "Work week"
-msgstr ""
+msgstr "Semana laboral"
 
 #: taskcoachlib/widgets/password.py:32
 msgid "Password:"
@@ -7259,7 +7259,7 @@ msgstr "Expresión &regular"
 
 #: taskcoachlib/widgets/searchctrl.py:72
 msgid "Consider search text as a regular expression"
-msgstr ""
+msgstr "Considerar el texto de búsqueda como una expresión regular"
 
 #: taskcoachlib/widgets/searchctrl.py:141
 msgid "This is an invalid regular expression."
@@ -7305,3 +7305,643 @@ msgstr "Error al abrir la URL"
 
 #~ msgid "&Delete\tDEL"
 #~ msgstr "&Borrar\tDEL"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%d mins"
+msgstr "%d min"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%d secs"
+msgstr "%d s"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%s (Attachment)"
+msgstr "%s (adjunto)"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%s (Category)"
+msgstr "%s (categoría)"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%s (Effort)"
+msgstr "%s (esfuerzo)"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%s (Note)"
+msgstr "%s (nota)"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%s (Task)"
+msgstr "%s (tarea)"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%s and %s"
+msgstr "%s y %s"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "%s copy"
+msgstr "%s copia"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "%s copy %d"
+msgstr "%s copia %d"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "%s is the open task file.\nSave the selected tasks to another file."
+msgstr "%s es el archivo de tareas abierto.\nGuarde las tareas seleccionadas en otro archivo."
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "%s was changed by another program.\nReload it, or merge its changes into what is open?"
+msgstr "%s ha sido modificado por otro programa.\n¿Recargarlo, o combinar sus cambios con lo que está abierto?"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "%s was changed by another program.\nSaving would replace its changes: merge them into yours first, or save yours under another name."
+msgstr "%s ha sido modificado por otro programa.\nGuardar reemplazaría esos cambios: combínelos primero con los suyos, o guarde los suyos con otro nombre."
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%s, %s and %s"
+msgstr "%s, %s y %s"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "%s: file changed on disk"
+msgstr "%s: archivo modificado en el disco"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "&Auto-scroll to selection"
+msgstr "&Desplazar automáticamente a la selección"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "&Cancel"
+msgstr "&Cancelar"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "&Consolidate efforts per task"
+msgstr "&Consolidar esfuerzos por tarea"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "&Deselect All\tCtrl+Shift+A"
+msgstr "&Deseleccionar todo\tCtrl+Shift+A"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "&Expand all\tShift+Ctrl+E"
+msgstr "&Expandir todos los elementos\tShift+Ctrl+E"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "&Later"
+msgstr "&Más tarde"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "&Merge"
+msgstr "&Combinar"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "&Merge and save"
+msgstr "Combinar y &guardar"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "&Reload"
+msgstr "&Recargar"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "&Status"
+msgstr "&Estado"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "&Uncheck all categories"
+msgstr "&Desmarcar todas las categorías"
+
+#: taskcoachlib/gui/menu.py
+msgid "(No categories defined yet)"
+msgstr "(Aún no hay categorías definidas)"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "(none)"
+msgstr "(ninguno)"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "... and %d more, listed in the log"
+msgstr "... y %d más, listados en el registro"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "0 minutes"
+msgstr "0 minutos"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "0 secs"
+msgstr "0 s"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "1 min"
+msgstr "1 min"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "1 sec"
+msgstr "1 s"
+
+#: taskcoachlib/domain/task/task.py
+msgid "Actual start date has passed"
+msgstr "La fecha de inicio real ha pasado"
+
+#: taskcoachlib/command/effortCommands.py
+msgid "Add effort to \"%s\""
+msgstr "Añadir esfuerzo a \"%s\""
+
+#: taskcoachlib/command/effortCommands.py
+msgid "Add efforts"
+msgstr "Añadir esfuerzos"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Adjust Due Date"
+msgstr "Ajustar la fecha de vencimiento"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Adjust Start Date"
+msgstr "Ajustar la fecha de inicio"
+
+#: taskcoachlib/gui/menu.py
+msgid "All tasks are completed!"
+msgstr "¡Todas las tareas están completadas!"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Attachment"
+msgstr "Adjunto"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Automatic"
+msgstr "Automático"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Autosave saves the correction; the file as it was can be restored with File > Manage backups."
+msgstr "El guardado automático guarda la corrección; el archivo tal como estaba se puede restaurar con Archivo > Administrar respaldos."
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Background"
+msgstr "Fondo"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "C&reation date"
+msgstr "Fecha de &creación"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Calculated time spent until now"
+msgstr "Tiempo dedicado calculado hasta ahora"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Cannot Delete - Category In Use"
+msgstr "No se puede eliminar - categoría en uso"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Cannot delete the selected category/categories because they have assigned objects:"
+msgstr "No se pueden eliminar las categorías seleccionadas porque tienen objetos asignados:"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Category &icons"
+msgstr "&Iconos de categorías"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Category icons"
+msgstr "Iconos de categorías"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Category: %s"
+msgstr "Categoría: %s"
+
+#: taskcoachlib/command/effortCommands.py
+msgid "Change effort duration of \"%s\""
+msgstr "Cambiar la duración del esfuerzo de \"%s\""
+
+#: taskcoachlib/command/effortCommands.py
+msgid "Change effort durations"
+msgstr "Cambiar la duración de los esfuerzos"
+
+#: taskcoachlib/command/effortCommands.py
+msgid "Change effort entry mode of \"%s\""
+msgstr "Cambiar el modo de entrada del esfuerzo de \"%s\""
+
+#: taskcoachlib/command/effortCommands.py
+msgid "Change effort entry modes"
+msgstr "Cambiar el modo de entrada de los esfuerzos"
+
+#: taskcoachlib/command/taskCommands.py
+msgid "Change percentage complete"
+msgstr "Cambiar el porcentaje completado"
+
+#: taskcoachlib/command/taskCommands.py
+msgid "Change planned duration mode of \"%s\""
+msgstr "Cambiar el modo de duración prevista de \"%s\""
+
+#: taskcoachlib/command/taskCommands.py
+msgid "Change planned duration modes"
+msgstr "Cambiar el modo de duración prevista"
+
+#: taskcoachlib/command/taskCommands.py
+msgid "Change planned duration of \"%s\""
+msgstr "Cambiar la duración prevista de \"%s\""
+
+#: taskcoachlib/command/taskCommands.py
+msgid "Change planned durations"
+msgstr "Cambiar las duraciones previstas"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Change the priority of the selected task(s)"
+msgstr "Cambiar la prioridad de la(s) tarea(s) seleccionada(s)"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Check &all categories"
+msgstr "Marcar &todas las categorías"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Check all category checkboxes"
+msgstr "Marcar todas las casillas de categorías"
+
+#: taskcoachlib/widgets/iconpicker.py
+msgid "Choose Icon"
+msgstr "Elegir icono"
+
+#: taskcoachlib/widgets/iconpicker.py
+msgid "Clear"
+msgstr "Borrar"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Co&llapse all\tShift+Ctrl+C"
+msgstr "&Contraer todos los elementos\tShift+Ctrl+C"
+
+#: taskcoachlib/domain/task/task.py
+msgid "Completion date is set"
+msgstr "La fecha de finalización está definida"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Consolidate all efforts per task to a single effort before rounding"
+msgstr "Consolidar todos los esfuerzos de cada tarea en uno solo antes de redondear"
+
+#: taskcoachlib/widgets/iconpicker.py
+msgid "Context"
+msgstr "Contexto"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Dependants"
+msgstr "Dependientes"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Derived values"
+msgstr "Valores derivados"
+
+#: taskcoachlib/domain/task/task.py
+msgid "Due date has passed"
+msgstr "La fecha de vencimiento ha pasado"
+
+#: taskcoachlib/domain/task/task.py
+msgid "Due within %d hours"
+msgstr "Vence en menos de %d horas"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Duplicate IDs"
+msgstr "Identificadores duplicados"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Duration"
+msgstr "Duración"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Edit in &place\tF2"
+msgstr "Editar en la &lista\tF2"
+
+#: taskcoachlib/command/categoryCommands.py
+msgid "Edit style priority"
+msgstr "Editar prioridad de estilo"
+
+#: taskcoachlib/command/categoryCommands.py
+msgid "Edit style priority of \"%s\""
+msgstr "Editar prioridad de estilo de \"%s\""
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Edit this cell in the list itself"
+msgstr "Editar esta celda en la propia lista"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Editing Multiple %s - Modal Window"
+msgstr "Edición de varios %s - ventana modal"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Effective values"
+msgstr "Valores efectivos"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Efforts"
+msgstr "Esfuerzos"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Email"
+msgstr "Correo"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Folder"
+msgstr "Carpeta"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Foreground"
+msgstr "Primer plano"
+
+#: taskcoachlib/render.py
+msgid "Fri"
+msgstr "vie"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "From"
+msgstr "De"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "From address"
+msgstr "Dirección del remitente"
+
+#: taskcoachlib/domain/task/task.py
+msgid "Has incomplete prerequisites"
+msgstr "Tiene requisitos sin completar"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Hide the main window"
+msgstr "Ocultar la ventana principal"
+
+#: taskcoachlib/widgets/iconpicker.py
+msgid "Hints"
+msgstr "Palabras clave"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Implicit"
+msgstr "Implícito"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Initializing..."
+msgstr "Inicializando..."
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Item"
+msgstr "Elemento"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Keep the selected item centered when the list changes"
+msgstr "Mantener el elemento seleccionado centrado cuando cambia la lista"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Kept its ID: %s"
+msgstr "Conservó su identificador: %s"
+
+#: taskcoachlib/gui/menu.py
+msgid "Large images (%dx%d) on the toolbar"
+msgstr "Imágenes grandes (%dx%d) en la barra de herramientas"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Link"
+msgstr "Enlace"
+
+#: taskcoachlib/gui/menu.py
+msgid "Medium-sized images (%dx%d) on the toolbar"
+msgstr "Imágenes medianas (%dx%d) en la barra de herramientas"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Merged the changes on disk of %s"
+msgstr "Se combinaron los cambios en disco de %s"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Mixed"
+msgstr "Mixto"
+
+#: taskcoachlib/render.py
+msgid "Mon"
+msgstr "lun"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "N/A"
+msgstr "N/D"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "New ID: %s"
+msgstr "Nuevo identificador: %s"
+
+#: taskcoachlib/gui/uicommand/mixin_uicommand.py
+msgid "No Templates"
+msgstr "Sin plantillas"
+
+#: taskcoachlib/domain/task/task.py
+msgid "No actual start date"
+msgstr "Sin fecha de inicio real"
+
+#: taskcoachlib/gui/uicommand/mixin_uicommand.py
+msgid "No templates available. Create a template first by saving a task as a template."
+msgstr "No hay plantillas disponibles. Cree primero una plantilla guardando una tarea como plantilla."
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Override values"
+msgstr "Valores propios"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "P&aste as subcategory"
+msgstr "Pegar como subc&ategoría"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "P&aste as subitem"
+msgstr "Pegar como &subelemento"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "P&aste as subnote"
+msgstr "Pegar como sub&nota"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "P&aste as subtask"
+msgstr "Pegar como sub&tarea"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Path"
+msgstr "Ruta"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Path is only shown for single items"
+msgstr "La ruta solo se muestra para un único elemento"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Planned duration"
+msgstr "Duración prevista"
+
+#: taskcoachlib/domain/task/task.py
+msgid "Planned start date has passed"
+msgstr "La fecha prevista de inicio ha pasado"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Please remove these assignments before deleting the category."
+msgstr "Elimine estas asignaciones antes de eliminar la categoría."
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Presets..."
+msgstr "Predeterminados..."
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Print Preview Error"
+msgstr "Error en la vista previa de impresión"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Reset &window layout"
+msgstr "Restablecer la disposición de &ventanas"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Reset all panes to their default positions"
+msgstr "Restablecer todos los paneles a su posición predeterminada"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Reset to zero"
+msgstr "Restablecer a cero"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Retroactive"
+msgstr "Retroactivo"
+
+#: taskcoachlib/render.py
+msgid "Sat"
+msgstr "sáb"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Save &as..."
+msgstr "Guardar &como..."
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Save to keep the correction, Save as to keep it in another file, or close without saving to leave the file as it was."
+msgstr "Guarde para conservar la corrección, Guardar como para conservarla en otro archivo, o cierre sin guardar para dejar el archivo como estaba."
+
+#: taskcoachlib/widgets/iconpicker.py
+msgid "Search icons..."
+msgstr "Buscar iconos..."
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Select &All\tCtrl+A"
+msgstr "Seleccionar &todo\tCtrl+A"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Sent"
+msgstr "Enviado"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Show/hide category icons column"
+msgstr "Mostrar/ocultar columna de iconos de categorías"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Show/hide status combo column (icon and text)"
+msgstr "Mostrar/ocultar columna de estado (icono y texto)"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Show/hide status icon column"
+msgstr "Mostrar/ocultar columna del icono de estado"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Show/hide status text column"
+msgstr "Mostrar/ocultar columna del texto de estado"
+
+#: taskcoachlib/gui/menu.py
+msgid "Small images (%dx%d) on the toolbar"
+msgstr "Imágenes pequeñas (%dx%d) en la barra de herramientas"
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Some items in %s had the same ID, which must be unique. They have been separated: the first item with each ID kept it, the others got new IDs."
+msgstr "Algunos elementos de %s tenían el mismo identificador, que debe ser único. Se han separado: el primer elemento con cada identificador lo conservó y los demás recibieron uno nuevo."
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Source"
+msgstr "Origen"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Standard"
+msgstr "Estándar"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Status"
+msgstr "Estado"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Status &combo"
+msgstr "Estado (icono y te&xto)"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Status &icon"
+msgstr "&Icono de estado"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Status combo"
+msgstr "Estado (icono y texto)"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Status icon"
+msgstr "Icono de estado"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Style priority"
+msgstr "Prioridad de estilo"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Subcategories are mutually exclusive"
+msgstr "Las subcategorías son mutuamente excluyentes"
+
+#: taskcoachlib/render.py
+msgid "Sun"
+msgstr "dom"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "There was a problem creating the print preview."
+msgstr "Se produjo un problema al crear la vista previa de impresión."
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "This item has no parent objects"
+msgstr "Este elemento no tiene elementos padre"
+
+#: taskcoachlib/render.py
+msgid "Thu"
+msgstr "jue"
+
+#: taskcoachlib/render.py
+msgid "Tue"
+msgstr "mar"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Uncheck all category checkboxes"
+msgstr "Desmarcar todas las casillas de categorías"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Unknown"
+msgstr "Desconocido"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Warning: start date-time is after the stop date-time!"
+msgstr "Aviso: ¡la fecha y hora de inicio es posterior a la de fin!"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Warning: start date-time is in the future!"
+msgstr "Aviso: ¡la fecha y hora de inicio está en el futuro!"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Warning: stop date-time is in the future!"
+msgstr "Aviso: ¡la fecha y hora de fin está en el futuro!"
+
+#: taskcoachlib/render.py
+msgid "Wed"
+msgstr "mié"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "You have unsaved changes.\nSave them before restoring a backup?"
+msgstr "Tiene cambios sin guardar.\n¿Guardarlos antes de restaurar un respaldo?"
+
+#: taskcoachlib/widgets/maskedtimectrl.py
+msgid "d"
+msgstr "d"
+
+#: taskcoachlib/widgets/maskedtimectrl.py
+msgid "days"
+msgstr "días"
+
+#: taskcoachlib/widgets/maskedtimectrl.py
+msgid "mins"
+msgstr "min"
+
+#: taskcoachlib/widgets/maskedtimectrl.py
+msgid "secs"
+msgstr "s"
+
+#: taskcoachlib/gui/viewer/task.py
+msgid "Show the \"Manual ordering\" column, then drag and drop items from this column to sort them arbitrarily."
+msgstr "Muestre la columna \"Ordenación manual\" y arrastre y suelte elementos de esta columna para ordenarlos libremente."

@@ -25,10 +25,16 @@ All locale concerns follow the same three-layer access pattern:
 3. **Effective function** — combines both: setting → detection → default.
    This is what controls and renderers call.
 
+The settings functions read the application's one settings object
+through the settings module ([SETTINGS.md](SETTINGS.md#usage)):
+the date and time formats as the application started with them, as the
+lists show dates (a change applies after a restart, as Preferences
+says), the other options as they are now.
+
 Example (date format):
 ```
 getDetectedLocaleDateFormat()     # Layer 1: strftime("%x") probe
-getDateFormatFromSettings()       # Layer 2: settings.Settings().get("view", "dateformat")
+getDateFormatFromSettings()       # Layer 2: settings.get("view", "dateformat"), as at start
 getEffectiveDateFormat()          # Layer 3: setting → detection → ISO default
 ```
 
@@ -78,7 +84,7 @@ Returns a dict with numeric formatting conventions. Key fields:
 | `thousands_sep` | Thousands separator | `","` | `"."` | Can be empty or non-ASCII |
 | `grouping` | Grouping pattern | `[3, 3, 0]` | `[3, 3, 0]` | — |
 
-- **Files:** `numericctrl.py`, `currencyctrl.py`, `masked.py`
+- **Files:** `numericctrl.py`, `currencyctrl.py`
 
 ### Environment variables + locale.getlocale() (language)
 
@@ -87,10 +93,15 @@ Cascading checks for language selection:
 1. Command-line options (`--language`, `--pofile`)
 2. User preference (`view/language_set_by_user`)
 3. External setting (`view/language`)
-4. `LANG` environment variable (strip `.UTF-8` suffix)
-5. `LC_ALL` environment variable
-6. `locale.getlocale(locale.LC_MESSAGES)`
-7. Final fallback: `"en_US"`
+4. The environment, in POSIX order: the first set of `LC_ALL`,
+   `LC_MESSAGES` and `LANG` (encoding suffix such as `.UTF-8`
+   stripped; `C` or `POSIX` goes on to the next step)
+5. `locale.getlocale(locale.LC_MESSAGES)`
+6. Final fallback: `"en_US"`
+
+Steps 4 and 5 are `i18n.system_language()`, the one reading of the
+environment's language: the spell check's default language and the
+strings translated before the translator exists use it too.
 
 - **Files:** `application.py`, `i18n/__init__.py`
 
@@ -111,7 +122,7 @@ Data flow example (German locale, comma decimal):
 User types "25,50"
   → CurrencyCtrl displays "25,50" (locale)
   → CurrencyCtrl.GetValue() → 25.5 (Python float, period)
-    → AttributeSync → domain → task.setHourlyFee(25.5)
+    → AttributeSync → domain → task.set_hourly_fee(25.5)
       → XML writer: str(25.5) → "25.5" (period, always)
 ```
 

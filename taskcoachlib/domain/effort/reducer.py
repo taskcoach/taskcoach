@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import date, task
-from pubsub import pub
 from . import composite
 from . import effortlist
 from . import effort
@@ -44,12 +43,12 @@ class EffortAggregator(
         )
         self.__end_of_period = getattr(date.DateTime, "endOf%s" % aggregation)
         super().__init__(*args, **kwargs)
-        pub.subscribe(
-            self.onCompositeEmpty,
+        patterns.Publisher().registerObserver(
+            self.on_composite_empty,
             composite.CompositeEffort.compositeEmptyEventType(),
         )
-        pub.subscribe(
-            self.onTaskEffortChanged, task.Task.effortsChangedEventType()
+        patterns.Publisher().registerObserver(
+            self.on_task_efforts_changed, task.Task.effortsChangedEventType()
         )
         patterns.Publisher().registerObserver(
             self.onChildAddedToTask, eventType=task.Task.addChildEventType()
@@ -63,18 +62,26 @@ class EffortAggregator(
             self.observable().removeItemEventType(),
             eventSource=self.observable(),
         )
-        pub.subscribe(
-            self.onEffortStartChanged, effort.Effort.startChangedEventType()
+        patterns.Publisher().registerObserver(
+            self.on_effort_start_changed, effort.Effort.startChangedEventType()
         )
-        pub.subscribe(
-            self.onRevenueChanged, task.Task.hourlyFeeChangedEventType()
+        patterns.Publisher().registerObserver(
+            self.on_effort_stop_changed, effort.Effort.stopChangedEventType()
+        )
+        patterns.Publisher().registerObserver(
+            self.on_hourly_fee_changed, task.Task.hourlyFeeChangedEventType()
         )
 
     def detach(self):
         super().detach()
+        patterns.Publisher().removeObserver(self.on_composite_empty)
+        patterns.Publisher().removeObserver(self.on_task_efforts_changed)
         patterns.Publisher().removeObserver(self.onChildAddedToTask)
         patterns.Publisher().removeObserver(self.onChildRemovedFromTask)
         patterns.Publisher().removeObserver(self.onTaskRemoved)
+        patterns.Publisher().removeObserver(self.on_hourly_fee_changed)
+        patterns.Publisher().removeObserver(self.on_effort_start_changed)
+        patterns.Publisher().removeObserver(self.on_effort_stop_changed)
 
     def extend(self, efforts):  # pylint: disable=W0221
         for effort in efforts:
@@ -102,14 +109,16 @@ class EffortAggregator(
     def __extend_self_with_composites(self, new_composites, event=None):
         """Add composites to the aggregator."""
         super().extendSelf(new_composites, event=event)
+        tracking = patterns.Event()
         for new_composite in new_composites:
             if new_composite.isBeingTracked():
                 self.__trackedComposites.add(new_composite)
-                pub.sendMessage(
-                    effort.Effort.trackingChangedEventType(),
-                    newValue=True,
-                    sender=new_composite,
+                tracking.addSource(
+                    new_composite,
+                    True,
+                    type=effort.Effort.trackingChangedEventType(),
                 )
+        tracking.send()
 
     @patterns.eventSource
     def removeItemsFromSelf(self, tasks, event=None):
@@ -139,29 +148,27 @@ class EffortAggregator(
             affected_composite._invalidateCache()
             affected_composite.notifyObserversOfDurationOrEmpty()
 
-    def onTaskEffortChanged(self, newValue, sender):
-        if sender not in self.observable():
-            return
-        new_composites = []
-        newValue, oldValue = newValue
+    def on_task_efforts_changed(self, event):
+        for sender in event.sources():
+            # By identity, as in EffortList
+            if any(sender is each for each in self.observable()):
+                self.__task_efforts_changed(sender, *event.value(sender))
+
+    def __task_efforts_changed(self, changed_task, new_efforts, old_efforts):
         efforts_added = [
-            effort for effort in newValue if effort not in oldValue
+            effort for effort in new_efforts if effort not in old_efforts
         ]
         efforts_removed = [
-            effort for effort in oldValue if effort not in newValue
+            effort for effort in old_efforts if effort not in new_efforts
         ]
-        new_composites.extend(self.__create_composites(sender, efforts_added))
-        self.__extend_self_with_composites(new_composites)
+        self.__extend_self_with_composites(
+            self.__create_composites(changed_task, efforts_added)
+        )
         for affected_composite in self.__get_composites_for_efforts(
             efforts_added + efforts_removed
         ):
-            is_tracked = affected_composite.isBeingTracked()
-            was_tracked = affected_composite in self.__trackedComposites
-            if is_tracked and not was_tracked:
-                self.__trackedComposites.add(affected_composite)
-            elif not is_tracked and was_tracked:
-                self.__trackedComposites.remove(affected_composite)
-            affected_composite.onTimeSpentChanged(newValue, sender)
+            self.__update_tracked(affected_composite)
+            affected_composite.time_spent_changed()
 
     def onChildAddedToTask(self, event):
         new_composites = []
@@ -183,36 +190,52 @@ class EffortAggregator(
             affected_composite._invalidateCache()
             affected_composite.notifyObserversOfDurationOrEmpty()
 
-    def onCompositeEmpty(self, sender):
-        # pylint: disable=W0621
-        if sender not in self:
-            return
-        key = self.__key_for_composite(sender)
-        if key in self.__composites:
-            # A composite may already have been removed, e.g. when a
-            # parent and child task have effort in the same period
-            del self.__composites[key]
-        self.__remove_composites_from_self([sender])
+    def on_composite_empty(self, event):
+        for empty in event.sources():
+            if empty not in self:
+                continue
+            key = self.__key_for_composite(empty)
+            if key in self.__composites:
+                # A composite may already have been removed, e.g. when a
+                # parent and child task have effort in the same period
+                del self.__composites[key]
+            self.__remove_composites_from_self([empty])
 
-    def onEffortStartChanged(self, newValue, sender):  # pylint: disable=W0613
-        new_composites = []
-        key = self.__key_for_effort(sender)
-        task = sender.task()  # pylint: disable=W0621
-        if (task in self.observable()) and (key not in self.__composites):
-            new_composites.extend(self.__create_composites(task, [sender]))
-        self.__extend_self_with_composites(new_composites)
-        for affected_composite in self.__get_composites_for_efforts([sender]):
-            is_tracked = affected_composite.isBeingTracked()
-            was_tracked = affected_composite in self.__trackedComposites
-            if is_tracked and not was_tracked:
-                self.__trackedComposites.add(affected_composite)
-            elif not is_tracked and was_tracked:
-                self.__trackedComposites.remove(affected_composite)
-            affected_composite.onTimeSpentChanged(newValue, sender)
+    def on_effort_start_changed(self, event):
+        for moved in event.sources():
+            key = self.__key_for_effort(moved)
+            owner = moved.task()
+            if owner in self.observable() and key not in self.__composites:
+                self.__extend_self_with_composites(
+                    self.__create_composites(owner, [moved])
+                )
+            for affected_composite in self.__get_composites_for_efforts(
+                [moved]
+            ):
+                self.__update_tracked(affected_composite)
+                affected_composite.time_spent_changed()
 
-    def onRevenueChanged(self, newValue, sender):
-        for affected_composite in self.__get_composites_for_tasks([sender]):
-            affected_composite.onRevenueChanged(newValue, sender)
+    def on_effort_stop_changed(self, event):
+        for affected_composite in self.__get_composites_for_efforts(
+            list(event.sources())
+        ):
+            self.__update_tracked(affected_composite)
+            # The same efforts, another total
+            affected_composite.notifyObserversOfDurationOrEmpty()
+
+    def __update_tracked(self, composite):
+        is_tracked = composite.isBeingTracked()
+        was_tracked = composite in self.__trackedComposites
+        if is_tracked and not was_tracked:
+            self.__trackedComposites.add(composite)
+        elif not is_tracked and was_tracked:
+            self.__trackedComposites.remove(composite)
+
+    def on_hourly_fee_changed(self, event):
+        for affected_composite in self.__get_composites_for_tasks(
+            event.sources()
+        ):
+            affected_composite.revenue_changed()
 
     def __get_composites_for_tasks(self, tasks):
         tasks = set(tasks)

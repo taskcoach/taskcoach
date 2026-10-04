@@ -27,10 +27,9 @@ class Note(
     and attachments. In addition, a note may be assigned to categories.
 
     Appearance (derived and effective values) is handled by the base class
-    and ComputeStyles polling. No explicit calls needed.
+    and the master loop. No explicit calls needed.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Note: Effective appearance is computed by ComputeStyles polling
-
+        # Note: Effective appearance is computed by the master loop

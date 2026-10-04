@@ -130,7 +130,10 @@ class NoRecurrenceTest(test.TestCase, CommonRecurrenceTestsMixin):
         self.assertFalse(self.recur)
 
     def testSetMaxRecurrenceCount_GetMultipleDates(self):
-        pass
+        # Without a recurrence there is nothing to count down
+        self.recur.max = 1
+        self.recur(date.Now(), next=False)
+        self.assertFalse(self.recur)
 
 
 class DailyRecurrenceTest(

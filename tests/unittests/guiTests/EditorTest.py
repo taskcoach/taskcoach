@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import test
-from taskcoachlib import gui, config, persistence
+from taskcoachlib import gui, persistence
 from taskcoachlib.domain import note, base
 from unittests import dummy
 
@@ -37,13 +37,12 @@ class EditorUnderTest(gui.dialog.editor.NoteEditor):
 class EditorTestCase(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
         self.taskFile = persistence.TaskFile()
         self.items = base.filter.SearchFilter(self.taskFile.notes())
         self.item = note.Note(subject="item")
         self.items.append(self.item)
         self.editor = EditorUnderTest(
-            self.frame, [self.item], self.settings, self.items, self.taskFile
+            self.frame, [self.item], self.items, self.taskFile
         )
         self.appearance = self.editor._interior.getPage("appearance")
 

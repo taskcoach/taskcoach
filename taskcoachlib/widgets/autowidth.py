@@ -20,6 +20,7 @@ import os
 import wx
 from wx.lib.agw import hypertreelist
 from taskcoachlib import operating_system
+from taskcoachlib import patterns
 
 
 class AutoColumnWidthMixin(object):
@@ -41,16 +42,13 @@ class AutoColumnWidthMixin(object):
 
     def __init__(self, *args, **kwargs):
         self.__is_auto_resizing = False
-        self.__header_window = None
-        self.__resize_cursor = wx.Cursor(wx.CURSOR_SIZEWE)
-        self.__no_entry_cursor = wx.Cursor(wx.CURSOR_NO_ENTRY)
+        from taskcoachlib.widgets.draganddrop import not_allowed_cursor
+
+        self.__no_entry_cursor = not_allowed_cursor()
         self.__current_cursor = wx.STANDARD_CURSOR
         self.ResizeColumn = kwargs.pop("resizeableColumn", -1)
         self.ResizeColumnMinWidth = kwargs.pop("resizeableColumnMinWidth", 50)
         super().__init__(*args, **kwargs)
-
-    def SetResizeColumn(self, column):
-        self.ResizeColumn = column
 
     def ToggleAutoResizing(self, on):
         if on == self.__is_auto_resizing:
@@ -61,7 +59,7 @@ class AutoColumnWidthMixin(object):
             self.Bind(wx.EVT_LIST_COL_BEGIN_DRAG, self.OnBeginColumnDrag)
             self.Bind(wx.EVT_LIST_COL_END_DRAG, self.OnEndColumnDrag)
             self._bindHeaderMotion()
-            wx.CallAfter(self.DoResize)
+            patterns.later.soon(self, self.DoResize)
         else:
             self.Unbind(wx.EVT_SIZE)
             self.Unbind(wx.EVT_LIST_COL_BEGIN_DRAG)
@@ -86,7 +84,7 @@ class AutoColumnWidthMixin(object):
 
     def OnEndColumnDrag(self, event):
         self.Bind(wx.EVT_SIZE, self.OnResize)
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
         event.Skip()
 
     def _getHeaderWindow(self):
@@ -94,15 +92,18 @@ class AutoColumnWidthMixin(object):
 
         For wx.ListCtrl, the header is a child window named 'wxlistctrlcolumntitles'.
         For HyperTreeList, header cursor is handled by TreeListHeaderWindow.
+
+        Looked up each time, never kept: wx creates it, so wxPython
+        does not learn when it is destroyed, and a kept wrapper outlives
+        it. wxPython then gives that stale wrapper for whatever wx
+        creates at its address (a dialog's button, a parent window),
+        and calls through it crash (P113).
         """
-        if self.__header_window is not None:
-            return self.__header_window
         # Only look for header in wx.ListCtrl, not HyperTreeList
         if isinstance(self, hypertreelist.HyperTreeList):
             return None
         for child in self.GetChildren():
-            if child.GetName() == 'wxlistctrlcolumntitles':
-                self.__header_window = child
+            if child.GetName() == "wxlistctrlcolumntitles":
                 return child
         return None
 
@@ -138,7 +139,10 @@ class AutoColumnWidthMixin(object):
         # Determine which column border (if any) the mouse is near
         column_at_border = self._getColumnBorderAtX(x)
 
-        if column_at_border is not None and column_at_border == self.ResizeColumn:
+        if (
+            column_at_border is not None
+            and column_at_border == self.ResizeColumn
+        ):
             # This is the auto-fill column border - show no-entry cursor
             # Don't call Skip() to prevent native cursor override
             if self.__current_cursor != self.__no_entry_cursor:
@@ -170,7 +174,7 @@ class AutoColumnWidthMixin(object):
         # Always defer column resize to avoid cascade repaints during resize operations.
         # This is especially important during AUI sash drag where immediate column
         # recalculation can cause flickering.
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
 
     def DoResize(self):
         if not self:
@@ -188,7 +192,6 @@ class AutoColumnWidthMixin(object):
         unused_width = max(self.AvailableWidth - self.NecessaryWidth, 0)
         resize_column_width = self.ResizeColumnMinWidth + unused_width
         self.SetColumnWidth(self.ResizeColumn, resize_column_width)
-
 
     def GetResizeColumn(self):
         if self.__resize_column == -1:
@@ -230,25 +233,25 @@ class AutoColumnWidthMixin(object):
     def InsertColumn(self, *args, **kwargs):
         """Insert the new column and then resize."""
         result = super().InsertColumn(*args, **kwargs)
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
         return result
 
     def DeleteColumn(self, *args, **kwargs):
         """Delete the column and then resize."""
         result = super().DeleteColumn(*args, **kwargs)
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
         return result
 
     def RemoveColumn(self, *args, **kwargs):
         """Remove the column and then resize."""
         result = super().RemoveColumn(*args, **kwargs)
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
         return result
 
     def AddColumn(self, *args, **kwargs):
         """Add the column and then resize."""
         result = super().AddColumn(*args, **kwargs)
-        wx.CallAfter(self.DoResize)
+        patterns.later.soon(self, self.DoResize)
         return result
 
     # Private helper methods:
@@ -293,14 +296,14 @@ class AutoColumnWidthMixin(object):
         """
         # Check for GTK3 or GTK4 in wx.PlatformInfo
         platform_info = wx.PlatformInfo
-        has_gtk3_or_gtk4 = 'gtk3' in platform_info or 'gtk4' in platform_info
+        has_gtk3_or_gtk4 = "gtk3" in platform_info or "gtk4" in platform_info
 
         if not has_gtk3_or_gtk4:
             # GTK2 or unknown: no overlay scrollbars
             return False
 
         # GTK3/GTK4: overlay is default, but can be disabled via env var
-        if os.environ.get('GTK_OVERLAY_SCROLLING') == '0':
+        if os.environ.get("GTK_OVERLAY_SCROLLING") == "0":
             return False
 
         return True

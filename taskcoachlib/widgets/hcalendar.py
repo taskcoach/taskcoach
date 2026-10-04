@@ -63,7 +63,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
 
         self.__tip = tooltip.SimpleToolTip(self)
         self.__dropTarget = draganddrop.DropTarget(
-            self.OnDropURL, self.OnDropFiles, self.OnDropMail
+            self.on_drop_url, self.on_drop_files, self.on_drop_mail
         )
         self.SetDropTarget(self.__dropTarget)
 
@@ -82,11 +82,14 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         start = date.DateTime.fromDateTime(event.start)
         end = date.DateTime.fromDateTime(event.end)
 
+        # One end, or both at once: each follows the task's duration
+        # mode (docs/DURATION_CALCULATIONS.md, Stored Duration)
         if task.plannedStartDateTime() != start:
+            other = {} if task.dueDateTime() == end else {"other_value": end}
             command.EditPlannedStartDateTimeCommand(
-                items=[task], newValue=start
+                items=[task], newValue=start, **other
             ).do()
-        if task.dueDateTime() != end:
+        elif task.dueDateTime() != end:
             command.EditDueDateTimeCommand(items=[task], newValue=end).do()
 
     def _OnLeftDClick(self, event):
@@ -173,15 +176,9 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         self._invalidate()
         self.Refresh()
 
-    def HeaderFormat(self):
-        return self.__hdrFormat
-
     def SetDrawNow(self, drawNow):
         self.__drawNow = drawNow
         self.Refresh()
-
-    def DrawNow(self):
-        return self.__drawNow
 
     def refresh_now_line(self):
         """Redraw the "now" line, if shown (called every minute)."""
@@ -270,11 +267,11 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         return self.__adapter.getItemText(task)
 
     def GetBackgroundColor(self, task):
-        color = task.backgroundColor(True)
+        color = task.shown_bg_color()
         return wx.Colour(*color) if color else wx.WHITE
 
     def GetForegroundColor(self, task):
-        color = task.foregroundColor(True)
+        color = task.shown_fg_color()
         return wx.Colour(*color) if color else wx.BLACK
 
     def GetProgress(self, task):
@@ -284,7 +281,9 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         return None
 
     def GetIcons(self, task):
-        icon_ids = [task.icon_id(recursive=True)]
+        # Empty until the master loop's first pass styles the task
+        icon_id = task.shown_icon_id()
+        icon_ids = [icon_id] if icon_id else []
         if task.attachments():
             icon_ids.append("nuvola_status_mail-attachment")
         if task.notes():
@@ -295,16 +294,16 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         ]
 
     def GetFont(self, task):
-        return task.font(recursive=True) or wx.NORMAL_FONT
+        return task.shown_font() or wx.NORMAL_FONT
 
-    def OnDropURL(self, x, y, url):
+    def on_drop_url(self, x, y, url):
         self.__Drop(x, y, url, self.__on_drop_url_callback)
 
-    def OnDropFiles(self, x, y, filenames):
+    def on_drop_files(self, x, y, filenames):
         self.__Drop(x, y, filenames, self.__on_drop_files_callback)
 
-    def OnDropMail(self, x, y, mail):
-        self.__Drop(x, y, mail, self.__on_drop_mail_callback)
+    def on_drop_mail(self, x, y, mails):
+        self.__Drop(x, y, mails, self.__on_drop_mail_callback)
 
     def __Drop(self, x, y, objects, callback):
         if callback is not None:

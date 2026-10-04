@@ -20,6 +20,15 @@ from taskcoachlib import patterns
 
 
 class Collection(patterns.CompositeSet):
+    def restore_items(self, added, removed, event=None):
+        """Put the items back as a snapshot holds them: the items
+        only, without their subitems or links, which are their fields.
+        For the task file's lists (docs/UNDO_REDO.md, Architecture)."""
+        if removed:
+            patterns.ObservableSet.removeItems(self, removed, event=event)
+        if added:
+            patterns.ObservableSet.extend(self, added, event=event)
+
     def getObjectById(self, domainObjectId):
         for domainObject in self:
             if domainObjectId == domainObject.id():

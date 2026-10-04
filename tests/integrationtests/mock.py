@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import application
+from taskcoachlib import application, config, i18n
 from taskcoachlib.domain import task
 
 
@@ -25,6 +25,9 @@ class MockWxApp(object):
         pass
 
     def SetVendorName(self, *args, **kwargs):
+        pass
+
+    def SetClassName(self, *args, **kwargs):
         pass
 
     def ProcessIdle(self):
@@ -36,7 +39,7 @@ class MockWxApp(object):
     def SetTopWindow(self, *args):
         pass
 
-    def onQuit(self):
+    def Bind(self, *args, **kwargs):
         pass
 
 
@@ -45,20 +48,17 @@ class App(application.Application):
         self._options = None
         self._args = args or []
         self._Application__wx_app = MockWxApp()
+        # Application.__init__() loads the settings before init()
+        # The one the harness installed (docs/SETTINGS.md)
+        self.settings = config.settings.current()
         self.init()
         self.sessionMonitor = None
         application.Application.instance = self
 
-    def initTwisted(self):
-        pass
-
-    def stopTwisted(self):
-        pass
-
-    def registerApp(self):
-        pass
-
     def init(self):  # pylint: disable=W0221
+        # The harness made a translator for the unit tests; the app
+        # makes its own, as at a real start (its guard stops a second)
+        i18n.Translator.deleteInstance()
         super().init(load_settings=False, load_task_file=False)
 
     def addTask(self):

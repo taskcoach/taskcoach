@@ -16,16 +16,37 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import csv
+import io
 import os
 import tempfile
 import test
+from unittest import mock
 from taskcoachlib import persistence, config
 from taskcoachlib.domain import task, category, date
+from taskcoachlib.persistence.csv import reader as csv_reader
+
+# What a French and a Japanese system's names are (glibc)
+FRENCH = (
+    list(
+        zip(
+            "janvier f\u00e9vrier mars avril mai juin juillet ao\u00fbt "
+            "septembre octobre novembre d\u00e9cembre".split(),
+            "janv. f\u00e9vr. mars avr. mai juin juil. ao\u00fbt sept. oct. "
+            "nov. d\u00e9c.".split(),
+        )
+    ),
+    ["", ""],
+)
+JAPANESE = (
+    [("%d\u6708" % month,) * 2 for month in range(1, 13)],
+    ["\u5348\u524d", "\u5348\u5f8c"],
+)
+GREEK_AMPM = ["\u03c0\u03bc", "\u03bc\u03bc"]
 
 
 class CSVReaderTestCase(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.taskList = task.TaskList()
         self.categoryList = category.CategoryList()
         self.reader = persistence.CSVReader(self.taskList, self.categoryList)
@@ -333,10 +354,10 @@ class CSVReaderTestCase(test.TestCase):
         parentCategory = [c for c in self.categoryList if not c.parent()][0]
         childCategory = parentCategory.children()[0]
         self.assertEqual(
-            "Subject 1", list(childCategory.categorizables())[0].subject()
+            "Subject 1", list(childCategory.members())[0].subject()
         )
         self.assertEqual(
-            "Subject 2", list(parentCategory.categorizables())[0].subject()
+            "Subject 2", list(parentCategory.members())[0].subject()
         )
 
     def testHierarchy(self):
@@ -372,4 +393,137 @@ class CSVReaderTestCase(test.TestCase):
         )
         self.assertEqual(
             set([1, 3, 4]), set(t.dueDateTime().month for t in self.taskList)
+        )
+
+    def test_year_first_dates_are_year_month_day(self):
+        # Whatever the day-first choice (ISO 8601)
+        filename = self.createCSVFile("T1,2026-10-02\nT2,2026/10/02 14:30")
+        self.reader.read(
+            filename=filename,
+            mappings={0: "Subject", 1: "Due date"},
+            **self.defaultReaderKwArgs
+        )
+        self.assertEqual(
+            {(10, 2)},
+            {
+                (t.dueDateTime().month, t.dueDateTime().day)
+                for t in self.taskList
+            },
+        )
+
+    def due_dates(self, *texts, dayfirst=True, names=None):
+        """Import one task per text as its due date: the due dates in
+        order, with the system language's names given."""
+        rows = io.StringIO()
+        writer = csv.writer(rows)
+        for index, text in enumerate(texts):
+            writer.writerow(["T%02d" % index, text])
+        filename = self.createCSVFile(rows.getvalue())
+        self.defaultReaderKwArgs["dayfirst"] = dayfirst
+        if names:
+            with mock.patch.object(
+                csv_reader, "_system_names", return_value=names
+            ):
+                self.reader = persistence.CSVReader(
+                    self.taskList, self.categoryList
+                )
+        self.reader.read(
+            filename=filename,
+            mappings={0: "Subject", 1: "Due date"},
+            **self.defaultReaderKwArgs
+        )
+        tasks = sorted(self.taskList, key=lambda t: t.subject())
+        return [t.dueDateTime() for t in tasks]
+
+    def test_month_name_in_the_system_language(self):
+        self.assertEqual(
+            [date.DateTime(2026, 3, 7, 23, 59, 59)] * 2,
+            self.due_dates(
+                "samedi, 07 mars 2026", "7 mars 2026", names=FRENCH
+            ),
+        )
+
+    def test_month_name_in_another_language_imports_no_date(self):
+        # Not 2026-07-03: the day as the month, today's day as the day
+        self.assertEqual(
+            [date.DateTime()], self.due_dates("samedi, 07 mars 2026")
+        )
+
+    def test_english_month_names_with_the_system_language(self):
+        self.assertEqual(
+            [date.DateTime(2026, 3, 7, 23, 59, 59)] * 2,
+            self.due_dates("Mar 7, 2026", "7 March 2026", names=FRENCH),
+        )
+
+    def test_system_language_name_that_dateutil_reads_otherwise(self):
+        # "mar" as May would make English "Mar" May
+        names = [(name, name) for name in "jan feb march apr mar".split()]
+        names += [("m%d" % month, "m%d" % month) for month in range(6, 13)]
+        self.assertEqual(
+            [date.DateTime(2026, 3, 7, 23, 59, 59)],
+            self.due_dates("Mar 7, 2026", names=(names, ["", ""])),
+        )
+
+    def test_am_pm_in_the_system_language(self):
+        self.assertEqual(
+            [date.DateTime(2026, 10, 23, 14, 30)],
+            self.due_dates(
+                "23/10/2026 02:30 \u03bc\u03bc",
+                names=(FRENCH[0], GREEK_AMPM),
+            ),
+        )
+
+    def test_own_abbreviated_form_in_the_system_language(self):
+        # "mar." is Tuesday in French and March in English
+        self.assertEqual(
+            [
+                date.DateTime(2026, 3, 7, 23, 59, 59),
+                date.DateTime(2026, 1, 6, 9, 5),
+            ],
+            self.due_dates(
+                "2026-mars-07-sam.", "2026-janv.-06-mar. 09:05", names=FRENCH
+            ),
+        )
+
+    def test_own_abbreviated_form_with_a_numbered_month(self):
+        self.assertEqual(
+            [date.DateTime(2026, 1, 2, 14, 30)],
+            self.due_dates(
+                "2026- 1\u6708-02-\u91d1 02:30 \u5348\u5f8c",
+                names=JAPANESE,
+            ),
+        )
+
+    def test_date_without_day_or_month_imports_no_date(self):
+        self.assertEqual(
+            [date.DateTime()] * 5,
+            self.due_dates(
+                "5", "2:30 PM", "Oct 2026", "next Monday", "week 12"
+            ),
+        )
+
+    def test_date_without_year_is_this_year(self):
+        this_year = date.Now().year
+        self.assertEqual(
+            [date.DateTime(this_year, 10, 5, 23, 59, 59)],
+            self.due_dates("5 Oct"),
+        )
+
+    def test_year_first_date_among_words(self):
+        # Year-month-day although day first is chosen
+        self.assertEqual(
+            [date.DateTime(2026, 10, 5, 23, 59, 59)],
+            self.due_dates("Due: 2026-10-05"),
+        )
+
+    def test_date_among_words(self):
+        self.assertEqual(
+            [date.DateTime(2026, 10, 5, 23, 59, 59)],
+            self.due_dates("around Oct 5, 2026", dayfirst=False),
+        )
+
+    def test_too_long_number_imports_no_date(self):
+        self.assertEqual(
+            [date.DateTime(), date.DateTime(2026, 10, 5, 23, 59, 59)],
+            self.due_dates("99999999999999999999", "2026-10-05"),
         )

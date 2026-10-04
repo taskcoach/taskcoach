@@ -22,7 +22,7 @@ Task Coach uses GNU gettext `.po` files for translations. The app loads these fi
 | File | Purpose |
 |------|---------|
 | `taskcoachlib/i18n/locales/*.po` | Translation files (53 languages) |
-| `i18n.in/messages.pot` | Template with all translatable strings |
+| `i18n.in/messages.pot` | Template with all translatable strings (generated, not in git) |
 | `taskcoachlib/i18n/po2dict.py` | Parser that loads .po files |
 | `taskcoachlib/i18n/__init__.py` | Translator class |
 
@@ -90,6 +90,20 @@ message = _("This text will be translated")
 error = _("File not found: %(filename)s") % {"filename": path}
 ```
 
+### Counts
+
+Wording never depends on a number, **ruled by designer 2026-09-30**:
+an action names no count ("Change percentage complete", for any
+number of tasks), and a count follows its label ("Tasks saved: 3").
+The loader has no plural forms (gettext's `ngettext`), and "task(s)"
+cannot be translated into languages with several plural forms
+(Polish, Russian, Czech); style guides advise against it too.
+
+The English text is the key of every translation: changing it drops
+the message's translations until translators add the new text. So
+existing messages keep their wording until they change for another
+reason.
+
 ### Extracting New Strings
 
 After adding new translatable strings, update the template:
@@ -97,6 +111,7 @@ After adding new translatable strings, update the template:
 ```bash
 # Extract all _("string") calls
 find taskcoachlib -name "*.py" -not -path "*/i18n/locales/*" > /tmp/pyfiles.txt
+mkdir -p i18n.in
 xgettext --language=Python --keyword=_ --output=i18n.in/messages.pot \
     --from-code=UTF-8 --files-from=/tmp/pyfiles.txt
 ```

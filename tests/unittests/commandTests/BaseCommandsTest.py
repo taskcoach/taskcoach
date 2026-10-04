@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import patterns, command
-from taskcoachlib.domain import task, date
+from taskcoachlib import command
+from taskcoachlib.domain import task
 from .CommandTestCase import CommandTestCase
 
 
@@ -25,7 +25,8 @@ class DeleteCommandTest(CommandTestCase):
     def setUp(self):
         super().setUp()
         self.item = task.Task()
-        self.items = patterns.List([self.item])
+        self.items = self.task_file.tasks()
+        self.items.append(self.item)
 
     def deleteItem(self, items=None):
         delete = command.DeleteCommand(self.items, items or [])
@@ -89,14 +90,17 @@ class EditSubjectTestCase(CommandTestCase):
             ).items_are_new()
         )
 
-    def testModificationDateTime(self):
+    def test_modification_date_time(self):
+        original = self.item1.modificationDateTime()
         self.editSubject("new", self.item1)
+        changed = self.item1.modificationDateTime()
+        self.assertTrue(original < changed)
         self.assertDoUndoRedo(
-            lambda: self.assertTrue(
-                self.item1.modificationDateTime() > date.DateTime.min
+            lambda: self.assertEqual(
+                changed, self.item1.modificationDateTime()
             ),
             lambda: self.assertEqual(
-                date.DateTime.min, self.item1.modificationDateTime()
+                original, self.item1.modificationDateTime()
             ),
         )
 
@@ -143,13 +147,16 @@ class EditDescriptionTestCase(CommandTestCase):
             ).items_are_new()
         )
 
-    def testModificationDateTime(self):
+    def test_modification_date_time(self):
+        original = self.item1.modificationDateTime()
         self.edit_description("new", self.item1)
+        changed = self.item1.modificationDateTime()
+        self.assertTrue(original < changed)
         self.assertDoUndoRedo(
-            lambda: self.assertTrue(
-                self.item1.modificationDateTime() > date.DateTime.min
+            lambda: self.assertEqual(
+                changed, self.item1.modificationDateTime()
             ),
             lambda: self.assertEqual(
-                date.DateTime.min, self.item1.modificationDateTime()
+                original, self.item1.modificationDateTime()
             ),
         )

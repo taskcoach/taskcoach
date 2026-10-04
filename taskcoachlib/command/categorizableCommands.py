@@ -28,9 +28,6 @@ class ToggleCategoryCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.category = kwargs.pop("category")
         super().__init__(*args, **kwargs)
-        # Keep track of previous category per categorizable in case of mutual
-        # exclusive categories:
-        self.__previous_categories = dict()
         # When some items are in the category and some are not, only toggle
         # the items that are not in the category.
         items_not_in_category = [
@@ -45,18 +42,11 @@ class ToggleCategoryCommand(base.BaseCommand):
         super().do_command()
         self.toggle_category()
 
-    def undo_command(self):
-        super().undo_command()
-        self.toggle_category()
-
-    redo_command = do_command
-
     @patterns.eventSource
     def toggle_category(self, event=None):
         for categorizable in self.items:
             if self.category in categorizable.categories():
                 self.unlink_category(self.category, categorizable, event)
-                self.relink_previous_categories(categorizable, event)
             else:
                 self.link_category(self.category, categorizable, event)
                 self.unlink_previous_categories(categorizable, event)
@@ -70,7 +60,7 @@ class ToggleCategoryCommand(base.BaseCommand):
                 parent in categorizable.categories()
                 and not parent.isMutualExclusive()
             ):
-                self.unlink_previous_category(parent, categorizable, event)
+                self.unlink_category(parent, categorizable, event)
             else:
                 self.unlink_previous_mutual_exclusive_category(
                     self.category.siblings(recursive=True),
@@ -88,29 +78,48 @@ class ToggleCategoryCommand(base.BaseCommand):
         """Look for the category that categorizable belongs to and remove
         categorizable from it."""
         for category in categories:
-            if categorizable in category.categorizables():
-                self.unlink_previous_category(category, categorizable, event)
-
-    def unlink_previous_category(self, category, categorizable, event):
-        """Remove categorizable from category, but remember the category so
-        it can be restored later."""
-        self.unlink_category(category, categorizable, event)
-        self.__previous_categories.setdefault(categorizable, []).append(
-            category
-        )
-
-    def relink_previous_categories(self, categorizable, event):
-        """Re-add categorizable to its previous categories."""
-        if categorizable in self.__previous_categories:
-            for previous_category in self.__previous_categories[categorizable]:
-                self.link_category(previous_category, categorizable, event)
+            if category in categorizable.categories():
+                self.unlink_category(category, categorizable, event)
 
     def link_category(self, category, categorizable, event):
         """Make categorizable belong to category."""
-        category.addCategorizable(categorizable, event=event)
         categorizable.addCategory(category, event=event)
 
     def unlink_category(self, category, categorizable, event):
         """Make categorizable no longer belong to category."""
-        category.removeCategorizable(categorizable, event=event)
         categorizable.removeCategory(category, event=event)
+
+
+class LinkCategoriesCommand(base.BaseCommand):
+    """Link every category to every item, or unlink them (the editor's
+    Check all and Uncheck all), as one action."""
+
+    plural_name = _("Toggle category")
+    singular_name = _('Toggle category of "%s"')
+
+    def __init__(self, *args, **kwargs):
+        categories = kwargs.pop("categories")
+        self.__link = kwargs.pop("link", True)
+        super().__init__(*args, **kwargs)
+        # The pairs this action changes; undo reverses exactly these
+        self.__pairs = [
+            (category, item)
+            for category in categories
+            for item in self.items
+            if (category in item.categories()) != self.__link
+        ]
+
+    def can_do(self):
+        return bool(self.__pairs)
+
+    @patterns.eventSource
+    def __apply(self, link, event=None):
+        for category, item in self.__pairs:
+            if link:
+                item.addCategory(category, event=event)
+            else:
+                item.removeCategory(category, event=event)
+
+    def do_command(self):
+        super().do_command()
+        self.__apply(self.__link)

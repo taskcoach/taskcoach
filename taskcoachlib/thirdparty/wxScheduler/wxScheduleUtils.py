@@ -4,42 +4,6 @@
 import wx
 
 
-def timeFunction(func):
-    """Decorator which displays the total time a function used at exit, grouped by stack frame."""
-    import atexit, time, traceback
-
-    func.elapsed = dict()
-
-    def wrapper(*args, **kwargs):
-        t0 = time.time()
-        try:
-            return func(*args, **kwargs)
-        finally:
-            exc = "\n".join(traceback.format_stack(limit=2)[:-1])
-            elapsed, count = func.elapsed.get(exc, (0.0, 0))
-            func.elapsed[exc] = (elapsed + (time.time() - t0), count + 1)
-
-    def printit():
-        elapsed = [
-            (tm, count, exc) for exc, (tm, count) in list(func.elapsed.items())
-        ]
-        elapsed.sort()
-        totalElapsed = 0.0
-        totalCount = 0
-        for tm, count, exc in elapsed:
-            print("========== %d ms / %d calls" % (int(tm * 1000), count))
-            print(exc)
-            totalElapsed += tm
-            totalCount += count
-        print("===========")
-        print("Total time: %d ms" % int(totalElapsed * 1000))
-        print("Total calls: %d" % totalCount)
-
-    atexit.register(printit)
-
-    return wrapper
-
-
 def copyDate(value):
     """Simple method for copy the date (Y,M,D)."""
     return wx.DateTime.FromDMY(

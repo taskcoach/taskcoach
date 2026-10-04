@@ -18,7 +18,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import gui, config, persistence, operating_system
+from taskcoachlib import command, gui, operating_system
+from taskcoachlib import patterns, persistence
 from taskcoachlib.domain import task, effort, date, note, attachment
 from taskcoachlib.gui import uicommand
 from unittests import dummy
@@ -39,38 +40,31 @@ class TaskEditorSetterMixin(object):
         page._descriptionEntry.SetValue(newDescription)
         return page
 
-    def setPlannedStartDateTime(self, dateTime):
-        self.setDateTime(
-            self.editor._interior[1]._plannedStartDateTimeEntry, dateTime
-        )
+    def set_planned_start_date_time(self, date_time):
+        self.set_date_time("plannedStartDateTime", date_time)
 
-    def setDueDateTime(self, dateTime):
-        self.setDateTime(self.editor._interior[1]._dueDateTimeEntry, dateTime)
+    def set_due_date_time(self, date_time):
+        self.set_date_time("dueDateTime", date_time)
 
-    def setActualStartDateTime(self, dateTime):
-        self.setDateTime(
-            self.editor._interior[1]._actualStartDateTimeEntry, dateTime
-        )
+    def set_actual_start_date_time(self, date_time):
+        self.set_date_time("actualStartDateTime", date_time)
 
-    def setCompletionDateTime(self, dateTime):
-        self.setDateTime(
-            self.editor._interior[1]._completionDateTimeEntry, dateTime
-        )
+    def set_completion_date_time(self, date_time):
+        self.set_date_time("completionDateTime", date_time)
 
-    def setReminder(self, dateTime):
-        self.setDateTime(
-            self.editor._interior[1]._reminderDateTimeEntry, dateTime
-        )
+    def set_reminder(self, date_time):
+        self.set_date_time("reminderDateTime", date_time)
 
-    def setDateTime(self, entry, dateTime):
-        entry.SetValue(dateTime)
-        entry.onDateTimeCtrlEdited()
-        wx.YieldIfNeeded()
+    def set_date_time(self, name, date_time):
+        """The user's edit of a date field on the Dates page."""
+        page = self.editor._interior[1]
+        getattr(page, "_%sCombo" % name).SetValue(date_time)
+        getattr(page, "_%sSync" % name).onAttributeEdited(dummy.Event())
 
-    def setRecurrence(self, newRecurrence):
-        recurrenceEntry = self.editor._interior[1]._recurrenceEntry
-        recurrenceEntry.SetValue(newRecurrence)
-        recurrenceEntry.onRecurrenceEdited()
+    def set_recurrence(self, new_recurrence):
+        recurrence_entry = self.editor._interior[1]._recurrenceEntry
+        recurrence_entry.SetValue(new_recurrence)
+        recurrence_entry.onRecurrenceEdited()
         wx.YieldIfNeeded()
 
 
@@ -94,26 +88,11 @@ class TaskEditorBySettingFocusMixin(TaskEditorSetterMixin):
             page._subjectEntry.SetFocus()  # pragma: no cover
 
 
-class TaskEditBookWithPerspective(gui.dialog.editor.TaskEditBook):
-    testPerspective = "503e3c7d0000018300000002=+0,1,2,3,4,5,6,7,8,9@layout2|name=dummy;caption=;state=67372030;dir=3;layer=0;row=0;pos=0;prop=100000;bestw=381;besth=173;minw=381;minh=173;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|name=503e3c7d0000018300000002;caption=;state=67372028;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=200;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1;notebookid=-1;transparent=255|dock_size(5,0,0)=202|"
-
-    def perspective(self):
-        return self.testPerspective
-
-
-class TaskEditorWithPerspective(gui.dialog.editor.TaskEditor):
-    EditBookClass = TaskEditBookWithPerspective
-
-
 class TaskEditorTestCase(test.wxTestCase):
-    extraSettings = list()
     editorClass = gui.dialog.editor.TaskEditor
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
-        for section, name, value in self.extraSettings:
-            self.settings.set(section, name, value)
         self.today = date.Now()
         self.tomorrow = self.today + date.ONE_DAY
         self.yesterday = self.today - date.ONE_DAY
@@ -124,7 +103,6 @@ class TaskEditorTestCase(test.wxTestCase):
         self.editor = self.editorClass(
             self.frame,
             self.getItems(),
-            self.settings,
             self.taskList,
             self.taskFile,
         )
@@ -155,7 +133,7 @@ class EditorDisplayTest(TaskEditorTestCase):
         # pylint: disable=W0201
         self.task = task.Task("Task to edit")
         self.stop_datetime = date.DateTime(2012, 12, 12, 12, 12)
-        self.task.setRecurrence(
+        self.task.set_recurrence(
             date.Recurrence(
                 "daily", amount=1, stop_datetime=self.stop_datetime
             )
@@ -167,18 +145,16 @@ class EditorDisplayTest(TaskEditorTestCase):
             "Task to edit", self.editor._interior[0]._subjectEntry.GetValue()
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testDueDateTime(self):
+    def test_due_date_time(self):
         self.assertEqual(
             date.DateTime(),
-            self.editor._interior[1]._dueDateTimeEntry.GetValue(),
+            self.editor._interior[1]._dueDateTimeCombo.GetValue(),
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testActualStartDateTime(self):
+    def test_actual_start_date_time(self):
         self.assertEqual(
             date.DateTime(),
-            self.editor._interior[1]._actualStartDateTimeEntry.GetValue(),
+            self.editor._interior[1]._actualStartDateTimeCombo.GetValue(),
         )
 
     def testRecurrenceUnit(self):
@@ -193,11 +169,10 @@ class EditorDisplayTest(TaskEditorTestCase):
         ]._recurrenceEntry._recurrenceFrequencyEntry
         self.assertEqual(1, freq.GetValue())
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testRecurrenceStopDateTime(self):
+    def test_recurrence_stop_date_time(self):
         stop = self.editor._interior[
             1
-        ]._recurrenceEntry._recurrenceStopDateTimeEntry
+        ]._recurrenceEntry._recurrenceStopDateTimeCombo
         self.assertEqual(self.stop_datetime, stop.GetValue())
 
 
@@ -222,82 +197,76 @@ class EditTaskTestMixin(object):
 
     # pylint: disable=W0212
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetPlannedStartDateTime(self):
-        self.setPlannedStartDateTime(self.tomorrow)
+    def test_set_planned_start_date_time(self):
+        self.set_planned_start_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
             self.task.plannedStartDateTime().toordinal(),
             places=2,
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetDueDateTime(self):
-        self.setDueDateTime(self.tomorrow)
+    def test_set_due_date_time(self):
+        self.set_due_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
             self.task.dueDateTime().toordinal(),
             places=2,
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetActualStartDateTime(self):
-        self.setActualStartDateTime(self.tomorrow)
+    def test_set_actual_start_date_time(self):
+        self.set_actual_start_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
             self.task.actualStartDateTime().toordinal(),
             places=2,
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetCompletionDateTime(self):
-        self.setCompletionDateTime(self.tomorrow)
+    def test_set_completion_date_time(self):
+        self.set_completion_date_time(self.tomorrow)
         self.assertAlmostEqual(
             self.tomorrow.toordinal(),
             self.task.completionDateTime().toordinal(),
             places=2,
         )
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetUncompleted(self):
-        self.setCompletionDateTime(date.Now())
-        self.setCompletionDateTime(date.DateTime())
+    def test_set_uncompleted(self):
+        self.set_completion_date_time(date.Now())
+        self.set_completion_date_time(date.DateTime())
         self.assertEqual(date.DateTime(), self.task.completionDateTime())
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testSetReminder(self):
+    def test_set_reminder(self):
         reminderDateTime = date.DateTime(2005, 1, 1)
-        self.setReminder(reminderDateTime)
+        self.set_reminder(reminderDateTime)
         self.assertEqual(reminderDateTime, self.task.reminder())
 
     def testSetRecurrence(self):
-        self.setRecurrence(date.Recurrence("weekly"))
+        self.set_recurrence(date.Recurrence("weekly"))
         self.assertEqual("weekly", self.task.recurrence().unit)
 
     def testSetDailyRecurrence(self):
-        self.setRecurrence(date.Recurrence("daily", amount=1))
+        self.set_recurrence(date.Recurrence("daily", amount=1))
         self.assertEqual("daily", self.task.recurrence().unit)
         self.assertEqual(1, self.task.recurrence().amount)
 
     def testSetYearlyRecurrence(self):
-        self.setRecurrence(date.Recurrence("yearly"))
+        self.set_recurrence(date.Recurrence("yearly"))
         self.assertEqual("yearly", self.task.recurrence().unit)
 
     def testSetMaxRecurrence(self):
-        self.setRecurrence(date.Recurrence("weekly", maximum=10))
+        self.set_recurrence(date.Recurrence("weekly", maximum=10))
         self.assertEqual(10, self.task.recurrence().max)
 
     def testSetRecurrenceStopDateTime(self):
         stop = date.DateTime(2012, 3, 4, 10, 0)
-        self.setRecurrence(date.Recurrence("weekly", stop_datetime=stop))
+        self.set_recurrence(date.Recurrence("weekly", stop_datetime=stop))
         self.assertEqual(stop, self.task.recurrence().stop_datetime)
 
     def testSetRecurrenceFrequency(self):
-        self.setRecurrence(date.Recurrence("weekly", amount=3))
+        self.set_recurrence(date.Recurrence("weekly", amount=3))
         self.assertEqual(3, self.task.recurrence().amount)
 
     def testSetRecurrenceSameWeekday(self):
-        self.setRecurrence(date.Recurrence("monthly", sameWeekday=True))
+        self.set_recurrence(date.Recurrence("monthly", sameWeekday=True))
         self.assertTrue(self.task.recurrence().sameWeekday)
 
     def testPriority(self):
@@ -334,7 +303,7 @@ class EditTaskTestMixin(object):
         )
 
     def testAddAttachment(self):
-        self.editor._interior[8].viewer.onDropFiles(self.task, ["filename"])
+        self.editor._interior[8].viewer.on_drop_files(self.task, ["filename"])
         # pylint: disable=E1101
         self.assertTrue(
             "filename" in [att.location() for att in self.task.attachments()]
@@ -358,7 +327,6 @@ class EditTaskTestMixin(object):
         openAttachment = uicommand.AttachmentOpen(
             viewer=self.editor._interior[6].viewer,
             attachments=attachment.AttachmentList([att]),
-            settings=self.settings,
         )
         openAttachment.do_command(None, showerror=onError)
         self.assertFalse(self.errorMessage)
@@ -372,7 +340,7 @@ class EditTaskTestMixin(object):
         parent = note.Note(subject="New note")
         child = note.Note(subject="Child")
         parent.addChild(child)
-        child.setParent(parent)
+        child.set_parent(parent)
         viewer = self.editor._interior[7].viewer
         viewer.newItemCommand(viewer.presentation()).do()
         viewer.newSubItemCommandClass()(
@@ -385,7 +353,7 @@ class EditTaskTestMixin(object):
         viewer = self.editor._interior[7].viewer
         wx.GetApp().TopWindow.taskFile = self.taskFile
         command = gui.uicommand.NoteNew(
-            notes=viewer.presentation(), settings=self.settings, viewer=viewer
+            notes=viewer.presentation(), viewer=viewer
         )
         dialog = command.do_command(None, show=False)
         dialog.ok()
@@ -439,95 +407,182 @@ class EditTaskWithEffortTest(TaskEditorTestCase):
 
 class FocusTest(TaskEditorTestCase):
     def createTasks(self):
-        self.task = task.Task("Task to edit")
+        self.task = task.Task("Task to edit", description="Some words")
         return [self.task]
 
     def getItems(self):
         return [self.task]
 
-    @test.stale("the subject entry wraps a styled text control")
-    def testFocus(self):
+    def test_focus(self):
         # pylint: disable=W0212
         self.assertEqual(
-            self.editor._interior[0]._subjectEntry, wx.Window.FindFocus()
+            self.editor._interior[0]._subjectEntry._textCtrl,
+            wx.Window.FindFocus(),
         )
 
-    @test.stale("the subject entry wraps a styled text control")
-    def testSelection(self):
+    def test_selection(self):
         # pylint: disable=W0212
+        subject = self.editor._interior[0]._subjectEntry
         self.assertEqual(
-            self.editor._interior[0]._subjectEntry.GetStringSelection(),
-            self.editor._interior[0]._subjectEntry.GetValue(),
+            subject.GetValue(), subject._textCtrl.GetSelectedText()
         )
 
+    def test_a_field_without_text_opens_on_its_page(self):
+        book = self.editor._interior
+        book.setFocus("percentageComplete")
+        self.assertIn(
+            "percentageComplete", book[book.GetSelection()].entries()
+        )
 
-class FocusTestWithPerspective(FocusTest):
-    editorClass = TaskEditorWithPerspective
+    def test_a_text_field_opens_with_its_text_selected(self):
+        self.editor._interior.setFocus("description")
+        description = self.editor._interior[0]._descriptionEntry
+        self.assertEqual("Some words", description._textCtrl.GetSelectedText())
 
 
-class DatesTestBase(TaskEditorSetterMixin, TaskEditorTestCase):
+class OpeningChangesNothingTest(TaskEditorTestCase):
+    """Dates changed outside the editor (a list cell) keep the stored
+    duration right, so opening the editor writes nothing (P133)."""
+
+    def getItems(self):
+        return [self.task]
+
     def createTasks(self):
         # pylint: disable=W0201
-        self.task = task.Task("Task to edit")
+        self.task = task.Task("Task")
+        start = date.DateTime(2026, 9, 30, 9, 0, 0)
+        self.task.set_planned_start_date_time(start)
+        self.task.set_due_date_time(start + date.ONE_DAY)
+        self.history = patterns.CommandHistory()
+        self.history.clear()
+        self.addCleanup(self.history.clear)
         return [self.task]
+
+    def test_opening_records_no_step(self):
+        wx.Yield()
+        self.assertEqual([], self.history.get_history())
+
+
+class OpeningRecurredTaskChangesNothingTest(OpeningChangesNothingTest):
+    """A task that has recurred keeps how many times when its editor
+    opens: "Stop after N recurrences" counts them (P168)."""
+
+    def createTasks(self):
+        tasks = super().createTasks()
+        self.task.set_recurrence(
+            date.Recurrence("weekly", maximum=10, count=3)
+        )
+        return tasks
+
+    def test_opening_keeps_the_count(self):
+        wx.Yield()
+        self.assertEqual(3, self.task.recurrence().count)
+
+    def test_changing_the_frequency_keeps_the_count(self):
+        entry = self.editor._interior[1]._recurrenceEntry
+        entry._recurrenceFrequencyEntry.Value = 2
+        entry.onRecurrenceEdited()
+        wx.Yield()
+        recurrence = self.task.recurrence()
+        self.assertEqual((2, 3), (recurrence.amount, recurrence.count))
+
+
+class EditRecurrenceOfTwoTasksTest(TaskEditorSetterMixin, TaskEditorTestCase):
+    def getItems(self):
+        return self.tasks
+
+    def createTasks(self):
+        # pylint: disable=W0201
+        self.tasks = [task.Task("Task A"), task.Task("Task B")]
+        for each, count in zip(self.tasks, (3, 5)):
+            each.set_recurrence(date.Recurrence("weekly", count=count))
+        return self.tasks
+
+    def test_each_keeps_its_count(self):
+        self.set_recurrence(date.Recurrence("daily"))
+        self.assertEqual(
+            [("daily", 3), ("daily", 5)],
+            [(t.recurrence().unit, t.recurrence().count) for t in self.tasks],
+        )
+
+
+class AdjustDueModeTest(TaskEditorSetterMixin, TaskEditorTestCase):
+    """The duration moves the due date when the start changes: the task
+    keeps the duration only in Implicit mode."""
 
     def getItems(self):
         return [self.task]
 
+    def createTasks(self):
+        # pylint: disable=W0201
+        self.start = date.DateTime(2026, 9, 30, 9, 0, 0)
+        self.task = task.Task(
+            "Task",
+            plannedStartDateTime=self.start,
+            dueDateTime=self.start + date.ONE_DAY,
+            plannedDuration=date.ONE_DAY,
+            plannedDurationMode="adjdue",
+        )
+        return [self.task]
 
-class DatesStartDueTest(DatesTestBase):
-    extraSettings = [("view", "datestied", "startdue")]
-
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testChangePlannedStartDateChangesDueDate(self):
-        self.setPlannedStartDateTime(self.yesterday)
-        self.setDueDateTime(self.today)
-        self.setPlannedStartDateTime(self.today)
-        self.assertAlmostEqual(
-            self.editor._interior[1]._dueDateTimeEntry.GetValue().toordinal(),
-            self.tomorrow.toordinal(),
-            places=2,
+    def test_a_new_start_moves_the_due_date(self):
+        self.set_planned_start_date_time(self.start + date.ONE_HOUR)
+        wx.Yield()  # The due field's change is posted
+        self.assertEqual(
+            (self.start + date.ONE_DAY + date.ONE_HOUR, date.ONE_DAY),
+            (self.task.dueDateTime(), self.task.plannedDuration()),
         )
 
 
-class DatesDueStartBase(DatesTestBase):
-    extraSettings = [("view", "datestied", "duestart")]
+class ChangeFromElsewhereTest(TaskEditorTestCase):
+    """A change made elsewhere (undo, another window) is shown, not
+    edited: the fields write nothing back
+    (docs/DURATION_CALCULATIONS.md, 0.5)."""
 
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testChangeDueDateChangesPlannedStartDate(self):
-        self.setPlannedStartDateTime(self.yesterday)
-        self.setDueDateTime(self.today)
-        self.setDueDateTime(self.yesterday)
-        self.assertAlmostEqual(
-            self.editor._interior[1]
-            ._plannedStartDateTimeEntry.GetValue()
-            .toordinal(),
-            self.twodaysago.toordinal(),
-            places=2,
+    def getItems(self):
+        return [self.task]
+
+    def createTasks(self):
+        # pylint: disable=W0201
+        self.task = task.Task("Task")
+        self.start = date.DateTime(2026, 9, 30, 9, 0, 0)
+        self.due = date.DateTime(2026, 10, 1, 9, 0, 0)
+        self.task.set_planned_start_date_time(self.start)
+        self.task.set_due_date_time(self.due)
+        return [self.task]
+
+    def setUp(self):
+        super().setUp()
+        self.history = patterns.CommandHistory()
+        self.process_events()
+        self.history.clear()
+        self.addCleanup(self.history.clear)
+
+    @staticmethod
+    def process_events():
+        wx.Yield()
+
+    def steps(self):
+        return [str(step) for step in self.history.get_history()]
+
+    def test_seconds_the_fields_do_not_show_stay(self):
+        reminder = date.DateTime(2026, 9, 30, 14, 2, 52)
+        command.EditReminderDateTimeCommand(
+            items=[self.task], newValue=reminder
+        ).do()
+        self.process_events()
+        self.assertEqual(reminder, self.task.reminder())
+        self.assertEqual(1, len(self.steps()))
+
+    def test_undo_writes_nothing_back(self):
+        command.EditPlannedStartDateTimeCommand(
+            items=[self.task], newValue=self.start - date.ONE_DAY
+        ).do()
+        self.process_events()
+        self.history.undo()
+        self.process_events()
+        self.assertEqual(
+            (self.start, self.due),
+            (self.task.plannedStartDateTime(), self.task.dueDateTime()),
         )
-
-
-class DatesTest(DatesTestBase):
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testChangePlannedStartDateDoesNotChangeDueDate(self):
-        self.setPlannedStartDateTime(self.yesterday)
-        self.setDueDateTime(self.today)
-        self.setPlannedStartDateTime(self.today)
-        self.assertAlmostEqual(
-            self.editor._interior[1]._dueDateTimeEntry.GetValue().toordinal(),
-            self.today.toordinal(),
-            places=2,
-        )
-
-    @test.stale("date entries were rebuilt (#271, #294)")
-    def testChangeDueDateDoesNotChangePlannedStartDate(self):
-        self.setPlannedStartDateTime(self.yesterday)
-        self.setDueDateTime(self.today)
-        self.setDueDateTime(self.yesterday)
-        self.assertAlmostEqual(
-            self.editor._interior[1]
-            ._plannedStartDateTimeEntry.GetValue()
-            .toordinal(),
-            self.yesterday.toordinal(),
-            places=2,
-        )
+        self.assertTrue(self.history.has_future())

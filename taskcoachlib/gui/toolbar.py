@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.config.defaults import MAIN_TOOLBAR_ICON_SIZE_DEFAULT
 from taskcoachlib.gui.icons.icon_library import LIST_ICON_SIZE
 from taskcoachlib.meta.debug import log_step
@@ -34,6 +35,10 @@ class _Toolbar(aui.AuiToolBar):
     def __init__(self, parent, style):
         super().__init__(parent, agwStyle=aui.AUI_TB_NO_AUTORESIZE)
 
+    def DoIdleUpdate(self):
+        """AuiToolBar sends an update event for every tool in every
+        idle cycle; the tools follow signals instead (docs/MENUS.md)."""
+
     def AddLabelTool(self, id, label, bitmap1, bitmap2, kind, **kwargs):
         long_help_string = kwargs.pop("longHelp", "")
         short_help_string = kwargs.pop("shortHelp", "")
@@ -43,7 +48,7 @@ class _Toolbar(aui.AuiToolBar):
                 f"Toolbar item '{label}' has no bitmap at size "
                 f"{size[0]}x{size[1]}. Import the missing size from the "
                 f"distillery. See ICON_LIBRARY.md Step 2.3.",
-                prefix="ICON"
+                prefix="ICON",
             )
             img = wx.Image(size[0], size[1])
             img.InitAlpha()
@@ -87,20 +92,20 @@ class _Toolbar(aui.AuiToolBar):
                 f"A toolbar icon is missing this size - import it from the "
                 f"distillery and update icons.json sizes. "
                 f"See ICON_LIBRARY.md Step 2.3.",
-                prefix="ICON"
+                prefix="ICON",
             )
             return bitmap
         return bitmap.ConvertToImage().ConvertToGreyscale().ConvertToBitmap()
 
 
 class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
-    def __init__(self, window, settings,
-                 size=(MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2):
+    def __init__(self, window, size=(MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2):
         self.__window = window
-        self.__settings = settings
         self.__visible_ui_commands = list()
         self.__cache = None
         super().__init__(window, style=wx.TB_FLAT | wx.TB_NODIVIDER)
+        # Rebuilding the main toolbar destroys it without Clear()
+        self.Bind(wx.EVT_WINDOW_DESTROY, self.__on_destroy)
         self.SetToolBitmapSize(size)
         if operating_system.isMac():
             # Extra margin needed because the search control is too high
@@ -130,6 +135,17 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
     def detach(self):
         self.Clear()
         self.__visible_ui_commands = self.__cache = None
+
+    def __on_destroy(self, event):
+        """The commands' subscriptions end with the toolbar."""
+        event.Skip()
+        if event.GetEventObject() is not self:
+            return
+        for command in (self.__cache or []) + (
+            self.__visible_ui_commands or []
+        ):
+            if command.is_command():
+                command.removeInstance()
 
     def get_tool_id_by_command(self, command_name):
         if command_name == "EditToolBarPerspective":
@@ -167,9 +183,7 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
                 commands.append(uicommand.Spacer())
             from taskcoachlib.gui.dialog.toolbar import ToolBarEditor
 
-            ui_command = uicommand.EditToolBarPerspective(
-                self, ToolBarEditor, settings=self.__settings
-            )
+            ui_command = uicommand.EditToolBarPerspective(self, ToolBarEditor)
             commands.append(ui_command)
             self.__customizeId = ui_command.id
         if operating_system.isMac():
@@ -191,9 +205,6 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
         self.load_perspective(perspective)
         self.__window.saveToolBarPerspective(perspective)
 
-    # Keep old name as alias
-    savePerspective = save_perspective
-
     def uiCommands(self, cache=True):
         if self.__cache is None or not cache:
             raw = self.__window.createToolBarUICommands()
@@ -203,34 +214,22 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
     def visible_ui_commands(self):
         return self.__visible_ui_commands[:]
 
-    # Keep old name as alias
-    visibleUICommands = visible_ui_commands
-
     def get_default_perspective(self):
         """Get the default toolbar perspective from settings."""
-        if hasattr(self.__window, 'settingsSection'):
+        if hasattr(self.__window, "settingsSection"):
             section = self.__window.settingsSection()
         else:
             # MainWindow uses "view" section
             section = "view"
-        return self.__settings.getDefault(section, "toolbarperspective")
-
-    # Keep old name as alias
-    getDefaultPerspective = get_default_perspective
+        return settings.template(section)["toolbarperspective"]
 
     def AppendSeparator(self):
         """This little adapter is needed for
         uicommand.UICommandContainerMixin.append_ui_commands"""
         self.AddSeparator()
 
-    def AppendStretchSpacer(self, proportion):
-        self.AddStretchSpacer(proportion)
-
     def append_ui_command(self, ui_command):
         return ui_command.append_to_toolbar(self)
-
-    # Keep old name as alias
-    appendUICommand = append_ui_command
 
 
 class MainToolBar(ToolBar):
@@ -240,4 +239,5 @@ class MainToolBar(ToolBar):
     Uses standard AUI toolbar behavior with GetBestSize() for automatic
     height calculation based on icon size.
     """
+
     pass

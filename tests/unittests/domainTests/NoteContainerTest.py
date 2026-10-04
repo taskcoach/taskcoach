@@ -33,11 +33,15 @@ class NoteContainerTest(test.TestCase):
         cat = category.Category(subject="Cat")
         self.note.addCategory(cat)
         self.container.append(self.note)
-        self.assertTrue(self.note in cat.categorizables())
+        self.assertTrue(self.note in cat.members())
 
-    def testRemoveNoteWithCategory(self):
+    def test_removed_note_keeps_its_category(self):
+        # To come back with it on undo; the file's members drop it
         cat = category.Category(subject="Cat")
         self.note.addCategory(cat)
         self.container.append(self.note)
         self.container.remove(self.note)
-        self.assertFalse(self.note in cat.categorizables())
+        self.assertEqual(
+            ({cat}, {self.note}),
+            (self.note.categories(), cat.members()),
+        )

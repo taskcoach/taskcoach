@@ -19,17 +19,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import meta
+from taskcoachlib.i18n import po2dict
 import string  # pylint: disable=W0402
 import re
 import test
-import shutil, os
+import os
+import shutil
+import tempfile
+
+HERE = os.path.dirname(__file__)
+# Generated with xgettext (docs/TRANSLATIONS.md)
+TEMPLATE = os.path.join(HERE, "..", "..", "i18n.in", "messages.pot")
+LOCALES = os.path.join(HERE, "..", "..", "taskcoachlib", "i18n", "locales")
 
 
 class TranslationIntegrityTestsMixin(object):
     """Unittests for translations. This class is subclassed below for each
     translated string in each language."""
 
-    conversionSpecificationRE = re.compile("%\(\w+\)[sd]")
+    conversion_specification_re = re.compile(r"%\(\w+\)[sd]")
 
     @staticmethod
     def findMatches(regex, search_string):
@@ -39,7 +47,7 @@ class TranslationIntegrityTestsMixin(object):
         return matches
 
     def testMatchingConversionSpecifications(self):
-        regex = self.conversionSpecificationRE
+        regex = self.conversion_specification_re
         matches_english = self.findMatches(regex, self.englishString)
         matches_translation = self.findMatches(regex, self.translatedString)
         self.assertEqual(
@@ -145,6 +153,11 @@ class TranslationIntegrityTestsMixin(object):
 
 
 class TranslationCoverageTestsMixin(object):
+    def setUp(self):
+        super().setUp()
+        if not self.strings:
+            self.skipTest("no template: generate %s" % TEMPLATE)
+
     def testNotComplete(self):
         if self.enabled:
             percentDone = 100.0 * len(self.translation) / len(self.strings)
@@ -166,17 +179,23 @@ class TranslationCoverageTestsMixin(object):
             )
 
 
-def installAllTestCaseClasses():
-    shutil.copyfile(
-        os.path.join(os.path.dirname(__file__), "../../i18n.in/messages.pot"),
-        "messages.po",
-    )
-    from taskcoachlib.i18n import po2dict
-
-    po2dict.make("messages")
-    allStrings = set(po2dict.STRINGS)
+def install_all_test_case_classes():
+    all_strings = template_strings()
     for language, enabled in getLanguages():
-        installTestCaseClasses(language, enabled, allStrings)
+        install_test_case_classes(language, enabled, all_strings)
+
+
+def template_strings():
+    """Every translatable string: the template's msgids, or none when
+    the template was not generated."""
+    if not os.path.exists(TEMPLATE):
+        return set()
+    with tempfile.TemporaryDirectory() as folder:
+        copy = os.path.join(folder, "messages.po")  # parse() reads .po
+        shutil.copyfile(TEMPLATE, copy)
+        po2dict.STRINGS.clear()
+        po2dict.parse(copy)
+    return po2dict.STRINGS - {""}  # Less the header
 
 
 def getLanguages():
@@ -187,15 +206,16 @@ def getLanguages():
     ]
 
 
-def installTestCaseClasses(language, enabled, allStrings):
-    translation = __import__(
-        "taskcoachlib.i18n.%s" % language, fromlist=["dict"]
+def install_test_case_classes(language, enabled, all_strings):
+    # The .po files are read at startup, as the app does
+    translation, _encoding = po2dict.parse(
+        os.path.join(LOCALES, language + ".po")
     )
-    for englishString, translatedString in translation.dict.items():
+    for english_string, translated_string in translation.items():
         installTranslationTestCaseClass(
-            language, englishString, translatedString
+            language, english_string, translated_string
         )
-    installLanguageTestCaseClass(language, enabled, translation, allStrings)
+    installLanguageTestCaseClass(language, enabled, translation, all_strings)
 
 
 def installTranslationTestCaseClass(language, englishString, translatedString):
@@ -260,7 +280,7 @@ def languageTestCaseClass(
     class_ = type(
         className, (TranslationCoverageTestsMixin, test.TestCase), dict()
     )
-    class_.translation = translation.dict
+    class_.translation = translation
     class_.enabled = enabled
     class_.strings = allStrings
     class_.language = language
@@ -268,4 +288,4 @@ def languageTestCaseClass(
 
 
 # Create all test cases and install them in the global name space:
-installAllTestCaseClasses()
+install_all_test_case_classes()

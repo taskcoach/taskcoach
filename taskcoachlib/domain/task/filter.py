@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.domain import base
-from pubsub import pub
 from . import task
 from . import tasklist
 
@@ -27,6 +26,7 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
     def __init__(self, *args, **kwargs):
         self.__statuses_to_hide = set(kwargs.pop("statusesToHide", []))
         self.__hide_composite_tasks = kwargs.pop("hide_composite_tasks", False)
+        self.__status_changed = False
         self.register_observers()
         super().__init__(*args, **kwargs)
 
@@ -38,25 +38,26 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
             task.Task.actualStartDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
             task.Task.prerequisitesChangedEventType(),
-            task.Task.appearanceChangedEventType(),  # Proxy for status changes
             task.Task.addChildEventType(),
             task.Task.removeChildEventType(),
         ):
-            if event_type.startswith("pubsub"):
-                pub.subscribe(self.on_task_status_change, event_type)
-            else:
-                register_observer(
-                    self.on_task_status_change_deprecated, eventType=event_type
-                )
-        # Midnight processing, sent after the scheduler recomputed the
-        # task statuses for the new day
+            register_observer(self.on_task_status_change, eventType=event_type)
+        # The clock changes statuses without a date event: refilter once
+        # after the loop's pass, not for each task, as the sorter does
+        register_observer(
+            self.__on_status_changed,
+            eventType=task.Task.statusChangedEventType(),
+        )
+        register_observer(self.__on_pass, eventType="scheduler.pass")
+        # Midnight processing: which tasks are included may change with
+        # the day
         register_observer(self._on_date_changed, eventType="scheduler.date")
 
     def detach(self):
         super().detach()
-        patterns.Publisher().removeObserver(
-            self.on_task_status_change_deprecated
-        )
+        patterns.Publisher().removeObserver(self.on_task_status_change)
+        patterns.Publisher().removeObserver(self.__on_status_changed)
+        patterns.Publisher().removeObserver(self.__on_pass)
         patterns.Publisher().removeObserver(
             self._on_date_changed, eventType="scheduler.date"
         )
@@ -70,13 +71,15 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
         midnight."""
         self.reset()
 
-    def on_task_status_change(self, newValue, sender):  # pylint: disable=W0613
+    def on_task_status_change(self, event=None):  # pylint: disable=W0613
         self.reset()
 
-    def on_task_status_change_deprecated(
-        self, event=None
-    ):  # pylint: disable=W0613
-        self.reset()
+    def __on_status_changed(self, event):  # pylint: disable=W0613
+        self.__status_changed = True
+
+    def __on_pass(self, event):  # pylint: disable=W0613
+        if self.__status_changed:
+            self.reset()
 
     def hide_task_status(self, status, hide=True):
         if hide:
@@ -111,6 +114,7 @@ class ViewFilter(tasklist.TaskListQueryMixin, base.Filter):
         - The recursion handles grandparents that become orphans when their
           children are removed
         """
+        self.__status_changed = False  # Every status is read now
         # Call parent reset first (does normal filtering + ancestor addition)
         super().reset(event=event)
 

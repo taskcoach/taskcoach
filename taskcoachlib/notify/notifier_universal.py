@@ -18,30 +18,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from .notifier import AbstractNotifier
-from taskcoachlib import operating_system
+from taskcoachlib import operating_system, patterns
+from taskcoachlib.tools import wxhelper
 
 # ==============================================================================
 # Utils
 
 
-class AnimatedShow(wx.Timer):
+class AnimatedShow:
     """
     Utility class to show a frame with an animation
     """
 
     def __init__(self, frame, show=True):
-        super().__init__()
-
         if frame.CanSetTransparent():
             self.__frame = frame
             self.__step = 0
             self.__show = show
 
-            id_ = wx.NewId()
-            self.SetOwner(self, id_)
-            self.Bind(wx.EVT_TIMER, self.__OnTick, id=id_)
-            self.Start(100)
-            frame.Bind(wx.EVT_CLOSE, self.__OnClose)
+            self.__ticks = patterns.later.every(frame, 100, self.__on_tick)
 
             frame.SetTransparent(0)
 
@@ -50,7 +45,7 @@ class AnimatedShow(wx.Timer):
         else:
             frame.Show(show)
 
-    def __OnTick(self, event):  # pylint: disable=W0613
+    def __on_tick(self):
         self.__step += 1
 
         if self.__show:
@@ -61,53 +56,39 @@ class AnimatedShow(wx.Timer):
         self.__frame.SetTransparent(alpha)
 
         if self.__step == 10:
-            self.Stop()
+            self.__ticks.cancel()
 
             if not self.__show:
                 self.__frame.Close()
 
-    def __OnClose(self, event):
-        self.Stop()
-        event.Skip()
 
-
-class AnimatedMove(wx.Timer):
+class AnimatedMove:
     """
     Utility class to move a frame with an animation
     """
 
     def __init__(self, frame, destination):
-        super().__init__()
-
         self.__frame = frame
         self.__origin = frame.GetPosition()
         self.__destination = destination
         self.__step = 0
 
-        id_ = wx.NewId()
-        self.SetOwner(self, id_)
-        self.Bind(wx.EVT_TIMER, self.__OnTick, id=id_)
-        self.Start(100)
-        frame.Bind(wx.EVT_CLOSE, self.__OnClose)
+        self.__ticks = patterns.later.every(frame, 100, self.__on_tick)
 
-    def __OnTick(self, event):  # pylint: disable=W0613
+    def __on_tick(self):
         x0, y0 = self.__origin
         x1, y1 = self.__destination
         self.__step += 1
 
-        curX = int(x0 + (x1 - x0) * self.__step / 10)
-        curY = int(y0 + (y1 - y0) * self.__step / 10)
+        cur_x = int(x0 + (x1 - x0) * self.__step / 10)
+        cur_y = int(y0 + (y1 - y0) * self.__step / 10)
 
-        self.__frame.SetPosition(wx.Point(curX, curY))
+        self.__frame.SetPosition(wx.Point(cur_x, cur_y))
 
         if self.__step == 10:
-            self.Stop()
+            self.__ticks.cancel()
 
-    def __OnClose(self, event):
-        self.Stop()
-        event.Skip()
 
-
 # ==============================================================================
 # Notifications
 
@@ -169,7 +150,7 @@ class NotificationFrameBase(_NotifyBase):
             )
 
         # Seems that font copy-on-write does not work sometimes...
-        font = wx.FontFromNativeInfoString(
+        font = wxhelper.font_from_native_info(
             wx.NORMAL_FONT.GetNativeFontInfoDesc()
         )
         font.SetPointSize(8)
@@ -194,10 +175,6 @@ class NotificationFrameBase(_NotifyBase):
         sz.Add(panel, 1, wx.EXPAND)
         self.SetSizer(sz)
         self.Fit()
-
-    def Unpopulate(self):
-        self.DestroyChildren()
-        self.SetSizer(None)
 
     def close_button(self, panel):
         """
@@ -280,8 +257,6 @@ class _NotificationCenter(wx.EvtHandler):
     The class that handles notification frames.
     """
 
-    framePool = []
-
     def __init__(self):
         super().__init__()
 
@@ -289,12 +264,11 @@ class _NotificationCenter(wx.EvtHandler):
         self.waitingFrames = []
         self.notificationWidth = 300
         self.notificationMargin = 5
+        self._ticks = None  # Only while there are frames
 
-        self.__tmr = wx.Timer()
-        id_ = wx.NewId()
-        self.__tmr.SetOwner(self, id_)
-        self.Bind(wx.EVT_TIMER, self.__on_tick, id=id_)
-        self.__tmr.Start(1000)
+    def _start_ticks(self):
+        if self._ticks is None or not self._ticks.pending:
+            self._ticks = patterns.later.every(self, 1000, self._on_tick)
 
     def notify_frame(self, frm, timeout=None):
         """
@@ -304,6 +278,7 @@ class _NotificationCenter(wx.EvtHandler):
         @param timeout: Time to display the frame before automatically
             hiding it; in seconds.
         """
+        self._start_ticks()
 
         if frm.GetParent():
             dx, dy = frm.GetParent().GetPosition()
@@ -379,12 +354,6 @@ class _NotificationCenter(wx.EvtHandler):
             frame.Close()
         self.waitingFrames = []
 
-    def cleanup(self):
-        """Stop the notification timer to prevent crashes during app shutdown."""
-        if self.__tmr and self.__tmr.IsRunning():
-            self.__tmr.Stop()
-        self.hide_all()
-
     def GetDisplayRect(self):
         """
         Returns the geometry of the main application frame's display
@@ -395,7 +364,7 @@ class _NotificationCenter(wx.EvtHandler):
             return wx.ClientDisplayRect()
         return wx.Display(dpyIndex).GetClientArea()
 
-    def __on_tick(self, event):  # pylint: disable=W0613
+    def _on_tick(self):
         s = 0
         new_list = []
         # Next free bottom per display area, carried over from frame to
@@ -442,6 +411,8 @@ class _NotificationCenter(wx.EvtHandler):
 
         self.displayedFrames = new_list
         self.CheckWaiting()
+        if not self.displayedFrames and not self.waitingFrames:
+            self._ticks.cancel()  # Its job is done
 
 
 class NotificationCenter(object):
@@ -454,8 +425,6 @@ class NotificationCenter(object):
 
 
 class UniversalNotifier(AbstractNotifier):
-    def getName(self):
-        return "Task Coach"
 
     def isAvailable(self):
         return True
@@ -467,68 +436,3 @@ class UniversalNotifier(AbstractNotifier):
 
 
 AbstractNotifier.register(UniversalNotifier())
-
-
-if __name__ == "__main__":
-    from taskcoachlib.gui.icons.icon_library import (
-        icon_catalog,
-        LIST_ICON_SIZE,
-    )
-
-    class TestNotificationFrame(NotificationFrameBase):
-        def add_inner_content(self, sizer, panel):
-            choice = wx.Choice(panel, wx.ID_ANY)
-            choice.Append("One")
-            choice.Append("Two")
-            choice.Append("Three")
-            sizer.Add(choice, 0, wx.ALL | wx.EXPAND, 5)
-
-            hsz = wx.BoxSizer(wx.HORIZONTAL)
-            hsz.Add(wx.Button(panel, wx.ID_ANY, "OK"), 1, wx.ALL, 2)
-            hsz.Add(wx.Button(panel, wx.ID_ANY, "Cancel"), 1, wx.ALL, 2)
-            sizer.Add(hsz, 0, wx.EXPAND | wx.ALL, 5)
-
-        def close_button(self, panel):
-            return None
-
-    class TestFrame(wx.Frame):
-        def __init__(self):
-            super().__init__(None, wx.ID_ANY, "Test frame")
-            # pylint: disable=E1101
-            NotificationCenter().notify(
-                "Sample title", "Sample content", timeout=3
-            )
-            NotificationCenter().notify(
-                "Other sample",
-                "Multi-line sample content\nfor example\nDont try this at home",
-                timeout=3,
-                wx_bitmap=icon_catalog.get_bitmap(
-                    "nuvola_apps_korganizer", LIST_ICON_SIZE
-                ),
-            )
-            NotificationCenter().notify("Before last sample", "Spam!")
-            NotificationCenter().notify_frame(
-                TestNotificationFrame(
-                    "Test custom",
-                    wx_bitmap=icon_catalog.get_bitmap(
-                        "nuvola_apps_korganizer", LIST_ICON_SIZE
-                    ),
-                )
-            )
-            NotificationCenter().notify("Last sample", "Foobar!")
-
-            self.Bind(wx.EVT_CLOSE, self.OnClose)
-
-        def OnClose(self, evt):
-            NotificationCenter().hide_all()  # pylint: disable=E1101
-            evt.Skip()
-
-    class App(wx.App):
-        def OnInit(self):
-            from taskcoachlib.gui.icons import icon_library
-
-            icon_library.init()
-            TestFrame().Show()
-            return True
-
-    App(0).MainLoop()

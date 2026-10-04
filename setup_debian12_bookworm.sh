@@ -43,7 +43,7 @@ elif [ ! -f /etc/debian_version ]; then
 fi
 
 # Check Python version
-echo -e "${BLUE}[1/7] Checking Python version...${NC}"
+echo -e "${BLUE}[1/5] Checking Python version...${NC}"
 PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
 PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
 PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
@@ -59,7 +59,7 @@ fi
 echo
 
 # Install system dependencies
-echo -e "${BLUE}[2/7] Installing system dependencies...${NC}"
+echo -e "${BLUE}[2/5] Installing system dependencies...${NC}"
 echo "This will install system packages from Debian repos."
 echo "Requires sudo privileges."
 
@@ -67,14 +67,10 @@ if command -v sudo &> /dev/null; then
     sudo apt-get update -qq
     sudo apt-get install -y \
         python3-wxgtk4.0 \
-        python3-six \
-        python3-lxml \
-        python3-numpy \
         python3-dateutil \
         python3-chardet \
         python3-keyring \
-        python3-pyparsing \
-        python3-pyxdg \
+        python3-enchant \
         python3-venv \
         python3-squaremap
     echo -e "${GREEN}✓ System packages installed${NC}"
@@ -85,7 +81,7 @@ fi
 echo
 
 # Create virtual environment for packages not in Debian repos
-echo -e "${BLUE}[3/7] Creating virtual environment...${NC}"
+echo -e "${BLUE}[3/5] Creating virtual environment...${NC}"
 VENV_PATH="$SCRIPT_DIR/.venv"
 
 if [ -d "$VENV_PATH" ]; then
@@ -106,20 +102,14 @@ fi
 echo
 
 # Install Python dependencies not available in Debian repos or with version issues
-echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
-echo "Installing: distro, pypubsub, pyparsing>=3.1.3, watchdog>=3.0.0"
-
-source "$VENV_PATH/bin/activate"
-# Note: pyparsing>=3.1.3 required for deltaTime.py (Debian Bookworm only has 3.0.9)
-# Note: watchdog>=3.0.0 for file system monitoring (Bookworm has 2.2.1)
-pip install --quiet distro pypubsub 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
-deactivate
+echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
+echo "Nothing to install: every dependency comes from the Debian repositories"
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
 
 # Check launch script
-echo -e "${BLUE}[5/7] Checking launch script...${NC}"
+echo -e "${BLUE}[5/5] Checking launch script...${NC}"
 if [ -f "$SCRIPT_DIR/taskcoach-run.sh" ]; then
     chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
     echo -e "${GREEN}✓ Launch script is ready: taskcoach-run.sh${NC}"
@@ -154,44 +144,6 @@ else
     exit 1
 fi
 
-# Test 3: Test venv packages individually
-echo "Testing virtual environment packages..."
-source "$VENV_PATH/bin/activate"
-
-VENV_FAILED=0
-
-# Test venv packages
-for pkg in "distro"; do
-    echo -n "  - $pkg... "
-    if python3 -c "import $pkg" 2>/dev/null; then
-        echo -e "${GREEN}✓${NC}"
-    else
-        echo -e "${RED}✗ Failed${NC}"
-        VENV_FAILED=1
-    fi
-done
-
-# pypubsub package provides 'pubsub' module
-echo -n "  - pypubsub... "
-if python3 -c "from pubsub import pub" 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
-    VENV_FAILED=1
-fi
-
-deactivate
-
-if [ $VENV_FAILED -eq 1 ]; then
-    echo -e "${RED}✗ Some packages failed to import${NC}"
-    echo "Try recreating the virtual environment:"
-    echo "  rm -rf $VENV_PATH"
-    echo "  python3 -m venv --system-site-packages $VENV_PATH"
-    echo "  source $VENV_PATH/bin/activate"
-    echo "  pip install distro pypubsub"
-    exit 1
-fi
-
 # Test 4: Run help
 echo -n "Testing application help... "
 if "$SCRIPT_DIR/taskcoach-run.sh" --help &>/dev/null; then
@@ -214,29 +166,13 @@ else
 fi
 
 echo
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}[6/7] Applying wxPython patch...${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo
-
-# Apply the wxPython background color patch automatically
-if [ -f "$SCRIPT_DIR/apply-wxpython-patch.sh" ]; then
-    "$SCRIPT_DIR/apply-wxpython-patch.sh"
-else
-    echo -e "${YELLOW}⚠ Warning: apply-wxpython-patch.sh not found${NC}"
-    echo "  Category row background coloring may not work correctly"
-fi
-
-echo
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up with:"
-echo "  • System packages from Debian repos (wxPython, numpy, lxml, squaremap, etc.)"
+echo "  • System packages from Debian repos (wxPython, squaremap, etc.)"
 echo "  • Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  • Additional packages in venv (distro, pypubsub, pyparsing, watchdog)"
-echo "  • wxPython background color patch (for category row coloring)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"

@@ -16,9 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
+from unittest import mock
+
 import test
 import wx
-from taskcoachlib import meta, application, config
+from taskcoachlib import meta, application, i18n
+from taskcoachlib.config import settings
 
 
 class DummyOptions(object):
@@ -27,73 +31,99 @@ class DummyOptions(object):
 
 
 class DummyLocale(object):
+    """The locale calls the app makes, for one language."""
+
+    LC_MESSAGES = 5
+
     def __init__(self, language="C"):
         self.language = language
 
-    def getdefaultlocale(self):
+    def getlocale(self, category):  # pylint: disable=W0613
         return self.language, None
 
 
 class AppTests(test.TestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
         self.options = DummyOptions()
 
-    def testAppProperties(self):
-        import locale
+    def test_app_properties(self):
+        # The harness made a translator for the unit tests; the app
+        # makes its own, as at a real start (its guard stops a second)
+        i18n.Translator.deleteInstance()
+        # Creating the app is expensive: all the queries in one test
+        app = application.Application(
+            load_settings=False, load_task_file=False
+        )
+        wx_app = wx.GetApp()
+        self.assertEqual(meta.name, wx_app.GetAppName())
+        self.assertEqual(meta.author, wx_app.GetVendorName())
+        app.mainwindow._idleController.stop()
+        app.quit_application()
+        app.mainwindow.Destroy()
+        application.Application.deleteInstance()
 
-        if locale.getdefaultlocale()[0] != "en_US":
-            # Somehow wx displays an error dialog box if en_US is not installed, when
-            # quit_application() calls ProcessIdle and I don't know how to get rid of it.
-            # I don't know how to find out if en_US is installed either, so skip if
-            # it's not the default.
-            self.skipTest("Locale is not en_US")
-        else:
-            # Normally I prefer one assert per test, but creating the app is
-            # expensive, so we do all the queries in one test method.
-            app = application.Application(
-                load_settings=False, load_task_file=False
-            )
-            wxApp = wx.GetApp()
-            self.assertEqual(meta.name, wxApp.GetAppName())
-            self.assertEqual(meta.author, wxApp.GetVendorName())
-            app.mainwindow._idleController.stop()
-            app.quit_application()
-            app.mainwindow.Destroy()
-            application.Application.deleteInstance()
-
-    def assertLanguage(self, expectedLanguage, locale=None):
-        args = [self.options, self.settings]
+    def assert_language(self, expected_language, locale=None, **environ):
+        args = [self.options]
         if locale:
             args.append(locale)
-        self.assertEqual(
-            expectedLanguage, application.Application.determine_language(*args)
-        )  # pylint: disable=W0142
+        # Not this machine's language: only the one given here
+        with mock.patch.dict(os.environ):
+            for name in ("LC_ALL", "LC_MESSAGES", "LANG"):
+                os.environ.pop(name, None)
+            os.environ.update(environ)
+            self.assertEqual(
+                expected_language,
+                application.Application.determine_language(*args),
+            )  # pylint: disable=W0142
 
     def testLanguageViaCommandLineOption(self):
         self.options.language = "fi_FI"
-        self.assertLanguage("fi_FI")
+        self.assert_language("fi_FI")
 
     def testLanguageViaCommandLinePoFile(self):
         self.options.pofile = "nl_NL"
-        self.assertLanguage("nl_NL")
+        self.assert_language("nl_NL")
 
     def testLanguageViaExternallySetLanguage(self):
-        self.settings.set("view", "language", "de_DE")
-        self.assertLanguage("de_DE")
+        settings.view.language = "de_DE"
+        self.assert_language("de_DE")
 
     def testLanguageSetByUser(self):
-        self.settings.set("view", "language_set_by_user", "de_DE")
-        self.assertLanguage("de_DE")
+        settings.view.language_set_by_user = "de_DE"
+        self.assert_language("de_DE")
 
     def testLanguageSetByUser_OverridesExternallySetLanguage(self):
-        self.settings.set("view", "language", "nl_NL")
-        self.settings.set("view", "language_set_by_user", "de_DE")
-        self.assertLanguage("de_DE")
+        settings.view.language = "nl_NL"
+        settings.view.language_set_by_user = "de_DE"
+        self.assert_language("de_DE")
 
-    def testLanguageViaLocale(self):
-        self.assertLanguage("en_GB", DummyLocale("en_GB"))
+    def test_language_via_lang(self):
+        self.assert_language("en_GB", DummyLocale(), LANG="en_GB.UTF-8")
 
-    def testLanguageViaCLocale(self):
-        self.assertLanguage("en_US", DummyLocale())
+    def test_lc_all_comes_before_lang(self):
+        self.assert_language(
+            "de_DE", DummyLocale(), LANG="en_GB.UTF-8", LC_ALL="de_DE.UTF-8"
+        )
+
+    def test_lc_messages_comes_before_lang(self):
+        self.assert_language(
+            "fr_FR",
+            DummyLocale(),
+            LANG="en_GB.UTF-8",
+            LC_MESSAGES="fr_FR.UTF-8",
+        )
+
+    def test_lc_all_comes_before_lc_messages(self):
+        self.assert_language(
+            "de_DE",
+            DummyLocale(),
+            LC_MESSAGES="fr_FR.UTF-8",
+            LC_ALL="de_DE.UTF-8",
+        )
+
+    def test_language_via_the_locale(self):
+        self.assert_language("en_GB", DummyLocale("en_GB"))
+
+    def test_language_via_the_c_locale(self):
+        self.assert_language("en_US", DummyLocale())

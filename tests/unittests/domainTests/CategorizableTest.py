@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test, wx
 from taskcoachlib import patterns
-from taskcoachlib.domain import category, categorizable
+from taskcoachlib.domain import category, categorizable, date, note
 
 
 class CategorizableCompositeObjectTest(test.TestCase):
@@ -36,9 +36,6 @@ class CategorizableCompositeObjectTest(test.TestCase):
     )
     categorySubjectChangedEventType = (
         categorizable.CategorizableCompositeObject.categorySubjectChangedEventType()
-    )
-    appearanceChangedEventType = (
-        categorizable.CategorizableCompositeObject.appearanceChangedEventType()
     )
 
     def assertEvent(self, *expectedEventArgs):
@@ -66,6 +63,14 @@ class CategorizableCompositeObjectTest(test.TestCase):
     def testAddCategory(self):
         self.categorizable.addCategory(self.category)
         self.assertEqual(set([self.category]), self.categorizable.categories())
+
+    def test_category_change_sets_the_modification_date(self):
+        before = date.Now()
+        self.categorizable.addCategory(self.category)
+        self.assertTrue(before <= self.categorizable.modificationDateTime())
+        self.categorizable.set_modification_datetime(date.DateTime.min)
+        self.categorizable.removeCategory(self.category)
+        self.assertTrue(before <= self.categorizable.modificationDateTime())
 
     def testAddCategoryNotification(self):
         self.registerObserver(self.categoryAddedEventType)
@@ -109,15 +114,16 @@ class CategorizableCompositeObjectTest(test.TestCase):
         )
         self.assertEqual(set(categories), categorizableObject.categories())
 
-    def testAddCategoryDoesNotAddCategorizableToCategory(self):
+    def test_adding_a_category_makes_the_item_a_member(self):
+        # The category's members are the index of its items' categories
         self.categorizable.addCategory(self.category)
-        self.assertEqual(set([]), self.category.categorizables())
+        self.assertEqual({self.categorizable}, self.category.members())
 
     def testAddParentToCategory(self):
         child = categorizable.CategorizableCompositeObject(subject="child")
         self.registerObserver(self.categoryAddedEventType, eventSource=child)
         self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
+        child.set_parent(self.categorizable)
         cat = category.Category(subject="Parent category")
         self.categorizable.addCategory(cat)
         self.assertEvent(self.categoryAddedEventType, child, cat)
@@ -151,7 +157,6 @@ class CategorizableCompositeObjectTest(test.TestCase):
     def testCategorySubjectChanged(self):
         self.registerObserver(self.categorySubjectChangedEventType)
         self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
         self.category.setSubject("New subject")
         self.assertEvent(
             self.categorySubjectChangedEventType,
@@ -169,7 +174,6 @@ class CategorizableCompositeObjectTest(test.TestCase):
         )
         self.categorizable.addChild(childCategorizable)
         self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
         self.category.setSubject("New subject")
         self.assertEvent(
             self.categorySubjectChangedEventType,
@@ -177,555 +181,20 @@ class CategorizableCompositeObjectTest(test.TestCase):
             "New subject",
         )
 
-    def testForegroundColor(self):
-        self.categorizable.addCategory(self.category)
-        self.category.setForegroundColor(wx.RED)
-        self.assertEqual(
-            wx.RED, self.categorizable.foregroundColor(recursive=True)
-        )
-
-    def testBackgroundColor(self):
-        self.categorizable.addCategory(self.category)
-        self.category.setBackgroundColor(wx.RED)
-        self.assertEqual(
-            wx.RED, self.categorizable.backgroundColor(recursive=True)
-        )
-
-    def testFont(self):
-        self.categorizable.addCategory(self.category)
-        self.category.setFont(wx.SWISS_FONT)
-        self.assertEqual(
-            wx.SWISS_FONT, self.categorizable.font(recursive=True)
-        )
-
-    def testCategorizableOwnForegroundColorOverridesCategoryForegroundColor(
-        self,
-    ):
-        self.categorizable.addCategory(self.category)
-        self.category.setForegroundColor(wx.RED)
-        self.categorizable.setForegroundColor(wx.GREEN)
-        self.assertEqual(
-            wx.GREEN, self.categorizable.foregroundColor(recursive=True)
-        )
-
-    def testCategorizableOwnBackgroundColorOverridesCategoryBackgroundColor(
-        self,
-    ):
-        self.categorizable.addCategory(self.category)
-        self.category.setBackgroundColor(wx.RED)
-        self.categorizable.setBackgroundColor(wx.GREEN)
-        self.assertEqual(
-            wx.GREEN, self.categorizable.backgroundColor(recursive=True)
-        )
-
-    def testCategorizableOwnFontOverridesCategoryFont(self):
+    def test_categorizable_own_font_overrides_category_font(self):
         self.categorizable.addCategory(self.category)
         self.category.setFont(wx.SWISS_FONT)
         self.categorizable.setFont(wx.NORMAL_FONT)
         self.assertEqual(wx.NORMAL_FONT, self.categorizable.font())
 
-    def testForegroundColorWithTupleColor(self):
-        self.categorizable.addCategory(self.category)
-        self.category.setForegroundColor((255, 0, 0, 255))
-        self.assertEqual(
-            wx.RED, self.categorizable.foregroundColor(recursive=True)
-        )
-
-    def testBackgroundColorWithTupleColor(self):
-        self.categorizable.addCategory(self.category)
-        self.category.setBackgroundColor((255, 0, 0, 255))
-        self.assertEqual(
-            wx.RED, self.categorizable.backgroundColor(recursive=True)
-        )
-
-    def testSubItemUsesParentForegroundColor(self):
-        self.categorizable.addCategory(self.category)
-        child = categorizable.CategorizableCompositeObject()
-        self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
-        self.category.setForegroundColor(wx.RED)
-        self.assertEqual(wx.RED, child.foregroundColor(recursive=True))
-
-    def testSubItemUsesParentBackgroundColor(self):
-        self.categorizable.addCategory(self.category)
-        child = categorizable.CategorizableCompositeObject()
-        self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
-        self.category.setBackgroundColor(wx.RED)
-        self.assertEqual(wx.RED, child.backgroundColor(recursive=True))
-
-    def testSubItemUsesParentFont(self):
-        self.categorizable.addCategory(self.category)
-        child = categorizable.CategorizableCompositeObject()
-        self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
-        self.category.setFont(wx.SWISS_FONT)
-        self.assertEqual(wx.SWISS_FONT, child.font(recursive=True))
-
-    def testSubItemDoesNotUseParentForegroundColorWhenItHasItsOwnForegroundColor(
-        self,
-    ):
-        child = categorizable.CategorizableCompositeObject()
-        self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
-        child.addCategory(self.category)
-        self.categorizable.setForegroundColor(wx.RED)
-        self.category.setForegroundColor(wx.BLUE)
-        self.assertEqual(wx.BLUE, child.foregroundColor(recursive=True))
-
-    def testSubItemDoesNotUseParentBackgroundColorWhenItHasItsOwnBackgroundColor(
-        self,
-    ):
-        child = categorizable.CategorizableCompositeObject()
-        self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
-        child.addCategory(self.category)
-        self.categorizable.setBackgroundColor(wx.RED)
-        self.category.setBackgroundColor(wx.BLUE)
-        self.assertEqual(wx.BLUE, child.backgroundColor(recursive=True))
-
-    def testSubItemDoesNotUseParentFontWhenItHasItsOwnFont(self):
-        child = categorizable.CategorizableCompositeObject()
-        self.categorizable.addChild(child)
-        child.setParent(self.categorizable)
-        child.addCategory(self.category)
-        self.categorizable.setFont(
-            wx.Font(
-                10,
-                wx.FONTFAMILY_SWISS,
-                wx.FONTSTYLE_NORMAL,
-                wx.FONTWEIGHT_NORMAL,
-            )
-        )
-        categoryFont = wx.Font(
-            11, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
-        self.category.setFont(categoryFont)
-        self.assertEqual(categoryFont, child.font(recursive=True))
-
-    def testForegroundColorChanged(self):
-        self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
-        self.registerObserver(self.appearanceChangedEventType)
-        self.category.setForegroundColor(wx.RED)
-        self.assertEqual(1, len(self.events))
-
-    def testBackgroundColorChanged(self):
-        self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
-        self.registerObserver(self.appearanceChangedEventType)
-        self.category.setBackgroundColor(wx.RED)
-        self.assertEqual(1, len(self.events))
-
-    def testFontChanged(self):
-        self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
-        self.registerObserver(self.appearanceChangedEventType)
-        self.category.setFont(wx.SWISS_FONT)
-        self.assertEqual(1, len(self.events))
-
-    def testIconChanged(self):
-        self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
-        self.registerObserver(self.appearanceChangedEventType)
-        self.category.set_icon_id("icon")
-        self.assertEqual(1, len(self.events))
-
-    def testForegroundColorChanged_NotifySubItemsToo(self):
-        child = categorizable.CategorizableCompositeObject()
-        self.categorizable.addChild(child)
-        self.registerObserver(
-            self.appearanceChangedEventType, eventSource=child
-        )
-        self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
-        self.category.setForegroundColor(wx.RED)
-        self.assertEqual(1, len(self.events))
-
-    def testBackgroundColorChanged_NotifySubItemsToo(self):
-        child = categorizable.CategorizableCompositeObject()
-        self.categorizable.addChild(child)
-        self.registerObserver(
-            self.appearanceChangedEventType, eventSource=child
-        )
-        self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
-        self.category.setBackgroundColor(wx.RED)
-        self.assertEqual(1, len(self.events))
-
-    def testFontChanged_NotifySubItemsToo(self):
-        child = categorizable.CategorizableCompositeObject()
-        self.categorizable.addChild(child)
-        self.registerObserver(
-            self.appearanceChangedEventType, eventSource=child
-        )
-        self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
-        self.category.setFont(wx.SWISS_FONT)
-        self.assertEqual(1, len(self.events))
-
-    def testIconChanged_NotifySubItemsToo(self):
-        child = categorizable.CategorizableCompositeObject()
-        self.categorizable.addChild(child)
-        self.registerObserver(
-            self.appearanceChangedEventType, eventSource=child
-        )
-        self.categorizable.addCategory(self.category)
-        self.category.addCategorizable(self.categorizable)
-        self.category.set_icon_id("icon")
-        self.assertEqual(1, len(self.events))
-
-    def testCategorizableDoesNotNotifyWhenItHasItsOwnForegroundColor(self):
-        self.categorizable.addCategory(self.category)
-        self.categorizable.setForegroundColor(wx.RED)
-        self.registerObserver(self.categorizable.appearanceChangedEventType())
-        self.category.setForegroundColor(wx.GREEN)
-        self.assertFalse(self.events)
-
-    def testCategorizableDoesNotNotifyWhenItHasItsOwnBackgroundColor(self):
-        self.categorizable.addCategory(self.category)
-        self.categorizable.setBackgroundColor(wx.RED)
-        self.registerObserver(self.categorizable.appearanceChangedEventType())
-        self.category.setBackgroundColor(wx.GREEN)
-        self.assertFalse(self.events)
-
-    def testCategorizableDoesNotNotifyWhenItHasItsOwnFont(self):
-        self.categorizable.addCategory(self.category)
-        self.categorizable.setFont(wx.SWISS_FONT)
-        self.registerObserver(self.categorizable.appearanceChangedEventType())
-        self.category.setFont(wx.NORMAL_FONT)
-        self.assertFalse(self.events)
-
-    def testCategorizableDoesNotNotifyWhenItHasItsOwnIcon(self):
-        self.categorizable.addCategory(self.category)
-        self.categorizable.set_icon_id("icon")
-        self.registerObserver(self.categorizable.appearanceChangedEventType())
-        self.category.set_icon_id("another icon")
-        self.assertFalse(self.events)
-
-    def testParentForegroundColorChanged(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        subCategory = category.Category("Subcategory")
-        self.category.addChild(subCategory)
-        subCategory.setParent(self.category)
-        self.categorizable.addCategory(subCategory)
-        subCategory.addCategorizable(self.categorizable)
-        self.category.setForegroundColor(wx.RED)
-        self.assertEqual(1, len(self.events))
-
-    def testParentBackgroundColorChanged(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        subCategory = category.Category("Subcategory")
-        self.category.addChild(subCategory)
-        subCategory.setParent(self.category)
-        self.categorizable.addCategory(subCategory)
-        subCategory.addCategorizable(self.categorizable)
-        self.category.setBackgroundColor(wx.RED)
-        self.assertEqual(1, len(self.events))
-
-    def testParentFontChanged(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        subCategory = category.Category("Subcategory")
-        self.category.addChild(subCategory)
-        subCategory.setParent(self.category)
-        self.categorizable.addCategory(subCategory)
-        subCategory.addCategorizable(self.categorizable)
-        self.category.setFont(wx.SWISS_FONT)
-        self.assertEqual(1, len(self.events))
-
-    def testParentIconChanged(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        subCategory = category.Category("Subcategory")
-        self.category.addChild(subCategory)
-        subCategory.setParent(self.category)
-        self.categorizable.addCategory(subCategory)
-        subCategory.addCategorizable(self.categorizable)
-        self.category.set_icon_id("icon")
-        self.assertEqual(1, len(self.events))
-
-    def testAddCategoryWithForegroundColor(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        newCategory = category.Category("New category")
-        newCategory.setForegroundColor(wx.RED)
-        self.categorizable.addCategory(newCategory)
-        self.assertEqual(1, len(self.events))
-
-    def testAddCategoryWithBackgroundColor(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        newCategory = category.Category("New category")
-        newCategory.setBackgroundColor(wx.RED)
-        self.categorizable.addCategory(newCategory)
-        self.assertEqual(1, len(self.events))
-
-    def testAddCategoryWithFont(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        newCategory = category.Category("New category")
-        newCategory.setFont(wx.SWISS_FONT)
-        self.categorizable.addCategory(newCategory)
-        self.assertEqual(1, len(self.events))
-
-    def testAddCategoryWithIcon(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        newCategory = category.Category("New category")
-        newCategory.set_icon_id("icon")
-        self.categorizable.addCategory(newCategory)
-        self.assertEqual(1, len(self.events))
-
-    def testAddCategoryWithParentWithForegroundColor(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        parentCategory = category.Category("Parent")
-        parentCategory.setForegroundColor(wx.RED)
-        childCategory = category.Category("Child")
-        parentCategory.addChild(childCategory)
-        childCategory.setParent(parentCategory)
-        self.categorizable.addCategory(childCategory)
-        self.assertEqual(1, len(self.events))
-
-    def testAddCategoryWithParentWithBackgroundColor(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        parentCategory = category.Category("Parent")
-        parentCategory.setBackgroundColor(wx.RED)
-        childCategory = category.Category("Child")
-        parentCategory.addChild(childCategory)
-        childCategory.setParent(parentCategory)
-        self.categorizable.addCategory(childCategory)
-        self.assertEqual(1, len(self.events))
-
-    def testAddCategoryWithParentWithFont(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        parentCategory = category.Category("Parent")
-        parentCategory.setFont(wx.SWISS_FONT)
-        childCategory = category.Category("Child")
-        parentCategory.addChild(childCategory)
-        childCategory.setParent(parentCategory)
-        self.categorizable.addCategory(childCategory)
-        self.assertEqual(1, len(self.events))
-
-    def testAddCategoryWithParentWithIcon(self):
-        self.registerObserver(self.appearanceChangedEventType)
-        parentCategory = category.Category("Parent")
-        parentCategory.set_icon_id("icon")
-        childCategory = category.Category("Child")
-        parentCategory.addChild(childCategory)
-        childCategory.setParent(parentCategory)
-        self.categorizable.addCategory(childCategory)
-        self.assertEqual(1, len(self.events))
-
-    def testRemoveCategoryWithForegroundColor(self):
-        self.categorizable.addCategory(self.category)
-        self.category.setForegroundColor(wx.RED)
-        self.registerObserver(self.appearanceChangedEventType)
-        self.categorizable.removeCategory(self.category)
-        self.assertEqual(1, len(self.events))
-
-    def testRemoveCategoryWithBackgroundColor(self):
-        self.categorizable.addCategory(self.category)
-        self.category.setBackgroundColor(wx.RED)
-        self.registerObserver(self.appearanceChangedEventType)
-        self.categorizable.removeCategory(self.category)
-        self.assertEqual(1, len(self.events))
-
-    def testRemoveCategoryWithFont(self):
-        self.categorizable.addCategory(self.category)
-        self.category.setFont(wx.SWISS_FONT)
-        self.registerObserver(self.appearanceChangedEventType)
-        self.categorizable.removeCategory(self.category)
-        self.assertEqual(1, len(self.events))
-
-    def testRemoveCategoryWithIcon(self):
-        self.categorizable.addCategory(self.category)
-        self.category.set_icon_id("icon")
-        self.registerObserver(self.appearanceChangedEventType)
-        self.categorizable.removeCategory(self.category)
-        self.assertEqual(1, len(self.events))
-
-    def testForegroundColorWhenOneOutOfTwoCategoriesHasForegroundColor(self):
-        self.categorizable.addCategory(self.category)
-        self.categorizable.addCategory(category.Category("Another category"))
-        self.category.setForegroundColor(wx.RED)
-        self.assertEqual(
-            wx.RED, self.categorizable.foregroundColor(recursive=True)
-        )
-
-    def testBackgroundColorWhenOneOutOfTwoCategoriesHasBackgroundColor(self):
-        self.categorizable.addCategory(self.category)
-        self.categorizable.addCategory(category.Category("Another category"))
-        self.category.setBackgroundColor(wx.RED)
-        self.assertEqual(
-            wx.RED, self.categorizable.backgroundColor(recursive=True)
-        )
-
-    def testFontWhenOneOutOfTwoCategoriesHasFont(self):
-        self.categorizable.addCategory(self.category)
-        self.categorizable.addCategory(category.Category("Another category"))
-        self.category.setFont(wx.SWISS_FONT)
-        self.assertEqual(
-            wx.SWISS_FONT, self.categorizable.font(recursive=True)
-        )
-
-    def testIconWhenOneOutOfTwoCategoriesHasIcon(self):
-        self.categorizable.addCategory(self.category)
-        self.categorizable.addCategory(category.Category("Another category"))
-        self.category.set_icon_id("icon")
-        self.assertEqual("icon", self.categorizable.icon_id(recursive=True))
-
-    def testForegroundColorWhenBothCategoriesHaveSameForegroundColor(self):
-        self.categorizable.addCategory(self.category)
-        anotherCategory = category.Category("Another category")
-        self.categorizable.addCategory(anotherCategory)
-        for cat in [self.category, anotherCategory]:
-            cat.setForegroundColor(wx.RED)
-        self.assertEqual(
-            wx.RED, self.categorizable.foregroundColor(recursive=True)
-        )
-
-    def testBackgroundColorWhenBothCategoriesHaveSameBackgroundColor(self):
-        self.categorizable.addCategory(self.category)
-        anotherCategory = category.Category("Another category")
-        self.categorizable.addCategory(anotherCategory)
-        for cat in [self.category, anotherCategory]:
-            cat.setBackgroundColor(wx.RED)
-        self.assertEqual(
-            wx.RED, self.categorizable.backgroundColor(recursive=True)
-        )
-
-    def testFontWhenBothCategoriesHaveSameFont(self):
-        self.categorizable.addCategory(self.category)
-        anotherCategory = category.Category("Another category")
-        self.categorizable.addCategory(anotherCategory)
-        for cat in [self.category, anotherCategory]:
-            cat.setFont(wx.SWISS_FONT)
-        self.assertEqual(
-            wx.SWISS_FONT, self.categorizable.font(recursive=True)
-        )
-
-    def testIconWhenBothCategoriesHaveSameIcon(self):
-        self.categorizable.addCategory(self.category)
-        anotherCategory = category.Category("Another category")
-        self.categorizable.addCategory(anotherCategory)
-        for cat in [self.category, anotherCategory]:
-            cat.set_icon_id("icon")
-        self.assertEqual("icon", self.categorizable.icon_id(recursive=True))
-
-    def testForegroundColorWhenBothCategoriesHaveDifferentForegroundColors(
-        self,
-    ):
-        self.categorizable.addCategory(self.category)
-        anotherCategory = category.Category("Another category")
-        self.categorizable.addCategory(anotherCategory)
-        self.category.setForegroundColor(wx.RED)
-        anotherCategory.setForegroundColor(wx.BLUE)
-        expectedColor = wx.Colour(127, 0, 127, 255)
-        self.assertEqual(
-            expectedColor, self.categorizable.foregroundColor(recursive=True)
-        )
-
-    def testBackgroundColorWhenBothCategoriesHaveDifferentBackgroundColors(
-        self,
-    ):
-        self.categorizable.addCategory(self.category)
-        anotherCategory = category.Category("Another category")
-        self.categorizable.addCategory(anotherCategory)
-        self.category.setBackgroundColor(wx.RED)
-        anotherCategory.setBackgroundColor(wx.BLUE)
-        expectedColor = wx.Colour(127, 0, 127, 255)
-        self.assertEqual(
-            expectedColor, self.categorizable.backgroundColor(recursive=True)
-        )
-
-    def testFontWhenBothCategoriesHaveDifferentFontSizes(self):
-        self.categorizable.addCategory(self.category)
-        anotherCategory = category.Category("Another category")
-        self.categorizable.addCategory(anotherCategory)
-        font = wx.SWISS_FONT
-        self.category.setFont(font)
-        biggerFont = wx.Font(
-            font.GetPointSize() + 2,
-            font.GetFamily(),
-            font.GetStyle(),
-            font.GetWeight(),
-        )
-        anotherCategory.setFont(biggerFont)
-        expectedFontSize = (
-            biggerFont.GetPointSize() + font.GetPointSize()
-        ) / 2
-        self.assertEqual(
-            expectedFontSize,
-            self.categorizable.font(recursive=True).GetPointSize(),
-        )
-
-    def testIconWhenBothCategoriesHaveDifferentIcons(self):
-        self.categorizable.addCategory(self.category)
-        anotherCategory = category.Category("Another category")
-        self.categorizable.addCategory(anotherCategory)
-        self.category.set_icon_id("icon")
-        anotherCategory.set_icon_id("another_icon")
-        self.assertTrue(
-            self.categorizable.icon_id(recursive=True)
-            in ["icon", "another_icon"]
-        )
-
-    def testUseCategoryIcon(self):
+    def test_own_icon_is_not_the_category_icon(self):
         self.category.set_icon_id("categoryIcon")
         self.categorizable.addCategory(self.category)
-        self.assertEqual(
-            "categoryIcon", self.categorizable.icon_id(recursive=True)
-        )
+        self.assertFalse(self.categorizable.icon_id())
 
-    def testDontUseCategoryIconWhenCategorizableHasItsOwnIcon(self):
-        self.category.set_icon_id("categoryIcon")
-        self.categorizable.set_icon_id("icon")
-        self.categorizable.addCategory(self.category)
-        self.assertEqual("icon", self.categorizable.icon_id(recursive=True))
-
-    def testDontUseCategoryIconWhenNotRecursive(self):
-        self.category.set_icon_id("categoryIcon")
-        self.categorizable.addCategory(self.category)
-        self.assertFalse(self.categorizable.icon_id(recursive=False))
-
-    def testUseCategoryIconEvenWhenCategorizableHasARecursiveIcon(self):
-        child = categorizable.CategorizableCompositeObject(subject="child")
-        self.categorizable.addChild(child)
-        self.categorizable.set_icon_id("icon")
-        self.category.set_icon_id("categoryIcon")
-        child.addCategory(self.category)
-        self.assertEqual("categoryIcon", child.icon_id(recursive=True))
-
-    def testUseCategorySelectedIcon(self):
-        self.category.set_selected_icon_id("categoryIcon")
-        self.categorizable.addCategory(self.category)
-        self.assertEqual(
-            "categoryIcon", self.categorizable.selected_icon_id(recursive=True)
-        )
-
-    def testDontUseCategorySelectedIconWhenCategorizableHasItsOwnSelectedIcon(
+    def test_parent_category_included_in_child_upward_recursive_categories(
         self,
     ):
-        self.category.set_selected_icon_id("categoryIcon")
-        self.categorizable.set_selected_icon_id("icon")
-        self.categorizable.addCategory(self.category)
-        self.assertEqual(
-            "icon", self.categorizable.selected_icon_id(recursive=True)
-        )
-
-    def testDontUseCategorySelectedIconWhenNotRecursive(self):
-        self.category.set_selected_icon_id("categoryIcon")
-        self.categorizable.addCategory(self.category)
-        self.assertFalse(self.categorizable.selected_icon_id(recursive=False))
-
-    def testUseCategorySelectedIconEvenWhenCategorizableHasARecursiveSelectedIcon(
-        self,
-    ):
-        child = categorizable.CategorizableCompositeObject(subject="child")
-        self.categorizable.addChild(child)
-        self.categorizable.set_selected_icon_id("icon")
-        self.category.set_selected_icon_id("categoryIcon")
-        child.addCategory(self.category)
-        self.assertEqual(
-            "categoryIcon", child.selected_icon_id(recursive=True)
-        )
-
-    def testParentCategoryIncludedInChildUpwardRecursiveCategories(self):
         self.categorizable.addCategory(self.category)
         child = categorizable.CategorizableCompositeObject()
         self.categorizable.addChild(child)
@@ -734,7 +203,9 @@ class CategorizableCompositeObjectTest(test.TestCase):
             child.categories(recursive=True, upwards=True),
         )
 
-    def testChildCategoryIncludedInParentDownwardRecursiveCategories(self):
+    def test_child_category_included_in_parent_downward_recursive_categories(
+        self,
+    ):
         child = categorizable.CategorizableCompositeObject()
         child.addCategory(self.category)
         self.categorizable.addChild(child)
@@ -743,19 +214,19 @@ class CategorizableCompositeObjectTest(test.TestCase):
             self.categorizable.categories(recursive=True, upwards=False),
         )
 
-    def testParentCategoriesNotIncludedInNonRecursiveCategories(self):
+    def test_parent_categories_not_included_in_non_recursive_categories(self):
         self.categorizable.addCategory(self.category)
         child = categorizable.CategorizableCompositeObject()
         self.categorizable.addChild(child)
         self.assertEqual(set(), child.categories(recursive=False))
 
-    def testChildCategoriesNotIncludedInNonRecursiveCategories(self):
+    def test_child_categories_not_included_in_non_recursive_categories(self):
         child = categorizable.CategorizableCompositeObject()
         child.addCategory(self.category)
         self.categorizable.addChild(child)
         self.assertEqual(set(), self.categorizable.categories(recursive=False))
 
-    def testGrandParentCategoryIncludedInGrandChildUpwardRecursiveCategories(
+    def test_grandchild_upward_recursive_includes_grandparent(
         self,
     ):
         self.categorizable.addCategory(self.category)
@@ -768,7 +239,7 @@ class CategorizableCompositeObjectTest(test.TestCase):
             grandchild.categories(recursive=True, upwards=True),
         )
 
-    def testGrandChildCategoryIncludedInGrandParentDownwardRecursiveCategories(
+    def test_grandparent_downward_recursive_includes_grandchild(
         self,
     ):
         child = categorizable.CategorizableCompositeObject()
@@ -780,7 +251,7 @@ class CategorizableCompositeObjectTest(test.TestCase):
             set([self.category]), self.categorizable.categories(recursive=True)
         )
 
-    def testGrandParentAndParentCategoriesIncludedInGrandChildUpwardRecursiveCategories(
+    def test_grandchild_upward_recursive_includes_both_ancestors(
         self,
     ):
         self.categorizable.addCategory(self.category)
@@ -788,29 +259,29 @@ class CategorizableCompositeObjectTest(test.TestCase):
         self.categorizable.addChild(child)
         grandchild = categorizable.CategorizableCompositeObject()
         child.addChild(grandchild)
-        childCategory = category.Category("Child category")
-        child.addCategory(childCategory)
+        child_category = category.Category("Child category")
+        child.addCategory(child_category)
         self.assertEqual(
-            set([self.category, childCategory]),
+            set([self.category, child_category]),
             grandchild.categories(recursive=True, upwards=True),
         )
 
-    def testGrandChildAndChildCategoriesIncludedInGrandParentDownwardRecursiveCategories(
+    def test_grandparent_downward_recursive_includes_both_descendants(
         self,
     ):
         child = categorizable.CategorizableCompositeObject()
         self.categorizable.addChild(child)
         grandchild = categorizable.CategorizableCompositeObject()
         child.addChild(grandchild)
-        childCategory = category.Category("Child category")
-        child.addCategory(childCategory)
+        child_category = category.Category("Child category")
+        child.addCategory(child_category)
         grandchild.addCategory(self.category)
         self.assertEqual(
-            set([self.category, childCategory]),
+            set([self.category, child_category]),
             self.categorizable.categories(recursive=True),
         )
 
-    def testRemoveCategoryCausesChildNotification(self):
+    def test_remove_category_causes_child_notification(self):
         self.categorizable.addCategory(self.category)
         child = categorizable.CategorizableCompositeObject()
         self.categorizable.addChild(child)
@@ -818,18 +289,289 @@ class CategorizableCompositeObjectTest(test.TestCase):
         self.categorizable.removeCategory(self.category)
         self.assertEvent(self.categoryRemovedEventType, child, self.category)
 
-    def testCopy(self):
+    def test_copy(self):
         self.categorizable.addCategory(self.category)
         copy = self.categorizable.copy()
         self.assertEqual(
             copy.categories(), self.categorizable.categories()
         )  # pylint: disable=E1101
 
-    def testModificationEventTypes(self):  # pylint: disable=E1003
+    def test_modification_event_types(self):  # pylint: disable=E1003
         self.assertEqual(
             super(
                 categorizable.CategorizableCompositeObject, self.categorizable
             ).modificationEventTypes()
             + [self.categoryAddedEventType, self.categoryRemovedEventType],
             self.categorizable.modificationEventTypes(),
+        )
+
+
+class CategorizableStyleTest(test.TestCase):
+    """The styles the master loop gives a categorizable from its
+    categories (docs/APPEARANCE_STYLES.md); notes are categorizables it
+    styles."""
+
+    def setUp(self):
+        self.categorizable = note.Note(subject="categorizable")
+        self.category = category.Category("category")
+
+    def test_category_foreground_color(self):
+        self.categorizable.addCategory(self.category)
+        self.category.setForegroundColor(wx.RED)
+        self.assertEqual(
+            wx.RED, test.styled(self.categorizable).shown_fg_color()
+        )
+
+    def test_equal_priorities_take_the_first_category_by_name(self):
+        later_by_name = category.Category("zzz")
+        later_by_name.setForegroundColor(wx.BLUE)
+        self.category.setForegroundColor(wx.RED)
+        for each in (later_by_name, self.category):
+            self.categorizable.addCategory(each)
+        self.assertEqual(
+            wx.RED, test.styled(self.categorizable).shown_fg_color()
+        )
+
+    def test_category_background_color(self):
+        self.categorizable.addCategory(self.category)
+        self.category.setBackgroundColor(wx.RED)
+        self.assertEqual(
+            wx.RED, test.styled(self.categorizable).shown_bg_color()
+        )
+
+    def test_category_font(self):
+        self.categorizable.addCategory(self.category)
+        self.category.setFont(wx.SWISS_FONT)
+        self.assertEqual(
+            wx.SWISS_FONT, test.styled(self.categorizable).shown_font()
+        )
+
+    def test_own_foreground_color_overrides_category(self):
+        self.categorizable.addCategory(self.category)
+        self.category.setForegroundColor(wx.RED)
+        self.categorizable.setForegroundColor(wx.GREEN)
+        self.assertEqual(
+            wx.GREEN, test.styled(self.categorizable).shown_fg_color()
+        )
+
+    def test_own_background_color_overrides_category(self):
+        self.categorizable.addCategory(self.category)
+        self.category.setBackgroundColor(wx.RED)
+        self.categorizable.setBackgroundColor(wx.GREEN)
+        self.assertEqual(
+            wx.GREEN, test.styled(self.categorizable).shown_bg_color()
+        )
+
+    def test_category_foreground_color_as_tuple(self):
+        self.categorizable.addCategory(self.category)
+        self.category.setForegroundColor((255, 0, 0, 255))
+        self.assertEqual(
+            wx.RED, test.styled(self.categorizable).shown_fg_color()
+        )
+
+    def test_category_background_color_as_tuple(self):
+        self.categorizable.addCategory(self.category)
+        self.category.setBackgroundColor((255, 0, 0, 255))
+        self.assertEqual(
+            wx.RED, test.styled(self.categorizable).shown_bg_color()
+        )
+
+    def test_child_takes_parent_category_foreground_color(self):
+        self.categorizable.addCategory(self.category)
+        child = note.Note()
+        self.categorizable.addChild(child)
+        child.set_parent(self.categorizable)
+        self.category.setForegroundColor(wx.RED)
+        self.assertEqual(wx.RED, test.styled(child).shown_fg_color())
+
+    def test_child_takes_parent_category_background_color(self):
+        self.categorizable.addCategory(self.category)
+        child = note.Note()
+        self.categorizable.addChild(child)
+        child.set_parent(self.categorizable)
+        self.category.setBackgroundColor(wx.RED)
+        self.assertEqual(wx.RED, test.styled(child).shown_bg_color())
+
+    def test_child_takes_parent_category_font(self):
+        self.categorizable.addCategory(self.category)
+        child = note.Note()
+        self.categorizable.addChild(child)
+        child.set_parent(self.categorizable)
+        self.category.setFont(wx.SWISS_FONT)
+        self.assertEqual(wx.SWISS_FONT, test.styled(child).shown_font())
+
+    def test_child_category_foreground_color_wins_over_parent(self):
+        child = note.Note()
+        self.categorizable.addChild(child)
+        child.set_parent(self.categorizable)
+        child.addCategory(self.category)
+        self.categorizable.setForegroundColor(wx.RED)
+        self.category.setForegroundColor(wx.BLUE)
+        self.assertEqual(wx.BLUE, test.styled(child).shown_fg_color())
+
+    def test_child_category_background_color_wins_over_parent(self):
+        child = note.Note()
+        self.categorizable.addChild(child)
+        child.set_parent(self.categorizable)
+        child.addCategory(self.category)
+        self.categorizable.setBackgroundColor(wx.RED)
+        self.category.setBackgroundColor(wx.BLUE)
+        self.assertEqual(wx.BLUE, test.styled(child).shown_bg_color())
+
+    def test_child_category_font_wins_over_parent(self):
+        child = note.Note()
+        self.categorizable.addChild(child)
+        child.set_parent(self.categorizable)
+        child.addCategory(self.category)
+        self.categorizable.setFont(
+            wx.Font(
+                10,
+                wx.FONTFAMILY_SWISS,
+                wx.FONTSTYLE_NORMAL,
+                wx.FONTWEIGHT_NORMAL,
+            )
+        )
+        category_font = wx.Font(
+            11, wx.FONTFAMILY_ROMAN, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        self.category.setFont(category_font)
+        self.assertEqual(category_font, test.styled(child).shown_font())
+
+    def test_foreground_color_of_one_of_two_categories(self):
+        self.categorizable.addCategory(self.category)
+        self.categorizable.addCategory(category.Category("Another category"))
+        self.category.setForegroundColor(wx.RED)
+        self.assertEqual(
+            wx.RED, test.styled(self.categorizable).shown_fg_color()
+        )
+
+    def test_background_color_of_one_of_two_categories(self):
+        self.categorizable.addCategory(self.category)
+        self.categorizable.addCategory(category.Category("Another category"))
+        self.category.setBackgroundColor(wx.RED)
+        self.assertEqual(
+            wx.RED, test.styled(self.categorizable).shown_bg_color()
+        )
+
+    def test_font_of_one_of_two_categories(self):
+        self.categorizable.addCategory(self.category)
+        self.categorizable.addCategory(category.Category("Another category"))
+        self.category.setFont(wx.SWISS_FONT)
+        self.assertEqual(
+            wx.SWISS_FONT, test.styled(self.categorizable).shown_font()
+        )
+
+    def test_icon_of_one_of_two_categories(self):
+        self.categorizable.addCategory(self.category)
+        self.categorizable.addCategory(category.Category("Another category"))
+        self.category.set_icon_id("icon")
+        self.assertEqual(
+            "icon", test.styled(self.categorizable).shown_icon_id()
+        )
+
+    def test_same_foreground_color_of_two_categories(self):
+        self.categorizable.addCategory(self.category)
+        another_category = category.Category("Another category")
+        self.categorizable.addCategory(another_category)
+        for cat in [self.category, another_category]:
+            cat.setForegroundColor(wx.RED)
+        self.assertEqual(
+            wx.RED, test.styled(self.categorizable).shown_fg_color()
+        )
+
+    def test_same_background_color_of_two_categories(self):
+        self.categorizable.addCategory(self.category)
+        another_category = category.Category("Another category")
+        self.categorizable.addCategory(another_category)
+        for cat in [self.category, another_category]:
+            cat.setBackgroundColor(wx.RED)
+        self.assertEqual(
+            wx.RED, test.styled(self.categorizable).shown_bg_color()
+        )
+
+    def test_same_font_of_two_categories(self):
+        self.categorizable.addCategory(self.category)
+        another_category = category.Category("Another category")
+        self.categorizable.addCategory(another_category)
+        for cat in [self.category, another_category]:
+            cat.setFont(wx.SWISS_FONT)
+        self.assertEqual(
+            wx.SWISS_FONT, test.styled(self.categorizable).shown_font()
+        )
+
+    def test_same_icon_of_two_categories(self):
+        self.categorizable.addCategory(self.category)
+        another_category = category.Category("Another category")
+        self.categorizable.addCategory(another_category)
+        for cat in [self.category, another_category]:
+            cat.set_icon_id("icon")
+        self.assertEqual(
+            "icon", test.styled(self.categorizable).shown_icon_id()
+        )
+
+    def test_category_icon(self):
+        self.category.set_icon_id("categoryIcon")
+        self.categorizable.addCategory(self.category)
+        self.assertEqual(
+            "categoryIcon", test.styled(self.categorizable).shown_icon_id()
+        )
+
+    def test_own_icon_overrides_category(self):
+        self.category.set_icon_id("categoryIcon")
+        self.categorizable.set_icon_id("icon")
+        self.categorizable.addCategory(self.category)
+        self.assertEqual(
+            "icon", test.styled(self.categorizable).shown_icon_id()
+        )
+
+    def test_category_icon_wins_over_parent_icon(self):
+        child = note.Note(subject="child")
+        self.categorizable.addChild(child)
+        self.categorizable.set_icon_id("icon")
+        self.category.set_icon_id("categoryIcon")
+        child.addCategory(self.category)
+        self.assertEqual("categoryIcon", test.styled(child).shown_icon_id())
+
+    def test_higher_style_priority_category_gives_the_foreground_color(self):
+        self.categorizable.addCategory(self.category)
+        another_category = category.Category("Another category")
+        self.categorizable.addCategory(another_category)
+        self.category.setForegroundColor(wx.RED)
+        another_category.setForegroundColor(wx.BLUE)
+        another_category.setStylePriority(1)
+        self.assertEqual(
+            wx.BLUE, test.styled(self.categorizable).shown_fg_color()
+        )
+
+    def test_higher_style_priority_category_gives_the_background_color(self):
+        self.categorizable.addCategory(self.category)
+        another_category = category.Category("Another category")
+        self.categorizable.addCategory(another_category)
+        self.category.setBackgroundColor(wx.RED)
+        another_category.setBackgroundColor(wx.BLUE)
+        another_category.setStylePriority(1)
+        self.assertEqual(
+            wx.BLUE, test.styled(self.categorizable).shown_bg_color()
+        )
+
+    def test_higher_style_priority_category_gives_the_font(self):
+        self.categorizable.addCategory(self.category)
+        another_category = category.Category("Another category")
+        self.categorizable.addCategory(another_category)
+        self.category.setFont(wx.SWISS_FONT)
+        another_category.setFont(wx.ITALIC_FONT)
+        another_category.setStylePriority(1)
+        self.assertEqual(
+            wx.ITALIC_FONT, test.styled(self.categorizable).shown_font()
+        )
+
+    def test_higher_style_priority_category_gives_the_icon(self):
+        self.categorizable.addCategory(self.category)
+        another_category = category.Category("Another category")
+        self.categorizable.addCategory(another_category)
+        self.category.set_icon_id("icon")
+        another_category.set_icon_id("another_icon")
+        another_category.setStylePriority(1)
+        self.assertEqual(
+            "another_icon", test.styled(self.categorizable).shown_icon_id()
         )
