@@ -24,7 +24,6 @@ from taskcoachlib.domain import task, effort, date
 class EffortListTest(test.TestCase):
     def setUp(self):
         self.events = []
-        task.Task.settings = config.Settings(load=False)
         self.task = task.Task()
         self.taskList = task.TaskList()
         self.effortList = effort.EffortList(self.taskList)
@@ -57,6 +56,12 @@ class EffortListTest(test.TestCase):
         self.task.addEffort(self.effort)
         self.assertEqual(1, len(self.effortList))
         self.assertTrue(self.effort in self.effortList)
+
+    def test_efforts_of_a_copy_of_a_task_stay_out(self):
+        # A copy (same id), such as a merged file's, is another list's
+        copy = task.Task(id=self.task.id())
+        copy.addEffort(effort.Effort(copy, date.DateTime(2004, 1, 1)))
+        self.assertEqual(0, len(self.effortList))
 
     def testNotificationAfterRemove(self):
         self.task.addEffort(self.effort)
@@ -152,5 +157,5 @@ class EffortListTest(test.TestCase):
         anotherTask = task.Task("Another task without effort")
         self.taskList.append(anotherTask)
         self.assertEqual(1, len(self.effortList))
-        self.effort.setTask(anotherTask)
+        self.effort.set_task(anotherTask)
         self.assertEqual(1, len(self.effortList))

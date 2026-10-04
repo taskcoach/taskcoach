@@ -35,6 +35,7 @@ from taskcoachlib.domain import date
 from taskcoachlib.widgets import draganddrop
 from taskcoachlib import command, render
 from . import tooltip
+from taskcoachlib import patterns
 
 
 class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
@@ -42,7 +43,6 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         self,
         parent,
         taskList,
-        get_selected_or_normal_icon_id,
         onSelect,
         onEdit,
         onCreate,
@@ -58,7 +58,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         self.__on_drop_mail_callback = kwargs.pop("on_drop_mail", None)
 
         self.dropTarget = draganddrop.DropTarget(
-            self.OnDropURL, self.OnDropFiles, self.OnDropMail
+            self.on_drop_url, self.on_drop_files, self.on_drop_mail
         )
 
         super().__init__(parent, wx.ID_ANY, *args, **kwargs)
@@ -66,7 +66,6 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         self.SetDropTarget(self.dropTarget)
 
         self.selectCommand = onSelect
-        self.get_selected_or_normal_icon_id = get_selected_or_normal_icon_id
         self.editCommand = onEdit
         self.createCommand = onCreate
         self.changeConfigCb = onChangeConfig
@@ -127,14 +126,14 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
             self.GetSchedules(),
         )
 
-    def OnDropURL(self, x, y, url):
+    def on_drop_url(self, x, y, url):
         self._handleDrop(x, y, url, self.__on_drop_url_callback)
 
-    def OnDropFiles(self, x, y, filenames):
+    def on_drop_files(self, x, y, filenames):
         self._handleDrop(x, y, filenames, self.__on_drop_files_callback)
 
-    def OnDropMail(self, x, y, mail):
-        self._handleDrop(x, y, mail, self.__on_drop_mail_callback)
+    def on_drop_mail(self, x, y, mails):
+        self._handleDrop(x, y, mails, self.__on_drop_mail_callback)
 
     def SetShowNoStartDate(self, doShow):
         self.__showNoPlannedStartDate = doShow
@@ -161,7 +160,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
             self.__selection = [schedule.task]
             schedule.SetSelected(True)
 
-        wx.CallAfter(self.__safeSelectCommand)
+        patterns.later.soon(self, self.__safeSelectCommand)
 
     def __safeSelectCommand(self):
         """Safely call selectCommand, guarding against deleted C++ objects."""
@@ -182,7 +181,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
 
     def OnPopup(self, event):
         self.OnActivation(event)
-        wx.CallAfter(self.__safePopupMenu)
+        patterns.later.soon(self, self.__safePopupMenu)
 
     def __safePopupMenu(self):
         """Safely show popup menu, guarding against deleted C++ objects."""
@@ -223,42 +222,39 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         maxDateTime = date.DateTime()
 
         for task in self.taskList:
-            if not task.isDeleted():
+            if (
+                task.plannedStartDateTime() == maxDateTime
+                or not task.completed()
+            ):
                 if (
                     task.plannedStartDateTime() == maxDateTime
-                    or not task.completed()
+                    and not self.__showNoPlannedStartDate
                 ):
+                    continue
+
+                if (
+                    task.dueDateTime() == maxDateTime
+                    and not self.__showNoDueDate
+                ):
+                    continue
+
+                if not self.__showUnplanned:
                     if (
                         task.plannedStartDateTime() == maxDateTime
-                        and not self.__showNoPlannedStartDate
+                        and task.dueDateTime() == maxDateTime
                     ):
                         continue
 
-                    if (
-                        task.dueDateTime() == maxDateTime
-                        and not self.__showNoDueDate
-                    ):
-                        continue
+            schedule = TaskSchedule(task)
+            schedules.append(schedule)
+            self.taskMap[task.id()] = schedule
 
-                    if not self.__showUnplanned:
-                        if (
-                            task.plannedStartDateTime() == maxDateTime
-                            and task.dueDateTime() == maxDateTime
-                        ):
-                            continue
-
-                schedule = TaskSchedule(
-                    task, self.get_selected_or_normal_icon_id
-                )
-                schedules.append(schedule)
-                self.taskMap[task.id()] = schedule
-
-                if task.id() == selectionId:
-                    self.__selection = [task]
-                    schedule.SetSelected(True)
+            if task.id() == selectionId:
+                self.__selection = [task]
+                schedule.SetSelected(True)
 
         self.Add(schedules)
-        wx.CallAfter(self.__safeSelectCommand)
+        patterns.later.soon(self, self.__safeSelectCommand)
         self.Scroll(x, y)
 
     def RefreshItems(self, *args):
@@ -291,9 +287,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
 
             # Special case
 
-            if task.isDeleted():
-                doShow = False
-            elif (
+            if (
                 task.plannedStartDateTime() != date.DateTime()
                 and task.completed()
             ):
@@ -304,9 +298,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                     schedule = self.taskMap[task.id()]
                     schedule.update()
                 else:
-                    schedule = TaskSchedule(
-                        task, self.get_selected_or_normal_icon_id
-                    )
+                    schedule = TaskSchedule(task)
                     self.taskMap[task.id()] = schedule
                     self.Add([schedule])
 
@@ -322,7 +314,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                         and self.__selection[0].id() == task.id()
                     ):
                         self.__selection = []
-                        wx.CallAfter(self.selectCommand)
+                        patterns.later.soon(self, self.selectCommand)
 
     def GetItemCount(self):
         return len(self.GetSchedules())
@@ -371,7 +363,6 @@ class Calendar(wx.Panel):
         self,
         parent,
         taskList,
-        get_selected_or_normal_icon_id,
         onSelect,
         onEdit,
         onCreate,
@@ -387,7 +378,6 @@ class Calendar(wx.Panel):
         self._content = _CalendarContent(
             self,
             taskList,
-            get_selected_or_normal_icon_id,
             onSelect,
             onEdit,
             onCreate,
@@ -401,8 +391,10 @@ class Calendar(wx.Panel):
         sizer.Add(self._content, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
-        # Must wx.CallAfter because SetDrawerClass is called this way.
-        wx.CallAfter(self._content.SetHeaderPanel, self._headers)
+        # Later, because SetDrawerClass is called this way
+        patterns.later.soon(
+            self._content, self._content.SetHeaderPanel, self._headers
+        )
 
     def Draw(self, dc):
         self._content.Draw(dc)
@@ -450,26 +442,22 @@ class Calendar(wx.Panel):
 
 
 class TaskSchedule(wxSchedule):
-    def __init__(self, task, get_selected_or_normal_icon_id):
+    def __init__(self, task):
         super().__init__()
 
-        self.__selected = False
-
         self.clientdata = task
-        self.get_selected_or_normal_icon_id = get_selected_or_normal_icon_id
         self.update()
 
     def SetSelected(self, selected):
         self.Freeze()
         try:
-            self.__selected = selected
             if selected:
                 self.color = wx.SystemSettings.GetColour(
                     wx.SYS_COLOUR_HIGHLIGHT
                 )
                 # On MS Windows, the selection background is very dark. If
                 # the foreground color is too dark, invert it.
-                color = self.task.foregroundColor(True) or (0, 0, 0)
+                color = self.task.shown_fg_color() or (0, 0, 0)
                 if len(color) == 3:
                     r, g, b = color
                 else:
@@ -478,10 +466,10 @@ class TaskSchedule(wxSchedule):
                     self.foreground = wx.Colour(255 - r, 255 - g, 255 - b)
             else:
                 self.color = wx.Colour(
-                    *(self.task.backgroundColor(True) or (255, 255, 255))
+                    *(self.task.shown_bg_color() or (255, 255, 255))
                 )
                 self.foreground = wx.Colour(
-                    *(self.task.foregroundColor(True) or (0, 0, 0))
+                    *(self.task.shown_fg_color() or (0, 0, 0))
                 )
         finally:
             self.Thaw()
@@ -502,12 +490,17 @@ class TaskSchedule(wxSchedule):
             ).do()
 
     def Offset(self, ts):
-        kwargs = dict()
-        if self.task.plannedStartDateTime() != date.DateTime():
+        has_start = self.task.plannedStartDateTime() != date.DateTime()
+        if has_start:
             start = self.GetStart()
             start.Add(ts)
+            # A move takes the due date along at once, which the task's
+            # duration mode then keeps (docs/DURATION_CALCULATIONS.md,
+            # Stored Duration); a completed task's end is its completion
             command.EditPlannedStartDateTimeCommand(
-                items=[self.task], newValue=self.tcDateTime(start)
+                items=[self.task],
+                newValue=self.tcDateTime(start),
+                keep_delta=not self.task.completed(),
             ).do()
         if self.task.completed():
             end = self.GetEnd()
@@ -515,7 +508,7 @@ class TaskSchedule(wxSchedule):
             command.EditCompletionDateTimeCommand(
                 items=[self.task], newValue=self.tcDateTime(end)
             ).do()
-        elif self.task.dueDateTime() != date.DateTime():
+        elif not has_start and self.task.dueDateTime() != date.DateTime():
             end = self.GetEnd()
             end.Add(ts)
             command.EditDueDateTimeCommand(
@@ -548,16 +541,16 @@ class TaskSchedule(wxSchedule):
                 self.done = True
 
             self.color = wx.Colour(
-                *(self.task.backgroundColor(True) or (255, 255, 255))
+                *(self.task.shown_bg_color() or (255, 255, 255))
             )
             self.foreground = wx.Colour(
-                *(self.task.foregroundColor(True) or (0, 0, 0))
+                *(self.task.shown_fg_color() or (0, 0, 0))
             )
-            self.font = self.task.font(True)
+            self.font = self.task.shown_font()
 
-            self.icon_ids = [
-                self.get_selected_or_normal_icon_id(self.task, False)
-            ]
+            # Empty until the master loop's first pass styles the task
+            icon_id = self.task.shown_icon_id()
+            self.icon_ids = [icon_id] if icon_id else []
             if self.task.attachments():
                 self.icon_ids.append("nuvola_status_mail-attachment")
             if self.task.notes():

@@ -6,8 +6,10 @@
 2. [The Problem](#the-problem)
 3. [Guards](#guards)
 4. [Log Output](#log-output)
-5. [Debugging a Segfault](#debugging-a-segfault)
-6. [Key Files](#key-files)
+5. [Stale Wrappers of wx's Own Windows](#stale-wrappers-of-wxs-own-windows)
+6. [Event Handlers That Are Not Windows](#event-handlers-that-are-not-windows)
+7. [Debugging a Segfault](#debugging-a-segfault)
+8. [Key Files](#key-files)
 
 ---
 
@@ -17,7 +19,9 @@ Task Coach uses wxPython, which wraps C++ widgets. When Python holds a reference
 
 The crash guard system prevents these segfaults and logs diagnostic information when they would have occurred.
 
-The crash guard is part of the runtime workarounds documented in [TODO.md — Monkeypatches and Workarounds](TODO.md#monkeypatches-and-workarounds).
+Since 2026-09-29 the app's own deferred calls go through `patterns.later`, which cannot reach a deleted window ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); the guards below remain for bundled and system library code (AUI, the tree list, the calendar), which still uses `wx.CallAfter` and `wx.Timer` directly.
+
+The crash guard is one of the runtime patches listed in [THIRD_PARTY_CODE.md](THIRD_PARTY_CODE.md#runtime-patches).
 
 ---
 
@@ -32,7 +36,7 @@ Common triggers:
 - `wx.CallAfter(widget.method)` where the widget is destroyed before the callback runs
 - `wx.Timer(window)` still running when `window` is destroyed, for example a timer (re)started by an event that is processed after the window's close handler already stopped it. No Python code runs when the tick arrives, so the only trace is a native crash with `MainLoop` as the only Python frame
 - Event handlers firing on widgets that are being or have been closed (AUI panes, dialogs)
-- `pub.subscribe` handlers referencing destroyed widgets
+- Publisher observers referencing destroyed widgets (a window's own observers are removed when it is destroyed)
 - HyperTreeList operations (`GetItemPyData`, `GetSelections`) on deleted tree items
 
 ---
@@ -126,9 +130,47 @@ RuntimeError: wrapped C/C++ object of type TreeListMainWindow has been deleted
 
 ---
 
+## Stale Wrappers of wx's Own Windows
+
+A window Task Coach creates is a Python object wxPython knows: once wx
+destroys it, a call through it raises "wrapped C/C++ object ... has
+been deleted". A window wx creates itself (a `wx.ListCtrl`'s header and
+rows windows on GTK) gets a plain `wx.Window` wrapper the first time
+Python asks for it, and wxPython is not told when wx destroys it. Kept
+in an attribute, that wrapper outlives the window: wxPython then hands
+it out for whatever wx creates at the same address, and a call through
+it crashes the process (P113 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+Seen in the unit tests, which open and destroy hundreds of editors in
+one process: a new dialog's OK button came back as a `wx.Window` (the
+lookup by type missed it), and two crashes, one creating a panel under
+such a parent, one calling `GetName()` through it. The source was the
+auto-width code keeping the list's header window; it now looks it up
+each time, and the dialogs find their buttons by id
+(`wxhelper.get_dialog_button()`). Rule:
+[DEVELOPMENT.md](DEVELOPMENT.md#design).
+
+## Event Handlers That Are Not Windows
+
+A `wx.EvtHandler` made in Python that is not a window (an AGW AUI
+manager, the date and time control `DateTimeComboCtrl`) is never
+freed: wx holds the handlers bound on it, and each holds it, a cycle
+through C++ that Python's collector cannot see. All it holds stays
+too: a closed view, a closed editor's pages, and their menu items'
+wrappers, which wxPython was not told are gone (the hazard above; P149
+in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+`wxhelper.delete_with_window(handler, window)` deletes such a handler
+once its window is destroyed, as wx's C++ classes delete theirs with
+their window. An AUI manager first stops its own timers, which the
+timer guard above passes through (their owner is not a window). Uses:
+[AUI.md](AUI.md#managers-never-freed), and a `DateTimeComboCtrl` goes
+with its checkbox. `DeleteWithWindowTest` fails once wx frees such a
+handler itself: the helper can then go.
+
 ## Debugging a Segfault
 
-If a segfault still occurs (the guards don't catch everything: direct event handlers on dead widgets bypass `CallAfter`, and the timer guard only covers timers owned by a `wx.Window`):
+If a segfault still occurs (the guards don't catch everything: direct event handlers on dead widgets bypass `CallAfter`, and the timer guard only covers timers owned by a `wx.Window` whose destroy event arrives, not an `AuiNotebook`: [AUI.md](AUI.md#destroy-event)):
 
 ### Using GDB for C++ backtraces
 ```bash
@@ -151,6 +193,8 @@ If `CRASH_GUARD` messages appear during normal use, they indicate code paths tha
 | File | Component |
 |------|-----------|
 | `taskcoachlib/workarounds/monkeypatches.py` | `wx.CallAfter` wrapper, `wx.Timer` owner guard |
+| `taskcoachlib/tools/wxhelper.py` | `delete_with_window()`, for event handlers that are not windows |
+| `taskcoachlib/patterns/deferred.py` | The app's deferred calls, which need no guard ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)) |
 | `taskcoachlib/application/application.py` | `wxApp.OnExceptionInMainLoop` |
 | `taskcoach.py` | `faulthandler.enable()` setup |
 | `taskcoachlib/meta/debug.py` | `log_step()` utility for ad-hoc debugging |

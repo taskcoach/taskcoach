@@ -50,18 +50,6 @@ ALLOWED = {
     ("taskcoachlib/config/options.py", "R2", "add_option"): (
         "optparse method"
     ),
-    ("taskcoachlib/thirdparty/deltaTime.py", "R2", "day_name"): (
-        "calendar.day_name; pyparsing result name"
-    ),
-    ("taskcoachlib/thirdparty/deltaTime.py", "R2", "time_delta"): (
-        "pyparsing result name"
-    ),
-    ("taskcoachlib/application/application.py", "R2", "get_default"): (
-        "Gtk.IconTheme method"
-    ),
-    ("taskcoachlib/gui/appindicator.py", "R2", "get_status"): (
-        "AppIndicator3 method"
-    ),
     ("taskcoachlib/config/settings.py", "R4", "frozen"): (
         "sys.frozen, set by bundlers"
     ),
@@ -83,12 +71,15 @@ ALLOWED = {
     ("taskcoachlib/gui/dialog/editor.py", "R4", "effectiveIconDefault"): (
         "optional domain method, not defined yet"
     ),
-    ("taskcoachlib/widgets/masked.py", "R3", "_OnKeyDown"): (
-        "wx.lib.masked override"
-    ),
     ("tests/test.py", "R2", "add_option"): "optparse method",
-    ("tests/unittests/ConfigTest.py", "R2", "read_file"): (
-        "configparser method"
+    ("taskcoachlib/persistence/xml/defaults.py", "R6", "fromName"): (
+        "task file attribute"
+    ),
+    ("taskcoachlib/persistence/xml/defaults.py", "R6", "fromAddress"): (
+        "task file attribute"
+    ),
+    ("taskcoachlib/persistence/xml/writer.py", "R6", "selectedIcon"): (
+        "task file attribute"
     ),
 }
 

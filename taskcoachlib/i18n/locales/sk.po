@@ -3548,8 +3548,8 @@ msgid "Insert a new note with the selected categories checked"
 msgstr "Vložiť novú poznámku so zvolenými vybranými kategóriami"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1936
-msgid "&Add attachment...\tShift-Ctrl-A"
-msgstr "Pridať &prílohu...\tShift-Ctrl-A"
+msgid "&Add attachment..."
+msgstr "Pridať &prílohu..."
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1960
 msgid "Error opening attachment"

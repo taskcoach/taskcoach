@@ -19,15 +19,107 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import sys, unittest, os, time, wx, logging
+import atexit
+import platform
+import re
+import shutil
+import subprocess
+import tempfile
+
+# The run's own settings, data, cache and documents folders, never the
+# user's (P167); a run's processes share them, the first removes them
+if "TASKCOACH_TEST_FOLDERS" not in os.environ:
+    os.environ["TASKCOACH_TEST_FOLDERS"] = tempfile.mkdtemp(
+        prefix="taskcoach-tests-"
+    )
+    atexit.register(
+        shutil.rmtree, os.environ["TASKCOACH_TEST_FOLDERS"], ignore_errors=True
+    )
+for variable in (
+    "XDG_CONFIG_HOME",
+    "XDG_DATA_HOME",
+    "XDG_CACHE_HOME",
+    "XDG_DOCUMENTS_DIR",
+):
+    folder = os.path.join(os.environ["TASKCOACH_TEST_FOLDERS"], variable)
+    os.makedirs(folder, exist_ok=True)
+    os.environ[variable] = folder
+# Nor the user's session bus, where the keychain, notifications and
+# tray live: an address with no bus behind it
+os.environ["DBUS_SESSION_BUS_ADDRESS"] = "unix:path=" + os.path.join(
+    os.environ["TASKCOACH_TEST_FOLDERS"], "no-session-bus"
+)
 
 projectRoot = os.path.abspath("..")
 if projectRoot not in sys.path:
     sys.path.insert(0, projectRoot)
 
-# The runtime patches taskcoach.py applies (e.g. inspect.getargspec)
+# The runtime patches taskcoach.py applies (hypertreelist, SetSize)
 import taskcoachlib.workarounds.monkeypatches  # noqa: F401,E402
 
 from taskcoachlib.notify import AbstractNotifier
+
+# The platform this suite is certified on (docs/TESTING.md); a run
+# stops anywhere else. Change a version here, on purpose, once the
+# full suite passes on it.
+CERTIFIED = {
+    "OS": "Linux",
+    "Display": "X11",
+    "Python": "3.13.5",
+    "wxPython": "4.2.3",
+    "wxWidgets": "3.2.8",
+    "GTK": "3.24.49",
+}
+
+
+def platform_in_use():
+    """The certified components as found on this machine."""
+    library = wx.GetLibraryVersionInfo()
+    in_use = {
+        "OS": platform.system(),
+        "Display": "none",
+        "Python": platform.python_version(),
+        "wxPython": wx.__version__,
+        "wxWidgets": "%d.%d.%d"
+        % (library.GetMajor(), library.GetMinor(), library.GetMicro()),
+        "GTK": "none",
+    }
+    try:
+        import gi
+
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gdk, Gtk
+    except (ImportError, ValueError):
+        return in_use
+    in_use["GTK"] = "%d.%d.%d" % (
+        Gtk.get_major_version(),
+        Gtk.get_minor_version(),
+        Gtk.get_micro_version(),
+    )
+    display = Gdk.Display.get_default()
+    if display is not None:
+        in_use["Display"] = type(display).__name__.replace("Display", "")
+    return in_use
+
+
+def check_platform():
+    """Stop unless this is the certified platform."""
+    in_use = platform_in_use()
+    differences = [
+        "  %s %s, certified %s" % (name, in_use[name], version)
+        for name, version in CERTIFIED.items()
+        if in_use[name] != version
+    ]
+    if differences:
+        sys.exit(
+            "Not the certified test platform (docs/TESTING.md):\n"
+            + "\n".join(differences)
+        )
+    print(
+        "Certified platform: "
+        + ", ".join("%s %s" % item for item in CERTIFIED.items()),
+        file=sys.stderr,
+    )
 
 
 def skipOnPlatform(*platforms):
@@ -44,29 +136,64 @@ def skipOnPlatform(*platforms):
     return wrapper
 
 
+def settle():
+    """Run what wx leaves for idle time: deferred calls and the
+    destroys of top-level windows."""
+    import gc
+
+    for _ in range(3):
+        wx.WakeUpIdle()
+        wx.Yield()
+    gc.collect()
+
+
 def stale(reason):
     """Skip a test that no longer matches the application and needs a
     rewrite. List them with: grep -rn "test.stale" tests"""
     return unittest.skip("stale: " + reason)
 
 
-def skipOnTwistedVersions(*versions):
-    """
-    Decorator for unit tests that were previously skipped on specific
-    versions of Twisted.
+class ChangeRecorder(list):
+    """The changes of an event type, as they are sent: (value, source)
+    for each source, or the source alone when the event carries no
+    value. Keep it referenced: the Publisher holds it weakly."""
 
-    DESIGN NOTE (Twisted Removal - 2024):
-    This decorator is now a no-op since Twisted has been removed.
-    It's kept for backward compatibility with existing test code.
-    Tests that used reactor.iterate() have been updated to use
-    wx event processing instead.
-    """
+    def __init__(self, event_type):
+        super().__init__()
+        from taskcoachlib import patterns
 
-    def wrapper(func):
-        # No longer skip based on Twisted versions since Twisted is removed
-        return func
+        patterns.Publisher().registerObserver(
+            self.on_event, eventType=event_type
+        )
 
-    return wrapper
+    def on_event(self, event):
+        for source in event.sources():
+            values = event.values(source)
+            self.append((values[0], source) if values else source)
+
+
+def styled(item):
+    """The item after the master loop's pass over it: its categories,
+    then its parents and itself, parents first (a child reads its
+    parent's style), with the loop's own steps."""
+    from taskcoachlib.domain import date
+    from taskcoachlib.domain.base.appearance import computeStyles
+    from taskcoachlib.gui.scheduler import MasterScheduler
+
+    def parents_first(each):
+        return list(reversed(each.ancestors())) + [each]
+
+    order = []
+    for each in parents_first(item):
+        for category in getattr(each, "categories", set)():
+            order.extend(parents_first(category))
+    order.extend(parents_first(item))
+    for each in order:
+        if hasattr(each, "compute_stored_status"):
+            MasterScheduler._process_task(each, date.Now())
+        else:
+            computeStyles(each)
+    return item
 
 
 class TestCase(unittest.TestCase, object):
@@ -107,18 +234,34 @@ class TestCase(unittest.TestCase, object):
     def tearDown(self):
         # pylint: disable=W0404
         # Prevent processing of pending events after the test has finished:
-        wx.GetApp().Disconnect(wx.ID_ANY)
+        app = wx.GetApp()
+        app.Disconnect(wx.ID_ANY)
+        # That disconnected wx.CallAfter's handler, which it binds once:
+        # without this, no deferred call would run in later tests
+        if hasattr(app, "_CallAfterId"):
+            del app._CallAfterId
         from taskcoachlib import patterns
 
         patterns.Publisher().clear()
         patterns.CommandHistory().clear()
+        self.__reset_settings(app)
         patterns.NumberedInstances.count = dict()
         if hasattr(self, "events"):
             del self.events
-        from pubsub import pub
-
-        pub.unsubAll()
         super().tearDown()
+
+    @staticmethod
+    def __reset_settings(app):
+        """The next test starts from the harness's settings: the one
+        every module reads, at its defaults (docs/SETTINGS.md)."""
+        from taskcoachlib import config
+
+        settings = getattr(app, "settings", None)
+        if settings is None:
+            return
+        config.settings.use(settings)
+        settings.reset()
+        settings.init("window", "theme", "light")
 
 
 class TestCaseFrame(wx.Frame):
@@ -140,14 +283,12 @@ class wxTestCase(TestCase):
     app.quitting = False
     from taskcoachlib import config
 
-    app.settings = config.Settings(load=False)
+    # The one every module reads, as the application's; test.py runs
+    # twice, as the program and as the module "test", with one
+    app.settings = config.settings.current() or config.Settings(load=False)
+    config.settings.use(app.settings)
     # Light, so colours do not follow the desktop theme
-    app.settings.settext("window", "theme", "light")
-    from taskcoachlib.config import settings2
-
-    if not settings2._initialized:  # test.py also runs as module "test"
-        settings2.init(app.settings)
-        settings2.wx_ready()
+    app.settings.set_typed("window", "theme", "light")
     frame = TestCaseFrame()
     from taskcoachlib import i18n
 
@@ -182,13 +323,15 @@ class TestResultWithTimings(unittest.TextTestResult):
         super().__init__(*args, **kwargs)
         self._timings = {}
 
+    # Keyed by name: a test object kept as key would keep all it holds
+    # (an editor, its views) for the rest of the run
     def startTest(self, test):
         super().startTest(test)
-        self._timings[test] = time.time()
+        self._timings[str(test)] = time.time()
 
     def stopTest(self, test):
         super().stopTest(test)
-        self._timings[test] = time.time() - self._timings[test]
+        self._timings[str(test)] = time.time() - self._timings[str(test)]
 
 
 class TextTestRunnerWithTimings(unittest.TextTestRunner):
@@ -232,25 +375,7 @@ class AllTests(unittest.TestSuite):
 
     def loadAllTests(self, testFiles):
         testloader = unittest.TestLoader()
-        if not testFiles:
-            if self._options.unittests:
-                testFiles.extend(self.getTestFilesFromDir("unittests"))
-            if self._options.integrationtests:
-                testFiles.extend(self.getTestFilesFromDir("integrationtests"))
-            if self._options.languagetests:
-                testFiles.extend(self.getTestFilesFromDir("languagetests"))
-            if self._options.releasetests:
-                testFiles.extend(self.getTestFilesFromDir("releasetests"))
-            if self._options.disttests:
-                path = os.path.join("disttests", sys.platform)
-                if os.path.exists(path):
-                    testFiles.extend(self.getTestFilesFromDir(path))
-                else:
-                    print(
-                        "WARNING: no disttest for your platform (%s)"
-                        % sys.platform
-                    )
-        for filename in testFiles:
+        for filename in testFiles or catalog(self._options):
             moduleName = self.filenameToModuleName(filename)
             # Importing the module is not strictly necessary because
             # loadTestsFromName will do that too as a side effect. But if the
@@ -270,10 +395,6 @@ class AllTests(unittest.TestSuite):
         return testrunner.run(self)
 
     @staticmethod
-    def getPyFilesFromDir(directory):
-        return AllTests.getFilesFromDir(directory, ".py")
-
-    @staticmethod
     def getTestFilesFromDir(directory):
         return AllTests.getFilesFromDir(directory, "Test.py")
 
@@ -291,6 +412,67 @@ class AllTests(unittest.TestSuite):
                 ]
             )
         return result
+
+
+def catalog(options):
+    """The test files of the selected parts of the catalog: the shared
+    tests, which run on every platform (docs/TESTING.md)."""
+    parts = [
+        ("unittests", options.unittests),
+        ("integrationtests", options.integrationtests),
+        ("languagetests", options.languagetests),
+    ]
+    return sorted(
+        filename
+        for directory, selected in parts
+        if selected
+        for filename in AllTests.getTestFilesFromDir(directory)
+    )
+
+
+def run_catalog(options, test_files):
+    """Run each test file in its own process, as a file is run alone;
+    report each file and the failures. Return the exit status."""
+    files = test_files or catalog(options)
+    options_given = [arg for arg in sys.argv[1:] if arg not in test_files]
+    failed, tests_run = [], 0
+    for filename in files:
+        # A crash leaves a traceback, and the output before it
+        environment = dict(
+            os.environ, PYTHONFAULTHANDLER="1", PYTHONUNBUFFERED="1"
+        )
+        result = subprocess.run(
+            [sys.executable, sys.argv[0], *options_given, filename],
+            capture_output=True,
+            text=True,
+            env=environment,
+        )
+        output = result.stdout + result.stderr
+        ran = re.search(r"^Ran (\d+) tests?", output, re.MULTILINE)
+        count = int(ran.group(1)) if ran else 0
+        tests_run += count
+        print(
+            "%-6s %5d  %s"
+            % ("FAILED" if result.returncode else "ok", count, filename),
+            flush=True,
+        )
+        if result.returncode:
+            failed.append(filename)
+            print("exit status %d" % result.returncode)
+            report = output.find("=" * 70)
+            lines = output[report:] if report >= 0 else output
+            print("\n".join(lines.splitlines()[-60:]) + "\n", flush=True)
+    print(
+        "%d files, %d tests: %s"
+        % (
+            len(files),
+            tests_run,
+            "%d failed" % len(failed) if failed else "all passed",
+        )
+    )
+    for filename in failed:
+        print("FAILED " + filename)
+    return 1 if failed else 0
 
 
 from taskcoachlib import config
@@ -415,7 +597,7 @@ class TestOptionParser(config.OptionParser):
             self, "Test selection", "Options to determine which tests to run."
         )
 
-        description = dict(dist="the platform-specific package", all="all")
+        description = dict(all="all")
 
         def help_text(selection):
             return "run %s tests" % description.get(
@@ -426,8 +608,6 @@ class TestOptionParser(config.OptionParser):
             "unit",
             "integration",
             "language",
-            "release",
-            "dist",
             "all",
         ):
             testselection.add_option(
@@ -449,8 +629,6 @@ class TestOptionParser(config.OptionParser):
             options.unittests
             or options.integrationtests
             or options.languagetests
-            or options.releasetests
-            or options.disttests
             or options.alltests
         ):
             options.unittests = True  # the default option
@@ -458,8 +636,6 @@ class TestOptionParser(config.OptionParser):
             options.unittests = True
             options.integrationtests = True
             options.languagetests = True
-            options.releasetests = True
-            options.disttests = True
         return options, args
 
 
@@ -484,8 +660,15 @@ class TestProfiler:
             stats.print_callees()
 
     def run(self, tests, command="runTests"):
-        if self._options.profile_report_only or self.profile(tests, command):
+        """Profile the tests and report; false when a test failed,
+        which leaves no profile to report."""
+        if self._options.profile_report_only:
             self.reportLastRun()
+            return True
+        succeeded = self.profile(tests, command)
+        if succeeded:
+            self.reportLastRun()
+        return succeeded
 
     def profile(self, tests, command):  # pylint: disable=W0613
         import cProfile  # pylint: disable=W0404
@@ -509,10 +692,14 @@ class TestProfiler:
 if __name__ == "__main__":
     logging.basicConfig()
     theOptions, theTestFiles = TestOptionParser().parse_args()
-    allTests = AllTests(theOptions, theTestFiles)
+    check_platform()
     if theOptions.profile:
-        TestProfiler(theOptions).run(allTests)
-    else:
-        theResult = allTests.runTests()
-        if not theResult.wasSuccessful():
+        # In one process: the profile covers the selection as a whole
+        profiler = TestProfiler(theOptions)
+        if not profiler.run(AllTests(theOptions, theTestFiles)):
             sys.exit(1)
+    elif len(theTestFiles) == 1:
+        if not AllTests(theOptions, theTestFiles).runTests().wasSuccessful():
+            sys.exit(1)
+    else:
+        sys.exit(run_catalog(theOptions, theTestFiles))

@@ -19,6 +19,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 import wx.lib.buttons as buttons
 
+from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.gui.icons.icon_library import LIST_ICON_SIZE
 from taskcoachlib.gui.icons import image_list_cache
@@ -31,12 +33,13 @@ class _IconListCtrl(wx.ListCtrl):
     Data lives in _items; wx asks for visible rows via OnGetItem* callbacks.
     """
 
-    COL_ICON_ID = 4
-
     def __init__(self, parent):
         super().__init__(
             parent,
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_VIRTUAL | wx.BORDER_NONE,
+            style=wx.LC_REPORT
+            | wx.LC_SINGLE_SEL
+            | wx.LC_VIRTUAL
+            | wx.BORDER_NONE,
         )
 
         # Shared image list (same singleton used by all viewers)
@@ -49,19 +52,21 @@ class _IconListCtrl(wx.ListCtrl):
         self.InsertColumn(3, _("Context"), width=80)
         self.InsertColumn(4, _("Key"), width=150)
 
-        self._items = []       # currently visible items
-        self._all_items = []   # unfiltered master list
+        self._items = []  # currently visible items
+        self._all_items = []  # unfiltered master list
         self._enabled_ids = set()
         self._on_select_callback = None
 
         # Cached item attribute for disabled (greyed-out) rows
         self._disabled_attr = wx.ItemAttr()
         self._disabled_attr.SetTextColour(
-            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        )
 
-        # Debounce timer for search filtering
-        self._filter_timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self._on_filter_timer, self._filter_timer)
+        # Debounced search filtering
+        self._filter_later = patterns.later.debounced(
+            self, 300, self._apply_filter
+        )
         self._pending_filter = ""
 
         self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self._on_item_activated)
@@ -72,15 +77,15 @@ class _IconListCtrl(wx.ListCtrl):
     def OnGetItemText(self, row, col):
         item = self._items[row]
         if col == 0:
-            return item[1]          # label
+            return item[1]  # label
         if col == 1:
-            return item[2] or ""    # hints
+            return item[2] or ""  # hints
         if col == 2:
-            return item[3] or ""    # theme
+            return item[3] or ""  # theme
         if col == 3:
-            return item[4] or ""    # context
+            return item[4] or ""  # context
         if col == 4:
-            return item[0]          # icon_id
+            return item[0]  # icon_id
         return ""
 
     def OnGetItemImage(self, row):
@@ -114,10 +119,9 @@ class _IconListCtrl(wx.ListCtrl):
     def FilterItems(self, filter_text):
         """Start debounced filter - waits 300ms after last keystroke."""
         self._pending_filter = filter_text
-        self._filter_timer.Stop()
-        self._filter_timer.Start(300, oneShot=True)
+        self._filter_later()
 
-    def _on_filter_timer(self, event):
+    def _apply_filter(self):
         """Execute the actual filter after debounce delay."""
         filter_text = self._pending_filter
         if not filter_text:
@@ -125,7 +129,8 @@ class _IconListCtrl(wx.ListCtrl):
         else:
             terms = filter_text.lower().split()
             self._items = [
-                item for item in self._all_items
+                item
+                for item in self._all_items
                 if self._matches_all_terms(item, terms)
             ]
         self.SetItemCount(len(self._items))
@@ -153,10 +158,9 @@ class _IconListCtrl(wx.ListCtrl):
 
         searchable = icon_id + " " + label + " " + hints
 
-        from taskcoachlib.config import settings2
-        if settings2.iconpicker.search_include_theme:
+        if settings.iconpicker.search_include_theme:
             searchable += " " + theme
-        if settings2.iconpicker.search_include_context:
+        if settings.iconpicker.search_include_context:
             searchable += " " + context
 
         return all(term in searchable for term in terms)
@@ -194,14 +198,18 @@ class _IconListCtrl(wx.ListCtrl):
 class _IconDialog(wx.Dialog):
     """Modal dialog with searchable icon list."""
 
-    def __init__(self, parent, current_icon_id, exclude=None, allow_clear=True):
+    def __init__(
+        self, parent, current_icon_id, exclude=None, allow_clear=True
+    ):
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         super().__init__(parent, title=_("Choose Icon"), style=style)
         self._selected_icon_id = None
         self._exclude = exclude
 
         panel = wx.Panel(self, style=wx.BORDER_NONE | wx.TAB_TRAVERSAL)
-        panel.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        panel.SetBackgroundColour(
+            wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        )
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self._search = wx.SearchCtrl(panel, style=wx.TE_PROCESS_ENTER)
@@ -213,7 +221,9 @@ class _IconDialog(wx.Dialog):
         self._listbox = _IconListCtrl(panel)
         self._listbox.SetItems(items, current_icon_id)
         self._listbox.SetSelectCallback(self._on_item_selected)
-        sizer.Add(self._listbox, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5)
+        sizer.Add(
+            self._listbox, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 5
+        )
 
         panel.SetSizer(sizer)
 
@@ -251,14 +261,18 @@ class _IconDialog(wx.Dialog):
             self.SetSize(self._desired_size)
             self.CentreOnParent()
             evt.Skip()
+
         self.Bind(wx.EVT_SHOW, _on_shown)
 
-        self._search.Bind(wx.EVT_TEXT, lambda e: self._listbox.FilterItems(self._search.GetValue()))
+        self._search.Bind(
+            wx.EVT_TEXT,
+            lambda e: self._listbox.FilterItems(self._search.GetValue()),
+        )
         self._search.Bind(wx.EVT_TEXT_ENTER, self._on_enter)
         self._search.Bind(wx.EVT_KEY_DOWN, self._on_key)
         self._search.Bind(wx.EVT_SEARCHCTRL_CANCEL_BTN, self._on_cancel)
 
-        wx.CallAfter(self._focus_search)
+        patterns.later.soon(self, self._focus_search)
 
     def _focus_search(self):
         if self._search and self.IsShown():
@@ -313,13 +327,18 @@ class _IconDialog(wx.Dialog):
         if self._exclude is None:
             return set()
         app = wx.GetApp()
-        settings = app.settings
         if self._exclude == "status":
             excluded = set()
-            for key in ["activetasks", "latetasks", "completedtasks",
-                        "overduetasks", "inactivetasks", "duesoontasks"]:
-                excluded.add(settings.gettext("icon", key))
-                excluded.add(settings.gettext("icon_dark", key))
+            for key in [
+                "activetasks",
+                "latetasks",
+                "completedtasks",
+                "overduetasks",
+                "inactivetasks",
+                "duesoontasks",
+            ]:
+                excluded.add(settings.get("icon", key))
+                excluded.add(settings.get("icon_dark", key))
             excluded.discard("")
             return excluded
         if self._exclude == "data":
@@ -340,7 +359,10 @@ class _IconDialog(wx.Dialog):
                 if icon_id:
                     excluded.add(icon_id)
             return excluded
-        log_step("WARNING: Unknown exclude mode '{}'".format(self._exclude), prefix="ICON")
+        log_step(
+            "WARNING: Unknown exclude mode '{}'".format(self._exclude),
+            prefix="ICON",
+        )
         return set()
 
     def _load_icons(self):
@@ -350,25 +372,24 @@ class _IconDialog(wx.Dialog):
         excluded_icons = self._get_excluded_icons()
 
         # Get enabled themes from settings (legacy always enabled)
-        from taskcoachlib.config import settings2
         enabled_themes = {"legacy"}
-        if settings2.iconpicker.theme_nuvola:
+        if settings.iconpicker.theme_nuvola:
             enabled_themes.add("nuvola")
-        if settings2.iconpicker.theme_oxygen:
+        if settings.iconpicker.theme_oxygen:
             enabled_themes.add("oxygen")
-        if settings2.iconpicker.theme_papirus:
+        if settings.iconpicker.theme_papirus:
             enabled_themes.add("papirus")
-        if settings2.iconpicker.theme_breeze:
+        if settings.iconpicker.theme_breeze:
             enabled_themes.add("breeze")
-        if settings2.iconpicker.theme_noto_emoji:
+        if settings.iconpicker.theme_noto_emoji:
             enabled_themes.add("noto-emoji")
-        if settings2.iconpicker.theme_taskcoach:
+        if settings.iconpicker.theme_taskcoach:
             enabled_themes.add("taskcoach")
 
         # Load icons from catalog, sort by label
         icon_ids = sorted(
             icon_catalog.viewer_icon_ids(),
-            key=lambda k: (icon_catalog.get_icon(k).label or k)
+            key=lambda k: (icon_catalog.get_icon(k).label or k),
         )
         items = []
         for icon_id in icon_ids:
@@ -380,7 +401,16 @@ class _IconDialog(wx.Dialog):
                 continue
             hints = " ".join(icon.hints)
             enabled = icon_id not in excluded_icons
-            items.append((icon_id, icon.label, hints, icon.theme_label, icon.context_label, enabled))
+            items.append(
+                (
+                    icon_id,
+                    icon.label,
+                    hints,
+                    icon.theme_label,
+                    icon.context_label,
+                    enabled,
+                )
+            )
         return items
 
 
@@ -405,24 +435,33 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
     PADDING = 8
     NO_ICON_LABEL = _("No icon")
 
-    def __init__(self, parent, current_icon_id, exclude=None, no_icon=True, fixed_width=None, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        current_icon_id,
+        exclude=None,
+        no_icon=True,
+        fixed_width=None,
+        *args,
+        **kwargs
+    ):
         self._exclude = exclude
         self._no_icon = no_icon
         self._fixed_width = fixed_width
         self._current_icon_id = ""
         self._current_label = ""
         self._current_bmp = None
-        self._previous_icon_id = ""
 
         # Initialize button - GenBitmapButton requires a bitmap in constructor,
         # but we immediately clear it. For "no icon" state, bmpLabel stays None.
         # Never call SetBitmapLabel(None) - that hits wxPython bug #2093.
-        super().__init__(parent, wx.ID_ANY, wx.Bitmap(1, 1), "", style=wx.BORDER_NONE)
+        super().__init__(
+            parent, wx.ID_ANY, wx.Bitmap(1, 1), "", style=wx.BORDER_NONE
+        )
         self.bmpLabel = None  # Clear - start with no icon
         self.SetUseFocusIndicator(True)
 
         self.SetValue(current_icon_id or "")
-        self._previous_icon_id = self._current_icon_id
 
         self.Bind(wx.EVT_BUTTON, self._on_click)
         self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
@@ -445,8 +484,11 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         This avoids wxPython bug #2093 where GenBitmapButton crashes on NullBitmap.
         """
         if bitmap is None or not bitmap.IsOk():
-            log_step("ERROR: SetBitmapLabel called with invalid bitmap - use bmpLabel=None instead",
-                     prefix="ICON")
+            log_step(
+                "ERROR: SetBitmapLabel called with invalid bitmap - use "
+                "bmpLabel=None instead",
+                prefix="ICON",
+            )
             return  # Ignore the call, don't crash
         super().SetBitmapLabel(bitmap, createOthers)
 
@@ -516,18 +558,24 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         if self.IsEnabled():
             dc.SetTextForeground(self.GetForegroundColour())
         else:
-            dc.SetTextForeground(wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT))
+            dc.SetTextForeground(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+            )
 
         label = self.GetLabel()
         available_width = width - overhead
         if available_width > 0:
-            label = wx.Control.Ellipsize(label, dc, wx.ELLIPSIZE_END, available_width)
+            label = wx.Control.Ellipsize(
+                label, dc, wx.ELLIPSIZE_END, available_width
+            )
 
         tw, th = dc.GetTextExtent(label)
 
         # Draw icon if present
         if bw > 0 and bmp:
-            dc.DrawBitmap(bmp, self.PADDING + dx, (height - bh) // 2 + dy, hasMask)
+            dc.DrawBitmap(
+                bmp, self.PADDING + dx, (height - bh) // 2 + dy, hasMask
+            )
 
         dc.DrawText(label, text_x + dx, (height - th) // 2 + dy)
 
@@ -536,17 +584,23 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         dc = wx.ClientDC(self)
         dc.SetFont(self.GetFont())
         tw, th = dc.GetTextExtent(self.GetLabel())
-        height = max(th, bh) + self.PADDING * 2 if bh > 0 else th + self.PADDING * 2
+        height = (
+            max(th, bh) + self.PADDING * 2 if bh > 0 else th + self.PADDING * 2
+        )
         if self._fixed_width:
             return wx.Size(self._fixed_width, height)
         return wx.Size(overhead + tw, height)
 
     def _on_click(self, event):
-        dialog = _IconDialog(self.GetTopLevelParent(), self._current_icon_id, self._exclude, self._no_icon)
+        dialog = _IconDialog(
+            self.GetTopLevelParent(),
+            self._current_icon_id,
+            self._exclude,
+            self._no_icon,
+        )
         if dialog.ShowModal() == wx.ID_OK:
             icon_id = dialog.GetSelectedIconId()
             if icon_id is not None:
-                self._previous_icon_id = self._current_icon_id
                 self.SetValue(icon_id)
                 evt = wx.CommandEvent(wx.wxEVT_COMBOBOX, self.GetId())
                 evt.SetEventObject(self)
@@ -567,16 +621,24 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
                 self._current_label = self.NO_ICON_LABEL
                 self._current_bmp = None
             else:
-                log_step("ERROR: Received empty icon_id but noIcon=False", prefix="ICON")
+                log_step(
+                    "ERROR: Received empty icon_id but noIcon=False",
+                    prefix="ICON",
+                )
                 return
         else:
             icon = icon_catalog.get_icon(icon_id)
             if icon:
                 self._current_icon_id = icon_id
                 self._current_label = icon.label
-                self._current_bmp = icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
+                self._current_bmp = icon_catalog.get_bitmap(
+                    icon_id, LIST_ICON_SIZE
+                )
             else:
-                log_step("WARNING: icon_id '{}' not found".format(icon_id), prefix="ICON")
+                log_step(
+                    "WARNING: icon_id '{}' not found".format(icon_id),
+                    prefix="ICON",
+                )
                 self._current_icon_id = ""
                 self._current_label = self.NO_ICON_LABEL
                 self._current_bmp = None

@@ -71,16 +71,9 @@ jobs:
             python-installer \
             python-wheel \
             python-wxpython \
-            python-six \
-            python-lxml \
-            python-numpy \
             python-dateutil \
             python-chardet \
             python-keyring \
-            python-pyparsing \
-            python-pyxdg \
-            python-watchdog \
-            python-distro \
             libxss \
             xdg-utils
 
@@ -209,6 +202,9 @@ jobs:
             archlinux:latest \
             bash -c '
               set -e
+              # A failed check fails the job: set -e passes over a
+              # command followed by &&
+              check() { "$@" || { echo "FAILED: $*"; exit 1; }; }
 
               # Update system
               pacman -Syu --noconfirm
@@ -235,7 +231,7 @@ jobs:
               SITE_PACKAGES=$(python3 -c "import site; print(site.getsitepackages()[0])")
               echo "Checking $SITE_PACKAGES for taskcoachlib..."
               ls -la "$SITE_PACKAGES/" | grep -i task || echo "No taskcoach found in site-packages"
-              test -d "$SITE_PACKAGES/taskcoachlib" && echo "SUCCESS: taskcoachlib directory exists"
+              check test -d "$SITE_PACKAGES/taskcoachlib" && echo "SUCCESS: taskcoachlib directory exists"
 
               # Debug: Check pacman file list
               echo "Files installed by taskcoach package:"
@@ -243,13 +239,13 @@ jobs:
 
               # Test that Python can import the module
               echo "Testing Python import..."
-              python3 -c "import taskcoachlib; print(taskcoachlib.__file__)" && echo "SUCCESS: taskcoachlib imports correctly"
+              check python3 -c "import taskcoachlib; print(taskcoachlib.__file__)" && echo "SUCCESS: taskcoachlib imports correctly"
 
               # Check desktop file
-              test -f /usr/share/applications/taskcoach.desktop && echo "SUCCESS: Desktop file installed"
+              check test -f /usr/share/applications/taskcoach.desktop && echo "SUCCESS: Desktop file installed"
 
               # Check icon
-              test -f /usr/share/pixmaps/taskcoach.png && echo "SUCCESS: Icon installed"
+              check test -f /usr/share/pixmaps/taskcoach.png && echo "SUCCESS: Icon installed"
 
               echo "All installation tests passed!"
             '

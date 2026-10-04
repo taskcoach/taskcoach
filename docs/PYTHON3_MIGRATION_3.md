@@ -5,6 +5,7 @@ This document is part of the Python 3 migration documentation. See [PYTHON3_MIGR
 **Contents:**
 - [GTK3 Menu Size Allocation Bug](#gtk3-menu-size-allocation-bug)
 - [Search Box Visibility in AUI Toolbars](#search-box-visibility-in-aui-toolbars)
+- [Search Drop-down Position on Wayland](#search-drop-down-position-on-wayland)
 - [AUI Divider Drag Visual Feedback](#aui-divider-drag-visual-feedback)
 - [GTK BitmapComboBox Icon Clipping](#gtk-bitmapcombobox-icon-clipping)
 - [Known Issues](#known-issues)
@@ -216,6 +217,34 @@ toolbar.AddControl(self.searchControl)
 - [ ] Can click in search box and type search terms
 - [ ] Search functionality works (filters items as expected)
 - [ ] Search options dropdown menu works (click magnifying glass icon)
+
+---
+
+## Search Drop-down Position on Wayland
+
+**Issue:** [#159](https://github.com/taskcoach/taskcoach/issues/159),
+fixed in January 2026 (Kubuntu 24, KDE Plasma, Wayland, wxPython
+4.2.1).
+
+**Problem:** the magnifier's drop-down of the search box (search
+options, recent searches) opened at the far left of the pane, not
+under the search box.
+
+**Cause:** Wayland has no global coordinates. A popup is placed by the
+compositor relative to its transient parent: the window
+`PopupMenu()` is called on. Called on a control deep in a toolbar's
+containers, the wrong ancestor became the parent.
+
+**Fix:** `SearchCtrl` (`taskcoachlib/widgets/searchctrl.py`) is a
+`wx.Panel` that fits the inner `wx.SearchCtrl` tightly, and the
+drop-down pops up from that panel. The position passed to
+`PopupMenu()` does not matter on Wayland; the window it is called on
+does. A test app tried every placement: only the panel wrappers worked.
+Near a screen edge the drop-down still jumps to the other side
+(#173, upstream: [WAYLAND_ISSUES.md](WAYLAND_ISSUES.md#popups)).
+
+References: [KDE Wayland Porting Notes](https://community.kde.org/Guidelines_and_HOWTOs/Wayland_Porting_Notes),
+[gtk_menu_popup_at_widget](https://docs.gtk.org/gtk3/method.Menu.popup_at_widget.html).
 
 ---
 
@@ -557,7 +586,7 @@ if operating_system.isGTK():
 ### Resolved Issues
 
 - Widget resizing stuck at large sizes (November 2025)
-- wxPython 4.2.0 category background coloring (Documented in CRITICAL_WXPYTHON_PATCH.md)
+- wxPython 4.2.0 category background coloring (Documented in BUNDLED_TREE_WIDGET.md)
 - wx.Timer crash when closing Edit Task/Categories quickly (November 2025)
 - Hacky close delay patches removed after root cause fix (November 2025)
 - Ctrl+C crash with AUI event handler assertion (November 2025)

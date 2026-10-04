@@ -5,6 +5,80 @@ and land changes. Deep-dive rationale for specific subsystems lives in
 dedicated `docs/*.md` files (grep `docs/` before changing pins, flags,
 or config defaults; non-obvious decisions are documented there).
 
+## Working plan
+
+Asked by the decider, 2026-10-02: the cycle every worker follows, a
+person or an AI. The **decider** rules on proposals (the "designer" of
+the records); the worker analyses, proposes and does the work.
+
+1. **Analyse before proposing.** Read the docs and the code together:
+   grep `docs/` and the git history for rulings, rationale and earlier
+   attempts; follow the code one step out (callers, other views, other
+   platforms, what else uses it). Reproduce in the full app with debug
+   logging, on the branch and on master, with the exact user steps and
+   what triggers it. Read the cause from logs ([Diagnosing](#diagnosing)):
+   when a finding depends on where the pointer or the focus is, log
+   that position and the target from the app itself. Research outside
+   when it applies (upstream code, platform docs, other applications'
+   conventions). When the size of a fix is unclear, prototype it in a
+   scratch copy.
+2. **Propose fully analysed options.** Each item as the steps a user
+   takes and what appears, checked on master and the branch; its
+   cause; the fix and what it changes for the user; risks and how they
+   will be checked; effort; a recommendation. Questions are numbered.
+   Rulings already given are applied, not asked again: they are in
+   `docs/`, cited by the proposal. In a list of what is outstanding,
+   the work's objective comes first and finishing steps (desktop test,
+   squash) last.
+3. **Do the work with its tests.** New behaviour gets tests that fail
+   on the code before (run in a scratch copy) and pass after; run the
+   related test files, then the full suite ([TESTING.md](TESTING.md)).
+   Check in the full app ([Verifying changes](#verifying-changes)) with
+   the proposal's steps, on master too for comparison. Check in scratch
+   copies only, never the decider's own files or settings. Lint, update
+   the feature's doc and the work's record in the same commit, and push
+   each finished piece.
+4. **Report back** what was done as user steps and results, what was
+   found on the way (a new issue numbered with its steps; a regression
+   of the branch fixed), then the next proposals.
+
+## Design
+
+Canon decision by designer, 2026-09-28.
+
+- **One source of truth:** no duplicated logic or data; derive what
+  can be derived.
+- **Modular:** one implementation per operation, reused by every path
+  (the UI, loading, merging, undo).
+- **Not brittle:** no special cases or order-dependent steps to force
+  a result. When something cannot be done cleanly, do the simple thing
+  and document what it leaves out; never risk core behaviour for a
+  fringe feature.
+- **Explicit fields:** a value computed from other fields gets its own
+  named field (column, editor line, sort) instead of being folded into
+  another field's display or sort, so users choose what to see and can
+  tell what each value means. The core fields that fold a subtree value
+  in keep doing so; explicit fields beside them are postponed
+  ([TASK_FIELDS.md](TASK_FIELDS.md#postponed-base-and-effective-fields)).
+- **Read-only looks read-only (ruled by designer 2026-09-30):** a
+  value the user cannot change is drawn as the window's text, like the
+  dates in the editors, never in an input box: a box that ignores
+  typing misleads. `widgets.read_only_text()` draws it; a control that
+  turns read-only greys out, as the date controls do.
+- **Deferred calls through `patterns.later`:** a debounce, delay,
+  repeat or "when idle" call names its owner and never uses
+  `wx.CallLater`, `wx.CallAfter` or `wx.Timer` directly, so none can
+  reach a deleted window. Lazy teardown: nothing is stopped when a
+  window closes or the app quits; a call whose owner is gone is
+  skipped when due ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+- **Never keep a window wx creates:** a window wx makes inside another
+  (a list's header or rows, a dialog's buttons) is looked up when
+  needed, never stored in an attribute. wxPython does not learn when
+  wx destroys it, so a kept wrapper outlives it and is handed out for
+  whatever wx creates at its address next: a button comes back as a
+  plain `wx.Window`, and calls through it crash
+  ([CRASH_GUARD.md](CRASH_GUARD.md#stale-wrappers-of-wxs-own-windows)).
+
 ## Code style
 
 - **Format the files you touch with black**, line-length 79 (configured
@@ -24,9 +98,13 @@ or config defaults; non-obvious decisions are documented there).
 
   A library name `check_renames.py` mistakes for a missed rename goes
   in its `ALLOWED` table, with the reason.
+- **Time resolution:** dates, times and durations are whole seconds;
+  only log timestamps carry fractions. `DateTime` and `TimeDelta`
+  enforce it. Ruling and scope:
+  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#time-resolution).
 - **Naming:** `snake_case` by default. Keep CamelCase when the name
   comes from wx (method overrides, duck-typed wx interfaces) or is
-  name-coupled (pubsub topics, `getattr` dispatch, the
+  name-coupled (event type strings, `getattr` dispatch, the
   `renderXxx`/`humanReadable` coupling).
 - Full rules, the flake8 fix-vs-expected list, and rename traps:
   [PEP8_MIGRATION.md](PEP8_MIGRATION.md). The style rules were first
@@ -43,19 +121,35 @@ or config defaults; non-obvious decisions are documented there).
   change by hand.
 - **Use the built-in debug logging** to see what the app is doing while
   you test: see [LOGGING_GUIDE.md](LOGGING_GUIDE.md).
-- **Unit tests are a regression net**, not the verification. Run a file
-  from `tests/`, under `xvfb-run` so no windows open on your desktop:
+- **Unit tests are a regression net**, not the verification,
+  certified for one platform: [TESTING.md](TESTING.md).
 
-  ```
-  xvfb-run -a ../.venv/bin/python test.py unittests/domainTests/TaskTest.py
-  ```
+## Diagnosing
 
-  A test that no longer matches the app and needs a rewrite is marked
-  `@test.stale("reason")`; `grep -rn "test.stale" tests` lists them.
+- **Work from detailed logs, not guesses.** For a UI, timing or
+  ordering problem, log the state at high frequency with millisecond
+  timestamps (`log_step()`) through the full app, and read the cause
+  from the sequence. The screen shows the result, not the cause; a fix
+  that hides the symptom (a repaint, a delay) is not a fix.
+- **Layout, placement and drawing:** the geometry trace
+  (`taskcoachlib/meta/geometry_trace.py`) logs the windows' wx and GTK
+  geometry every 10 ms for 2 s after each event of interest, then
+  every second; on GTK 3 also each allocation and each draw, with its
+  place in the toplevel and the Python call that forced it. Call it
+  from the code under investigation, remove the call once the cause is
+  found.
+- **Third-party code** (bundled, copied or patched at runtime): start
+  from [THIRD_PARTY_CODE.md](THIRD_PARTY_CODE.md#before-analysing-it).
+  A copy's base comes from diffing it against upstream releases, never
+  from its header; a copy may still import the installed library, which
+  differs per build.
 
 ## Documentation
 
 - Update documentation when adding or changing features.
+- A change users notice gets a line in `CHANGELOG.md`, under the
+  version being made: its release notes
+  ([PACKAGING.md](PACKAGING.md#release-notes)).
 - Record non-obvious rationale (version pins, platform workarounds,
   design decisions) in a dedicated `docs/*.md` so the next reader does
   not have to rediscover it.
@@ -79,5 +173,5 @@ docstrings, docs and log messages.
 - Title: what the change does, imperative, short. No version numbers
   and no issue references (issue links are added to the PR).
 - Body: a sentence or two of why, then short bullets of what changed.
-- Squash work-in-progress commits into one concise commit before
-  pushing a branch.
+- Squash a branch's commits into one concise commit when its pull
+  request is ready; pushes before that keep the full history.

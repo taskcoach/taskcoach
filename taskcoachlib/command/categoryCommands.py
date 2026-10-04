@@ -50,7 +50,6 @@ class NewSubCategoryCommand(base.NewSubItemCommand):
         self.items = self.createNewCategories(
             subject=subject, description=description, attachments=attachments
         )
-        self.save_modification_datetimes()
 
     def createNewCategories(self, **kwargs):
         return [parent.newChild(**kwargs) for parent in self.items]
@@ -63,24 +62,12 @@ class EditExclusiveSubcategoriesCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newExclusivity = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldExclusivities = [
-            item.hasExclusiveSubcategories() for item in self.items
-        ]
 
     @patterns.eventSource
     def do_command(self, event=None):
         super().do_command()
         for item in self.items:
             item.makeSubcategoriesExclusive(self.__newExclusivity, event=event)
-
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command()
-        for item, oldExclusivity in zip(self.items, self.__oldExclusivities):
-            item.makeSubcategoriesExclusive(oldExclusivity, event=event)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditStylePriorityCommand(base.BaseCommand):
@@ -90,24 +77,12 @@ class EditStylePriorityCommand(base.BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newPriority = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldPriorities = [
-            item.stylePriority() for item in self.items
-        ]
 
     @patterns.eventSource
     def do_command(self, event=None):
         super().do_command()
         for item in self.items:
             item.setStylePriority(self.__newPriority, event=event)
-
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command()
-        for item, oldPriority in zip(self.items, self.__oldPriorities):
-            item.setStylePriority(oldPriority, event=event)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class DeleteCategoryCommand(base.DeleteCommand):

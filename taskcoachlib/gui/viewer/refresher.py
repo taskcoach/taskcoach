@@ -23,7 +23,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
 from taskcoachlib import patterns
-from pubsub import pub
 
 
 class MinuteRefresher(patterns.Observer):
@@ -50,7 +49,7 @@ class MinuteRefresher(patterns.Observer):
 
     def _on_minute_changed(self, event):  # pylint: disable=W0613
         """Handle the minute change the scheduler sends after its
-        per-second processing."""
+        tick's processing."""
         self.on_every_minute()
 
     def on_every_minute(self):
@@ -71,7 +70,9 @@ class SecondRefresher(patterns.Observer):
         self.__viewer = viewer
         self.__presentation = viewer.presentation()
         self.__tracked_items = set()
-        pub.subscribe(self.on_tracking_changed, tracking_changed_event_type)
+        self.registerObserver(
+            self.on_tracking_changed, eventType=tracking_changed_event_type
+        )
         self.registerObserver(
             self.on_item_added,
             eventType=self.__presentation.addItemEventType(),
@@ -90,15 +91,17 @@ class SecondRefresher(patterns.Observer):
     def on_item_removed(self, event):
         self.remove_tracked_items(self.tracked_items(list(event.values())))
 
-    def on_tracking_changed(self, newValue, sender):
-        if sender not in self.__presentation:
+    def on_tracking_changed(self, event):
+        senders = event.sources()
+        if any(sender not in self.__presentation for sender in senders):
             self.set_tracked_items(self.tracked_items(self.__presentation))
             return
-        if newValue:
-            self.add_tracked_items([sender])
-        else:
-            self.remove_tracked_items([sender])
-        self.refresh_items([sender])
+        for sender in senders:
+            if event.value(sender):
+                self.add_tracked_items([sender])
+            else:
+                self.remove_tracked_items([sender])
+        self.refresh_items(senders)
 
     def on_every_second(self, event=None):  # pylint: disable=W0613
         if self.__viewer and not self.__viewer.needs_second_refresh():

@@ -20,7 +20,33 @@ from taskcoachlib import operating_system
 from wx.lib.agw import customtreectrl as customtree, hypertreelist
 from taskcoachlib.widgets import itemctrl, draganddrop
 import contextlib
+import time
 import wx
+from taskcoachlib import patterns
+from taskcoachlib.config import settings
+
+# A slow double click: a second click on the same cell, after the
+# system's double-click time and within this time of the first
+# (docs/LIST_MANAGEMENT.md#in-place-editing)
+SLOW_DOUBLE_CLICK_MAX_MS = 2000
+_clock = time.monotonic  # Seconds; tests replace it
+
+
+def double_click_ms():
+    """The system's double-click time; Windows' default where the
+    platform gives none."""
+    milliseconds = wx.SystemSettings.GetMetric(wx.SYS_DCLICK_MSEC)
+    return milliseconds if milliseconds > 0 else 500
+
+
+_MODIFIER_KEYS = {
+    wx.WXK_SHIFT,
+    wx.WXK_CONTROL,
+    wx.WXK_RAW_CONTROL,
+    wx.WXK_ALT,
+    wx.WXK_WINDOWS_LEFT,
+    wx.WXK_WINDOWS_RIGHT,
+}
 
 # pylint: disable=E1101,E1103
 
@@ -57,7 +83,7 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
         """
         event.Skip()  # Let base class handle layout first
         # Schedule scrollbar adjustment after the layout is complete
-        wx.CallAfter(self.__safe_adjust_scrollbars)
+        patterns.later.soon(self, self.__safe_adjust_scrollbars)
 
     def __safe_adjust_scrollbars(self):
         """Safely adjust scrollbars, guarding against deleted C++ objects.
@@ -81,13 +107,15 @@ class BaseHyperTreeList(hypertreelist.HyperTreeList):
         """Schedule scrollbar adjustment for after event processing completes.
 
         On Windows, content changes (expand/collapse/add/delete) that don't
-        trigger window resize don't update scrollbars. Use wx.CallAfter to
-        defer adjustment until after the event cycle completes. Other platforms
+        trigger window resize don't update scrollbars. The adjustment
+        waits until the event cycle completes. Other platforms
         handle this automatically through their event processing, but the
         deferred call is harmless and ensures consistency.
         """
         if operating_system.isWindows():
-            wx.CallAfter(self.__safe_adjust_scrollbars_content_change)
+            patterns.later.soon(
+                self, self.__safe_adjust_scrollbars_content_change
+            )
         else:
             self.__safe_adjust_scrollbars_content_change()
 
@@ -122,7 +150,7 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         # On Ubuntu, when the user has scrolled to the bottom of the tree
         # and collapses an item, the tree is not redrawn correctly. Refreshing
         # solves this. See http://trac.wxwidgets.org/ticket/11704
-        wx.CallAfter(self.__safe_refresh)
+        patterns.later.soon(self, self.__safe_refresh)
 
     def __safe_refresh(self):
         """Safely refresh the main window, guarding against deleted
@@ -181,12 +209,11 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         """Select items whose PyData is in the selection list.
         Returns the first selected tree item (for scrolling).
 
-        Note: UnselectAll() is required before SelectItem() after a
-        tree rebuild. This appears to be a HyperTreeList quirk/bug -
-        SelectItem() silently fails without it, even though
-        DoSelectItem has unselect_others=True by default. See:
-        https://github.com/wxWidgets/Phoenix/issues/1164 for related
-        issues.
+        UnselectAll() first: in a multi-selection tree SelectItem()
+        toggles, and a rebuild has already highlighted the rows it
+        restores (_refresh_selection()). UnselectAll() clears only the
+        rows in the tree's selection set, which SetItemHilight() keeps
+        (docs/BUNDLED_TREE_WIDGET.md).
         """
         first_selected_item = None
         self.UnselectAll()
@@ -210,17 +237,10 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
     def _recalculated_main_window(self):
         """Return the main window with item positions up to date.
 
-        Item positions drive both the scrollbar range and GetY(), but
-        AdjustMyScrollbars() never recalculates them; only ScrollTo()
-        does, guarded on the _dirty flag. Both it and CalculatePositions()
-        also return early while the window is frozen, so after a
-        freeze/thaw rebuild the positions are still stale and anything
-        reading them silently works off the old layout.
-
-        The flag is deliberately left set, exactly as upstream ScrollTo()
-        leaves it: customtreectrl only ever sets _dirty, it never clears
-        it, so clearing it here would suppress recalculations upstream
-        still expects to happen.
+        Positions drive the scrollbar range and GetY() but are
+        recalculated lazily, when the window paints or scrolls to an
+        item, and not while it is frozen: after a freeze/thaw rebuild
+        they are stale until then.
         """
         main = self.GetMainWindow()
         if getattr(main, "_dirty", False):
@@ -344,11 +364,21 @@ class TreeListCtrl(
         **kwargs,
     ):
         self.__adapter = parent
-        self.__selection = []
+        self.__selection = set()  # What a refresh keeps selected
         self.__user_double_clicked = False
+        # In-place editing (docs/LIST_MANAGEMENT.md#in-place-editing):
+        # the cell clicked last while the list keeps the focus, the
+        # first click of a possible slow double click, and how the edit
+        # about to start was asked for
+        self.__focused_cell = None
+        self.__popup_cell = None
+        self.__first_click = None
+        self.__slow_double_click = False
+        self.__explicit_edit = False
         self.__columns_with_images = []
         self.__default_font = wx.NORMAL_FONT
         self.__refreshing = False
+        self.__following_pointer = False
         kwargs.setdefault("resizeableColumn", 0)
         super().__init__(
             parent,
@@ -364,6 +394,18 @@ class TreeListCtrl(
             selectCommand, editCommand, dragAndDropCommand
         )
         self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self._on_hover_leave)
+        # Rows move under a pointer at rest
+        for event_type in (
+            wx.EVT_TREE_ITEM_EXPANDED,
+            wx.EVT_TREE_ITEM_COLLAPSED,
+        ):
+            self.Bind(event_type, self.__on_rows_moved)
+        self.GetMainWindow().Bind(wx.EVT_SCROLLWIN, self.__on_rows_moved)
+        main = self.GetMainWindow()
+        main.Bind(wx.EVT_LEFT_DOWN, self.__on_left_down)
+        main.Bind(wx.EVT_RIGHT_DOWN, self.__on_right_down)
+        main.Bind(wx.EVT_MOUSEWHEEL, self.__on_wheel)
+        main.Bind(wx.EVT_KILL_FOCUS, self.__on_kill_focus)
 
     def bind_event_handlers(
         self, selectCommand, editCommand, dragAndDropCommand
@@ -393,6 +435,31 @@ class TreeListCtrl(
         self.GetMainWindow().SetHoverItem(None)
         event.Skip()
 
+    def __on_rows_moved(self, event):
+        event.Skip()
+        self.follow_pointer()
+
+    def follow_pointer(self):
+        """Rows moved under a pointer at rest (a rebuild, a parent
+        expanded or collapsed, a scroll, a key): the tooltip, about the
+        row that was there, hides, and the hover outline goes to the row
+        under the pointer now. Once, after the change settles."""
+        if not self.__following_pointer:
+            self.__following_pointer = True
+            patterns.later.soon(self, self.__follow_pointer)
+
+    def __follow_pointer(self):
+        self.__following_pointer = False
+        main = self._recalculated_main_window()
+        if main._isDragging:  # pylint: disable=W0212
+            return  # The drag shows its drop target instead
+        self.cancel_tip()
+        point = main.ScreenToClient(wx.GetMousePosition())
+        item = None
+        if main.GetClientRect().Contains(point):
+            item = main.HitTest(point)[0]
+        main.SetHoverItem(item)
+
     def getItemTooltipData(self, item):
         return self.__adapter.getItemTooltipData(item)
 
@@ -408,9 +475,9 @@ class TreeListCtrl(
         return len(self.GetSelections()) == 1
 
     def curselection(self):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing
-        # nested dialogs)
+        # Guard against deleted C++ object - can happen when a later
+        # call runs after window destruction (e.g., closing nested
+        # dialogs)
         try:
             # Filter out None values - GetItemPyData can return None
             # for some items
@@ -445,6 +512,12 @@ class TreeListCtrl(
         return result
 
     def RefreshAllItems(self, count=0):  # pylint: disable=W0613
+        # A column shown or hidden since the last refresh changes them
+        self.__columns_with_images = [
+            index
+            for index in range(self.GetColumnCount())
+            if self.__adapter.hasColumnImages(index)
+        ]
         # Check if tree structure actually changed before rebuilding
         root_item = self.GetRootItem()
         if root_item:
@@ -453,7 +526,7 @@ class TreeListCtrl(
             if current and current == desired:
                 # Structure unchanged - refresh items in place, keeping
                 # the current selection (as RefreshItems does)
-                self.__selection = self.curselection()
+                self.__selection = set(self.curselection())
                 self._refresh_all_items_in_place(root_item)
                 return
 
@@ -494,13 +567,8 @@ class TreeListCtrl(
         self.__refreshing = True
         self.Freeze()
         self.StopEditing()
-        self.__selection = self.curselection()
+        self.__selection = set(self.curselection())
         self.DeleteAllItems()
-        self.__columns_with_images = [
-            index
-            for index in range(self.GetColumnCount())
-            if self.__adapter.hasColumnImages(index)
-        ]
         root_item = self.GetRootItem()
         if not root_item:
             root_item = self.AddRoot("Hidden root")
@@ -522,14 +590,12 @@ class TreeListCtrl(
         # Immediate repaint - no blank screen
         self.GetMainWindow().Refresh(eraseBackground=False)
         _input_filter.release()
+        self.follow_pointer()
 
     def _auto_scroll_enabled(self):
         """Whether the view may scroll by itself to follow the
         selection."""
-        settings = getattr(self.__adapter, "settings", None)
-        if settings is None:
-            return True
-        return settings.getboolean("view", "autoscrollselection")
+        return settings.view.autoscrollselection
 
     @contextlib.contextmanager
     def stable_viewport(self):
@@ -578,16 +644,16 @@ class TreeListCtrl(
             main.Scroll(x_pos, center_y // y_unit if y_unit > 0 else 0)
 
     def RefreshItems(self, *objects):
-        self.__selection = self.curselection()
-        self._refresh_target_objects(self.GetRootItem(), *objects)
+        self.__selection = set(self.curselection())
+        self._refresh_target_objects(self.GetRootItem(), set(objects))
 
-    def _refresh_target_objects(self, parent_item, *target_objects):
+    def _refresh_target_objects(self, parent_item, target_objects):
         child_item, cookie = self.GetFirstChild(parent_item)
         while child_item:
             item_object = self.GetItemPyData(child_item)
             if item_object in target_objects:
                 self._refresh_object_completely(child_item, item_object)
-            self._refresh_target_objects(child_item, *target_objects)
+            self._refresh_target_objects(child_item, target_objects)
             child_item, cookie = self.GetNextChild(parent_item, cookie)
 
     def _refresh_object_completely(self, item, *args):
@@ -675,8 +741,8 @@ class TreeListCtrl(
                 item.SetImage(column_index, image, which)
 
     def _refresh_colors(self, item, domain_object, check=False):
-        bg_color = domain_object.backgroundColor(recursive=True)
-        fg_color = domain_object.foregroundColor(recursive=True)
+        bg_color = domain_object.shown_bg_color()
+        fg_color = domain_object.shown_fg_color()
         if bg_color is None:
             # wx.NullColour doesn't work correctly on Windows - it renders as
             # black instead of transparent. Use system listbox color to match
@@ -700,16 +766,16 @@ class TreeListCtrl(
             self.SetItemTextColour(item, fg_color)
 
     def _refresh_font(self, item, domain_object, check=False):
-        font = domain_object.font(recursive=True) or self.__default_font
+        font = domain_object.shown_font() or self.__default_font
         if not check or (check and font != self.GetItemFont(item)):
             self.SetItemFont(item, font)
 
     def _refresh_selection(self, item, domain_object, check=False):
         select = domain_object in self.__selection
         if not check or (check and select != item.IsSelected()):
-            # Use SetHilight for visual highlighting during tree construction.
-            # Actual selection is done via select() after tree is fully built.
-            item.SetHilight(select)
+            # Highlighted while the tree is built, selected by select()
+            # once it is; through the tree, so UnselectAll() clears it
+            self.GetMainWindow().SetItemHilight(item, select)
 
     # Event handlers
 
@@ -718,9 +784,9 @@ class TreeListCtrl(
         if self.__refreshing:
             event.Skip()
             return
-        # Use CallAfter to prevent handling the select while items are
+        # Later, to prevent handling the select while items are
         # being deleted:
-        wx.CallAfter(self.__safe_select_command)
+        patterns.later.soon(self, self.__safe_select_command)
         event.Skip()
 
     def __safe_select_command(self):
@@ -738,10 +804,24 @@ class TreeListCtrl(
             )
 
     def on_key_down(self, event):
-        if event.GetKeyCode() == wx.WXK_RETURN:
+        # A key may scroll the view (End, the arrows), without a scroll
+        # event
+        self.follow_pointer()
+        # Only a plain Enter edits: Ctrl+Enter is the menu's Mark
+        # completed, reached when the event is skipped
+        plain = not event.GetKeyEvent().HasAnyModifiers()
+        if event.GetKeyCode() == wx.WXK_F2 and plain:
+            self.__first_click = None
+            self.__slow_double_click = False
+            if self.__can_edit(self.__focused_cell):
+                self.__edit(self.__focused_cell)
+            return
+        if event.GetKeyCode() not in _MODIFIER_KEYS:
+            # Any other key ends the cell's focus and a slow double
+            # click
+            self.__forget_clicks()
+        if event.GetKeyCode() == wx.WXK_RETURN and plain:
             self.editCommand(event)
-        elif event.GetKeyCode() == wx.WXK_F2 and self.GetSelections():
-            self.EditLabel(self.GetSelections()[0], column=0)
         else:
             event.Skip()
 
@@ -754,7 +834,8 @@ class TreeListCtrl(
         drag_items = list(
             self.GetItemPyData(drag_item) for drag_item in drag_items
         )
-        wx.CallAfter(
+        patterns.later.soon(
+            self,
             self.__safe_drag_and_drop_command,
             drop_item,
             drag_items,
@@ -773,6 +854,7 @@ class TreeListCtrl(
                 # Expand the drop target if items were dropped on it
                 if drop_item is not None:
                     self._expand_drop_target(drop_item)
+                self.__select_dropped(drag_items)
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             from taskcoachlib.meta.debug import log_step
@@ -781,6 +863,17 @@ class TreeListCtrl(
                 "dragAndDropCommand failed - widget already destroyed",
                 prefix="DEAD-OBJ",
             )
+
+    def __select_dropped(self, drag_items):
+        """The dragged items stay selected where they landed: a move
+        removes them first, and the viewer selects a neighbour then."""
+        dropped = set(drag_items)
+        if any(
+            self.GetItemPyData(item) in dropped
+            for item in self.GetItemChildren(recursively=True)
+        ):
+            self.select(dropped)
+            self.scroll_to_selection_centered()
 
     def _expand_drop_target(self, drop_item):
         """Expand the drop target item so the dropped children are visible."""
@@ -804,6 +897,9 @@ class TreeListCtrl(
 
     def on_double_click(self, event):
         self.__user_double_clicked = True
+        # A double click is not a slow one
+        self.__first_click = None
+        self.__slow_double_click = False
         if self.is_clickable_part_of_node_clicked(event):
             event.Skip(False)
         else:
@@ -831,7 +927,114 @@ class TreeListCtrl(
         else:
             return -1
 
-    # Inline editing
+    # Inline editing (docs/LIST_MANAGEMENT.md#in-place-editing)
+
+    def can_edit_clicked_cell(self):
+        """Whether Edit in place on the right-click menu has a cell."""
+        return self.__can_edit(self.__popup_cell)
+
+    def edit_clicked_cell(self):
+        if self.can_edit_clicked_cell():
+            self.__edit(self.__popup_cell)
+
+    def edit_cell_in_place(self, item, column):
+        """Edit a cell in place as F2 and the right-click menu do."""
+        self.__edit((item, column))
+
+    def __edit(self, cell):
+        item = cell[0]
+        if self.GetSelections() != [item]:
+            # A cell is edited for its row alone: the other rows are no
+            # longer selected
+            self.UnselectAll()
+            self.SelectItem(item, True)
+            self.selectCommand()
+        self.__explicit_edit = True
+        try:
+            self.GetMainWindow().EditLabel(*cell)
+        finally:
+            self.__explicit_edit = False
+
+    def __can_edit(self, cell):
+        """Editing in place is on, the cell's row is still selected, and
+        its column can be edited."""
+        if cell is None or not settings.feature.in_place_editing:
+            return False
+        item, column = cell
+        try:
+            if item not in self.GetSelections():
+                return False
+        except RuntimeError:
+            return False  # The list is gone
+        return self.IsColumnEditable(column)
+
+    def __cell_at(self, position):
+        item, _, column = self.HitTest(position)
+        if not item:
+            return None
+        if column < 0:
+            # Left or right of the subject's text: still its cell
+            column = self.GetMainWindow().GetMainColumn()
+            left = sum(
+                self.GetColumnWidth(index)
+                for index in range(column)
+                if self.IsColumnShown(index)
+            )
+            x = self.GetMainWindow().CalcUnscrolledPosition(position).x
+            if not left <= x < left + self.GetColumnWidth(column):
+                return None
+        return item, column
+
+    def __forget_clicks(self):
+        self.__focused_cell = None
+        self.__first_click = None
+        self.__slow_double_click = False
+
+    def __on_left_down(self, event):
+        event.Skip()
+        self.__popup_cell = None
+        cell = self.__cell_at(event.GetPosition())
+        first, self.__first_click = self.__first_click, None
+        self.__slow_double_click = False
+        if cell is None or event.HasAnyModifiers():
+            self.__focused_cell = None
+            return
+        self.__focused_cell = cell
+        now = _clock()
+        if first is not None and self.__same_cell(first[0], cell):
+            elapsed = (now - first[1]) * 1000
+            if double_click_ms() <= elapsed <= SLOW_DOUBLE_CLICK_MAX_MS:
+                self.__slow_double_click = True
+                return
+        self.__first_click = (cell, now)
+
+    def __on_right_down(self, event):
+        event.Skip()
+        self.__forget_clicks()
+        # Edit in place on the right-click menu edits this cell; the
+        # menu may take the focus, which ends the focused cell
+        self.__popup_cell = None
+        if not event.HasAnyModifiers():
+            self.__popup_cell = self.__cell_at(event.GetPosition())
+            self.__focused_cell = self.__popup_cell
+
+    def __on_wheel(self, event):
+        event.Skip()
+        self.__first_click = None
+        self.__slow_double_click = False
+
+    def __on_kill_focus(self, event):
+        event.Skip()
+        window = event.GetWindow()
+        while window is not None:
+            if window is self.GetMainWindow():
+                return  # Its own edit box took the focus
+            window = window.GetParent()
+        self.__forget_clicks()
+
+    @staticmethod
+    def __same_cell(cell, other):
+        return cell[0] is other[0] and cell[1] == other[1]
 
     def on_begin_edit(self, event):
         if self.__user_double_clicked:
@@ -841,8 +1044,23 @@ class TreeListCtrl(
             # Don't start editing another label when the user is still editing
             # a label. This prevents left-over text controls in the tree.
             event.Veto()
-        else:
+        elif self.__explicit_edit or self.__slow_double_click_edit(event):
             event.Skip()
+        else:
+            # The tree's own timer after a click: only a slow double
+            # click edits, with both options on
+            event.Veto()
+
+    def __slow_double_click_edit(self, event):
+        slow, self.__slow_double_click = self.__slow_double_click, False
+        return (
+            slow
+            and settings.feature.in_place_slow_double_click
+            and self.__can_edit(self.__focused_cell)
+            and self.__same_cell(
+                self.__focused_cell, (event.GetItem(), event.GetInt())
+            )
+        )
 
     def on_end_edit(self, event):
         if event._editCancelled:  # pylint: disable=W0212
@@ -898,6 +1116,7 @@ class TreeListCtrl(
 
     def DeleteColumn(self, column_index):
         self.RemoveColumn(column_index)
+        self.__move_row_columns(column_index, inserted=False)
 
     def InsertColumn(self, column_index, column_header, *args, **kwargs):
         alignment = self.alignment_map[
@@ -907,10 +1126,45 @@ class TreeListCtrl(
             self.AddColumn(column_header, *args, **kwargs)
         else:
             super().InsertColumn(column_index, column_header, *args, **kwargs)
+        self.__move_row_columns(column_index, inserted=True)
         self.SetColumnAlignment(column_index, alignment)
         self.SetColumnEditable(
             column_index, self._getColumn(column_index).isEditable()
         )
+
+    def __move_row_columns(self, column_index, inserted):
+        """Keep each row's values with their column. The widget inserts
+        or removes only the header; a row keeps its texts, icons,
+        windows and background colours by column position, and would
+        draw them under the wrong columns (docs/BUNDLED_TREE_WIDGET.md,
+        Changing the Copy)."""
+        # pylint: disable=W0212
+        root_item = self.GetRootItem()
+        pending = [root_item] if root_item else []
+        while pending:
+            item = pending.pop()
+            for values, empty in (
+                (item._text, ""),
+                (item._col_images, hypertreelist._NO_IMAGE),
+                (item._wnd, None),
+                (item._bgColour, None),
+            ):
+                if inserted and column_index <= len(values):
+                    values.insert(column_index, empty)
+                elif not inserted and column_index < len(values):
+                    del values[column_index]
+            moved_images = {}
+            for column, images in getattr(item, "_multiImages", {}).items():
+                if column < column_index:
+                    moved_images[column] = images
+                elif inserted:
+                    moved_images[column + 1] = images
+                elif column > column_index:
+                    moved_images[column - 1] = images
+            item._multiImages = moved_images
+            # Its text sizes are cached by column too
+            item.SetDirty(True, clear_extents=True)
+            pending.extend(item.GetChildren())
 
     def showColumn(self, *args, **kwargs):
         """Stop editing before we hide or show a column to prevent problems

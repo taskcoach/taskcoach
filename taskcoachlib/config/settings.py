@@ -18,15 +18,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import meta, patterns, operating_system
 from taskcoachlib.i18n import _
-from pubsub import pub
 import ast
 import configparser
+import functools
 import os
 import sys
 import wx
 import shutil
 from . import defaults
 from taskcoachlib.meta.debug import log_step
+
+
+def _xdg_dir(variable, default, mode=0o777):
+    """The application's folder in an XDG base directory, made when
+    missing: the variable's folder, or the default when it is unset or
+    empty (XDG Base Directory Specification)."""
+    path = os.path.join(
+        os.environ.get(variable) or os.path.expanduser(default), meta.name
+    )
+    if not os.path.isdir(path):
+        os.makedirs(path, mode)
+    return path
+
 
 # Reverse mapping: new namespaced icon IDs -> old legacy names.
 # Used only when legacystatusicons is True, to write old-format ini.
@@ -49,78 +62,128 @@ _LEGACY_STATUS_KEYS = (
 )
 
 
-class UnicodeAwareConfigParser(configparser.ConfigParser):
-    def __init__(self, *args, **kwargs):
-        if "interpolation" not in kwargs:
-            kwargs["interpolation"] = None
-        super().__init__(*args, **kwargs)
+def _parser():
+    """A parser for the INI file: no interpolation, so a "%" in a value
+    is kept."""
+    return configparser.ConfigParser(interpolation=None)
 
 
-class CachingConfigParser(UnicodeAwareConfigParser):
-    """ConfigParser is rather slow, so cache its values."""
+def _write_legacy_status_icons(parser):
+    """The status icons by the names older releases know."""
+    for section in ("icon", "icon_dark"):
+        for key in _LEGACY_STATUS_KEYS:
+            try:
+                current = parser.get(section, key)
+            except (configparser.NoSectionError, configparser.NoOptionError):
+                continue
+            old_name = _LEGACY_REVERSE_MAP.get(current)
+            if old_name:
+                log_step(
+                    f"Legacy save: converting '{current}' -> "
+                    f"'{old_name}' ({section}.{key})",
+                    prefix="ICON",
+                )
+                parser.set(section, key, old_name)
+            else:
+                log_step(
+                    f"Legacy save: WARNING: '{current}' has no legacy "
+                    f"equivalent for {section}.{key}, writing as-is",
+                    prefix="ICON",
+                )
 
-    def __init__(self, *args, **kwargs):
-        self.__cachedValues = dict()
-        super().__init__(*args, **kwargs)
 
-    def read(self, *args, **kwargs):
-        self.__cachedValues = dict()
-        return super().read(*args, **kwargs)
-
-    def set(self, section, option, value=None):
-        self.__cachedValues[(section, option)] = value
-        super().set(section, option, value)
-
-    def get(self, section, option, **kwargs):
-        cache, key = self.__cachedValues, (section, option)
-        if key not in cache:
-            cache[key] = super().get(*key, **kwargs)  # pylint: disable=W0142
-        return cache[key]
+# Starting with release 1.1.0, the date properties of tasks (startDate,
+# dueDate and completionDate) are datetimes
+_TASK_DATE_COLUMNS = ("startDate", "dueDate", "completionDate")
+# Views with an ordering column, 28 wide unless saved
+_ORDERING_VIEWERS = (
+    "taskviewer",
+    "categoryviewer",
+    "noteviewer",
+    "noteviewerintaskeditor",
+    "noteviewerincategoryeditor",
+    "noteviewerinattachmenteditor",
+    "categoryviewerintaskeditor",
+    "categoryviewerinnoteeditor",
+)
 
 
-class Settings(CachingConfigParser):
-    def __init__(self, load=True, iniFile=None, *args, **kwargs):
-        # Sigh, ConfigParser.SafeConfigParser is an old-style class, so we
-        # have to call the superclass __init__ explicitly:
-        CachingConfigParser.__init__(self, *args, **kwargs)
-
-        self.initializeWithDefaults()
-        self.__loadAndSave = load
-        self.__iniFileSpecifiedOnCommandLine = iniFile
-        self.__ini_lock = (
-            None  # Lock for ini file to prevent concurrent access
+def _upgraded(section, option, value, options):
+    """The value in today's form, from the forms older releases wrote;
+    options are the other values of its section."""
+    if option == "sortby":
+        if value in _TASK_DATE_COLUMNS:
+            value += "Time"
+        try:
+            ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            ascending = options.get("sortascending", "True") != "False"
+            value = '["%s%s"]' % (("" if ascending else "-"), value)
+    elif option == "columns":
+        try:
+            columns = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            return value  # Shown as an error when read
+        value = str(
+            [
+                (column + "Time" if column in _TASK_DATE_COLUMNS else column)
+                for column in columns
+            ]
         )
+    elif option == "columnwidths":
+        try:
+            column_widths = ast.literal_eval(value)
+        except (ValueError, SyntaxError):
+            column_widths = dict()
+        widths = dict()
+        for column, width in list(column_widths.items()):
+            if column in _TASK_DATE_COLUMNS:
+                column += "Time"
+            widths[column] = width
+        if section in _ORDERING_VIEWERS and "ordering" not in widths:
+            widths["ordering"] = 28
+        value = str(widths)
+    if section in ("icon", "icon_dark"):
+        from taskcoachlib.gui.icons.icon_library import icon_catalog
+
+        value = icon_catalog.normalize_icon_id(value)
+    return value
+
+
+class Settings:
+    """The settings: each option's text by section, read and written as
+    the option's type (docs/SETTINGS.md); configparser only reads and
+    writes the file."""
+
+    def __init__(self, load=True, ini_file=None):
+        self.__sections = {}
+        self.__initialize_with_defaults()
+        self.__loadAndSave = load
+        self.__iniFileSpecifiedOnCommandLine = ini_file
+        self.__ini_lock = None  # Only one Task Coach uses the file
 
         self.migrateConfigurationFiles()
 
-        # Check if this is first run (no INI file exists yet)
-        isFirstRun = load and not self._iniFileExists()
-
+        first_run = load and not self._iniFileExists()
         if load:
-            # First, try to load the settings file from the program directory,
-            # if that fails, load the settings file from the settings directory
+            # The file in the program folder first, else the settings
+            # folder's
             try:
-                if not self.read(
+                parser = _parser()
+                if not parser.read(
                     self.filename(forceProgramDir=True), encoding="utf-8"
                 ):
-                    self.read(self.filename(), encoding="utf-8")
-                self._migrateOldSettingNames()
-            except configparser.ParsingError as errorMessage:
-                # Ignore exceptions and simply use default values.
-                # Also record the failure in the settings:
-                self.initializeWithDefaults()
-                self.setLoadStatus(str(errorMessage))
-            # On first run, set up Welcome.tsk in user's Documents folder
-            if isFirstRun:
+                    parser.read(self.filename(), encoding="utf-8")
+            except configparser.ParsingError as reason:
+                # The defaults, and the failure recorded to be shown
+                self.setLoadStatus(str(reason))
+            else:
+                self.__load(parser)
+            if first_run:
                 self._setupFirstRunWelcomeFile()
         else:
-            # Assume that if the settings are not to be loaded, we also
-            # should be quiet (i.e. we are probably in test mode):
-            self.__beQuiet()
-        pub.subscribe(
-            self.onSettingsFileLocationChanged,
-            "settings.file.saveinifileinprogramdir",
-        )
+            # Not loaded, not saved: tests, which want quiet
+            self.__be_quiet()
 
     def acquire_ini_lock(self):
         """Lock the ini file so only one Task Coach uses it. Shows an
@@ -162,76 +225,92 @@ class Settings(CachingConfigParser):
             self.__ini_lock.release()
             self.__ini_lock = None
 
-    def onSettingsFileLocationChanged(self, value):
-        saveIniFileInProgramDir = value
-        if not saveIniFileInProgramDir:
+    def on_settings_file_location_changed(self):
+        if not self.get_typed("file", "saveinifileinprogramdir"):
             try:
                 os.remove(self.generatedIniFilename(forceProgramDir=True))
             except OSError:
                 return  # File might not exist
 
-    def initializeWithDefaults(self):
-        for section in self.sections():
-            self.remove_section(section)
-        for section, settings in list(defaults.defaults.items()):
-            self.add_section(section)
-            for key, value in list(settings.items()):
-                # Don't notify observers while we are initializing
-                super().set(section, key, value)
+    def __initialize_with_defaults(self):
+        self.__sections = {
+            section: dict(options)
+            for section, options in defaults.defaults.items()
+        }
+        self.__upgrade_old_values()
 
     def setLoadStatus(self, message):
-        self.set("file", "inifileloaded", "False" if message else "True")
-        self.set("file", "inifileloaderror", message)
+        self.__set("file", "inifileloaded", "False" if message else "True")
+        self.__set("file", "inifileloaderror", message)
 
-    def __beQuiet(self):
-        noisySettings = [
-            ("window", "tips", "False"),
-            ("window", "starticonized", "Always"),
-        ]
-        for section, setting, value in noisySettings:
-            self.set(section, setting, value)
+    # Not shown when the settings are not loaded, in tests
+    _QUIET = (("window", "tips", "False"),)
 
-    def add_section(
-        self, section, copyFromSection=None
-    ):  # pylint: disable=W0221
-        result = super().add_section(section)
-        if copyFromSection:
-            for name, value in self.items(copyFromSection):
-                super().set(section, name, value)
-        return result
+    def __be_quiet(self):
+        for section, setting, value in self._QUIET:
+            self.init(section, setting, value)
 
-    def getRawValue(self, section, option):
-        return super().get(section, option)
+    def reset(self):
+        """The defaults again, telling no listener: a test's settings
+        for the next test."""
+        self.__initialize_with_defaults()
+        if not self.__loadAndSave:
+            self.__be_quiet()
+
+    def read_file(self, file):  # pylint: disable=W0622
+        """Load the settings in an INI file object over the current
+        ones, converting old values."""
+        parser = _parser()
+        parser.read_file(file)
+        self.__load(parser)
+
+    def __load(self, parser):
+        for section in parser.sections():
+            options = self.__sections.setdefault(section, {})
+            for option, value in parser.items(section, raw=True):
+                options[option] = value
+        self._migrateOldSettingNames()
+        self._remove_obsolete_settings()
+        self.__upgrade_old_values()
+
+    def write(self, file):  # pylint: disable=W0622
+        """Write the settings to an INI file object: the status icons
+        by their old names when the legacy status icons are on."""
+        parser = _parser()
+        for section, options in self.__sections.items():
+            parser.add_section(section)
+            for option, value in options.items():
+                parser.set(section, option, value)
+        if self.get_typed("icon", "legacystatusicons"):
+            _write_legacy_status_icons(parser)
+        parser.write(file)
+
+    def sections(self):
+        return list(self.__sections)
+
+    def has_section(self, section):
+        return section in self.__sections
+
+    def has_option(self, section, option):
+        return option in self.__sections.get(section, {})
+
+    def add_section(self, section, copy_from=None):
+        if section in self.__sections:
+            raise ValueError("Section %r exists" % section)
+        self.__sections[section] = dict(
+            self.__sections[copy_from] if copy_from else {}
+        )
 
     def init(self, section, option, value):
-        return super().set(section, option, value)
+        """Store the option's text, telling no listener."""
+        self.__sections[section][option] = value
 
-    def get(self, section, option, **kwargs):
+    def __text(self, section, option):
+        """The option's text: stored, else its template's default."""
         try:
-            result = super().get(section, option, **kwargs)
-        except (configparser.NoOptionError, configparser.NoSectionError):
-            return self.getDefault(section, option)
-        result = self._fixValuesFromOldIniFiles(section, option, result)
-        result = self._ensureMinimum(section, option, result)
-        return result
-
-    def getDefault(self, section, option):
-        defaultSectionKey = section.strip("0123456789")
-        try:
-            defaultSection = defaults.defaults[defaultSectionKey]
+            return self.__sections[section][option]
         except KeyError:
-            raise configparser.NoSectionError(defaultSectionKey)
-        try:
-            return defaultSection[option]
-        except KeyError:
-            raise configparser.NoOptionError(option, defaultSection)
-
-    def _ensureMinimum(self, section, option, result):
-        # Some settings may have a minimum value, make sure we return at
-        # least that minimum value:
-        if section in defaults.minimum and option in defaults.minimum[section]:
-            result = max(result, defaults.minimum[section][option])
-        return result
+            return template(section)[option]
 
     def _migrateOldSettingNames(self):
         """Migrate old setting names to new names for backward compatibility."""
@@ -241,251 +320,146 @@ class Settings(CachingConfigParser):
             ("feature", "sdtcspans_effort", "effort_duration_presets"),
         ]
         for section, old_name, new_name in migrations:
-            try:
-                if self.has_option(section, old_name):
-                    old_value = super().get(section, old_name)
-                    if not self.has_option(section, new_name):
-                        self.set(section, new_name, old_value)
-                    self.remove_option(section, old_name)
-            except (configparser.NoSectionError, configparser.NoOptionError):
-                pass
+            options = self.__sections.get(section, {})
+            if old_name in options:
+                old_value = options.pop(old_name)
+                options.setdefault(new_name, old_value)
 
-    def _fixValuesFromOldIniFiles(self, section, option, result):
-        """Try to fix settings from old TaskCoach.ini files that are no longer
-        valid."""
-        original = result
-        # Starting with release 1.1.0, the date properties of tasks (startDate,
-        # dueDate and completionDate) are datetimes:
-        taskDateColumns = ("startDate", "dueDate", "completionDate")
-        orderingViewers = [
-            "taskviewer",
-            "categoryviewer",
-            "noteviewer",
-            "noteviewerintaskeditor",
-            "noteviewerincategoryeditor",
-            "noteviewerinattachmenteditor",
-            "categoryviewerintaskeditor",
-            "categoryviewerinnoteeditor",
-        ]
-        if option == "sortby":
-            if result in taskDateColumns:
-                result += "Time"
-            try:
-                ast.literal_eval(result)
-            except (ValueError, SyntaxError):
-                try:
-                    ascending = self.getboolean(section, "sortascending")
-                except (
-                    ValueError,
-                    configparser.NoOptionError,
-                    configparser.NoSectionError,
-                ):
-                    ascending = True
-                result = '["%s%s"]' % (("" if ascending else "-"), result)
-        elif option == "columns":
-            columns = [
-                (col + "Time" if col in taskDateColumns else col)
-                for col in ast.literal_eval(result)
-            ]
-            result = str(columns)
-        elif option == "columnwidths":
-            widths = dict()
-            try:
-                columnWidthMap = ast.literal_eval(result)
-            except (SyntaxError, ValueError):
-                columnWidthMap = dict()
-            for column, width in list(columnWidthMap.items()):
-                if column in taskDateColumns:
-                    column += "Time"
-                widths[column] = width
-            if section in orderingViewers and "ordering" not in widths:
-                widths["ordering"] = 28
-            result = str(widths)
-        elif (
-            section == "feature"
-            and option == "notifier"
-            and result == "Native"
-        ):
-            result = "Task Coach"
-        elif section == "editor" and option == "preferencespages":
-            # Migrate legacy page names saved in .ini files from older versions.
-            # Each step must be kept so upgrades from any prior version work.
-            result = result.replace(
-                "colors", "appearance"
-            )  # pre-1.x "colors" tab
-            result = result.replace(
-                "appearance", "statuses"
-            )  # renamed to "Statuses" tab
-        elif section in orderingViewers and option == "columnsalwaysvisible":
-            # XXX: remove 'ordering' from always visible columns. This wasn't in any official release
-            # but I need it so that people can test without resetting their .ini file...
-            # Remove this after the 1.3.38 release.
-            try:
-                columns = ast.literal_eval(result)
-            except (SyntaxError, ValueError):
-                columns = ["ordering"]
-            else:
-                if "ordering" in columns:
-                    columns.remove("ordering")
-            result = str(columns)
-        if section in ("icon", "icon_dark"):
-            from taskcoachlib.gui.icons.icon_library import icon_catalog
+    # Options no release reads any more (2.0.3.0)
+    _OBSOLETE_SETTINGS = (
+        ("balloontips", "autosavehint"),
+        ("view", "effortviewerintaskeditor"),
+        ("window", "monitor_index"),
+        ("window", "iconized"),
+        ("window", "starticonized"),
+        ("window", "hidewheniconized"),
+        ("window", "hidewhenclosed"),
+        ("export", "html_selectiononly"),
+        ("export", "csv_selectiononly"),
+        ("export", "ical_selectiononly"),
+        ("export", "todotxt_selectiononly"),
+        ("view", "taskinterdepsviewercount"),
+        ("file", "fspoll"),
+        # Views in editors are never captioned or renamed
+        ("attachmentviewer", "title"),
+        ("attachmentviewerincategoryeditor", "title"),
+        ("attachmentviewerinnoteeditor", "title"),
+        ("attachmentviewerintaskeditor", "title"),
+        ("categoryviewerinnoteeditor", "title"),
+        ("categoryviewerintaskeditor", "title"),
+        ("prerequisiteviewerintaskeditor", "title"),
+    )
+    # Retired views: their template section and numbered instances
+    _OBSOLETE_VIEWERS = ("taskinterdepsviewer",)
 
-            result = icon_catalog.normalize_icon_id(result)
-        if result != original:
-            super().set(section, option, result)
-        return result
+    def _remove_obsolete_settings(self):
+        """Drop from an old INI file the options nothing reads."""
+        for section, option in self._OBSOLETE_SETTINGS:
+            self.__sections.get(section, {}).pop(option, None)
+        for section in list(self.__sections):
+            if section == "effortdialog" or "dialog_with_" in section:
+                self.__sections[section].pop("parent_offset", None)
+            if section.rstrip("0123456789") in self._OBSOLETE_VIEWERS:
+                del self.__sections[section]
 
-    def set(self, section, option, value, new=False):  # pylint: disable=W0221
-        if new:
-            current_value = (
-                "a new option, so use something as current value"
-                " that is unlikely to be equal to the new value"
+    def __upgrade_old_values(self):
+        """Values in the forms older releases wrote, in today's."""
+        for section, options in self.__sections.items():
+            for option, value in options.items():
+                options[option] = _upgraded(section, option, value, options)
+
+    def get_typed(self, section, option):
+        """The option's value as its type (docs/SETTINGS.md, One
+        Settings Object); a value that does not read as its type is
+        shown as an error and replaced by the default."""
+        kind = option_type(section, option)
+        text = self.__text(section, option)
+        try:
+            value = _READ[kind](text)
+        except Exception as reason:  # pylint: disable=W0703
+            wx.MessageBox(
+                "\n".join(
+                    [
+                        _("Error while reading the %s-%s setting from %s.ini.")
+                        % (section, option, meta.filename),
+                        _("The value is: %s") % text,
+                        _("The error is: %s") % reason,
+                        _(
+                            "%s will use the default value for the setting "
+                            "and should proceed normally."
+                        )
+                        % meta.name,
+                    ]
+                ),
+                caption=_("Settings error"),
+                style=wx.ICON_ERROR,
             )
-        else:
-            current_value = self.get(section, option)
-        if value != current_value:
-            super().set(section, option, value)
-            from taskcoachlib.config import settings2
+            text = template(section)[option]
+            self.__sections[section][option] = text
+            value = _READ[kind](text)
+        minimum = defaults.minimum.get(section, {}).get(option)
+        if minimum is not None:
+            value = max(value, _READ[kind](minimum))
+        return value
 
-            if (section, option) == ("window", "theme"):
-                # Before notifying: listeners read the computed
-                # window.theme_is_dark right away
-                settings2.refresh_now()
-            patterns.Event("%s.%s" % (section, option), self, value).send()
-            settings2.schedule_refresh()
-            return True
-        else:
-            return False
+    def set_typed(self, section, option, value):
+        """Store the value, of the option's type, and tell the
+        listeners when it changed."""
+        kind = option_type(section, option)
+        if not _ACCEPTS[kind](value):
+            raise TypeError(
+                "%s.%s takes %s, not %r" % (section, option, kind, value)
+            )
+        self.__set(section, option, value if kind == "text" else str(value))
 
-    def setboolean(self, section, option, value):
-        if self.set(section, option, str(value)):
-            pub.sendMessage("settings.%s.%s" % (section, option), value=value)
-
-    setvalue = settuple = setlist = setdict = setint = setboolean
-
-    def settext(self, section, option, value):
-        if self.set(section, option, value):
-            pub.sendMessage("settings.%s.%s" % (section, option), value=value)
-
-    def getlist(self, section, option):
-        return self.getEvaluatedValue(section, option, ast.literal_eval)
-
-    getvalue = gettuple = getdict = getlist
-
-    def getint(self, section, option):
-        return self.getEvaluatedValue(section, option, int)
-
-    def getboolean(self, section, option):
-        return self.getEvaluatedValue(section, option, self.evalBoolean)
-
-    def gettext(self, section, option):
-        return self.get(section, option)
+    def __set(self, section, option, text):
+        if text == self.__text(section, option):
+            return
+        self.__sections[section][option] = text
+        self.send_changed(section, option)
+        # Called, not subscribed: the Publisher would keep every
+        # Settings object, also the ones tests make and drop
+        if (section, option) == ("file", "saveinifileinprogramdir"):
+            self.on_settings_file_location_changed()
 
     @staticmethod
-    def evalBoolean(stringValue):
-        if stringValue in ("True", "False"):
-            return "True" == stringValue
-        else:
-            raise ValueError(
-                "invalid literal for Boolean value: '%s'" % stringValue
-            )
+    def section_changed_event_type(section):
+        """Any option of the section changed: the settings are the
+        source and the option's name the value. An option's own event
+        type is "<section>.<option>", its value the new text."""
+        return "settings.%s" % section
 
-    def getEvaluatedValue(
-        self,
-        section,
-        option,
-        evaluate=ast.literal_eval,
-        showerror=wx.MessageBox,
-    ):
-        stringValue = self.get(section, option)
-        try:
-            return evaluate(stringValue)
-        except Exception as exceptionMessage:  # pylint: disable=W0703
-            message = "\n".join(
-                [
-                    _("Error while reading the %s-%s setting from %s.ini.")
-                    % (section, option, meta.filename),
-                    _("The value is: %s") % stringValue,
-                    _("The error is: %s") % exceptionMessage,
-                    _(
-                        "%s will use the default value for the setting and should proceed normally."
-                    )
-                    % meta.name,
-                ]
-            )
-            showerror(
-                message, caption=_("Settings error"), style=wx.ICON_ERROR
-            )
-            defaultValue = self.getDefault(section, option)
-            self.set(
-                section, option, defaultValue, new=True
-            )  # Ignore current value
-            return evaluate(defaultValue)
-
-    def _create_legacy_writer(self):
-        """Create a ConfigParser copy with status icons converted to old names.
-
-        Returns a new ConfigParser with legacy icon names substituted,
-        or None if legacy mode is off. Original self is never modified.
-        """
-        try:
-            legacy = self.getboolean("icon", "legacystatusicons")
-        except (configparser.NoSectionError, configparser.NoOptionError):
-            return None
-        if not legacy:
-            return None
-        tmp = configparser.ConfigParser(interpolation=None)
-        for section in self.sections():
-            tmp.add_section(section)
-            for key, val in super().items(section):
-                tmp.set(section, key, val)
-        for section in ("icon", "icon_dark"):
-            for key in _LEGACY_STATUS_KEYS:
-                try:
-                    current = tmp.get(section, key)
-                except (
-                    configparser.NoSectionError,
-                    configparser.NoOptionError,
-                ):
-                    continue
-                old_name = _LEGACY_REVERSE_MAP.get(current)
-                if old_name:
-                    log_step(
-                        f"Legacy save: converting '{current}' -> "
-                        f"'{old_name}' ({section}.{key})",
-                        prefix="ICON",
-                    )
-                    tmp.set(section, key, old_name)
-                else:
-                    log_step(
-                        f"Legacy save: WARNING: '{current}' has no legacy "
-                        f"equivalent for {section}.{key}, writing as-is",
-                        prefix="ICON",
-                    )
-        return tmp
+    def send_changed(self, section, option):
+        """Tell the listeners of the option and of its section that it
+        changed; they read typed values from the settings."""
+        event = patterns.Event(
+            "%s.%s" % (section, option), self, self.__text(section, option)
+        )
+        event.addSource(
+            self, option, type=self.section_changed_event_type(section)
+        )
+        event.send()
 
     def save(
         self, showerror=wx.MessageBox, file=open
     ):  # pylint: disable=W0622
-        self.set("version", "python", sys.version)
-        self.set(
+        self.__set("version", "python", sys.version)
+        self.__set(
             "version",
             "wxpython",
             "%s-%s @ %s"
             % (wx.VERSION_STRING, wx.PlatformInfo[2], wx.PlatformInfo[1]),
         )
-        self.set("version", "pythonfrozen", str(hasattr(sys, "frozen")))
-        self.set("version", "current", meta.data.version)
+        self.__set("version", "pythonfrozen", str(hasattr(sys, "frozen")))
+        self.__set("version", "current", meta.data.version)
         if not self.__loadAndSave:
             return
         try:
             path = self.path()
             if not os.path.exists(path):
                 os.makedirs(path, exist_ok=True)
-            writer = self._create_legacy_writer() or self
             tmpFile = file(self.filename() + ".tmp", "w", encoding="utf-8")
-            writer.write(tmpFile)
+            self.write(tmpFile)
             tmpFile.close()
             if os.path.exists(self.filename()):
                 os.remove(self.filename())
@@ -509,7 +483,7 @@ class Settings(CachingConfigParser):
     ):  # pylint: disable=W0102
         if self.__iniFileSpecifiedOnCommandLine:
             return self.pathToIniFileSpecifiedOnCommandLine()
-        elif forceProgramDir or self.getboolean(
+        elif forceProgramDir or self.get_typed(
             "file", "saveinifileinprogramdir"
         ):
             return self.pathToProgramDir()
@@ -538,12 +512,6 @@ class Settings(CachingConfigParser):
         elif operating_system.isMac():
             return os.path.expanduser("~/Documents")
         elif operating_system.isGTK():
-            try:
-                from PyKDE4.kdeui import KGlobalSettings
-            except ImportError:
-                pass
-            else:
-                return str(KGlobalSettings.documentPath())
             # Check XDG_DOCUMENTS_DIR (standard on Linux)
             xdg_docs = os.environ.get("XDG_DOCUMENTS_DIR")
             if xdg_docs and os.path.isdir(xdg_docs):
@@ -609,7 +577,7 @@ class Settings(CachingConfigParser):
         # Don't overwrite if user already has a Welcome.tsk
         if os.path.exists(userWelcome):
             # But still set it as the file to open on first run
-            self.set("file", "lastfile", userWelcome)
+            self.set_typed("file", "lastfile", userWelcome)
             return
 
         try:
@@ -617,7 +585,7 @@ class Settings(CachingConfigParser):
                 os.makedirs(taskcoachDocsDir)
             shutil.copy(systemWelcome, userWelcome)
             # Set this as the last opened file so it opens on startup
-            self.set("file", "lastfile", userWelcome)
+            self.set_typed("file", "lastfile", userWelcome)
         except OSError:
             pass  # Silently fail if we can't copy
 
@@ -630,9 +598,7 @@ class Settings(CachingConfigParser):
     def pathToConfigDir(self, environ):
         try:
             if operating_system.isGTK():
-                from xdg import BaseDirectory
-
-                path = BaseDirectory.save_config_path(meta.name)
+                path = _xdg_dir("XDG_CONFIG_HOME", "~/.config", 0o700)
             elif operating_system.isMac():
                 path = os.path.expanduser("~/Library/Preferences")
             elif operating_system.isWindows():
@@ -653,9 +619,7 @@ class Settings(CachingConfigParser):
     def _pathToDataDir(self, *args, **kwargs):
         forceGlobal = kwargs.pop("forceGlobal", False)
         if operating_system.isGTK():
-            from xdg import BaseDirectory
-
-            path = BaseDirectory.save_data_path(meta.name)
+            path = _xdg_dir("XDG_DATA_HOME", "~/.local/share")
         elif operating_system.isMac():
             path = os.path.join(
                 os.path.expanduser("~/Library/Application Support"), meta.name
@@ -719,7 +683,7 @@ class Settings(CachingConfigParser):
                 # path not expanded: apparently, there is no home dir
                 path = os.getcwd()
             path = os.path.join(path, ".%s" % meta.filename)
-        return operating_system.decodeSystemString(path)
+        return path
 
     def pathToTemplatesDir_deprecated(self, doCreate=True):
         path = os.path.join(self.path(), "taskcoach-templates")
@@ -740,7 +704,7 @@ class Settings(CachingConfigParser):
                 os.makedirs(path)
             except OSError:
                 pass
-        return operating_system.decodeSystemString(path)
+        return path
 
     def pathToIniFileSpecifiedOnCommandLine(self):
         return os.path.dirname(self.__iniFileSpecifiedOnCommandLine) or "."
@@ -758,7 +722,13 @@ class Settings(CachingConfigParser):
             globalPath = os.path.join(
                 self.pathToDataDir(forceGlobal=True), "templates"
             )
-            if os.path.exists(globalPath) and not os.path.exists(oldPath):
+            # Only where the settings file moves the data folder
+            # (Windows): elsewhere the global folder is this one
+            if (
+                os.path.exists(globalPath)
+                and not os.path.exists(oldPath)
+                and globalPath != newPath
+            ):
                 # Upgrade from fresh installation of 1.3.24 Portable
                 oldPath = globalPath
                 if exists and not os.path.exists(newPath + "-old"):
@@ -795,5 +765,199 @@ class Settings(CachingConfigParser):
         except OSError:
             pass
 
-    def __hash__(self) -> int:
-        return id(self)
+
+# Each option's type comes from its default: "True" or "False", a
+# whole number, a Python literal (list, tuple, dict), or text. These
+# defaults look like a number but are text.
+_TEXT_OPTIONS = {("view", "timeformat")}
+
+
+def _read_bool(text):
+    if text not in ("True", "False"):
+        raise ValueError("invalid literal for Boolean value: '%s'" % text)
+    return text == "True"
+
+
+# An option's text read as its type; ValueError or SyntaxError for text
+# that is not of the type
+_READ = dict(bool=_read_bool, int=int, literal=ast.literal_eval, text=str)
+
+
+def _is_literal(value):
+    try:
+        ast.literal_eval(str(value))
+    except (ValueError, SyntaxError):
+        return False
+    return True
+
+
+_ACCEPTS = dict(
+    bool=lambda value: isinstance(value, bool),
+    int=lambda value: isinstance(value, int) and not isinstance(value, bool),
+    literal=lambda value: not isinstance(value, str) and _is_literal(value),
+    text=lambda value: isinstance(value, str),
+)
+
+
+def template(section):
+    """The defaults of the section: its own, a viewer instance's
+    template's (taskviewer1: taskviewer), or an editor window's."""
+    if section in defaults.defaults:
+        return defaults.defaults[section]
+    base = section.rstrip("0123456789")
+    if base in defaults.defaults:
+        return defaults.defaults[base]
+    if "dialog_with_" in section:
+        return defaults.editor_window
+    raise KeyError(section)
+
+
+@functools.lru_cache(maxsize=None)
+def option_type(section, option):
+    """The option's type: "bool", "int", "literal" or "text";
+    KeyError for an option no defaults name."""
+    default = template(section)[option]
+    if (section.rstrip("0123456789"), option) in _TEXT_OPTIONS:
+        return "text"
+    if default in ("True", "False"):
+        return "bool"
+    if default.lstrip("-").isdigit():
+        return "int"
+    if default[:1] in ("[", "(", "{") and _is_literal(default):
+        return "literal"
+    return "text"
+
+
+def _default(section_name, option):
+    """The option's default as its type: what a module reads while it
+    loads, before the application has its settings."""
+    kind = option_type(section_name, option)
+    return _READ[kind](template(section_name)[option])
+
+
+def _theme_is_dark():
+    """Whether the colours are the dark ones: the theme chosen, or the
+    system's when automatic."""
+    theme = get("window", "theme")
+    if theme in ("dark", "light"):
+        return theme == "dark"
+    from taskcoachlib.application.application import detect_dark_theme
+
+    return detect_dark_theme()
+
+
+# Read like options, computed at each read from the settings and the
+# system (1.3 microseconds for the theme on GTK)
+_COMPUTED = {("window", "theme_is_dark"): _theme_is_dark}
+
+
+class _Section:
+    """One section's options as attributes: read as their type, and
+    written, which tells the listeners."""
+
+    __slots__ = ("_name",)
+
+    def __init__(self, name):
+        object.__setattr__(self, "_name", name)
+
+    def __getattr__(self, option):
+        computed = _COMPUTED.get((self._name, option))
+        if computed:
+            return computed()
+        try:
+            if _current is None:
+                return _default(self._name, option)
+            return _current.get_typed(self._name, option)
+        except KeyError:
+            raise AttributeError("%s.%s" % (self._name, option)) from None
+
+    def __setattr__(self, option, value):
+        try:
+            option_type(self._name, option)
+        except KeyError:
+            raise AttributeError("%s.%s" % (self._name, option)) from None
+        _current.set_typed(self._name, option, value)
+
+    def __repr__(self):
+        return "<settings section %s>" % self._name
+
+
+# The one Settings object: the application's, in tests the harness's
+_current = None
+_sections = {}
+
+
+def use(settings):
+    """Make settings the object every module reads and writes."""
+    global _current  # pylint: disable=W0603
+    _current = settings
+
+
+def current():
+    """The Settings object every module reads and writes."""
+    return _current
+
+
+def section(name):
+    """The section's options as attributes, for a section named while
+    running (settings.section("taskviewer1").sortby)."""
+    try:
+        return _sections[name]
+    except KeyError:
+        return _sections.setdefault(name, _Section(name))
+
+
+def get(section_name, option):
+    """The option's value as its type, for names the caller computes."""
+    return getattr(section(section_name), option)
+
+
+def set(section_name, option, value):  # pylint: disable=W0622
+    """Store the value, of the option's type, for names the caller
+    computes."""
+    setattr(section(section_name), option, value)
+
+
+def templates_dir():
+    """The task templates' folder, made if missing."""
+    return _current.pathToTemplatesDir()
+
+
+def backups_dir():
+    """The automatic backups' folder, made if missing."""
+    return _current.pathToBackupsDir()
+
+
+def send_changed(section_name, option):
+    """Tell the option's listeners it changed though its value did not
+    (window.theme "automatic" when the system theme changes)."""
+    _current.send_changed(section_name, option)
+
+
+def from_text(section_name, option, text):
+    """The option's value as its type from its text form, as a choice
+    list holds it ("15" for a whole number)."""
+    return _READ[option_type(section_name, option)](text)
+
+
+def has_section(name):
+    """Whether the section exists: a viewer instance's or an editor
+    window's, made while running or loaded from the file."""
+    return _current.has_section(name)
+
+
+def add_section(name, copy_from=None):
+    """Make a section while running, telling no listener: with
+    copy_from's values (a new viewer takes the previous one's), else
+    its template's defaults."""
+    _current.add_section(name, copy_from=copy_from)
+    if not copy_from:
+        for option, value in template(name).items():
+            _current.init(name, option, value)
+
+
+def __getattr__(name):
+    """settings.view and the other declared sections (PEP 562)."""
+    if name in defaults.defaults:
+        return section(name)
+    raise AttributeError(name)

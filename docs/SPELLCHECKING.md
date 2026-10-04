@@ -76,6 +76,14 @@ self.IndicatorFillRange(byte_start, byte_length)
 
 This approach is used by other wxPython applications like [WikidPad](https://github.com/WikidPad/WikidPad).
 
+### When the Check Runs
+
+The check (misspellings and URLs) runs 0.3 s after typing stops, as a
+debounce (`patterns.later.debounced`), and once when the control is
+created or its language or theme changes. Until 2026-09-29 the delay
+was a `wx.CallLater` that could fire after its editor had closed,
+logging a RuntimeError ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+
 ### Keyboard Navigation (Spreadsheet Convention)
 
 Using `StyledTextCtrl` means Scintilla captures Tab and Enter by default. Task Coach uses the spreadsheet convention (like Excel / LibreOffice Calc) so plain Tab and Enter navigate instead of inserting characters. Modified keys insert the character:
@@ -86,7 +94,7 @@ Using `StyledTextCtrl` means Scintilla captures Tab and Enter by default. Task C
 | Shift+Tab        | Navigate to prev control  | Navigate to prev control   |
 | Ctrl+Tab         | Switch notebook tab (OS)  | Switch notebook tab (OS)   |
 | Enter            | Navigate to next control  | Insert newline (normal)    |
-| Ctrl+V           | Paste (newlines stripped) | Paste (normal)             |
+| Ctrl+V           | Paste as one line         | Paste (normal)             |
 
 **Implementation:** `CmdKeyClear` removes Scintilla's default Tab binding in all modes, and Enter binding in single-line mode. `EVT_KEY_DOWN` in `_onKeyDown` handles Tab navigation and single-line Enter navigation. Tab always navigates — no literal tab insertion (Ctrl+Tab is reserved for notebook tab switching). In multiline mode, Enter inserts newlines normally (Scintilla default). Tab navigation uses `Navigate()` which preserves forward/backward direction.
 
@@ -99,7 +107,7 @@ Using `StyledTextCtrl` for a single-line field (like Subject) requires several p
 | 1  | Enter key creates newlines   | `CmdKeyClear(STC_KEY_RETURN, 0)` + navigate focus| Done       |
 | 2  | Tab key inserts tab char     | `CmdKeyClear(STC_KEY_TAB, 0)` + navigate focus   | Done (all modes) |
 | 3  | Height too small for scrollbar| 50% extra height: `int(baseHeight * 1.5)`       | Done       |
-| 4  | Paste can include newlines   | `EVT_KEY_DOWN` intercepts Ctrl+V, strips newlines| Done       |
+| 4  | Paste can include newlines   | `EVT_KEY_DOWN` intercepts Ctrl+V, pastes one line ([Text](ATTRIBUTE_PATTERN.md#text))| Done       |
 | 5  | Word wrap enabled            | `SetWrapMode(STC_WRAP_NONE)`                     | Done       |
 | 6  | Scrollbars visible           | `SetUseVerticalScrollBar(False)` + `SetUseHorizontalScrollBar(False)` | Done |
 | 7  | Rich text paste (fonts)      | STC is plain text by default                     | N/A        |
@@ -122,7 +130,7 @@ This fallback trades visual consistency for implementation simplicity.
 Spell checking is configured in **Edit > Preferences > Regional**:
 
 - **Enable spell checking**: Toggle on/off
-- **Language**: Dropdown shows installed dictionaries (auto-detects system language if not set)
+- **Language**: Dropdown shows installed dictionaries; when not set, the user's language from the environment, as for the translation (`i18n.system_language()`, [LOCALE.md](LOCALE.md))
 
 ## Theme-Aware STC Improvements
 

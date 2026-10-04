@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import command, widgets, domain
+from taskcoachlib import command, widgets
 from taskcoachlib.domain import note
 from taskcoachlib.gui import uicommand, dialog
 from taskcoachlib.gui.icons import image_list_cache
@@ -52,12 +52,10 @@ class BaseNoteViewer(
         self.notesToShow = kwargs.get("notesToShow", None)
         super().__init__(*args, **kwargs)
         for eventType in (
-            note.Note.appearanceChangedEventType(),
             note.Note.subjectChangedEventType(),
+            *note.Note.effective_style_event_types(),
         ):
-            self.registerObserver(
-                self.onAttributeChanged_Deprecated, eventType
-            )
+            self.registerObserver(self.on_attribute_changed, eventType)
 
     def domainObjectsToView(self):
         return (
@@ -69,12 +67,14 @@ class BaseNoteViewer(
     def getSupportedPasteTypes(self):
         return (note.Note,)
 
-    def createWidget(self):
+    def create_widget(self):
         imageList = self.createImageList()  # Has side-effects
         self._columns = self._createColumns()
         itemPopupMenu = taskcoachlib.gui.menu.NotePopupMenu(
-            self.parent, self.settings, self.taskFile.categories(), self,
-            notes=self.taskFile.notes()
+            self.parent,
+            self.taskFile.categories(),
+            self,
+            notes=self.taskFile.notes(),
         )
         columnPopupMenu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
         self._popupMenus.extend([itemPopupMenu, columnPopupMenu])
@@ -96,22 +96,17 @@ class BaseNoteViewer(
         return widget
 
     def createFilter(self, notes):
-        notes = super().createFilter(notes)
-        return domain.base.DeletedFilter(notes)
+        return super().createFilter(notes)
 
     def createCreationToolBarUICommands(self):
         return (
-            uicommand.NoteNew(
-                notes=self.presentation(), settings=self.settings, viewer=self
-            ),
+            uicommand.NoteNew(notes=self.presentation(), viewer=self),
             uicommand.NewSubItem(viewer=self),
         ) + super().createCreationToolBarUICommands()
 
     def createColumnUICommands(self):
         return [
-            uicommand.ToggleAutoColumnResizing(
-                viewer=self, settings=self.settings
-            ),
+            uicommand.ToggleAutoColumnResizing(viewer=self),
             uicommand.Separator(),
             uicommand.ViewColumn(
                 menu_text=_("&Manual ordering"),
@@ -212,7 +207,9 @@ class BaseNoteViewer(
             width=self.getColumnWidth("attachments"),
             alignment=wx.LIST_FORMAT_LEFT,
             imageIndicesCallback=self.attachmentImageIndices,  # pylint: disable=E1101
-            headerImageIndex=image_list_cache.get_index("nuvola_status_mail-attachment"),
+            headerImageIndex=image_list_cache.get_index(
+                "nuvola_status_mail-attachment"
+            ),
             renderCallback=lambda note: "",
         )
         categoriesColumn = widgets.Column(
@@ -248,6 +245,7 @@ class BaseNoteViewer(
         modificationDateTimeColumn = widgets.Column(
             "modificationDateTime",
             _("Modification date"),
+            note.Note.modification_datetime_changed_event_type(),
             width=self.getColumnWidth("modificationDateTime"),
             resizeCallback=self.onResizeColumn,
             renderCallback=self.renderModificationDateTime,
@@ -257,7 +255,6 @@ class BaseNoteViewer(
                 menu_text=_("&Modification date"),
                 help_text=_("Sort notes by last modification date"),
             ),
-            *note.Note.modificationEventTypes()
         )
         idColumn = widgets.Column(
             "id",
@@ -302,7 +299,6 @@ class BaseNoteViewer(
         return command.DeleteNoteCommand(
             self.presentation(),
             self.curselection(),
-            shadow=False,  # SyncML removed
         )
 
     def itemEditorClass(self):

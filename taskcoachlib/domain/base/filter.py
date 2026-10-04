@@ -17,9 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import re
-import sre_constants
 from taskcoachlib import patterns
-from taskcoachlib.domain.base import object as domainobject
 
 
 class Filter(patterns.SetDecorator):
@@ -56,8 +54,12 @@ class Filter(patterns.SetDecorator):
             observable.set_tree_mode(tree_mode)
         elif not isinstance(observable, patterns.ObservableCollection):
             from taskcoachlib.meta.debug import log_step
-            log_step("set_tree_mode: unexpected observable type %s"
-                     % type(observable).__name__, prefix="FILTER")
+
+            log_step(
+                "set_tree_mode: unexpected observable type %s"
+                % type(observable).__name__,
+                prefix="FILTER",
+            )
         self.reset()
 
     def tree_mode(self):
@@ -103,14 +105,6 @@ class Filter(patterns.SetDecorator):
         )
         patterns.Event(self.filter_change_event_type(), self).send()
 
-    def getFilterForced(self):
-        """Return items that were added as ancestors, not directly matched.
-
-        These items are in the filter only to maintain tree hierarchy, not
-        because they passed the filter criteria.
-        """
-        return self.__filterForced.copy()
-
     def getAccumulatedFilterForced(self):
         """Return filter_forced items accumulated from the entire filter chain.
 
@@ -127,12 +121,15 @@ class Filter(patterns.SetDecorator):
         accumulated = self.__filterForced.copy()
         try:
             inner = self.observable()
-            if hasattr(inner, 'getAccumulatedFilterForced'):
+            if hasattr(inner, "getAccumulatedFilterForced"):
                 accumulated |= inner.getAccumulatedFilterForced()
         except AttributeError:
             from taskcoachlib.meta.debug import log_step
-            log_step("getAccumulatedFilterForced: AttributeError on observable",
-                     prefix="FILTER")
+
+            log_step(
+                "getAccumulatedFilterForced: AttributeError on observable",
+                prefix="FILTER",
+            )
         return accumulated
 
     def filter_items(self, items):
@@ -231,7 +228,7 @@ class SearchFilter(Filter):
         if regularExpression:
             try:
                 rx = re.compile(searchString, flag)
-            except sre_constants.error:
+            except re.error:
                 if matchCase:
                     return lambda x: x.find(searchString) != -1
                 else:
@@ -276,26 +273,3 @@ class SearchFilter(Filter):
         if self.__searchDescription:
             text += item.description()
         return text
-
-
-class DeletedFilter(Filter):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        for eventType in [
-            domainobject.Object.markDeletedEventType(),
-            domainobject.Object.markNotDeletedEventType(),
-        ]:
-            patterns.Publisher().registerObserver(
-                self.onObjectMarkedDeletedOrNot, eventType=eventType
-            )
-
-    def detach(self):
-        patterns.Publisher().removeObserver(self.onObjectMarkedDeletedOrNot)
-        super().detach()
-
-    def onObjectMarkedDeletedOrNot(self, event):  # pylint: disable=W0613
-        self.reset()
-
-    def filter_items(self, items):
-        return [item for item in items if not item.isDeleted()]

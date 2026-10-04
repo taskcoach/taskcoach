@@ -16,9 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-"""
-In place editors for viewers.
-"""  # pylint: disable=W0105
+# In place editors for viewers.
 
 import wx
 from wx.lib.agw import hypertreelist
@@ -28,43 +26,90 @@ from taskcoachlib.gui.dialog.entry import (
     get_suggested_hour_choices,
     get_suggested_minute_choices,
 )
+from taskcoachlib import patterns
 
 
 class KillFocusAcceptsEditsMixin(object):
-    """Mixin class to let in place editors accept changes whenever the user
-    clicks outside the edit control instead of cancelling the changes."""
+    """In-place editors keep the typed value however the editing stops
+    (a click elsewhere, another cell's edit, a refresh), but on Escape
+    or when the item edited is deleted, which call CancelEditing(). The
+    tree stops the editing before the focus moves, so the focus cannot
+    tell the two apart.
+
+    The editing also stops once the focus has left the editor and its
+    parts for anything else: another view, a menu, a dialog, another
+    application. Its own popups and a text field's own menu keep it
+    (docs/LIST_MANAGEMENT.md#in-place-editing)."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.Bind(wx.EVT_CHILD_FOCUS, self.__on_focus_entered)
+        self.Bind(wx.EVT_CONTEXT_MENU, self.__on_context_menu)
+
+    @staticmethod
+    def __on_context_menu(event):
+        # The text field's own menu opens (Cut, Copy, Paste), not the
+        # list's item menu, which took the row below for the one clicked
+        event.StopPropagation()
+        event.Skip()
 
     def StopEditing(self):
         try:
-            if self.__has_focus():
-                # User hit Escape
-                super().StopEditing()
-            else:
-                # User clicked outside edit window
-                self.AcceptChanges()
-                self.Finish()
+            self.AcceptChanges()
+            self.Finish()
         except RuntimeError:
             pass
 
-    def __has_focus(self):
-        """Return whether this control has the focus.
+    def Finish(self):
+        if self._finished:
+            return
+        focus = wx.Window.FindFocus()
+        if focus is not None and not self.__holds(focus):
+            # Finish() would take the focus back from where it went
+            self._finished = True
+            self._owner.ResetEditControl()
+            return
+        super().Finish()
+        # Given again once the editor is destroyed: wx makes a window
+        # with a focusable child unfocusable in GTK, so Finish() handed
+        # the focus to the editor, which takes it along
+        owner = self._owner
+        patterns.later.soon(owner, owner.SetFocusIgnoringChildren)
 
-        Also returns True if a popup (calendar or dropdown) is open from any
-        child control, since the user is still interacting with the editor.
-        """
-        def window_and_all_children(window):
-            window_and_children = [window]
-            for child in window.GetChildren():
-                window_and_children.extend(window_and_all_children(child))
-            return window_and_children
+    def has_open_popup(self):
+        """Whether a popup of the editor's own is shown."""
+        return False
 
-        if wx.Window.FindFocus() in window_and_all_children(self):
-            return True
+    def __on_focus_entered(self, event):
+        # The editor itself or one of its parts: a composite editor's
+        # focus moves between its fields
+        event.Skip()
+        part = wx.Window.FindFocus()
+        if part is not None:
+            # On the part itself: the date's combo control forwards
+            # Bind(), not Unbind(), to its date fields
+            wx.EvtHandler.Unbind(
+                part, wx.EVT_KILL_FOCUS, handler=self.__on_focus_left
+            )
+            wx.EvtHandler.Bind(part, wx.EVT_KILL_FOCUS, self.__on_focus_left)
 
-        # Check if any DateTimeComboCtrl has an open popup
-        if hasattr(self, '_dateTimeCombo') and self._dateTimeCombo.HasOpenPopup():
-            return True
+    def __on_focus_left(self, event):
+        event.Skip()
+        # Once settled: Tab moves it to another part
+        patterns.later.soon(self, self.__stop_unless_focused)
 
+    def __stop_unless_focused(self):
+        if self._finished or self.has_open_popup():
+            return
+        if not self.__holds(wx.Window.FindFocus()):
+            self.StopEditing()
+
+    def __holds(self, window):
+        # A popup is a top-level window, its parent one of the parts
+        while window is not None:
+            if window is self:
+                return True
+            window = window.GetParent()
         return False
 
 
@@ -90,7 +135,7 @@ class EscapeKeyMixin(object):
     def OnKeyDown(self, event):
         keyCode = event.GetKeyCode()
         if keyCode == wx.WXK_ESCAPE:
-            self.StopEditing()
+            self.CancelEditing()
         elif (
             keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER)
             and not event.ShiftDown()
@@ -98,7 +143,7 @@ class EscapeKeyMixin(object):
             # Notify the owner about the changes
             self.AcceptChanges()
             # Even if vetoed, close the control (consistent with MSW)
-            wx.CallAfter(self.Finish)
+            patterns.later.soon(self, self.Finish)
         else:
             event.Skip()
 
@@ -153,37 +198,36 @@ class Panel(wx.Panel):
 class BudgetCtrl(
     EscapeKeyMixin, KillFocusAcceptsEditsMixin, hypertreelist.EditCtrl, Panel
 ):
-    """Masked inline text control for editing budgets:
-    <hours>:<minutes>:<seconds>."""
+    """Inline control for editing budgets: the task editor's duration
+    field, days, hours, minutes and seconds."""
 
     def __init__(self, parent, wxId, item, column, owner, value):
         super().__init__(parent, wxId, item, column, owner)
-        hours, minutes, seconds = value.hoursMinutesSeconds()
-        # Can't inherit from TimeDeltaCtrl because we need to override GetValue,
-        # so we use composition instead
-        self.__timeDeltaCtrl = widgets.masked.TimeDeltaCtrl(
-            self, hours, minutes, seconds
+        self.__durationCtrl = widgets.MaskedDurationCtrl(
+            self, show_seconds=True
         )
-        self.__timeDeltaCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-        self.makeSizer(self.__timeDeltaCtrl)
+        self.__durationCtrl.SetDuration(value)
+        self.__durationCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.makeSizer(self.__durationCtrl)
 
     def GetValue(self):
-        return date.parseTimeDelta(self.__timeDeltaCtrl.GetValue())
+        return self.__durationCtrl.GetDuration()
 
 
 class AmountCtrl(
     EscapeKeyMixin, KillFocusAcceptsEditsMixin, hypertreelist.EditCtrl, Panel
 ):
-    """Masked inline text control for editing amounts (floats >= 0)."""
+    """Inline control for editing amounts, typed freely: the task
+    editor's CurrencyCtrl (docs/MONETARY_CONTROLS.md)."""
 
     def __init__(self, parent, wxId, item, column, owner, value):
         super().__init__(parent, wxId, item, column, owner)
-        self.__floatCtrl = widgets.masked.AmountCtrl(self, value)
-        self.__floatCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
-        self.makeSizer(self.__floatCtrl)
+        self.__amountCtrl = widgets.CurrencyCtrl(self, value)
+        self.__amountCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.makeSizer(self.__amountCtrl)
 
     def GetValue(self):
-        return self.__floatCtrl.GetValue()
+        return self.__amountCtrl.GetValue()
 
 
 class DateTimeCtrl(
@@ -199,7 +243,6 @@ class DateTimeCtrl(
         kwargs.pop("relative", False)
         kwargs.pop("startDateTime", None)
         super().__init__(parent, wxId, item, column, owner)
-        settings = kwargs["settings"]
 
         # Convert empty DateTime to None for DateTimeComboCtrl (unchecked state)
         combo_value = None if value == date.DateTime() else value
@@ -207,8 +250,8 @@ class DateTimeCtrl(
         self._dateTimeCombo = widgets.DateTimeComboCtrl(
             self,
             value=combo_value,
-            hourChoices=lambda: get_suggested_hour_choices(settings),
-            minuteChoices=lambda: get_suggested_minute_choices(settings),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
         )
 
         # Get widgets directly (they're children of self) - don't use CreateRowPanel
@@ -232,11 +275,6 @@ class DateTimeCtrl(
         self._dateCtrl.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
         self._timeCtrl.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
 
-        # Bind focus loss events to detect click-away (save on click outside)
-        self._checkbox.Bind(wx.EVT_KILL_FOCUS, self._onChildKillFocus)
-        self._dateCtrl.Bind(wx.EVT_KILL_FOCUS, self._onChildKillFocus)
-        self._timeCtrl.Bind(wx.EVT_KILL_FOCUS, self._onChildKillFocus)
-
     def _onKeyDown(self, event):
         """Handle key events, including Tab for internal navigation."""
         keyCode = event.GetKeyCode()
@@ -244,10 +282,13 @@ class DateTimeCtrl(
             # Navigate within the editor's controls, don't let it escape
             self._navigateTab(event.ShiftDown())
         elif keyCode == wx.WXK_ESCAPE:
-            self.StopEditing()
-        elif keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER) and not event.ShiftDown():
+            self.CancelEditing()
+        elif (
+            keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER)
+            and not event.ShiftDown()
+        ):
             self.AcceptChanges()
-            wx.CallAfter(self.Finish)
+            patterns.later.soon(self, self.Finish)
         else:
             event.Skip()
 
@@ -271,34 +312,8 @@ class DateTimeCtrl(
 
         self._tabOrder[idx].SetFocus()
 
-    def _onChildKillFocus(self, event):
-        """Handle focus loss from child controls."""
-        event.Skip()  # Allow default processing
-        # Check focus after it settles (allows tab between children)
-        wx.CallAfter(self._maybeAcceptAndClose)
-
-    def _maybeAcceptAndClose(self):
-        """Accept changes and close if focus has left the control entirely."""
-        try:
-            if not self._hasFocusOrPopup():
-                self.AcceptChanges()
-                self.Finish()
-        except RuntimeError:
-            pass  # Control may be destroyed
-
-    def _hasFocusOrPopup(self):
-        """Check if focus is in this control or a popup is open."""
-        def window_and_all_children(window):
-            result = [window]
-            for child in window.GetChildren():
-                result.extend(window_and_all_children(child))
-            return result
-
-        if wx.Window.FindFocus() in window_and_all_children(self):
-            return True
-        if self._dateTimeCombo.HasOpenPopup():
-            return True
-        return False
+    def has_open_popup(self):
+        return self._dateTimeCombo.HasOpenPopup()
 
     def GetValue(self):
         value = self._dateTimeCombo.GetValue()

@@ -3440,7 +3440,7 @@ msgid "Insert a new note with the selected categories checked"
 msgstr "Hinka un nota nobo i marka e kategorianan skohí"
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1936
-msgid "&Add attachment...\tShift-Ctrl-A"
+msgid "&Add attachment..."
 msgstr ""
 
 #: taskcoachlib/gui/uicommand/uicommand.py:1960

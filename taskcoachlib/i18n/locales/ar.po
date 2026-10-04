@@ -2767,7 +2767,7 @@ msgid "Insert a new note with the selected categories checked"
 msgstr ""
 
 #: taskcoachlib\gui\uicommand.py:2087
-msgid "&Add attachment...\tShift-Ctrl-A"
+msgid "&Add attachment..."
 msgstr ""
 
 #: taskcoachlib\gui\uicommand.py:2110

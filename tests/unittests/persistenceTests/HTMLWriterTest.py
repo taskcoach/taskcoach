@@ -18,8 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx, io, os
 import test
-from taskcoachlib import persistence, gui, config, render
+from taskcoachlib import persistence, gui, render
 from taskcoachlib.domain import task, category, effort, date
+from taskcoachlib.config import settings
 
 
 class HTMLWriterTestCase(test.wxTestCase):
@@ -28,7 +29,6 @@ class HTMLWriterTestCase(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = self.settings = config.Settings(load=False)
         self.fd = io.StringIO()
         self.writer = persistence.HTMLWriter(self.fd, self.filename)
         self.taskFile = persistence.TaskFile()
@@ -48,7 +48,7 @@ class HTMLWriterTestCase(test.wxTestCase):
         raise NotImplementedError  # pragma: no cover
 
     def __writeAndRead(self, selectionOnly):
-        self.writer.write(self.viewer, self.settings, selectionOnly, True)
+        self.writer.write(self.viewer, selectionOnly, True)
         return self.fd.getvalue()
 
     def expectInHTML(self, *htmlFragments, **kwargs):
@@ -87,8 +87,8 @@ class CommonTestsMixin(object):
 
 class TaskWriterTestCase(HTMLWriterTestCase):
     def createViewer(self):
-        self.settings.set("taskviewer", "treemode", self.tree_mode)
-        return gui.viewer.TaskViewer(self.frame, self.taskFile, self.settings)
+        settings.set("taskviewer", "treemode", self.tree_mode)
+        return gui.viewer.TaskViewer(self.frame, self.taskFile)
 
 
 class TaskTestsMixin(CommonTestsMixin):
@@ -113,99 +113,53 @@ class TaskTestsMixin(CommonTestsMixin):
         if not self.filename:
             self.expectInHTML("<u>")
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testTaskStatusStyle(self):
-        self.expectInHTML("      .completed {color: rgb(0, 255, 0)}\n")
+    def expect_row_style(self, style):
+        """The task's row, after the master loop's pass, has style: the
+        export writes colours inline (#308)."""
+        test.styled(self.task)
+        self.expectInHTML('<tr style="%s">' % style)
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testTaskStatusStyleWhenForegroundColorChangedInSettings(self):
-        self.settings.set("fgcolor", "completedtasks", str(wx.RED))
-        self.expectInHTML("      .completed {color: rgb(255, 0, 0)}\n")
+    def test_completed_task(self):
+        self.task.set_completion_date_time()
+        self.expect_row_style("color: #00ff00")
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testOverdueTask(self):
-        self.task.setDueDateTime(date.Yesterday())
-        fragment = (
-            '<tr class="overdue">'
-            if self.filename
-            else '<font color="rgb(255, 0, 0)">Task subject</font>'
-        )
-        self.expectInHTML(fragment)
+    def test_foreground_color_from_settings(self):
+        settings.set("fgcolor", "completedtasks", wx.RED)
+        self.task.set_completion_date_time()
+        self.expect_row_style("color: #ff0000")
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testCompletedTask(self):
-        self.task.setCompletionDateTime()
-        if self.filename:
-            self.expectInHTML('<tr class="completed">')
-        else:
-            self.expectInHTML(
-                '<font color="rgb(0, 255, 0)">Task subject</font>'
-            )
+    def test_overdue_task(self):
+        self.task.set_due_date_time(date.Yesterday())
+        self.expect_row_style("color: #ff0000")
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testTaskDueSoon(self):
-        self.task.setDueDateTime(date.Now() + date.ONE_HOUR)
-        fragment = (
-            '<tr class="duesoon">'
-            if self.filename
-            else '<font color="rgb(255, 128, 0)">Task subject</font>'
-        )
-        self.expectInHTML(fragment)
+    def test_task_due_soon(self):
+        self.task.set_due_date_time(date.Now() + date.ONE_HOUR)
+        self.expect_row_style("color: #ff8000")
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testInactiveTask(self):
-        self.task.setPlannedStartDateTime(date.Tomorrow())
-        fragment = (
-            '<tr class="inactive">'
-            if self.filename
-            else '<font color="rgb(192, 192, 192)">Task subject</font>'
-        )
-        self.expectInHTML(fragment)
+    def test_inactive_task(self):
+        self.task.set_planned_start_date_time(date.Tomorrow())
+        self.expect_row_style("color: #c0c0c0")
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testLateTask(self):
-        self.task.setPlannedStartDateTime(date.Yesterday())
-        fragment = (
-            '<tr class="late">'
-            if self.filename
-            else '<font color="rgb(160, 32, 240)">Task subject</font>'
-        )
-        self.expectInHTML(fragment)
+    def test_late_task(self):
+        self.task.set_planned_start_date_time(date.Yesterday())
+        self.expect_row_style("color: #a020f0")
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testTaskBackgroundColor(self):
-        self.task.setActualStartDateTime(date.Now())
+    def test_task_background_color(self):
+        self.task.set_actual_start_date_time(date.Now())
         self.task.setBackgroundColor(wx.RED)
-        fragment = (
-            '<tr class="active" style="background: rgb(255, 0, 0)">'
-            if self.filename
-            else '<tr bgcolor="rgb(255, 0, 0)">'
-        )
-        self.expectInHTML(fragment)
+        self.expect_row_style("color: #000000; background: #ff0000")
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testTaskHasCategoryBackgroundColor(self):
-        self.task.setActualStartDateTime(date.Now())
+    def test_task_has_category_background_color(self):
+        self.task.set_actual_start_date_time(date.Now())
         cat = category.Category("cat", bgColor=wx.RED)
         self.task.addCategory(cat)
-        fragment = (
-            '<tr class="active" style="background: rgb(255, 0, 0)">'
-            if self.filename
-            else '<tr bgcolor="rgb(255, 0, 0)">'
-        )
-        self.expectInHTML(fragment)
+        self.expect_row_style("color: #000000; background: #ff0000")
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testCategoryBackgroundColorAsTuple(self):
-        self.task.setActualStartDateTime(date.Now())
+    def test_category_background_color_as_tuple(self):
+        self.task.set_actual_start_date_time(date.Now())
         cat = category.Category("cat", bgColor=(255, 0, 0))
         self.task.addCategory(cat)
-        if self.filename:
-            self.expectInHTML(
-                '<tr class="active" style="background: rgba(255, 0, 0, 0.000)">'
-            )
-        else:
-            self.expectInHTML('<tr bgcolor="rgba(255, 0, 0, 0.000)">')
+        self.expect_row_style("color: #000000; background: #ff0000")
 
     def testCSSLink(self):
         if self.filename:
@@ -219,7 +173,7 @@ class TaskTestsMixin(CommonTestsMixin):
         def open(*args):  # pylint: disable=W0613,W0622
             raise IOError
 
-        self.writer._writeCSS(open=open)  # pylint: disable=W0212
+        self.writer._write_css(open=open)  # pylint: disable=W0212
 
 
 class TaskListTestsMixin(object):
@@ -248,7 +202,9 @@ class TaskListTestsMixin(object):
         self.expectNotInHTML("1/1/1")
 
     def testModificationDateTime(self):
-        self.task.setModificationDateTime(date.DateTime(2012, 1, 1, 10, 0, 0))
+        self.task.set_modification_datetime(
+            date.DateTime(2012, 1, 1, 10, 0, 0)
+        )
         self.viewer.showColumnByName("modificationDateTime")
         self.expectInHTML(
             render.dateTime(
@@ -269,24 +225,24 @@ class TaskListTestsMixin(object):
 class TaskListExportTest(
     TaskTestsMixin, TaskListTestsMixin, TaskWriterTestCase
 ):
-    tree_mode = "False"
+    tree_mode = False
     filename = "filename"
 
 
 class TaskListPrintTest(
     TaskTestsMixin, TaskListTestsMixin, TaskWriterTestCase
 ):
-    tree_mode = "False"
+    tree_mode = False
     filename = ""
 
 
 class TaskTreeExportTest(TaskTestsMixin, TaskWriterTestCase):
-    tree_mode = "True"
+    tree_mode = True
     filename = "filename"
 
 
 class TaskTreePrintTest(TaskTestsMixin, TaskWriterTestCase):
-    tree_mode = "True"
+    tree_mode = True
     filename = ""
 
 
@@ -301,9 +257,7 @@ class EffortWriterTestCase(CommonTestsMixin, HTMLWriterTestCase):
         )
 
     def createViewer(self):
-        return gui.viewer.EffortViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        return gui.viewer.EffortViewer(self.frame, self.taskFile)
 
     def testTaskSubject(self):
         self.expectInHTML(">Task subject<")
@@ -319,13 +273,10 @@ class CategoryWriterTestsMixin(CommonTestsMixin):
     def testCategorySubject(self):
         self.expectInHTML(">Category<")
 
-    @test.stale("HTML export uses inline colours since #308")
-    def testCategoryBackgroundColor(self):
+    def test_category_background_color(self):
         self.category.setBackgroundColor(wx.RED)
-        if self.filename:
-            self.expectInHTML('<tr style="background: rgb(255, 0, 0)">')
-        else:
-            self.expectInHTML('<tr bgcolor="rgb(255, 0, 0)">')
+        test.styled(self.category)
+        self.expectInHTML('<tr style="background: #ff0000">')
 
 
 class CategoryWriterTestCase(HTMLWriterTestCase):
@@ -335,9 +286,7 @@ class CategoryWriterTestCase(HTMLWriterTestCase):
         self.taskFile.categories().append(self.category)
 
     def createViewer(self):
-        return gui.viewer.CategoryViewer(
-            self.frame, self.taskFile, self.settings
-        )
+        return gui.viewer.CategoryViewer(self.frame, self.taskFile)
 
 
 class CategoryWriterExportTest(

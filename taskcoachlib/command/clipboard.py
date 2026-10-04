@@ -17,21 +17,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.patterns.snapshot import is_held
 
 
 class Clipboard(metaclass=patterns.Singleton):
     def __init__(self):
         self.clear()
 
-    def put(self, items, source):
+    def put(self, items, source, cut=False):
         # pylint: disable=W0201
         self._contents = items
         self._source = source
+        self._cut = cut
 
     def get(self):
         currentContents = self._contents
         currentSource = self._source
         return currentContents, currentSource
+
+    def items_to_paste(self):
+        """The items a paste inserts: cut items themselves while the
+        file does not hold them, a move that keeps their IDs; copies,
+        with new IDs, otherwise (docs/PERSISTENCE_XML.md, IDs;
+        docs/UNDO_REDO.md, Design Intent)."""
+        if self._cut and not any(is_held(item) for item in self._contents):
+            return list(self._contents)
+        return [item.copy() for item in self._contents]
 
     def peek(self):
         return self._contents
@@ -39,6 +50,7 @@ class Clipboard(metaclass=patterns.Singleton):
     def clear(self):
         self._contents = []
         self._source = None
+        self._cut = False
 
     def __bool__(self):
         return len(self._contents) > 0

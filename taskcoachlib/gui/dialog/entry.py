@@ -19,26 +19,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import widgets, operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.domain import date
 from taskcoachlib.i18n import _
-import datetime
 from wx.lib import combotreebox, newevent
 import wx
 import wx.adv
-
 
 # Helper functions to get suggested time choices from preferences
 # These are used by both entry.py and editor.py for datetime controls
 #
 # For dynamic updates when preferences change, pass as lambda:
-#   hourChoices=lambda: get_suggested_hour_choices(settings)
+#   hour_choices=get_suggested_hour_choices
 
 
-def get_suggested_hour_choices(settings, override=None):
+def get_suggested_hour_choices(override=None):
     """Get hour choices list for dropdowns.
 
     Args:
-        settings: Settings object for reading preferences
         override: Optional override value:
             - None (default): Use preferences (efforthourstart to efforthourend)
             - list: Use that specific list of hours
@@ -56,20 +54,20 @@ def get_suggested_hour_choices(settings, override=None):
         return override
     # Check time format - in 12-hour mode, return 1-12
     from taskcoachlib.widgets.maskedtimectrl import getEffectiveTimeFormat
+
     if getEffectiveTimeFormat() == "12":
         return list(range(1, 13))
     # 24-hour mode: use working hours from preferences
-    start = settings.getint("view", "efforthourstart")
-    end = settings.getint("view", "efforthourend")
+    start = settings.view.efforthourstart
+    end = settings.view.efforthourend
     # Cap at 23 to handle legacy settings that may have sentinel value 24
     return list(range(start, min(end + 1, 24)))
 
 
-def get_suggested_minute_choices(settings, override=None):
+def get_suggested_minute_choices(override=None):
     """Get minute choices list for dropdowns.
 
     Args:
-        settings: Settings object for reading preferences
         override: Optional override value:
             - None (default): Use preferences (based on effortminuteinterval)
             - list: Use that specific list of minutes
@@ -82,15 +80,14 @@ def get_suggested_minute_choices(settings, override=None):
         return None
     if override is not None:
         return override
-    interval = settings.getint("view", "effortminuteinterval")
+    interval = settings.view.effortminuteinterval
     return list(range(0, 60, interval))
 
 
-def get_suggested_second_choices(settings, override=None):
+def get_suggested_second_choices(override=None):
     """Get second choices list for dropdowns.
 
     Args:
-        settings: Settings object for reading preferences
         override: Optional override value:
             - None (default): Use preferences (based on effortsecondinterval)
             - list: Use that specific list of seconds
@@ -103,57 +100,8 @@ def get_suggested_second_choices(settings, override=None):
         return None
     if override is not None:
         return override
-    interval = settings.getint("view", "effortsecondinterval")
+    interval = settings.view.effortsecondinterval
     return list(range(0, 60, interval))
-
-
-class TimeDeltaEntry(widgets.PanelWithBoxSizer):
-    # We can't inherit from widgets.masked.TextCtrl because that class expects
-    # GetValue to return a string and we want to return a TimeDelta.
-
-    defaultTimeDelta = date.TimeDelta()
-
-    def __init__(
-        self,
-        parent,
-        timeDelta=defaultTimeDelta,
-        readonly=False,
-        *args,
-        **kwargs
-    ):
-        super().__init__(parent, *args, **kwargs)
-        hours, minutes, seconds = timeDelta.hoursMinutesSeconds()
-        self._entry = widgets.masked.TimeDeltaCtrl(
-            self,
-            hours,
-            minutes,
-            seconds,
-            readonly,
-            timeDelta < self.defaultTimeDelta,
-        )
-        if readonly:
-            self._entry.Disable()
-            # Set grey background to clearly indicate non-editable
-            self._entry.SetBackgroundColour(
-                wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
-            )
-        self.add(self._entry, flag=wx.EXPAND | wx.ALL, proportion=1)
-        self.fit()
-
-    def NavigateBook(self, event):
-        self.GetParent().NavigateBook(not event.ShiftDown())
-        return True
-
-    def GetValue(self):
-        return date.parseTimeDelta(self._entry.GetValue())
-
-    def SetValue(self, newTimeDelta):
-        hours, minutes, seconds = newTimeDelta.hoursMinutesSeconds()
-        negative = newTimeDelta < self.defaultTimeDelta
-        self._entry.set_value(hours, minutes, seconds, negative)
-
-    def Bind(self, *args, **kwargs):  # pylint: disable=W0221
-        self._entry.Bind(*args, **kwargs)
 
 
 class AmountEntry(widgets.PanelWithBoxSizer):
@@ -251,11 +199,21 @@ FontEntryEvent, EVT_FONTENTRY = newevent.NewEvent()
 
 
 class FontEntry(widgets.PanelWithBoxSizer):
-    def __init__(self, parent, currentFont, currentColor, currentBgColor=None, *args, **kwargs):
+    def __init__(
+        self,
+        parent,
+        current_font,
+        current_color,
+        current_bg_color=None,
+        *args,
+        **kwargs
+    ):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._fontCheckBox = self._createCheckBox(currentFont)
-        self._fontPicker = self._createFontPicker(currentFont, currentColor, currentBgColor)
+        self._fontCheckBox = self._create_check_box(current_font)
+        self._fontPicker = self._create_font_picker(
+            current_font, current_color, current_bg_color
+        )
         self.add(
             self._fontCheckBox,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
@@ -270,16 +228,21 @@ class FontEntry(widgets.PanelWithBoxSizer):
         )
         self.fitNoMinSize()
 
-    def _createCheckBox(self, currentFont):
+    def _create_check_box(self, current_font):
         checkBox = wx.CheckBox(self, label="")
-        checkBox.SetValue(currentFont is not None)
+        checkBox.SetValue(current_font is not None)
         checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
         return checkBox
 
-    def _createFontPicker(self, currentFont, currentColor, currentBgColor):
+    def _create_font_picker(
+        self, current_font, current_color, current_bg_color
+    ):
         defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         picker = widgets.FontPickerCtrl(
-            self, font=currentFont or defaultFont, colour=currentColor, bgColour=currentBgColor
+            self,
+            font=current_font or defaultFont,
+            colour=current_color,
+            bgColour=current_bg_color,
         )
         picker.Bind(wx.EVT_FONTPICKER_CHANGED, self.onFontPicked)
         return picker
@@ -295,7 +258,11 @@ class FontEntry(widgets.PanelWithBoxSizer):
     def onChecked(self, event):
         event.Skip()
         checked = self._fontCheckBox.IsChecked()
-        if not checked and hasattr(self, '_effectiveFont') and self._effectiveFont:
+        if (
+            not checked
+            and hasattr(self, "_effectiveFont")
+            and self._effectiveFont
+        ):
             self._fontPicker.SetSelectedFont(self._effectiveFont)
         wx.PostEvent(self, FontEntryEvent())
 
@@ -323,9 +290,6 @@ class FontEntry(widgets.PanelWithBoxSizer):
     def SetColor(self, newColor):
         self._fontPicker.SetSelectedColour(newColor)
 
-    def GetBgColor(self):
-        return self._fontPicker.GetSelectedBgColour()
-
     def SetBgColor(self, newColor):
         self._fontPicker.SetSelectedBgColour(newColor)
 
@@ -340,13 +304,17 @@ class ColorEntry(widgets.PanelWithBoxSizer):
     When checked: user can pick a custom color.
     Editor provides derived color (inherited value or system theme fallback).
     """
-    def __init__(self, parent, currentColor, defaultColor, *args, **kwargs):
+
+    def __init__(self, parent, current_color, default_color, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._defaultColor = defaultColor
-        self._effectiveColor = None  # Set via setEffectiveColor() after construction
-        self._colorCheckBox = self._createCheckBox(currentColor)
-        self._colorPicker = self._createColorPicker(currentColor, defaultColor)
+        self._effectiveColor = (
+            None  # Set via setEffectiveColor() after construction
+        )
+        self._colorCheckBox = self._create_check_box(current_color)
+        self._colorPicker = self._create_color_picker(
+            current_color, default_color
+        )
         self.add(
             self._colorCheckBox,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
@@ -361,26 +329,30 @@ class ColorEntry(widgets.PanelWithBoxSizer):
         )
         self.fit()
 
-    def _createCheckBox(self, currentColor):
+    def _create_check_box(self, current_color):
         checkBox = wx.CheckBox(self, label="")
-        checkBox.SetValue(currentColor is not None)
+        checkBox.SetValue(current_color is not None)
         checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
         return checkBox
 
-    def _createColorPicker(self, currentColor, defaultColor):
+    def _create_color_picker(self, current_color, default_color):
         # ColourPickerCtrl on Mac OS X expects a wx.Colour and fails on tuples
         # so convert the tuples to a wx.Colour:
-        if currentColor:
-            displayColor = wx.Colour(*currentColor)
+        if current_color:
+            display_color = wx.Colour(*current_color)
         else:
             # No override - show system theme initially (derived color set later)
-            if defaultColor == wx.BLACK:
-                displayColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
-            elif defaultColor == wx.WHITE:
-                displayColor = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+            if default_color == wx.BLACK:
+                display_color = wx.SystemSettings.GetColour(
+                    wx.SYS_COLOUR_WINDOWTEXT
+                )
+            elif default_color == wx.WHITE:
+                display_color = wx.SystemSettings.GetColour(
+                    wx.SYS_COLOUR_WINDOW
+                )
             else:
-                displayColor = defaultColor
-        picker = widgets.ColourPickerCtrl(self, colour=displayColor)
+                display_color = default_color
+        picker = widgets.ColourPickerCtrl(self, colour=display_color)
         picker.Bind(wx.EVT_COLOURPICKER_CHANGED, self.onColorPicked)
         return picker
 
@@ -389,7 +361,9 @@ class ColorEntry(widgets.PanelWithBoxSizer):
 
         Editor provides the effective color from the SSOT model.
         """
-        if color is None or (isinstance(color, wx.Colour) and not color.IsOk()):
+        if color is None or (
+            isinstance(color, wx.Colour) and not color.IsOk()
+        ):
             return
         if not isinstance(color, wx.Colour):
             color = wx.Colour(*color)
@@ -428,11 +402,14 @@ IconEntryEvent, EVT_ICONENTRY = newevent.NewEvent()
 
 class IconEntry(widgets.PanelWithBoxSizer):
     """Icon entry with checkbox. When unchecked, returns empty string (no icon)."""
+
     def __init__(self, parent, current_icon_id, exclude=None, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._iconCheckBox = self._createCheckBox(current_icon_id)
-        self._iconPicker = self._createIconPicker(parent, current_icon_id, exclude)
+        self._iconCheckBox = self._create_check_box(current_icon_id)
+        self._iconPicker = self._create_icon_picker(
+            parent, current_icon_id, exclude
+        )
         self.add(
             self._iconCheckBox,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
@@ -447,14 +424,16 @@ class IconEntry(widgets.PanelWithBoxSizer):
         )
         self.fitNoMinSize()
 
-    def _createCheckBox(self, current_icon_id):
+    def _create_check_box(self, current_icon_id):
         checkBox = wx.CheckBox(self, label="")
         checkBox.SetValue(current_icon_id != "")
         checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
         return checkBox
 
-    def _createIconPicker(self, parent, current_icon_id, exclude):
-        picker = widgets.IconPicker(self, current_icon_id or "", exclude=exclude)
+    def _create_icon_picker(self, parent, current_icon_id, exclude):
+        picker = widgets.IconPicker(
+            self, current_icon_id or "", exclude=exclude
+        )
         picker.Bind(wx.EVT_COMBOBOX, self.onIconPicked)
         return picker
 
@@ -524,7 +503,7 @@ class TaskEntry(wx.Panel):
         set the selection."""
         super().__init__(parent)
         self._createInterior()
-        self._addTasksRecursively(rootTasks)
+        self._add_tasks_recursively(rootTasks)
         self.SetValue(selectedTask)
         # Bind to window close to properly clean up the popup
         self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
@@ -546,19 +525,18 @@ class TaskEntry(wx.Panel):
         boxSizer.Add(self._comboTreeBox, flag=wx.EXPAND, proportion=1)
         self.SetSizerAndFit(boxSizer)
 
-    def _addTasksRecursively(self, tasks, parentItem=None):
+    def _add_tasks_recursively(self, tasks, parent_item=None):
         """Add tasks to the ComboTreeBox and then recursively add their
         subtasks."""
         for task in tasks:
-            self._addTaskRecursively(task, parentItem)
+            self._add_task_recursively(task, parent_item)
 
-    def _addTaskRecursively(self, task, parentItem=None):
+    def _add_task_recursively(self, task, parent_item=None):
         """Add a task to the ComboTreeBox and then recursively add its
         subtasks."""
-        if not task.isDeleted():
-            item = self._comboTreeBox.Append(task.subject(), parent=parentItem)
-            self._comboTreeBox.SetClientData(item, task)
-            self._addTasksRecursively(task.children(), item)
+        item = self._comboTreeBox.Append(task.subject(), parent=parent_item)
+        self._comboTreeBox.SetClientData(item, task)
+        self._add_tasks_recursively(task.children(), item)
 
     def onTaskSelected(self, event):  # pylint: disable=W0613
         wx.PostEvent(self, TaskEntryEvent())
@@ -605,11 +583,9 @@ RecurrenceEntryEvent, EVT_RECURRENCEENTRY = newevent.NewEvent()
 
 class RecurrenceEntry(wx.Panel):
     horizontalSpace = (3, -1)
-    verticalSpace = (-1, 3)
 
-    def __init__(self, parent, recurrence, settings, *args, **kwargs):
+    def __init__(self, parent, recurrence, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        self._settings = settings  # Store for later use
         recurrenceFrequencyPanel = wx.Panel(self)
         self._recurrencePeriodEntry = wx.Choice(
             recurrenceFrequencyPanel,
@@ -759,8 +735,8 @@ class RecurrenceEntry(wx.Panel):
         self._recurrenceStopDateTimeCombo = widgets.DateTimeComboCtrl(
             stopPanel,
             value=None,  # unchecked by default
-            hourChoices=lambda: get_suggested_hour_choices(self._settings),
-            minuteChoices=lambda: get_suggested_minute_choices(self._settings),
+            hour_choices=get_suggested_hour_choices,
+            minute_choices=get_suggested_minute_choices,
         )
         # Bind value change — fires on checkbox toggle AND date/time edits
         self._recurrenceStopDateTimeCombo.Bind(
@@ -847,6 +823,9 @@ class RecurrenceEntry(wx.Panel):
         wx.PostEvent(self, RecurrenceEntryEvent())
 
     def SetValue(self, recurrence):
+        # How many times the task has recurred: no field shows it, and
+        # "Stop after" counts it
+        self._count = recurrence.count
         index = {"": 0, "daily": 1, "weekly": 2, "monthly": 3, "yearly": 4}[
             recurrence.unit
         ]
@@ -874,7 +853,9 @@ class RecurrenceEntry(wx.Panel):
             self._recurrenceStopDateTimeCombo.SetEditable()
             has_stop_datetime = recurrence.stop_datetime != date.DateTime()
             if has_stop_datetime:
-                self._recurrenceStopDateTimeCombo.SetValue(recurrence.stop_datetime)
+                self._recurrenceStopDateTimeCombo.SetValue(
+                    recurrence.stop_datetime
+                )
             else:
                 self._recurrenceStopDateTimeCombo.DeactivateValue()
         else:
@@ -891,7 +872,8 @@ class RecurrenceEntry(wx.Panel):
             4: "yearly",
         }
         kwargs = dict(
-            unit=recurrenceDict[self._recurrencePeriodEntry.Selection]
+            unit=recurrenceDict[self._recurrencePeriodEntry.Selection],
+            count=self._count,
         )
         if self._maxRecurrenceCheckBox.IsChecked():
             kwargs["maximum"] = self._maxRecurrenceCountEntry.Value
@@ -899,7 +881,9 @@ class RecurrenceEntry(wx.Panel):
         kwargs["sameWeekday"] = self._recurrenceSameWeekdayCheckBox.IsChecked()
         kwargs["recurBasedOnCompletion"] = bool(self._scheduleChoice.Selection)
         if self._recurrenceStopDateTimeCombo.IsActive():
-            kwargs["stop_datetime"] = self._recurrenceStopDateTimeCombo.GetValue()
+            kwargs["stop_datetime"] = (
+                self._recurrenceStopDateTimeCombo.GetValue()
+            )
         # Get selected weekdays (0-6 for Mon-Sun)
         kwargs["weekdays"] = [
             i for i, cb in enumerate(self._weekdayCheckBoxes) if cb.IsChecked()

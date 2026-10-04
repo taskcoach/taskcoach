@@ -16,8 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import taskcoachlib.gui.menu
-from pubsub import pub
+from taskcoachlib import patterns
 import wx.lib.agw.aui as aui
 import wx
 
@@ -31,12 +30,11 @@ class ViewerContainer(object):
     components, e.g. menu's, to talk to the ViewerContainer as were
     it a regular viewer."""
 
-    def __init__(self, containerWidget, settings, *args, **kwargs):
-        self.containerWidget = containerWidget
+    def __init__(self, container_widget, *args, **kwargs):
+        self.containerWidget = container_widget
         self._notifyActiveViewer = False
         self._focus_skipped = False  # While the main window was minimized
         self.__bind_event_handlers()
-        self._settings = settings
         self.viewers = []
         super().__init__(*args, **kwargs)
 
@@ -70,17 +68,12 @@ class ViewerContainer(object):
             )
         self.activate_viewer(self.viewers[new_index])
 
-    def is_viewer_container(self):
-        """Return whether this is a viewer container or an actual viewer."""
-        return True
-
     def __bind_event_handlers(self):
         """Register for pane closing, activating and floating events."""
         self.containerWidget.Bind(aui.EVT_AUI_PANE_CLOSE, self.on_page_closed)
         self.containerWidget.Bind(
             aui.EVT_AUI_PANE_ACTIVATED, self.on_page_changed
         )
-        self.containerWidget.Bind(aui.EVT_AUI_PANE_FLOATED, self.on_page_floated)
 
     def __getitem__(self, index):
         return self.viewers[index]
@@ -90,11 +83,17 @@ class ViewerContainer(object):
 
     def add_viewer(self, viewer, floating=False):
         """Add a new pane with the specified viewer."""
-        self.containerWidget.add_pane(viewer, viewer.title(), floating=floating)
+        self.containerWidget.add_pane(
+            viewer, viewer.title(), floating=floating
+        )
         self.viewers.append(viewer)
         if len(self.viewers) == 1:
             self.activate_viewer(viewer)
-        pub.subscribe(self.on_status_changed, viewer.viewer_status_event_type())
+        patterns.Publisher().registerObserver(
+            self.on_status_changed,
+            eventType=viewer.viewer_status_event_type(),
+            eventSource=viewer,
+        )
 
     def close_viewer(self, viewer):
         """Close the specified viewer."""
@@ -128,15 +127,33 @@ class ViewerContainer(object):
         pane_info = self.containerWidget.manager.GetPane(viewer_to_activate)
         if pane_info.IsNotebookPage():
             self.containerWidget.manager.ShowPane(viewer_to_activate, True)
+        if pane_info.IsFloating() and pane_info.frame:
+            # Its own window, in front for the keys to reach it
+            pane_info.frame.Raise()
         self.send_viewer_status_event()
 
     def __del__(self):
         pass  # Don't forward del to one of the viewers.
 
-    def on_status_changed(self, viewer):
-        if self.active_viewer() == viewer:
-            self.send_viewer_status_event()
-        pub.sendMessage("all.viewer.status", viewer=viewer)
+    @classmethod
+    def all_viewers_status_event_type(cls):
+        """A viewer's status changed: the container is the source and
+        the viewer the value."""
+        return "all.viewer.status"
+
+    @classmethod
+    def status_event_type(cls):
+        """The active viewer's status changed, or another viewer became
+        active: the container is the source."""
+        return "viewer.status"
+
+    def on_status_changed(self, event):
+        for viewer in event.sources():
+            if self.active_viewer() == viewer:
+                self.send_viewer_status_event()
+            patterns.Event(
+                self.all_viewers_status_event_type(), self, viewer
+            ).send()
 
     def on_page_changed(self, event):
         """Handle pane activation events from AUI."""
@@ -153,7 +170,7 @@ class ViewerContainer(object):
             self.__ensure_active_viewer_has_focus()
 
     def send_viewer_status_event(self):
-        pub.sendMessage("viewer.status")
+        patterns.Event(self.status_event_type(), self).send()
 
     def __ensure_active_viewer_has_focus(self):
         """Set focus on active viewer, unless a text control inside it has focus.
@@ -211,29 +228,8 @@ class ViewerContainer(object):
         if viewer in self.viewers:
             self.viewers.remove(viewer)
             # Unsubscribe from the viewer's status event before detaching
-            try:
-                pub.unsubscribe(self.on_status_changed, viewer.viewer_status_event_type())
-            except Exception:
-                pass  # May already be unsubscribed
+            patterns.Publisher().removeObserver(
+                self.on_status_changed,
+                eventType=viewer.viewer_status_event_type(),
+            )
             viewer.detach()
-
-    @staticmethod
-    def on_page_floated(event):
-        """Give floating pane accelerator keys for activating next and previous
-        viewer."""
-        viewer = event.GetPane().window
-        table = wx.AcceleratorTable(
-            [
-                (
-                    wx.ACCEL_CTRL,
-                    wx.WXK_PAGEDOWN,
-                    taskcoachlib.gui.menu.activateNextViewerId,
-                ),
-                (
-                    wx.ACCEL_CTRL,
-                    wx.WXK_PAGEUP,
-                    taskcoachlib.gui.menu.activatePreviousViewerId,
-                ),
-            ]
-        )
-        viewer.SetAcceleratorTable(table)

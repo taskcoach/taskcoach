@@ -20,10 +20,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import test
-from taskcoachlib import gui, config
+from taskcoachlib import gui
 from taskcoachlib.gui import uicommand
 from taskcoachlib.gui.uicommand import Separator
 from taskcoachlib.domain import task, category, date
+from taskcoachlib.config import settings
 
 
 class MockViewerContainer(object):
@@ -103,10 +104,60 @@ class MenuTest(MenuTestCase):
         self.assertEqual(1, len(self.menu))
 
 
+class SometimesShown(uicommand.base_uicommand.UICommand):
+    """A command shown only while visible() says so, as Edit in
+    place."""
+
+    shown = False
+
+    def visible(self):
+        return self.shown
+
+    def do_command(self, event):  # pragma: no cover
+        pass
+
+
+class MenuWithOptionalItemsTest(MenuTestCase):
+    """A command with visible() is in the menu only while it is
+    visible, in its place."""
+
+    def setUp(self):
+        super().setUp()
+        self.first = uicommand.base_uicommand.UICommand(menu_text="first")
+        self.optional = SometimesShown(menu_text="optional")
+        self.last = uicommand.base_uicommand.UICommand(menu_text="last")
+        self.menu.appendUICommands(self.first, self.optional, self.last)
+
+    def labels(self):
+        return [item.GetItemLabelText() for item in self.menu.GetMenuItems()]
+
+    def test_hidden_while_not_visible(self):
+        self.assertEqual(["first", "last"], self.labels())
+
+    def test_not_asked_while_the_menu_is_built(self):
+        # What visible() reads (a view's list) may not exist yet
+        class NotYet(SometimesShown):
+            def visible(self):
+                raise AttributeError("no widget yet")
+
+        gui.menu.Menu(self.frame).appendUICommands(NotYet(menu_text="x"))
+
+    def test_shown_in_its_place_once_visible(self):
+        self.optional.shown = True
+        self.menu.show_visible_items()
+        self.assertEqual(["first", "optional", "last"], self.labels())
+
+    def test_hidden_again(self):
+        self.optional.shown = True
+        self.menu.show_visible_items()
+        self.optional.shown = False
+        self.menu.show_visible_items()
+        self.assertEqual(["first", "last"], self.labels())
+
+
 class MenuWithBooleanMenuItemsTestCase(MenuTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
         self.commands = self.createCommands()
 
     def createCommands(self):
@@ -126,18 +177,14 @@ class MenuWithBooleanMenuItemsTestCase(MenuTestCase):
 
 class MenuWithCheckItemsTest(MenuWithBooleanMenuItemsTestCase):
     def createCommands(self):
-        return [
-            uicommand.UICheckCommand(
-                settings=self.settings, section="view", setting="statusbar"
-            )
-        ]
+        return [uicommand.UICheckCommand(section="view", setting="statusbar")]
 
     def testCheckedItem(self):
-        self.settings.set("view", "statusbar", "True")
+        settings.set("view", "statusbar", True)
         self.assertMenuItemsChecked(True)
 
     def testUncheckedItem(self):
-        self.settings.set("view", "statusbar", "False")
+        settings.set("view", "statusbar", False)
         self.assertMenuItemsChecked(False)
 
 
@@ -145,7 +192,6 @@ class MenuWithRadioItemsTest(MenuWithBooleanMenuItemsTestCase):
     def createCommands(self):
         return [
             uicommand.UIRadioCommand(
-                settings=self.settings,
                 section="view",
                 setting="toolbar",
                 value=value,
@@ -154,11 +200,11 @@ class MenuWithRadioItemsTest(MenuWithBooleanMenuItemsTestCase):
         ]
 
     def testRadioItem_FirstChecked(self):
-        self.settings.setvalue("view", "toolbar", None)
+        settings.set("view", "toolbar", None)
         self.assertMenuItemsChecked(True, False)
 
     def testRadioItem_SecondChecked(self):
-        self.settings.setvalue("view", "toolbar", (16, 16))
+        settings.set("view", "toolbar", (16, 16))
         self.assertMenuItemsChecked(False, True)
 
 
@@ -174,16 +220,13 @@ class RecentFilesMenuTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
         self.ioController = MockIOController()
-        self.settings = config.Settings(load=False)
         self.initialFileMenuLength = len(self.createFileMenu())
         self.filename1 = "c:/Program Files/TaskCoach/test.tsk"
         self.filename2 = "c:/two.tsk"
         self.filenames = []
 
     def createFileMenu(self):
-        return gui.menu.FileMenu(
-            self.frame, self.settings, self.ioController, None
-        )
+        return gui.menu.FileMenu(self.frame, self.ioController, None)
 
     def setRecentFilesAndCreateMenu(self, *filenames):
         self.addRecentFiles(*filenames)
@@ -191,7 +234,7 @@ class RecentFilesMenuTest(test.wxTestCase):
 
     def addRecentFiles(self, *filenames):
         self.filenames.extend(filenames)
-        self.settings.set("file", "recentfiles", str(list(self.filenames)))
+        settings.set("file", "recentfiles", list(self.filenames))
 
     def assertRecentFileMenuItems(self, *expectedFilenames):
         expectedFilenames = expectedFilenames or self.filenames
@@ -246,7 +289,7 @@ class RecentFilesMenuTest(test.wxTestCase):
 
     def testNeverShowMoreThanTheMaximumNumberAllowed(self):
         # Read when the menu is built; it has no Preferences setting
-        self.settings.set("file", "maxrecentfiles", "1")
+        settings.set("file", "maxrecentfiles", 1)
         self.setRecentFilesAndCreateMenu(self.filename1, self.filename2)
         self.assertRecentFileMenuItems(self.filename1)
 
@@ -254,7 +297,6 @@ class RecentFilesMenuTest(test.wxTestCase):
 class ViewMenuTestCase(test.wxTestCase):
     def setUp(self):
         super().setUp()
-        self.settings = config.Settings(load=False)
         self.viewerContainer = MockViewerContainer()
         self.menuBar = wx.MenuBar()
         self.parentMenu = wx.Menu()
@@ -265,13 +307,13 @@ class ViewMenuTestCase(test.wxTestCase):
 
     def createMenu(self):
         self.frame.viewer = self.viewerContainer
-        menu = gui.menu.SortMenu(self.frame, self.parentMenu, "menu")
+        menu = gui.menu.SortMenu(self.frame, self.parentMenu)
         menu.updateMenu()
         return menu
 
     def open_menu(self):
-        # What MainMenu does on EVT_MENU_OPEN
-        self.menu._update_menu_state()
+        # What wx does when the menu opens
+        self.menu.UpdateUI()
 
     def testSortOrderAscending(self):
         self.viewerContainer.setSortOrderAscending(True)
@@ -298,7 +340,6 @@ class ViewMenuTestCase(test.wxTestCase):
 
 class StartEffortForTaskMenuTest(test.wxTestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.tasks = task.TaskList()
         self.menu = gui.menu.StartEffortForTaskMenu(self.frame, self.tasks)
 
@@ -446,6 +487,33 @@ class ToggleCategoryMenuTest(test.wxTestCase):
         self.assertFalse(checked_items)
 
 
+class DynamicMenuEntryTest(test.wxTestCase):
+    """A dynamic menu enables or disables its entry in its parent menu,
+    found as the entry whose submenu it is: not by its label, which may
+    carry a mnemonic and a shortcut, and an item inside the menu may
+    have the same label."""
+
+    def test_entry_follows_whether_the_menu_is_enabled(self):
+        state = dict(enabled=False)
+
+        class Menu(gui.menu.DynamicMenu):
+            def register_for_menu_update(self):
+                pass
+
+            def enabled(self):
+                return state["enabled"]
+
+        parent = wx.Menu()
+        menu = Menu(self.frame, parent)
+        menu.Append(wx.ID_ANY, "Menu")
+        entry = parent.AppendSubMenu(menu, "&Menu\tCtrl+M")
+        menu.updateMenu()
+        self.assertFalse(entry.IsEnabled())
+        state["enabled"] = True
+        menu.updateMenu()
+        self.assertTrue(entry.IsEnabled())
+
+
 class TaskTemplateMenuTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
@@ -457,16 +525,13 @@ class TaskTemplateMenuTest(test.wxTestCase):
                 return uicommands
 
         self.menu_class = TaskTemplateMenu
-        self.settings = config.Settings(load=False)
 
     def open_menu(self, menu):
         self.frame.ProcessEvent(wx.MenuEvent(wx.wxEVT_MENU_OPEN, menu=menu))
 
     def test_menu_is_refilled_when_its_parent_opens(self):
         parent = wx.Menu()
-        menu = self.menu_class(
-            self.frame, task.TaskList(), self.settings, parent, "Templates"
-        )
+        menu = self.menu_class(self.frame, task.TaskList(), parent)
         parent.AppendSubMenu(menu, "Templates")
         self.uicommands.append(Separator())  # A template was added
         self.open_menu(parent)
@@ -474,9 +539,7 @@ class TaskTemplateMenuTest(test.wxTestCase):
 
     def test_menu_is_not_refilled_when_another_menu_opens(self):
         parent = wx.Menu()
-        menu = self.menu_class(
-            self.frame, task.TaskList(), self.settings, parent, "Templates"
-        )
+        menu = self.menu_class(self.frame, task.TaskList(), parent)
         self.uicommands.append(Separator())
         self.open_menu(wx.Menu())
         self.assertEqual(1, len(menu))

@@ -17,10 +17,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import render
+from taskcoachlib import patterns, render
 from taskcoachlib.domain import date
 from taskcoachlib.i18n import _
-from pubsub import pub
 from . import base
 
 
@@ -49,9 +48,6 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
     def _getEfforts(self):
         raise NotImplementedError
 
-    def markDirty(self):
-        pass  # CompositeEfforts cannot be dirty
-
     def __doRound(self, duration, rounding, roundUp):
         if rounding:
             return duration.round(seconds=rounding, alwaysUp=roundUp)
@@ -59,7 +55,7 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
 
     def timeSpent(self, now=None):
         """Return the total time spent for this composite (no rounding).
-        Required by BaseEffort.sendDurationChangedMessage()."""
+        Required by BaseEffort.send_duration_changed()."""
         return self.totalTimeSpent()
 
     def totalTimeSpent(
@@ -112,26 +108,28 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
 
     def notifyObserversOfDurationOrEmpty(self):
         if self._getEfforts():
-            self.sendDurationChangedMessage()
+            self.send_duration_changed()
         else:
-            pub.sendMessage(self.compositeEmptyEventType(), sender=self)
+            patterns.Event(self.compositeEmptyEventType(), self).send()
 
     @classmethod
     def compositeEmptyEventType(class_):
-        return "pubsub.effort.composite.empty"
+        return "effort.composite.empty"
 
     @classmethod
     def modificationEventTypes(class_):
         return []  # A composite effort cannot be 'dirty' since its contents
         # are determined by the contained efforts.
 
-    def onTimeSpentChanged(self, newValue, sender):  # pylint: disable=W0613
+    def time_spent_changed(self):
+        """One of its efforts' time spent changed."""
         if self._refreshCache():
             # Only need to notify if our time spent actually changed
             self.notifyObserversOfDurationOrEmpty()
 
-    def onRevenueChanged(self, newValue, sender):  # pylint: disable=W0613
-        self.sendRevenueChangedMessage()
+    def revenue_changed(self):
+        """Its task's hourly fee changed."""
+        self.send_revenue_changed()
 
     def revenue(self, recursive=False):
         raise NotImplementedError  # pragma: no cover
@@ -158,11 +156,6 @@ class CompositeEffort(BaseCompositeEffort):
         self.__hash_value = hash((task, start))
         # Effort cache: {True: [efforts recursively], False: [efforts]}
         self.__effort_cache = dict()
-        """
-        FIMXE! CompositeEffort does not derive from base.Object
-        patterns.Publisher().registerObserver(self.onAppearanceChanged,
-            eventType=task.appearanceChangedEventType(), eventSource=task)
-        """
 
     def __hash__(self):
         return self.__hash_value
@@ -232,10 +225,6 @@ class CompositeEffort(BaseCompositeEffort):
         ]
         return "\n".join(effortDescriptions)
 
-    def onAppearanceChanged(self, event):
-        return  # FIXME: CompositeEffort does not derive from base.Object
-        # patterns.Event(self.appearanceChangedEventType(), self, event.value()).send()
-
 
 class CompositeEffortPerPeriod(BaseCompositeEffort):
     class Total(object):
@@ -243,13 +232,13 @@ class CompositeEffortPerPeriod(BaseCompositeEffort):
         def subject(self, *args, **kwargs):
             return _("Total")
 
-        def foregroundColor(self, *args, **kwargs):
+        def shown_fg_color(self):
             return None
 
-        def backgroundColor(self, *args, **kwargs):
+        def shown_bg_color(self):
             return None
 
-        def font(self, *args, **kwargs):
+        def shown_font(self):
             return None
 
     total = Total()

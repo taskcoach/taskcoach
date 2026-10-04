@@ -29,8 +29,6 @@ References:
 - https://lazka.github.io/pgi-docs/AyatanaAppIndicator3-0.1/
 """
 
-import os
-
 # Try to import AppIndicator (Ayatana version preferred, fallback to legacy)
 _appindicator = None
 _gi = None
@@ -74,14 +72,6 @@ except Exception as e:
     APPINDICATOR_ERROR = f"Failed to initialize AppIndicator: {e}"
 
 
-def is_wayland():
-    """Check if running on Wayland."""
-    return (
-        os.environ.get("XDG_SESSION_TYPE") == "wayland"
-        or os.environ.get("WAYLAND_DISPLAY") is not None
-    )
-
-
 class AppIndicatorIcon:
     """System tray icon using AppIndicator/StatusNotifierItem.
 
@@ -114,11 +104,8 @@ class AppIndicatorIcon:
                 f"AppIndicator not available: {APPINDICATOR_ERROR}"
             )
 
-        self._app_id = app_id
         self._tooltip = tooltip
         self._menu = None
-        self._menu_items = {}
-        self._click_callback = None
 
         # Determine category
         if category is None:
@@ -163,37 +150,11 @@ class AppIndicatorIcon:
         self._tooltip = tooltip
         self._indicator.set_title(tooltip)
 
-    def set_click_callback(self, callback):
-        """Set callback for left-click on indicator.
-
-        Note: AppIndicator doesn't support direct left-click handling in the
-        same way as wx.TaskBarIcon. The callback will be triggered via a
-        menu item instead.
-        """
-        self._click_callback = callback
-
-    def set_menu(self, menu_builder_callback):
-        """Set the menu using a builder callback.
-
-        Args:
-            menu_builder_callback: A function that takes (Gtk, menu, click_callback)
-                                  and populates the menu with items
-        """
-        self._menu = _Gtk.Menu()
-        menu_builder_callback(_Gtk, self._menu, self._click_callback)
-        self._menu.show_all()
-        self._indicator.set_menu(self._menu)
-
     def set_gtk_menu(self, menu):
         """Set a pre-built GTK menu."""
         self._menu = menu
         self._menu.show_all()
         self._indicator.set_menu(self._menu)
-
-    def update_menu(self):
-        """Trigger menu update (re-show all items)."""
-        if self._menu:
-            self._menu.show_all()
 
     def RemoveIcon(self):
         """Remove/hide the indicator."""
@@ -204,16 +165,3 @@ class AppIndicatorIcon:
         self.RemoveIcon()
         self._menu = None
         self._indicator = None
-
-    def IsAvailable(self):
-        """Check if the indicator is available and active."""
-        return (
-            self._indicator is not None
-            and self._indicator.get_status()
-            == _appindicator.IndicatorStatus.ACTIVE
-        )
-
-    @property
-    def indicator(self):
-        """Access the underlying AppIndicator object."""
-        return self._indicator

@@ -14,7 +14,7 @@ Default date/time values for new tasks, configured in Preferences.
   - [Reminder Preset](#reminder-preset)
 - [Propose Mode](#propose-mode)
   - [Old Behavior (DateTimeEntry)](#old-behavior-datetimeentry)
-  - [Initial Bug (DateTimeComboCtrl)](#initial-bug-datetimecomboctrl2)
+  - [Initial Bug (DateTimeComboCtrl)](#initial-bug-datetimecomboctrl)
   - [Fix](#fix)
 - [Duration Mode Interaction](#duration-mode-interaction)
 - [Suggested DateTime Computation](#suggested-datetime-computation)
@@ -27,7 +27,7 @@ Default date/time values for new tasks, configured in Preferences.
 
 1. **Unify preset and propose paths through the Attribute model or
    DateTimeComboCtrl public API.** Currently, preset mode writes directly to
-   the Task constructor kwargs (`uicommand.py:1693-1708`), bypassing both
+   the Task constructor kwargs (`TaskNew.do_command()` in `uicommand.py`), bypassing both
    the Attribute setter/callback chain and the editor widget API. Propose
    mode relies on the editor widget to pre-fill a display value. These two
    paths should be consolidated so that both modes go through the same
@@ -42,15 +42,15 @@ Default date/time values for new tasks, configured in Preferences.
    This would eliminate the split between `uicommand.py` (preset) and
    `editor.py` (propose) and ensure domain invariants are always enforced.
 
-2. **Preset completion date bypasses `_onCompletionDateTimeChanged`.**
-   When `uicommand.py` passes `completionDateTime=...` to the Task
-   constructor, the Attribute is initialized directly (no `.set()` call),
-   so the callback never fires. This means recurrence is not triggered,
-   reminder is not cleared, children are not completed, and parent
-   completion cascade does not happen. The task is born in an inconsistent
-   state. See [Constructor Bypass Problem](#constructor-bypass-problem).
+2. ~~**Preset completion date bypasses `_on_completion_date_time_changed`.**~~
+   Removed 2026-09-29: Preferences has offered only Propose for the
+   completion date since release 1.3 (2011-07-26, "More options for
+   default task date and times"), so the code no longer applies a
+   completion preset (**ruled by designer**: only what the interface
+   offers is supported). See
+   [Constructor Bypass Problem](#constructor-bypass-problem).
 
-3. ~~**Fix propose mode for DateTimeComboCtrl**~~ — **Done.** `suggestedValue`
+3. ~~**Fix propose mode for DateTimeComboCtrl**~~ — **Done.** `suggested_value`
    parameter added to `DateTimeComboCtrl.__init__()`. Editor passes preference-
    computed datetime at construction. See [Fix](#fix) section.
 
@@ -75,7 +75,7 @@ There are two modes:
 | **Preset** | Checked | Yes — on the domain object at creation | `uicommand.py` (before editor opens) |
 | **Propose** | Unchecked | No — display hint only, hidden behind "N/A" | Editor widget (when editor opens) |
 
-Both modes compute the same datetime using `task.Task.suggestedDateTime()`.
+Both modes compute the same datetime using `task.Task.suggested_date_time()`.
 The mode only controls where and how the value is applied.
 
 ---
@@ -98,7 +98,7 @@ Format: `{preset|propose}_{day}_{time}`
 
 **Time options:** `startofday`, `startofworkingday`, `currenttime`, `endofworkingday`, `endofday`
 
-The prefix (`preset` or `propose`) determines the mode. The `suggestedDateTime()`
+The prefix (`preset` or `propose`) determines the mode. The `suggested_date_time()`
 method strips the prefix (`dummy_prefix` at `task.py:1944`) and computes the
 same datetime regardless of mode.
 
@@ -122,7 +122,7 @@ Note: Completion date only supports propose mode (`[check_choices[1]]` at
 
 When the preference starts with `"preset"`:
 
-1. **Task creation** (`uicommand.py:1691-1708`):
+1. **Task creation** (`TaskNew.do_command()` in `uicommand.py`):
    ```python
    def do_command(self, event, show=True):
        kwargs = self.taskKeywords.copy()
@@ -148,46 +148,31 @@ Callbacks only fire on `Attribute.set()`. This means any business logic in
 the `_on*Changed` callback is skipped when a value is set via the constructor.
 
 For most date fields this is harmless — the callbacks for planned start,
-due date, and actual start just send pubsub notifications and mark dirty,
+due date, and actual start just send change events and mark dirty,
 which happen separately during task creation.
 
-But for **completion date** and **reminder**, the callbacks contain
-important business logic that is bypassed.
+For the **reminder**, the callback's event is bypassed (below).
 
 ### Completion Date Preset
 
-When `completionDateTime` is passed to the Task constructor:
-
-| Expected Side Effect | Actually Fires? | Why |
-|---------------------|----------------|-----|
-| Recurrence triggered (`self.recur()`) | No | Callback not fired |
-| Reminder cleared (`self.setReminder(None)`) | No | Callback not fired |
-| Percentage set to 100 | Yes | Handled separately in `__init__` lines 87-94 |
-| Children completed | No | Callback not fired |
-| Effort tracking stopped | No | Callback not fired |
-| Parent completion cascade | No | Callback not fired |
-
-The task is born in an **inconsistent state**: marked completed (percentage
-100) but without any of the normal completion side effects.
-
-Note: The preferences UI only allows propose mode for completion date
-(`preferences.py:2103`), so this path may never be reached in normal usage.
-But nothing prevents setting `"preset_..."` manually in `TaskCoach.ini`.
+None: a completion date is only proposed. Were it preset through the
+constructor, a new task would be completed without the completion's
+side effects (recurrence, children, parent, tracking); since
+Preferences has never offered it, the code does not apply one.
 
 ### Reminder Preset
 
 See also [REMINDERS.md](REMINDERS.md) for the reminder popup, sound
 playback, and snooze configuration.
 
-When `reminder` is passed to the Task constructor, `setReminder()` is not
-called, so the `reminderChangedEventType` pubsub event is not fired.
+When `reminder` is passed to the Task constructor, `set_reminder()` is not
+called, so the `reminderChangedEventType` event is not fired.
 
-This is **not a problem** because the `ReminderController` uses polling —
-it iterates all tasks every second and checks `task.reminder()` directly.
-It does not rely on pubsub events to discover reminders, only to clear
-its "already shown" set when a reminder is snoozed.
-
-**File:** `taskcoachlib/gui/remindercontroller.py:63-98`
+This is **not a problem**: the master timer list takes the new task's
+reminder second from the task list's add event (`_on_tasks_added`, via
+`timer_seconds()`), and the pass calls `task.processReminder()` at
+that second (see [SCHEDULERS.md](SCHEDULERS.md#the-master-timer-list)),
+which reads `task.reminder()` directly.
 
 ---
 
@@ -232,18 +217,18 @@ When `value=None` (propose mode), the constructor defaulted to
 
 ### Fix
 
-**Done.** `suggestedValue` parameter added to `DateTimeComboCtrl.__init__()`.
+**Done.** `suggested_value` parameter added to `DateTimeComboCtrl.__init__()`.
 The editor passes the preference-computed datetime at construction time:
 
 ```python
-def __init__(self, parent, value=None, suggestedValue=None, ...):
+def __init__(self, parent, value=None, suggested_value=None, ...):
     ...
-    display_value = value if value is not None else (suggestedValue or datetime.datetime.now())
+    display_value = value if value is not None else (suggested_value or datetime.datetime.now())
 ```
 
 The sub-controls are initialized with the suggested datetime and hold it
 while the checkbox is unchecked. In preset mode, `value` is already
-non-None, so `suggestedValue` is ignored.
+non-None, so `suggested_value` is ignored.
 
 For how the sub-controls serve as the stash for DateTimeComboCtrl (retaining
 the proposed value through activate/deactivate cycles), see
@@ -251,7 +236,7 @@ the proposed value through activate/deactivate cycles), see
 
 **Editor construction sites** (`taskcoachlib/gui/dialog/editor.py`):
 
-| Date Field | suggestedValue |
+| Date Field | suggested_value |
 |-----------|---------------|
 | Planned start | `task.Task.suggestedPlannedStartDateTime()` |
 | Due date | `task.Task.suggestedDueDateTime()` |
@@ -291,18 +276,18 @@ presets are active.
 
 ## Suggested DateTime Computation
 
-The `suggestedDateTime()` classmethod computes a datetime from the preference
+The `suggested_date_time()` classmethod computes a datetime from the preference
 setting and `now()`. It is called at dialog open time (propose mode) or at
 task creation time (preset mode).
 
-**File:** `taskcoachlib/domain/task/task.py:1941-1989`
+**File:** `taskcoachlib/domain/task/task.py`
 
 ```python
 @classmethod
-def suggestedDateTime(cls, defaultDateTimeSetting, now=date.Now):
-    defaultDateTime = cls.settings.get("view", defaultDateTimeSetting)
-    dummy_prefix, defaultDate, defaultTime = defaultDateTime.split("_")
-    dateTime = now()
+def suggested_date_time(cls, default_date_time_setting, now=date.Now):
+    default_date_time = cls.settings.get("view", default_date_time_setting)
+    dummy_prefix, default_date, default_time = default_date_time.split("_")
+    date_time = now()
     # Apply day offset: today, tomorrow, dayaftertomorrow, nextfriday, nextmonday
     # Apply time: startofday, startofworkingday, currenttime, endofworkingday, endofday
     ...
@@ -326,19 +311,13 @@ Convenience classmethods:
 ## Reminder Scheduling on Load
 
 When a `.tsk` file is loaded, tasks are reconstructed via `__init__` with
-reminder values from XML. The reminder is stored directly in `self.__reminder`
-(not through `setReminder()`), so no pubsub event fires.
+reminder values from XML. The constructor creates the reminder `Attribute`
+with that value (not through `set_reminder()`), so no event fires.
 
-This works because `ReminderController` uses **polling** (checks all tasks
-every second via `timer.second`), not event-driven scheduling. It reads
-`task.reminder()` directly and doesn't need a pubsub notification to
-discover reminders.
-
-The pubsub subscription (`_onReminderChanged`) is only used to clear the
-"already shown" set when a reminder is snoozed — so it can fire again at the
-new snooze time.
-
-**File:** `taskcoachlib/gui/remindercontroller.py`
+The master timer list takes loaded tasks' reminder seconds from the task
+list's add event instead, as for a [preset reminder](#reminder-preset)
+(see
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#what-changes-the-master-timer-list)).
 
 ---
 
@@ -350,5 +329,5 @@ new snooze time.
   pattern, constructor vs `.set()` behavior, three-layer relationship
 - [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) — Duration modes,
   starting state documentation ("Start: Implicit mode")
-- [PERSISTENCE_XML.md](PERSISTENCE_XML.md) — XML writer/reader, skip conditions,
-  round-trip consistency
+- [PERSISTENCE_XML.md](PERSISTENCE_XML.md): XML writer/reader, the
+  defaults

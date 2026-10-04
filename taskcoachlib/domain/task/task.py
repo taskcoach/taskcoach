@@ -20,12 +20,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.domain import date, categorizable, note, attachment
-from taskcoachlib.domain.base.attribute import Attribute
-from pubsub import pub
-from weakref import WeakSet
+from taskcoachlib.domain.base import is_restoring
+from taskcoachlib.domain.base.attribute import Attribute, SetAttribute
+from taskcoachlib.patterns.field import ListField
+from taskcoachlib.tools import wxhelper
 from . import status
-import ast
 import wx
 
 
@@ -69,35 +70,32 @@ class Task(
         kwargs["description"] = description
         kwargs["categories"] = categories
         super().__init__(*args, **kwargs)
-        self.__status = None  # status cache (legacy)
-        # Single-source-of-truth fields, set by computeStoredStatus()
+        # Single-source-of-truth fields, set by compute_stored_status()
         self.__computed_status = None
         self.__status_text = ""
         self.__status_icon_id = ""
         self.__status_source = ""  # Explanation of why task has this status
-        self.__dueSoonHours = self.settings.getint(
-            "behavior", "duesoonhours"
-        )  # pylint: disable=E1101
+        self.__dueSoonHours = settings.behavior.duesoonhours
         maxDateTime = self.maxDateTime
         self.__dueDateTime = Attribute(
-            dueDateTime or maxDateTime, self, self._onDueDateTimeChanged
+            dueDateTime or maxDateTime, self, self._on_due_date_time_changed
         )
         self.__plannedStartDateTime = Attribute(
             plannedStartDateTime or maxDateTime,
             self,
-            self._onPlannedStartDateTimeChanged,
+            self._on_planned_start_date_time_changed,
         )
         self.__actualStartDateTime = Attribute(
             actualStartDateTime or maxDateTime,
             self,
-            self._onActualStartDateTimeChanged,
+            self._on_actual_start_date_time_changed,
         )
         if completionDateTime is None and percentageComplete == 100:
             completionDateTime = date.Now()
         self.__completionDateTime = Attribute(
             completionDateTime or maxDateTime,
             self,
-            self._onCompletionDateTimeChanged,
+            self._on_completion_date_time_changed,
         )
         percentageComplete = (
             100
@@ -105,13 +103,15 @@ class Task(
             else percentageComplete
         )
         self.__percentageComplete = Attribute(
-            percentageComplete, self, self._onPercentageCompleteChanged
+            percentageComplete, self, self._on_percentage_complete_changed
         )
-        self.__budget = budget or date.TimeDelta()
+        self.__budget = Attribute(
+            budget or date.TimeDelta(), self, self._on_budget_changed
+        )
         self.__plannedDuration = Attribute(
             plannedDuration or date.TimeDelta(),
             self,
-            self._onPlannedDurationChanged,
+            self._on_planned_duration_changed,
         )
         # Normalize old mode values to new keys: implicit, adjdue, adjstart
         mode_map = {"todue": "adjdue", "fromstart": "adjstart"}
@@ -119,114 +119,55 @@ class Task(
             mode_map.get(plannedDurationMode, plannedDurationMode)
             or "implicit",
             self,
-            self._onPlannedDurationModeChanged,
+            self._on_planned_duration_mode_changed,
         )
-        self._efforts = efforts or []
-        self.__priority = Attribute(priority, self, self._onPriorityChanged)
-        self.__hourlyFee = hourlyFee
-        self.__fixedFee = fixedFee
-        self.__reminder = reminder or maxDateTime
-        self.__reminderBeforeSnooze = reminderBeforeSnooze or self.__reminder
-        self.__recurrence = (
-            date.Recurrence() if recurrence is None else recurrence
+        # A stored field (docs/UNDO_REDO.md, Architecture)
+        self.__efforts = ListField(efforts, self, self._efforts_restored)
+        self.__priority = Attribute(priority, self, self._on_priority_changed)
+        self.__hourlyFee = Attribute(
+            hourlyFee, self, self._on_hourly_fee_changed
         )
-        self.__prerequisites = WeakSet(prerequisites or [])
-        self.__dependencies = WeakSet(dependencies or [])
-        self.__shouldMarkCompletedWhenAllChildrenCompleted = (
-            shouldMarkCompletedWhenAllChildrenCompleted
+        self.__fixedFee = Attribute(fixedFee, self, self._on_fixed_fee_changed)
+        self.__reminder = Attribute(
+            reminder or maxDateTime, self, self._on_reminder_changed
+        )
+        self.__reminder_before_snooze = Attribute(
+            reminderBeforeSnooze or self.__reminder.get(),
+            self,
+            self._on_reminder_before_snooze_changed,
+        )
+        self.__recurrence = Attribute(
+            date.Recurrence() if recurrence is None else recurrence,
+            self,
+            self._on_recurrence_changed,
+        )
+        self.__prerequisites = SetAttribute(
+            set(prerequisites or []),
+            self,
+            changeEvent=self._on_prerequisites_changed,
+            weak=True,
+        )
+        # The reverse of other tasks' prerequisites: no date
+        self.__dependencies = SetAttribute(
+            set(dependencies or []),
+            self,
+            changeEvent=self._on_dependencies_changed,
+            weak=True,
+            dates=False,
+        )
+        self.__shouldMarkCompletedWhenAllChildrenCompleted = Attribute(
+            shouldMarkCompletedWhenAllChildrenCompleted,
+            self,
+            self._on_should_mark_completed_changed,
         )
         for effort in self._efforts:
-            effort.setTask(self)
-        pub.subscribe(
-            self.__computeRecursiveForegroundColor, "settings.fgcolor"
-        )
-        pub.subscribe(
-            self.__computeRecursiveForegroundColor, "settings.fgcolor_dark"
-        )
-        pub.subscribe(
-            self.__computeRecursiveBackgroundColor, "settings.bgcolor"
-        )
-        pub.subscribe(
-            self.__computeRecursiveBackgroundColor, "settings.bgcolor_dark"
-        )
-        pub.subscribe(self.__compute_recursive_icon_id, "settings.icon")
-        pub.subscribe(self.__compute_recursive_icon_id, "settings.icon_dark")
-        pub.subscribe(
-            self.__compute_recursive_selected_icon_id, "settings.icon"
-        )
-        pub.subscribe(
-            self.__compute_recursive_selected_icon_id, "settings.icon_dark"
-        )
-        pub.subscribe(self.__onThemeChanged, "settings.window.theme")
-        pub.subscribe(
-            self.onDueSoonHoursChanged, "settings.behavior.duesoonhours"
-        )
-        pub.subscribe(
-            self.onMarkParentCompletedWhenAllChildrenCompletedChanged,
-            "settings.behavior.markparentcompletedwhenallchildrencompleted",
-        )
+            effort.set_task(self)
+        self.__observe_settings()
 
-        self.computeStoredStatus()
-        # Note: Effective appearance is computed by ComputeStyles polling.
-        # Status transitions (overdue, due soon, time to start) are handled
-        # by ComputeStyles per-second polling.
-        # See docs/SCHEDULERS.md for architecture documentation.
-
-    @patterns.eventSource
-    def __setstate__(self, state, event=None):
-        super().__setstate__(state, event=event)
-        self.setPlannedStartDateTime(
-            state["plannedStartDateTime"], event=event
-        )
-        self.setActualStartDateTime(state["actualStartDateTime"], event=event)
-        self.setDueDateTime(state["dueDateTime"], event=event)
-        self.setCompletionDateTime(state["completionDateTime"], event=event)
-        self.setPercentageComplete(state["percentageComplete"], event=event)
-        self.setRecurrence(state["recurrence"])
-        self.setReminder(state["reminder"])
-        self.setEfforts(state["efforts"])
-        self.setBudget(state["budget"])
-        self.setPlannedDuration(
-            state.get("plannedDuration", date.TimeDelta()), event=event
-        )
-        self.setPlannedDurationMode(
-            state.get("plannedDurationMode", "implicit"), event=event
-        )
-        self.setPriority(state["priority"], event=event)
-        self.setHourlyFee(state["hourlyFee"])
-        self.setFixedFee(state["fixedFee"])
-        self.setPrerequisites(state["prerequisites"])
-        self.setDependencies(state["dependencies"])
-        self.setShouldMarkCompletedWhenAllChildrenCompleted(
-            state["shouldMarkCompletedWhenAllChildrenCompleted"]
-        )
-
-    def __getstate__(self):
-        state = super().__getstate__()
-        state.update(
-            dict(
-                dueDateTime=self.__dueDateTime.get(),
-                plannedStartDateTime=self.__plannedStartDateTime.get(),
-                actualStartDateTime=self.__actualStartDateTime.get(),
-                completionDateTime=self.__completionDateTime.get(),
-                percentageComplete=self.__percentageComplete.get(),
-                children=self.children(),
-                parent=self.parent(),
-                efforts=self._efforts,
-                budget=self.__budget,
-                plannedDuration=self.__plannedDuration.get(),
-                plannedDurationMode=self.__plannedDurationMode.get(),
-                priority=self.__priority.get(),
-                hourlyFee=self.__hourlyFee,
-                fixedFee=self.__fixedFee,
-                recurrence=self.__recurrence.copy(),
-                reminder=self.__reminder,
-                prerequisites=set(self.__prerequisites),
-                dependencies=set(self.__dependencies),
-                shouldMarkCompletedWhenAllChildrenCompleted=self.__shouldMarkCompletedWhenAllChildrenCompleted,
-            )
-        )
-        return state
+        self.compute_stored_status()
+        # The effective appearance and the status transitions in time
+        # (overdue, due soon, time to start) are computed by the master
+        # loop (docs/MASTER_SCHEDULER_REFACTOR.md).
 
     def __getcopystate__(self):
         state = super().__getcopystate__()
@@ -238,61 +179,20 @@ class Task(
                 completionDateTime=self.__completionDateTime.get(),
                 percentageComplete=self.__percentageComplete.get(),
                 efforts=[effort.copy() for effort in self._efforts],
-                budget=self.__budget,
+                budget=self.__budget.get(),
                 plannedDuration=self.__plannedDuration.get(),
                 plannedDurationMode=self.__plannedDurationMode.get(),
                 priority=self.__priority.get(),
-                hourlyFee=self.__hourlyFee,
-                fixedFee=self.__fixedFee,
-                recurrence=self.__recurrence.copy(),
-                reminder=self.__reminder,
-                shouldMarkCompletedWhenAllChildrenCompleted=self.__shouldMarkCompletedWhenAllChildrenCompleted,
+                hourlyFee=self.hourlyFee(),
+                fixedFee=self.__fixedFee.get(),
+                recurrence=self.__recurrence.get().copy(),
+                reminder=self.__reminder.get(),
+                shouldMarkCompletedWhenAllChildrenCompleted=(
+                    self.shouldMarkCompletedWhenAllChildrenCompleted()
+                ),
             )
         )
         return state
-
-    @classmethod
-    def monitoredAttributes(class_):
-        return (
-            categorizable.CategorizableCompositeObject.monitoredAttributes()
-            + [
-                "plannedStartDateTime",
-                "dueDateTime",
-                "completionDateTime",
-                "percentageComplete",
-                "recurrence",
-                "reminder",
-                "budget",
-                "plannedDuration",
-                "plannedDurationMode",
-                "priority",
-                "hourlyFee",
-                "fixedFee",
-                "shouldMarkCompletedWhenAllChildrenCompleted",
-            ]
-        )
-
-    @patterns.eventSource
-    def addCategory(self, *categories, **kwargs):
-        if super().addCategory(*categories, **kwargs):
-            self.recomputeAppearance(True, event=kwargs.pop("event"))
-
-    @patterns.eventSource
-    def removeCategory(self, *categories, **kwargs):
-        if super().removeCategory(*categories, **kwargs):
-            self.recomputeAppearance(True, event=kwargs.pop("event"))
-
-    @patterns.eventSource
-    def setCategories(self, *categories, **kwargs):
-        if super().setCategories(*categories, **kwargs):
-            self.recomputeAppearance(True, event=kwargs.pop("event"))
-
-    def setParent(self, parent):
-        """Override to handle parent change.
-
-        Note: Effective appearance is computed by ComputeStyles polling.
-        """
-        super().setParent(parent)
 
     def allChildrenCompleted(self):
         """Return whether all children (non-recursively) are completed.
@@ -312,71 +212,88 @@ class Task(
     def addChild(self, child, event=None):
         if child in self.children():
             return
-        wasTracking = self.isBeingTracked(recursive=True)
+        was_tracking = bool(self.isBeingTracked(recursive=True))
         super().addChild(child, event=event)
-        self.childChangeEvent(child, wasTracking, event)
-        if self.shouldBeMarkedCompleted():
-            self.setCompletionDateTime(child.completionDateTime())
-        elif self.completed() and not child.completed():
-            self.setCompletionDateTime(self.maxDateTime)
-        self.recomputeAppearance(recursive=False, event=event)
-        child.recomputeAppearance(recursive=True, event=event)
+        self.__child_changed(child, event)
+        self.__send_tracking_if_changed(was_tracking)
+        if not is_restoring():
+            if self.shouldBeMarkedCompleted():
+                self.set_completion_date_time(child.completionDateTime())
+            elif self.completed() and not child.completed():
+                self.set_completion_date_time(self.maxDateTime)
+        # Under another parent, other ancestors' prerequisites count
+        child._update_status(recursive=True)
 
     @patterns.eventSource
     def removeChild(self, child, event=None):
         if child not in self.children():
             return
-        wasTracking = self.isBeingTracked(recursive=True)
+        was_tracking = bool(self.isBeingTracked(recursive=True))
         super().removeChild(child, event=event)
-        self.childChangeEvent(child, wasTracking, event)
-        if self.shouldBeMarkedCompleted():
+        self.__child_changed(child, event)
+        self.__send_tracking_if_changed(was_tracking)
+        if not is_restoring() and self.shouldBeMarkedCompleted():
             # The removed child was the last uncompleted child
-            self.setCompletionDateTime(date.Now())
-        self.recomputeAppearance(recursive=False, event=event)
-        child.recomputeAppearance(recursive=True, event=event)
+            self.set_completion_date_time(date.Now())
+        child._update_status(recursive=True)
 
-    def childChangeEvent(self, child, wasTracking, event):
-        childHasTimeSpent = child.timeSpent(recursive=True)
-        childHasBudget = child.budget(recursive=True)
-        childHasBudgetLeft = child.budgetLeft(recursive=True)
-        childHasRevenue = child.revenue(recursive=True)
-        childPriority = child.priority(recursive=True)
-        # Determine what changes due to the child being added or removed:
-        if childHasTimeSpent:
-            self.sendTimeSpentChangedMessage()
-        if childHasRevenue:
-            self.sendRevenueChangedMessage()
-        if childHasBudget:
-            self.sendBudgetChangedMessage()
-        if childHasBudgetLeft or (
-            childHasTimeSpent and (childHasBudget or self.budget())
+    def _children_restored(self, added, removed, event=None):
+        """Undo or redo moved subtasks: what adding or removing them
+        tells, without the edit rules (their effects are the step's)."""
+        super()._children_restored(added, removed, event=event)
+        for child in added + removed:
+            self.__child_changed(child, event)
+            child._update_status(recursive=True)
+        if any(
+            child.isBeingTracked(recursive=True) for child in added + removed
         ):
-            self.sendBudgetLeftChangedMessage()
-        if childPriority > self.priority():
-            event.addSource(self, type=self.priorityChangedEventType())
-        isTracking = self.isBeingTracked(recursive=True)
-        if wasTracking and not isTracking:
-            self.sendTrackingChangedMessage(tracking=False)
-        elif not wasTracking and isTracking:
-            self.sendTrackingChangedMessage(tracking=True)
+            self.send_tracking_changed(
+                tracking=bool(self.isBeingTracked(recursive=True))
+            )
 
-    @patterns.eventSource
-    def setSubject(self, subject, event=None):
-        super().setSubject(subject, event=event)
-        # The subject of a dependency of our prerequisites has changed, notify:
+    def __send_tracking_if_changed(self, was_tracking):
+        is_tracking = bool(self.isBeingTracked(recursive=True))
+        if was_tracking != is_tracking:
+            self.send_tracking_changed(tracking=is_tracking)
+
+    def __child_changed(self, child, event):
+        has_time_spent = child.timeSpent(recursive=True)
+        has_budget = child.budget(recursive=True)
+        has_budget_left = child.budgetLeft(recursive=True)
+        has_revenue = child.revenue(recursive=True)
+        priority = child.priority(recursive=True)
+        # What the child's arrival or departure changes here
+        if has_time_spent:
+            self.send_time_spent_changed()
+        if has_revenue:
+            self.send_revenue_changed()
+        if has_budget:
+            self.budget_changed_event(event)
+        if has_budget_left or (
+            has_time_spent and (has_budget or self.budget())
+        ):
+            self.send_budget_left_changed()
+        if priority > self.priority():
+            event.addSource(self, type=self.priorityChangedEventType())
+
+    def subject_changed_event(self, event):
+        super().subject_changed_event(event)
+        # Linked tasks show this subject in their prerequisites and
+        # dependencies
         for prerequisite in self.prerequisites():
-            pub.sendMessage(
-                prerequisite.dependenciesChangedEventType(),
-                newValue=prerequisite.dependencies(),
-                sender=prerequisite,
+            event.addSource(
+                prerequisite, type=prerequisite.dependenciesChangedEventType()
             )
-        # The subject of a prerequisite of our dependencies has changed, notify:
         for dependency in self.dependencies():
-            pub.sendMessage(
-                dependency.prerequisitesChangedEventType(),
-                newValue=dependency.prerequisites(),
-                sender=dependency,
+            event.addSource(
+                dependency, type=dependency.prerequisitesChangedEventType()
             )
+
+    def _send_to_self_and_ancestors(self, event, event_type, *value):
+        """Announce a change of this task's field: its ancestors show it
+        in their subtree values, so they are sources too."""
+        for each_task in [self] + self.ancestors():
+            event.addSource(each_task, *value, type=event_type)
 
     # Due date
 
@@ -391,33 +308,20 @@ class Task(
         else:
             return self.__dueDateTime.get()
 
-    def setDueDateTime(self, dueDateTime, event=None):
-        self.__dueDateTime.set(dueDateTime, event=event)
+    def set_due_date_time(self, due_date_time, event=None):
+        # Not set is the latest date (docs/ATTRIBUTE_PATTERN.md)
+        self.__dueDateTime.set(due_date_time or self.maxDateTime, event=event)
 
-    def _onDueDateTimeChanged(self, event):
-        self.markDirty()
-        self.recomputeAppearance()
-        pub.sendMessage(
-            self.dueDateTimeChangedEventType(),
-            newValue=self.dueDateTime(),
-            sender=self,
+    def _on_due_date_time_changed(self, event):
+        self._update_status()
+        self.__derive_planned_duration(event)
+        self._send_to_self_and_ancestors(
+            event, self.dueDateTimeChangedEventType(), self.dueDateTime()
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.dueDateTimeChangedEventType(),
-                newValue=self.dueDateTime(),
-                sender=ancestor,
-            )
 
     @classmethod
     def dueDateTimeChangedEventType(class_):
-        return "pubsub.task.dueDateTime"
-
-    def onOverDue(self):
-        self.recomputeAppearance()
-
-    def onDueSoon(self):
-        self.recomputeAppearance()
+        return "task.dueDateTime"
 
     @staticmethod
     def dueDateTimeSortFunction(**kwargs):
@@ -445,30 +349,23 @@ class Task(
         else:
             return self.__plannedStartDateTime.get()
 
-    def setPlannedStartDateTime(self, plannedStartDateTime, event=None):
-        self.__plannedStartDateTime.set(plannedStartDateTime, event=event)
-
-    def _onPlannedStartDateTimeChanged(self, event):
-        self.markDirty()
-        self.recomputeAppearance()
-        pub.sendMessage(
-            self.plannedStartDateTimeChangedEventType(),
-            newValue=self.plannedStartDateTime(),
-            sender=self,
+    def set_planned_start_date_time(self, planned_start_date_time, event=None):
+        self.__plannedStartDateTime.set(
+            planned_start_date_time or self.maxDateTime, event=event
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.plannedStartDateTimeChangedEventType(),
-                newValue=self.plannedStartDateTime(),
-                sender=ancestor,
-            )
+
+    def _on_planned_start_date_time_changed(self, event):
+        self._update_status()
+        self.__derive_planned_duration(event)
+        self._send_to_self_and_ancestors(
+            event,
+            self.plannedStartDateTimeChangedEventType(),
+            self.plannedStartDateTime(),
+        )
 
     @classmethod
     def plannedStartDateTimeChangedEventType(class_):
-        return "pubsub.task.plannedStartDateTime"
-
-    def onTimeToStart(self):
-        self.recomputeAppearance()
+        return "task.plannedStartDateTime"
 
     @staticmethod
     def plannedStartDateTimeSortFunction(**kwargs):
@@ -510,32 +407,27 @@ class Task(
         else:
             return self.__actualStartDateTime.get()
 
-    def setActualStartDateTime(
-        self, actualStartDateTime, recursive=False, event=None
+    def set_actual_start_date_time(
+        self, actual_start_date_time, recursive=False, event=None
     ):
         if recursive:
             for child in self.children(recursive=True):
-                child.setActualStartDateTime(actualStartDateTime)
-        self.__actualStartDateTime.set(actualStartDateTime, event=event)
-
-    def _onActualStartDateTimeChanged(self, event):
-        self.markDirty()
-        self.recomputeAppearance()
-        pub.sendMessage(
-            self.actualStartDateTimeChangedEventType(),
-            newValue=self.actualStartDateTime(),
-            sender=self,
+                child.set_actual_start_date_time(actual_start_date_time)
+        self.__actualStartDateTime.set(
+            actual_start_date_time or self.maxDateTime, event=event
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.actualStartDateTimeChangedEventType(),
-                newValue=self.actualStartDateTime(),
-                sender=ancestor,
-            )
+
+    def _on_actual_start_date_time_changed(self, event):
+        self._update_status()
+        self._send_to_self_and_ancestors(
+            event,
+            self.actualStartDateTimeChangedEventType(),
+            self.actualStartDateTime(),
+        )
 
     @classmethod
     def actualStartDateTimeChangedEventType(class_):
-        return "pubsub.task.actualStartDateTime"
+        return "task.actualStartDateTime"
 
     @staticmethod
     def actualStartDateTimeSortFunction(**kwargs):
@@ -562,22 +454,23 @@ class Task(
         else:
             return self.__completionDateTime.get()
 
-    def setCompletionDateTime(self, completionDateTime=None, event=None):
+    def set_completion_date_time(self, completion_date_time=None, event=None):
         self.__completionDateTime.set(
-            completionDateTime or date.Now(), event=event
+            completion_date_time or date.Now(), event=event
         )
 
-    def _onCompletionDateTimeChanged(self, event):
-        self.__status = None
+    def _on_completion_date_time_changed(self, event):
         completionDateTime = self.completionDateTime()
         isCompleted = completionDateTime != self.maxDateTime
 
-        if isCompleted and self.recurrence():
+        if isCompleted and self.recurrence() and not is_restoring():
             self.recur(completionDateTime)
             return  # recur resets completionDateTime, triggering this callback again
 
-        if isCompleted:
-            self.setReminder(None)
+        if is_restoring():
+            pass  # The edit rules' effects are put back too
+        elif isCompleted:
+            self.set_reminder(None)
             self.setPercentageComplete(100)
             if self.isBeingTracked():
                 self.stopTracking()
@@ -585,20 +478,20 @@ class Task(
             # Parent→Children cascade: complete my incomplete children
             for child in self.children():
                 if child.completionDateTime() == self.maxDateTime:
-                    child.setRecurrence()  # Clear recurrence first (since 2008)
-                    child.setCompletionDateTime(completionDateTime)
+                    child.set_recurrence(event=event)  # Cleared first
+                    child.set_completion_date_time(completionDateTime)
 
             # Children→Parent cascade: check if parent should auto-complete
             parent = self.parent()
             if parent and parent.shouldBeMarkedCompleted():
-                parent.setCompletionDateTime(completionDateTime)
+                parent.set_completion_date_time(completionDateTime)
         else:
             if self.percentageComplete() == 100:
                 self.setPercentageComplete(0)
             # An open child reopens its completed parent, and so on up
             parent = self.parent()
             if parent and parent.completed():
-                parent.setCompletionDateTime(self.maxDateTime)
+                parent.set_completion_date_time(self.maxDateTime)
 
         # Notify parent of recursive priority change (child completion
         # changes which children are included in the recursive max)
@@ -606,34 +499,26 @@ class Task(
         if parent:
             event.addSource(parent, type=parent.priorityChangedEventType())
 
-        self.markDirty()
-        self.recomputeAppearance()
+        self._update_status()
         for dependency in self.dependencies():
-            dependency.recomputeAppearance(recursive=True)
-        pub.sendMessage(
+            dependency._update_status(recursive=True)
+        self._send_to_self_and_ancestors(
+            event,
             self.completionDateTimeChangedEventType(),
-            newValue=self.completionDateTime(),
-            sender=self,
+            self.completionDateTime(),
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.completionDateTimeChangedEventType(),
-                newValue=self.completionDateTime(),
-                sender=ancestor,
-            )
 
     @classmethod
     def completionDateTimeChangedEventType(class_):
-        return "pubsub.task.completionDateTime"
+        return "task.completionDateTime"
 
     def shouldBeMarkedCompleted(self):
         """Return whether this task should be marked completed. It should be
         marked completed when 1) it's not completed, 2) all of its children
         are completed, 3) its setting says it should be completed when
         all of its children are completed."""
-        shouldMarkCompletedAccordingToSetting = self.settings.getboolean(
-            "behavior",  # pylint: disable=E1101
-            "markparentcompletedwhenallchildrencompleted",
+        mark_by_setting = settings.get(
+            "behavior", "markparentcompletedwhenallchildrencompleted"
         )
         shouldMarkCompletedAccordingToTask = (
             self.shouldMarkCompletedWhenAllChildrenCompleted()
@@ -643,7 +528,7 @@ class Task(
                 (shouldMarkCompletedAccordingToTask == True)
                 or (
                     (shouldMarkCompletedAccordingToTask == None)
-                    and shouldMarkCompletedAccordingToSetting
+                    and mark_by_setting
                 )
             )
             and (not self.completed())
@@ -660,17 +545,26 @@ class Task(
         """The event types that influence the completion date time sort order."""
         return (class_.completionDateTimeChangedEventType(),)
 
-    def onMarkParentCompletedWhenAllChildrenCompletedChanged(self, value):
+    def __observe_settings(self):
+        for event_type, handler in (
+            ("behavior.duesoonhours", self.on_due_soon_hours_changed),
+            (
+                "behavior.markparentcompletedwhenallchildrencompleted",
+                self.on_mark_parent_completed_setting_changed,
+            ),
+        ):
+            patterns.Publisher().registerObserver(
+                handler, eventType=event_type
+            )
+
+    def on_mark_parent_completed_setting_changed(self, event=None):
+        # pylint: disable=W0613
         """When the global setting changes, send a percentage completed
         changed if necessary."""
         if self.shouldMarkCompletedWhenAllChildrenCompleted() is None and any(
             [child.percentageComplete(True) for child in self.children()]
         ):
-            pub.sendMessage(
-                self.percentageCompleteChangedEventType(),
-                newValue=self.percentageComplete(),
-                sender=self,
-            )
+            self.percentage_complete_changed_event()
 
     # Task state
 
@@ -723,40 +617,9 @@ class Task(
             status.completed,
         )
 
-    def status(self):
-        if self.__status:
-            return self.__status
-        if self.completionDateTime() != self.maxDateTime:
-            self.__status = status.completed
-        else:
-            now = date.Now()
-            # Don't call prerequisite.completed() because it will lead to infinite
-            # recursion in the case of circular dependencies.
-            # Check prerequisites first - task is inactive if any prereq is uncompleted:
-            if any(
-                [
-                    prerequisite.completionDateTime() == self.maxDateTime
-                    for prerequisite in self.prerequisites(
-                        recursive=True, upwards=True
-                    )
-                ]
-            ):
-                self.__status = status.inactive
-            elif self.dueDateTime() < now:
-                self.__status = status.overdue
-            elif 0 <= self.timeLeft().hours() < self.__dueSoonHours:
-                self.__status = status.duesoon
-            elif self.actualStartDateTime() <= now:
-                self.__status = status.active
-            elif self.plannedStartDateTime() < now:
-                self.__status = status.late
-            else:
-                self.__status = status.inactive
-        return self.__status
-
     @classmethod
     def statusChangedEventType(class_):
-        return "pubsub.task.status"
+        return "task.status"
 
     @classmethod
     def compute_status(
@@ -820,13 +683,41 @@ class Task(
 
         return status.inactive, _("No actual start date")
 
-    def computeStoredStatus(self):
-        """Compute and store status fields for this task instance.
+    # A reminder fires this long before its time
+    REMINDER_AHEAD = date.TimeDelta(seconds=2)
+
+    def timer_seconds(self, due_soon_hours):
+        """The seconds at which time alone changes this task's status or
+        fires its reminder, for the master timer list, by rule: each the
+        first whole second at which a rule of compute_status() or
+        processReminder() holds (docs/MASTER_SCHEDULER_REFACTOR.md). A
+        date not set gives none: it is never reached."""
+        latest = self.maxDateTime
+        seconds = {}
+        planned_start = self.plannedStartDateTime()
+        if planned_start != latest:
+            seconds["late"] = planned_start + date.ONE_SECOND
+        actual_start = self.actualStartDateTime()
+        if actual_start != latest:
+            seconds["active"] = actual_start
+        due = self.dueDateTime()
+        if due != latest:
+            due_soon = due - date.TimeDelta(hours=due_soon_hours)
+            seconds["duesoon"] = due_soon + date.ONE_SECOND
+            seconds["overdue"] = due + date.ONE_SECOND
+        reminder = self.reminder()
+        if reminder != latest:
+            seconds["reminder"] = reminder - self.REMINDER_AHEAD
+        return seconds
+
+    def compute_stored_status(self, now=None):
+        """Compute and store status fields for this task instance, at
+        now: the clock by default, the master loop's tick second.
 
         Called from:
         - Task.__init__() — initial population on load
-        - recomputeAppearance() — immediate update on date changes
-        - ComputeStyles._computeForObject() — per-second polling for time-based transitions
+        - _update_status(): at once after a change of what it reads
+        - the master loop, at the seconds time changes a status
 
         Updates __computed_status, __status_text, __status_icon_id, and __status_source.
         Fires statusChangedEventType if status actually changed.
@@ -847,6 +738,7 @@ class Task(
             planned_start_dt=self.plannedStartDateTime(),
             due_soon_hours=self.__dueSoonHours,
             has_incomplete_prerequisites=has_incomplete_prereqs,
+            now=now,
             max_date_time=self.maxDateTime,
         )
 
@@ -854,23 +746,18 @@ class Task(
         old_status = self.__computed_status
         self.__computed_status = new_status
         self.__status_text = (
-            new_status.pluralLabel.replace(" tasks", "")
+            new_status.plural_label.replace(" tasks", "")
             .replace("tasks", "")
             .strip()
         )
-        icon_section = self._themedSection("icon")
-        self.__status_icon_id = self.settings.get(
-            icon_section, "%stasks" % new_status
-        )
+        self.__status_icon_id = new_status.icon_id()
         self.__status_source = new_source
 
         # Fire event if status changed
         if old_status is not None and new_status != old_status:
-            pub.sendMessage(
-                self.statusChangedEventType(),
-                newValue=new_status,
-                sender=self,
-            )
+            patterns.Event(
+                self.statusChangedEventType(), self, new_status
+            ).send()
 
     def statusText(self):
         return self.__status_text
@@ -881,14 +768,12 @@ class Task(
     def computedStatus(self, explain=False):
         """Return the computed TaskStatus object (single source of truth).
 
-        This is the preferred accessor for status. It returns the
-        cached TaskStatus object populated by computeStoredStatus(),
-        which is called:
+        The accessor for the status: styles, filters, sorting and the
+        status bar all read it. It returns the cached TaskStatus object
+        populated by compute_stored_status(), which is called:
         - On task creation/load (Task.__init__)
-        - On date changes (recomputeAppearance)
-        - Every second (ComputeStyles polling)
-
-        Use this instead of the legacy status() method.
+        - At once after a change of what it reads (_update_status)
+        - The master loop, at the seconds time changes a status
 
         Args:
             explain: If True, return (status, source) tuple where source
@@ -902,77 +787,24 @@ class Task(
         return self.__computed_status
 
     # =========================================================================
-    # Scheduler methods - called by MasterScheduler every second
+    # Scheduler methods - called by the master loop
     # =========================================================================
-
-    def recomputeLegacyStatus(self, timestamp=None):
-        """Recompute legacy status cache for color/font lookups.
-
-        This is the legacy status system - separate from modern computeStoredStatus().
-        Called by scheduler every second to handle time-based transitions.
-
-        Note: recomputeAppearance() handles data-change-triggered updates.
-        This method handles time-passing updates (due soon → overdue at midnight).
-
-        No pubsub events - legacy system didn't have them. UI updates via:
-        - Modern system fires statusChangedEventType
-        - MinuteRefresher calls viewer.refresh() every minute
-
-        Args:
-            timestamp: Current time from scheduler (avoids redundant Now() calls)
-        """
-        now = timestamp or date.Now()
-
-        if self.completionDateTime() != self.maxDateTime:
-            self.__status = status.completed
-        # Direct prereqs only - no recursive (each task's status already computed)
-        elif any(
-            p.completionDateTime() == self.maxDateTime
-            for p in self.prerequisites()
-        ):
-            self.__status = status.inactive
-        elif self.dueDateTime() < now:
-            self.__status = status.overdue
-        elif 0 <= self.timeLeft().hours() < self.__dueSoonHours:
-            self.__status = status.duesoon
-        elif self.actualStartDateTime() <= now:
-            self.__status = status.active
-        elif self.plannedStartDateTime() < now:
-            self.__status = status.late
-        else:
-            self.__status = status.inactive
-
-    def onDailyChange(self):
-        """Called once at midnight for daily processing.
-
-        Status updates are handled separately by the scheduler
-        (both legacy and refactored).
-
-        Placeholder for future daily-specific logic:
-        - Daily aggregates
-        - Daily notifications
-        - etc.
-        """
-        pass
 
     def processReminder(self, timestamp):
         """Process reminder state and trigger if due.
 
-        Called by scheduler every second. Fires trigger event every
-        second while reminder is due - controller handles deduplication.
+        Called by the scheduler's passes: at the reminder's second, and
+        whenever a pass processes the task while it is due; the
+        controller shows its dialog once.
         """
         # Clear reminder if completed and not recurring
         if self.completed() and not self.recurrence():
-            if self.reminder():
-                self.setReminder(None)
+            self.set_reminder()
             return
 
-        # Check if due and trigger
-        reminder = self.reminder()
-        if not reminder:
-            return
-        # 2-second buffer to not miss reminders (matches prior behavior)
-        if reminder <= timestamp + date.TimeDelta(seconds=2):
+        # Trigger when due; a reminder not set (the latest date) never
+        # is.
+        if self.reminder() <= timestamp + self.REMINDER_AHEAD:
             self.triggerReminder()
 
     def triggerReminder(self):
@@ -983,10 +815,11 @@ class Task(
         """
         patterns.Event("task.reminder.trigger", self).send()
 
-    def onDueSoonHoursChanged(self, value):
-        self.__dueSoonHours = value
-        # Note: Status transitions are handled by ComputeStyles per-second polling
-        self.recomputeAppearance()
+    def on_due_soon_hours_changed(self, event=None):  # pylint: disable=W0613
+        self.__dueSoonHours = settings.behavior.duesoonhours
+        # The status at once; the master loop moves the timer seconds
+        # (docs/SCHEDULERS.md)
+        self._update_status()
 
     # effort related methods:
 
@@ -1013,46 +846,50 @@ class Task(
         wasTracking = self.isBeingTracked()
         oldValue = self._efforts[:]
         self._efforts.append(effort)
-        if effort.getStart() < self.actualStartDateTime():
-            self.setActualStartDateTime(effort.getStart())
-        pub.sendMessage(
-            self.effortsChangedEventType(),
-            newValue=(self._efforts, oldValue),
-            sender=self,
-        )
+        if (
+            effort.getStart() < self.actualStartDateTime()
+            and not is_restoring()
+        ):
+            self.set_actual_start_date_time(effort.getStart())
+        self.__send_efforts_changed(oldValue)
         if effort.isBeingTracked() and not wasTracking:
-            self.sendTrackingChangedMessage(tracking=True)
-        self.sendTimeSpentChangedMessage()
+            self.send_tracking_changed(tracking=True)
+        self.send_time_spent_changed()
 
     @classmethod
     def effortsChangedEventType(class_):
-        return "pubsub.task.efforts"
+        return "task.efforts"
 
-    def sendTrackingChangedMessage(self, tracking):
-        self.recomputeAppearance()
-        pub.sendMessage(
-            self.trackingChangedEventType(), newValue=tracking, sender=self
-        )
+    def __send_efforts_changed(self, old_efforts):
+        # Tuples: event values must be hashable
+        patterns.Event(
+            self.effortsChangedEventType(),
+            self,
+            (tuple(self._efforts), tuple(old_efforts)),
+        ).send()
+
+    def __send_to_ancestors_too(self, event_type, value, ancestor_value):
+        """One event for the task and its ancestors, which show the
+        value too; ancestor_value(ancestor) gives theirs."""
+        event = patterns.Event(event_type, self, value)
         for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.trackingChangedEventType(),
-                newValue=tracking,
-                sender=ancestor,
-            )
+            event.addSource(ancestor, ancestor_value(ancestor))
+        event.send()
+
+    def send_tracking_changed(self, tracking):
+        self.__send_to_ancestors_too(
+            self.trackingChangedEventType(), tracking, lambda _: tracking
+        )
 
     def removeEffort(self, effort):
         if effort not in self._efforts:
             return
         oldValue = self._efforts[:]
         self._efforts.remove(effort)
-        pub.sendMessage(
-            self.effortsChangedEventType(),
-            newValue=(self._efforts, oldValue),
-            sender=self,
-        )
+        self.__send_efforts_changed(oldValue)
         if effort.isBeingTracked() and not self.isBeingTracked():
-            self.sendTrackingChangedMessage(tracking=False)
-        self.sendTimeSpentChangedMessage()
+            self.send_tracking_changed(tracking=False)
+        self.send_time_spent_changed()
 
     def stopTracking(self):
         for effort in self.activeEfforts():
@@ -1062,17 +899,28 @@ class Task(
         if efforts == self._efforts:
             return
         oldValue = self._efforts[:]
-        self._efforts = efforts
-        pub.sendMessage(
-            self.effortsChangedEventType(),
-            newValue=(self._efforts, oldValue),
-            sender=self,
+        self._efforts[:] = efforts
+        self.__send_efforts_changed(oldValue)
+        self.send_time_spent_changed()
+
+    @property
+    def _efforts(self):
+        """The task's own efforts: the list itself."""
+        return self.__efforts.get()
+
+    def _efforts_restored(self, added, removed, event=None):
+        added_ids = {id(each) for each in added}
+        self.__send_efforts_changed(
+            [each for each in self._efforts if id(each) not in added_ids]
+            + removed
         )
-        self.sendTimeSpentChangedMessage()
+        if any(each.isBeingTracked() for each in added + removed):
+            self.send_tracking_changed(tracking=bool(self.isBeingTracked()))
+        self.send_time_spent_changed()
 
     @classmethod
     def trackingChangedEventType(class_):
-        return "pubsub.task.track"
+        return "task.track"
 
     # Time spent
 
@@ -1082,26 +930,20 @@ class Task(
             date.TimeDelta(),
         )
 
-    def sendTimeSpentChangedMessage(self):
-        pub.sendMessage(
+    def send_time_spent_changed(self):
+        self.__send_to_ancestors_too(
             self.timeSpentChangedEventType(),
-            newValue=self.timeSpent(),
-            sender=self,
+            self.timeSpent(),
+            lambda ancestor: ancestor.timeSpent(),
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.timeSpentChangedEventType(),
-                newValue=ancestor.timeSpent(),
-                sender=ancestor,
-            )
         if self.budget(recursive=True):
-            self.sendBudgetLeftChangedMessage()
+            self.send_budget_left_changed()
         if self.hourlyFee() > 0:
-            self.sendRevenueChangedMessage()
+            self.send_revenue_changed()
 
     @classmethod
     def timeSpentChangedEventType(class_):
-        return "pubsub.task.timeSpent"
+        return "task.timeSpent"
 
     @staticmethod
     def timeSpentSortFunction(**kwargs):
@@ -1116,33 +958,34 @@ class Task(
     # Budget
 
     def budget(self, recursive=False):
-        result = self.__budget
+        result = self.__budget.get()
         if recursive:
             for task in self.children():
                 result += task.budget(recursive)
         return result
 
-    def setBudget(self, budget):
-        if budget == self.__budget:
-            return
-        self.__budget = budget
-        self.sendBudgetChangedMessage()
-        self.sendBudgetLeftChangedMessage()
+    def set_budget(self, budget, event=None):
+        self.__budget.set(budget, event=event)
 
-    def sendBudgetChangedMessage(self):
-        pub.sendMessage(
-            self.budgetChangedEventType(), newValue=self.budget(), sender=self
+    def _on_budget_changed(self, event):
+        self.budget_changed_event(event)
+        self.send_budget_left_changed()
+
+    def budget_changed_event(self, event):
+        # Ancestors show it in their recursive budget
+        event.addSource(
+            self, self.budget(), type=self.budgetChangedEventType()
         )
         for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.budgetChangedEventType(),
-                newValue=ancestor.budget(recursive=True),
-                sender=ancestor,
+            event.addSource(
+                ancestor,
+                ancestor.budget(recursive=True),
+                type=ancestor.budgetChangedEventType(),
             )
 
     @classmethod
     def budgetChangedEventType(class_):
-        return "pubsub.task.budget"
+        return "task.budget"
 
     @staticmethod
     def budgetSortFunction(**kwargs):
@@ -1160,22 +1003,16 @@ class Task(
         budget = self.budget(recursive)
         return budget - self.timeSpent(recursive)
 
-    def sendBudgetLeftChangedMessage(self):
-        pub.sendMessage(
+    def send_budget_left_changed(self):
+        self.__send_to_ancestors_too(
             self.budgetLeftChangedEventType(),
-            newValue=self.budgetLeft(),
-            sender=self,
+            self.budgetLeft(),
+            lambda ancestor: ancestor.budgetLeft(recursive=True),
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.budgetLeftChangedEventType(),
-                newValue=ancestor.budgetLeft(recursive=True),
-                sender=ancestor,
-            )
 
     @classmethod
     def budgetLeftChangedEventType(class_):
-        return "pubsub.task.budgetLeft"
+        return "task.budgetLeft"
 
     @staticmethod
     def budgetLeftSortFunction(**kwargs):
@@ -1196,19 +1033,16 @@ class Task(
     def setPlannedDuration(self, plannedDuration, event=None):
         self.__plannedDuration.set(plannedDuration, event=event)
 
-    def _onPlannedDurationChanged(self, event):
-        self.sendPlannedDurationChangedMessage()
-
-    def sendPlannedDurationChangedMessage(self):
-        pub.sendMessage(
-            self.plannedDurationChangedEventType(),
-            newValue=self.plannedDuration(),
-            sender=self,
+    def _on_planned_duration_changed(self, event):
+        event.addSource(
+            self,
+            self.plannedDuration(),
+            type=self.plannedDurationChangedEventType(),
         )
 
     @classmethod
     def plannedDurationChangedEventType(class_):
-        return "pubsub.task.plannedDuration"
+        return "task.plannedDuration"
 
     @staticmethod
     def plannedDurationSortFunction(**kwargs):
@@ -1230,264 +1064,89 @@ class Task(
         mode = mode_map.get(mode, mode) or "implicit"
         self.__plannedDurationMode.set(mode, event=event)
 
-    def _onPlannedDurationModeChanged(self, event):
-        self.sendPlannedDurationModeChangedMessage()
-
-    def sendPlannedDurationModeChangedMessage(self):
-        pub.sendMessage(
-            self.plannedDurationModeChangedEventType(),
-            newValue=self.plannedDurationMode(),
-            sender=self,
+    def _on_planned_duration_mode_changed(self, event):
+        event.addSource(
+            self,
+            self.plannedDurationMode(),
+            type=self.plannedDurationModeChangedEventType(),
         )
 
     @classmethod
     def plannedDurationModeChangedEventType(class_):
-        return "pubsub.task.plannedDurationMode"
+        return "task.plannedDurationMode"
 
-    # Foreground color
+    def __derive_planned_duration(self, event):
+        """In Implicit mode the planned duration is due minus planned
+        start, whichever way a date changed (a list cell, the editor):
+        in the same step, so the editor, which shows it read-only, finds
+        it right and changes nothing when it opens. In whole minutes, as
+        the editor's date fields hold them
+        (docs/DURATION_CALCULATIONS.md, Stored Duration)."""
+        if is_restoring() or self.plannedDurationMode() != "implicit":
+            return  # The adjust modes: the date commands follow them
+        difference = self.planned_dates_difference()
+        if difference is not None:
+            self.setPlannedDuration(difference, event=event)
 
-    def setForegroundColor(self, *args, **kwargs):
-        super().setForegroundColor(*args, **kwargs)
-        self.__computeRecursiveForegroundColor()
-
-    def foregroundColor(self, recursive=False):
-        if not recursive:
-            return super().foregroundColor(recursive)
-        try:
-            return self.__recursiveForegroundColor
-        except AttributeError:
-            return self.__computeRecursiveForegroundColor()
-
-    def __computeRecursiveForegroundColor(
-        self, value=None
-    ):  # pylint: disable=W0613
-        ownColor = super().foregroundColor(False)
-        if ownColor:
-            recursiveColor = ownColor
-        else:
-            categoryColor = self._categoryForegroundColor()
-            if categoryColor:
-                recursiveColor = categoryColor
-            else:
-                recursiveColor = self.statusFgColor()
-        self.__recursiveForegroundColor = (
-            recursiveColor  # pylint: disable=W0201
+    def planned_dates_difference(self):
+        """Due minus planned start in whole minutes, as the editor's
+        date fields hold them; None without both dates."""
+        start = self.__plannedStartDateTime.get()
+        due = self.__dueDateTime.get()
+        if self.maxDateTime in (start, due):
+            return None
+        delta = due.replace(second=0, microsecond=0) - start.replace(
+            second=0, microsecond=0
         )
-        return recursiveColor
+        return date.TimeDelta(days=delta.days, seconds=delta.seconds)
+
+    # Styles by status: the effective styles' last source
+    # (docs/TASK_STATUS.md, Appearance Inheritance Overview)
 
     def statusFgColor(self):
-        return self.fgColorForStatus(self.status())
+        return self.fgColorForStatus(self.computedStatus())
 
     @classmethod
     def _themedSection(class_, section):
-        try:
-            from taskcoachlib.config import settings2
-
-            return (
-                section + "_dark"
-                if settings2.window.theme_is_dark
-                else section
-            )
-        except Exception as e:
-            from taskcoachlib.meta.debug import log_step
-
-            log_step("_themedSection(%s): %s" % (section, e), prefix="THEME")
-            return section
+        return status.themed_section(section)
 
     @classmethod
     def fgColorForStatus(class_, taskStatus):
         section = class_._themedSection("fgcolor")
-        return wx.Colour(
-            *ast.literal_eval(
-                class_.settings.get(section, "%stasks" % taskStatus)
-            )
-        )  # pylint: disable=E1101
-
-    def appearanceChangedEvent(self, event):
-        self.__computeRecursiveForegroundColor()
-        self.__computeRecursiveBackgroundColor()
-        self.__compute_recursive_icon_id()
-        self.__compute_recursive_selected_icon_id()
-        super().appearanceChangedEvent(event)
-        for eachEffort in self.efforts():
-            eachEffort.appearanceChangedEvent(event)
-
-    # Background color
-
-    def setBackgroundColor(self, *args, **kwargs):
-        super().setBackgroundColor(*args, **kwargs)
-        self.__computeRecursiveBackgroundColor()
-
-    def backgroundColor(self, recursive=False):
-        if not recursive:
-            return super().backgroundColor(recursive)
-        try:
-            return self.__recursiveBackgroundColor
-        except AttributeError:
-            return self.__computeRecursiveBackgroundColor()
-
-    def __computeRecursiveBackgroundColor(
-        self, *args, **kwargs
-    ):  # pylint: disable=W0613
-        ownColor = super().backgroundColor(recursive=False)
-        if ownColor:
-            recursiveColor = ownColor
-        else:
-            categoryColor = self._categoryBackgroundColor()
-            if categoryColor:
-                recursiveColor = categoryColor
-            else:
-                statusColor = self.statusBgColor()
-                if statusColor:
-                    recursiveColor = statusColor
-                elif self.parent():
-                    recursiveColor = self.parent().backgroundColor(
-                        recursive=True
-                    )
-                else:
-                    recursiveColor = None
-        self.__recursiveBackgroundColor = (
-            recursiveColor  # pylint: disable=W0201
-        )
-        return recursiveColor
+        return wx.Colour(*settings.get(section, "%stasks" % taskStatus))
 
     def statusBgColor(self):
-        return self.bgColorForStatus(self.status())
+        return self.bgColorForStatus(self.computedStatus())
 
     @classmethod
     def bgColorForStatus(class_, taskStatus):
         section = class_._themedSection("bgcolor")
-        return wx.Colour(
-            *ast.literal_eval(
-                class_.settings.get(section, "%stasks" % taskStatus)
-            )
-        )  # pylint: disable=E1101
-
-    # Font
-
-    def font(self, recursive=False):
-        ownFont = super().font(recursive=False)
-        if ownFont or not recursive:
-            return ownFont
-        else:
-            categoryFont = self._categoryFont()
-            if categoryFont:
-                return categoryFont
-            else:
-                return self.statusFont()
+        return wx.Colour(*settings.get(section, "%stasks" % taskStatus))
 
     def statusFont(self):
-        return self.fontForStatus(self.status())
+        return self.fontForStatus(self.computedStatus())
 
     @classmethod
     def fontForStatus(class_, taskStatus):
         section = class_._themedSection("font")
-        nativeInfoString = class_.settings.get(
-            section, "%stasks" % taskStatus
-        )  # pylint: disable=E1101
-        return (
-            wx.FontFromNativeInfoString(nativeInfoString)
-            if nativeInfoString
-            else None
-        )
+        native_info = settings.get(section, "%stasks" % taskStatus)
+        return wxhelper.font_from_native_info(native_info)
 
-    # Icon
-
-    def icon_id(self, recursive=False):
-        if recursive and self.isBeingTracked():
-            return "nuvola_apps_clock"
-        icon_id = super().icon_id()
-        if recursive and not icon_id:
-            try:
-                icon_id = self.__recursive_icon_id
-            except AttributeError:
-                icon_id = self.__compute_recursive_icon_id()
-        return self.pluralOrSingularIcon(
-            icon_id, native=super().icon_id() == ""
-        )
-
-    def __compute_recursive_icon_id(
-        self, *args, **kwargs
-    ):  # pylint: disable=W0613
-        # pylint: disable=W0201
-        self.__recursive_icon_id = (
-            self.category_icon_id() or self.status_icon_id()
-        )
-        return self.__recursive_icon_id
-
-    def selected_icon_id(self, recursive=False):
-        if recursive and self.isBeingTracked():
-            return "nuvola_apps_clock"
-        icon_id = super().selected_icon_id()
-        if recursive and not icon_id:
-            try:
-                icon_id = self.__recursive_selected_icon_id
-            except AttributeError:
-                icon_id = self.__compute_recursive_selected_icon_id()
-        return self.pluralOrSingularIcon(
-            icon_id, native=super().selected_icon_id == ""
-        )
-
-    def __compute_recursive_selected_icon_id(
-        self, *args, **kwargs
-    ):  # pylint: disable=W0613
-        # pylint: disable=W0201
-        self.__recursive_selected_icon_id = (
-            self.category_selected_icon_id() or self.status_icon_id()
-        )
-        return self.__recursive_selected_icon_id
-
-    def __onThemeChanged(self, value=None):
-        """Recompute all cached appearance when the theme changes."""
-        self.__computeRecursiveForegroundColor()
-        self.__computeRecursiveBackgroundColor()
-        self.__compute_recursive_icon_id()
-        self.__compute_recursive_selected_icon_id()
-
-    # Note: Derived and effective appearance is now handled by the base class
-    # (object.py) and ComputeStyles polling in appearance.py. The base class
-    # provides: derivedFgColor(), derivedFgColorSource(), effectiveFgColor(),
-    # effectiveFgColorSource(), effectiveFgColorDefault(), etc. for all field types.
-
-    @patterns.eventSource
-    def recomputeAppearance(self, recursive=False, event=None):
-        self.computeStoredStatus()
-        self.__status = None
-        # Note: SSOT updates are handled by ComputeStyles polling
-        # Legacy: compute recursive values for backward compatibility
-        try:
-            previousForegroundColor = self.__recursiveForegroundColor
-            previousBackgroundColor = self.__recursiveBackgroundColor
-            prev_recursive_icon_id = self.__recursive_icon_id
-            prev_recursive_selected_icon_id = self.__recursive_selected_icon_id
-        except AttributeError:
-            previousForegroundColor = None
-            previousBackgroundColor = None
-            prev_recursive_icon_id = None
-            prev_recursive_selected_icon_id = None
-        self.__computeRecursiveForegroundColor()
-        self.__computeRecursiveBackgroundColor()
-        self.__compute_recursive_icon_id()
-        self.__compute_recursive_selected_icon_id()
-        if (
-            self.__recursiveForegroundColor != previousForegroundColor
-            or self.__recursiveBackgroundColor != previousBackgroundColor
-            or self.__recursive_icon_id != prev_recursive_icon_id
-            or self.__recursive_selected_icon_id
-            != prev_recursive_selected_icon_id
-        ):
-            event.addSource(self, type=self.appearanceChangedEventType())
+    def _update_status(self, recursive=False):
+        """The status at once after a change of what it reads, without
+        waiting for the master loop's next tick (docs/TASK_STATUS.md,
+        Immediate Updates); the styles follow at that tick."""
+        self.compute_stored_status()
         if recursive:
             for child in self.children():
-                child.recomputeAppearance(recursive=True, event=event)
+                child._update_status(recursive=True)
 
     # percentage Complete
 
     def percentageComplete(self, recursive=False):
         if recursive:
             if self.shouldMarkCompletedWhenAllChildrenCompleted() is None:
-                # pylint: disable=E1101
-                ignore_me = self.settings.getboolean(
+                ignore_me = settings.get(
                     "behavior", "markparentcompletedwhenallchildrencompleted"
                 )
             else:
@@ -1508,29 +1167,40 @@ class Task(
     def setPercentageComplete(self, percentage, event=None):
         self.__percentageComplete.set(percentage, event=event)
 
-    def _onPercentageCompleteChanged(self, event):
+    def _on_percentage_complete_changed(self, event):
         percentage = self.__percentageComplete.get()
-        if percentage == 100 and self.completionDateTime() == self.maxDateTime:
-            self.setCompletionDateTime(date.Now())
+        if is_restoring():
+            pass  # The edit rules' effects are put back too
+        elif (
+            percentage == 100 and self.completionDateTime() == self.maxDateTime
+        ):
+            self.set_completion_date_time(date.Now())
         elif (
             percentage != 100 and self.completionDateTime() != self.maxDateTime
         ):
-            self.setCompletionDateTime(self.maxDateTime)
+            self.set_completion_date_time(self.maxDateTime)
         if (
             0 < percentage < 100
             and self.actualStartDateTime() == date.DateTime()
+            and not is_restoring()
         ):
-            self.setActualStartDateTime(date.Now())
-        pub.sendMessage(
-            self.percentageCompleteChangedEventType(),
-            newValue=percentage,
-            sender=self,
+            self.set_actual_start_date_time(date.Now())
+        self.percentage_complete_changed_event(event=event)
+
+    @patterns.eventSource
+    def percentage_complete_changed_event(self, event=None):
+        """The percentage, and so the recursive percentages of the
+        ancestors, changed."""
+        event.addSource(
+            self,
+            self.percentageComplete(),
+            type=self.percentageCompleteChangedEventType(),
         )
         for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.percentageCompleteChangedEventType(),
-                newValue=ancestor.percentageComplete(recursive=True),
-                sender=ancestor,
+            event.addSource(
+                ancestor,
+                ancestor.percentageComplete(recursive=True),
+                type=ancestor.percentageCompleteChangedEventType(),
             )
 
     @staticmethod
@@ -1545,7 +1215,7 @@ class Task(
 
     @classmethod
     def percentageCompleteChangedEventType(class_):
-        return "pubsub.task.percentageComplete"
+        return "task.percentageComplete"
 
     # priority
 
@@ -1563,14 +1233,21 @@ class Task(
     def setPriority(self, priority, event=None):
         self.__priority.set(priority, event=event)
 
-    def _onPriorityChanged(self, event):
-        event.addSource(self, type=self.priorityChangedEventType())
-        for ancestor in self.ancestors():
-            event.addSource(ancestor, type=ancestor.priorityChangedEventType())
+    def _on_priority_changed(self, event):
+        self._send_to_self_and_ancestors(
+            event, self.priorityChangedEventType()
+        )
 
     @classmethod
     def priorityChangedEventType(class_):
         return "task.priority"
+
+    @staticmethod
+    def statusSortFunction(**kwargs):  # pylint: disable=W0613
+        """The Status column's order: the sort priorities of
+        Preferences > Statuses, highest first, as sorting by status
+        first does (docs/TASK_STATUS_SORT.md)."""
+        return lambda task: -task.computedStatus().get_sort_priority()
 
     @staticmethod
     def prioritySortFunction(**kwargs):
@@ -1585,23 +1262,23 @@ class Task(
     # Hourly fee
 
     def hourlyFee(self, recursive=False):  # pylint: disable=W0613
-        return self.__hourlyFee
+        return self.__hourlyFee.get()
 
-    def setHourlyFee(self, hourlyFee):
-        if hourlyFee == self.__hourlyFee:
-            return
-        self.__hourlyFee = hourlyFee
-        pub.sendMessage(
-            self.hourlyFeeChangedEventType(), newValue=hourlyFee, sender=self
+    def set_hourly_fee(self, hourly_fee, event=None):
+        self.__hourlyFee.set(hourly_fee, event=event)
+
+    def _on_hourly_fee_changed(self, event):
+        event.addSource(
+            self, self.hourlyFee(), type=self.hourlyFeeChangedEventType()
         )
         if self.timeSpent() > date.TimeDelta():
-            self.sendRevenueChangedMessage()
+            self.send_revenue_changed()
             for effort in self.efforts():
-                effort.sendRevenueChangedMessage()
+                effort.send_revenue_changed()
 
     @classmethod
     def hourlyFeeChangedEventType(class_):
-        return "pubsub.task.hourlyFee"
+        return "task.hourlyFee"
 
     @staticmethod  # pylint: disable=W0613
     def hourlyFeeSortFunction(**kwargs):
@@ -1620,26 +1297,27 @@ class Task(
             if recursive
             else 0
         )
-        return self.__fixedFee + childFixedFees
+        return self.__fixedFee.get() + childFixedFees
 
-    def setFixedFee(self, fixedFee):
-        if fixedFee == self.__fixedFee:
-            return
-        self.__fixedFee = fixedFee
-        pub.sendMessage(
-            self.fixedFeeChangedEventType(), newValue=fixedFee, sender=self
+    def set_fixed_fee(self, fixed_fee, event=None):
+        self.__fixedFee.set(fixed_fee, event=event)
+
+    def _on_fixed_fee_changed(self, event):
+        # Ancestors show it in their recursive fixed fee
+        event.addSource(
+            self, self.fixedFee(), type=self.fixedFeeChangedEventType()
         )
         for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.fixedFeeChangedEventType(),
-                newValue=ancestor.fixedFee(recursive=True),
-                sender=ancestor,
+            event.addSource(
+                ancestor,
+                ancestor.fixedFee(recursive=True),
+                type=ancestor.fixedFeeChangedEventType(),
             )
-        self.sendRevenueChangedMessage()
+        self.send_revenue_changed()
 
     @classmethod
     def fixedFeeChangedEventType(class_):
-        return "pubsub.task.fixedFee"
+        return "task.fixedFee"
 
     @staticmethod
     def fixedFeeSortFunction(**kwargs):
@@ -1665,22 +1343,16 @@ class Task(
             + childRevenues
         )
 
-    def sendRevenueChangedMessage(self):
-        pub.sendMessage(
+    def send_revenue_changed(self):
+        self.__send_to_ancestors_too(
             self.revenueChangedEventType(),
-            newValue=self.revenue(),
-            sender=self,
+            self.revenue(),
+            lambda ancestor: ancestor.revenue(recursive=True),
         )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.revenueChangedEventType(),
-                newValue=ancestor.revenue(recursive=True),
-                sender=ancestor,
-            )
 
     @classmethod
     def revenueChangedEventType(class_):
-        return "pubsub.task.revenue"
+        return "task.revenue"
 
     @staticmethod
     def revenueSortFunction(**kwargs):
@@ -1695,68 +1367,52 @@ class Task(
     # reminder
 
     def reminder(
-        self, recursive=False, includeSnooze=True
+        self, recursive=False, include_snooze=True
     ):  # pylint: disable=W0613
         if recursive:
             reminders = [
                 child.reminder(recursive=True) for child in self.children()
-            ] + [self.__reminder]
-            reminders = [reminder for reminder in reminders if reminder]
-            return min(reminders) if reminders else None
+            ]
+            return min(reminders + [self.__reminder.get()])
         else:
             return (
-                self.__reminder
-                if includeSnooze
-                else self.__reminderBeforeSnooze
+                self.__reminder.get()
+                if include_snooze
+                else self.__reminder_before_snooze.get()
             )
 
-    def setReminder(self, reminderDateTime=None):
-        if reminderDateTime == self.maxDateTime:
-            reminderDateTime = None
-        if reminderDateTime == self.__reminder:
+    def set_reminder(self, reminder_date_time=None, event=None):
+        # Not set is the latest date (docs/ATTRIBUTE_PATTERN.md)
+        reminder_date_time = reminder_date_time or self.maxDateTime
+        if reminder_date_time == self.__reminder.get():
             return
-        self.__reminder = reminderDateTime
-        self.__reminderBeforeSnooze = reminderDateTime
-        pub.sendMessage(
-            self.reminderChangedEventType(),
-            newValue=reminderDateTime,
-            sender=self,
-        )
-        for ancestor in self.ancestors():
-            pub.sendMessage(
-                ancestor.reminderChangedEventType(),
-                newValue=reminderDateTime,
-                sender=ancestor,
-            )
+        self.__reminder_before_snooze.set(reminder_date_time, event=event)
+        self.__reminder.set(reminder_date_time, event=event)
 
-    def snoozeReminder(self, timeDelta, now=date.Now):
-        if timeDelta:
-            self.__reminder = now() + timeDelta
-            pub.sendMessage(
-                self.reminderChangedEventType(),
-                newValue=self.__reminder,
-                sender=self,
-            )
+    def snooze_reminder(self, time_delta, now=date.Now):
+        if time_delta:
+            self.__reminder.set(now() + time_delta)
+        elif self.recurrence():
+            self.__reminder.set(self.maxDateTime)
         else:
-            if self.recurrence():
-                self.__reminder = None
-                pub.sendMessage(
-                    self.reminderChangedEventType(),
-                    newValue=self.__reminder,
-                    sender=self,
-                )
-            else:
-                self.setReminder()
+            self.set_reminder()
+
+    def _on_reminder_before_snooze_changed(self, event):
+        pass  # Shown nowhere: the reminder's own event tells the views
+
+    def _on_reminder_changed(self, event):
+        self._send_to_self_and_ancestors(
+            event, self.reminderChangedEventType(), self.reminder()
+        )
 
     @classmethod
     def reminderChangedEventType(class_):
-        return "pubsub.task.reminder"
+        return "task.reminder"
 
     @staticmethod
     def reminderSortFunction(**kwargs):
         recursive = kwargs.get("tree_mode", False)
-        maxDateTime = date.DateTime()
-        return lambda task: task.reminder(recursive=recursive) or maxDateTime
+        return lambda task: task.reminder(recursive=recursive)
 
     @classmethod
     def reminderSortEventTypes(class_):
@@ -1766,37 +1422,38 @@ class Task(
     # Recurrence
 
     def recurrence(self, recursive=False, upwards=False):
-        if not self.__recurrence and recursive and upwards and self.parent():
+        own = self.__recurrence.get()
+        if not own and recursive and upwards and self.parent():
             return self.parent().recurrence(recursive, upwards)
         elif recursive and not upwards:
             recurrences = [
                 child.recurrence() for child in self.children(recursive)
             ]
-            recurrences.append(self.__recurrence)
+            recurrences.append(own)
             recurrences = [r for r in recurrences if r]
-            return min(recurrences) if recurrences else self.__recurrence
+            return min(recurrences) if recurrences else own
         else:
-            return self.__recurrence
+            return own
 
-    def setRecurrence(self, recurrence=None):
-        recurrence = recurrence or date.Recurrence()
-        if recurrence == self.__recurrence:
-            return
-        self.__recurrence = recurrence
-        pub.sendMessage(
-            self.recurrenceChangedEventType(), newValue=recurrence, sender=self
+    def set_recurrence(self, recurrence=None, event=None):
+        self.__recurrence.set(recurrence or date.Recurrence(), event=event)
+
+    def _on_recurrence_changed(self, event):
+        # Without the value: a Recurrence is mutable, so not hashable
+        self._send_to_self_and_ancestors(
+            event, self.recurrenceChangedEventType()
         )
 
     @classmethod
     def recurrenceChangedEventType(class_):
-        return "pubsub.task.recurrence"
+        return "task.recurrence"
 
     @patterns.eventSource
     def recur(self, completionDateTime=None, event=None):
         from taskcoachlib.meta.debug import log_step
 
         completionDateTime = completionDateTime or date.Now()
-        self.setCompletionDateTime(self.maxDateTime)
+        self.set_completion_date_time(self.maxDateTime)
         recur = self.recurrence(recursive=True, upwards=True)
 
         if not recur.unit:
@@ -1820,7 +1477,6 @@ class Task(
                 hour=current_due.hour,
                 minute=current_due.minute,
                 second=current_due.second,
-                microsecond=current_due.microsecond,
             )
             if next_due == current_due:
                 log_step(
@@ -1828,7 +1484,7 @@ class Task(
                     % (self.subject(), current_due),
                     prefix="RECUR",
                 )
-            self.setDueDateTime(next_due)
+            self.set_due_date_time(next_due)
 
         if current_planned_start != date.DateTime():
             if date.DateTime() not in (
@@ -1848,21 +1504,24 @@ class Task(
                 hour=current_planned_start.hour,
                 minute=current_planned_start.minute,
                 second=current_planned_start.second,
-                microsecond=current_planned_start.microsecond,
             )
-            self.setPlannedStartDateTime(next_planned_start)
+            self.set_planned_start_date_time(next_planned_start)
 
-        self.setActualStartDateTime(date.DateTime())
+        self.set_actual_start_date_time(date.DateTime())
         self.setPercentageComplete(0)
-        if self.reminder(includeSnooze=False):
+        if self.reminder(include_snooze=False) != self.maxDateTime:
             next_reminder = recur(
-                self.reminder(includeSnooze=False), next=False
+                self.reminder(include_snooze=False), next=False
             )
-            self.setReminder(next_reminder)
+            self.set_reminder(next_reminder)
         for child in self.children():
             if not child.recurrence():
                 child.recur(completionDateTime, event=event)
-        self.recurrence()(next=True)
+        # A copy, so the Attribute sees the count change: it is saved
+        if self.recurrence():
+            recurrence = self.recurrence().copy()
+            recurrence(next=True)
+            self.set_recurrence(recurrence, event=event)
 
     @staticmethod
     def recurrenceSortFunction(**kwargs):
@@ -1877,7 +1536,7 @@ class Task(
     # Prerequisites
 
     def prerequisites(self, recursive=False, upwards=False):
-        prerequisites = set(self.__prerequisites)
+        prerequisites = self.__prerequisites.get()
         if recursive and upwards and self.parent() is not None:
             prerequisites |= self.parent().prerequisites(
                 recursive=True, upwards=True
@@ -1887,53 +1546,31 @@ class Task(
                 prerequisites |= child.prerequisites()
         return prerequisites
 
-    def setPrerequisites(self, prerequisites):
-        prerequisites = set(prerequisites)
-        if prerequisites == self.prerequisites():
-            return
-        self.__prerequisites = WeakSet(prerequisites)
-        self.recomputeAppearance(recursive=True)
-        pub.sendMessage(
-            self.prerequisitesChangedEventType(),
-            newValue=self.prerequisites(),
-            sender=self,
-        )
+    def set_prerequisites(self, prerequisites, event=None):
+        self.__prerequisites.set(set(prerequisites), event=event)
 
-    def addPrerequisites(self, prerequisites):
-        prerequisites = set(prerequisites)
-        if prerequisites <= self.prerequisites():
-            return
-        self.__prerequisites = WeakSet(prerequisites | self.prerequisites())
-        self.recomputeAppearance(recursive=True)
-        pub.sendMessage(
-            self.prerequisitesChangedEventType(),
-            newValue=self.prerequisites(),
-            sender=self,
-        )
+    def add_prerequisites(self, prerequisites, event=None):
+        self.__prerequisites.add(set(prerequisites), event=event)
 
-    def removePrerequisites(self, prerequisites):
-        prerequisites = set(prerequisites)
-        if self.prerequisites().isdisjoint(prerequisites):
-            return
-        self.__prerequisites = WeakSet(self.prerequisites() - prerequisites)
-        self.recomputeAppearance(recursive=True)
-        pub.sendMessage(
-            self.prerequisitesChangedEventType(),
-            newValue=self.prerequisites(),
-            sender=self,
-        )
+    def remove_prerequisites(self, prerequisites, event=None):
+        self.__prerequisites.remove(set(prerequisites), event=event)
+
+    def _on_prerequisites_changed(self, event, *prerequisites):
+        self._update_status(recursive=True)
+        # Without the value: a set is not hashable
+        event.addSource(self, type=self.prerequisitesChangedEventType())
 
     def addTaskAsDependencyOf(self, prerequisites):
         for prerequisite in prerequisites:
-            prerequisite.addDependencies([self])
+            prerequisite.add_dependencies([self])
 
     def removeTaskAsDependencyOf(self, prerequisites):
         for prerequisite in prerequisites:
-            prerequisite.removeDependencies([self])
+            prerequisite.remove_dependencies([self])
 
     @classmethod
     def prerequisitesChangedEventType(class_):
-        return "pubsub.task.prerequisites"
+        return "task.prerequisites"
 
     @staticmethod
     def prerequisitesSortFunction(**kwargs):
@@ -1971,7 +1608,7 @@ class Task(
     # Dependencies
 
     def dependencies(self, recursive=False, upwards=False):
-        dependencies = set(self.__dependencies)
+        dependencies = self.__dependencies.get()
         if recursive and upwards and self.parent() is not None:
             dependencies |= self.parent().dependencies(
                 recursive=True, upwards=True
@@ -1981,50 +1618,40 @@ class Task(
                 dependencies |= child.dependencies()
         return dependencies
 
-    def setDependencies(self, dependencies):
-        dependencies = set(dependencies)
-        if dependencies == self.dependencies():
-            return
-        self.__dependencies = WeakSet(dependencies)
-        pub.sendMessage(
-            self.dependenciesChangedEventType(),
-            newValue=self.dependencies(),
-            sender=self,
-        )
+    # The reverse of prerequisites, not saved: no modification date
 
-    def addDependencies(self, dependencies):
+    def set_dependencies(self, dependencies, event=None):
         dependencies = set(dependencies)
-        if dependencies <= self.dependencies():
-            return
-        self.__dependencies = WeakSet(self.dependencies() | dependencies)
-        pub.sendMessage(
-            self.dependenciesChangedEventType(),
-            newValue=self.dependencies(),
-            sender=self,
-        )
+        if dependencies != self.dependencies():
+            self.__set_dependencies(dependencies, event=event)
 
-    def removeDependencies(self, dependencies):
+    def add_dependencies(self, dependencies, event=None):
         dependencies = set(dependencies)
-        if self.dependencies().isdisjoint(dependencies):
-            return
-        self.__dependencies = WeakSet(self.dependencies() - dependencies)
-        pub.sendMessage(
-            self.dependenciesChangedEventType(),
-            newValue=self.dependencies(),
-            sender=self,
-        )
+        if not dependencies <= self.dependencies():
+            self.__set_dependencies(
+                self.dependencies() | dependencies, event=event
+            )
 
-    def addTaskAsPrerequisiteOf(self, dependencies):
-        for dependency in dependencies:
-            dependency.addPrerequisites([self])
+    def remove_dependencies(self, dependencies, event=None):
+        dependencies = set(dependencies)
+        if not self.dependencies().isdisjoint(dependencies):
+            self.__set_dependencies(
+                self.dependencies() - dependencies, event=event
+            )
+
+    def __set_dependencies(self, dependencies, event=None):
+        self.__dependencies.set(dependencies, event=event)
+
+    def _on_dependencies_changed(self, event, *dependencies):
+        event.addSource(self, type=self.dependenciesChangedEventType())
 
     def removeTaskAsPrerequisiteOf(self, dependencies):
         for dependency in dependencies:
-            dependency.removePrerequisites([self])
+            dependency.remove_prerequisites([self])
 
     @classmethod
     def dependenciesChangedEventType(class_):
-        return "pubsub.task.dependencies"
+        return "task.dependencies"
 
     @staticmethod
     def dependenciesSortFunction(**kwargs):
@@ -2059,27 +1686,31 @@ class Task(
 
     # behavior
 
-    def setShouldMarkCompletedWhenAllChildrenCompleted(self, newValue):
-        if newValue == self.__shouldMarkCompletedWhenAllChildrenCompleted:
-            return
-        self.__shouldMarkCompletedWhenAllChildrenCompleted = newValue
-        pub.sendMessage(
-            self.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType(),
-            newValue=newValue,
-            sender=self,
+    def set_should_mark_completed_when_all_children_completed(
+        self, value, event=None
+    ):
+        self.__shouldMarkCompletedWhenAllChildrenCompleted.set(
+            value, event=event
         )
-        pub.sendMessage(
-            self.percentageCompleteChangedEventType(),
-            newValue=self.percentageComplete(),
-            sender=self,
+
+    def _on_should_mark_completed_changed(self, event):
+        event_type = (
+            self.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType()
         )
+        event.addSource(
+            self,
+            self.shouldMarkCompletedWhenAllChildrenCompleted(),
+            type=event_type,
+        )
+        # It decides whether the recursive percentage counts this task
+        self.percentage_complete_changed_event(event=event)
 
     @classmethod
     def shouldMarkCompletedWhenAllChildrenCompletedChangedEventType(class_):
-        return "pubsub.task.shouldMarkCompletedWhenAllChildrenCompleted"
+        return "task.shouldMarkCompletedWhenAllChildrenCompleted"
 
     def shouldMarkCompletedWhenAllChildrenCompleted(self):
-        return self.__shouldMarkCompletedWhenAllChildrenCompleted
+        return self.__shouldMarkCompletedWhenAllChildrenCompleted.get()
 
     @classmethod
     def suggestedPlannedStartDateTime(cls, now=date.Now):
@@ -2103,15 +1734,13 @@ class Task(
 
     @classmethod
     def suggested_date_time(cls, default_date_time_setting, now=date.Now):
-        # pylint: disable=E1101,W0142
-        default_date_time = cls.settings.get("view", default_date_time_setting)
+        default_date_time = settings.get("view", default_date_time_setting)
         dummy_prefix, default_date, default_time = default_date_time.split("_")
         date_time = now()
         current_time = dict(
             hour=date_time.hour,
             minute=date_time.minute,
             second=date_time.second,
-            microsecond=date_time.microsecond,
         )
         if default_date == "tomorrow":
             date_time += date.ONE_DAY
@@ -2133,25 +1762,20 @@ class Task(
         if default_time == "startofday":
             return date_time.startOfDay()
         elif default_time == "startofworkingday":
-            start_hour = cls.settings.getint("view", "efforthourstart")
-            return date_time.replace(
-                hour=start_hour, minute=0, second=0, microsecond=0
-            )
+            start_hour = settings.view.efforthourstart
+            return date_time.replace(hour=start_hour, minute=0, second=0)
         elif default_time == "currenttime":
             return date_time
         elif default_time == "endofworkingday":
-            end_hour = cls.settings.getint("view", "efforthourend")
+            end_hour = settings.view.efforthourend
             # 24 is how older versions said "end of day" (Preferences
             # migrates it only when saved); replace() rejects hour 24.
-            if (
-                cls.settings.getboolean("view", "efforthourend_endofday")
-                or end_hour >= 24
-            ):
+            if settings.view.efforthourend_endofday or end_hour >= 24:
                 end_hour, minute, second = 23, 59, 59
             else:
                 minute, second = 0, 0
             return date_time.replace(
-                hour=end_hour, minute=minute, second=second, microsecond=0
+                hour=end_hour, minute=minute, second=second
             )
         elif default_time == "endofday":
             return date_time.endOfDay()
@@ -2175,4 +1799,6 @@ class Task(
             class_.prerequisitesChangedEventType(),
             class_.dependenciesChangedEventType(),
             class_.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType(),
+            class_.plannedDurationChangedEventType(),
+            class_.plannedDurationModeChangedEventType(),
         ]

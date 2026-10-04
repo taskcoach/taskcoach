@@ -20,87 +20,70 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import test
+import uuid
 import weakref
 from taskcoachlib import patterns
 from taskcoachlib.domain import base, date
 
 
-class SynchronizedObjectTest(test.TestCase):
+class AttributeOwner:
+    def __init__(self):
+        self.changes = 0
+        self.modification_datetime = date.DateTime.min
+        self.attribute = base.Attribute("old", self, self.on_change)
+        self.computed_attribute = base.Attribute(
+            "old", self, self.on_change, volatile=True
+        )
+
+    def on_change(self, event):
+        self.changes += 1
+
+    def modified_now(self, event=None):
+        self.modification_datetime = date.Now()
+
+
+class AttributeTest(test.TestCase):
+    """An unchanged value creates no event: the master loop sets
+    thousands of them."""
+
     def setUp(self):
-        self.object = base.SynchronizedObject()
-        self.events = []
+        self.owner = AttributeOwner()
+        self.events_created = 0
+        self.original_event_class = patterns.observer.Event
+        test_case = self
 
-    def onEvent(self, event):
-        self.events.append(event)
+        class CountingEvent(self.original_event_class):
+            def __init__(self, *args, **kwargs):
+                test_case.events_created += 1
+                super().__init__(*args, **kwargs)
 
-    def registerObserver(self, eventType):  # pylint: disable=W0221
-        patterns.Publisher().registerObserver(self.onEvent, eventType)
+        patterns.observer.Event = CountingEvent
 
-    def assertObjectStatus(self, expectedStatus):
-        self.assertEqual(expectedStatus, self.object.getStatus())
+    def tearDown(self):
+        patterns.observer.Event = self.original_event_class
+        super().tearDown()
 
-    def assertOneEventReceived(self, eventSource, eventType, *values):
-        self.assertEqual(
-            [patterns.Event(eventType, eventSource, *values)], self.events
-        )
+    def test_unchanged_value_creates_no_event(self):
+        self.assertFalse(self.owner.attribute.set("old"))
+        self.assertEqual((0, 0), (self.events_created, self.owner.changes))
 
-    def testInitialStatus(self):
-        self.assertObjectStatus(base.SynchronizedObject.STATUS_NEW)
+    def test_changed_value_calls_back_with_one_event(self):
+        self.assertTrue(self.owner.attribute.set("new"))
+        self.assertEqual("new", self.owner.attribute.get())
+        self.assertEqual((1, 1), (self.events_created, self.owner.changes))
 
-    def testMarkDeleted(self):
-        self.object.markDeleted()
-        self.assertObjectStatus(base.SynchronizedObject.STATUS_DELETED)
+    def test_changed_value_sets_the_modification_date(self):
+        before = date.Now()
+        self.owner.attribute.set("new")
+        self.assertTrue(before <= self.owner.modification_datetime)
 
-    def testMarkDeletedNotification(self):
-        self.registerObserver(self.object.markDeletedEventType())
-        self.object.markDeleted()
-        self.assertOneEventReceived(
-            self.object,
-            self.object.markDeletedEventType(),
-            self.object.getStatus(),
-        )
+    def test_unchanged_value_keeps_the_modification_date(self):
+        self.owner.attribute.set("old")
+        self.assertEqual(date.DateTime.min, self.owner.modification_datetime)
 
-    def testMarkNewObjectAsNotDeleted(self):
-        self.object.cleanDirty()
-        self.assertObjectStatus(base.SynchronizedObject.STATUS_NONE)
-
-    def testMarkDeletedObjectAsUndeleted(self):
-        self.object.markDeleted()
-        self.object.cleanDirty()
-        self.assertObjectStatus(base.SynchronizedObject.STATUS_NONE)
-
-    def testMarkNotDeletedNotification(self):
-        self.object.markDeleted()
-        self.registerObserver(self.object.markNotDeletedEventType())
-        self.object.cleanDirty()
-        self.assertOneEventReceived(
-            self.object,
-            self.object.markNotDeletedEventType(),
-            self.object.getStatus(),
-        )
-
-    def testSetStateToDeletedCausesNotification(self):
-        self.object.markDeleted()
-        state = self.object.__getstate__()
-        self.object.cleanDirty()
-        self.registerObserver(self.object.markDeletedEventType())
-        self.object.__setstate__(state)
-        self.assertOneEventReceived(
-            self.object,
-            self.object.markDeletedEventType(),
-            self.object.STATUS_DELETED,
-        )
-
-    def testSetStateToNotDeletedCausesNotification(self):
-        state = self.object.__getstate__()
-        self.object.markDeleted()
-        self.registerObserver(self.object.markNotDeletedEventType())
-        self.object.__setstate__(state)
-        self.assertOneEventReceived(
-            self.object,
-            self.object.markNotDeletedEventType(),
-            self.object.STATUS_NEW,
-        )
+    def test_computed_value_keeps_the_modification_date(self):
+        self.owner.computed_attribute.set("new")
+        self.assertEqual(date.DateTime.min, self.owner.modification_datetime)
 
 
 class ObjectSubclass(base.Object):
@@ -108,6 +91,20 @@ class ObjectSubclass(base.Object):
 
 
 class ObjectTest(test.TestCase):
+
+    def test_a_subject_is_one_line_of_text(self):
+        # docs/ATTRIBUTE_PATTERN.md, Text
+        item = base.Object(subject="a\tb\r\nc\x00d")
+        self.assertEqual("a b cd", item.subject())
+        item.setSubject("e\nf\x0c")
+        self.assertEqual("e f", item.subject())
+
+    def test_a_description_keeps_tabs_and_line_breaks(self):
+        item = base.Object(description="a\tb\r\nc\x00d\x85\ud800")
+        self.assertEqual("a\tb\r\ncd", item.description())
+        item.setDescription("e\x0cf\ufffe")
+        self.assertEqual("ef", item.description())
+
     def setUp(self):
         self.object = base.Object()
         self.subclassObject = ObjectSubclass()
@@ -150,6 +147,9 @@ class ObjectTest(test.TestCase):
     def testIdIsAString(self):
         self.assertEqual(type(""), type(self.object.id()))
 
+    def test_a_new_id_is_a_random_uuid(self):
+        self.assertEqual(4, uuid.UUID(self.object.id()).version)
+
     def testDifferentObjectsHaveDifferentIds(self):
         self.assertNotEqual(base.Object().id(), self.object.id())
 
@@ -170,6 +170,7 @@ class ObjectTest(test.TestCase):
         creation_datetime = self.object.creationDateTime()
         minute = date.TimeDelta(seconds=60)
         self.assertTrue(now - minute < creation_datetime < now + minute)
+        self.assertIsInstance(creation_datetime, date.Timestamp)
 
     # Modification date/time tests:
 
@@ -180,8 +181,37 @@ class ObjectTest(test.TestCase):
             modification_datetime, domain_object.modificationDateTime()
         )
 
-    def testModificationDateTimeIsNotSetWhenNotPassed(self):
-        self.assertEqual(date.DateTime.min, self.object.modificationDateTime())
+    def test_modification_date_starts_at_creation(self):
+        self.assertEqual(
+            self.object.creationDateTime(), self.object.modificationDateTime()
+        )
+
+    def test_stored_field_change_sets_the_modification_date(self):
+        event_type = self.object.modification_datetime_changed_event_type()
+        patterns.Publisher().registerObserver(
+            self.onEvent, event_type, eventSource=self.object
+        )
+        before = date.Now()
+        self.object.setSubject("New subject")
+        modification_datetime = self.object.modificationDateTime()
+        self.assertIsInstance(modification_datetime, date.Timestamp)
+        self.assertTrue(before <= modification_datetime)
+        self.assertEqual(
+            [modification_datetime],
+            [
+                event.value(self.object, event_type)
+                for event in self.eventsReceived
+                if event_type in event.types()
+            ],
+        )
+
+    def test_computed_style_keeps_the_modification_date(self):
+        self.object.setDerivedFgColor(wx.RED, "category")
+        self.object.setEffectiveFgColor(wx.RED, wx.BLACK, "category")
+        self.assertEqual(wx.RED, self.object.effectiveFgColor())
+        self.assertEqual(
+            self.object.creationDateTime(), self.object.modificationDateTime()
+        )
 
     # Subject tests:
 
@@ -247,63 +277,6 @@ class ObjectTest(test.TestCase):
         self.subclassObject.setDescription("New")
         self.assertFalse(self.eventsReceived)
 
-    # State tests:
-
-    def testGetState(self):
-        self.assertEqual(
-            dict(
-                subject="",
-                description="",
-                id=self.object.id(),
-                status=self.object.getStatus(),
-                fgColor=None,
-                bgColor=None,
-                font=None,
-                icon="",
-                selectedIcon="",
-                creationDateTime=self.object.creationDateTime(),
-                modificationDateTime=self.object.modificationDateTime(),
-                ordering=self.object.ordering(),
-            ),
-            self.object.__getstate__(),
-        )
-
-    def testSetState(self):
-        newState = dict(
-            subject="New",
-            description="New",
-            id=None,
-            status=self.object.STATUS_DELETED,
-            fgColor=wx.GREEN,
-            bgColor=wx.RED,
-            font=wx.SWISS_FONT,
-            icon="icon",
-            selectedIcon="selectedIcon",
-            creationDateTime=date.DateTime(2012, 12, 12, 12, 0, 0),
-            modificationDateTime=date.DateTime(2012, 12, 12, 12, 1, 0),
-            ordering=42,
-        )
-        self.object.__setstate__(newState)
-        self.assertEqual(newState, self.object.__getstate__())
-
-    def testSetState_SendsOneNotification(self):
-        newState = dict(
-            subject="New",
-            description="New",
-            id=None,
-            status=self.object.STATUS_DELETED,
-            fgColor=wx.GREEN,
-            bgColor=wx.RED,
-            font=wx.SWISS_FONT,
-            icon="icon",
-            selectedIcon="selectedIcon",
-            creationDateTime=date.DateTime(2013, 1, 1, 0, 0, 0),
-            modificationDateTime=date.DateTime(2013, 1, 1, 1, 0, 0),
-            ordering=42,
-        )
-        self.object.__setstate__(newState)
-        self.assertEqual(1, len(self.eventsReceived))
-
     # Copy tests:
 
     def testCopy_IdIsNotCopied(self):
@@ -318,9 +291,11 @@ class ObjectTest(test.TestCase):
         )
 
     def testCopy_ModificationDateTimeIsNotCopied(self):
-        self.object.setModificationDateTime(date.DateTime(2013, 1, 1, 1, 0, 0))
+        self.object.set_modification_datetime(
+            date.DateTime(2013, 1, 1, 1, 0, 0)
+        )
         copy = self.object.copy()
-        self.assertEqual(date.DateTime.min, copy.modificationDateTime())
+        self.assertEqual(copy.creationDateTime(), copy.modificationDateTime())
 
     def testCopy_SubjectIsCopied(self):
         self.object.setSubject("New subject")
@@ -430,25 +405,6 @@ class ObjectTest(test.TestCase):
         self.object.set_icon_id("icon")
         self.assertEqual(1, len(self.eventsReceived))
 
-    def testDefaultSelectedIcon(self):
-        self.assertEqual("", self.object.selected_icon_id())
-
-    def testSetSelectedIcon(self):
-        self.object.set_selected_icon_id("selected")
-        self.assertEqual("selected", self.object.selected_icon_id())
-
-    def testSelectedIconAfterSettingRegularIconOnly(self):
-        self.object.set_icon_id("icon")
-        self.assertEqual("", self.object.selected_icon_id())
-
-    def testSetSelectedIconOnCreation(self):
-        domainObject = base.Object(selectedIcon="icon")
-        self.assertEqual("icon", domainObject.selected_icon_id())
-
-    def testSelectedIconChangedNotification(self):
-        self.object.set_selected_icon_id("icon")
-        self.assertEqual(1, len(self.eventsReceived))
-
     # Event types:
 
     def testModificationEventTypes(self):
@@ -475,7 +431,7 @@ class CompositeObjectTest(test.TestCase):
     def addChild(self, **kwargs):
         self.child = base.CompositeObject(**kwargs)
         self.compositeObject.addChild(self.child)
-        self.child.setParent(self.compositeObject)
+        self.child.set_parent(self.compositeObject)
 
     def removeChild(self):
         self.compositeObject.removeChild(self.child)
@@ -543,217 +499,21 @@ class CompositeObjectTest(test.TestCase):
             self.eventsReceived,
         )
 
-    def testSubItemUsesParentForegroundColor(self):
-        self.addChild()
-        self.compositeObject.setForegroundColor(wx.RED)
-        self.assertEqual(wx.RED, self.child.foregroundColor(recursive=True))
-
-    def testSubItemDoesNotUseParentForegroundColorIfItHasItsOwnForegroundColor(
-        self,
-    ):
-        self.addChild(fgColor=wx.RED)
-        self.compositeObject.setForegroundColor(wx.BLUE)
-        self.assertEqual(wx.RED, self.child.foregroundColor(recursive=True))
-
-    def testApperanceChangedNotificationWhenForegroundColorChanges(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.appearanceChangedEventType(),
-            eventSource=self.child,
-        )
-        self.compositeObject.setForegroundColor(wx.RED)
-        self.assertEqual(1, len(self.eventsReceived))
-
-    def testSubItemUsesParentBackgroundColor(self):
-        self.addChild()
-        self.compositeObject.setBackgroundColor(wx.RED)
-        self.assertEqual(wx.RED, self.child.backgroundColor(recursive=True))
-
-    def testSubItemDoesNotUseParentBackgroundColorIfItHasItsOwnBackgroundColor(
-        self,
-    ):
-        self.addChild(bgColor=wx.RED)
-        self.compositeObject.setBackgroundColor(wx.BLUE)
-        self.assertEqual(wx.RED, self.child.backgroundColor(recursive=True))
-
-    def testBackgroundColorChangedNotification(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.appearanceChangedEventType(),
-            eventSource=self.child,
-        )
-        self.compositeObject.setBackgroundColor(wx.RED)
-        self.assertEqual(1, len(self.eventsReceived))
-
-    def testSubItemUsesParentFont(self):
-        self.addChild()
-        self.compositeObject.setFont(wx.ITALIC_FONT)
-        self.assertEqual(wx.ITALIC_FONT, self.child.font(recursive=True))
-
-    def testSubItemDoesNotUseParentFontIfItHasItsOwnFont(self):
-        self.addChild(font=wx.SWISS_FONT)
-        self.compositeObject.setFont(wx.ITALIC_FONT)
-        self.assertEqual(wx.SWISS_FONT, self.child.font(recursive=True))
-
-    def testFontChangedNotification(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.appearanceChangedEventType(),
-            eventSource=self.child,
-        )
-        self.compositeObject.setFont(wx.SWISS_FONT)
-        self.assertEqual(1, len(self.eventsReceived))
-
-    def testSubItemUsesParentIcon(self):
-        self.addChild()
-        self.compositeObject.set_icon_id("icon")
-        self.assertEqual("icon", self.child.icon_id(recursive=True))
-
-    def testSubItemDoesNotUseParentIconIfItHasItsOwnIcon(self):
-        self.addChild(icon="childIcon")
-        self.compositeObject.set_icon_id("icon")
-        self.assertEqual("childIcon", self.child.icon_id(recursive=True))
-
-    def testIconChangedNotification(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.appearanceChangedEventType(),
-            eventSource=self.child,
-        )
-        self.compositeObject.set_icon_id("icon")
-        self.assertEqual(1, len(self.eventsReceived))
-
-    def testSubItemUsesParentSelectedIcon(self):
-        self.addChild()
-        self.compositeObject.set_selected_icon_id("icon")
-        self.assertEqual("icon", self.child.selected_icon_id(recursive=True))
-
-    def testSubItemDoesNotUseParentSelectedIconIfItHasItsOwnSelectedIcon(self):
-        self.addChild(selectedIcon="childIcon")
-        self.compositeObject.set_selected_icon_id("icon")
-        self.assertEqual(
-            "childIcon", self.child.selected_icon_id(recursive=True)
-        )
-
-    def testSubItemUsesParentSelectedIconEvenIfItHasItsOwnIcon(self):
-        self.addChild(icon="childIcon")
-        self.compositeObject.set_selected_icon_id("icon")
-        self.assertEqual("icon", self.child.selected_icon_id(recursive=True))
-
-    def testSelectedIconChangedNotification(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.appearanceChangedEventType(),
-            eventSource=self.child,
-        )
-        self.compositeObject.set_selected_icon_id("icon")
-        self.assertEqual(1, len(self.eventsReceived))
-
-    def testCompositeWithChildrenUsesPluralIconIfAvailable(self):
+    def test_icon_is_shown_as_is_with_or_without_children(self):
+        # Plural icons are deprecated: a group shows its own icon
         self.compositeObject.set_icon_id("nuvola_actions_ledblue")
-        self.assertEqual(
-            "nuvola_actions_ledblue",
-            self.compositeObject.icon_id(recursive=True),
-        )
+        shown = [self.compositeObject.shown_icon_id()]
         self.addChild()
-        self.assertEqual(
-            "nuvola_mimetypes_inode-directory",
-            self.compositeObject.icon_id(recursive=True),
-        )
-        self.assertEqual(
-            "nuvola_actions_ledblue",
-            self.compositeObject.icon_id(recursive=False),
-        )
+        shown.append(self.compositeObject.shown_icon_id())
+        self.removeChild()
+        shown.append(self.compositeObject.shown_icon_id())
+        self.assertEqual(["nuvola_actions_ledblue"] * 3, shown)
 
-    def testCompositeWithChildrenUsesPluralSelectedIconIfAvailable(self):
-        self.compositeObject.set_selected_icon_id("nuvola_actions_ledblue")
-        self.assertEqual(
-            "nuvola_actions_ledblue",
-            self.compositeObject.selected_icon_id(recursive=True),
-        )
-        self.addChild()
-        self.assertEqual(
-            "nuvola_mimetypes_inode-directory",
-            self.compositeObject.selected_icon_id(recursive=True),
-        )
-        self.assertEqual(
-            "nuvola_actions_ledblue",
-            self.compositeObject.selected_icon_id(recursive=False),
-        )
-
-    def testCompositeWithoutChildrenDoesNotUseSingularIconIfAvailable(self):
+    def test_a_folder_icon_stays_a_folder(self):
         self.compositeObject.set_icon_id("nuvola_mimetypes_inode-directory")
         self.assertEqual(
             "nuvola_mimetypes_inode-directory",
-            self.compositeObject.icon_id(recursive=False),
-        )
-        self.assertEqual(
-            "nuvola_mimetypes_inode-directory",
-            self.compositeObject.icon_id(recursive=True),
-        )
-
-    def testCompositeWithoutChildrenDoesNotUseSingularSelectedIconIfAvailable(
-        self,
-    ):
-        self.compositeObject.set_selected_icon_id(
-            "nuvola_mimetypes_inode-directory"
-        )
-        self.assertEqual(
-            "nuvola_mimetypes_inode-directory",
-            self.compositeObject.selected_icon_id(recursive=False),
-        )
-        self.assertEqual(
-            "nuvola_mimetypes_inode-directory",
-            self.compositeObject.selected_icon_id(recursive=True),
-        )
-
-    def testChildOfCompositeUsesSingularIconIfAvailable(self):
-        self.compositeObject.set_icon_id("nuvola_mimetypes_inode-directory")
-        self.addChild()
-        self.assertEqual(
-            "nuvola_actions_ledblue",
-            self.child.icon_id(recursive=True),
-        )
-
-    def testChildOfCompositeUsesSingularSelectedIconIfAvailable(self):
-        self.compositeObject.set_selected_icon_id(
-            "nuvola_mimetypes_inode-directory"
-        )
-        self.addChild()
-        self.assertEqual(
-            "nuvola_actions_ledblue",
-            self.child.selected_icon_id(recursive=True),
-        )
-
-    def testParentUsesSingularIconAfterChildRemoved(self):
-        self.compositeObject.set_icon_id("nuvola_actions_ledblue")
-        self.addChild()
-        self.assertEqual(
-            "nuvola_mimetypes_inode-directory",
-            self.compositeObject.icon_id(recursive=True),
-        )
-        self.removeChild()
-        self.assertEqual(
-            "nuvola_actions_ledblue",
-            self.compositeObject.icon_id(recursive=True),
-        )
-
-    def testParentUsesSingularSelectedIconAfterChildRemoved(self):
-        self.compositeObject.set_selected_icon_id("nuvola_actions_ledblue")
-        self.addChild()
-        self.assertEqual(
-            "nuvola_mimetypes_inode-directory",
-            self.compositeObject.selected_icon_id(recursive=True),
-        )
-        self.removeChild()
-        self.assertEqual(
-            "nuvola_actions_ledblue",
-            self.compositeObject.selected_icon_id(recursive=True),
+            self.compositeObject.shown_icon_id(),
         )
 
     def testCopy(self):
@@ -765,72 +525,6 @@ class CompositeObjectTest(test.TestCase):
         )
         self.compositeObject.expand(context="another_viewer")
         self.assertFalse("another_viewer" in copy.expandedContexts())
-
-    def testMarkDeleted(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent, eventType=base.CompositeObject.markDeletedEventType()
-        )
-        self.compositeObject.markDeleted()
-        expectedEvent = patterns.Event(
-            base.CompositeObject.markDeletedEventType(),
-            self.compositeObject,
-            base.CompositeObject.STATUS_DELETED,
-        )
-        expectedEvent.addSource(
-            self.child, base.CompositeObject.STATUS_DELETED
-        )
-        self.assertEqual([expectedEvent], self.eventsReceived)
-
-    def testMarkDirty(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.markNotDeletedEventType(),
-        )
-        self.compositeObject.markDeleted()
-        self.compositeObject.markDirty(force=True)
-        expectedEvent = patterns.Event(
-            base.CompositeObject.markNotDeletedEventType(),
-            self.compositeObject,
-            base.CompositeObject.STATUS_CHANGED,
-        )
-        expectedEvent.addSource(
-            self.child, base.CompositeObject.STATUS_CHANGED
-        )
-        self.assertEqual([expectedEvent], self.eventsReceived)
-
-    def testMarkNew(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.markNotDeletedEventType(),
-        )
-        self.compositeObject.markDeleted()
-        self.compositeObject.markNew()
-        expectedEvent = patterns.Event(
-            base.CompositeObject.markNotDeletedEventType(),
-            self.compositeObject,
-            base.CompositeObject.STATUS_NEW,
-        )
-        expectedEvent.addSource(self.child, base.CompositeObject.STATUS_NEW)
-        self.assertEqual([expectedEvent], self.eventsReceived)
-
-    def testCleanDirty(self):
-        self.addChild()
-        patterns.Publisher().registerObserver(
-            self.onEvent,
-            eventType=base.CompositeObject.markNotDeletedEventType(),
-        )
-        self.compositeObject.markDeleted()
-        self.compositeObject.cleanDirty()
-        expectedEvent = patterns.Event(
-            base.CompositeObject.markNotDeletedEventType(),
-            self.compositeObject,
-            base.CompositeObject.STATUS_NONE,
-        )
-        expectedEvent.addSource(self.child, base.CompositeObject.STATUS_NONE)
-        self.assertEqual([expectedEvent], self.eventsReceived)
 
     def testModificationEventTypes(self):
         self.assertEqual(

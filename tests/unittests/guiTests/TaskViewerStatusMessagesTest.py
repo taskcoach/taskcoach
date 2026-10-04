@@ -39,7 +39,6 @@ class DummyViewer(object):
 class TaskViewerStatusMessagesTest(test.TestCase):
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
         self.taskList = task.filter.ViewFilter(task.TaskList())
         self.task = task.Task("Task")
         self.viewer = DummyViewer(self.taskList)
@@ -66,38 +65,38 @@ class TaskViewerStatusMessagesTest(test.TestCase):
         self.assertEqual((message1, message2), self.status())
 
     def addActiveTask(self):
-        self.task.setActualStartDateTime(date.Now())
+        self.task.set_actual_start_date_time(date.Now())
         self.taskList.append(self.task)
 
     def addOverdueTask(self):
-        self.task.setDueDateTime(date.Now() - date.ONE_HOUR)
+        self.task.set_due_date_time(date.Now() - date.ONE_HOUR)
         self.taskList.append(self.task)
 
     def addInactiveTask(self):
         self.taskList.append(self.task)
 
     def addCompletedTask(self):
-        self.task.setCompletionDateTime(date.Now())
+        self.task.set_completion_date_time(date.Now())
         self.taskList.append(self.task)
 
     def addLateTask(self):
-        self.task.setPlannedStartDateTime(date.Yesterday())
+        self.task.set_planned_start_date_time(date.Yesterday())
         self.taskList.append(self.task)
 
     def removeTask(self):
         self.taskList.remove(self.task)
 
     def markTaskCompleted(self):
-        self.task.setCompletionDateTime(date.Now())
+        self.task.set_completion_date_time(date.Now())
 
     def markTaskUncompleted(self):
-        self.task.setCompletionDateTime(date.DateTime())
+        self.task.set_completion_date_time(date.DateTime())
 
     def makeTaskActive(self):
-        self.task.setActualStartDateTime(date.Now())
+        self.task.set_actual_start_date_time(date.Now())
 
     def makeTaskInactive(self):
-        self.task.setActualStartDateTime(date.DateTime())
+        self.task.set_actual_start_date_time(date.DateTime())
 
     def selectTask(self):
         self.viewer._selection = [self.task]

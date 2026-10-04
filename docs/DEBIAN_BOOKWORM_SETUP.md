@@ -24,7 +24,7 @@ That's it! The .deb package handles all dependencies and the wxPython patch auto
 ### What the .deb Package Includes
 
 - All Python dependencies from Debian repositories
-- Bundled wxPython patch for category row coloring (see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md))
+- Bundled copy of wxPython's tree widget, for category row colouring among others (see [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md))
 - Desktop integration (application menu entry, file associations)
 - Man page
 
@@ -63,11 +63,10 @@ For more details on the packaging system, see [PACKAGING.md](PACKAGING.md).
 
 This section is for developers who want to work on TaskCoach code. If you just want to use TaskCoach, install the .deb package above.
 
-### ⚠️ IMPORTANT: wxPython Patch Required
-
-Debian Bookworm ships wxPython 4.2.0, which has critical bugs affecting category row background coloring. When running from source, the patch is applied automatically via the import hook.
-
-**For complete details, see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)**
+Task Coach carries its own copy of wxPython's tree widget, loaded in
+place of the installed one
+([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)); nothing
+to install.
 
 ### System Requirements
 
@@ -135,20 +134,17 @@ sudo apt-get update
 # Install wxPython and available Python packages from Debian repos
 sudo apt-get install -y \
     python3-wxgtk4.0 \
-    python3-six \
-    python3-lxml \
-    python3-numpy \
     python3-dateutil \
     python3-chardet \
     python3-keyring \
-    python3-pyparsing \
-    python3-pyxdg \
+    python3-enchant \
     python3-venv
 ```
 
 #### Step 2: Create Virtual Environment
 
-For packages not available in Debian repos or with version requirements:
+Every dependency comes from the Debian repositories; the virtual
+environment only runs Task Coach with them:
 
 ```bash
 cd /path/to/taskcoach
@@ -156,17 +152,9 @@ cd /path/to/taskcoach
 # Create virtual environment with access to system packages
 python3 -m venv --system-site-packages .venv
 
-# Activate it
-source .venv/bin/activate
-
-# Install remaining dependencies
-pip install distro pypubsub 'pyparsing>=3.1.3' 'watchdog>=3.0.0'
-
-# Deactivate when done
-deactivate
 ```
 
-**Note**: The `--system-site-packages` flag allows the virtual environment to access system-installed packages (like wxPython, lxml, numpy) while keeping pip-installed packages isolated.
+**Note**: The `--system-site-packages` flag allows the virtual environment to access system-installed packages (like wxPython) while keeping pip-installed packages isolated.
 
 #### Step 3: Run TaskCoach
 
@@ -264,13 +252,12 @@ python3 --version  # Should be 3.11.x
 ### Check System Packages
 ```bash
 dpkg -l | grep python3-wx
-dpkg -l | grep python3-lxml
 ```
 
-### Verbose Logging
-```bash
-./taskcoach-run.sh --verbose
-```
+### Logging
+
+Run from a terminal: the log goes to its output
+([LOGGING_GUIDE.md](LOGGING_GUIDE.md)).
 
 ---
 
@@ -278,22 +265,14 @@ dpkg -l | grep python3-lxml
 
 ### From Debian Repositories (apt):
 - ✅ python3-wxgtk4.0 (4.2.0)
-- ✅ python3-six (1.16.0)
-- ✅ python3-lxml (4.9.2)
-- ✅ python3-numpy (1.24.2)
 - ✅ python3-dateutil (2.8.2)
 - ✅ python3-chardet (5.1.0)
 - ✅ python3-keyring (23.13.1)
-- ⚠️ python3-pyparsing (3.0.9) - **Note: requires 3.1.3+, install via pip**
-- ✅ python3-pyxdg (0.28)
+- ✅ python3-enchant (spell checking)
 - ✅ python3-squaremap
 
 ### From PyPI (pip in venv, for development):
-- 📦
-- 📦 distro
-- 📦 pypubsub
-- 📦 pyparsing>=3.1.3 (Bookworm's 3.0.9 is too old)
-- 📦 watchdog>=3.0.0 (Bookworm's 2.2.1 is too old)
+- none
 
 ---
 
@@ -306,7 +285,7 @@ dpkg -l | grep python3-lxml
 ## Related Documentation
 
 - [PACKAGING.md](PACKAGING.md) - Debian packaging details and build process
-- [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md) - wxPython patch information
+- [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md) - Task Coach's copy of wxPython's tree widget
 
 ## Compatibility Notes
 

@@ -18,12 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import test
 from taskcoachlib.domain import task, date
-from taskcoachlib import config
 
 
 class TaskStatusTest(test.TestCase):
     def setUp(self):
-        self.settings = task.Task.settings = config.Settings(load=False)
         self.now = date.Now()
         self.yesterday = self.now - date.ONE_DAY
         self.nearFuture = self.now + date.ONE_DAY - date.ONE_HOUR
@@ -31,7 +29,7 @@ class TaskStatusTest(test.TestCase):
         self.farFuture = self.now + date.ONE_DAY + date.ONE_DAY
 
     def assertTaskStatus(self, status, **taskKwArgs):
-        self.assertEqual(status, task.Task(**taskKwArgs).status())
+        self.assertEqual(status, task.Task(**taskKwArgs).computedStatus())
 
     # No dates/times
 
@@ -397,6 +395,6 @@ class TaskStatusTest(test.TestCase):
     def testMutualPrerequisites(self):
         taskA = task.Task()
         taskB = task.Task(prerequisites=[taskA])
-        taskA.addPrerequisites([taskB])
+        taskA.add_prerequisites([taskB])
         for eachTask in (taskA, taskB):
-            self.assertEqual(task.status.inactive, eachTask.status())
+            self.assertEqual(task.status.inactive, eachTask.computedStatus())

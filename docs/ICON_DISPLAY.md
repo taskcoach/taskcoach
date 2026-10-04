@@ -56,32 +56,16 @@ How icons are rendered in viewer columns.
    Moved `gui.init()` before `MainWindow` import in `application.py` so
    the icon catalog is populated before any widget module grabs the
    reference. `help/tips.py` was already safe (deferred via `CallAfter`).
-   `changes/sync.py`, `widgets/searchctrl.py`, `widgets/notebook.py` only
-   call `get_bitmap()` inside methods, never at import time.
+   `changes/sync.py` (removed 2026-09-27), `widgets/searchctrl.py`,
+   `widgets/notebook.py` only call `get_bitmap()` inside methods, never at
+   import time.
 
-7. **Remove open/close (selected) icon logic.** The `selectedIcon` system
-   provides alternate icons for expanded tree nodes (e.g. `folder_red_open_icon`
-   for an expanded `folder_red_icon`). This should be removed entirely.
-   Anchor points to review:
-   - **Domain layer:** `object.py` — `selected_icon_id()`, `set_selected_icon_id()`,
-     `__selected_icon_id` attribute, `__getstate__`/`__setstate__`/`__getcopystate__`
-     serialization keys. `categorizable.py` — `selected_icon_id()`,
-     `category_selected_icon_id()`. `task.py` — `selected_icon_id()`,
-     `__recursive_selected_icon_id`, `__compute_recursive_selected_icon_id()`.
-   - **Command:** `command/base.py` `EditIconCommand` — auto-generates
-     `_open_icon` suffix from folder icons (lines 610-613), stores/restores
-     `__new_selected_icon_id` and `__old_icon_ids` tuples.
-   - **Viewer:** `viewer/base.py` `subjectImageIndices()` — reads both
-     `item.icon_id()` and `item.selected_icon_id()`, maps to
-     `wx.TreeItemIcon_Normal` / `wx.TreeItemIcon_Expanded`.
-   - **Calendar:** `calendarwidget.py` — `get_selected_or_normal_icon_id`
-     callback (reference to `get_icon_id` in `viewer/task.py`) selects between
-     `icon_id()` and `selected_icon_id()` based on `isSelected` flag. Currently
-     always called with `False`, so `selected_icon_id` is never used here.
-   - **Serialization:** `writer.py` writes `selectedIcon` XML attribute,
-     `reader.py` reads it back. XML format change required.
-   - **Icon picker:** `entry.py` `IconEntry` — only sets `icon_id`, not
-     `selected_icon_id` (the auto-generation in `EditIconCommand` handles it).
+7. ~~**Remove open/close (selected) icon logic.**~~ **Done** (2026-09-28,
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md), To Do 35).
+   One icon, expanded or not: the domain field, `EditIconCommand`'s
+   `_open_icon` variant, the trees' expanded image, the calendar's icon
+   callback and the XML attribute are removed; `selectedIcon` in old
+   files is read and dropped.
 
 8. ~~**Rename `wx.Icon` variables to `wx_icon`.**~~ **Done.** Variables named
    `icon` holding `wx.Icon` objects renamed to `wx_icon`; variables holding
@@ -215,7 +199,7 @@ Registry — store, retrieve, load themes, resolve duplicates.
 | `.get_wx_icon(icon_id, size)` | method | `wx.Icon or NullIcon` — get_icon + get_wx_icon + fallback |
 | `.get_icon_bundle(icon_id)` | method | `IconBundle` — convenience: get_icon + get_icon_bundle, empty bundle if not found |
 | `.get_path(icon_id, size)` | method | `str or None` — convenience: get_icon + path |
-| `.viewer_icon_ids()` | method | `list[str]` — icon IDs for viewer image lists (non-synthetic; future: only in-use data icons) |
+| `.viewer_icon_ids()` | method | `list[str]`: icon IDs for the icon picker (non-synthetic) |
 | `.normalize_icon_id(icon_id)` | method | `str` — resolve deprecated then duplicate, logs each, returns id unchanged if no match |
 | `._load_all_themes()` | method | File-based themes from icons_parsed.py + synthetic icons |
 | `._load_synthetic_icons()` | method | Create synthetic `Icon` + `SyntheticIconGenerator` instances from `get_icon_defs()` |
@@ -309,7 +293,7 @@ image_list_cache.init()
 ### Caller patterns
 
 ```python
-# In viewer createWidget — borrow the shared list:
+# In viewer create_widget — borrow the shared list:
 widget.SetImageList(image_list_cache.image_list)              # tree viewers
 widget.SetImageList(image_list_cache.image_list, image_list_cache.size)  # list viewers
 
@@ -333,9 +317,13 @@ the same way for all icons.
 ### Callers
 
 - **Status filter overlays** (`synthetic_hide_*`): `taskcoachlib/gui/uicommand/uicommand.py:1423` —
-  toolbar buttons for hiding tasks by status, icon constructed as `"synthetic_hide_%s" % statusString`
+  toolbar buttons for hiding tasks by status, icon constructed as `"synthetic_hide_%s" % status_string`
 - **DnD cursors** (`synthetic_dnd_cursor_*`): `taskcoachlib/widgets/draganddrop.py:29,35` —
   `_getLinkCursor()` and `_getHomeCursor()` call `get_cursor()` from `synthetic_icon_generator.py`
+- **Not-allowed cursor** (`synthetic_cursor_not_allowed`): `not_allowed_cursor()` in
+  `taskcoachlib/widgets/draganddrop.py`, for a refused drop and for a column border that cannot
+  be dragged (`widgets/autowidth.py`, the bundled `hypertreelist.py` header). wx's no-entry
+  cursor is X's skull wherever the cursor theme has no picture for it
 - **Routing table SSOT**: `taskcoachlib/gui/icons/synthetic_icon_generator.py:23-33`
 - **Icon registration**: `taskcoachlib/gui/icons/icon_library.py` `_load_synthetic_icons()` — creates `Icon` +
   `SyntheticIconGenerator` instances from `get_icon_defs()`
@@ -384,6 +372,7 @@ Each entry is `{icon_id: {"method": method_name, ...}}` with method-specific key
 |---------|--------|-----|-------|
 | `synthetic_dnd_cursor_home` | `_dnd_cursor_overlay` | `icon_id` | `nuvola_places_user-home` |
 | `synthetic_dnd_cursor_link` | `_dnd_cursor_overlay` | `icon_id` | `taskcoach_actions_link_icon` |
+| `synthetic_cursor_not_allowed` | `_dnd_cursor_overlay` | `icon_id` | `noto-emoji_symbols_u1f6ab` |
 | `synthetic_hide_active` | `_status_filter_overlay` | `option_id` | `activetasks` |
 | `synthetic_hide_completed` | `_status_filter_overlay` | `option_id` | `completedtasks` |
 | `synthetic_hide_duesoon` | `_status_filter_overlay` | `option_id` | `duesoontasks` |
@@ -440,7 +429,7 @@ callers that require a valid bitmap.
 themes. If it fails, a `CRITICAL` log message is emitted — the icon system
 itself is broken.
 
-**Recursion guard:** `_get_fallback_bitmap()` checks if the failing icon IS the
+**Recursion guard:** `_fallback_bitmap()` checks if the failing icon IS the
 fallback icon. If so, it returns NullBitmap to avoid infinite recursion.
 
 ---
@@ -456,7 +445,7 @@ See [SYSTEM_TRAY.md — Platform Detection Flow](SYSTEM_TRAY.md#platform-detecti
 - Column class (single + multi image): `taskcoachlib/widgets/itemctrl.py`
 - Viewer adapter: `taskcoachlib/gui/viewer/base.py`
 - Tree refresh: `taskcoachlib/widgets/treectrl.py` (`_refreshImage`)
-- HyperTreeList storage + painting: `patches/wxpython/hypertreelist.py`
+- HyperTreeList storage + painting: `taskcoachlib/patches/hypertreelist.py`
 - Category icons column + callback: `taskcoachlib/gui/viewer/task.py`
 - Synthetic icon composition + cache: `taskcoachlib/gui/icons/synthetic_icon_generator.py`
 - Icon catalog + init + fallback: `taskcoachlib/gui/icons/icon_library.py`

@@ -5,6 +5,7 @@
 - [TODO](#todo)
 - [Overview](#overview)
 - [SSOT Architecture](#ssot-architecture)
+- [What the Views Draw](#what-the-views-draw)
 - [Field Types](#field-types)
 - [Derivation Sources by Object Type](#derivation-sources-by-object-type)
   - [Task](#task)
@@ -14,14 +15,14 @@
   - [Effort](#effort)
 - [Category Style Priority](#category-style-priority)
 - [Default Icons](#default-icons)
-- [ComputeStyles Polling](#computestyles-polling)
+- [The Master Loop](#the-master-loop)
   - [Processing Order](#processing-order)
   - [Owned Object Traversal](#owned-object-traversal)
 - [Stored Procedures](#stored-procedures)
   - [computeDerived](#computederived)
   - [computeEffective](#computeeffective)
   - [_getFromCategories](#_getfromcategories)
-  - [_getFromParent](#_getfromparent)
+  - [_get_from_parent](#_get_from_parent)
 - [SSOT Accessors (base Object)](#ssot-accessors-base-object)
 - [Appearance Tab (Editor)](#appearance-tab-editor)
 - [File Reference](#file-reference)
@@ -31,26 +32,21 @@
 
 ## TODO
 
-1. **Attachment styling**: Attachments appear to use the parent task's styling
-   for fg/bg/font, but not for icon (icon is file-type based). However,
-   attachments have no categories and the current `computeDerived` gives them
-   no sources. Consider whether the Attachment Appearance tab and the
-   Attachment branch in the derived/effective logic should be removed entirely,
-   or whether parent-task inheritance should be added properly.
+1. **Attachment styling**: deferred, not in this release (D3 in
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-and-will-not-do)).
+   Attachments draw only their own style, as on master: no categories,
+   and `computeDerived` gives them no sources. Open for later: remove
+   their Appearance tab and branch, or inherit the owner's style.
 
 2. ~~**Note styling incomplete**~~: **Done.** Tested and confirmed that
    `computeDerived` correctly flows category fg/bg/font/icon values through
    to Notes via `_getFromCategories` for all field types.
 
-3. **Category assignment triggers filter refresh** *(deferred — wait for
-   pubsub conversion)*: Selecting a category for *assignment* (e.g. in a
-   task/note editor) incorrectly triggers the same full filter-refresh
-   event used by the category *filter* viewer. Root cause:
-   `CategoryFilter.onCategoryChanged()` in `domain/category/filter.py:91`
-   blindly calls `self.reset()` for both membership events
-   (`categorizableAdded/Removed`) and filter events (`filterChanged`).
-   With proper pubsub, these would be separate subscriptions with clean
-   separation. Current event system makes the fix messy.
+3. ~~**Category assignment triggers filter refresh**~~: **Done
+   2026-09-29.** Membership events (`member_added/removed_event_type()`) have
+   their own handler, `CategoryFilter.on_membership_changed()`, which
+   refilters only when the category or one it is under is filtered;
+   filter events (`filterChangedEventType`) still refilter.
 
 ---
 
@@ -58,11 +54,12 @@
 
 All domain objects (Task, Category, Note, Attachment) use a Single Source of
 Truth (SSOT) architecture for appearance properties. Each object stores derived,
-override, and effective values for each style field. A per-second polling system
-(`ComputeStyles`) recomputes derived and effective values for all objects.
+override, and effective values for each style field. The master loop
+(`MasterScheduler`), at the seconds that matter, recomputes derived and
+effective values for all objects.
 
-Efforts are the exception: they have no appearance/styling system and use a
-hardcoded icon (`clock_icon`).
+Efforts are the exception: they have no styles of their own and are drawn in
+their task's.
 
 ---
 
@@ -76,8 +73,26 @@ Each style field has three layers per object:
 | **Derived** | Computed from sources (categories, parent, status) | No (volatile) |
 | **Effective** | Override if set, otherwise derived | No (volatile) |
 
-Volatile fields are recomputed by `ComputeStyles` polling within 1 second of
-any change. They are `None` after file load until the first poll runs.
+Volatile fields are recomputed by the master loop within 1 second of any
+change. They are `None` after file load until the loop's first pass.
+
+---
+
+## What the Views Draw
+
+Every view, widget, export and print, the tray and the editor's lists
+draw the effective styles through:
+
+| Method | Returns |
+|--------|---------|
+| `shown_fg_color()`, `shown_bg_color()`, `shown_font()` | The effective value, None for the system theme (the widget's own) |
+| `shown_icon_id()` | The effective icon |
+
+Efforts return their task's. The views refresh on the four effective
+events (`effective_style_event_types()`); each setter sends one event
+for a field's value, default and source together. An item's own style
+shows at once (its setter computes its effective value), styles from
+categories, parents and the status at the loop's next pass.
 
 ---
 
@@ -104,8 +119,9 @@ Icons have type-specific defaults applied in `computeDerived` (see
 Sources checked in order (first non-system-theme value wins):
 
 1. **Categories** - sorted by `stylePriority` descending (via `_getFromCategories`)
-2. **Parent task** - `parent.effectiveXxx()` (via `_getFromParent`)
-3. **Status** - `statusIcon()`, `statusFgColor()`, etc. from `computeStoredStatus()`
+2. **Parent task** - `parent.effectiveXxx()` (via `_get_from_parent`), unless
+   it comes from the parent's own status or tracking: each task shows its own
+3. **Status** - `status_icon_id()`, `statusFgColor()`, etc. from `compute_stored_status()`
 
 Source labels: `[Category] name`, `[Task] name`, `[Status] active/completed/...`
 
@@ -114,7 +130,7 @@ Source labels: `[Category] name`, `[Task] name`, `[Status] active/completed/...`
 Sources checked in order:
 
 1. **Categories** - sorted by `stylePriority` descending (via `_getFromCategories`)
-2. **Parent note** - `parent.effectiveXxx()` (via `_getFromParent`)
+2. **Parent note** - `parent.effectiveXxx()` (via `_get_from_parent`)
 
 Source labels: `[Category] name`, `[Note] name`
 
@@ -124,7 +140,7 @@ Notes are categorizable (`CategorizableCompositeObject`), same as Tasks.
 
 Sources checked in order:
 
-1. **Parent category** - `parent.effectiveXxx()` (via `_getFromParent`)
+1. **Parent category** - `parent.effectiveXxx()` (via `_get_from_parent`)
 
 Source label: `[Category] name`
 
@@ -134,7 +150,7 @@ No sources. Derived value is always `None`. Only override or default icon applie
 
 ### Effort
 
-Not processed by the appearance system. Uses hardcoded `clock_icon`.
+Not processed by the appearance system: `shown_*()` return its task's.
 
 ---
 
@@ -143,8 +159,19 @@ Not processed by the appearance system. Uses hardcoded `clock_icon`.
 When an object belongs to multiple categories, `stylePriority` determines which
 category's appearance wins. Higher priority = checked first.
 
-- Stored on `Category` as `__stylePriority` (integer, default 0)
-- Sorted descending: `categories.sort(key=stylePriority, reverse=True)`
+- Stored on `Category` as an Attribute (integer, default 0), saved as
+  the category's `stylePriority` (omitted when 0)
+- Sorted descending by `stylePriority`; equal priorities by name, then
+  ID, so the choice is the same in every session (a set's order is not).
+  **Ruling, 2026-09-29:** equal priorities take the first by name; the
+  colours of several categories are no longer mixed, as they were
+  before the views drew the effective styles
+  ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#views-on-the-effective-styles)).
+  `by_style_priority()` gives this order; the task viewer's Category
+  icons column shows the icons in it too.
+- The status priority (Preferences > Statuses) only orders tasks
+  sorted by status; statuses do not compete with categories, whose
+  styles come first.
 - First category with a non-system-theme value for the field wins
 - Editable via `EditStylePriorityCommand`
 
@@ -161,37 +188,41 @@ when no other source provides an icon:
 
 | Type | Default Icon | Source Label |
 |------|-------------|-------------|
-| Category | `nuvola_mimetypes_inode-directory` | `"System Theme"` |
 | Note | `nuvola_apps_knotes` | `"System Theme"` |
 | Attachment | `nuvola_status_mail-attachment` | `"System Theme"` |
 
 Tasks get their default icon from status (e.g., `nuvola_actions_ledblue` for active).
+Categories have none (removed in #389): an icon of their own or their parent's.
 
 ---
 
-## ComputeStyles Polling
+## The Master Loop
 
-`ComputeStyles` subscribes to `timer.second` and recomputes all objects every
-second. This catches all changes without explicit triggers.
+The scheduler's pass runs `computeStyles()` for the objects a change or
+a time condition concerns and what reads them, each once; the full
+loop, for every object, when what every object reads changed
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#incremental-pass)).
 
-**File:** `taskcoachlib/domain/base/appearance.py` (class `ComputeStyles`)
+**File:** `taskcoachlib/gui/scheduler.py` (`MasterScheduler._run_pass()`)
 
 ### Processing Order
 
-1. **Categories** (so tasks/notes can read their effective values)
-2. **Tasks** (including child tasks via flat `CompositeSet`)
-3. **Global notes** (standalone notes from `taskFile.notes()`)
+Each object once, sorted by kind, then depth (`_order()`), so what an
+object reads is processed before it:
+
+1. **Categories** (so tasks and notes can read their effective values)
+2. **Tasks** (parents before subtasks)
+3. **Notes**, global and owned (parents before subnotes)
+4. **Attachments**
 
 ### Owned Object Traversal
 
-`_computeForObject` recursively processes owned objects after computing
-the object's own styles:
-
-- `obj.notes(recursive=True)` - all owned notes (flat list + children)
-- `obj.attachments()` - all owned attachments
-
-This covers the full ownership graph: task -> notes -> attachments -> notes -> ...
-No circular ownership exists because users create new objects under owners.
+The full loop takes each task's, category's and note's owned objects
+with them (`_owned()`): `obj.notes(recursive=True)` and
+`obj.attachments()`, then what those own in turn (task -> notes ->
+attachments -> notes -> ...), and sorts them into the order above: an
+owned note reads its categories, never its owner. No circular
+ownership exists because users create new objects under owners.
 
 ---
 
@@ -213,10 +244,11 @@ Shared helper for Task and Note derivation. Gets the object's categories,
 sorts by `stylePriority` descending, returns `(value, source)` from the first
 category with a non-system-theme effective value.
 
-### _getFromParent
+### _get_from_parent
 
 Shared helper for Task, Note, and Category derivation. Checks the object's
-parent for a non-system-theme effective value, returns `(value, source)`.
+parent for a non-system-theme effective value, returns `(value, source)`. A
+task skips its parent's value from the parent's own status or tracking.
 
 ---
 
@@ -256,11 +288,10 @@ an `"appearance"` page).
 
 | File | Purpose |
 |------|---------|
-| `taskcoachlib/domain/base/appearance.py` | SSOT stored procedures, ComputeStyles, constants |
-| `taskcoachlib/domain/base/object.py` | SSOT accessor/setter methods on base Object |
-| `taskcoachlib/domain/task/task.py` | Task status icon/color/font, `computeStoredStatus()` |
+| `taskcoachlib/domain/base/appearance.py` | SSOT stored procedures, `computeStyles()`, constants |
+| `taskcoachlib/domain/base/object.py` | SSOT accessor/setter methods and `shown_*()` on base Object |
+| `taskcoachlib/domain/task/task.py` | Task status icon/color/font, `compute_stored_status()` |
 | `taskcoachlib/domain/category/category.py` | `stylePriority` attribute |
-| `taskcoachlib/domain/categorizable/categorizable.py` | Legacy category color/font mixers |
 | `taskcoachlib/command/categoryCommands.py` | `EditStylePriorityCommand` |
 | `taskcoachlib/config/defaults.py` | Default status icons/colors/fonts/sort priorities |
 | `taskcoachlib/gui/dialog/editor.py` | `TaskAppearancePage` (Appearance tab in editor) |
@@ -271,6 +302,5 @@ an `"appearance"` page).
 ## See Also
 
 - [TASK_STATUS.md](TASK_STATUS.md) - Task status system and status-based icon defaults
-- [SCHEDULERS.md](SCHEDULERS.md) - GlobalTimer architecture (drives ComputeStyles polling)
+- [SCHEDULERS.md](SCHEDULERS.md) - GlobalTimer architecture (drives the master loop)
 - [ICON_LIBRARY.md](ICON_LIBRARY.md) - Icon sources, structure, and adding new icons
-- [ICON_PLURALIZE.md](ICON_PLURALIZE.md) - Plural/singular icon mapping (may be removed)

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
 
+from taskcoachlib.config import settings
 from . import effort
 from . import task
 from . import category
@@ -44,12 +45,6 @@ def viewer_types():
         pass
     else:
         types.append("squaretaskviewer")
-    try:
-        import igraph
-    except ImportError:
-        pass
-    else:
-        types.append("taskinterdepsviewer")
     return tuple(types)
 
 
@@ -60,14 +55,9 @@ class addViewers(object):  # pylint: disable=C0103, R0903
 
     floating = False  # Start viewers floating? Not when restoring layout
 
-    def __init__(self, viewer_container, task_file, settings):
+    def __init__(self, viewer_container, task_file):
         self.__viewer_container = viewer_container
-        self.__settings = settings
-        self.__viewer_init_args = (
-            viewer_container.containerWidget,
-            task_file,
-            settings,
-        )
+        self.__viewer_init_args = (viewer_container.containerWidget, task_file)
         self.__add_all_viewers()
 
     def __add_all_viewers(self):
@@ -83,12 +73,6 @@ class addViewers(object):  # pylint: disable=C0103, R0903
         self.__add_viewers(task.TimelineViewer)
         self.__add_viewers(task.CalendarViewer)
         self.__add_viewers(task.HierarchicalCalendarViewer)
-        try:
-            import igraph
-        except ImportError:
-            pass
-        else:
-            self.__add_viewers(task.TaskInterdepsViewer)
         self.__add_viewers(effort.EffortViewer)
         self.__add_viewers(effort.EffortViewerForSelectedTasks)
         self.__add_viewers(category.CategoryViewer)
@@ -124,7 +108,7 @@ class addViewers(object):  # pylint: disable=C0103, R0903
         type the user has never opened.
         """
         section = viewer_class.__name__.lower()
-        perspective = self.__settings.get("view", "perspective")
+        perspective = settings.view.perspective
         # Anchored at the start of a pane entry, so a caption containing
         # "name=" does not match (AUI escapes "|" in captions as "|\"),
         # and on the name separator, so effortviewer does not also match
@@ -143,9 +127,7 @@ class addViewers(object):  # pylint: disable=C0103, R0903
     def _number_of_viewers_to_add(self, viewer_class):
         """Return the number of viewers of the specified viewer class the
         user has opened previously."""
-        return self.__settings.getint(
-            "view", viewer_class.__name__.lower() + "count"
-        )
+        return settings.get("view", viewer_class.__name__.lower() + "count")
 
     def _viewer_kwargs(self, viewer_class):  # pylint: disable=R0201
         """Return the keyword arguments to be passed to the viewer
@@ -163,12 +145,10 @@ class addOneViewer(addViewers):  # pylint: disable=C0103, R0903
 
     floating = True  # Start viewer floating? Yes when opening a new viewer
 
-    def __init__(
-        self, viewer_container, task_file, settings, viewer_class, **kwargs
-    ):
+    def __init__(self, viewer_container, task_file, viewer_class, **kwargs):
         self.__viewer_class = viewer_class
         self.__kwargs = kwargs
-        super().__init__(viewer_container, task_file, settings)
+        super().__init__(viewer_container, task_file)
 
     def _instance_numbers_to_add(self, viewer_class):
         # A brand new viewer, not a restored one: None lets the metaclass

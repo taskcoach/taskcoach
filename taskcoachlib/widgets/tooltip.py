@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import operating_system
-from taskcoachlib.config import settings2
+from taskcoachlib import operating_system, patterns
+from taskcoachlib.config import settings
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 import wx
 import textwrap
@@ -30,19 +30,17 @@ class ToolTipMixin(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.__timer = wx.Timer(self, wx.NewId())
+        self.__tip_later = patterns.later.debounced(
+            self, 200, self.__show_pending_tip
+        )
 
         self.__tip = None
         self.__position = (0, 0)
         self.__pending_xy = (0, 0)
-        self.__text = None
         self.__frozen = True
 
-        self.GetMainWindow().Bind(wx.EVT_MOTION, self.__OnMotion)
-        self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self.__OnLeave)
-        self.Bind(wx.EVT_TIMER, self.__OnTimer, id=self.__timer.GetId())
-        # Stop timer on window destruction to prevent crashes
-        self.Bind(wx.EVT_WINDOW_DESTROY, self.__OnDestroy)
+        self.GetMainWindow().Bind(wx.EVT_MOTION, self.__on_motion)
+        self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self.__on_leave)
 
     def PopupMenu(self, menu):
         self.__frozen = False
@@ -88,58 +86,45 @@ class ToolTipMixin(object):
         if self.__tip:
             self.__tip.Hide()
 
+    def cancel_tip(self):
+        """Hide the tip and drop a pending one: the mouse moved on, or
+        a window (an editor) opened over the control."""
+        self.__tip_later.cancel()
+        if self.__tip is not None:
+            self.HideTip()
+            self.__tip = None
+
     def OnBeforeShowToolTip(self, x, y):
         """Should return a wx.Frame instance that will be displayed as
         the tooltip, or None."""
         raise NotImplementedError  # pragma: no cover
 
-    def __OnMotion(self, event):
+    def __on_motion(self, event):
         x, y = event.GetPosition()
-
-        self.__timer.Stop()
-
-        if self.__tip is not None:
-            self.HideTip()
-            self.__tip = None
-
-        if settings2.view.descriptionpopups:
+        self.cancel_tip()
+        if settings.view.descriptionpopups:
             self.__position = (x + 20, y + 10)
             self.__pending_xy = (x, y)
-            self.__timer.Start(200, True)
+            self.__tip_later()
 
         event.Skip()
 
-    def __OnTipMotion(self, event):  # pylint: disable=W0613
+    def __on_tip_motion(self, event):  # pylint: disable=W0613
         self.HideTip()
 
-    def __OnLeave(self, event):
-        self.__timer.Stop()
-
-        if self.__tip is not None:
-            self.HideTip()
-            self.__tip = None
-
+    def __on_leave(self, event):
+        self.cancel_tip()
         event.Skip()
 
-    def __OnDestroy(self, event):
-        """Stop timer on window destruction to prevent crashes."""
-        if event.GetEventObject() == self and self.__timer.IsRunning():
-            self.__timer.Stop()
-        event.Skip()
-
-    def cleanupTooltipTimer(self):
-        """Stop the tooltip timer to prevent crashes during widget destruction.
-        This should be called from the widget's Destroy() or cleanup method."""
-        if self.__timer and self.__timer.IsRunning():
-            self.__timer.Stop()
-
-    def __OnTimer(self, event):  # pylint: disable=W0613
+    def __show_pending_tip(self):
         x, y = self.__pending_xy
-        newTip = self.OnBeforeShowToolTip(x, y)
-        if newTip is not None:
-            self.__tip = newTip
-            self.__tip.Bind(wx.EVT_MOTION, self.__OnTipMotion)
-            self.ShowTip(*self.GetMainWindow().ClientToScreen(*self.__position))
+        new_tip = self.OnBeforeShowToolTip(x, y)
+        if new_tip is not None:
+            self.__tip = new_tip
+            self.__tip.Bind(wx.EVT_MOTION, self.__on_tip_motion)
+            self.ShowTip(
+                *self.GetMainWindow().ClientToScreen(*self.__position)
+            )
 
 
 if operating_system.isWindows():

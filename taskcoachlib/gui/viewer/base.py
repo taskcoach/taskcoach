@@ -23,11 +23,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import contextlib
 import wx
 from taskcoachlib import patterns, widgets, command, render
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, toolbar
 from taskcoachlib.gui.icons import image_list_cache
 from wx.lib.agw import hypertreelist
-from pubsub import pub
 from taskcoachlib.meta.debug import log_step
 from . import mixin
 
@@ -44,15 +44,15 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     defaultBitmap = "Subclass responsibility"
     coreObjectType = None
 
-    def __init__(self, parent, taskFile, settings, *args, **kwargs):
+    def __init__(self, parent, task_file, *args, **kwargs):
         patterns.Observer.__init__(self)
         super().__init__(parent, -1)
         self.parent = parent
-        self.taskFile = taskFile
-        self.settings = settings
+        self.taskFile = task_file
         self.__settingsSection = kwargs.pop("settingsSection")
         self.__freezeCount = 0
-        # Track items changed during bulk operations
+        self.__in_pass = False
+        # Items changed during a bulk operation or a scheduler pass
         self.__pendingRefreshItems = set()
         # The how maniest of this viewer type are we? Used for settings
         self.__instanceNumber = kwargs.pop("instanceNumber")
@@ -73,55 +73,62 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.createFilter(self.domainObjectsToView())
         )
         # The widget used to present the presentation:
-        self.widget = self.createWidget()
+        self.widget = self.create_widget()
         self.widget.SetBackgroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         )
-        self.toolbar = toolbar.ToolBar(
-            self, settings, (toolbar.TOOLBAR_ICON_SIZE,) * 2
-        )
+        self.toolbar = toolbar.ToolBar(self, (toolbar.TOOLBAR_ICON_SIZE,) * 2)
         self.init_layout()
         self.register_presentation_observers()
-        # Re-center when auto-scroll is turned back on. Publisher
-        # dispatch, not pypubsub; see PUBLISHER_OBSERVER.md.
+        # Re-center when auto-scroll is turned back on
         self.registerObserver(
             self.on_auto_scroll_changed,
             eventType="view.autoscrollselection",
-            eventSource=self.settings,
+        )
+        # Times are drawn as decimal hours or not: redraw on a change
+        self.registerObserver(
+            self.__on_decimal_time_changed, eventType="feature.decimal_time"
         )
         self.refresh()
 
-        pub.subscribe(self.on_begin_io, "taskfile.aboutToRead")
-        pub.subscribe(self.on_begin_io, "taskfile.aboutToClear")
-        pub.subscribe(self.on_end_io, "taskfile.justRead")
-        pub.subscribe(self.on_end_io, "taskfile.justCleared")
-        # Subscribe to bulk operation signals to freeze/thaw during batch updates
-        pub.subscribe(
-            self.on_begin_bulk_operation, "command.aboutToBulkModify"
+        for event_type, handler in (
+            ("taskfile.aboutToRead", self.on_begin_io),
+            ("taskfile.aboutToClear", self.on_begin_io),
+            ("taskfile.justRead", self.on_end_io),
+            ("taskfile.justCleared", self.on_end_io),
+        ):
+            self.registerObserver(
+                handler, eventType=event_type, eventSource=self.taskFile
+            )
+        # Frozen during a command's bulk changes, refreshed once after
+        self.registerObserver(
+            self.on_begin_bulk_operation, eventType="command.aboutToBulkModify"
         )
-        pub.subscribe(self.on_end_bulk_operation, "command.justBulkModified")
+        self.registerObserver(
+            self.on_end_bulk_operation, eventType="command.justBulkModified"
+        )
+        # Also refreshed once after a scheduler pass: its first, after a
+        # file opens, changes every row
+        self.registerObserver(
+            self.on_begin_pass, eventType="scheduler.aboutToPass"
+        )
+        self.registerObserver(self.on_end_pass, eventType="scheduler.pass")
 
-        wx.CallAfter(self.__DisplayBalloon)
+        patterns.later.soon(self, self.__DisplayBalloon)
 
     def __DisplayBalloon(self):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing nested dialogs)
-        try:
-            if not self or self.IsBeingDeleted():
-                return
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
+        # Run later: the viewer may be closing by then
+        if not self or self.IsBeingDeleted():
             return
         # AuiFloatingFrame is instantiated from framemanager, we can't derive it from BalloonTipManager
         if self.toolbar.IsShownOnScreen() and hasattr(
             wx.GetTopLevelParent(self), "AddBalloonTip"
         ):
             wx.GetTopLevelParent(self).AddBalloonTip(
-                self.settings,
                 "customizabletoolbars",
                 self.toolbar,
                 title=_("Toolbars are customizable"),
-                getRect=lambda: self.toolbar.GetToolRect(
+                get_rect=lambda: self.toolbar.GetToolRect(
                     self.toolbar.getToolIdByCommand("EditToolBarPerspective")
                 ),
                 message=_(
@@ -129,60 +136,82 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                 ),
             )
 
-    def on_begin_io(self, taskFile):
+    def on_begin_io(self, event):  # pylint: disable=W0613
         self.__freezeCount += 1
         self.__presentation.freeze()
 
-    def on_end_io(self, taskFile):
+    def on_end_io(self, event):  # pylint: disable=W0613
         self.__freezeCount -= 1
         self.__presentation.thaw()
         if self.__freezeCount == 0:
             self.refresh()
 
-    def on_begin_bulk_operation(self):
+    def on_begin_bulk_operation(self, event=None):  # pylint: disable=W0613
         """Freeze viewer and presentation to batch updates during bulk operations."""
         self.__freezeCount += 1
         self.__presentation.freeze()
 
-    def on_end_bulk_operation(self):
+    def on_end_bulk_operation(self, event=None):  # pylint: disable=W0613
         """Thaw viewer and presentation after bulk operation, refresh only changed items."""
         self.__freezeCount -= 1
         self.__presentation.thaw()
-        if self.__freezeCount == 0 and self.__pendingRefreshItems:
-            # Refresh only items that changed during the bulk operation
-            items = [
-                item
-                for item in self.__pendingRefreshItems
-                if item in self.presentation()
-            ]
-            self.__pendingRefreshItems.clear()
-            if items:
-                self.widget.RefreshItems(*items)
+        self.__refresh_pending_items()
+
+    def on_begin_pass(self, event):  # pylint: disable=W0613
+        self.__in_pass = True
+
+    def on_end_pass(self, event):  # pylint: disable=W0613
+        self.__in_pass = False
+        self.__refresh_pending_items()
+
+    def __refresh_pending_items(self):
+        if self.__freezeCount or self.__in_pass:
+            return
+        items, self.__pendingRefreshItems = self.__pendingRefreshItems, set()
+        if items:
+            self.refresh_changed_items(items)
 
     def activate(self):
         pass
 
-    def _bindActivationEvents(self, window):
-        """Bind click events to activate this viewer's pane.
-
-        This ensures clicking anywhere on the viewer (toolbar, title bar area,
-        empty space) will activate the pane. We skip text controls to avoid
-        interfering with text input focus.
-        """
-        # Skip text input controls - they handle their own focus
+    def _bind_activation_events(self, window):
+        """A click anywhere in the viewer, with either button, makes its
+        pane the active one. Text controls handle their own focus. The
+        children are wx's: the hierarchical calendar's GetChildren()
+        takes a task."""
         if isinstance(window, (wx.TextCtrl, wx.SearchCtrl, wx.ComboBox)):
             return
-        window.Bind(wx.EVT_LEFT_DOWN, self._onViewerClick)
-        # Recursively bind to children, but skip the main widget (tree/list)
-        for child in window.GetChildren():
-            if child != self.widget:
-                self._bindActivationEvents(child)
+        if window is self.widget:
+            self.__bind_widget_clicks(window)
+            return
+        for event_type in (wx.EVT_LEFT_DOWN, wx.EVT_RIGHT_DOWN):
+            window.Bind(event_type, self._onViewerClick)
+        for child in wx.Window.GetChildren(window):
+            self._bind_activation_events(child)
+
+    def __bind_widget_clicks(self, window):
+        # A list takes the focus on a click, which activates its pane;
+        # the calendars, timeline and square map take none
+        for event_type in (wx.EVT_LEFT_DOWN, wx.EVT_RIGHT_DOWN):
+            window.Bind(event_type, self.__on_widget_click)
+        for child in wx.Window.GetChildren(window):
+            if not child.IsTopLevel():
+                self.__bind_widget_clicks(child)
 
     def _onViewerClick(self, event):
         """Handle clicks on the viewer to activate its pane."""
         wx.PostEvent(self, wx.ChildFocusEvent(self))
         self.SetFocus()  # Clear focus from other controls (e.g., search box)
         event.Skip()
+
+    def __on_widget_click(self, event):
+        event.Skip()
+        focus = wx.Window.FindFocus()
+        while focus is not None and focus is not self:
+            focus = focus.GetParent()
+        if focus is None:
+            # Activating the pane gives the viewer the focus
+            wx.PostEvent(self, wx.ChildFocusEvent(self))
 
     def domainObjectsToView(self):
         """Return the domain objects that this viewer should display. For
@@ -232,14 +261,15 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
                     exc=True,
                 )
 
-        pub.unsubscribe(self.on_begin_io, "taskfile.aboutToRead")
-        pub.unsubscribe(self.on_begin_io, "taskfile.aboutToClear")
-        pub.unsubscribe(self.on_end_io, "taskfile.justRead")
-        pub.unsubscribe(self.on_end_io, "taskfile.justCleared")
-        pub.unsubscribe(
-            self.on_begin_bulk_operation, "command.aboutToBulkModify"
-        )
-        pub.unsubscribe(self.on_end_bulk_operation, "command.justBulkModified")
+        for handler in (
+            self.on_begin_io,
+            self.on_end_io,
+            self.on_begin_bulk_operation,
+            self.on_end_bulk_operation,
+            self.on_begin_pass,
+            self.on_end_pass,
+        ):
+            self.removeObserver(handler)
 
         self.presentation().detach()
         self.toolbar.detach()
@@ -294,22 +324,17 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         return False
 
     def send_viewer_status_event(self):
-        pub.sendMessage(self.viewer_status_event_type(), viewer=self)
+        patterns.Event(self.viewer_status_event_type(), self).send()
 
     def statusMessages(self):
         return "", ""
 
     def title(self):
-        return (
-            self.settings.get(self.settingsSection(), "title")
-            or self.defaultTitle
-        )
+        return self.options.title or self.defaultTitle
 
     def set_title(self, title):
         titleToSaveInSettings = "" if title == self.defaultTitle else title
-        self.settings.set(
-            self.settingsSection(), "title", titleToSaveInSettings
-        )
+        self.options.title = titleToSaveInSettings
         self.parent.set_pane_title(self, title)
         self.parent.manager.Update()
 
@@ -322,10 +347,9 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         )  # Changed from SetSizerAndFit to prevent locking MinSize
         # Prevent GetEffectiveMinSize() from returning child's BestSize
         self.SetMinSize((100, 50))
-        # Bind click events to activate pane when clicking on toolbar/empty space
-        self._bindActivationEvents(self)
+        self._bind_activation_events(self)
 
-    def createWidget(self, *args):
+    def create_widget(self, *args):
         raise NotImplementedError
 
     def createImageList(self):
@@ -355,20 +379,17 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         filter."""
         return collection
 
-    def onAttributeChanged(self, newValue, sender):  # pylint: disable=W0613
-        if self:
-            if self.__freezeCount:
-                # During bulk operation, collect items to refresh later
-                self.__pendingRefreshItems.add(sender)
-            else:
-                self.refreshItems(sender)
-
-    def onAttributeChanged_Deprecated(self, event):
-        if self.__freezeCount:
-            # During bulk operation, collect items to refresh later
+    def on_attribute_changed(self, event):
+        if self.__freezeCount or self.__in_pass:
+            # Refreshed once, after the bulk operation or the pass
             self.__pendingRefreshItems.update(event.sources())
         else:
-            self.refreshItems(*event.sources())
+            self.refresh_changed_items(event.sources())
+
+    def refresh_changed_items(self, items):
+        """Refresh the rows of the changed items. A viewer whose rows
+        show other items' values refreshes those rows instead."""
+        self.refreshItems(*items)
 
     def on_new_item(self, event):
         self.select(
@@ -414,18 +435,18 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.widget.ensureSelectionVisible()
         self.send_viewer_status_event()
 
+    def __on_decimal_time_changed(self, event):  # pylint: disable=W0613
+        self.refresh()
+
     def on_auto_scroll_changed(self, event=None):
         """Re-center on the selection when auto-scroll is turned back
         on."""
-        if not self.settings.getboolean("view", "autoscrollselection"):
+        if not settings.view.autoscrollselection:
             return
-        try:
-            if hasattr(self.widget, "scroll_to_selection_centered"):
-                self.widget.scroll_to_selection_centered()
-            elif hasattr(self.widget, "ensureSelectionVisible"):
-                self.widget.ensureSelectionVisible()
-        except RuntimeError:
-            pass  # wrapped C/C++ object has been deleted
+        if hasattr(self.widget, "scroll_to_selection_centered"):
+            self.widget.scroll_to_selection_centered()
+        elif hasattr(self.widget, "ensureSelectionVisible"):
+            self.widget.ensureSelectionVisible()
 
     def _capture_selection_info(self):
         """Capture selection info before refresh. Override in subclasses."""
@@ -446,31 +467,20 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
         if self.__detached or not self:
             # The widget fired a selection event while the viewer is being
-            # torn down (e.g. hidden viewers in the export dialog). The wx
-            # object may already be gone; "not self" is False-y once the
-            # underlying C++ object is deleted, so bail out before touching
-            # it instead of raising and logging from the except below.
+            # torn down (e.g. hidden viewers in the export dialog); "not
+            # self" is false once the C++ object is deleted
             return
 
-        try:
-            if self.IsBeingDeleted() or self.__selectingAllItems:
-                # Some widgets change the selection and send selection events when
-                # deleting all items as part of the Destroy process. Ignore.
-                return
+        if self.IsBeingDeleted() or self.__selectingAllItems:
+            # Some widgets send selection events while deleting all
+            # items as they are destroyed
+            return
 
-            # Fire selection signal — toolbar buttons subscribe via _SelectionSync
-            patterns.Event(self.selection_changed_event_type(), self).send()
+        # Toolbar buttons follow the selection (_SelectionSync)
+        patterns.Event(self.selection_changed_event_type(), self).send()
 
-            # Fire status event - StatusBar has its own 500ms debounce
-            # No need to query selection here; status bar queries fresh when displaying
-            wx.CallAfter(self.send_viewer_status_event)
-        except RuntimeError as e:
-            log_step(
-                "onSelect on dead viewer %s: %s"
-                % (self.__class__.__name__, e),
-                prefix="DEAD-OBJ",
-                exc=True,
-            )
+        # The status bar reads the selection itself, 500 ms later
+        patterns.later.soon(self, self.send_viewer_status_event)
 
     def updateSelection(self, send_status_event=True):
         """Legacy method - kept for subclass compatibility.
@@ -499,7 +509,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def refreshItems(self, *items):
         if not self.__freezeCount:
-            items = [item for item in items if item in self.presentation()]
+            shown = set(self.presentation())
+            items = [item for item in items if item in shown]
             self.widget.RefreshItems(*items)  # pylint: disable=W0142
 
     def select(self, items):
@@ -526,18 +537,13 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         selection events while we select all items."""
         self.__selectingAllItems = True
         self.widget.select_all()
-        # Use CallAfter to make sure we start processing selection events
+        # Later, to make sure we start processing selection events
         # after all selection events have been fired (and ignored):
-        wx.CallAfter(self.end_of_select_all)
+        patterns.later.soon(self, self.end_of_select_all)
 
     def end_of_select_all(self):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing nested dialogs)
-        try:
-            if not self or self.IsBeingDeleted():
-                return
-        except RuntimeError:
-            # wrapped C/C++ object has been deleted
+        # Run later: the viewer may be closing by then
+        if not self or self.IsBeingDeleted():
             return
         self.__selectingAllItems = False
         # Pretend we received one selection event for the select_all() call:
@@ -560,9 +566,6 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def widgetCreationKeywordArguments(self):
         return {}
-
-    def is_viewer_container(self):
-        return False
 
     def is_showing_tasks(self):
         return False
@@ -587,6 +590,12 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         'Viewer->New viewer' menu item, for example."""
         return self.defaultBitmap  # Class attribute of concrete viewers
 
+    @property
+    def options(self):
+        """This viewer's own section of the settings, its options as
+        attributes."""
+        return settings.section(self.settingsSection())
+
     def settingsSection(self):
         """Return the settings section of this viewer."""
         section = self.__settingsSection
@@ -594,14 +603,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             # We're not the first viewer of our class, so we need a different
             # settings section than the default one.
             section += str(self.__instanceNumber)
-            if not self.settings.has_section(section):
+            if not settings.has_section(section):
                 # Our section does not exist yet. Create it and copy the
                 # settings from the previous section as starting point. We're
                 # copying from the previous section instead of the default
                 # section so that when the user closes a viewer and then opens
                 # a new one, the settings of that closed viewer are reused.
-                self.settings.add_section(
-                    section, copyFromSection=self.previousSettingsSection()
+                settings.add_section(
+                    section, copy_from=self.previousSettingsSection()
                 )
         return section
 
@@ -613,7 +622,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             previousSection = self.__settingsSection + str(
                 previousSectionNumber
             )
-            if self.settings.has_section(previousSection):
+            if settings.has_section(previousSection):
                 return previousSection
             previousSectionNumber -= 1
         return self.__settingsSection
@@ -653,16 +662,20 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def createToolBarUICommands(self):
         """UI commands to put on the toolbar of this viewer."""
+        # On the list, not the viewer: an accelerator table takes its
+        # keys from every child first, so the toolbar's search box
+        # would lose Enter and its clipboard keys
         table = wx.AcceleratorTable(
             [
                 (wx.ACCEL_CMD, ord("X"), wx.ID_CUT),
                 (wx.ACCEL_CMD, ord("C"), wx.ID_COPY),
                 (wx.ACCEL_CMD, ord("V"), wx.ID_PASTE),
                 (wx.ACCEL_NORMAL, wx.WXK_RETURN, wx.ID_EDIT),
+                (wx.ACCEL_NORMAL, wx.WXK_NUMPAD_ENTER, wx.ID_EDIT),
                 (wx.ACCEL_CTRL, wx.WXK_DELETE, wx.ID_DELETE),
             ]
         )
-        self.SetAcceleratorTable(table)
+        self.widget.SetAcceleratorTable(table)
 
         clipboardToolBarUICommands = self.createClipboardToolBarUICommands()
         creationToolBarUICommands = self.createCreationToolBarUICommands()
@@ -712,12 +725,10 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         )
 
     def getToolBarPerspective(self):
-        return self.settings.get(self.settingsSection(), "toolbarperspective")
+        return self.options.toolbarperspective
 
     def saveToolBarPerspective(self, perspective):
-        self.settings.set(
-            self.settingsSection(), "toolbarperspective", perspective
-        )
+        self.options.toolbarperspective = perspective
 
     def createClipboardToolBarUICommands(self):
         """UI commands for manipulating the clipboard (cut, copy, paste)."""
@@ -773,6 +784,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def editItemDialog(
         self, items, icon_id, columnName="", items_are_new=False
     ):
+        self.cancel_tip()
         parent = wx.GetTopLevelParent(self)
         # If the viewer is inside an Editor dialog (e.g. EffortViewer inside
         # TaskEditor), parent to main window instead. Otherwise Destroy() on
@@ -784,13 +796,18 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         return EditorClass(
             parent,
             items,
-            self.settings,
             self.presentation(),
             self.taskFile,
             icon_id=icon_id,
             columnName=columnName,
             items_are_new=items_are_new,
         )
+
+    def cancel_tip(self):
+        """No list tooltip over an editor opened from the list."""
+        cancel_tip = getattr(self.widget, "cancel_tip", None)
+        if cancel_tip:
+            cancel_tip()
 
     def itemEditorClass(self):
         raise NotImplementedError
@@ -904,16 +921,35 @@ class ListViewer(Viewer):  # pylint: disable=W0223
 
 class TreeViewer(Viewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
+        self.__selection_before = None
         super().__init__(*args, **kwargs)
+        self.widget.Bind(wx.EVT_TREE_ITEM_EXPANDING, self.__remember_selection)
+        self.widget.Bind(
+            wx.EVT_TREE_ITEM_COLLAPSING, self.__remember_selection
+        )
         self.widget.Bind(wx.EVT_TREE_ITEM_EXPANDED, self.on_item_expanded)
         self.widget.Bind(wx.EVT_TREE_ITEM_COLLAPSED, self.on_item_collapsed)
 
+    def __remember_selection(self, event):
+        event.Skip()
+        self.__selection_before = self.widget.GetSelections()
+
+    def __announce_selection_change(self):
+        # Collapsing drops the hidden children from the selection and
+        # expanding brings them back, without a selection event: the
+        # status bar and the toolbar would keep the old selection
+        if self.widget.GetSelections() != self.__selection_before:
+            self.onSelect()
+        self.__selection_before = None
+
     def on_item_expanded(self, event):
         self.__handleExpandedOrCollapsedItem(event, expanded=True)
+        self.__announce_selection_change()
         self.widget._schedule_scrollbar_adjustment()
 
     def on_item_collapsed(self, event):
         self.__handleExpandedOrCollapsedItem(event, expanded=False)
+        self.__announce_selection_change()
         self.widget._schedule_scrollbar_adjustment()
 
     def __handleExpandedOrCollapsedItem(self, event, expanded):
@@ -1058,7 +1094,11 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
 
     def children(self, parent=None):
         if parent:
-            children = parent.children()
+            # The parent's own subitems the view shows, in its order
+            presentation = self.presentation()
+            if hasattr(presentation, "children_of"):
+                return presentation.children_of(parent)
+            children = set(parent.children())
             if children:
                 return [
                     child for child in self.presentation() if child in children
@@ -1120,18 +1160,14 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             self.widget.SetMainColumn(1)
 
     def initColumn(self, column):
-        if column.name() in self.settings.getlist(
-            self.settingsSection(), "columnsalwaysvisible"
-        ):
+        if column.name() in self.options.columnsalwaysvisible:
             show = True
         else:
-            show = column.name() in self.settings.getlist(
-                self.settingsSection(), "columns"
-            )
+            show = column.name() in self.options.columns
             self.widget.showColumn(column, show=show)
         if show:
             self.__visibleColumns.append(column)
-            self.__startObserving(column.eventTypes())
+            self.__start_observing(column.eventTypes())
 
     def showColumnByName(self, columnName, show=True):
         for column in self.hideable_columns():
@@ -1150,20 +1186,18 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             self.__visibleColumns = [
                 c for c in self.columns() if c in self.__visibleColumns
             ]
-            self.__startObserving(column.eventTypes())
+            self.__start_observing(column.eventTypes())
         else:
             self.__visibleColumns.remove(column)
-            self.__stopObserving(column.eventTypes())
+            self.__stop_observing(column.eventTypes())
         self.widget.showColumn(column, show)
         # Set main column AFTER inserting/removing the ordering column
         if column.name() == "ordering":
             self.widget.SetResizeColumn(1 if show else 0)
             self.widget.SetMainColumn(1 if show else 0)
-        self.settings.set(
-            self.settingsSection(),
-            "columns",
-            str([column.name() for column in self.__visibleColumns]),
-        )
+        self.options.columns = [
+            column.name() for column in self.__visibleColumns
+        ]
         if refresh:
             self.widget.RefreshAllItems(len(self.presentation()))
 
@@ -1192,23 +1226,16 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         return [
             column
             for column in self._columns
-            if column.name()
-            not in self.settings.getlist(
-                self.settingsSection(), "columnsalwaysvisible"
-            )
+            if column.name() not in self.options.columnsalwaysvisible
         ]
 
     def is_hideable_column(self, visibleColumnIndex):
         column = self.visibleColumns()[visibleColumnIndex]
-        unhideable_columns = self.settings.getlist(
-            self.settingsSection(), "columnsalwaysvisible"
-        )
+        unhideable_columns = self.options.columnsalwaysvisible
         return column.name() not in unhideable_columns
 
     def getColumnWidth(self, column_name):
-        column_widths = self.settings.getdict(
-            self.settingsSection(), "columnwidths"
-        )
+        column_widths = self.options.columnwidths
         default_width = (
             28
             if column_name == "ordering"
@@ -1217,13 +1244,9 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         return int(column_widths.get(column_name, default_width))
 
     def onResizeColumn(self, column, width):
-        column_widths = self.settings.getdict(
-            self.settingsSection(), "columnwidths"
-        )
+        column_widths = self.options.columnwidths
         column_widths[column.name()] = int(width)
-        self.settings.setdict(
-            self.settingsSection(), "columnwidths", column_widths
-        )
+        self.options.columnwidths = column_widths
 
     def validateDrag(self, dropItem, dragItems, columnIndex):
         if (
@@ -1240,11 +1263,10 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         # Tree mode. Only allow drag if all selected items are siblings.
         if len(set([item.parent() for item in dragItems])) >= 2:
             wx.GetTopLevelParent(self).AddBalloonTip(
-                self.settings,
                 "treemanualordering",
                 self,
                 title=_("Reordering in tree mode"),
-                getRect=lambda: wx.Rect(0, 0, 28, 16),
+                get_rect=lambda: wx.Rect(0, 0, 28, 16),
                 message=_(
                     """When in tree mode, manual ordering is only possible when all selected items are siblings."""
                 ),
@@ -1256,11 +1278,10 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             None if dropItem is None else dropItem.parent()
         ):
             wx.GetTopLevelParent(self).AddBalloonTip(
-                self.settings,
                 "treechildrenmanualordering",
                 self,
                 title=_("Reordering in tree mode"),
-                getRect=lambda: wx.Rect(0, 0, 28, 16),
+                get_rect=lambda: wx.Rect(0, 0, 28, 16),
                 message=_(
                     """When in tree mode, you can only put objects at the same level (parent)."""
                 ),
@@ -1290,48 +1311,35 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         return self.visibleColumns()[column].hasMultiImages()
 
     def subjectImageIndices(self, item):
-        normal_icon_id = item.icon_id(recursive=True)
-        selected_icon_id = (
-            item.selected_icon_id(recursive=True) or normal_icon_id
-        )
-        normalImageIndex = (
-            image_list_cache.get_index(normal_icon_id)
-            if normal_icon_id
-            else -1
-        )
-        selectedImageIndex = (
-            image_list_cache.get_index(selected_icon_id)
-            if selected_icon_id
-            else -1
-        )
+        # One icon, expanded or not
+        icon_id = item.shown_icon_id()
+        index = image_list_cache.get_index(icon_id) if icon_id else -1
         return {
-            wx.TreeItemIcon_Normal: normalImageIndex,
-            wx.TreeItemIcon_Expanded: selectedImageIndex,
+            wx.TreeItemIcon_Normal: index,
+            wx.TreeItemIcon_Expanded: index,
         }
 
-    def __startObserving(self, eventTypes):
-        for eventType in eventTypes:
-            if eventType.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, eventType)
-            else:
-                self.registerObserver(
-                    self.onAttributeChanged_Deprecated, eventType=eventType
+    def __start_observing(self, event_types):
+        # Columns observe with their own callback, so hiding one never
+        # drops an event type the viewer observes for every row
+        for event_type in event_types:
+            self.registerObserver(
+                self.__on_column_changed, eventType=event_type
+            )
+
+    def __stop_observing(self, event_types):
+        # Keep observing the event types the visible columns still need
+        visible_event_types = []
+        for column in self.visibleColumns():
+            visible_event_types.extend(column.eventTypes())
+        for event_type in event_types:
+            if event_type not in visible_event_types:
+                self.removeObserver(
+                    self.__on_column_changed, eventType=event_type
                 )
 
-    def __stopObserving(self, eventTypes):
-        # Collect the event types that the currently visible columns are
-        # interested in and make sure we don't stop observing those event types.
-        eventTypesOfVisibleColumns = []
-        for column in self.visibleColumns():
-            eventTypesOfVisibleColumns.extend(column.eventTypes())
-        for eventType in eventTypes:
-            if eventType not in eventTypesOfVisibleColumns:
-                if eventType.startswith("pubsub"):
-                    pub.unsubscribe(self.onAttributeChanged, eventType)
-                else:
-                    self.removeObserver(
-                        self.onAttributeChanged_Deprecated, eventType=eventType
-                    )
+    def __on_column_changed(self, event):
+        self.on_attribute_changed(event)
 
     def renderCategories(self, item):
         return self.renderSubjectsOfRelatedItems(item, item.categories)

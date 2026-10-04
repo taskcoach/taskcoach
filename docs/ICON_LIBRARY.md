@@ -22,7 +22,8 @@
 - [Completed Icon Migrations](#migration-from-legacy-icons)
 - [Recently Added Icons](#recently-added-icons)
 - [Icon Grid Browser and Duplicates (Dev Tools)](#icon-grid-browser-and-duplicates-dev-tools)
-- [Icon Hints Worker Plan](#icon-hints-plan)
+- [Icon Hints Worker Plan](#icon-hints-worker-plan)
+- [Removed: Plural Icons](#removed-plural-icons)
 - [See Also](#see-also)
 
 ## TODO
@@ -850,7 +851,6 @@ future icon renames or consolidations.
 | `undo` | `nuvola_actions_edit-undo` | Undo arrow (main toolbar) |
 | `redo` | `nuvola_actions_edit-redo` | Redo arrow (main toolbar) |
 | `save` | `nuvola_devices_media-floppy` | Floppy disk/save (main toolbar) |
-| `mergedisk` | `nuvola_actions_go-top` | Merge disk changes (main toolbar) |
 | `fileopen` | `nuvola_actions_document-open` | File open folder (main toolbar) |
 | `calendar_icon` | `nuvola_apps_date` | Calendar |
 | `graph_icon` | `nuvola_apps_kchart` | Chart/graph |
@@ -947,7 +947,7 @@ nuvola/oxygen.
 
 **Theme wiring** is already in place:
 - `ICON_THEME_CATALOG.json`: `"taskcoach"` is `"active": true`
-- `icon_library.py`: theme loop uses `get_available_themes()`
+- `icon_library.py`: theme loop uses `_load_theme_catalog()`
   (reads the catalog dynamically — no code change needed for new themes)
 - `defaults.py`: `"theme_taskcoach": "True"` in `iconpicker` section
 - `preferences.py`: checkbox "Show TaskCoach icons in picker"
@@ -1020,7 +1020,7 @@ Tier 1 (user-assignable) and Tier 2 icons not on the main toolbar only need
 | `uncheckall` | `taskcoach_actions_uncheckall` | Uncheck all categories (editor toolbar, 16) |
 | `timer_icon` | `nuvola_apps_ktimer` | Clock with blue/red hands (user-assignable, 16) |
 | `star_yellow_icon` | `taskcoach_actions_star_yellow_icon` | Yellow star (user-assignable, 16) |
-| `folder_blue_light_icon` | `taskcoach_actions_folder_blue_light_icon` | Light blue folder (user-assignable + plural target, 16) |
+| `folder_blue_light_icon` | `taskcoach_actions_folder_blue_light_icon` | Light blue folder (user-assignable, 16) |
 | `file_important_icon` | `taskcoach_actions_file_important_icon` | File with exclamation (user-assignable, 16) |
 | `file_locked_icon` | `taskcoach_actions_file_locked_icon` | File with lock (user-assignable, 16) |
 | `link_icon` | `taskcoach_actions_link_icon` | Blue chain link, DnD prereq/dep cursor (16/22/32) |
@@ -1038,7 +1038,7 @@ Tier 1 (user-assignable) and Tier 2 icons not on the main toolbar only need
 | `box_in_icon` | `taskcoach_actions_box_in_icon` | Green inbox/download box (user-assignable, 16) |
 | `box_out_icon` | `taskcoach_actions_box_out_icon` | Red outbox/upload box (user-assignable, 16) |
 | `checkmark_green_icon` | `nuvola_actions_ok` | Green checkmark, completed-tasks status default (16) |
-| `checkmark_green_icon_multiple` | `taskcoach_actions_checkmark_green_icon_multiple` | Double green checkmarks, plural variant (custom, 16) |
+| `checkmark_green_icon_multiple` | `taskcoach_actions_checkmark_green_icon_multiple` | Double green checkmarks (custom, user-assignable, 16) |
 | `listview` | `nuvola_actions_view-list-details` | List view icon, orphaned (16) |
 | `windows` | `nuvola_apps_window_list` | Overlapping windows, preferences page icon (16) |
 | `restore` | `nuvola_apps_preferences-system-windows` | Restore window command icon (16) |
@@ -1064,8 +1064,7 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
 - **Menus and toolbars**: hardcoded UI references in viewer/toolbar code
 - **Icon picker**: `icon_catalog.viewer_icon_ids()` in `icon_library.py`
 - **Defaults**: task status icons, type defaults, viewer defaults
-- **Plural/singular mappings**: `itemImagePlural` in `domain/attribute/icon/__init__.py`
-- **Documentation**: `docs/ICON_PLURALIZE.md`, `docs/ICON_LIBRARY.md`, demo scripts
+- **Documentation**: `docs/ICON_LIBRARY.md`, demo scripts
 - **Data files**: JSON catalogs, `icons_parsed.py`, `nuvola/icons.json`
 - **Test data**: unit tests using the icon name as test data
 - **Auto-generated files**: `SOURCES.txt` (auto-updates on build, no manual action)
@@ -1084,20 +1083,19 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
    **Main toolbar icons require 16, 22, AND 32px.** The main toolbar
    (`MainToolBar`) is user-resizable via View > Toolbar menu: Small (16×16),
    Medium (22×22, default), Large (32×32). If the migrated icon is any of
-   these 10 main toolbar commands, import all 3 sizes from the distillery:
+   these 9 main toolbar commands, import all 3 sizes from the distillery:
 
    | # | Command class | Current bitmap= |
    |---|---------------|-----------------|
    | 1 | FileOpen | `fileopen` |
    | 2 | FileSave | `save` |
-   | 3 | FileMergeDiskChanges | `mergedisk` |
-   | 4 | Print | `print` |
-   | 5 | EditUndo | `undo` |
-   | 6 | EditRedo | `redo` |
-   | 7 | EffortStartButton | `taskcoach_actions_clock_menu_icon` |
-   | 8 | EffortStop | `taskcoach_actions_clock_resume_icon` |
-   | 9 | EditToolBarPerspective | `nuvola_apps_preferences-system-session-services` |
-   | 10 | ToggleAutoScroll | `oxygen_actions_align-vertical-center` (16/22/32/48 imported) |
+   | 3 | Print | `print` |
+   | 4 | EditUndo | `undo` |
+   | 5 | EditRedo | `redo` |
+   | 6 | EffortStartButton | `taskcoach_actions_clock_menu_icon` |
+   | 7 | EffortStop | `taskcoach_actions_clock_resume_icon` |
+   | 8 | EditToolBarPerspective | `nuvola_apps_preferences-system-session-services` |
+   | 9 | ToggleAutoScroll | `oxygen_actions_align-vertical-center` (16/22/32/48 imported) |
 
    (Defined in `mainwindow.py:434` + auto-appended at `toolbar.py:144`)
 
@@ -1126,13 +1124,7 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
    }
    ```
 
-3. **`domain/attribute/icon/__init__.py`**: Remove the migrated icon's entry
-   from `itemImagePlural` if it was the singular (key) side of a mapping.
-   Do NOT replace the key with the new nuvola name — the plural icon
-   (e.g., `keys_icon`) is a separate icon that needs its own migration.
-   Just delete the row. Update `docs/ICON_PLURALIZE.md` likewise.
-
-4. **Test files**: Update any tests using the legacy icon name as test data.
+3. **Test files**: Update any tests using the legacy icon name as test data.
 
 #### Step 4 — Delete old files
 
@@ -1141,8 +1133,6 @@ Delete the old icon's PNG files from its theme directory in
 
 #### Step 5 — Update documentation
 
-- `docs/ICON_PLURALIZE.md` — remove row from plural table if applicable
-- `docs/scripts/icon_picker_refactoring_demo.py` — update test data
 - `docs/ICON_LIBRARY.md` — add to "Completed Migrations" table above
 - Delete `icon_overview.html` and `generate_icon_overview.py` if not already removed
 
@@ -1159,8 +1149,8 @@ Delete the old icon's PNG files from its theme directory in
   follow procedure above. The icon appears only in the picker and user data files.
 - **Tier 2 — Hardcoded defaults** (status LEDs, type icons, viewer icons): requires
   additional code changes beyond the deprecated mapping (default values in code).
-- **Tier 3 — Semantic pairs** (LED→folder, singular→plural with different images):
-  needs replacement concept, not just renaming.
+- **Tier 3: Semantic pairs**: none left; the LED to folder pairs went with
+  the plural icons (2026-09-29).
 
 ## Recently Added Icons
 
@@ -1322,9 +1312,27 @@ Use icon-distillery's hints script:
 ### Key Files
 - **Import catalogs**: `../icon-distillery/{theme}/icons.json`
 
+## Removed: Plural Icons
+
+Removed 2026-09-29, **ruled by designer**
+([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do),
+to do 58). An item with children showed the plural twin of its icon (a
+status dot became the folder of its colour, the checkmark a double
+checkmark), and one without showed the singular.
+
+Why:
+
+- Redundant: the tree's expand arrow already shows that an item has
+  children, as it does for the open folder icons removed before.
+- Not scalable: fixed pairs of icons, one twin per icon, cannot grow
+  with the icon library.
+- No longer used: it touched only the default status dots.
+
+Any icons for grouping items need a richer icon feature, not pairs.
+The folder and double checkmark icons stay as regular icons.
+
 ## See Also
 
-- [ICON_PLURALIZE.md](ICON_PLURALIZE.md) - Plural/singular icon mapping
 - [ICON_DISPLAY.md](ICON_DISPLAY.md) - Icon display architecture (image lists, viewers, synthetic icons)
 - [SYSTEM_TRAY.md](SYSTEM_TRAY.md) - System tray icons and `tray/hicolor` theme
 - [TASK_STATUS.md](TASK_STATUS.md) - Status icon system

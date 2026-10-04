@@ -100,7 +100,6 @@ class StackedFilterTest(test.TestCase):
 
 class SearchFilterTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.parent = task.Task(
             subject="*ABC$D", description="Parent description"
         )
@@ -219,37 +218,8 @@ class SearchFilterTest(test.TestCase):
         self.assertEqual(2, len(self.filter))
 
 
-class DeletedFilterTest(test.TestCase):
-    def setUp(self):
-        task.Task.settings = config.Settings(load=False)
-        self.list = task.TaskList()
-        self.filter = base.DeletedFilter(self.list)
-        self.task = task.Task()
-
-    def testAddItem(self):
-        self.list.append(self.task)
-        self.assertEqual(1, len(self.filter))
-
-    def testDeleteItem(self):
-        self.list.append(self.task)
-        self.list.remove(self.task)
-        self.assertEqual(0, len(self.filter))
-
-    def testMarkDeleted(self):
-        self.list.append(self.task)
-        self.task.markDeleted()
-        self.assertEqual(0, len(self.filter))
-
-    def testMarkNotDeleted(self):
-        self.list.append(self.task)
-        self.task.markDeleted()
-        self.task.cleanDirty()
-        self.assertEqual(1, len(self.filter))
-
-
 class SelectedItemsFilterTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.task = task.Task()
         self.child = task.Task(parent=self.task)
         self.list = task.TaskList([self.task])

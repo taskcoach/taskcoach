@@ -17,8 +17,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import operating_system
+from taskcoachlib.config import settings
 from taskcoachlib.widgets import itemctrl
 import wx.lib.mixins.listctrl
+from taskcoachlib import patterns
 
 
 class VirtualListCtrl(
@@ -83,10 +85,8 @@ class VirtualListCtrl(
             rect = self.GetItemRect(row)
         except Exception:
             return
-        from taskcoachlib.config import settings2
-
         pad = (
-            settings2.window.hoverlinewidth + 1
+            settings.window.hoverlinewidth + 1
         )  # both lines inside row, small safety
         rect.Inflate(pad, pad)
         self.RefreshRect(rect)
@@ -94,16 +94,14 @@ class VirtualListCtrl(
     def _on_hover_motion(self, event):
         row, flags = super().HitTest(event.GetPosition())
         if row != self._hover_row:
-            from taskcoachlib.config import settings2
-
             old = self._hover_row
             self._hover_row = row
-            if settings2.window.hoverlinewidth:
+            if settings.window.hoverlinewidth:
                 if old >= 0:
                     self._refresh_hover_row(old)
                 if row >= 0:
                     self._refresh_hover_row(row)
-                wx.CallAfter(self._draw_hover_outline)
+                patterns.later.soon(self, self._draw_hover_outline)
         event.Skip()
 
     def _on_hover_leave(self, event):
@@ -113,13 +111,38 @@ class VirtualListCtrl(
             self._refresh_hover_row(old)
         event.Skip()
 
+    def follow_pointer(self):
+        """Rows moved under a pointer at rest (a scroll, a key, the list
+        refilled): the tooltip, about the row that was there, hides,
+        and the hover outline goes to the row under the pointer now
+        (docs/LIST_MANAGEMENT.md, Row Hover Outline)."""
+        self.cancel_tip()
+        row = self.__row_under_pointer()
+        if row != self._hover_row:
+            old, self._hover_row = self._hover_row, row
+            for each in (old, row):
+                if each >= 0:
+                    self._refresh_hover_row(each)
+
+    def __row_under_pointer(self):
+        # The rows' window, whose coordinates wx's HitTest takes; only
+        # the generic list (GTK) has one apart from the control
+        main_window = getattr(wx.ListCtrl, "GetMainWindow", None)
+        rows = (main_window(self) if main_window else None) or self
+        point = rows.ScreenToClient(wx.GetMousePosition())
+        if not rows.GetClientRect().Contains(point):
+            return -1
+        return super().HitTest(point)[0]
+
     def _draw_hover_outline(self):
         """Two-tone hover outline: fgcolor inner + bgcolor outer."""
-        from taskcoachlib.config import settings2
-
-        pw = settings2.window.hoverlinewidth
+        pw = settings.window.hoverlinewidth
         if self._hover_row < 0 or not pw:
             return
+        if self.__row_under_pointer() != self._hover_row:
+            # The rows scrolled under the pointer at rest
+            self.follow_pointer()
+            return  # Drawn after the repaint the change asks
         try:
             outer = self.GetItemRect(self._hover_row)
         except Exception:
@@ -137,12 +160,13 @@ class VirtualListCtrl(
 
     def _on_paint_hover(self, event):
         event.Skip()
-        # Only schedule a redraw when a row is actually hovered. Otherwise
-        # every paint (including those on hidden, never-hovered controls such
-        # as the export dialog's temporary viewers) would queue a CallAfter
-        # that fires after the control is destroyed.
+        # Only schedule a redraw when a row is actually hovered.
+        # Otherwise every paint (including those on hidden,
+        # never-hovered controls such as the export dialog's temporary
+        # viewers) would queue a call that is due after the control is
+        # destroyed.
         if self._hover_row >= 0:
-            wx.CallAfter(self._draw_hover_outline)
+            patterns.later.soon(self, self._draw_hover_outline)
 
     def GetMainWindow(self):
         # Override to return self for drop target support.
@@ -171,13 +195,6 @@ class VirtualListCtrl(
             return ""
         return self.getItemText(item, columnIndex)
 
-    def OnGetItemTooltipData(self, rowIndex, columnIndex):
-        try:
-            item = self.get_item_with_index(rowIndex)
-        except IndexError:
-            return None
-        return self.getItemTooltipData(item)
-
     def OnGetItemImage(self, rowIndex):
         try:
             item = self.get_item_with_index(rowIndex)
@@ -197,8 +214,8 @@ class VirtualListCtrl(
             item = self.get_item_with_index(rowIndex)
         except IndexError:
             return None
-        foreground_color = item.foregroundColor(recursive=True)
-        background_color = item.backgroundColor(recursive=True)
+        foreground_color = item.shown_fg_color()
+        background_color = item.shown_bg_color()
         # wx.NullColour doesn't work correctly on Windows - it renders as
         # black instead of transparent. Use system colors to match
         # HyperTreeList's GetClassDefaultAttributes.
@@ -213,7 +230,7 @@ class VirtualListCtrl(
                 )
 
         item_attribute_arguments = [foreground_color, background_color]
-        font = item.font(recursive=True)
+        font = item.shown_font()
         if font is None:
             # FIXME: Is the right way to get the font here?
             # wxItemAttr required a font for initialization, so we give one
@@ -258,6 +275,9 @@ class VirtualListCtrl(
             # The VirtualListCtrl makes sure only visible items are updated
             super().RefreshItems(0, count - 1)
         self.selectCommand()
+        if self._hover_row >= 0:
+            # Another item may be under the pointer now
+            patterns.later.soon(self, self.follow_pointer)
 
     def RefreshItems(self, *items):
         """Refresh specific items."""
@@ -291,9 +311,9 @@ class VirtualListCtrl(
         return self.GetSelectedItemCount() == 1
 
     def curselection(self):
-        # Guard against deleted C++ object - can happen when wx.CallAfter
-        # callback executes after window destruction (e.g., closing
-        # nested dialogs)
+        # Guard against deleted C++ object - can happen when a later
+        # call runs after window destruction (e.g., closing nested
+        # dialogs)
         try:
             # Filter out None values - get_item_with_index can return None
             # for some indices
@@ -316,10 +336,7 @@ class VirtualListCtrl(
     def _auto_scroll_enabled(self):
         """Whether the view may scroll by itself to follow the
         selection."""
-        settings = getattr(self.__parent, "settings", None)
-        if settings is None:
-            return True
-        return settings.getboolean("view", "autoscrollselection")
+        return settings.view.autoscrollselection
 
     def ensureSelectionVisible(self):
         if not self._auto_scroll_enabled():

@@ -22,6 +22,7 @@ from taskcoachlib.command import (
     NewEffortCommand,
     EditEffortStopDateTimeCommand,
 )
+from taskcoachlib.config import settings
 from taskcoachlib.domain import effort, date
 from taskcoachlib.i18n import _
 from taskcoachlib.meta.debug import log_step
@@ -98,28 +99,30 @@ class WakeFromIdleFrame(NotificationFrameBase):
 
 
 class IdleController(Observer, IdleNotifier):
-    def __init__(self, main_window, settings, effort_list):
-        self._main_window = main_window
-        self._settings = settings
+    def __init__(self, effort_list):
         self._effort_list = effort_list
         self._displayed = set()
         self._went_idle_at = None
+        self.__backend_logged = False
 
         super().__init__()
 
         self._tracker = effort.EffortListTracker(self._effort_list)
-        self._tracker.subscribe(self._on_tracked_changed, "effortlisttracker")
+        self.registerObserver(
+            self._on_tracked_changed,
+            eventType=self._tracker.changed_event_type(),
+            eventSource=self._tracker,
+        )
 
         self.registerObserver(self._on_power_off, eventType="powermgt.off")
         self.registerObserver(self._on_power_on, eventType="powermgt.on")
         self.registerObserver(
             self._on_min_idle_time_changed,
             eventType="feature.minidletime",
-            eventSource=settings,
         )
 
         self._log_backend_if_enabled()
-        self._on_tracked_changed(self._tracker.trackedEfforts())
+        self._on_tracked_changed()
 
     def _on_power_off(self, event):  # pylint: disable=W0613
         self.poweroff()
@@ -128,15 +131,18 @@ class IdleController(Observer, IdleNotifier):
         self.poweron()
 
     def _log_backend_if_enabled(self):
-        """Probe and report the idle-detection backend at startup.
+        """Probe and report the idle-detection backend once, when the
+        feature is first on: at startup, or when turned on later in the
+        session (docs/IDLE.md#startup-logging).
 
-        Runs only when the feature is enabled (minidletime > 0). Calling
-        get_idle_seconds() also forces lazy backend selection on Linux, so
-        no separate runtime logging is needed when the dialog later fires.
+        Calling get_idle_seconds() also forces lazy backend selection on
+        Linux, so no separate runtime logging is needed when the dialog
+        later fires.
         """
         min_time_sec = self.get_min_idle_time()
-        if min_time_sec <= 0:
+        if min_time_sec <= 0 or self.__backend_logged:
             return
+        self.__backend_logged = True
 
         log_step(
             "Idle time notice enabled; threshold=%d min (%ds)"
@@ -170,19 +176,20 @@ class IdleController(Observer, IdleNotifier):
                 prefix="IDLE",
             )
 
-    def _on_tracked_changed(self, efforts):
-        if len(efforts):
+    def _on_tracked_changed(self, event=None):  # pylint: disable=W0613
+        if self._tracker.trackedEfforts():
             self.resume()
         else:
             self.pause()
 
     def _on_min_idle_time_changed(self, event):  # pylint: disable=W0613
+        self._log_backend_if_enabled()
         # Through resume(), so polling that starts now does not count
         # the time since tracking started as idle.
-        self._on_tracked_changed(self._tracker.trackedEfforts())
+        self._on_tracked_changed()
 
     def get_min_idle_time(self):
-        return self._settings.getint("feature", "minidletime") * 60
+        return settings.feature.minidletime * 60
 
     def sleep(self):
         log_step("Idle threshold reached while tracking effort", prefix="IDLE")

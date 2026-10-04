@@ -30,27 +30,12 @@ OUT="$SCRIPT_DIR/python3-sources.json"
 # detection) built from its pinned sdist in the runtime, whose Sdk ships the
 # dbus/glib dev headers. wxPython/wxWidgets are separate pinned source modules.
 REQUIREMENTS=(
-    "six>=1.16.0"
-    "pypubsub"
-    "watchdog>=3.0.0"
     "chardet>=5.2.0"
     "python-dateutil>=2.9.0"
-    "pyparsing>=3.1.3"
-    "lxml"
-    "pyxdg"
     "keyring"
-    # numpy: the other builds pin <2 (numpy 1.26.4, the final 1.x), but that
-    # release only ships wheels for Python 3.9-3.12 and the GNOME runtime is
-    # Python 3.13, so <2 is unsatisfiable here. The real constraint behind that
-    # pin is avoiding numpy 2.4+, which raised its CPU baseline to SSE4.2 and
-    # crashes older CPUs with ILLEGAL INSTRUCTION (see docs/NUMPY.md). numpy
-    # 2.1-2.3 have cp313 wheels and keep the old baseline, and Task Coach's use
-    # (uint8 array ops) is numpy-2.x-safe, so pin <2.4 for the flatpak.
-    "numpy>=1.26,<2.4"
     "squaremap>=1.0.5"
     "pyenchant>=3.2.0"
     "dbus-python>=1.3.2"
-    "distro"
 )
 
 # Python build backends the OFFLINE build needs but pip cannot fetch from PyPI
@@ -80,13 +65,13 @@ wget -q "$GENERATOR_URL" -O "$TMP/flatpak-pip-generator"
 python3 -m pip install --quiet --user requirements-parser packaging || true
 
 # --runtime makes the generator read the TARGET Python's version/ABI tags from
-# the GNOME Sdk, so numpy/lxml/cryptography resolve to the correct cp3xx
+# the GNOME Sdk, so cryptography resolves to the correct cp3xx
 # manylinux wheels (generating on the host would pin the wrong ABI).
 # --prefer-wheels avoids compiling those heavy binary deps from sdist;
 # dbus-python is intentionally left off it (no wheels exist) and builds from its
 # sdist against the Sdk's dbus/glib headers.
 # --ignore-installed lists packages pip must install into /app even when the
-# build's org.gnome.Sdk already ships them (notably lxml): without it pip sees
+# build's org.gnome.Sdk already ships them: without it pip sees
 # them "already satisfied", skips them, and they are MISSING at runtime against
 # org.gnome.Platform, crashing the app with ModuleNotFoundError. We pass every
 # runtime dep by name; names the Sdk does not ship are harmless no-ops. Requires
@@ -97,7 +82,7 @@ IGNORE_INSTALLED="$(printf '%s\n' "${REQUIREMENTS[@]}" | sed -E 's/[<>=!~,].*//'
 echo "Generating $OUT ..."
 python3 "$TMP/flatpak-pip-generator" \
     --runtime "org.gnome.Sdk//$RUNTIME_VERSION" \
-    --prefer-wheels=numpy,lxml,cryptography,cffi \
+    --prefer-wheels=cryptography,cffi \
     --ignore-installed="$IGNORE_INSTALLED" \
     --output "$SCRIPT_DIR/python3-sources" \
     "${REQUIREMENTS[@]}"

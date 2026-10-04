@@ -22,7 +22,8 @@ import os, shutil, glob, math, re
 from taskcoachlib.domain import date
 from taskcoachlib.filesystem import resourcelock
 from .taskfile import SafeWriteFile
-from pubsub import pub
+from taskcoachlib import patterns
+from taskcoachlib.config import settings
 import bz2, hashlib
 
 # Hack: indirect
@@ -43,12 +44,10 @@ def compressFile(srcName, dstName):
 
 
 class BackupManifest(object):
-    def __init__(self, settings):
-        self.__settings = settings
-
-        xmlName = os.path.join(settings.pathToBackupsDir(), "backups.xml")
-        if os.path.exists(xmlName):
-            with open(xmlName, "rb") as fp:
+    def __init__(self):
+        xml_name = os.path.join(settings.backups_dir(), "backups.xml")
+        if os.path.exists(xml_name):
+            with open(xml_name, "rb") as fp:
                 root = ET.parse(fp).getroot()
                 self.__files = dict(
                     [
@@ -66,7 +65,7 @@ class BackupManifest(object):
             node.attrib["sha"] = sha
             node.text = filename
         with open(
-            os.path.join(self.__settings.pathToBackupsDir(), "backups.xml"),
+            os.path.join(settings.backups_dir(), "backups.xml"),
             "wb",
         ) as fp:
             ET.ElementTree(root).write(fp)
@@ -100,18 +99,13 @@ class BackupManifest(object):
         return len(self.listBackups(filename)) != 0
 
     def backupPath(self, filename):
-        path = os.path.join(self.__settings.pathToBackupsDir(), SHA(filename))
+        path = os.path.join(settings.backups_dir(), SHA(filename))
         if not os.path.exists(path):
             os.makedirs(path)
         return path
 
     def addFile(self, filename):
         self.__files[SHA(filename)] = filename
-
-    def removeFile(self, filename):
-        sha = SHA(filename)
-        if sha in self.__files:
-            del self.__files[sha]
 
     def restoreFile(self, filename, dateTime, dstName):
         """Restore the backup of filename made at dateTime as dstName.
@@ -121,7 +115,7 @@ class BackupManifest(object):
         sha = SHA(filename)
         src = bz2.BZ2File(
             os.path.join(
-                self.__settings.pathToBackupsDir(),
+                settings.backups_dir(),
                 sha,
                 dateTime.strftime("%Y%m%d%H%M%S.bak"),
             ),
@@ -148,12 +142,22 @@ class AutoBackup(object):
     minNrOfBackupFiles = 3  # Keep at least three backup files.
     maxNrOfBackupFilesToRemoveAtOnce = 3  # Slowly reduce the number of backups
 
-    def __init__(self, settings, copyfile=compressFile):
+    def __init__(self, copyfile=compressFile):
         super().__init__()
-        self.__settings = settings
         self.__copyfile = copyfile
-        pub.subscribe(self.onTaskFileAboutToSave, "taskfile.aboutToSave")
-        pub.subscribe(self.onTaskFileRead, "taskfile.justRead")
+        register = patterns.Publisher().registerObserver
+        register(
+            self.on_task_file_about_to_save, eventType="taskfile.aboutToSave"
+        )
+        register(self.on_task_file_read, eventType="taskfile.justRead")
+
+    def on_task_file_read(self, event):
+        for task_file in event.sources():
+            self.onTaskFileRead(task_file)
+
+    def on_task_file_about_to_save(self, event):
+        for task_file in event.sources():
+            self.onTaskFileAboutToSave(task_file)
 
     def onTaskFileRead(self, taskFile):
         """Copies old-style backups (in the same dictory as the task file) to the
@@ -170,7 +174,7 @@ class AutoBackup(object):
             return
 
         # First add the file to the XML manifest.
-        man = BackupManifest(self.__settings)
+        man = BackupManifest()
         man.addFile(taskFile.filename())
         man.save()
 
@@ -262,14 +266,14 @@ class AutoBackup(object):
 
     def backupFiles(self, taskFile, glob=glob.glob):  # pylint: disable=W0621
         sha = SHA(taskFile.filename())
-        root = os.path.join(self.__settings.pathToBackupsDir(), sha)
+        root = os.path.join(settings.backups_dir(), sha)
         return sorted(glob("%s.bak" % os.path.join(root, "[0-9]" * 14)))
 
     def backupFilename(self, taskFile, now=date.DateTime.now):
         """Generate a backup filename for the specified date/time."""
         sha = SHA(taskFile.filename())
         return os.path.join(
-            self.__settings.pathToBackupsDir(),
+            settings.backups_dir(),
             sha,
             now().strftime("%Y%m%d%H%M%S.bak"),
         )

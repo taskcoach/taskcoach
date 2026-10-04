@@ -23,7 +23,8 @@ from taskcoachlib.i18n import _
 from wx.lib import sized_controls
 from wx.lib.agw import hypertreelist, customtreectrl
 from taskcoachlib import meta
-from pubsub import pub
+from taskcoachlib import patterns
+from taskcoachlib.config import settings
 
 
 class ExportDialog(sized_controls.SizedDialog):
@@ -35,7 +36,6 @@ class ExportDialog(sized_controls.SizedDialog):
 
     def __init__(self, *args, **kwargs):
         self.window = args[0]
-        self.settings = kwargs.pop("settings")
         super().__init__(
             title=self.title,
             style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
@@ -47,7 +47,7 @@ class ExportDialog(sized_controls.SizedDialog):
         self.components = self.createInterior(pane)
         buttonSizer = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
         self.SetButtonSizer(buttonSizer)
-        wxhelper.getButtonFromStdDialogButtonSizer(buttonSizer, wx.ID_OK).Bind(
+        wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.onOk
         )
         self.Fit()
@@ -58,12 +58,6 @@ class ExportDialog(sized_controls.SizedDialog):
 
     def createInterior(self, pane):
         raise NotImplementedError
-
-    def exportableViewers(self):
-        return self.window.viewer
-
-    def activeViewer(self):
-        return self.window.viewer.active_viewer()
 
     def options(self):
         result = dict()
@@ -80,78 +74,6 @@ class ExportDialog(sized_controls.SizedDialog):
 # Controls for adding behavior to the base export dialog:
 
 ViewerPickedEvent, EVT_VIEWERPICKED = wx.lib.newevent.NewEvent()
-
-
-class ViewerPicker(sized_controls.SizedPanel):
-    """Control for adding a viewer chooser widget to the export dialog."""
-
-    def __init__(self, parent, viewers, activeViewer):
-        super().__init__(parent)
-        self.SetSizerType("horizontal")
-        self.createPicker()
-        self.populatePicker(viewers)
-        self.selectActiveViewer(viewers, activeViewer)
-
-    def createPicker(self):
-        label = wx.StaticText(self, label=_("Export items from:"))
-        label.SetSizerProps(valign="center")
-        self.viewerComboBox = wx.ComboBox(
-            self, style=wx.CB_READONLY | wx.CB_SORT
-        )  # pylint: disable=W0201
-        self.viewerComboBox.Bind(wx.EVT_COMBOBOX, self.onViewerChanged)
-
-    def populatePicker(self, viewers):
-        self.titleToViewer = dict()  # pylint: disable=W0201
-        for viewer in viewers:
-            self.viewerComboBox.Append(viewer.title())  # pylint: disable=E1101
-            # Would like to user client data in the combobox, but that
-            # doesn't work on all platforms
-            self.titleToViewer[viewer.title()] = viewer
-
-    def selectActiveViewer(self, viewers, activeViewer):
-        selectedViewer = (
-            activeViewer if activeViewer in viewers else viewers[0]
-        )
-        self.viewerComboBox.SetValue(selectedViewer.title())
-
-    def selectedViewer(self):
-        return self.titleToViewer[self.viewerComboBox.GetValue()]
-
-    def options(self):
-        return dict(selectedViewer=self.selectedViewer())
-
-    def onViewerChanged(self, event):
-        event.Skip()
-        wx.PostEvent(self, ViewerPickedEvent(viewer=self.selectedViewer()))
-
-    def saveSettings(self):
-        pass  # No settings to remember
-
-
-class SelectionOnlyCheckBox(wx.CheckBox):
-    """Control for adding a widget to the export dialog that lets the
-    user choose between exporting all items or just the selected items."""
-
-    def __init__(self, parent, settings, section, setting):
-        super().__init__(parent, label=_("Export only the selected items"))
-        self.settings = settings
-        self.section = section
-        self.setting = setting
-        self.initializeCheckBox()
-
-    def initializeCheckBox(self):
-        selectionOnly = self.settings.getboolean(self.section, self.setting)
-        self.SetValue(selectionOnly)
-
-    def options(self):
-        return dict(selectionOnly=self.GetValue())
-
-    def saveSettings(self):
-        self.settings.set(
-            self.section,
-            self.setting,  # pylint: disable=E1101
-            str(self.GetValue()),
-        )
 
 
 class ColumnPicker(sized_controls.SizedPanel):
@@ -263,36 +185,31 @@ class SeparateDateAndTimeColumnsCheckBox(wx.CheckBox):
     """Control that lets the user decide whether dates and times should be
     separated or kept together."""
 
-    def __init__(self, parent, settings, section, setting):
+    def __init__(self, parent, section, setting):
         super().__init__(
             parent, label=_("Put task dates and times in separate columns")
         )
-        self.settings = settings
         self.section = section
         self.setting = setting
         self.initializeCheckBox()
 
     def initializeCheckBox(self):
-        separateDateAndTimeColumns = self.settings.getboolean(
-            self.section, self.setting
-        )
-        self.SetValue(separateDateAndTimeColumns)
+        self.SetValue(settings.get(self.section, self.setting))
 
     def options(self):
         return dict(separateDateAndTimeColumns=self.GetValue())
 
     def saveSettings(self):
-        self.settings.setboolean(self.section, self.setting, self.GetValue())
+        settings.set(self.section, self.setting, self.GetValue())
 
 
 class SeparateCSSCheckBox(sized_controls.SizedPanel):
     """Control to let the user write CSS style information to a
     separate file instead of including it into the HTML file."""
 
-    def __init__(self, parent, settings, section, setting):
+    def __init__(self, parent, section, setting):
         super().__init__(parent)
         self.SetSizerProps(expand=True)
-        self.settings = settings
         self.section = section
         self.setting = setting
         self.createCheckBox()
@@ -303,8 +220,9 @@ class SeparateCSSCheckBox(sized_controls.SizedPanel):
             self,  # pylint: disable=W0201
             label=_("Write style information to a separate CSS file"),
         )
-        separateCSS = self.settings.getboolean(self.section, self.setting)
-        self.separateCSSCheckBox.SetValue(separateCSS)
+        self.separateCSSCheckBox.SetValue(
+            settings.get(self.section, self.setting)
+        )
 
     def createHelpInformation(self):
         self._helpText = (
@@ -334,10 +252,8 @@ class SeparateCSSCheckBox(sized_controls.SizedPanel):
         return dict(separateCSS=self.separateCSSCheckBox.GetValue())
 
     def saveSettings(self):
-        self.settings.set(
-            self.section,
-            self.setting,
-            str(self.separateCSSCheckBox.GetValue()),
+        settings.set(
+            self.section, self.setting, self.separateCSSCheckBox.GetValue()
         )
 
 
@@ -386,7 +302,6 @@ class ExportAsCSVDialog(ExportDialog):
         self.separateDateAndTimeColumnsCheckBox = (
             SeparateDateAndTimeColumnsCheckBox(
                 pane,
-                self.settings,
                 self.section,
                 "csv_separatedateandtimecolumns",
             )
@@ -429,7 +344,7 @@ class ExportAsCSVDialog(ExportDialog):
 
             kwargs["attachmentsToShow"] = AttachmentList()
         hiddenViewer = viewerClass(
-            self._hiddenPanel, self.window.taskFile, self.settings, **kwargs
+            self._hiddenPanel, self.window.taskFile, **kwargs
         )
         hiddenViewer.Hide()
         self._hiddenViewers[viewerClass] = hiddenViewer
@@ -537,7 +452,7 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         self._viewerMap = {}
         self.createPicker()
         self.populatePicker()
-        self._subscribeToSelectionChanges()
+        self._subscribe_to_selection_changes()
         topLevel = self.GetTopLevelParent()
         if topLevel:
             topLevel.Bind(wx.EVT_ACTIVATE, self._onDialogActivate)
@@ -618,17 +533,22 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         if self.viewerComboBox.GetCount() > 0:
             self.viewerComboBox.SetSelection(0)
 
-    def _subscribeToSelectionChanges(self):
+    def _subscribe_to_selection_changes(self):
         """Subscribe to selection change events from all viewers."""
-        pub.subscribe(self._onViewerStatusChanged, "viewer.status")
+        from taskcoachlib.gui.viewer.container import ViewerContainer
+
+        patterns.Publisher().registerObserver(
+            self._on_viewer_status_changed,
+            eventType=ViewerContainer.status_event_type(),
+        )
 
     def _onDialogActivate(self, event):
         """Rebuild dropdown when the export dialog gains focus."""
         event.Skip()
         if event.GetActive():
-            self._onViewerStatusChanged()
+            self._on_viewer_status_changed()
 
-    def _onViewerStatusChanged(self):
+    def _on_viewer_status_changed(self, event=None):  # pylint: disable=W0613
         """Handle viewer status changes (including selection changes)."""
         currentSelection = self.viewerComboBox.GetStringSelection()
         currentViewer = self._viewerMap.get(currentSelection)
@@ -702,10 +622,7 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         pass
 
     def Destroy(self):
-        try:
-            pub.unsubscribe(self._onViewerStatusChanged, "viewer.status")
-        except Exception:
-            pass
+        patterns.Publisher().removeObserver(self._on_viewer_status_changed)
         return super().Destroy()
 
 
@@ -713,35 +630,24 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
     """Control for selecting which fields to export in iCalendar format.
     Uses HyperTreeList with checkboxes."""
 
-    # Field definitions: (field_key, taskcoach_label, icalendar_field, required, formatting, for_tasks, for_efforts)
+    # Field definitions: (field_key, taskcoach_label, icalendar_field,
+    # required, formatting)
     TASK_FIELDS = [
-        ("uid", _("ID"), "UID", True, _("Internal identifier"), True, False),
+        ("uid", _("ID"), "UID", True, _("Internal identifier")),
         (
             "dtstamp",
             _("(auto-generated)"),
             "DTSTAMP",
             True,
             _("Current UTC timestamp"),
-            True,
-            False,
         ),
-        (
-            "summary",
-            _("Subject"),
-            "SUMMARY",
-            False,
-            _("Text, quoted"),
-            True,
-            False,
-        ),
+        ("summary", _("Subject"), "SUMMARY", False, _("Text, quoted")),
         (
             "description",
             _("Description"),
             "DESCRIPTION",
             False,
             _("Text, quoted"),
-            True,
-            False,
         ),
         (
             "dtstart",
@@ -749,18 +655,14 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             "DTSTART",
             False,
             _("UTC datetime"),
-            True,
-            False,
         ),
-        ("due", _("Due date"), "DUE", False, _("UTC datetime"), True, False),
+        ("due", _("Due date"), "DUE", False, _("UTC datetime")),
         (
             "completed",
             _("Completion date"),
             "COMPLETED",
             False,
             _("UTC datetime"),
-            True,
-            False,
         ),
         (
             "categories",
@@ -768,8 +670,6 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             "CATEGORIES",
             False,
             _("Comma-separated, recursive"),
-            True,
-            False,
         ),
         (
             "status",
@@ -777,8 +677,6 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             "STATUS",
             False,
             _("NEEDS-ACTION / IN-PROCESS / COMPLETED"),
-            True,
-            False,
         ),
         (
             "priority",
@@ -786,8 +684,6 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             "PRIORITY",
             False,
             _("Number, capped at 3"),
-            True,
-            False,
         ),
         (
             "percent",
@@ -795,68 +691,36 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             "PERCENT-COMPLETE",
             False,
             _("Integer 0-100"),
-            True,
-            False,
         ),
-        (
-            "created",
-            _("Creation date"),
-            "CREATED",
-            False,
-            _("UTC datetime"),
-            True,
-            False,
-        ),
+        ("created", _("Creation date"), "CREATED", False, _("UTC datetime")),
         (
             "lastmod",
             _("Modification date"),
             "LAST-MODIFIED",
             False,
             _("UTC datetime"),
-            True,
-            False,
         ),
     ]
 
     EFFORT_FIELDS = [
-        ("uid", _("ID"), "UID", True, _("Internal identifier"), False, True),
+        ("uid", _("ID"), "UID", True, _("Internal identifier")),
         (
             "dtstamp",
             _("(auto-generated)"),
             "DTSTAMP",
             True,
             _("Current UTC timestamp"),
-            False,
-            True,
         ),
-        (
-            "summary",
-            _("Subject"),
-            "SUMMARY",
-            False,
-            _("Task subject, quoted"),
-            False,
-            True,
-        ),
+        ("summary", _("Subject"), "SUMMARY", False, _("Task subject, quoted")),
         (
             "description",
             _("Description"),
             "DESCRIPTION",
             False,
             _("Task description, quoted"),
-            False,
-            True,
         ),
-        (
-            "dtstart",
-            _("Start"),
-            "DTSTART",
-            False,
-            _("UTC datetime"),
-            False,
-            True,
-        ),
-        ("dtend", _("End"), "DTEND", False, _("UTC datetime"), False, True),
+        ("dtstart", _("Start"), "DTSTART", False, _("UTC datetime")),
+        ("dtend", _("End"), "DTEND", False, _("UTC datetime")),
     ]
 
     def __init__(self, parent, forTasks=True):
@@ -909,8 +773,6 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
             ical_field,
             required,
             formatting,
-            for_tasks,
-            for_efforts,
         ) in fields:
             item = self.tree.AppendItem(root, tc_label, ct_type=1)
             self.tree.SetItemText(item, ical_field, 1)
@@ -1085,7 +947,7 @@ class ExportAsHTMLDialog(ExportDialog):
 
         self.columnPicker = ColumnPicker(pane, None)
         separateCSSChooser = SeparateCSSCheckBox(
-            pane, self.settings, self.section, "html_separatecss"
+            pane, self.section, "html_separatecss"
         )
         self._updateColumnPickerState()
 
@@ -1122,7 +984,7 @@ class ExportAsHTMLDialog(ExportDialog):
 
             kwargs["attachmentsToShow"] = AttachmentList()
         hiddenViewer = viewerClass(
-            self._hiddenPanel, self.window.taskFile, self.settings, **kwargs
+            self._hiddenPanel, self.window.taskFile, **kwargs
         )
         hiddenViewer.Hide()
         self._hiddenViewers[viewerClass] = hiddenViewer

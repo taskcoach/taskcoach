@@ -25,15 +25,13 @@ class CategoryList(base.Collection):
     def extend(self, categories, event=None):
         super().extend(categories, event=event)
         for category in self._compositesAndAllChildren(categories):
-            for categorizable in category.categorizables():
-                categorizable.addCategory(category, event=event, modify=False)
+            category.enter_file(event=event)
 
     @patterns.eventSource
     def removeItems(self, categories, event=None):
         super().removeItems(categories, event=event)
         for category in self._compositesAndAllChildren(categories):
-            for categorizable in category.categorizables():
-                categorizable.removeCategory(category, event=event)
+            category.leave_file(event=event)
 
     def findCategoryByName(self, name):
         for category in self:

@@ -22,20 +22,18 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 **Appendix**
 - [Dependency Installation Strategy](#dependency-installation-strategy)
 - [Creating a Release](#creating-a-release)
+- [Release Notes](#release-notes)
+- [Version Check](#version-check)
 
 ## Minimum Version Requirements
 
 | Package | Min Version | Why Required | Distros with Old Versions |
 |---------|-------------|--------------|---------------------------|
-| Python | >=3.8 | Type hints, f-strings, walrus operator | — |
+| Python | >=3.10 | The oldest supported distribution's, Ubuntu 22.04 (the code itself needs 3.8) | — |
 | wxPython | >=4.2.0 | HyperTreeList stability | — |
-| wxPython | >=4.2.4 | hypertreelist row background fix (PR #2088) | All current (Bookworm 4.2.0, Trixie 4.2.3) |
 | wxPython | >=4.3.0 | Native dark mode on Windows (optional, see [WINDOWS.md](WINDOWS.md#dark-mode)) | Windows builds pin 4.3.1 |
-| pyparsing | >=3.1.3 | `pp.Tag()` API | Debian Bookworm (3.0.9) |
-| watchdog | >=3.0.0 | File monitoring API | Debian Bookworm (2.2.1) |
-| numpy | >=1.26,<2 | NumPy 2.4+ requires SSE4.2 (crashes old CPUs, see [NUMPY.md](NUMPY.md)) | — |
 
-**Note**: wxPython 4.2.4 was released October 28, 2025. Of the distros, only Arch (4.2.5) and Fedora 43 (4.2.4) ship it so far. The bundled copy in `taskcoachlib/patches/` is used on every wxPython version, since it also carries Task Coach changes (see [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md)).
+**Note**: the tree views run on Task Coach's own copy of wxPython's tree widget (`taskcoachlib/patches/`) on every wxPython version, so the installed wxPython's (4.0.7 to 4.3.1 across the builds) does not matter for them ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)).
 
 ## Install Overview by Build Target
 
@@ -44,23 +42,15 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | Package | debian12 | ubuntu22 | debian13 | ubuntu24 | arch | fedora | appimage | ~~flatpak~~ | windows | macos |
 |---------|:--------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|:-------:|:-------:|:-----:|
 | wxpython | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| pypubsub | distro | distro | distro | distro | AUR | distro | bundled | bundled | pip | pip |
-| pyparsing | **pip** | **pip** | distro | distro | distro | **pip** | bundled | bundled | pip | pip |
-| watchdog | **pip** | **pip** | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
-| six | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| lxml | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| numpy (<2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| ↳ version | 1.24.2 | 1.21.5 | 2.2.4 | 1.26.4 | 2.4.0 | 2.3.3 | 1.26.4 | 1.26.4 | 1.26.4 | 1.26.4 |
-| chardet (<5.2) | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| chardet | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | python-dateutil | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | keyring | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| pyxdg | distro | distro | distro | distro | distro | distro | bundled | bundled | — | — |
 | pyenchant | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | optional | — | — |
 | ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | bundled | — | — |
-| hypertreelist | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | bundled | bundled | **patch** | **patch** |
-| WMI | — | — | — | — | — | — | — | — | pip | — |
+| hypertreelist, customtreectrl | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** |
+| pywin32 | — | — | — | — | — | — | — | — | pip | — |
 | python3-dbus | optional | optional | optional | optional | optional | optional | — | bundled | — | — |
 | python3-pywayland | — | — | optional | — | optional | optional | — | — | — | — |
 
@@ -68,7 +58,7 @@ This table shows how dependencies are handled in **built packages** and **setup 
 - `distro` = Installed from distribution repos (required dependency)
 - `optional` = Optional feature support, exactly like the spell-check dictionaries: `Recommends:` on deb/rpm, `optdepends` on Arch. Never a hard dependency, never bundled, never pip-installed. Pulled in where the distro packages it, silently skipped (install still succeeds) where it does not.
 - `pip` = Bundled via pip in package build (version too old or not in repos)
-- `patch` = Bundled patch in `taskcoachlib/patches/` (wxPython hypertreelist fix)
+- `patch` = Task Coach's copy of wxPython's tree widget in `taskcoachlib/patches/` ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md))
 - `bundled` = Bundled in package (thirdparty/ for .deb/.rpm, inside the AppImage, or built into the Flatpak). For Flatpak this means pip-installed or built as a manifest module at build time; the base Python, GTK and PyGObject come from the GNOME runtime, not from these rows.
 - ~~`flatpak`~~ (struck through) = **Flathub release postponed** (2026); the Flatpak build still works for a direct `.flatpak` install but is not actively published — see [Flatpak Packaging](#flatpak-packaging).
 - `host` = Uses host system library (AppImage); install on host for Wayland tray support
@@ -76,9 +66,12 @@ This table shows how dependencies are handled in **built packages** and **setup 
 - `—` = Not applicable for this platform
 
 **Note: `python3-dbus` / `python3-pywayland` are optional
-idle-detection bindings**, used only by the "Idle time notice"
-feature (off by default; guarded imports, degrade silently; see
-[IDLE.md](IDLE.md) for the binding-vs-C-library distinction). Only
+bindings** (guarded imports, degrade silently), mainly for the "Idle
+time notice" (off by default; see [IDLE.md](IDLE.md) for the
+binding-vs-C-library distinction). `python3-pywayland` also serves the
+tray's hide and restore on KDE Plasma Wayland
+([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)), and
+`python3-dbus` the start-up report's tray check (To Do 92). Only
 **core** `python3-pywayland` is needed: distro packages ship just the
 core `wayland` protocol, so the `ext-idle-notify-v1` binding is
 vendored in-tree (`taskcoachlib/thirdparty/ext_idle_notify_v1`); no
@@ -101,13 +94,13 @@ backends.
 
 | Target | ID | Python | wxPython | Setup Script | GitHub Workflow | Notes |
 |--------|:--:|:------:|:--------:|--------------|-----------------|-------|
-| [Debian 12 Bookworm](#debianubuntu-packaging) | debian12 | 3.11 | 4.2.0 | `setup_debian12_bookworm.sh` | `build-deb.yml` | pip: pyparsing, watchdog |
+| [Debian 12 Bookworm](#debianubuntu-packaging) | debian12 | 3.11 | 4.2.0 | `setup_debian12_bookworm.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Debian 13 Trixie](#debianubuntu-packaging) | debian13 | 3.12 | 4.2.3 | `setup_debian13_trixie.sh` | `build-deb.yml` | Distro deps sufficient |
-| [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.1.1 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | pip: pyparsing, watchdog |
+| [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.0.7 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Ubuntu 24.04 Noble](#debianubuntu-packaging) | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
-| [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
-| [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap; pypubsub from AUR |
-| [Fedora 43](#fedora-packaging) | fedora43 | 3.13 | 4.2.4 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap, pyparsing |
+| [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
+| [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
+| [Fedora 43](#fedora-packaging) | fedora43 | 3.14 | 4.2.4 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap |
 | [**AppImage**](#appimage-packaging) | appimage | **3.11** | **4.2.5** | — | `build-appimage.yml` | Bundles Python + all deps |
 | [~~**Flatpak**~~](#flatpak-packaging) | flatpak | runtime | **4.3.1 (source)** | `scripts/build-flatpak.sh` | `build-flatpak.yml` | **Flathub release postponed**; GNOME runtime; wxPython from sdist (builds its own bundled wxWidgets) |
 | [**Windows**](#windows-packaging) | windows | **3.11** | **4.3.1** | — | `build-windows.yml` | Python embed + Inno Setup |
@@ -153,6 +146,9 @@ because deletions raise `delete`, not `push`.
 
 All seven also share a `concurrency` group that cancels superseded runs
 on a branch or PR but never on a tag.
+
+`release-notes.yml` runs on the release tags only, to write the
+release page's text ([Release Notes](#release-notes)).
 
 `build-flatpak.yml` additionally runs on a weekly `schedule`. That adds
 no build ref of its own: it exists solely because GitHub evicts the
@@ -209,7 +205,7 @@ debian/
 ```bash
 # Install build dependencies
 sudo apt install build-essential debhelper dh-python \
-    python3-all python3-setuptools python3-distro devscripts
+    python3-all python3-setuptools devscripts
 
 # Build binary package (no orig tarball needed)
 dpkg-buildpackage -us -uc -b
@@ -246,32 +242,17 @@ dpkg-buildpackage -us -uc -S
 # - taskcoach_X.Y.Z-N.dsc (source description)
 ```
 
-### wxPython Patch Strategy
+### Bundled Tree Widget
 
-**Project files:** [CRITICAL_WXPYTHON_PATCH.md](CRITICAL_WXPYTHON_PATCH.md) | [patches/wxpython/README.md](../patches/wxpython/README.md)
+**Project files:** [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)
 
-Task Coach requires a patch to wxPython's `hypertreelist.py` for correct background coloring. Since packages cannot modify system `python3-wxgtk4.0`, we bundle the patch.
-
-### The Problem
-
-- wxPython < 4.2.4 has bugs in `TR_FULL_ROW_HIGHLIGHT` and `TR_FILL_WHOLE_COLUMN_BACKGROUND`
-- Fix merged upstream in wxPython 4.2.4 (October 28, 2025)
-- Current Debian/Ubuntu versions ship older wxPython
-
-### The Solution
-
-1. **Bundled patch** at `taskcoachlib/patches/hypertreelist.py`
-2. **Import hook** in `taskcoachlib/workarounds/monkeypatches.py`
-3. **Redirects** `wx.lib.agw.hypertreelist` to bundled version
-4. System wxPython remains unmodified
-
-This works for all installation methods (Debian, Ubuntu, Fedora, pip, etc.).
-
-### When to Remove
-
-Remove when Debian/Ubuntu ship wxPython >= 4.2.4:
-1. Remove import hook from `monkeypatches.py`
-2. Remove `taskcoachlib/patches/` directory
+Task Coach carries its own copy of wxPython's tree widget,
+`hypertreelist.py` and the `customtreectrl.py` it is built on
+(`taskcoachlib/patches/`), loaded in place of the installed ones on
+every wxPython version; packages cannot modify the system
+`python3-wxgtk4.0`. An import hook in
+`taskcoachlib/workarounds/monkeypatches.py` loads both; they ship
+inside `taskcoachlib`, so every package type has them.
 
 ### Dependencies
 
@@ -336,11 +317,11 @@ taskcoach (1.6.1-1~ppa1) noble; urgency=medium
 
 | Codename | Version | wxPython | Status |
 |----------|---------|----------|--------|
-| Jammy | 22.04 LTS | 4.1.1 | Patch required |
-| Noble | 24.04 LTS | 4.2.1 | Patch required |
-| Oracular | 24.10 | 4.2.1 | Patch required |
-| Plucky | 25.04 | 4.2.2 | Patch required |
-| Questing | 25.10 | 4.2.x | Patch required |
+| Jammy | 22.04 LTS | 4.0.7 (wxWidgets 3.0.5) | Bundled tree widget |
+| Noble | 24.04 LTS | 4.2.1 | Bundled tree widget |
+| Oracular | 24.10 | 4.2.1 | Bundled tree widget |
+| Plucky | 25.04 | 4.2.2 | Bundled tree widget |
+| Questing | 25.10 | 4.2.x | Bundled tree widget |
 
 ---
 
@@ -366,7 +347,7 @@ build.in/arch/
 
 ```bash
 # Install build dependencies
-sudo pacman -S base-devel python python-setuptools python-distro
+sudo pacman -S base-devel python python-setuptools
 
 # Build package using the build script
 ./scripts/build-arch.sh
@@ -403,7 +384,7 @@ sudo pacman -U taskcoach-*.pkg.tar.zst
 
 ### Dependencies
 
-See `PKGBUILD` (linked above) for runtime, build, and optional dependencies. Some packages require AUR (`python-pypubsub`, `python-squaremap`).
+See `PKGBUILD` (linked above) for runtime, build, and optional dependencies. `python-squaremap` requires AUR.
 
 ### Setup Script
 
@@ -605,7 +586,6 @@ Task Coach builds native macOS .app bundles using py2app for both Intel and Appl
 |---------|-----------|--------|
 | chardet | `<5.2.0` | chardet >=5.2.0 uses mypyc-compiled C extensions with hashed filenames (`*__mypyc.cpython-*.so`) that py2app cannot discover. Results in `ModuleNotFoundError: No module named '...__mypyc'` at runtime. Pure-Python chardet (<5.2.0) works identically. |
 | setuptools | `<71.0.2` | py2app compatibility issue ([py2app#531](https://github.com/ronaldoussoren/py2app/issues/531)) |
-| numpy | `<2` | NumPy 2.x API changes; see [NUMPY.md](NUMPY.md) |
 
 ### Code Signing
 
@@ -630,11 +610,41 @@ All build scripts follow the same simple strategy:
 This process applies to all build targets (AppImage, Windows, macOS, etc.):
 
 1. Update version in `taskcoachlib/meta/data.py`
-2. Commit and push changes
-3. Create and push a version tag:
+2. Check that `CHANGELOG.md` has the version's section, its release
+   notes ([below](#release-notes))
+3. Commit and push changes
+4. Create and push a version tag:
    ```bash
    git tag v2.0.1.23
    git push origin v2.0.1.23
    ```
-4. GitHub Actions will automatically build all packages and create a GitHub Release
+5. GitHub Actions will automatically build all packages and create a GitHub Release
+
+### Release Notes
+
+**Ruled by designer 2026-10-02** (To Do 73 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)):
+release notes are kept in `CHANGELOG.md` at the top of the
+repository, a `## <version>` section per release, newest first: what
+changes for users. A change users notice gets its line there in the
+same commit, under the version being made.
+
+On a release tag, `release-notes.yml` puts the tag's section on the
+release page (`tools/release_notes.py` prints it); the build
+workflows add their packages to the same release. Without a section,
+or with an empty one, that workflow fails and the page has no text;
+the packages still upload.
+
+### Version Check
+
+With Preferences > Windows > "Check for new version of Task Coach on
+startup" (on by default), the app asks GitHub's API for the latest
+release (`api.github.com/repos/taskcoach/taskcoach/releases/latest`,
+which leaves out drafts and prereleases) once per start, in a
+background thread (`meta/versionchecker.py`). A tag `vX.Y.Z.P` newer
+than the running `version_full`, and not shown before
+(`[version] notified`), opens a dialog with a link to the release page.
+A failure (no network, the Flatpak's sandbox) is only logged
+(`[VERSION]`). So a release must be tagged `v` + `version_full` and not
+marked prerelease to be offered.
 

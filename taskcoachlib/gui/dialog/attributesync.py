@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from pubsub import pub
 from taskcoachlib.i18n import _
 import wx
 
@@ -27,7 +26,12 @@ class AttributeSync(object):
     a control in a dialog. If the user edits the value using the control,
     the domain object is changed, using the appropriate command. If the
     attribute of the domain object is changed (e.g. in another dialog) the
-    value of the control is updated."""
+    value of the control is updated.
+
+    callback(value, edited) follows both: edited is whether the user
+    edited it here, not a change from elsewhere (undo, another window),
+    which the dialog's own logic must not act on
+    (docs/DURATION_CALCULATIONS.md, 0.5)."""
 
     def __init__(
         self,
@@ -47,7 +51,6 @@ class AttributeSync(object):
         self._items = items
         self._commandClass = commandClass
         self.__commandKwArgs = kwargs
-        self.__changedEventType = changedEventType
         self.__callback = callback
 
         entry.Bind(editedEventType, self.onAttributeEdited)
@@ -57,98 +60,65 @@ class AttributeSync(object):
 
     def onAttributeEdited(self, event):
         event.Skip()
-        new_value = self.getValue()
+        new_value = self.get_value()
         if new_value != self._currentValue:
             self.__executeCommand(new_value)
 
     def __executeCommand(self, new_value):
         self._currentValue = new_value
-        commandKwArgs = self.commandKwArgs(new_value)
+        command_kw_args = self.command_kw_args(new_value)
         self._commandClass(
-            None, self._items, **commandKwArgs
+            None, self._items, **command_kw_args
         ).do()  # pylint: disable=W0142
-        self.__invokeCallback(new_value)
+        self.__invoke_callback(new_value, edited=True)
 
-    def onAttributeChanged_Deprecated(self, event):  # pylint: disable=W0613
+    def on_attribute_changed(self, event):  # pylint: disable=W0613
         if self._entry:
             new_value = getattr(self._items[0], self._getter)()
             if new_value != self._currentValue:
-                self._currentValue = new_value
-                self.setValue(new_value)
-                self.__invokeCallback(new_value)
+                self.set_value(new_value)
+                # What the control shows, which may be coarser (a time
+                # without seconds): the change event it posts is no
+                # edit (docs/UNDO_REDO.md, Actions)
+                self._currentValue = self.get_value()
+                self.__invoke_callback(new_value, edited=False)
         else:
             self.__stop_observing_attribute()
 
-    def onAttributeChanged(self, newValue, sender):
-        if sender in self._items:
-            # Check if widget is still valid (not destroyed)
-            try:
-                if not self._entry:
-                    self.__stop_observing_attribute()
-                    return
-                # Additional check - try to access a property to verify widget is alive
-                # On GTK, accessing a destroyed widget can segfault
-                self._entry.GetId()
-            except RuntimeError:
-                self.__stop_observing_attribute()
-                return
-
-            if newValue != self._currentValue:
-                self._currentValue = newValue
-                try:
-                    self.setValue(newValue)
-                    self.__invokeCallback(newValue)
-                except RuntimeError:
-                    self.__stop_observing_attribute()
-                    return
-
-    def commandKwArgs(self, new_value):
+    def command_kw_args(self, new_value):
         self.__commandKwArgs["newValue"] = new_value
         return self.__commandKwArgs
 
-    def setValue(self, new_value):
-        try:
-            if self._entry:
-                self._entry.SetValue(new_value)
-        except RuntimeError:
-            raise
+    def set_value(self, new_value):
+        if self._entry:
+            self._entry.SetValue(new_value)
 
-    def getValue(self):
-        try:
-            return self._entry.GetValue()
-        except RuntimeError:
-            raise
+    def get_value(self):
+        return self._entry.GetValue()
 
-    def __invokeCallback(self, value):
+    def __invoke_callback(self, value, edited):
         if self.__callback is not None:
             try:
-                self.__callback(value)
+                self.__callback(value, edited)
             except RuntimeError:
                 pass  # Widget has been deleted (e.g., dialog closing)
             except Exception as e:
                 wx.MessageBox(str(e), _("Error"), wx.OK)
 
     def __start_observing_attribute(self, eventType, eventSource):
-        if eventType.startswith("pubsub"):
-            pub.subscribe(self.onAttributeChanged, eventType)
-        else:
-            patterns.Publisher().registerObserver(
-                self.onAttributeChanged_Deprecated,
-                eventType=eventType,
-                eventSource=eventSource,
-            )
+        patterns.Publisher().registerObserver(
+            self.on_attribute_changed,
+            eventType=eventType,
+            eventSource=eventSource,
+        )
 
     def __stop_observing_attribute(self):
-        try:
-            pub.unsubscribe(self.onAttributeChanged, self.__changedEventType)
-        except pub.TopicNameError:
-            pass
-        patterns.Publisher().removeObserver(self.onAttributeChanged_Deprecated)
+        patterns.Publisher().removeObserver(self.on_attribute_changed)
 
 
 class FontColorSync(AttributeSync):
-    def setValue(self, newValue):
-        self._entry.SetColor(newValue)
+    def set_value(self, new_value):
+        self._entry.SetColor(new_value)
 
-    def getValue(self):
+    def get_value(self):
         return self._entry.GetColor()

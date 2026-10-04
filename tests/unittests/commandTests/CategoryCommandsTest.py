@@ -18,14 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from unittests import asserts
 from .CommandTestCase import CommandTestCase
-from taskcoachlib import patterns, command, config
+from taskcoachlib import patterns, command
 from taskcoachlib.domain import category, task
 
 
 class CategoryCommandTestCase(CommandTestCase, asserts.CommandAssertsMixin):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
-        self.categories = category.CategoryList()
+        super().setUp()
+        self.categories = self.task_file.categories()
 
 
 class NewCategoryCommandTest(CategoryCommandTestCase):
@@ -89,15 +89,15 @@ class DragAndDropCategoryCommandTest(CategoryCommandTestCase):
 
     def testCannotDropOnParent(self):
         self.dragAndDrop([self.parent], [self.child])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testCannotDropOnChild(self):
         self.dragAndDrop([self.child], [self.parent])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testCannotDropOnGrandchild(self):
         self.dragAndDrop([self.grandchild], [self.parent])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testDropAsRootTask(self):
         self.dragAndDrop([], [self.grandchild])
@@ -129,7 +129,6 @@ class CopyAndPasteCommandTest(CategoryCommandTestCase):
         )
 
     def testCopyOneCategoryWithTasks(self):
-        self.original.addCategorizable(self.task)
         self.task.addCategory(self.original)
         self.copy([self.original])
         self.assertDoUndoRedo(
@@ -139,7 +138,6 @@ class CopyAndPasteCommandTest(CategoryCommandTestCase):
         )
 
     def testPasteOneCategoryWithTasks(self):
-        self.original.addCategorizable(self.task)
         self.task.addCategory(self.original)
         self.copy([self.original])
         self.paste()
@@ -155,7 +153,6 @@ class CopyAndPasteCommandTest(CategoryCommandTestCase):
         self.categories.append(childCat)
         self.original.addChild(childCat)
         self.task.addCategory(childCat)
-        childCat.addCategorizable(self.task)
         self.copy([self.original])
         self.paste()
         self.assertDoUndoRedo(

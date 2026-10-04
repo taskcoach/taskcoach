@@ -46,7 +46,7 @@ else
 fi
 
 # Check Python version
-echo -e "${BLUE}[1/7] Checking Python version...${NC}"
+echo -e "${BLUE}[1/5] Checking Python version...${NC}"
 PYTHON_CMD="python3"
 
 PYTHON_VERSION=$($PYTHON_CMD --version 2>&1 | awk '{print $2}')
@@ -64,7 +64,7 @@ fi
 echo
 
 # Install system dependencies
-echo -e "${BLUE}[2/7] Installing system dependencies...${NC}"
+echo -e "${BLUE}[2/5] Installing system dependencies...${NC}"
 echo "This will install system packages from Fedora repos."
 echo "Fedora has all core packages available."
 echo "Requires sudo privileges."
@@ -74,16 +74,10 @@ if command -v sudo &> /dev/null; then
         python3 \
         python3-virtualenv \
         python3-wxpython4 \
-        python3-six \
-        python3-lxml \
-        python3-numpy \
         python3-dateutil \
         python3-chardet \
         python3-keyring \
-        python3-pyparsing \
-        python3-pyxdg \
-        python3-watchdog \
-        python3-pypubsub \
+        python3-enchant \
         libayatana-appindicator-gtk3 \
         libXScrnSaver \
         xdg-utils
@@ -95,7 +89,7 @@ fi
 echo
 
 # Create virtual environment
-echo -e "${BLUE}[3/7] Creating virtual environment...${NC}"
+echo -e "${BLUE}[3/5] Creating virtual environment...${NC}"
 VENV_PATH="$SCRIPT_DIR/.venv"
 
 if [ -d "$VENV_PATH" ]; then
@@ -116,21 +110,19 @@ fi
 echo
 
 # Install Python dependencies not available in Fedora repos or too old
-echo -e "${BLUE}[4/7] Installing Python dependencies in venv...${NC}"
+echo -e "${BLUE}[4/5] Installing Python dependencies in venv...${NC}"
 echo "Fedora has most packages, pip install for:"
 echo "  - squaremap: Not in Fedora repos"
-echo "  - pyparsing>=3.1.3: Fedora has older version, need pp.Tag() API"
-echo "  - distro: Distribution detection"
 
 source "$VENV_PATH/bin/activate"
-pip install --quiet squaremap "pyparsing>=3.1.3" distro
+pip install --quiet squaremap
 deactivate
 
 echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 echo
 
 # Check launch script
-echo -e "${BLUE}[5/7] Checking launch script...${NC}"
+echo -e "${BLUE}[5/5] Checking launch script...${NC}"
 if [ -f "$SCRIPT_DIR/taskcoach-run.sh" ]; then
     chmod +x "$SCRIPT_DIR/taskcoach-run.sh"
     echo -e "${GREEN}✓ Launch script is ready: taskcoach-run.sh${NC}"
@@ -173,7 +165,7 @@ fi
 echo "Testing key packages..."
 FAILED=0
 
-for pkg in "distro" "watchdog" "squaremap"; do
+for pkg in "squaremap"; do
     echo -n "  - $pkg... "
     if $PYTHON_CMD -c "import $pkg" 2>/dev/null; then
         echo -e "${GREEN}✓${NC}"
@@ -182,15 +174,6 @@ for pkg in "distro" "watchdog" "squaremap"; do
         FAILED=1
     fi
 done
-
-# pypubsub package provides 'pubsub' module
-echo -n "  - pypubsub... "
-if $PYTHON_CMD -c "from pubsub import pub" 2>/dev/null; then
-    echo -e "${GREEN}✓${NC}"
-else
-    echo -e "${RED}✗ Failed${NC}"
-    FAILED=1
-fi
 
 deactivate
 
@@ -221,30 +204,15 @@ else
 fi
 
 echo
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}[6/7] Applying wxPython patch...${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo
-
-# Apply the wxPython background color patch automatically
-if [ -f "$SCRIPT_DIR/apply-wxpython-patch.sh" ]; then
-    "$SCRIPT_DIR/apply-wxpython-patch.sh"
-else
-    echo -e "${YELLOW}⚠ Warning: apply-wxpython-patch.sh not found${NC}"
-    echo "  Category row background coloring may not work correctly"
-fi
-
-echo
 echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}Setup completed successfully!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo
 echo "TaskCoach has been set up for Fedora with:"
 echo "  - Python: $PYTHON_CMD ($PYTHON_VERSION)"
-echo "  - System packages from Fedora repos (wxPython, numpy, lxml, etc.)"
+echo "  - System packages from Fedora repos (wxPython, etc.)"
 echo "  - Virtual environment at: $SCRIPT_DIR/.venv"
-echo "  - Additional packages in venv (squaremap, distro)"
-echo "  - wxPython background color patch (for category row coloring)"
+echo "  - Additional packages in venv (squaremap)"
 echo
 echo "You can now run TaskCoach with:"
 echo -e "  ${BLUE}./taskcoach-run.sh${NC}"

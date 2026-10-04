@@ -17,7 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from pubsub import pub
+from taskcoachlib.domain import date
+from taskcoachlib.patterns.snapshot import after_restoring, is_restoring
+
+
+def _tie_break_key(item):
+    # Some items (e.g. CompositeEffortPerPeriod) have neither
+    if hasattr(item, "id"):
+        return (item.creationDateTime(), item.id())
+    return (date.DateTime.min, "")
 
 
 class Sorter(patterns.ListDecorator):
@@ -28,7 +36,7 @@ class Sorter(patterns.ListDecorator):
         self._sortCaseSensitive = kwargs.pop("sortCaseSensitive", True)
         super().__init__(*args, **kwargs)
         for sort_key in self._sortKeys:
-            self._registerObserverForAttribute(sort_key.lstrip("-"))
+            self._register_observer_for_attribute(sort_key.lstrip("-"))
         self.reset()
 
     def thaw(self):
@@ -39,11 +47,11 @@ class Sorter(patterns.ListDecorator):
     def detach(self):
         super().detach()
         for sort_key in self._sortKeys:
-            self._removeObserverForAttribute(sort_key.lstrip("-"))
+            self._remove_observer_for_attribute(sort_key.lstrip("-"))
 
     @classmethod
     def sort_event_type(cls):
-        return "pubsub.%s.sorted" % cls.__name__
+        return "%s.sorted" % cls.__name__
 
     @patterns.eventSource
     def extendSelf(self, items, event=None):
@@ -77,7 +85,7 @@ class Sorter(patterns.ListDecorator):
             self._sortKeys.insert(0, sort_key)
         else:
             self._sortKeys.insert(0, sort_key)
-            self._registerObserverForAttribute(sort_key)
+            self._register_observer_for_attribute(sort_key)
 
         self.reset()
 
@@ -101,17 +109,17 @@ class Sorter(patterns.ListDecorator):
         old_self = self[:]
         # XXXTODO: create only one function with all keys ? Reversing may
         # be problematic.
-        # UUID tiebreaker first (least significant) - guarantees
-        # deterministic ordering for items with equal sort keys.
-        # Some items (e.g. CompositeEffortPerPeriod) have no id().
-        self.sort(key=lambda item: item.id() if hasattr(item, 'id') else '')
+        # Tie-break first (least significant): items with equal sort
+        # keys keep their creation order, then their ID, so the order
+        # is deterministic
+        self.sort(key=_tie_break_key)
         for sort_key in reversed(self._sortKeys):
             self.sort(
                 key=self.create_sort_key_function(sort_key.lstrip("-")),
                 reverse=sort_key.startswith("-"),
             )
         if force_event or self != old_self:
-            pub.sendMessage(self.sort_event_type(), sender=self)
+            patterns.Event(self.sort_event_type(), self).send()
 
     def create_sort_key_function(self, sort_key):
         """create_sort_key_function returns a function that is passed to the
@@ -125,55 +133,81 @@ class Sorter(patterns.ListDecorator):
 
     def _getSortKeyFunction(self, sort_key):
         try:
-            return getattr(self.DomainObjectClass,
-                           "%sSortFunction" % sort_key)
+            return getattr(self.DomainObjectClass, "%sSortFunction" % sort_key)
         except AttributeError:
             from taskcoachlib.meta.debug import log_step
-            log_step('%sSortFunction not found on %s - falling back '
-                     'to subject'
-                     % (sort_key, self.DomainObjectClass.__name__),
-                     prefix='SORTER')
+
+            log_step(
+                "%sSortFunction not found on %s - falling back "
+                "to subject" % (sort_key, self.DomainObjectClass.__name__),
+                prefix="SORTER",
+            )
             return self._getSortKeyFunction("subject")
 
-    def _registerObserverForAttribute(self, attribute):
-        for event_type in self._getSortEventTypes(attribute):
-            if event_type.startswith("pubsub"):
-                pub.subscribe(self.onAttributeChanged, event_type)
-            else:
-                patterns.Publisher().registerObserver(
-                    self.onAttributeChanged_Deprecated,
-                    eventType=event_type,
-                )
+    def _register_observer_for_attribute(self, attribute):
+        for event_type in self._get_sort_event_types(attribute):
+            patterns.Publisher().registerObserver(
+                self.on_attribute_changed, eventType=event_type
+            )
 
-    def _removeObserverForAttribute(self, attribute):
-        for event_type in self._getSortEventTypes(attribute):
-            if event_type.startswith("pubsub"):
-                pub.unsubscribe(self.onAttributeChanged, event_type)
-            else:
-                patterns.Publisher().removeObserver(
-                    self.onAttributeChanged_Deprecated,
-                    eventType=event_type,
-                )
+    def _remove_observer_for_attribute(self, attribute):
+        for event_type in self._get_sort_event_types(attribute):
+            patterns.Publisher().removeObserver(
+                self.on_attribute_changed, eventType=event_type
+            )
 
-    def onAttributeChanged(self, newValue, sender):  # pylint: disable=W0613
+    def on_attribute_changed(self, event):  # pylint: disable=W0613
         self.reset()
 
-    def onAttributeChanged_Deprecated(self, event):  # pylint: disable=W0613
-        self.reset()
+    @classmethod
+    def sorted_classes(cls):
+        """The classes of the items sorted: each sends its own change
+        events."""
+        return (cls.DomainObjectClass,)
 
-    def _getSortEventTypes(self, attribute):
-        try:
-            return getattr(
-                self.DomainObjectClass, "%sSortEventTypes" % attribute
-            )()
-        except AttributeError:
-            return []
+    def _get_sort_event_types(self, attribute):
+        event_types = []
+        for klass in self.sorted_classes():
+            getter = getattr(klass, "%sSortEventTypes" % attribute, None)
+            for event_type in getter() if getter else ():
+                if event_type not in event_types:
+                    event_types.append(event_type)
+        return event_types
 
 
 class TreeSorter(Sorter):
     def __init__(self, *args, **kwargs):
         self.__rootItems = None  # Cached root items
+        self.__positions = None  # Cached {item: its place in the list}
+        self.__restored = set()  # What the values put back changed
         super().__init__(*args, **kwargs)
+        for event_type in (
+            self.DomainObjectClass.addChildEventType(),
+            self.DomainObjectClass.removeChildEventType(),
+        ):
+            self.registerObserver(
+                self.__on_children_changed, eventType=event_type
+            )
+
+    def detach(self):
+        super().detach()
+        self.removeObserver(self.__on_children_changed)
+
+    def __on_children_changed(self, event):  # pylint: disable=W0613
+        if is_restoring():
+            self.__note_restored("moved")
+
+    def __note_restored(self, change):
+        self.__restored.add(change)
+        after_restoring(self.__on_restored)
+
+    def __on_restored(self):
+        # An action moves items out of the list and back, which tells
+        # the views. Undo and redo put a move's links back alone
+        # (docs/UNDO_REDO.md): then sort again and tell them, once
+        restored, self.__restored = self.__restored, set()
+        if restored == {"moved"}:
+            self.reset(force_event=True)
 
     def tree_mode(self):
         return True
@@ -185,21 +219,26 @@ class TreeSorter(Sorter):
         <sortKey>SortFunction(sortCaseSensitive, tree_mode) method that
         returns the sortKeyFunction for the sortKey."""
         return self._getSortKeyFunction(key)(
-            sortCaseSensitive=self._sortCaseSensitive, tree_mode=self.tree_mode()
+            sortCaseSensitive=self._sortCaseSensitive,
+            tree_mode=self.tree_mode(),
         )
 
     def reset(self, *args, **kwargs):  # pylint: disable=W0221
-        self.__invalidateRootItemCache()
+        self.__forget_cached()
         return super().reset(*args, **kwargs)
 
     @patterns.eventSource
     def extendSelf(self, items, event=None):
-        self.__invalidateRootItemCache()
+        self.__forget_cached()
+        if is_restoring():
+            self.__note_restored("listed")
         return super().extendSelf(items, event=event)
 
     @patterns.eventSource
     def removeItemsFromSelf(self, items_to_remove, event=None):
-        self.__invalidateRootItemCache()
+        self.__forget_cached()
+        if is_restoring():
+            self.__note_restored("listed")
         # FIXME: Why is it necessary to remove all children explicitly?
         items_to_remove = set(items_to_remove)
         if self.tree_mode():
@@ -214,5 +253,18 @@ class TreeSorter(Sorter):
             self.__rootItems = [item for item in self if item.parent() is None]
         return self.__rootItems
 
-    def __invalidateRootItemCache(self):
+    def children_of(self, parent):
+        """The parent's own subitems that this list holds, in its order:
+        their places are looked up, the list is not searched."""
+        if self.__positions is None:
+            self.__positions = {item: place for place, item in enumerate(self)}
+        positions = self.__positions
+        return sorted(
+            (child for child in parent.children() if child in positions),
+            key=positions.__getitem__,
+        )
+
+    def __forget_cached(self):
+        # The list changes only here: items added, removed or sorted
         self.__rootItems = None
+        self.__positions = None

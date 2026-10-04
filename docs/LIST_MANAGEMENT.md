@@ -7,18 +7,20 @@
 3. [Selection SSOT Principle](#selection-ssot-principle)
 4. [Multi-Window Architecture](#multi-window-architecture)
 5. [Select Next After Deletion](#select-next-after-deletion)
-6. [Status Bar Updates](#status-bar-updates)
-7. [Selection-Driven Button Enable/Disable](#selection-driven-button-enabledisable)
-8. [Tree Mode Button Enable/Disable](#tree-mode-button-enabledisable)
-9. [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views)
-10. [Stale Item Positions After Rebuild](#stale-item-positions-after-rebuild)
-11. [Windows: Scrollbar Adjustment on Content Changes](#windows-scrollbar-adjustment-on-content-changes)
-11. [Row Hover Outline](#row-hover-outline)
-10. [Mouse-Move Handler Inventory (Tree Views)](#mouse-move-handler-inventory-tree-views)
-11. [Vampire CPU Usage](#vampire-cpu-usage)
-12. [AUI Sash Resize Throttle](#aui-sash-resize-throttle)
-13. [AUI Repaint Cascade on GTK3](#aui-repaint-cascade-on-gtk3)
-14. [Key Files](#key-files)
+6. [Restoring the Selection After a Rebuild](#restoring-the-selection-after-a-rebuild)
+7. [Status Bar Updates](#status-bar-updates)
+8. [Selection-Driven Button Enable/Disable](#selection-driven-button-enabledisable)
+9. [Tree Mode Button Enable/Disable](#tree-mode-button-enabledisable)
+10. [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views)
+11. [Stale Item Positions After Rebuild](#stale-item-positions-after-rebuild)
+12. [Windows: Scrollbar Adjustment on Content Changes](#windows-scrollbar-adjustment-on-content-changes)
+13. [Row Hover Outline](#row-hover-outline)
+14. [Mouse-Move Handler Inventory (Tree Views)](#mouse-move-handler-inventory-tree-views)
+15. [Vampire CPU Usage](#vampire-cpu-usage)
+16. [AUI Sash Resize Throttle](#aui-sash-resize-throttle)
+17. [AUI Repaint Cascade on GTK3](#aui-repaint-cascade-on-gtk3)
+18. [In-Place Editing](#in-place-editing)
+19. [Key Files](#key-files)
 
 ---
 
@@ -32,9 +34,10 @@
    infrastructure (`_hoverItem`, `PaintLevel`, `_refresh_hover_row`) could be
    reused or extended to also draw around selected items using a different
    color pair (e.g. `SYS_COLOUR_HIGHLIGHT` / `SYS_COLOUR_HIGHLIGHTTEXT`).
-2. ~~**Eliminate UpdateUI polling entirely**~~: **Done.** All `EVT_UPDATE_UI`
-   bindings removed from UICommand. Replaced by signal-driven `_SelectionSync`
-   and `_ViewSettingsSync` classes. See [Vampire CPU Usage](#vampire-cpu-usage)
+2. ~~**Eliminate UpdateUI polling entirely**~~: **Done.** Toolbar buttons
+   follow signals (`_SelectionSync`, `_ViewSettingsSync`); menu items answer
+   `EVT_UPDATE_UI`, which wx sends only on demand ([MENUS.md](MENUS.md));
+   no update events in idle time. See [Vampire CPU Usage](#vampire-cpu-usage)
    for background.
 
 ---
@@ -150,6 +153,19 @@ whether the row is scrolled on screen and would skip off-screen rows.
 - The parent is not in the presentation, so it is skipped like any other
   removed row and the walk continues outward
 
+**Moved by drag and drop:**
+- A move reaches the viewer as a removal, then an addition, so the
+  removal selects a neighbour. The tree control then selects the
+  dragged items where they landed (`TreeListCtrl.__select_dropped()`),
+  the view following them when auto-scroll is on. However a drag ends,
+  dropped, refused or cancelled with Escape, the dragged items stay
+  selected (`select_dragged_items()` in `widgets/draganddrop.py`).
+  The end of a drag does not select the drop target: as the tree's
+  current row it would take the button's release for a second click on
+  it and start the in-place editor, on whatever row is current when its
+  timer fires (P124 in
+  [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+
 **Widgets without a row order** (timeline, calendar, square map):
 - These have no `selection_neighbours()`; they keep the older
   parent-plus-index capture, where "next" means `min(len(siblings) - 1,
@@ -180,6 +196,33 @@ not follow the rule above.
 
 ---
 
+## Restoring the Selection After a Rebuild
+
+**Reference:** `treectrl.py:_do_full_rebuild()`, `_refresh_selection()`, `select()`
+
+A tree view rebuilds its rows when their order or set changes (a sort,
+a filter or search, the tree/list switch, an item added, removed or
+moved); otherwise it refreshes them in place and the selection stays.
+
+The rebuild saves the selected objects, deletes and re-adds every row,
+highlighting the saved ones as it adds them (`_refresh_selection()`),
+and after `Thaw()` (`SelectItem()` does nothing on a frozen tree)
+selects them with `select()`: `UnselectAll()`, then `SelectItem()` per
+row. In a multi-selection tree `SelectItem()` toggles, so
+`UnselectAll()` must first clear the rows the rebuild highlighted. It
+clears only the rows in the tree's selection set, so the rebuild
+highlights through `SetItemHilight()`, which keeps that set. When it
+highlighted rows on their own, every restored row toggled off on the
+builds running wxPython 4.2.4 or later (P118, GitHub #385;
+[BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#one-widget-two-files)).
+
+A selection that does not come back looks like a deletion to
+`on_presentation_changed()`, and [Select Next After
+Deletion](#select-next-after-deletion) selects a neighbour: a lost
+selection after a filter or search shows as another task selected.
+
+---
+
 ## Status Bar Updates
 
 Status bar displays info about current selection. Uses debouncing to avoid excessive updates.
@@ -193,7 +236,7 @@ Selection changes in widget
 onSelect() fires
     │
     ▼
-sendViewerStatusEvent() - fires pubsub event
+send_viewer_status_event() - sends a Publisher event
     │
     ▼
 StatusBar receives event, restarts 500ms timer
@@ -214,8 +257,8 @@ StatusBar displays status
 
 ## Selection-Driven Button Enable/Disable
 
-See [MENUS.md](MENUS.md) for the menu-side architecture (MenuItem subclass,
-`_update_menu_state()`, menu-level state methods).
+See [MENUS.md](MENUS.md) for the menu-side architecture (menu items answer
+wx's `EVT_UPDATE_UI` when a menu opens and before a shortcut).
 
 Toolbar and menu commands that depend on selection state (Edit, Delete, Cut,
 Copy, etc.) update their enabled state via Publisher signal — not polling.
@@ -236,8 +279,17 @@ EVT_TREE_SEL_CHANGED / EVT_LIST_ITEM_SELECTED / DESELECTED
             ├── patterns.Event(selection_changed_event_type, self, has_selection).send()
             │   └── _SelectionSync._on_selection_changed(event)
             │       └── toolbar.EnableTool(id, command.enabled(None))
-            └── wx.CallAfter(sendViewerStatusEvent)  [existing]
+            └── patterns.later.soon(sendViewerStatusEvent)  [existing]
+
+EVT_TREE_ITEM_EXPANDED / COLLAPSED, the selection changed since
+EXPANDING / COLLAPSING (tree views)
+    └── viewer.onSelect()   (as above)
 ```
+
+Collapsing a parent drops its hidden children from the selection
+(`GetSelections()` skips collapsed branches) and expanding brings back
+those still marked, but the widget sends no selection event, so
+`TreeViewer` compares the selection before and after.
 
 ### Design
 
@@ -251,10 +303,10 @@ that subscribes to the viewer's selection signal via `registerObserver`
 and calls `command.enabled()` → `toolbar.EnableTool()` on change. Each
 command creates one in its `append_to_toolbar`.
 
-**Commands**: Each selection-dependent command overrides `onUpdateUI` as
-a no-op, creates a `_SelectionSync` in `append_to_toolbar`, and owns its
-`enabled()` check. Signal handlers and menu open both call
-`command.enabled()` — one source of truth.
+**Commands**: Each selection-dependent command creates a `_SelectionSync`
+in `append_to_toolbar` and owns its `enabled()` check. Toolbar signals and
+the menus' update events both call `command.enabled()`: one source of
+truth.
 
 ### Key Files
 
@@ -280,13 +332,13 @@ the same per-instance pattern used for
 ```
 Toolbar Dropdown / Menu Radio
     └── viewer.set_tree_mode(value)  (task.py)
-        ├── settings.setboolean(...)          ← persistence
+        ├── self.options.treemode = value     ← persistence
         ├── presentation().set_tree_mode(value) ← data layer
         └── patterns.Event(view_settings_changed_event_type, self).send()
             ├── _ViewSettingsSync._on_view_settings_changed(event)
             │   └── toolbar.EnableTool(id, command.enabled(None))
             └── TaskViewerTreeOrListChoice._on_view_settings_changed(event)
-                └── set_choice(settings.getboolean(..., "treemode"))
+                └── set_choice(<the view's section>.treemode)
 ```
 
 ### Design
@@ -302,8 +354,8 @@ the viewer's settings event via `registerObserver`. On change, calls
 `command.enabled()` → `toolbar.EnableTool()`.
 
 **Commands**: `ViewExpandAll` and `ViewCollapseAll` each create a
-`_ViewSettingsSync` in `append_to_toolbar` and override `onUpdateUI`
-as a no-op (these buttons are fully signal-driven).
+`_ViewSettingsSync` in `append_to_toolbar` (these buttons are fully
+signal-driven).
 
 **Dropdown**: `TaskViewerTreeOrListChoice` subscribes to the same signal
 and reads the current treemode value from settings on change.
@@ -328,7 +380,7 @@ After filter changes, search clears, or category toggles, the selected item scro
 
 HyperTreeList's `ScrollTo()` (upstream, in `hypertreelist.py`) calls `CalculatePositions()` when `_dirty` but never calls `AdjustMyScrollbars()`. During normal use (click, keyboard), scrollbars are already current. But after a freeze/thaw rebuild cycle (`RefreshAllItems` in `treectrl.py`), the scrollbar range is stale. `Scroll()` gets clamped to the old range and silently does nothing.
 
-This is an upstream design limitation (same in wxPython 4.2.0 and current master), not a bug in our code.
+This is an upstream design limitation (same in wxPython 4.2.0 and current master), not a bug in our code. The bundled widget since To Do 67 (wxPython 4.3.1's) adjusts the scrollbars at the end of `CalculatePositions()`, so `ScrollTo()` on a dirty tree now gets the range right; the explicit adjustment below stays until checked on Windows (P138).
 
 **Does NOT affect list views** — `VirtualListCtrl` uses native wx scrollbar management.
 
@@ -360,7 +412,7 @@ on_presentation_changed (base.py)
 **Mode switch (list <-> tree)** - fires sort event, NOT add/remove:
 ```
 viewer.set_tree_mode(value) (task.py)
-  -> settings.setboolean(...)                (persistence)
+  -> self.options.treemode = value          (persistence)
   -> presentation().set_tree_mode(value)
     -> Sorter.reset() -> fires sort_event_type (NOT add/remove)
       -> on_sort_order_changed (mixin.py) -> refresh()
@@ -372,7 +424,7 @@ viewer.set_tree_mode(value) (task.py)
     -> dropdown: set_choice(value)
     -> buttons: EnableTool(id, value)
 ```
-Note: `Sorter.reset()` fires `pub.sendMessage(self.sort_event_type())`, not add/remove
+Note: `Sorter.reset()` fires the Publisher event `sort_event_type()`, not add/remove
 events, so `on_presentation_changed` does NOT fire. Because the rebuild's own recompute
 (`scroll_to_selection`) is synchronous and gated on a non-empty selection, `set_tree_mode`
 also calls `_schedule_scrollbar_adjustment()` to recompute the scrollbar range
@@ -393,7 +445,7 @@ List-only viewers (effort, attachments) always use `ensureSelectionVisible` (nat
 | Switch list <-> tree mode       | Center          | `set_tree_mode` -> `_schedule_scrollbar_adjustment` (range) + centered |
 | Delete selected item            | Center          | `on_presentation_changed` -> centered    |
 | Add new item                    | Center          | `on_presentation_changed` -> centered    |
-| Window resize                   | Center          | `EVT_SIZE` -> `CallAfter` -> centered    |
+| Window resize                   | Center          | `EVT_SIZE` -> `patterns.later.soon` -> centered |
 | Sort change                     | Ensure-visible  | `refresh()` only, no `on_presentation_changed` |
 | Expand all / Collapse all       | Ensure-visible  | `refresh()` only, no `on_presentation_changed` |
 | Item edit (attribute change)    | No scroll       | `RefreshItems()`, not `RefreshAllItems`  |
@@ -431,8 +483,7 @@ its widget on the selection immediately
 buttons stay in sync with each other and with the menu the same way
 (`ToggleAutoScroll._on_setting_change`). Both use legacy Publisher
 dispatch (`registerObserver` on event type `view.autoscrollselection`
-with the settings object as source), not pypubsub; see
-PUBLISHER_OBSERVER.md for why new signals must not use pubsub.
+with the settings object as source); see PUBLISHER_OBSERVER.md.
 
 ---
 
@@ -465,10 +516,8 @@ in `_do_full_rebuild()` and by `stable_viewport()`, both of which call
 `AdjustMyScrollbars()` + `Scroll()` on a freshly rebuilt tree, and by
 `selection_neighbours()`, which orders the selected rows by `GetY()`.
 
-It deliberately leaves `_dirty` set, exactly as upstream `ScrollTo()`
-does. `customtreectrl` only ever *sets* that flag - nothing but
-`__init__` clears it - so clearing it here would suppress
-recalculations upstream still expects to perform.
+`CalculatePositions()` clears `_dirty` and adjusts the scrollbars
+itself (the bundled wxPython 4.3.1 widget).
 
 ### Known Implicit Dependency
 
@@ -489,17 +538,17 @@ On Windows, tree/list viewer scrollbars do not update when expanding/collapsing/
 
 ### Root Cause
 
-The scrollbar range is only ever recomputed by `AdjustMyScrollbars()`, and that recompute is gated. On the expand path it runs only through the upstream `RefreshSubtree()`, which returns early when the tree is marked dirty or frozen. `AdjustMyScrollbars()` itself becomes a no-op (it just sets the dirty flag) while frozen, and the dirty flag is cleared only by the upstream `OnInternalIdle()`. On a settled GTK tree the recompute fires synchronously, which is why Linux is unaffected. On Windows the recompute is missed when content changes while the tree is dirty or frozen, or before idle runs, and a synchronous `AdjustMyScrollbars()` does not reliably take effect until after the layout cycle. Deferring the call (see below) lets it run after that dirty/frozen state has cleared.
+The scrollbar range is only ever recomputed by `AdjustMyScrollbars()`, and that recompute is gated. On the expand path it runs only through the upstream `RefreshSubtree()`, which returns early when the tree is marked dirty or frozen. `AdjustMyScrollbars()` itself becomes a no-op (it just sets the dirty flag) while frozen, and the dirty flag is cleared only by the upstream `OnInternalIdle()`. On a settled GTK tree the recompute fires synchronously, which is why Linux is unaffected. On Windows the recompute is missed when content changes while the tree is dirty or frozen, or before idle runs, and a synchronous `AdjustMyScrollbars()` does not reliably take effect until after the layout cycle. Deferring the call (see below) lets it run after that dirty/frozen state has cleared. This describes the tree widget before To Do 67: wxPython 4.3.1's, bundled since, adjusts the scrollbars in every `CalculatePositions()` (on expand, paint, `ScrollTo()` and idle), so the deferred call may no longer be needed; it stays until checked on Windows (P138).
 
 ### Fix: Deferred Scrollbar Adjustment
 
 A new method `_schedule_scrollbar_adjustment()` on `TreeListCtrl` (`treectrl.py`) handles the platform difference:
 
-- **Windows**: Uses `wx.CallAfter()` to defer scrollbar adjustment until after the event queue empties and the layout/idle cycle has cleared the dirty/frozen state
+- **Windows**: Uses `patterns.later.soon()` to defer scrollbar adjustment until after the event queue empties and the layout/idle cycle has cleared the dirty/frozen state
 - **Other platforms**: Adjusts immediately (the deferral is harmless and ensures consistency)
 
 Called from:
-- `_expandDropTarget()` — after explicit expand on drag-drop
+- `_expand_drop_target()`: after explicit expand on drag-drop
 - `on_item_expanding()` — after lazy-loading children when item expands
 - `TreeViewer.on_item_expanded()` / `on_item_collapsed()` — after individual expand/collapse events
 - `TreeViewer.expand_all()` / `collapse_all()` — after bulk expand/collapse operations
@@ -516,11 +565,11 @@ All tree-based viewers now adjust scrollbars consistently on all platforms:
 
 | User Action                     | Scroll Behavior | Windows | Other Platforms |
 |---------------------------------|-----------------|---------|-----------------|
-| Expand single item              | Ensure-visible  | Deferred via `CallAfter` | Immediate |
-| Collapse single item            | Ensure-visible  | Deferred via `CallAfter` | Immediate |
-| Expand all                      | Ensure-visible  | Deferred via `CallAfter` | Immediate |
-| Collapse all                    | Ensure-visible  | Deferred via `CallAfter` | Immediate |
-| Switch tree <-> list            | Center          | Deferred via `CallAfter` | Immediate |
+| Expand single item              | Ensure-visible  | Deferred via `patterns.later.soon` | Immediate |
+| Collapse single item            | Ensure-visible  | Deferred via `patterns.later.soon` | Immediate |
+| Expand all                      | Ensure-visible  | Deferred via `patterns.later.soon` | Immediate |
+| Collapse all                    | Ensure-visible  | Deferred via `patterns.later.soon` | Immediate |
+| Switch tree <-> list            | Center          | Deferred via `patterns.later.soon` | Immediate |
 
 (Other scroll behaviors unchanged — see previous table above)
 
@@ -538,14 +587,14 @@ W3C WCAG C40 technique used by Chrome/Edge focus indicators. An inner line uses
 visibility on any background including selected, custom-colored, and unfocused
 rows. Line thickness is configurable via **Preferences > Theme > Hoverover
 Highlight** (default 1, 0 to disable). Read directly via
-`settings2.window.hoverlinewidth` at every use site — no cached attribute,
+`settings.window.hoverlinewidth` at every use site — no cached attribute,
 changes take effect immediately without restart.
 
-Tooltips are controlled by `settings2.view.descriptionpopups` (bool), read
-directly on every mouse-move in `ToolTipMixin.__OnMotion`. The expensive
+Tooltips are controlled by `settings.view.descriptionpopups` (bool), read
+directly on every mouse-move in `ToolTipMixin.__on_motion`. The expensive
 `OnBeforeShowToolTip()` call (HitTest + full tooltip data extraction traversing
-notes, categories, attachments, descriptions) is deferred to a 200ms timer
-callback. Only the mouse position is stored on motion; data extraction runs
+notes, categories, attachments, descriptions) runs 200ms after the last move
+(a debounced call, [DEFERRED_CALLS.md](DEFERRED_CALLS.md)). Only the mouse position is stored on motion; data extraction runs
 once after the cursor is still.
 
 ### Two-Tone Strategy (W3C WCAG C40)
@@ -569,12 +618,12 @@ EVT_MOUSE_EVENTS on TreeListMainWindow
     │       ├── Same row (Y-bounds cache hit) → return (zero work)
     │       └── New row → HitTest → SetHoverItem(item)
     │           ├── _refresh_hover_row(prevItem)      ← padded invalidation
-    │           │   └── settings2.window.hoverlinewidth  ← direct read
+    │           │   └── settings.window.hoverlinewidth  ← direct read
     │           └── _refresh_hover_row(newItem)       ← padded invalidation
-    │               └── settings2.window.hoverlinewidth  ← direct read
+    │               └── settings.window.hoverlinewidth  ← direct read
     │
-    └── event.Skip() → tooltip __OnMotion fires (tooltip.py)
-        └── settings2.view.descriptionpopups        ← direct read
+    └── event.Skip() → tooltip __on_motion fires (tooltip.py)
+        └── settings.view.descriptionpopups        ← direct read
             └── start 200ms timer → OnBeforeShowToolTip
 ```
 
@@ -585,6 +634,17 @@ DC restore. Draws outer 1px bg rect (inflated by 1), then inner 1px fg rect.
 Skipped for drag items.
 
 **Cleanup:** `EVT_LEAVE_WINDOW` → `SetHoverItem(None)`.
+
+**Rows moving under a pointer at rest** (a rebuild such as Expand all
+or a sort, a parent expanded or collapsed, a scroll by the wheel or
+the scrollbar, a key that scrolls such as End): no mouse event comes,
+so `TreeListCtrl.follow_pointer()` (`treectrl.py`) hides the tooltip,
+about the row that was there, and gives the outline to the row now
+under the pointer, once after the change settles; not during a drag.
+A rebuild deletes the rows, the hovered one included, so without it
+the outline stayed on a gone row until the pointer left that row's
+old place (P141 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
 
 **Ghosting prevention:** `_refresh_hover_row()` inflates the invalidation rect by
 3px (1px inner + 1px outer + safety) so the full two-tone outline is erased on
@@ -597,33 +657,42 @@ EVT_MOTION on VirtualListCtrl
     │
     ├── _on_hover_motion()
     │   └── HitTest → row != _hover_row?
-    │       ├── settings2.window.hoverlinewidth?   ← direct read
+    │       ├── settings.window.hoverlinewidth?   ← direct read
     │       │   ├── _refresh_hover_row(old)   ← padded invalidation
     │       │   └── _refresh_hover_row(new)   ← padded invalidation
-    │       │   └── CallAfter(_draw_hover_outline)
-    │       │       └── settings2.window.hoverlinewidth  ← direct read
+    │       │   └── patterns.later.soon(_draw_hover_outline)
+    │       │       └── settings.window.hoverlinewidth  ← direct read
     │
-    └── event.Skip() → tooltip __OnMotion fires (tooltip.py)
-        └── settings2.view.descriptionpopups        ← direct read
+    └── event.Skip() → tooltip __on_motion fires (tooltip.py)
+        └── settings.view.descriptionpopups        ← direct read
             └── start 200ms timer → OnBeforeShowToolTip
 ```
 
+Rows moving under a pointer at rest follow the tree views' rule:
+after a paint, when the row under the pointer is not the hovered one
+(the wheel, the scrollbar, a key such as End), and after the list is
+refilled (a sort, a filter), `VirtualListCtrl.follow_pointer()` hides
+the tooltip and moves the outline to the row under the pointer. Before,
+a scroll left the outline drawn by its old row number, on the column
+header (P148 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+
 Native `wx.ListCtrl` has no PaintItem hook, so the outline is drawn post-paint
-via `wx.ClientDC` + `wx.CallAfter`. `EVT_PAINT` also triggers a deferred redraw
+via `wx.ClientDC` + `patterns.later.soon`. `EVT_PAINT` also triggers a deferred redraw
 to survive native repaints.
 
 **Cleanup:** `EVT_LEAVE_WINDOW` → reset `_hover_row`, padded refresh.
 
 ### Settings
 
-Both hover and tooltip settings are read directly via the `settings2` shim
-(see [SETTINGS.md](SETTINGS.md)) — no cached attributes, no getter lambdas,
-no pubsub subscriptions.
+Both hover and tooltip settings are read directly from the one settings
+object ([SETTINGS.md](SETTINGS.md#usage)): no cached attributes, no getter
+lambdas, no change subscriptions.
 
-- `settings2.window.hoverlinewidth` — integer, default 1. 0 disables hover,
+- `settings.window.hoverlinewidth` — integer, default 1. 0 disables hover,
   >0 enables the two-tone outline. User-facing: **Preferences > Theme >
   Hoverover Highlight**.
-- `settings2.view.descriptionpopups` — boolean, default True. Enables/disables
+- `settings.view.descriptionpopups` — boolean, default True. Enables/disables
   tooltip popups. User-facing: **Preferences > View > Description popups**.
 
 ---
@@ -634,9 +703,9 @@ Only two handlers fire on mouse motion. Both call `event.Skip()` so the chain is
 
 | Handler | File | Purpose |
 |---------|------|---------|
-| `OnMouse` fast-path | `hypertreelist.py` | Row-bounds cache → HitTest only on row change → update `_hoverItem`, read `settings2.window.hoverlinewidth` |
-| `__OnMotion` (ToolTipMixin) | `tooltip.py` | Read `settings2.view.descriptionpopups`, store position, start 200ms timer |
-| `__OnTimer` (ToolTipMixin) | `tooltip.py` | Call `OnBeforeShowToolTip()` → build tooltip |
+| `OnMouse` fast-path | `hypertreelist.py` | Row-bounds cache → HitTest only on row change → update `_hoverItem`, read `settings.window.hoverlinewidth` |
+| `__on_motion` (ToolTipMixin) | `tooltip.py` | Read `settings.view.descriptionpopups`, store position, restart the 200ms debounced call |
+| `__show_pending_tip` (ToolTipMixin) | `tooltip.py` | Call `OnBeforeShowToolTip()` → build tooltip |
 
 **Hover fast-path:** `OnMouse` short-circuits for `event.Moving()` before the
 full HitTest + button/drag/tooltip processing (~200 lines skipped). A Y-bounds
@@ -716,14 +785,14 @@ states only when selection or data actually changes, not by continuous polling.
 ### ~~TODO~~: Eliminate UpdateUI polling entirely — DONE
 
 **Q1: Can we piggyback on the 1-second scheduler tick?** The global scheduler
-timer already fires every second (`scheduler.py:89`). Instead of wx polling
+timer already fires every second (`scheduler.py`, `GlobalTimer`). Instead of wx polling
 `enabled()` via UpdateUI, we could update toolbar button states once per second
 in the scheduler callback. This would consolidate the work into one place and
 eliminate the UpdateUI overhead entirely.
 
 **Q2: Can we make it event-driven instead?** Selection changes already fire
 `EVT_TREE_SEL_CHANGED` → `onSelect()`. Data changes fire
-`onPresentationChanged()`. Undo/redo state changes when commands execute. We
+`on_presentation_changed()`. Undo/redo state changes when commands execute. We
 could call `UpdateWindowUI()` explicitly at these points and disable the
 polling entirely via `wx.UpdateUIEvent.SetMode(wx.UPDATE_UI_PROCESS_SPECIFIED)`.
 This way button states update immediately on real changes and never poll.
@@ -784,22 +853,20 @@ continuous polling overhead.
 | `ViewerHideTasks` | filter change | `Filter.filter_change_event_type()` → `command.checked()` |
 | `SelectAll` | selection | menu-open → `command.enabled()` |
 | `ToggleCategory` | selection | menu-open → `command.enabled()` + `checked()` |
-| `FileSave` | dirty state | `taskfile.dirty`/`taskfile.clean` pubsub → `command.enabled()` |
-| `FileMergeDiskChanges` | disk change | `taskfile.changed`/dirty/clean pubsub → `command.enabled()` |
-| `FilePurgeDeletedItems` | deleted items | menu-open → `command.enabled()` |
+| `FileSave` | dirty state | `taskfile.dirty`/`taskfile.clean` events → `command.enabled()` |
 | `ViewerHideCompositeTasks` | tree mode | menu-open → `command.enabled()` + `checked()` |
 | `EditTrackedTasks` | tracking | menu-open → `command.enabled()` |
 | `EditUndo` | history | `commandhistory.changed` Publisher event → `command.enabled()` |
 | `EditRedo` | history | `commandhistory.changed` Publisher event → `command.enabled()` |
 
-**Custom `enabled()`** (`EVT_UPDATE_UI` but no selection polling):
+**Custom `enabled()`**:
 
 | Command | What `enabled()` checks |
 |---------|-------------------------|
 | `EditPaste` | `TextCtrl.CanPaste()` or clipboard |
 | `RenameViewer` | `activeViewer()` |
 | `ActivateViewer` | `viewerCount() > 1` |
-| `HideCurrentColumn` | `isHideableColumn()` at mouse position |
+| `HideCurrentColumn` | `is_hideable_column()` of the column the menu was opened on |
 | `EffortStartForTask` | task not completed/tracked |
 | `EffortStartButton` | any task not completed |
 | `DialogCommand` | dialog is closed |
@@ -812,17 +879,20 @@ continuous polling overhead.
 | `on_idle` | `taskbaricon.py:155` | Compares tooltip text + icon strings |
 | `_on_idle` | `windowdimensionstracker.py:469` | Checks ready flag (cheap early return) |
 
-### The Fix: SetUpdateInterval
+### The Fix: No Update Events in Idle Time
 
-`wx.UpdateUIEvent.SetUpdateInterval(200)` in `application.py:OnInit` throttles
-UpdateUI processing to fire at most every 200ms instead of on every idle cycle.
-This is wx's official recommended API for this exact problem.
+First `SetUpdateInterval(200)` throttled the polling, then the toolbar
+buttons moved to signals. Measured 2026-10-01, idle, with nothing left
+to answer them, about 37 update events a second still went out: wx's
+idle pass over every window (about 10), and AGW's `AuiToolBar` sending
+one per tool in every idle cycle, on its own (about 27).
 
-**Before:** ~30 `enabled()` calls on every idle cycle (hundreds/sec during
-mouse motion, ~2/sec when idle via timer ticks).
-
-**After:** ~30 `enabled()` calls at most every 200ms (~5 batches/sec max),
-regardless of how many idle cycles occur.
+Now `wx.UpdateUIEvent.SetUpdateInterval(-1)` in `application.py:OnInit`
+turns wx's idle updates off (the documented switch), and
+`_Toolbar.DoIdleUpdate()` (`gui/toolbar.py`) skips AGW's loop: none in
+idle time. Menus are not idle-driven: wx asks their items when a menu
+opens, before a popup menu shows and before a shortcut acts
+([MENUS.md](MENUS.md)).
 
 ### Why only toolbar items, not menu items?
 
@@ -846,8 +916,8 @@ then removed. Re-add any of them to trace a specific path:
 | OnMouse same-row | `hypertreelist.py:OnMouse` fast-path | `OnMouse` | Mouse motion within same row (should be majority) |
 | OnMouse new-row | `hypertreelist.py:OnMouse` fast-path | `OnMouse` | Mouse crossing to a new row (triggers HitTest) |
 | OnMouse fallthrough | `hypertreelist.py:OnMouse` after fast-path | `OnMouse` | Non-motion events (clicks, drag) entering full handler |
-| Tooltip motion | `tooltip.py:__OnMotion` | `TOOLTIP` | Timer stop/restart on every mouse move |
-| UpdateUI poll | `base_uicommand.py:onUpdateUI` | `UpdateUI` | Each toolbar button's enabled() poll |
+| Tooltip motion | `tooltip.py:__on_motion` | `TOOLTIP` | Debounced call restart on every mouse move |
+| Menu item asked | `base_uicommand.py:on_menu_update_ui` | `UpdateUI` | Each menu item's enabled() when wx asks |
 | Taskbar idle | `taskbaricon.py:on_idle` | `EVT_IDLE` | Tray icon tooltip/icon string comparison |
 | Window dims idle | `windowdimensionstracker.py:_on_idle` | `EVT_IDLE` | Window position/size readiness check |
 | Autosaver idle | `autosaver.py:on_idle` | `EVT_IDLE` | Dirty-file save during idle |
@@ -856,10 +926,10 @@ then removed. Re-add any of them to trace a specific path:
 
 | Timer | File | Interval | Always? | Purpose |
 |-------|------|----------|---------|---------|
-| Global scheduler | `scheduler.py:89` | 1000ms | Yes | Reminders, styles; its `timer.second` tick drives viewer, editor and tray refreshes |
+| Global scheduler | `scheduler.py` (`GlobalTimer`) | 1000ms | Yes | Reminders, styles; its `timer.second` tick drives viewer, editor and tray refreshes |
 | Notification center | `notifier_universal.py` (`_NotificationCenter`) | 1000ms | While notifications shown | Timeout-based dismissal |
 | Notification anim | `notifier_universal.py` (`AnimatedShow`, `AnimatedMove`) | 100ms | During fade-in only (~1s) | Fade-in/move animation |
-| Editor Mac poll | `editor.py` (`Editor.__init__`) | 1000ms | macOS only, editor open | Window close detection |
+| Geometry trace | `meta/geometry_trace.py` | 10ms for a 2s burst, then 1000ms | Only while a call to it is added for a diagnosis | Logs window geometry ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing)) |
 
 Only the global scheduler runs at all times. All
 others are conditional and stop when their context ends.
@@ -998,33 +1068,14 @@ the motion-only input filter is sufficient to prevent the cascade.
    occur with standard `wx.aui.AuiManager` (C++ implementation) or
    is it specific to the pure-Python `agw` version?
 
-2. **Full rebuild on every editor field change** - Editing any field
-   in the task or category editor (even subject, notes, colors) triggers
-   a full `RefreshAllItems` rebuild of every tree view.  The tree is not
-   virtual - each rebuild deletes all nodes and recreates them (text,
-   colors, fonts, images for every item and column).  For 291 items
-   with 8 columns this is ~2300 text lookups + 291 color/font
-   computations + a 280ms paint.
-
-   The tree already has per-item `RefreshItems()` that updates just the
-   changed rows in place (text, colors, font, repaint line).  The
-   filter's `reset()` and sorter's `reset()` both check whether the
-   result actually changed before firing events.  But something in the
-   event chain still triggers a full rebuild on every edit.  Need caller
-   tracing to identify the exact path.
-
-   User request: "Why every time that I change a value in the edit task
-   window, all lists in my views flicker, seems like they are being
-   fully rebuilt" and "same thing for each time I edit values of a
-   category" and "Any fields, even a task or category subject."
-
-   Ideal fix: attribute changes that don't affect sort order or filter
-   membership should use per-item `RefreshItems()` only, never a full
-   `RefreshAllItems()` rebuild.  The list control (`wx.LC_VIRTUAL`) is
-   already virtual and cheap to refresh.  The tree control
-   (`HyperTreeList`) is not virtual and cannot reorder nodes in place -
-   it has no `MoveItem()` API - so sort order changes do require a full
-   rebuild, but non-sort attribute changes should not.
+2. **Full rebuild on every editor field change**: partly done
+   (March 2026, 6f5fae795). `RefreshAllItems()` compares the tree's
+   structure with the presentation's and refreshes the rows in place
+   when it is unchanged, so an edit no longer deletes and recreates
+   the nodes. Left: every row is refreshed, not only the changed one;
+   an attribute change that moves no row needs only `RefreshItems()`.
+   A sort order change still needs a rebuild: `HyperTreeList` has no
+   `MoveItem()`.
 
 ### Key Files
 
@@ -1036,6 +1087,83 @@ the motion-only input filter is sufficient to prevent the cascade.
 | `taskcoachlib/meta/debug.py` | `log_step()` - timestamped debug logging |
 
 ---
+
+
+## In-Place Editing
+
+**Ruled by designer 2026-10-02**: editing a cell in place is an
+explicit, recent action on that cell; nothing from a disconnected
+sequence of clicks or keys may open an edit box. The tree views (Tasks,
+in tree and list mode, Categories, Notes) edit a cell in place; the
+list views (Effort, Attachments) do not. Editable: the subject and
+description, and in the Tasks view the dates, the reminder, progress,
+budget, priority and fees.
+
+Two options on Preferences > Features, both off by default
+([SETTINGS.md](SETTINGS.md#in-place-editing-options)): "Edit cells in
+place" turns it on; "Edit in place with a slow double click" adds the
+slow double click. With the first off no edit box opens and Edit in
+place is not on the right-click menu. An edit box then opens:
+
+- **Right-click menu, Edit in place**: on the cell right-clicked,
+  beside the subject's text too (the tree gives no column there). The
+  item is greyed on a cell that cannot be edited.
+- **F2**: on the cell just clicked or right-clicked, while the list
+  keeps the focus. Any other key, a click elsewhere, a modifier click
+  or the focus leaving the list (to another view, window or dialog)
+  ends it: F2 then does nothing. A row reached with the arrow keys has
+  no cell. F2 is the rename and edit-cell key of Windows and the Linux
+  desktops; macOS uses Return, which here opens the editor dialog.
+- **Slow double click**: a second click on the same cell's text, from
+  the double-click time to 2 s after the first (`double_click_ms()`,
+  `SLOW_DOUBLE_CLICK_MAX_MS`), with no click, key, wheel turn or focus
+  change between them. The edit box opens the double-click time after
+  the second click, unless a third click makes a double click, which
+  opens the editor dialog (as Windows does: no other click within the
+  double-click time before or after). With the system's 400 ms here:
+  two clicks within 400 ms are a double click; 400 ms to 2 s apart, a
+  slow double click, edited 400 ms later; more than 2 s apart, two
+  clicks.
+
+An edit box ends, keeping what was typed, once the focus has left it
+and its parts (the date's fields, calendar and time choices included)
+for anything else: a click in another view, Ctrl+PgDn, a dialog,
+another application. The focus stays where it went; the list takes it
+back when it went to another application, as at Escape and Enter.
+Escape cancels, Enter keeps; a menu of the menu bar leaves the box
+open, so Edit > Paste pastes into it (`KillFocusAcceptsEditsMixin` in
+`inplace_editor.py`). Before (master the same), only the date box
+ended so, and it took the focus back from the view clicked, leaving
+the keyboard nowhere; the others stayed open, the typed text unsaved,
+until the next click in their list (P154).
+
+A right-click inside an edit box opens its text field's own menu (on
+GTK Cut, Copy, Paste, Delete, Select All, Insert Emoji), and the box
+stays open; in the date, time and budget fields, drawn by Task Coach,
+it opens nothing. The list never sees it. Before (master the same),
+the list's item menu opened, for the row below the one edited (the
+list read the pointer in its outer frame's coordinates, the column
+header's height lower), so Delete in it deleted that other task
+(P157). It now reads the pointer in its rows' window.
+
+The list is given the focus once the box is destroyed. While the box
+exists, wx makes the list unfocusable in GTK (a window with a
+focusable child passes the focus on to it), so the focus went to the
+box and was lost with it: after Enter or Escape the row showed grey
+and the keys did nothing until a click (P158, master the same).
+
+Editing a cell leaves its row the only one selected, as a tree view's
+cursor does in GTK. Every edit passes `TreeListCtrl.on_begin_edit()`,
+which refuses the tree's own timer unless the clicks made a slow double
+click; the timer waits the double-click time
+([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#task-coachs-changes)).
+
+Before (master the same): a click on the row clicked last, however long
+ago, opened an edit box 250 ms later, also the click coming back into
+the list from another view and the release of a drag (P124 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)),
+and F2 edited the subject of the first selected row. To Do 68 and 69 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do).
 
 ## Key Files
 
@@ -1050,4 +1178,5 @@ the motion-only input filter is sufficient to prevent the cascade.
 | `taskcoachlib/widgets/tooltip.py` | Tooltip mixin with deferred data prep |
 | `taskcoachlib/widgets/frame.py` | AUI frame, `_RebuildInputFilter` (EventFilter), sash throttle |
 | `taskcoachlib/patches/hypertreelist.py` | Patched upstream widget — hover outline, drag highlight |
+| `taskcoachlib/patches/customtreectrl.py` | Its base, bundled with it ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)) |
 

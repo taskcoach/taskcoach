@@ -21,21 +21,13 @@ import wx
 import wx.lib.colourselect as csel
 from wx.lib import sized_controls
 from taskcoachlib.i18n import _
-from taskcoachlib.thirdparty.wxScheduler import (
-    wxSCHEDULER_DAILY,
-    wxSCHEDULER_WEEKLY,
-    wxSCHEDULER_MONTHLY,
-    wxSCHEDULER_HORIZONTAL,
-    wxSCHEDULER_VERTICAL,
-)
+from taskcoachlib.config import settings
 
 
 class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
-    def __init__(self, settings, settingsSection, *args, **kwargs):
-        self._settings = settings
-        self._settingsSection = settingsSection
-        kwargs.setdefault(
-            "style", wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+    def __init__(self, settings_section, *args, **kwargs):
+        self._options = settings.section(settings_section)
+        kwargs.setdefault("style", wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         super().__init__(*args, **kwargs)
         pane = self.GetContentsPane()
         pane.SetSizerType("form")
@@ -44,7 +36,7 @@ class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
         self.SetButtonSizer(buttonSizer)
         self.Fit()
         self.SetMinSize(self.GetSize())
-        wxhelper.getButtonFromStdDialogButtonSizer(buttonSizer, wx.ID_OK).Bind(
+        wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.ok
         )
 
@@ -57,7 +49,7 @@ class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
     def createHeaderEntry(self, pane):
         label = wx.StaticText(pane, label=_("Headers"))
         label.SetSizerProps(valign="center")
-        hdr = self._settings.getint(self._settingsSection, "headerformat")
+        hdr = self._options.headerformat
         panel = sized_controls.SizedPanel(pane)
         panel.SetSizerType("vertical")
         self._weekNumber = wx.CheckBox(panel, label=_("Week number"))
@@ -77,9 +69,7 @@ class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
             pane, choices=periods
         )  # pylint: disable=W0201
         self._spanType.SetSizerProps(valign="center")
-        self._spanType.SetSelection(
-            self._settings.getint(self._settingsSection, "calendarformat")
-        )
+        self._spanType.SetSelection(self._options.calendarformat)
 
     def createLineEntry(self, pane):
         label = wx.StaticText(
@@ -88,16 +78,14 @@ class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
         label.SetSizerProps(valign="center")
         self._shownow = wx.CheckBox(pane)  # pylint: disable=W0201
         self._shownow.SetSizerProps(valign="center")
-        self._shownow.SetValue(
-            self._settings.getboolean(self._settingsSection, "drawnow")
-        )
+        self._shownow.SetValue(self._options.drawnow)
 
     def createColorEntry(self, pane):
         label = wx.StaticText(
             pane, label=_("Color used to highlight the current day")
         )
         label.SetSizerProps(valign="center")
-        hcolor = self._settings.get(self._settingsSection, "todaycolor")
+        hcolor = self._options.todaycolor
         if not hcolor:
             # The highlight color is too dark
             color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
@@ -117,21 +105,19 @@ class HierarchicalCalendarConfigDialog(sized_controls.SizedDialog):
         self._highlight.SetColour(color)
 
     def ok(self, event=None):  # pylint: disable=W0613
-        settings, section = self._settings, self._settingsSection
-        settings.set(
-            section, "calendarformat", str(self._spanType.GetSelection())
-        )
-        settings.set(section, "drawnow", str(self._shownow.GetValue()))
+        options = self._options
+        options.calendarformat = self._spanType.GetSelection()
+        options.drawnow = self._shownow.GetValue()
         color = self._highlight.GetColour()
-        settings.set(
-            section,
-            "todaycolor",
-            "%d,%d,%d" % (color.Red(), color.Green(), color.Blue()),
+        options.todaycolor = "%d,%d,%d" % (
+            color.Red(),
+            color.Green(),
+            color.Blue(),
         )
         hdr = 0
         if self._weekNumber.GetValue():
             hdr |= 1
         if self._dates.GetValue():
             hdr |= 2
-        settings.set(section, "headerformat", str(hdr))
+        options.headerformat = hdr
         self.EndModal(wx.ID_OK)

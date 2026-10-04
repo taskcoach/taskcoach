@@ -23,10 +23,11 @@ from taskcoachlib.help.balloontips import BalloonTipManager
 from taskcoachlib.gui import uicommand
 from taskcoachlib.i18n import _
 import wx
+from taskcoachlib import patterns
 
 
 class _ToolBarEditorInterior(wx.Panel):
-    def __init__(self, toolbar, settings, parent):
+    def __init__(self, toolbar, parent):
         self.__toolbar = toolbar
         self.__visible = toolbar.visible_ui_commands()
 
@@ -38,9 +39,7 @@ class _ToolBarEditorInterior(wx.Panel):
         sb = wx.StaticBox(self, wx.ID_ANY, _("Preview"))
         from taskcoachlib.gui.toolbar import ToolBar
 
-        self.__preview = ToolBar(
-            self, settings, self.__toolbar.GetToolBitmapSize()
-        )
+        self.__preview = ToolBar(self, self.__toolbar.GetToolBitmapSize())
         sbsz = wx.StaticBoxSizer(sb)
         sbsz.Add(self.__preview, 1)
         vsizer.Add(sbsz, 0, wx.EXPAND | wx.ALL, 3)
@@ -54,8 +53,7 @@ class _ToolBarEditorInterior(wx.Panel):
         # Remaining commands list
         sb = wx.StaticBox(self, wx.ID_ANY, _("Available tools"))
         self.__remaining_commands = wx.ListCtrl(
-            self,
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
+            self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
         )
         self.__remaining_commands.SetImageList(
             image_list_cache.image_list, wx.IMAGE_LIST_SMALL
@@ -100,8 +98,7 @@ class _ToolBarEditorInterior(wx.Panel):
         # Visible commands list
         sb = wx.StaticBox(self, wx.ID_ANY, _("Tools"))
         self.__visible_commands = wx.ListCtrl(
-            self,
-            style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
+            self, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_NO_HEADER
         )
         self.__visible_commands.SetImageList(
             image_list_cache.image_list, wx.IMAGE_LIST_SMALL
@@ -185,9 +182,9 @@ class _ToolBarEditorInterior(wx.Panel):
             wx.EVT_LIST_ITEM_ACTIVATED, self._on_visible_double_click
         )
 
-        wx.CallAfter(
+        patterns.later.soon(
+            wx.GetTopLevelParent(self),
             wx.GetTopLevelParent(self).AddBalloonTip,
-            settings,
             "customizabletoolbars_dnd",
             self.__visible_commands,
             title=_("Drag and drop"),
@@ -567,10 +564,9 @@ class _ToolBarEditorInterior(wx.Panel):
 
         visible_names = self._get_visible_names()
 
-        all_commands = [
-            uicommand.Separator(), uicommand.Spacer()
-        ] + [
-            cmd for cmd in self.create_toolbar_ui_commands()
+        all_commands = [uicommand.Separator(), uicommand.Spacer()] + [
+            cmd
+            for cmd in self.create_toolbar_ui_commands()
             if cmd.is_command()
         ]
 
@@ -643,17 +639,14 @@ class _ListDropTarget(wx.DropTarget):
 
 
 class ToolBarEditor(BalloonTipManager, widgets.Dialog):
-    def __init__(self, toolbar, settings, *args, **kwargs):
+    def __init__(self, toolbar, *args, **kwargs):
         self.__toolbar = toolbar
-        self.__settings = settings
         super().__init__(*args, **kwargs)
         self.SetClientSize(wx.Size(900, 700))
         self.CentreOnParent()
 
     def createInterior(self):
-        return _ToolBarEditorInterior(
-            self.__toolbar, self.__settings, self._panel
-        )
+        return _ToolBarEditorInterior(self.__toolbar, self._panel)
 
     def createButtons(self):
         # Create buttons with dialog as parent

@@ -26,11 +26,18 @@ import wx.html
 from wx.lib import sized_controls
 import os
 from ..tools import wxhelper
+from taskcoachlib import patterns
 
 
 class Dialog(sized_controls.SizedDialog):
     def __init__(
-        self, parent, title, icon_id="nuvola_actions_edit", direction=None, *args, **kwargs
+        self,
+        parent,
+        title,
+        icon_id="nuvola_actions_edit",
+        direction=None,
+        *args,
+        **kwargs
     ):
         self._buttonTypes = kwargs.get("buttonTypes", wx.OK | wx.CANCEL)
         super().__init__(
@@ -42,11 +49,9 @@ class Dialog(sized_controls.SizedDialog):
             | wx.MAXIMIZE_BOX
             | wx.MINIMIZE_BOX,
         )
-        self.SetIcon(
-            icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE)
-        )
+        self.SetIcon(icon_catalog.get_wx_icon(icon_id, LIST_ICON_SIZE))
 
-        if operating_system.isWindows7_OrNewer():
+        if operating_system.isWindows():
             # Without this the window has no taskbar icon on Windows, and the focus comes back to the main
             # window instead of this one when returning to Task Coach through Alt+Tab. Which is probably not
             # what we want.
@@ -73,11 +78,11 @@ class Dialog(sized_controls.SizedDialog):
         self.Fit()
         self.CentreOnParent()
         if not operating_system.isGTK():
-            wx.CallAfter(self.__safeRaise)
-        wx.CallAfter(self.__safePanelSetFocus)
+            patterns.later.soon(self, self.__safeRaise)
+        patterns.later.soon(self, self.__safePanelSetFocus)
         # Wayland needs a size event to trigger proper initial layout
         if operating_system.isWayland():
-            wx.CallAfter(self.__safeLayoutRefresh)
+            patterns.later.soon(self, self.__safeLayoutRefresh)
 
     def __safeLayoutRefresh(self):
         """Force layout refresh on Wayland where initial render may be incomplete.
@@ -123,12 +128,6 @@ class Dialog(sized_controls.SizedDialog):
             # wrapped C/C++ object has been deleted
             pass
 
-    def SetExtraStyle(self, exstyle):
-        # SizedDialog's constructor calls this to set WS_EX_VALIDATE_RECURSIVELY. We don't need
-        # it, it makes the dialog appear in about 7 seconds, and it makes switching focus
-        # between two controls take up to 5 seconds.
-        pass
-
     def createInterior(self):
         raise NotImplementedError
 
@@ -143,21 +142,21 @@ class Dialog(sized_controls.SizedDialog):
             buttonTypes
         )  # type: wx.StdDialogButtonSizer
         if self._buttonTypes & wx.OK or self._buttonTypes & wx.ID_CLOSE:
-            wxhelper.getButtonFromStdDialogButtonSizer(
-                buttonSizer, wx.ID_OK
-            ).Bind(wx.EVT_BUTTON, self.ok)
+            wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
+                wx.EVT_BUTTON, self.ok
+            )
         if self._buttonTypes & wx.CANCEL:
-            wxhelper.getButtonFromStdDialogButtonSizer(
-                buttonSizer, wx.ID_CANCEL
-            ).Bind(wx.EVT_BUTTON, self.cancel)
+            wxhelper.get_dialog_button(buttonSizer, wx.ID_CANCEL).Bind(
+                wx.EVT_BUTTON, self.cancel
+            )
         if self._buttonTypes & wx.APPLY:
-            wxhelper.getButtonFromStdDialogButtonSizer(
-                buttonSizer, wx.ID_APPLY
-            ).Bind(wx.EVT_BUTTON, self.apply)
+            wxhelper.get_dialog_button(buttonSizer, wx.ID_APPLY).Bind(
+                wx.EVT_BUTTON, self.apply
+            )
         if self._buttonTypes == wx.ID_CLOSE:
-            wxhelper.getButtonFromStdDialogButtonSizer(
-                buttonSizer, wx.ID_OK
-            ).SetLabel(_("Close"))
+            wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).SetLabel(
+                _("Close")
+            )
         self.SetButtonSizer(buttonSizer)
         return buttonSizer
 
@@ -175,16 +174,6 @@ class Dialog(sized_controls.SizedDialog):
             event.Skip()
         self.Close(True)
         self.Destroy()
-
-    def disableOK(self):
-        wxhelper.getButtonFromStdDialogButtonSizer(
-            self._buttons, wx.ID_OK
-        ).Disable()
-
-    def enableOK(self):
-        wxhelper.getButtonFromStdDialogButtonSizer(
-            self._buttons, wx.ID_OK
-        ).Enable()
 
 
 class NotebookDialog(Dialog):
@@ -238,7 +227,9 @@ class HtmlWindowThatUsesWebBrowserForExternalLinks(wx.html.HtmlWindow):
 class HTMLDialog(Dialog):
     def __init__(self, title, htmlText, parent=None, *args, **kwargs):
         self._htmlText = htmlText
-        super().__init__(parent, title, buttonTypes=wx.ID_CLOSE, *args, **kwargs)
+        super().__init__(
+            parent, title, buttonTypes=wx.ID_CLOSE, *args, **kwargs
+        )
 
     def createInterior(self):
         interior = HtmlWindowThatUsesWebBrowserForExternalLinks(

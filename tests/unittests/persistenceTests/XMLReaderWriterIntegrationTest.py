@@ -27,25 +27,17 @@ from taskcoachlib.domain import task, category, effort, date, note, attachment
 
 class IntegrationTestCase(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.fd = io.BytesIO()  # The app writes UTF-8 bytes (SafeWriteFile)
         self.fd.name = "testfile.tsk"
         self.writer = persistence.XMLWriter(self.fd)
         self.taskList = task.TaskList()
         self.categories = category.CategoryList()
         self.notes = note.NoteContainer()
-        self.changes = dict()
-        self.guid = "GUID"
         self.fillContainers()
-        tasks, categories, notes, syncMLConfig, changes, guid = (
-            self.readAndWrite()
-        )
+        tasks, categories, notes = self.readAndWrite()
         self.tasksWrittenAndRead = task.TaskList(tasks)
         self.categoriesWrittenAndRead = category.CategoryList(categories)
         self.notesWrittenAndRead = note.NoteContainer(notes)
-        # syncMLConfig is now always None - SyncML removed
-        self.changesWrittenAndRead = changes
-        self.guidWrittenAndRead = guid
 
     def fillContainers(self):
         pass
@@ -56,8 +48,6 @@ class IntegrationTestCase(test.TestCase):
             self.taskList,
             self.categories,
             self.notes,
-            None,  # SyncML removed
-            self.guid,
         )
         # The app reads the file back as text (TaskFile._openForRead)
         written = io.BytesIO(self.fd.getvalue())
@@ -103,7 +93,6 @@ class IntegrationTest(IntegrationTestCase):
             font=wx.NORMAL_FONT,
             expandedContexts=["viewer1"],
             icon="icon",
-            selectedIcon="selectedIcon",
             percentageComplete=67,
             shouldMarkCompletedWhenAllChildrenCompleted=True,
         )
@@ -140,8 +129,10 @@ class IntegrationTest(IntegrationTestCase):
             children=[note.Note(subject="Child")],
         )
         self.notes.append(self.note)
-        self.category.addCategorizable(self.note)
-        self.task.setModificationDateTime(date.DateTime(2012, 1, 1, 10, 9, 8))
+        self.note.addCategory(self.category)
+        self.task.set_modification_datetime(
+            date.DateTime(2012, 1, 1, 10, 9, 8)
+        )
 
     def getTaskWrittenAndRead(self, targetId):
         # pylint: disable=W0621
@@ -209,7 +200,7 @@ class IntegrationTest(IntegrationTestCase):
         self.assertAttributeWrittenAndRead(self.task, "budget")
 
     def testBudget_MoreThan24Hour(self):
-        self.task.setBudget(date.TimeDelta(hours=25))
+        self.task.set_budget(date.TimeDelta(hours=25))
         self.tasksWrittenAndRead = task.TaskList(self.readAndWrite()[0])
         self.assertAttributeWrittenAndRead(self.task, "budget")
 
@@ -241,9 +232,7 @@ class IntegrationTest(IntegrationTestCase):
         )
 
     def testCategory(self):
-        categorizables = list(self.categoriesWrittenAndRead)[
-            0
-        ].categorizables()
+        categorizables = list(self.categoriesWrittenAndRead)[0].members()
         categorizableIds = set([item.id() for item in categorizables])
         self.assertEqual(
             set([self.task.id(), self.note.id()]), categorizableIds
@@ -326,11 +315,8 @@ class IntegrationTest(IntegrationTestCase):
     def testNoteWithCategory(self):
         self.assertTrue(
             self.notesWrittenAndRead.rootItems()[0]
-            in list(self.categoriesWrittenAndRead)[0].categorizables()
+            in list(self.categoriesWrittenAndRead)[0].members()
         )
 
     def testTaskNote(self):
         self.assertContainedDomainObjectsWrittenAndRead(self.task, "notes")
-
-    def testGUID(self):
-        self.assertEqual(self.guidWrittenAndRead, self.guid)

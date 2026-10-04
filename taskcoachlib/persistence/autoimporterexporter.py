@@ -16,8 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import codecs, os
-from pubsub import pub
+import os
+from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from . import todotxt
 
 
@@ -27,11 +28,21 @@ class AutoImporterExporter(object):
     import and/or export is on, AutoImporterExporter imports and/or exports
     the task file."""
 
-    def __init__(self, settings):
+    def __init__(self):
         super().__init__()
-        self.__settings = settings
-        pub.subscribe(self.onTaskFileAboutToBeSaved, "taskfile.aboutToSave")
-        pub.subscribe(self.onTaskFileJustRead, "taskfile.justRead")
+        register = patterns.Publisher().registerObserver
+        register(
+            self.on_task_file_about_to_save, eventType="taskfile.aboutToSave"
+        )
+        register(self.on_task_file_read, eventType="taskfile.justRead")
+
+    def on_task_file_read(self, event):
+        for task_file in event.sources():
+            self.onTaskFileJustRead(task_file)
+
+    def on_task_file_about_to_save(self, event):
+        for task_file in event.sources():
+            self.onTaskFileAboutToBeSaved(task_file)
 
     def onTaskFileJustRead(self, taskFile):
         """After a task file has been read and if auto import is on,
@@ -45,15 +56,15 @@ class AutoImporterExporter(object):
         self.exportFiles(taskFile)
 
     def importFiles(self, taskFile):
-        importFormats = self.__settings.getlist("file", "autoimport")
-        for importFormat in importFormats:
-            if importFormat == "Todo.txt":
+        import_formats = settings.file.autoimport
+        for import_format in import_formats:
+            if import_format == "Todo.txt":
                 self.importTodoTxt(taskFile)
 
     def exportFiles(self, taskFile):
-        exportFormats = self.__settings.getlist("file", "autoexport")
-        for exportFormat in exportFormats:
-            if exportFormat == "Todo.txt":
+        export_formats = settings.file.autoexport
+        for export_format in export_formats:
+            if export_format == "Todo.txt":
                 self.exportTodoTxt(taskFile)
 
     @classmethod
@@ -67,8 +78,8 @@ class AutoImporterExporter(object):
     @classmethod
     def exportTodoTxt(cls, taskFile):
         filename = cls.todoTxtFilename(taskFile)
-        with codecs.open(filename, "w", "utf-8") as todoFile:
-            todotxt.TodoTxtWriter(todoFile, filename).writeTasks(
+        with open(filename, "w", encoding="utf-8", newline="") as todo_file:
+            todotxt.TodoTxtWriter(todo_file, filename).writeTasks(
                 taskFile.tasks()
             )
 

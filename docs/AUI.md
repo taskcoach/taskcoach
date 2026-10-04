@@ -10,7 +10,11 @@ This document covers AUI-related topics for Task Coach, which uses wxPython's AG
    - [Planned: Fit Floating Panes to the Monitors](#planned-fit-floating-panes-to-the-monitors)
 2. [Sash Cursor Seep-Through Fix](#sash-cursor-seep-through-fix)
 3. [System Colour Change Event](#system-colour-change-event)
-4. [Related Documentation](#related-documentation)
+4. [Destroy Event](#destroy-event)
+5. [Managers Never Freed](#managers-never-freed)
+6. [Page Painted Over the Tabs](#page-painted-over-the-tabs)
+7. [Captions Drawn at the Next Paint](#captions-drawn-at-the-next-paint)
+8. [Related Documentation](#related-documentation)
 
 ---
 
@@ -72,7 +76,7 @@ The correct approach is to simply load the perspective and let AUI handle it:
 ```python
 # DO THIS - simple and robust
 def __restore_perspective(self):
-    perspective = self.settings.get("view", "perspective")
+    perspective = settings.view.perspective
     try:
         self.manager.LoadPerspective(perspective)
     except Exception:
@@ -174,7 +178,7 @@ The perspective stores each floating pane's position and size, and
 `LoadPerspective()` restores them as saved, whatever the current
 monitors: a pane saved on a monitor that is gone can open off screen.
 Plan: after `LoadPerspective()`, pass each floating pane's rect through
-the shared `restore_rect()`
+the shared `fit_to_monitors()`
 ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#planned-refactoring)) and set
 the result with `FloatingPosition()` and `FloatingSize()` before
 `Update()`. This adapts the loaded geometry only; it does not validate
@@ -241,9 +245,134 @@ notebooks) still consumes it.
 
 ---
 
+## Destroy Event
+
+`AuiManager.OnDestroy()` handles `EVT_WINDOW_DESTROY` of its managed
+window without `Skip()`. The main window removes its manager in
+`onClose()` before it is destroyed, so its own destroy handlers run;
+an `AuiNotebook`'s manager (the task editor's pages) stays, so
+handlers bound on the notebook never run. Neither the crash guard's
+timer watch ([CRASH_GUARD.md](CRASH_GUARD.md)) nor the Publisher's
+unsubscribe on destroy covers a notebook: a timer it owns ticks into
+freed memory once it is gone. The app's calls go through
+`patterns.later`, which checks the owner when each call is due
+([DEFERRED_CALLS.md](DEFERRED_CALLS.md)).
+
+---
+
+## Managers Never Freed
+
+An `AuiManager` binds its handlers to itself, so nothing frees it
+([CRASH_GUARD.md](CRASH_GUARD.md#event-handlers-that-are-not-windows)),
+nor what it holds. Besides the main window's, Task Coach has one in
+each floating view's frame, in each notebook AUI makes for views
+dropped onto one another, and in the notebook of every editor and of
+Preferences. Each one closed stayed in memory with its window's
+objects: a closed floating view, a closed editor's or Preferences'
+pages. On master too: 11 MB after opening and closing 20 task
+editors.
+
+`free_with_window()` (`taskcoachlib/widgets/frame.py`) deletes a
+manager once its window is destroyed. `_AuiManager` applies it in
+AUI's factory methods, `CreateFloatingFrame()` and
+`CreateNotebook()`; `widgets.Notebook` applies it to itself. While
+pushed onto its window, the manager receives the window's destroy
+event, and ends it; once removed, the window does. A top-level
+window's event comes after its wrapper is deleted.
+
+`_AuiManager.ClosePane()` also:
+
+- removes a floating pane's frame manager from the frame before AUI
+  destroys it, as AUI's `DetachPane()` does. Reset window layout with
+  a floating view logged `wxAssertionError ... any pushed event
+  handlers must have been removed`.
+- clears AUI's drag state (`_action_window`, `_action_pane`) when it
+  holds the closed pane: the pane whose caption was clicked last stays
+  there until the next click.
+
+A pane docked by dragging leaves a copy of its pane info in the drag
+state, with its old floating frame, until the next caption click or
+until the pane closes.
+
+---
+
+## Page Painted Over the Tabs
+
+### Problem
+
+On GTK 3, a task editor page shown for the first time could draw
+widgets over the tab row until something repainted the tabs: the
+Progress page's percentage control and slider, the Effort page's
+details dropdown, and the Search box of the Effort, Notes and
+Attachments pages (at the row's empty right end, so easy to miss).
+Seen with the editor maximized or resized.
+
+### Root Cause
+
+`AuiNotebook.SetSelection()` shows the page (`SetActivePage()`), then
+paints at once (`Update()` in `AuiTabFrame.DoSizing()` and after
+setting the tab fonts). GTK 3 places a shown widget only at the next
+frame, so that paint drew the page unplaced, at the notebook's top left
+over the tabs. Placing it then repainted nothing there: unplaced, the
+page counted as 1x1. Only widgets with a size drew: GTK sizes a hidden
+widget only when wx resizes it during a window layout (maximizing,
+resizing), so only the widgets that stretch with the notebook (the
+Progress slider and dropdown, the viewers and their toolbars). Fixed
+size widgets stayed 1x1 and drew nothing; the Prerequisites and
+Categories pages create theirs when first selected; a page shown once
+keeps its place.
+
+### Solution
+
+`Notebook.SetSelection()` freezes the notebook for the call, so the
+forced paints skip it and the page draws at the next frame, placed.
+Found with the geometry trace ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing)).
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| `taskcoachlib/widgets/notebook.py` | `Notebook.SetSelection()` - freezes the notebook |
+| `wx/lib/agw/aui/auibook.py` | System file - `SetSelection()`, `AuiTabFrame.DoSizing()` |
+
+---
+
+## Captions Drawn at the Next Paint
+
+### Problem
+
+Making another view active froze the window for a second or more with
+all views open: a click from one list into another, View > Activate
+next viewer, Ctrl+PgDn (P160 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+
+### Root Cause
+
+AGW's `RefreshCaptions()`, run on each activation, repaints the
+window at once (`Update()`) after marking each caption, so seven
+views cost seven full repaints, about 0.1 s each on Xvfb and more on a
+loaded machine. A switch from the menu or the keys runs it twice: the
+view taking the focus activates its pane again.
+
+### Solution
+
+`_AuiManager.RefreshCaptions()` marks the captions only; they are
+drawn at the next paint, a moment later. Its other callers (a
+notebook tab's caption, a floating view activated, a caption drag)
+need no more.
+
+### Related Files
+
+| File | Purpose |
+|------|---------|
+| `taskcoachlib/widgets/frame.py` | `_AuiManager.RefreshCaptions()` - no repaint at once |
+| `wx/lib/agw/aui/framemanager.py` | System file - `RefreshCaptions()`, `ActivatePane()` |
+
+---
+
 ## Related Documentation
 
-- **[AUI Wayland Issues](AUI_WAYLAND_ISSUES.md)** - Docking problems on Wayland display servers
+- **[Wayland Issues](WAYLAND_ISSUES.md#aui-docking)** - Docking problems on Wayland display servers
 - **[Window Geometry](WINDOW_GEOMETRY.md)** - Size and position of the main window and editors
 
 ## External References

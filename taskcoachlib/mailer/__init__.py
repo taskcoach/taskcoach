@@ -16,109 +16,152 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import wx, os, re, tempfile, urllib.request, urllib.parse, urllib.error, email, email.header
-import chardet
-from taskcoachlib.tools import openfile
-from taskcoachlib.i18n import _
+import email
+import email.policy
+import os
+import re
+import tempfile
+import urllib.parse
+
 from taskcoachlib import operating_system
+from taskcoachlib.domain import date
+from taskcoachlib.tools import openfile
+
+# Kept in a mid: link's Message-ID (RFC 2392): what a URL allows,
+# other characters escaped
+_MID_SAFE = "@!$&'()*+,;=:/~"
+
+# The line starting each mail in an mbox file
+_MBOX_FROM = re.compile(rb"^From .*\r?\n", re.MULTILINE)
+
+# A header line's name (RFC 5322)
+_HEADER_NAME = re.compile(rb"^([!-9;-~]+):")
+
+# Enough of a file to tell a mail by its headers
+_HEAD_SIZE = 65536
 
 
-def readMail(filename, readContent=True):
-    with open(filename, "r") as fd:
-        message = email.message_from_file(fd)
-    subject = getSubject(message)
-    content = getContent(message) if readContent else ""
-    return subject, content
-
-
-charset_re = re.compile('charset="?([-0-9a-zA-Z]+)"?')
-
-
-def getSubject(message):
-    subject = message["subject"]
+def dropped_mails(filename):
+    """The fields of each mail in a file a mail program dropped: a mail
+    or mbox file in a temporary folder, where the programs put what
+    they drag. [] for any other file, a saved mail included, which is
+    attached as a file (docs/EMAIL_ATTACHMENTS.md, The Drop)."""
+    if not is_temporary(filename):
+        return []
     try:
-        return " ".join(
-            (part[0].decode(part[1]) if part[1] else part[0])
-            for part in email.header.decode_header(subject)
-        )
+        with open(filename, "rb") as mail_file:
+            head = mail_file.read(_HEAD_SIZE)
+    except OSError:
+        return []
+    return read_mails(filename) if looks_like_mail(head) else []
+
+
+def is_temporary(filename):
+    """Whether the file is in a temporary folder: under the system's,
+    or in (or one folder below) a folder named tmp or temp, as the
+    mail programs keeping their own use (Evolution's Flatpak cache,
+    Claws Mail's)."""
+    folder = os.path.dirname(os.path.abspath(filename))
+    system = os.path.abspath(tempfile.gettempdir())
+    if os.path.commonpath([folder, system]) == system:
+        return True
+    names = (
+        os.path.basename(folder),
+        os.path.basename(os.path.dirname(folder)),
+    )
+    return any(name.lower() in ("tmp", "temp") for name in names)
+
+
+def looks_like_mail(data):
+    """Whether the bytes start as a mail: an mbox file's From line, or
+    a header block with a sender and a date, Message-ID, subject or
+    Received header."""
+    if data.startswith(b"From "):
+        return True
+    names = set()
+    for line in re.split(rb"\r?\n\r?\n", data, maxsplit=1)[0].splitlines():
+        match = _HEADER_NAME.match(line)
+        if match:
+            names.add(match.group(1).lower())
+        elif not line[:1].isspace():  # Not a header nor its next line
+            return False
+    return b"from" in names and bool(
+        names & {b"date", b"message-id", b"subject", b"received"}
+    )
+
+
+def read_mails(filename):
+    """The fields of each dropped mail's attachment, from the file the
+    mail program left: one mail, or several in mbox format (Evolution)
+    (docs/EMAIL_ATTACHMENTS.md)."""
+    with open(filename, "rb") as mail_file:
+        data = mail_file.read()
+    if not data.startswith(b"From "):
+        return [parse_mail(data)]
+    return [parse_mail(mail) for mail in _MBOX_FROM.split(data)[1:]]
+
+
+def parse_mail(data):
+    """The fields of a mail's attachment, from the mail's bytes."""
+    message = email.message_from_bytes(
+        _utf8_headers(data), policy=email.policy.default
+    )
+    sender = message["from"]
+    addresses = getattr(sender, "addresses", ())
+    sent = message["date"]
+    return mail_fields(
+        subject=_text(message["subject"]),
+        from_name=_text(addresses[0].display_name if addresses else ""),
+        from_address=_text(addresses[0].addr_spec if addresses else ""),
+        sent=getattr(sent, "datetime", None),
+        message_id=_text(message["message-id"]),
+    )
+
+
+def _utf8_headers(data):
+    """The mail with its headers in UTF-8. RFC 6532 allows UTF-8 in
+    headers; older mails may hold Latin-1, which the parser would turn
+    into replacement characters."""
+    end = re.search(rb"\r?\n\r?\n", data)
+    headers = data[: end.start()] if end else data
+    try:
+        headers.decode("utf-8")
     except UnicodeDecodeError:
-        encoding = message.get_content_charset()
-        if encoding is None:
-            encoding = message.get("Content-Transfer-Encoding")
-        if encoding is None:
-            encoding = "utf-8"
-        try:
-            return subject.decode(encoding)
-        except (UnicodeDecodeError, LookupError):
-            return repr(subject)
+        return headers.decode("latin-1").encode("utf-8") + data[len(headers) :]
+    return data
 
 
-def getContent(message):
-    if message.is_multipart():
-        content = []
-        for submessage in message.get_payload():
-            content.append(getContent(submessage))
-        return "\n".join(content)
-    elif message.get_content_type() in ("text/plain", "message/rfc822"):
-        content = message.get_payload()
-        transfer_encoding = message["content-transfer-encoding"]
-        if transfer_encoding:
-            try:
-                content = content.decode(transfer_encoding)
-            except LookupError:
-                pass  # 8bit transfer encoding gives LookupError, ignore
-        content_type = message["content-type"]
-        if content_type:
-            match = charset_re.search(message["content-type"])
-            encoding = match.group(1) if match else ""
-            if encoding:
-                content = content.decode(encoding)
-        return content
+def _text(value):
+    """A header's text. The parser keeps raw 8-bit bytes in some headers
+    (addresses) as surrogates, which the task file cannot hold."""
+    return (
+        str(value or "")
+        .encode("utf-8", "surrogateescape")
+        .decode("utf-8", "replace")
+    )
+
+
+def mail_fields(subject, from_name, from_address, sent, message_id):
+    """A mail attachment's fields: the sent date in local time, the
+    Message-ID as a mid: link."""
+    if sent is None:
+        sent_datetime = date.DateTime()
     else:
-        return ""
-
-
-def openMailWithOutlook(filename):
-    id_ = None
-    for line in open(filename, "r"):
-        if line.startswith("X-Outlook-ID:"):
-            id_ = line[13:].strip()
-            break
-        elif line.strip() == "":
-            break
-
-    if id_ is None:
-        return False
-
-    from win32com.client import GetActiveObject  # pylint: disable=F0401
-
-    app = GetActiveObject("Outlook.Application")
-    app.ActiveExplorer().Session.GetItemFromID(id_).Display()
-
-    return True
-
-
-def openMail(filename):
-    if os.name == "nt":
-        # Find out if Outlook is the so-called 'default' mailer.
-        import winreg  # pylint: disable=F0401
-
-        key = winreg.OpenKey(
-            winreg.HKEY_CLASSES_ROOT, r"mailto\shell\open\command"
-        )
-        try:
-            value, type_ = winreg.QueryValueEx(key, "")
-            if type_ in [winreg.REG_SZ, winreg.REG_EXPAND_SZ]:
-                if "outlook.exe" in value.lower():
-                    try:
-                        if openMailWithOutlook(filename):
-                            return
-                    except Exception:
-                        pass  # Fall back to default handler
-        finally:
-            winreg.CloseKey(key)
-
-    openfile.openFile(filename)
+        if sent.tzinfo is not None:
+            sent = sent.astimezone().replace(tzinfo=None)
+        sent_datetime = date.DateTime.fromDateTime(sent)
+    message_id = message_id.strip().strip("<>")
+    return dict(
+        location=(
+            "mid:" + urllib.parse.quote(message_id, safe=_MID_SAFE)
+            if message_id
+            else ""
+        ),
+        subject=subject.strip(),
+        from_name=from_name.strip(),
+        from_address=from_address.strip(),
+        sent_datetime=sent_datetime,
+    )
 
 
 def sendMail(to, subject, body, cc=None, openURL=openfile.openFile):

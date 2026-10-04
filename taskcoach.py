@@ -28,7 +28,7 @@ import faulthandler
 # "Fatal Python error: Segmentation fault" with no actionable information.
 # NOTE: On Windows, only enable if stderr is redirected to a file,
 # as faulthandler writing to console during shutdown can cause issues.
-if sys.platform != 'win32' or not sys.stderr.isatty():
+if sys.platform != "win32" or not sys.stderr.isatty():
     faulthandler.enable(all_threads=True)
 else:
     faulthandler.enable()
@@ -37,34 +37,26 @@ else:
 # The embeddable package doesn't process .pth files by default.
 # pywin32's .pth file adds DLL directories to PATH, which is required.
 # We must call site.addsitedir() to process .pth files before importing wx.
-if sys.platform == 'win32':
+if sys.platform == "win32":
     import site
+
     # Find site-packages directory and process .pth files there
     python_dir = os.path.dirname(os.path.abspath(sys.executable))
-    site_packages = os.path.join(python_dir, 'Lib', 'site-packages')
+    site_packages = os.path.join(python_dir, "Lib", "site-packages")
     if os.path.isdir(site_packages):
         site.addsitedir(site_packages)
 
-    # Python 3.8+ also needs explicit DLL directory registration
-    if sys.version_info >= (3, 8) and hasattr(os, 'add_dll_directory'):
-        # Add wx package directory for wxPython DLLs
-        wx_path = os.path.join(site_packages, 'wx')
-        if os.path.isdir(wx_path):
-            os.add_dll_directory(wx_path)
-        # Add pywin32_system32 for pywin32 DLLs
-        pywin32_dir = os.path.join(site_packages, 'pywin32_system32')
-        if os.path.isdir(pywin32_dir):
-            os.add_dll_directory(pywin32_dir)
-        # Add python directory itself
-        os.add_dll_directory(python_dir)
-
-# TEMPORARILY DISABLED: TEE stdout/stderr redirection to log file
-# This code uses os.dup2() to redirect file descriptors to a pipe, which
-# may cause issues on some systems. Until further testing, logging goes
-# directly to console. Users should run Task Coach from a terminal to see output.
-#
-# from taskcoachlib.tee import init_tee
-# init_tee()
+    # Python also needs explicit DLL directory registration
+    # Add wx package directory for wxPython DLLs
+    wx_path = os.path.join(site_packages, "wx")
+    if os.path.isdir(wx_path):
+        os.add_dll_directory(wx_path)
+    # Add pywin32_system32 for pywin32 DLLs
+    pywin32_dir = os.path.join(site_packages, "pywin32_system32")
+    if os.path.isdir(pywin32_dir):
+        os.add_dll_directory(pywin32_dir)
+    # Add python directory itself
+    os.add_dll_directory(python_dir)
 
 
 def _set_wayland_app_id():
@@ -104,7 +96,7 @@ _set_wayland_app_id()
 # Enable more detailed Python error reporting
 sys.tracebacklimit = 100  # Show full tracebacks, not just last 10 frames
 
-# Apply runtime patches (e.g., hypertreelist, inspect.getargspec)
+# Apply runtime patches (hypertreelist, Window.SetSize, crash guards)
 import taskcoachlib.workarounds.monkeypatches
 
 

@@ -32,8 +32,9 @@ class SaveTest(test.TestCase):
         self.mockApp.iocontroller.save()
         self.mockApp.quit_application()
         for filename in [self.filename, self.filename2]:
-            if os.path.isfile(filename):
-                os.remove(filename)
+            for each in [filename, filename + ".lock"]:
+                if os.path.isfile(each):
+                    os.remove(each)
         mock.App.deleteInstance()
         super().tearDown()
 

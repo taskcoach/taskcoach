@@ -121,36 +121,6 @@ class CompositeTest(test.TestCase):
         child = self.composite.newChild()
         self.assertFalse(child in self.composite.children())
 
-    def testGetState(self):
-        self.assertEqual(
-            dict(children=[], parent=None), self.composite.__getstate__()
-        )
-
-    def testGetState_WithChildren(self):
-        self.composite.addChild(self.child)
-        state = self.composite.__getstate__()
-        self.assertEqual(
-            dict(children=[state["children"][0]], parent=None), state
-        )
-
-    def testGetState_WithParent(self):
-        self.composite.addChild(self.child)
-        self.assertEqual(
-            dict(children=[], parent=self.composite), self.child.__getstate__()
-        )
-
-    def testSetState_Parent(self):
-        state = self.composite.__getstate__()
-        self.composite.setParent(self.child)
-        self.composite.__setstate__(state)
-        self.assertEqual(None, self.composite.parent())
-
-    def testSetState_Children(self):
-        state = self.composite.__getstate__()
-        self.composite.addChild(self.child)
-        self.composite.__setstate__(state)
-        self.assertEqual([], self.composite.children())
-
     def testCopy(self):
         copy = self.composite.copy()
         self.assertEqual(copy.children(), self.composite.children())
@@ -214,14 +184,6 @@ class ObservableCompositeTest(test.TestCase):
             self.composite.modificationEventTypes(),
         )
 
-    def testSetState(self):
-        self.composite.addChild(self.child)
-        state = self.composite.__getstate__()
-        self.registerObserver(self.composite.removeChildEventType())
-        self.registerObserver(self.composite.addChildEventType())
-        self.composite.__setstate__(state)
-        self.assertEqual([], self.events)
-
 
 class CompositeCollectionTest(test.TestCase):
     def setUp(self):
@@ -280,14 +242,14 @@ class CompositeCollectionTest(test.TestCase):
 
     def testAddCompositeWithParentAddsItToParent(self):
         self.collection.append(self.composite)
-        self.composite2.setParent(self.composite)
+        self.composite2.set_parent(self.composite)
         self.collection.append(self.composite2)
         self.assertEqual([self.composite2], self.composite.children())
 
     def testAddCompositeWithParentTriggersNotificationByParent(self):
         self.registerObserver(self.composite.addChildEventType())
         self.collection.append(self.composite)
-        self.composite2.setParent(self.composite)
+        self.composite2.set_parent(self.composite)
         self.collection.append(self.composite2)
         expectedEvent = patterns.Event(
             self.composite.addChildEventType(), self.composite, self.composite2

@@ -20,7 +20,8 @@ import time
 
 import wx
 
-from taskcoachlib import operating_system
+from taskcoachlib import operating_system, patterns
+from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
 
 # Windows and macOS apply position, size and maximize during the call,
@@ -111,9 +112,8 @@ class WindowGeometryTracker:
     since the tracker started, until the window has settled.
     """
 
-    def __init__(self, window, settings, section, parent=None):
+    def __init__(self, window, section, parent=None):
         self._window = window
-        self._settings = settings
         self._section = section
         self._parent = parent
         # Editor sections name every tab; the type is enough to trace
@@ -129,7 +129,7 @@ class WindowGeometryTracker:
         self._direct = _DIRECT_PLACEMENT
         self._phase = "placing"
         self._attempts = 0
-        self._quiet = None  # wx.CallLater ending the quiet period
+        self._quiet = None  # The call ending the quiet period
         self._quiet_ms = _FIRST_QUIET_MS
         self._step_started = None  # Set by the first show
         self._requesting = False  # In our own SetSize() and the like
@@ -137,8 +137,6 @@ class WindowGeometryTracker:
         self._slowest_answer = 0.0  # Seconds from a request to a change
         self._requested_size = None  # Last size given to SetSize()
         self._seen = None  # Geometry at the last event
-        # Placed at once but started minimized: maximize when restored
-        self._maximize_on_restore = False
 
         # Tracing
         self._started = time.perf_counter()
@@ -210,10 +208,10 @@ class WindowGeometryTracker:
     # === Settings I/O ===
 
     def _get_setting(self, setting):
-        return self._settings.getvalue(self._section, setting)
+        return settings.get(self._section, setting)
 
     def _set_setting(self, setting, value):
-        self._settings.setvalue(self._section, setting, value)
+        settings.set(self._section, setting, value)
 
     # === State persistence ===
 
@@ -389,10 +387,11 @@ class WindowGeometryTracker:
             self._trace("still moving after %.1f s: accepted" % elapsed)
             self._accept()
             return
-        if self._quiet is None:
-            self._quiet = wx.CallLater(self._quiet_ms, self._on_quiet)
-        else:
-            self._quiet.Start(self._quiet_ms)
+        if self._quiet is not None:
+            self._quiet.cancel()  # Restarted, its period may have changed
+        self._quiet = patterns.later.call(
+            self._window, self._quiet_ms, self._on_quiet
+        )
 
     def _on_quiet(self):
         """Quiet for a quiet period: check the placement step."""
@@ -616,11 +615,6 @@ class WindowGeometryTracker:
     def _on_iconize(self, event):
         if self._tracing:
             self._trace("EVT_ICONIZE iconized=%s" % event.IsIconized())
-        if self._maximize_on_restore and not event.IsIconized():
-            self._maximize_on_restore = False
-            if not self._window.IsMaximized():
-                self._trace("restored: Maximize()", always=True)
-                self._request(self._window.Maximize)
         if not self.ready and not event.IsIconized():
             if self._step_started is not None:
                 self._step_started = time.perf_counter()
@@ -659,27 +653,8 @@ class WindowGeometryTracker:
 class WindowDimensionsTracker(WindowGeometryTracker):
     """Track the dimensions of the main window in the settings."""
 
-    def __init__(self, window, settings):
-        super().__init__(window, settings, "window")
-
-        # Handle start iconized setting (Task Coach specific)
-        if self._should_start_iconized():
-            self._trace("start iconized: Show() then Iconize(True)")
-            if operating_system.isMac() or operating_system.isGTK():
-                self._window.Show()
-            self._window.Iconize(True)
-            # Minimizing a window not shown yet drops the Maximize()
-            # asked before the show (wxMSW)
-            self._maximize_on_restore = self._direct and self.maximized
-            if not operating_system.isMac() and self._get_setting(
-                "hidewheniconized"
-            ):
-                wx.CallAfter(self._window.Hide)
-
-    def _should_start_iconized(self):
-        """Return whether the window should be opened iconized."""
-        start_iconized = self._settings.get("window", "starticonized")
-        return start_iconized == "Always"
+    def __init__(self, window):
+        super().__init__(window, "window")
 
     def save_position(self):
         """Save the position of the window in the settings."""

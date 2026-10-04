@@ -501,14 +501,8 @@ The minimum supported macOS is now **macOS 14 (Sonoma)**, released 2023. These o
 | `isMacOsXMountainLion_OrNewer()` | macOS 10.8 (2012) | 12 years obsolete |
 | `isMacOsXMavericks_OrNewer()` | macOS 10.9 (2013) | 11 years obsolete |
 
-**New function added:**
-```python
-def isMacOsSonoma_OrNewer():
-    """Check if running on macOS 14 (Sonoma) or newer."""
-    if isMac():
-        return _platformVersion() >= (23,)  # Darwin 23 = macOS 14
-    return False
-```
+`isMacOsXLion_OrNewer()` stayed, unused, until 2026-09; no version
+check is left.
 
 ### Dead Code Removed
 
@@ -573,7 +567,7 @@ The simplified system loads `.po` files directly at runtime:
 | Removed deprecated API | Deleted `importlib.load_source()` usage |
 | Deleted `i18n.in/make.py` | Build step no longer needed |
 | Deleted `tools/pygettext.py` | Broken in Python 3, use `xgettext` instead |
-| Added `isCurrentLocaleOk()` | Check if wx.Locale was set successfully |
+| Added `Translator.locale_ok()` | Check if wx.Locale was set successfully |
 | Suppress wx warning | Use `wx.LogNull` to suppress locale popup |
 | Preferences UI update | Show locale warning only when needed |
 

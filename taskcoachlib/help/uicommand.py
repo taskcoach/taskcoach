@@ -30,6 +30,7 @@ addNote = _("Add a note to the selected item(s)")
 categoryNew = _("Insert a new category")
 editCut = _("Cut the selected item(s) to the clipboard")
 editCopy = _("Copy the selected item(s) to the clipboard")
+edit_deselect_all = _("Deselect all items")
 editPaste = _("Paste item(s) from the clipboard")
 editPasteAsSubitem = _(
     "Paste item(s) from the clipboard as subitem of the selected item"
@@ -45,7 +46,6 @@ fileClose = _("Close the current file")
 fileQuit = _("Exit %s") % meta.name
 fileOpen = _("Open a %s file") % meta.name
 fileSave = _("Save the current file")
-fileMergeDiskChanges = _("Load what has changed on disk")
 fileSaveAs = _("Save the current file under a new name")
 help = _("Help about the program")  # pylint: disable=W0622
 mailItem = _("Mail the selected item(s), using your default mailer")

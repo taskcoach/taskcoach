@@ -16,19 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from taskcoachlib import persistence, operating_system
-from taskcoachlib.thirdparty.ntlm import IMAPNtlmAuthHandler
+from taskcoachlib import mailer, persistence, operating_system
 from taskcoachlib.widgets.password import GetPassword
 from taskcoachlib.i18n import _
+import contextlib
+import io
 import os
-import stat
 import re
 import imaplib
 import configparser
-import wx
 import socket
 import mailbox
-
 
 _RX_MAILBOX_MESSAGE = re.compile(
     r"mailbox-message://(.*)@(.*)/(.*)#((?:-)?\d+)"
@@ -38,6 +36,11 @@ _RX_IMAP = re.compile(
     r"imap://([^@]+)@([^/]+)/fetch%3EUID%3E(?:/|\.)(.*)%3E(\d+)"
 )
 _RX_MAILBOX = re.compile(r"mailbox://([^?]+)\?number=(\d+)")
+
+# What Thunderbird drags as text: each message's URI, concatenated on
+# Windows (docs/EMAIL_ATTACHMENTS.md, The Drop)
+_MESSAGE_SCHEMES = ("mailbox-message://", "imap-message://")
+_RX_MESSAGE_START = re.compile(r"(?=mailbox-message://|imap-message://)")
 
 
 class ThunderbirdError(Exception):
@@ -62,16 +65,20 @@ def unquote(s):
     return s
 
 
-def loadPreferences():
+def load_preferences():
     """Reads Thunderbird's prefs.js file and return a dictionary of
     configuration options."""
 
     config = {}
 
     # Regex to parse user_pref("key", value) lines safely
-    pref_pattern = re.compile(r'user_pref\s*\(\s*"([^"]+)"\s*,\s*(.+?)\s*\)\s*;')
+    pref_pattern = re.compile(
+        r'user_pref\s*\(\s*"([^"]+)"\s*,\s*(.+?)\s*\)\s*;'
+    )
 
-    for line in open(os.path.join(getDefaultProfileDir(), "prefs.js"), "r"):
+    with open(os.path.join(getDefaultProfileDir(), "prefs.js"), "r") as prefs:
+        lines = prefs.readlines()
+    for line in lines:
         if line.startswith("user_pref("):
             match = pref_pattern.match(line.strip())
             if match:
@@ -85,11 +92,15 @@ def loadPreferences():
                     value = False
                 elif value_str.startswith('"') and value_str.endswith('"'):
                     # String value - handle escape sequences
-                    value = value_str[1:-1].replace('\\"', '"').replace('\\\\', '\\')
+                    value = (
+                        value_str[1:-1]
+                        .replace('\\"', '"')
+                        .replace("\\\\", "\\")
+                    )
                 else:
                     # Try to parse as number
                     try:
-                        if '.' in value_str:
+                        if "." in value_str:
                             value = float(value_str)
                         else:
                             value = int(value_str)
@@ -146,9 +157,11 @@ def getDefaultProfileDir():
         if _PORTABLECACHE is not None:
             return _PORTABLECACHE
 
-        import wmi  # pylint: disable=W0404
+        from win32com.client import GetObject  # pylint: disable=F0401
 
-        for process in wmi.WMI().Win32_Process():
+        for process in GetObject("winmgmts:").ExecQuery(
+            "SELECT ExecutablePath FROM Win32_Process"
+        ):
             if (
                 process.ExecutablePath
                 and process.ExecutablePath.lower().endswith(
@@ -210,7 +223,7 @@ class ThunderbirdMailboxReader(object):
         # mailbox-message://<username>@<hostname>//<filename>#<id>. Or
         # so I hope.
 
-        config = loadPreferences()
+        config = load_preferences()
 
         self.user = unquote(mt.group(1))
         self.server = unquote(mt.group(2))
@@ -249,19 +262,13 @@ class ThunderbirdMailboxReader(object):
                 % url
             )
 
-        self.fp = open(self.filename, "rb")
-        if self.offset >= 0:
-            self.fp.seek(self.offset)
-        else:
-            self.fp.seek(self.offset, os.SEEK_END)
-
         self.done = False
 
     def read(self):
         """Buffer-like read() method"""
 
         if self.done:
-            return ""
+            return b""
 
         lines = []
 
@@ -270,31 +277,20 @@ class ThunderbirdMailboxReader(object):
 
         starting = True
 
-        for line in self.fp:
-            if not starting:
-                if line.startswith("From "):
-                    break
-            lines.append(line)
-            starting = False
+        with open(self.filename, "rb") as mail_file:
+            if self.offset >= 0:
+                mail_file.seek(self.offset)
+            else:
+                mail_file.seek(self.offset, os.SEEK_END)
+            for line in mail_file:
+                if not starting:
+                    if line.startswith(b"From "):
+                        break
+                lines.append(line)
+                starting = False
 
         self.done = True
-        return "".join(lines)
-
-    def __iter__(self):
-        class Iterator(object):
-            def __init__(self, fp):
-                self.fp = fp
-
-            def __iter__(self):
-                return self
-
-            def __next__(self):
-                line = self.fp.readline()
-                if line.strip() == ".":
-                    raise StopIteration
-                return line
-
-        return Iterator(self.fp)
+        return b"".join(lines)
 
     def saveToFile(self, fp):
         fp.write(self.read())
@@ -321,7 +317,7 @@ class ThunderbirdImapReader(object):
         self.box = mt.group(3)
         self.uid = int(mt.group(4))
 
-        config = loadPreferences()
+        config = load_preferences()
 
         stype = None
         # We iterate over a maximum of 100 mailservers. You'd think that
@@ -366,7 +362,7 @@ class ThunderbirdImapReader(object):
         else:
             return server1 == server2
 
-    def _getMail(self):
+    def _get_mail(self):
         """Retrieve the email message from the IMAP server as specified by
         the dropped URL."""
         imap_class = imaplib.IMAP4_SSL if self.ssl else imaplib.IMAP4
@@ -380,66 +376,54 @@ class ThunderbirdImapReader(object):
             ) % dict(server=self.server, port=self.port, reason=reason)
             raise ThunderbirdError(error_message)
 
-        password_domain = "%s:%d" % (self.server, self.port)
-        pwd = GetPassword(password_domain, self.user)
-        if pwd is None:
-            raise ThunderbirdCancelled("User canceled")
-
-        while True:
-            try:
-                if "AUTH=CRAM-MD5" in imap.capabilities:
-                    response, dummy = imap.login_cram_md5(
-                        str(self.user), str(pwd)
-                    )
-                elif "AUTH=NTLM" in imap.capabilities:
-                    domain = wx.GetTextFromUser(
-                        _("Please enter the domain for user %s") % self.user
-                    )
-                    domain_username = "\\".join(
-                        [domain.upper(), str(self.user)]
-                    )
-                    response, dummy_parameters = imap.authenticate(
-                        "NTLM",
-                        IMAPNtlmAuthHandler.IMAPNtlmAuthHandler(
-                            domain_username, str(pwd)
-                        ),
-                    )
-                else:
-                    response, dummy_parameters = imap.login(self.user, pwd)
-            except imap.error as reason:
-                response = "KO"
-                (error_message,) = reason.args
-
-            if response == "OK":
-                break
-
-            pwd = GetPassword(password_domain, self.user, reset=True)
+        with imap:
+            password_domain = "%s:%d" % (self.server, self.port)
+            pwd = GetPassword(password_domain, self.user)
             if pwd is None:
                 raise ThunderbirdCancelled("User canceled")
 
-        # Two possibilities for separator...
+            while True:
+                try:
+                    if "AUTH=CRAM-MD5" in imap.capabilities:
+                        response, dummy = imap.login_cram_md5(
+                            str(self.user), str(pwd)
+                        )
+                    else:
+                        response, dummy_parameters = imap.login(self.user, pwd)
+                except imap.error as reason:
+                    response = "KO"
+                    (error_message,) = reason.args
 
-        response, dummy_parameters = imap.select(self.box)
+                if response == "OK":
+                    break
 
-        if response != "OK":
-            response, dummy_parameters = imap.select(
-                self.box.replace("/", ".")
-            )
+                pwd = GetPassword(password_domain, self.user, reset=True)
+                if pwd is None:
+                    raise ThunderbirdCancelled("User canceled")
+
+            # Two possibilities for separator...
+
+            response, dummy_parameters = imap.select(self.box)
+
             if response != "OK":
-                raise ThunderbirdError(
-                    _('Could not select inbox "%s"\n(%s)')
-                    % (self.box, response)
+                response, dummy_parameters = imap.select(
+                    self.box.replace("/", ".")
                 )
+                if response != "OK":
+                    raise ThunderbirdError(
+                        _('Could not select inbox "%s"\n(%s)')
+                        % (self.box, response)
+                    )
 
-        response, parameters = imap.uid("FETCH", str(self.uid), "(RFC822)")
+            response, parameters = imap.uid("FETCH", str(self.uid), "(RFC822)")
 
-        if response != "OK":
-            raise ThunderbirdError(_("No such mail: %d") % self.uid)
+            if response != "OK":
+                raise ThunderbirdError(_("No such mail: %d") % self.uid)
 
-        return parameters[0][1]
+            return parameters[0][1]
 
     def saveToFile(self, fp):
-        fp.write(self._getMail())
+        fp.write(self._get_mail())
 
 
 class ThunderbirdLocalMailboxReader(object):
@@ -448,7 +432,7 @@ class ThunderbirdLocalMailboxReader(object):
     def __init__(self, url):
         self.url = url
 
-    def _getMail(self):
+    def _get_mail(self):
         match = _RX_MAILBOX.match(self.url)
         if match is None:
             raise ThunderbirdError(
@@ -468,15 +452,28 @@ class ThunderbirdLocalMailboxReader(object):
         with open(filename, "wb") as tmpmbox:
             tmpmbox.write(contents)
         # Now we can open the temporary mbox file...
-        mb = mailbox.mbox(filename)
-        # And the message we look for should be the first one:
-        return mb.get_string(0)
+        with contextlib.closing(mailbox.mbox(filename)) as mb:
+            # And the message we look for should be the first one:
+            return mb.get_bytes(0)
 
     def saveToFile(self, fp):
-        fp.write(self._getMail())
+        fp.write(self._get_mail())
 
 
-def getMail(id_):
+def message_uris(text):
+    """The message URIs a Thunderbird drag gave as text; [] when the
+    text is anything else."""
+    parts = [
+        part for part in _RX_MESSAGE_START.split("".join(text.split())) if part
+    ]
+    if parts and all(part.startswith(_MESSAGE_SCHEMES) for part in parts):
+        return parts
+    return []
+
+
+def get_mail(id_):
+    """The fields of the dragged mail's attachment
+    (mailer.mail_fields())."""
     if id_.startswith("mailbox-message://"):
         reader = ThunderbirdMailboxReader(id_)
     elif id_.startswith("imap"):
@@ -486,10 +483,6 @@ def getMail(id_):
     else:
         raise TypeError("Not supported: %s" % id_)
 
-    filename = persistence.get_temp_file(suffix=".eml")
-    reader.saveToFile(open(filename, "wb"))
-
-    if os.name == "nt":
-        os.chmod(filename, stat.S_IREAD)
-
-    return filename
+    mail = io.BytesIO()
+    reader.saveToFile(mail)
+    return mailer.parse_mail(mail.getvalue())

@@ -17,47 +17,62 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib.i18n import _
-from taskcoachlib.config import defaults
+from taskcoachlib.config import defaults, settings
+
+
+def themed_section(section):
+    """The settings section of a status style in the current theme:
+    its _dark twin in a dark one."""
+    return section + "_dark" if settings.window.theme_is_dark else section
 
 
 class TaskStatus(object):
     def __init__(
-        self, statusString, pluralLabel, countLabel, hideMenuText, hideHelpText,
+        self,
+        status_string,
+        plural_label,
+        count_label,
+        hide_menu_text,
+        hide_help_text,
     ):
-        self.statusString = statusString
-        self.pluralLabel = pluralLabel
-        self.countLabel = countLabel
-        self.hideMenuText = hideMenuText
-        self.hideHelpText = hideHelpText
+        self.status_string = status_string
+        self.plural_label = plural_label
+        self.count_label = count_label
+        self.hide_menu_text = hide_menu_text
+        self.hide_help_text = hide_help_text
 
-    # This is only used by uicommands so use default if the user configured 'no bitmap', because we
-    # need one for the toolbar...
+    def get_sort_priority(self):
+        return settings.get(
+            "statussortpriority", "%stasks" % self.status_string
+        )
 
-    def getSortPriority(self, settings):
-        return int(settings.get("statussortpriority", "%stasks" % self.statusString))
-
-    def getBitmap(self, settings):
-        if settings.get("icon", "%stasks" % self.statusString):
-            return settings.get("icon", "%stasks" % self.statusString)
-        return defaults.defaults["icon"]["%stasks" % self.statusString]
+    def icon_id(self, required=False):
+        """The status's icon in the current theme (Preferences >
+        Statuses), empty when set to none; required gives the default
+        then (a toolbar button needs one)."""
+        section = themed_section("icon")
+        key = "%stasks" % self.status_string
+        return settings.get(section, key) or (
+            defaults.defaults[section][key] if required else ""
+        )
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.statusString)
+        return "%s(%s)" % (self.__class__.__name__, self.status_string)
 
     def __str__(self):
-        return self.statusString
+        return self.status_string
 
     def __eq__(self, other):
-        return self.statusString == other.statusString
+        return self.status_string == other.status_string
 
     def __neq__(self, other):
-        return self.statusString != other.statusString
+        return self.status_string != other.status_string
 
     def __bool__(self):
         return True
 
     def __hash__(self) -> int:
-        return hash(self.statusString)
+        return hash(self.status_string)
 
 
 inactive = TaskStatus(
@@ -66,7 +81,6 @@ inactive = TaskStatus(
     _("Inactive tasks: %d (%d%%)"),
     _("Hide &inactive tasks"),
     _("Show/hide inactive tasks (incomplete tasks without actual start date)"),
-
 )
 
 late = TaskStatus(
@@ -77,7 +91,6 @@ late = TaskStatus(
     _(
         "Show/hide late tasks (inactive tasks with a planned start in the past)"
     ),
-
 )
 
 active = TaskStatus(
@@ -88,7 +101,6 @@ active = TaskStatus(
     _(
         "Show/hide active tasks (incomplete tasks with an actual start date in the past)"
     ),
-
 )
 
 duesoon = TaskStatus(
@@ -99,7 +111,6 @@ duesoon = TaskStatus(
     _(
         "Show/hide due soon tasks (incomplete tasks with a due date in the near future)"
     ),
-
 )
 
 overdue = TaskStatus(
@@ -110,7 +121,6 @@ overdue = TaskStatus(
     _(
         "Show/hide over due tasks (incomplete tasks with a due date in the past)"
     ),
-
 )
 
 completed = TaskStatus(
@@ -119,7 +129,4 @@ completed = TaskStatus(
     _("Completed tasks: %d (%d%%)"),
     _("Hide &completed tasks"),
     _("Show/hide completed tasks"),
-
 )
-
-

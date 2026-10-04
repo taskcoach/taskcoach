@@ -17,34 +17,87 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.patterns.field import Field
 from weakref import WeakSet
 import weakref
 
 
-class Attribute(object):
-    __slots__ = ("__value", "__owner", "__setEvent")
+class Attribute(Field):
+    """A field of a domain object, with one change callback however it
+    is set. A stored field's change sets its owner's modification date;
+    a volatile one, a computed value, does not, nor does the date
+    itself (dates=False) (docs/ATTRIBUTE_PATTERN.md, Modification
+    Date). A field whose every value takes the same normalization
+    applies it when created and when set (normalize), as text does
+    (docs/ATTRIBUTE_PATTERN.md, Value Normalization)."""
 
-    def __init__(self, value, owner, setEvent):
+    __slots__ = (
+        "__value",
+        "__owner",
+        "__set_event",
+        "__volatile",
+        "__dates",
+        "__normalize",
+    )
+
+    def __init__(
+        self,
+        value,
+        owner,
+        set_event,
+        volatile=False,
+        dates=True,
+        normalize=None,
+    ):
         super().__init__()
-        self.__value = value
+        self.__normalize = normalize
+        self.__value = normalize(value) if normalize else value
         self.__owner = weakref.ref(owner)
-        self.__setEvent = setEvent.__func__
+        self.__set_event = set_event.__func__
+        self.__volatile = volatile
+        self.__dates = dates and not volatile
+
+    @property
+    def stored(self):
+        return not self.__volatile
 
     def get(self):
         return self.__value
 
-    @patterns.eventSource
-    def set(self, value, event=None):
+    def snapshot(self):
+        return self.__value
+
+    def restore(self, value, event=None):
         owner = self.__owner()
-        if owner is not None:
-            if value == self.__value:
-                return False
-            self.__value = value
-            self.__setEvent(owner, event)
-            return True
+        if owner is not None and value != self.__value:
+            self.__change(owner, value, dates=False, event=event)
+
+    def set(self, value, event=None):
+        if self.__normalize:
+            value = self.__normalize(value)
+        owner = self.__owner()
+        # Checked before an event is created: the master loop sets
+        # thousands of unchanged values
+        # (docs/MASTER_SCHEDULER_REFACTOR.md)
+        if owner is None or value == self.__value:
+            return False
+        return self.__change(owner, value, dates=self.__dates, event=event)
+
+    @patterns.eventSource
+    def __change(self, owner, value, dates, event=None):
+        self.__value = value
+        if dates:
+            owner.modified_now(event=event)
+        self.__set_event(owner, event)
+        return True
 
 
-class SetAttribute(object):
+class SetAttribute(Field):
+    """A set field of a domain object, such as its links to other
+    items. A change sets its owner's modification date, as an
+    Attribute's does; the reverse of links other items own does not
+    (dates=False)."""
+
     __slots__ = (
         "__set",
         "__owner",
@@ -52,6 +105,7 @@ class SetAttribute(object):
         "__removeEvent",
         "__changeEvent",
         "__setClass",
+        "__dates",
     )
 
     def __init__(
@@ -62,7 +116,9 @@ class SetAttribute(object):
         removeEvent=None,
         changeEvent=None,
         weak=False,
+        dates=True,
     ):
+        self.__dates = dates
         self.__setClass = WeakSet if weak else set
         self.__set = self.__setClass(values) if values else self.__setClass()
         self.__owner = weakref.ref(owner)
@@ -73,8 +129,24 @@ class SetAttribute(object):
     def get(self):
         return set(self.__set)
 
-    @patterns.eventSource
+    def snapshot(self):
+        return frozenset(self.__set)
+
+    @staticmethod
+    def same(values, others):
+        # Items compare equal by ID: a copy is another item
+        return {id(value) for value in values} == {
+            id(other) for other in others
+        }
+
+    def restore(self, values, event=None):
+        self.__assign(set(values), dates=False, event=event)
+
     def set(self, values, event=None):
+        return self.__assign(values, dates=self.__dates, event=event)
+
+    @patterns.eventSource
+    def __assign(self, values, dates, event=None):
         owner = self.__owner()
         if owner is not None:
             if values == set(self.__set):
@@ -82,6 +154,8 @@ class SetAttribute(object):
             added = values - set(self.__set)
             removed = set(self.__set) - values
             self.__set = self.__setClass(values)
+            if dates:
+                self.__set_date(owner, event)
             if added:
                 self.__addEvent(owner, event, *added)  # pylint: disable=W0142
             if removed:
@@ -99,6 +173,7 @@ class SetAttribute(object):
             if values <= set(self.__set):
                 return False
             self.__set = self.__setClass(set(self.__set) | values)
+            self.__set_date(owner, event)
             self.__addEvent(owner, event, *values)  # pylint: disable=W0142
             self.__changeEvent(owner, event, *set(self.__set))
             return True
@@ -110,9 +185,14 @@ class SetAttribute(object):
             if values & set(self.__set) == set():
                 return False
             self.__set = self.__setClass(set(self.__set) - values)
+            self.__set_date(owner, event)
             self.__removeEvent(owner, event, *values)  # pylint: disable=W0142
             self.__changeEvent(owner, event, *set(self.__set))
             return True
+
+    def __set_date(self, owner, event):
+        if self.__dates:
+            owner.modified_now(event=event)
 
     def __nullEvent(self, *args, **kwargs):
         pass

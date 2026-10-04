@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 import test
 from unittests import dummy
-from taskcoachlib import gui, config
+from taskcoachlib import gui
 from taskcoachlib.gui.uicommand import Separator, Spacer
 
 
@@ -31,8 +31,7 @@ class ToolBar(gui.toolbar.ToolBar):
 class ToolBarTest(test.wxTestCase):
     def testAppendUICommand(self):
         gui.init()
-        settings = config.Settings(load=False)
-        toolbar = ToolBar(self.frame, settings)
+        toolbar = ToolBar(self.frame)
         uiCommand = dummy.DummyUICommand(menu_text="undo", bitmap="undo")
         toolId = toolbar.append_ui_command(uiCommand)
         self.assertNotEqual(wx.NOT_FOUND, toolbar.GetToolPos(toolId))
@@ -52,11 +51,10 @@ class ToolBarSizeTest(test.wxTestCase):
         self.createToolBarAndTestSize((32, 32))
 
     def createToolBarAndTestSize(self, size, expectedSize=None):
-        settings = config.Settings(load=False)
-        toolbarArgs = [self.frame, settings]
+        toolbar_args = [self.frame]
         if size:
-            toolbarArgs.append(size)
-        toolbar = ToolBar(*toolbarArgs)
+            toolbar_args.append(size)
+        toolbar = ToolBar(*toolbar_args)
         if not expectedSize:
             expectedSize = size
         self.assertEqual(wx.Size(*expectedSize), toolbar.GetToolBitmapSize())
@@ -79,22 +77,21 @@ class ToolBarPerspectiveTest(test.wxTestCase):
                 return [Test1(), Separator(), Test2(), Spacer()]
 
         self.tbFrame = TestFrame()
-        self.settings = config.Settings(load=False)
 
     def tearDown(self):
         self.tbFrame.Close()
 
     def test_empty(self):
-        bar = gui.toolbar.ToolBar(self.tbFrame, self.settings)
+        bar = gui.toolbar.ToolBar(self.tbFrame)
         # An empty perspective is an empty toolbar
         self.assertEqual(bar.perspective(), "")
 
     def test_restrict(self):
         self.tbFrame.toolbarPerspective = "Test1,Spacer"
-        bar = gui.toolbar.ToolBar(self.tbFrame, self.settings)
+        bar = gui.toolbar.ToolBar(self.tbFrame)
         self.assertEqual(bar.perspective(), "Test1,Spacer")
 
     def test_does_not_exist(self):
         self.tbFrame.toolbarPerspective = "Test1,Spacer,Test3"
-        bar = gui.toolbar.ToolBar(self.tbFrame, self.settings)
+        bar = gui.toolbar.ToolBar(self.tbFrame)
         self.assertEqual(bar.perspective(), "Test1,Spacer")

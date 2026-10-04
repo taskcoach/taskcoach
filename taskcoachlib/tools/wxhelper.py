@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from typing import Union, List
+from typing import Union
 import wx
-import numpy as np
+
+from taskcoachlib import patterns
 
 
 def centerOnAppMonitor(window):
@@ -10,8 +11,7 @@ def centerOnAppMonitor(window):
 
     This function determines the correct monitor by:
     1. If main window exists, use its monitor
-    2. Otherwise, try to get saved monitor_index from app settings
-    3. Fall back to primary monitor
+    2. Fall back to primary monitor
 
     Call this after the window is created and sized but before Show().
     """
@@ -25,19 +25,11 @@ def centerOnAppMonitor(window):
         if main_window and main_window is not window and main_window.IsShown():
             main_rect = main_window.GetScreenRect()
             target_monitor = wx.Display.GetFromPoint(
-                wx.Point(main_rect.x + main_rect.width // 2,
-                         main_rect.y + main_rect.height // 2)
+                wx.Point(
+                    main_rect.x + main_rect.width // 2,
+                    main_rect.y + main_rect.height // 2,
+                )
             )
-
-    # Fall back to saved monitor from settings
-    if target_monitor is None or target_monitor == wx.NOT_FOUND:
-        if app and hasattr(app, 'settings'):
-            try:
-                saved_monitor = app.settings.getint("window", "monitor_index")
-                if 0 <= saved_monitor < wx.Display.GetCount():
-                    target_monitor = saved_monitor
-            except (KeyError, ValueError, AttributeError):
-                pass
 
     # Fall back to primary monitor
     if target_monitor is None or target_monitor == wx.NOT_FOUND:
@@ -53,97 +45,57 @@ def centerOnAppMonitor(window):
         window.SetPosition(wx.Point(x, y))
 
 
-def getButtonFromStdDialogButtonSizer(
-    sizer: wx.StdDialogButtonSizer, buttonId: int
-) -> Union[wx.Button, None]:
-    for child in sizer.GetChildren():
-        if (
-            isinstance(child.GetWindow(), wx.Button)
-            and child.GetWindow().GetId() == buttonId
-        ):
-            return child.GetWindow()
+def font_from_native_info(text):
+    """The font a native font description gives, or None.
 
+    A description saved on another platform can hold a zero point size,
+    which wx asserts on.
+    """
+    if text:
+        info = wx.NativeFontInfo()
+        try:
+            if info.FromString(text):
+                return wx.Font(info)
+        except wx.PyAssertionError:
+            pass
     return None
 
 
-def getAlphaDataFromImage(image: wx.Image):
-    """Get image alpha data as a NumPy uint8 array."""
-    return np.frombuffer(image.GetAlpha(), dtype=np.uint8)
+def get_dialog_button(
+    sizer: wx.StdDialogButtonSizer, button_id: int
+) -> Union[wx.Window, None]:
+    """The sizer's button with that id, found by the id alone: wxPython
+    can give a button as a plain wx.Window, reusing the stale wrapper of
+    a destroyed window at the same address, and a lookup by type then
+    left the dialog without its buttons (P113)."""
+    for child in sizer.GetChildren():
+        window = child.GetWindow()
+        if window is not None and window.GetId() == button_id:
+            return window
+    return None
 
 
-def setAlphaDataToImage(image: wx.Image, data):
-    """Set alpha data on image. Supports NumPy arrays, bytes, lists."""
-    if not image.HasAlpha():
-        image.InitAlpha()
+def delete_with_window(handler, window, release=None):
+    """Delete handler, a wx.EvtHandler made in Python that is not a
+    window, once window is destroyed: the handlers bound on it keep it
+    through wx, so nothing else frees it, nor what it holds
+    (docs/CRASH_GUARD.md#event-handlers-that-are-not-windows).
+    release(handler) runs first. Returns the destroy handler."""
 
-    width = image.GetWidth()
-    height = image.GetHeight()
-    expected_size = width * height
+    def on_destroy(event):
+        event.Skip()
+        # Children's destroy events come up too. A top-level window's
+        # comes last, from wx, once its wrapper is already deleted.
+        if patterns.deferred.is_gone(window) or (
+            event.GetEventObject() is window
+        ):
+            patterns.later.soon(handler, _delete, handler, release)
 
-    if isinstance(data, np.ndarray):
-        data_array = data.astype(np.uint8).flatten()
-    elif isinstance(data, (list, tuple)):
-        data_array = np.array(data, dtype=np.uint8)
-    elif isinstance(data, (bytes, bytearray)):
-        data_array = np.frombuffer(data, dtype=np.uint8)
-    else:
-        raise TypeError(f"Unsupported data type: {type(data)}")
-
-    if data_array.size != expected_size:
-        if data_array.size > expected_size:
-            data_array = data_array[:expected_size]
-        else:
-            padded_data = np.zeros(expected_size, dtype=np.uint8)
-            padded_data[: data_array.size] = data_array
-            data_array = padded_data
-
-    data_array = np.clip(data_array, 0, 255)
-    image.SetAlpha(data_array.tobytes())
+    window.Bind(wx.EVT_WINDOW_DESTROY, on_destroy)
+    return on_destroy
 
 
-def clearAlphaDataOfImage(image: wx.Image, value: int):
-    """Fill image alpha channel with a uniform value."""
-    if not image.HasAlpha():
-        image.InitAlpha()
-
-    size = image.GetWidth() * image.GetHeight()
-    alpha_array = np.full(size, value, dtype=np.uint8)
-    image.SetAlpha(alpha_array.tobytes())
-
-
-def mergeImagesWithAlpha(main_image, overlay_image, overlay_position):
-    """Merge alpha channels of two images."""
-    main_width, main_height = main_image.GetWidth(), main_image.GetHeight()
-    overlay_width, overlay_height = (
-        overlay_image.GetWidth(),
-        overlay_image.GetHeight(),
-    )
-    overlay_x, overlay_y = overlay_position
-
-    y_start, y_end = overlay_y, min(overlay_y + overlay_height, main_height)
-    x_start, x_end = overlay_x, min(overlay_x + overlay_width, main_width)
-    actual_overlay_height = y_end - y_start
-    actual_overlay_width = x_end - x_start
-
-    main_alpha = getAlphaDataFromImage(main_image).reshape(
-        main_height, main_width
-    )
-    overlay_alpha = np.frombuffer(
-        overlay_image.GetAlphaBuffer(), dtype=np.uint8
-    ).reshape(overlay_height, overlay_width)
-
-    if (actual_overlay_height < overlay_height
-            or actual_overlay_width < overlay_width):
-        overlay_alpha = overlay_alpha[
-            :actual_overlay_height, :actual_overlay_width
-        ]
-
-    result_alpha = main_alpha.copy()
-    result_alpha[y_start:y_end, x_start:x_end] = np.maximum(
-        result_alpha[y_start:y_end, x_start:x_end], overlay_alpha
-    )
-
-    result_image = main_image.Copy()
-    setAlphaDataToImage(result_image, result_alpha)
-
-    return result_image
+def _delete(handler, release):
+    if release is not None:
+        release(handler)
+    handler.Destroy()

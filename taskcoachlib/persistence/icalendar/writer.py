@@ -41,7 +41,6 @@ class iCalendarWriter(object):
     def write(
         self,
         viewer,
-        settings,
         selectionOnly=False,
         selectedFields=None,
         taskFile=None,
@@ -50,7 +49,6 @@ class iCalendarWriter(object):
 
         Args:
             viewer: The viewer to export from, or ALL_TASKS/ALL_EFFORTS constant
-            settings: Application settings
             selectionOnly: If True, only export selected items (ignored for ALL_*)
             selectedFields: Set of field keys to export
             taskFile: The task file (required for ALL_* export)

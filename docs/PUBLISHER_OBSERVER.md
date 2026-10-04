@@ -1,7 +1,7 @@
 # Publisher / Observer Signal Dispatch
 
-Signal dispatch architecture, pypubsub migration, and signaling lifecycle
-cleanup for the Task Coach domain model.
+Signal dispatch architecture, the move off pypubsub (done 2026-09-28),
+and signaling lifecycle cleanup for the Task Coach domain model.
 
 See [ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md) for the Attribute pattern
 itself (setter/callback, equality check, event batching, three-layer
@@ -14,13 +14,13 @@ relationship) — signal dispatch exists to serve Attribute change notification.
   - [Case Study: Tree Mode Toggle](#case-study-tree-mode-toggle)
 - [Signaling System Cleanup](#signaling-system-cleanup)
 - [Migration Log](#migration-log)
-- [Active pypubsub Settings Listeners](#active-pypubsub-settings-listeners)
+- [Settings Events](#settings-events)
 
 ---
 
 ## TODO
 
-1. **Migrate signal dispatch to per-instance.** Some Attribute callbacks
+1. **Done: migrate signal dispatch to per-instance.** Some Attribute callbacks
    (Task dates, percentage, duration; Effort fields) use pypubsub
    (`pub.sendMessage`) which is topic-based broadcast — every subscriber
    receives every object's changes. This is wrong for per-instance
@@ -42,7 +42,19 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    dispatch from the start: `ToggleAutoScroll` (toolbar button sync)
    and `Viewer.on_auto_scroll_changed` (re-center on enable) both
    subscribe via `registerObserver` on the settings instance.
-   **Remaining:** Task dates, percentage, duration; Effort fields.
+   Task planned start, due, actual start, completion and reminder
+   migrated to Publisher (the reminder made an `Attribute`), for the
+   master timer list ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#what-changes-the-master-timer-list)).
+   Task hourly and fixed fee, budget, "mark completed when all
+   subtasks are", percentage complete, planned duration and its mode
+   migrated with the modification date
+   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
+   Task recurrence, prerequisites and dependencies, and effort start,
+   stop, entry mode and task migrated the same way.
+   The domain's other messages (computed values too), then the task
+   file's, settings', commands' and viewers' messages followed
+   (2026-09-28, Migration Log), and pypubsub is no longer a
+   dependency: every signal is a Publisher event.
 
 2. **Modularize and clean up the signaling system.** The three independent
    cleanup mechanisms (wx C++ destruction, `removeInstance()`, Python GC)
@@ -53,8 +65,9 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    for the full plan and current band-aids.
    **Done:** `MethodProxy` (strong references) replaced with
    `WeakMethodProxy` (`weakref.WeakMethod`). Publisher no longer prevents
-   GC of destroyed wx widgets. Dead subscribers are detected and pruned
-   automatically during `notifyObservers()` dispatch.
+   GC of destroyed wx widgets. **Done 2026-10-02:** sources are held
+   weakly too, and a subscription goes at the Publisher's next call once
+   its source or subscriber is freed ([Current state](#current-state)).
    Editor pages (`Page`, `ScrolledPage` in `gui/dialog/editor.py`) call
    `removeInstance()` on their own `EVT_WINDOW_DESTROY`, so their
    subscriptions are removed however the page is destroyed (close
@@ -66,9 +79,9 @@ relationship) — signal dispatch exists to serve Attribute change notification.
    silently stop a subscriber such as the per-second `MasterScheduler`.
    A failure that repeats on every event logs its traceback once, then
    a count every 100 repeats.
-   **Remaining:** Hook `EVT_WINDOW_DESTROY` → `removeInstance()` for
-   the other `patterns.Observer` windows (viewers, toolbars, menus,
-   dialogs). Remove DEAD-OBJ guards once cleanup is proven reliable.
+   **Done 2026-09-28:** every subscription ends with its owner
+   ([Signaling System Cleanup](#signaling-system-cleanup)), and the
+   guards that became unreachable are removed.
 
 ---
 
@@ -90,18 +103,30 @@ This rules out topic-based broadcast systems (like pypubsub's
 `pub.sendMessage`) where every subscriber to a topic receives every
 notification regardless of sender, requiring handler-side filtering.
 
-### Current state (mixed, partially incorrect)
+### Current state
 
-The codebase has two signal dispatch systems:
+The codebase has one signal dispatch system, the Publisher; pypubsub was
+removed 2026-09-28.
 
-**Legacy Publisher** (`patterns.Publisher`, `registerObserver`/
+**Publisher** (`patterns.Publisher`, `registerObserver`/
 `notifyObservers`) — sender-filtered dispatch via a global routing table.
 Subscriber registers for a `(eventType, eventSource)` pair; dispatch does
 a dict lookup on that key and delivers only to matching observers.
 Observers registered for other senders are never touched — O(1) lookup,
-not iteration over all observers. Used by the base `Object` fields
-(subject, description, appearance, derived/effective) and collection fields
-(categories, categorizables).
+not iteration over all observers. Every signal uses it: domain fields,
+collections, the task file, settings, commands and viewers.
+
+The Publisher keeps nothing alive: it holds the observer and its
+source weakly, and once either is freed the subscription goes at its
+next call (a registration, a removal, an event, a query), never in the
+middle of a dispatch. Sources that compare equal share their
+subscriptions, as they always matched each other's (domain objects
+compare by id); when the first is freed, an equal one subscribed keeps
+them. A source that cannot be held weakly (a str, a number) is a value
+and stays. Until 2026-10-02 it held sources strongly: an object
+subscribed to its own events was never freed, and a freed subscriber
+went only when an event of its type and source came (P151, To Do 71
+in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
 
 Note: the Publisher is a **Singleton** (one global registry), not true
 per-instance signals (where the signal object lives on the instance itself,
@@ -110,23 +135,23 @@ a global routing table vs per-instance subscriber lists — not behavioral.
 The dispatch semantics are per-instance: only matching subscribers are
 invoked, no subscriber has to check "is this message for me?"
 
-**pypubsub** (`pub.sendMessage`/`pub.subscribe`) — topic-based broadcast.
+**pypubsub** (removed; `pub.sendMessage`/`pub.subscribe`): topic-based broadcast.
 All subscribers to a topic receive all messages regardless of sender. No
 per-sender filtering at dispatch; subscribers must check the `sender` kwarg
-in the handler to decide whether to act. Used by some Task fields (dates,
-percentage, duration) and Effort fields that were migrated circa 2012.
-The migration was intended to replace the legacy system entirely but
-stalled partway.
+in the handler to decide whether to act. Task and Effort fields were
+migrated to it circa 2012; the migration was intended to replace the
+legacy system entirely but stalled partway. Since 2026-09-28 nothing
+uses it and it is no longer a dependency (see [TODO](#todo)).
 
 The pypubsub migration was motivated by API simplicity and weak reference
 support, but it introduced broadcast dispatch for what are inherently
-per-instance signals. This is architecturally wrong: an editor showing one
-task receives (and discards) notifications from every other task in the
+per-instance signals. This was architecturally wrong: an editor showing one
+task received (and discarded) notifications from every other task in the
 system.
 
 ### Target architecture
 
-1. **Immediate:** new Attribute fields use the legacy Publisher with
+1. **Immediate:** new Attribute fields use the Publisher with
    sender-filtered `eventSource` dispatch. Dispatch semantics are correct
    (only matching subscribers called), even though the implementation is a
    global routing table rather than true per-instance signal objects.
@@ -135,25 +160,19 @@ system.
    following the Qt signals/slots pattern (e.g. Blinker or psygnal). These
    use true per-instance signals — the signal object lives on the instance
    (`task.icon_changed.connect(handler)`), no global registry. This would
-   replace both the legacy Publisher and pypubsub with a single system that
-   supports per-sender subscription natively, weak references, and a clean
-   API.
+   replace the Publisher with a system that supports per-sender
+   subscription natively, weak references, and a clean API.
 
-3. **Revert pypubsub fields:** the Task and Effort fields currently using
-   `pub.sendMessage` should be migrated back to sender-filtered dispatch
-   (either legacy Publisher or the future signal library). pypubsub should
-   be removed as a dependency once all fields are migrated.
+3. **Done 2026-09-28: revert pypubsub fields.** Every message moved to
+   the Publisher and pypubsub was removed as a dependency.
 
 ### Naming convention
 
 Event type strings prefixed `"pubsub."` were introduced during the
-pypubsub migration. The viewer's `__startObserving()` in `base.py` uses
-this prefix to choose dispatch system: `"pubsub."` → `pub.subscribe`,
-otherwise → `registerObserver`.
-
-New event types should **not** use the `"pubsub."` prefix. They should use
-the legacy Publisher dispatch (per-instance) until the future signal library
-migration.
+pypubsub migration, and listeners chose the dispatch system by that
+prefix. Since 2026-09-28 every event type is a Publisher event and none
+has the prefix. New event types use the Publisher (per-instance) until
+the future signal library migration.
 
 ### Case Study: Tree Mode Toggle
 
@@ -187,7 +206,7 @@ Menu Radio Option ── do_command(event) ────────────�
                                                      │
                                     ┌────────────────┼────────────────┐
                                     ▼                ▼                ▼
-                            settings.setboolean  presentation    patterns.Event
+                          options.treemode = v  presentation    patterns.Event
                             (persistence only)   .set_tree_mode()   .send()
                                                                      │
                                               ┌──────────────────────┤
@@ -228,10 +247,10 @@ Menu Radio Option ── do_command(event) ────────────�
    tracks all registered observers. When the viewer is destroyed,
    `removeInstance()` unregisters them. No manual unsubscribe needed.
 
-6. **Settings write is inert.** `settings.setboolean()` still fires a
-   pubsub message (`"settings.taskviewer.treemode"`), but nobody subscribes
-   to it. The broadcast is harmless — all subscribers use the Publisher
-   event instead.
+6. **Settings write.** `self.options.treemode = value` sends the
+   settings event `taskviewer.treemode`, the settings as source
+   ([Settings Events](#settings-events)); the toggle's subscribers listen
+   to the viewer's own event instead.
 
 **Files:**
 - `taskcoachlib/gui/viewer/task.py` — `TaskViewer.set_tree_mode()`
@@ -253,8 +272,8 @@ that don't coordinate lifecycle cleanup:
 
 1. **wx C++ destruction** — `Destroy()` frees the C++ widget tree. Python
    wrappers become zombies (accessing them segfaults).
-2. **patterns.Observer.removeInstance()** — Removes pubsub + Publisher
-   subscriptions for a Python object. Must be called explicitly.
+2. **patterns.Observer.removeInstance()**: removes the Publisher
+   subscriptions of a Python object. Must be called explicitly.
 3. **Python garbage collection** — Frees Python objects when refcount hits
    zero. Triggers `__del__`.
 
@@ -267,7 +286,7 @@ coordination.
 ### Goal
 
 A single, automatic cleanup mechanism: when an object goes away, all its
-subscriptions (pubsub, Publisher, wx events) are automatically removed.
+subscriptions (Publisher, wx events) are automatically removed.
 No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 
 ### Current band-aids (February 2026)
@@ -277,23 +296,44 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 - `toolbar.Clear()` and `menu.clearMenu()` call `removeInstance()` during
   teardown.
 - `Editor.on_close_editor()` explicitly cleans up its UICommands.
-- 20+ `try/except RuntimeError: pass` blocks now log with `prefix="DEAD-OBJ"`
-  so zombie access is visible. These should eventually be eliminated, not
-  just logged.
+- The `try/except RuntimeError: pass` blocks log with `prefix="DEAD-OBJ"`
+  so zombie access is visible; those left guard what unsubscribing
+  cannot (item 3 below).
 
 ### Target architecture
 
-1. **Unify on one signal system.** Migrate all pypubsub usage to Publisher
-   signaling (per-instance dispatch). Then migrate Publisher to a modern
+1. **Unify on one signal system.** Done 2026-09-28 for pypubsub: every
+   signal is a Publisher event. Next: migrate the Publisher to a modern
    signal library (Blinker or psygnal) with true per-instance signals.
 
-2. **Automatic cleanup via EVT_WINDOW_DESTROY.** Hook into wx's
-   `EVT_WINDOW_DESTROY` event to call `removeInstance()` automatically when
-   a window is destroyed. This eliminates the need for manual cleanup in
-   every close handler.
+2. **Automatic cleanup via EVT_WINDOW_DESTROY.** Done 2026-09-28:
+   - A window's subscriptions, through the `Observer` mixin or the
+     `Publisher` directly, end when it is destroyed: the Publisher
+     binds `EVT_WINDOW_DESTROY` at its first subscription
+     (`Publisher.remove_observers_of()`). A window must subscribe after
+     its wx `__init__`.
+   - A toolbar's commands unsubscribe when the toolbar is destroyed
+     (rebuilding the main toolbar destroys it without `Clear()`).
+   - A destroyed submenu or popup menu drops its subscriptions
+     (`Menu.DestroyItem()`, `Menu.Destroy()`).
+   - An editor page ends its field syncs' (`AttributeSync`) with its
+     own: they are not windows, and some entries wrap several widgets.
 
-3. **Remove all DEAD-OBJ guards.** Once cleanup is automatic, the
-   `try/except RuntimeError` guards become dead code. Remove them.
+3. **Remove the DEAD-OBJ guards.** Done 2026-09-28 where unreachable: a
+   liveness check just before the call (`if not self`, `if
+   self.toolbar`), or an owner that now unsubscribes. The others stay;
+   they guard what unsubscribing cannot:
+
+   | Guarded against | Where |
+   |---|---|
+   | A delayed call reaching a window closed meanwhile | `patterns.later` skips it when its owner is gone ([DEFERRED_CALLS.md](DEFERRED_CALLS.md)); the older `__safe*()` wrappers in the widgets and viewers, the in-place editors, `Editor._deferred_destroy()`, and the viewer container's focus remain as a second check; the `not self or IsBeingDeleted()` checks also skip a window being deleted, which the service still runs |
+   | wx events while a window's children are being destroyed | `TaskEntry._onDestroy()`, `Viewer.SetFocus()`, `AttributeSync`'s callback, the tree and list `curselection()`, the column sort |
+   | Menu items that outlive their menu, wx assertions | `update_menu_text()`, `on_update_menu()`; `Menu.DestroyItem()` and `UICommand.remove_from_menu()` unbind an item's update handler |
+   | Shutdown | `Application.display_message()` |
+
+   The app-wide `wx.CallAfter` guard (`workarounds/monkeypatches.py`)
+   covers library code's delayed calls to a deleted window's own
+   methods.
 
 ### Files involved
 
@@ -306,7 +346,7 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | Editor cleanup | `taskcoachlib/gui/dialog/editor.py` |
 | Viewer cleanup | `taskcoachlib/gui/viewer/base.py` |
 
-**Status:** Planned — incremental. Band-aids in place, root cause understood.
+**Status:** Done 2026-09-28, but for the signal library (1).
 
 ---
 
@@ -314,10 +354,11 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 
 | Signal | Action | Location |
 |--------|--------|----------|
-| `view.categoryfiltermatchall` | Migrated to Publisher | `taskcoachlib/gui/viewer/category/filter.py` |
+| `view.categoryfiltermatchall` | Migrated to Publisher | `taskcoachlib/domain/category/filter.py` (CategoryFilter), `taskcoachlib/gui/uicommand/uicommand.py` (CategoryViewerFilterChoice) |
 | `view.statusbar` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` |
 | `view.toolbar` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` |
 | `view.weekstartmonday` | Deleted (dead — topic name mismatch) | `taskcoachlib/gui/viewer/task.py` |
+| `view.weekstart`, `calendarviewer.gradient` | Added 2026-09-28: the calendar viewer applies them at once | `taskcoachlib/gui/viewer/task.py` |
 | `view.efforthourstart` | Deleted (no live-update needed) | `taskcoachlib/gui/viewer/task.py` |
 | `view.efforthourend` | Deleted (no live-update needed) | `taskcoachlib/gui/viewer/task.py` |
 | `file.recentfiles` | Migrated to Publisher | `taskcoachlib/gui/menu.py` |
@@ -328,6 +369,15 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | `spellcheck.colours.changed` | Migrated to Publisher | `taskcoachlib/gui/dialog/preferences.py` (ThemePage), `taskcoachlib/widgets/textctrl.py` (_StyledTextCtrl) |
 | `calendar.colours.changed` | Migrated to Publisher | `taskcoachlib/gui/dialog/preferences.py` (ThemePage), `taskcoachlib/gui/viewer/task.py` (CalendarViewer), `taskcoachlib/widgets/maskedtimectrl.py` (_CalendarComboPopup) |
 | `powermgt.on` / `powermgt.off` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` (MainWindow), `taskcoachlib/gui/idlecontroller.py` (IdleController), `taskcoachlib/gui/viewer/task.py` (BaseTaskViewer, `powermgt.on` only) |
+| `pubsub.task.plannedStartDateTime`, `dueDateTime`, `actualStartDateTime`, `completionDateTime` | Migrated to Publisher as `task.<field>`, the task and each ancestor as sources | `taskcoachlib/domain/task/task.py` (Task), `taskcoachlib/domain/task/sorter.py` (Sorter), `taskcoachlib/gui/taskbaricon.py`, `taskcoachlib/gui/dialog/reminder.py` (ReminderDialog); the others route by prefix |
+| `pubsub.task.reminder` | Migrated to Publisher as `task.reminder`; the reminder is an `Attribute`, so snoozing also notifies the ancestors | `taskcoachlib/domain/task/task.py` (Task) |
+| `pubsub.task.status`, `efforts`, `track`, `timeSpent`, `budgetLeft`, `revenue`; `pubsub.effort.track`, `duration`, `revenue`; `pubsub.<class>.expandedContexts`; `pubsub.<sorter>.sorted`; `pubsub.effort.composite.empty` | Migrated to Publisher without the `pubsub.` prefix; a task's change also shown by its ancestors is one event with them as sources; the prefix routing and the `(newValue, sender)` handler twins removed (`onAttributeChanged_Deprecated` is `on_attribute_changed`) | `taskcoachlib/domain/task/task.py`, `taskcoachlib/domain/effort/`, `taskcoachlib/domain/base/object.py`, `taskcoachlib/domain/base/sorter.py`; listeners in `taskcoachlib/gui/viewer/`, `taskcoachlib/gui/dialog/editor.py`, `attributesync.py`, `reminder.py`, `taskcoachlib/gui/taskbaricon.py`, `taskcoachlib/gui/scheduler.py`, `taskcoachlib/persistence/taskfile.py` |
+| `effortlisttracker.changed` (the tracker's own pypubsub publisher) | Migrated to Publisher, the tracker as source | `taskcoachlib/domain/effort/effortlist.py` (EffortListTracker), `taskcoachlib/gui/idlecontroller.py`, `taskcoachlib/gui/uicommand/uicommand.py` (EffortStop) |
+| `taskfile.aboutToRead`, `justRead`, `aboutToClear`, `justCleared`, `aboutToSave`, `dirty`, `clean`, `filenameChanged`, `changed` | Migrated to Publisher, the task file as source (a read-only merged file sends none); the viewers, main window and IO controller listen to their own file only | `taskcoachlib/persistence/taskfile.py`, `autosaver.py`, `autobackup.py`, `autoimporterexporter.py`, `taskcoachlib/gui/viewer/base.py`, `taskcoachlib/gui/mainwindow.py`, `taskcoachlib/gui/iocontroller.py`, `taskcoachlib/gui/uicommand/uicommand.py` (FileSave) |
+| `command.aboutToBulkModify`, `command.justBulkModified` | Migrated to Publisher, the command as source (`_bulk_modification()`) | `taskcoachlib/command/taskCommands.py`, `taskcoachlib/gui/viewer/base.py` |
+| `viewer<id>.status`, `viewer.status`, `all.viewer.status` | Migrated to Publisher: the viewer, or the container with the viewer as value, as source | `taskcoachlib/gui/viewer/base.py`, `container.py`, `effort.py`, `taskcoachlib/gui/status.py`, `taskcoachlib/gui/dialog/export.py` |
+| `settings.<section>.<option>` | Replaced by the Publisher events `Settings.set()` already sent, plus a section event ([Settings Events](#settings-events)) | `taskcoachlib/config/settings.py`; listeners in `taskcoachlib/domain/task/task.py`, `taskcoachlib/gui/scheduler.py`, `taskcoachlib/gui/viewer/task.py`, `effort.py`, `taskcoachlib/gui/mainwindow.py` |
+| pypubsub | Removed as a dependency: `setup.py`, the setup scripts, the CI workflows, the Debian, Fedora and Arch packaging, the Flatpak sources | |
 | `task.reminder.trigger` | Migrated to Publisher | `taskcoachlib/domain/task/task.py` (Task), `taskcoachlib/gui/remindercontroller.py` (ReminderController) |
 | `feature.task_duration_presets` | Migrated to Publisher | `taskcoachlib/gui/dialog/editor.py` (DatesPage) |
 | `feature.effort_duration_presets` | Migrated to Publisher | `taskcoachlib/gui/dialog/editor.py` (EffortEditBook) |
@@ -354,8 +404,10 @@ an `EVT_MENU_OPEN` handler. This manifests in two ways:
    open sizes correctly because GTK caches the updated count.
 2. **Menu too narrow for new label text.** `SetItemLabel()` during
    `EVT_MENU_OPEN` changes label width but GTK does not widen the popup.
-   Text is clipped on first open; second open recalculates. This affects
-   EditUndo/EditRedo and EditPasteAsSubItem (see [MENUS.md TODO #2](MENUS.md#todo)).
+   Text is clipped on first open; second open recalculates. This
+   affected EditUndo/EditRedo and EditPasteAsSubItem (see
+   [MENUS.md TODO #2](MENUS.md#todo)); no label changes then since
+   2026-10-02.
 
 **Pattern:** change items only while the menu is closed, so GTK always
 sees the correct geometry at popup time. Without messaging where possible:
@@ -376,8 +428,13 @@ sees the correct geometry at popup time. Without messaging where possible:
 - **EditMenu** — undo/redo labels were updated via `current_menu_text()`
   during `EVT_MENU_OPEN`. **Fixed** — `CommandHistory` now fires a Publisher
   event; `EditUndo`/`EditRedo` subscribe and call `update_menu_text()`
-  proactively. `current_menu_text()` returns `None` to skip `SetItemLabel`
-  during popup.
+  proactively.
+- **EditMenu, NewMenu**: "Paste as subitem" and "New subitem" name the
+  active viewer's kind of item ("Paste as subcategory"); set as the menu
+  opened, the first open cut off the shortcut. **Fixed** 2026-10-02:
+  they follow the viewer container's `viewer.status` event
+  (`_KindLabelMixin`). `current_menu_text()` is gone: no label is set
+  as a menu opens.
 
 **References:**
 - [PYTHON3_MIGRATION_3.md — GTK3 Menu Size Allocation Bug](PYTHON3_MIGRATION_3.md#gtk3-menu-size-allocation-bug)
@@ -387,26 +444,18 @@ sees the correct geometry at popup time. Without messaging where possible:
 
 ---
 
-## Active pypubsub Settings Listeners
+## Settings Events
 
-Settings topics that still have pypubsub subscribers. This is the tracking
-list for the migration — entries are removed as they are migrated or deleted.
-
-| Topic pattern | Subscriber location |
-|---------------|---------------------|
-| `settings.icon` / `settings.icon_dark` | `taskcoachlib/domain/task/task.py:152-159` |
-| `settings.fgcolor` / `settings.fgcolor_dark` | `taskcoachlib/domain/task/task.py:140,143` |
-| `settings.bgcolor` / `settings.bgcolor_dark` | `taskcoachlib/domain/task/task.py:146,149` |
-| `settings.behavior.duesoonhours` | `taskcoachlib/domain/task/task.py:161` |
-| `settings.behavior.markparentcompletedwhenallchildrencompleted` | `taskcoachlib/domain/task/task.py:164` |
-| `settings.window.theme` | `taskcoachlib/domain/task/task.py:160`, `taskcoachlib/gui/viewer/task.py:171` |
-
-pypubsub fixes a topic's arguments from its first listener, so the
-listeners of a topic and of its subtopics must agree on which arguments
-are optional; otherwise subscribing fails depending on which object
-subscribed first. The appearance and theme listeners take `value` as
-optional (`value=None`, or `*args, **kwargs`); `onDueSoonHoursChanged`
-and `onMarkParentCompletedWhenAllChildrenCompletedChanged` require it.
+`Settings.set()` sends one Publisher event, the settings as source, of
+two types: `"<section>.<option>"` with the new text as value, and
+`Settings.section_changed_event_type(section)` (`"settings.<section>"`)
+with the option's name as value, for listeners of a whole section (the
+appearance sections, whose options are the statuses). Listeners read
+typed values from the settings (`settings.view.statusbar`), not from
+the event. `Settings.send_changed()` sends the same event without a
+change: the main window uses it when the system theme changes while
+the theme follows it. The settings act on their own change of the ini
+file's location by a call in `set()`.
 
 ---
 

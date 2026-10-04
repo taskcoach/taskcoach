@@ -18,7 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import wx.lib.agw.aui as aui
-from taskcoachlib import operating_system
+from taskcoachlib import operating_system, patterns
+from taskcoachlib.tools import wxhelper
 
 # --- Rebuild guard: block motion events during list/tree rebuilds ---
 
@@ -55,7 +56,7 @@ class _RebuildInputFilter(wx.EventFilter):
     def acquire(self):
         """Called at start of each RefreshAllItems."""
         if self._release_timer is not None:
-            self._release_timer.Stop()
+            self._release_timer.cancel()
             self._release_timer = None
         self._refcount += 1
         self.active = True
@@ -68,9 +69,8 @@ class _RebuildInputFilter(wx.EventFilter):
         """
         self._refcount = max(0, self._refcount - 1)
         if self._refcount == 0:
-            self._release_timer = wx.CallLater(
-                1000,
-                self._deferred_release,
+            self._release_timer = patterns.later.call(
+                None, 1000, self._deferred_release
             )
 
     def _deferred_release(self):
@@ -123,7 +123,60 @@ def _install_sash_resize_optimization(manager):
     manager.OnMotion = throttled_on_motion
 
 
+def free_with_window(window, manager):
+    """Free an AGW AUI manager once its window is destroyed: it binds
+    its handlers to itself, so it never goes, keeping its window's
+    objects (a closed view, an editor's pages) in memory
+    (docs/AUI.md#managers-never-freed)."""
+    on_destroy = wxhelper.delete_with_window(manager, window, _release)
+    # Pushed onto the window, the manager sees the event first and
+    # ends it; once removed, the window sees it
+    manager.Bind(wx.EVT_WINDOW_DESTROY, on_destroy)
+
+
+def _release(manager):
+    manager.UnInit()
+    # Its own timers notify it, so they stop with it
+    manager._hint_fadetimer.Stop()
+    manager._preview_timer.Stop()
+
+
 class _AuiManager(aui.AuiManager):
+    def CreateFloatingFrame(self, parent, pane_info):
+        frame = super().CreateFloatingFrame(parent, pane_info)
+        # The frame's own manager, which AUI reaches the same way
+        free_with_window(frame, frame._mgr)
+        return frame
+
+    def CreateNotebook(self):
+        notebook = super().CreateNotebook()
+        free_with_window(notebook, notebook.GetAuiManager())
+        return notebook
+
+    def ClosePane(self, pane_info):
+        window = pane_info.window
+        if pane_info.frame:
+            # Removed from the floating frame before AUI destroys it, as
+            # its DetachPane() does: wx asserts on a destroyed window
+            # with a handler still pushed
+            pane_info.frame._mgr.UnInit()
+        super().ClosePane(pane_info)
+        # The pane whose caption was clicked last stays in the drag
+        # state until the next click, holding a closed window
+        if self._action_window is window:
+            self._action_window = None
+        pane = getattr(self, "_action_pane", None)  # Set at a click
+        if pane is not None and pane.window is window:
+            self._action_pane = None
+
+    def RefreshCaptions(self):
+        # Drawn at the next paint: AGW repaints the window at once for
+        # each caption, a second or more with all views open
+        # (docs/AUI.md#captions-drawn-at-the-next-paint)
+        for part in self._uiparts:
+            if part.type == aui.AuiDockUIPart.typeCaption:
+                self._frame.Refresh(True, part.rect)
+
     def OnSysColourChanged(self, event):
         # The manager is pushed onto the frame's event handler stack;
         # without Skip() the frame and its children never see the event.

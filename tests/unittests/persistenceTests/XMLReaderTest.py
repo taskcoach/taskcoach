@@ -18,17 +18,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import lxml.etree
-import xml.parsers.expat
+from xml.etree import ElementTree
 import wx
 import io
 import os
-import tempfile
 import base64
 import sys
 import test
 from taskcoachlib import persistence, config, operating_system
-from taskcoachlib.domain import date, task
+from taskcoachlib.domain import attachment, category, date, note, task
+from taskcoachlib.patterns.field import fields
 
 
 class XMLTemplateReaderTestCase(test.TestCase):
@@ -102,7 +101,6 @@ class XMLReaderTestCase(test.TestCase):
 
     def setUp(self):
         super().setUp()
-        task.Task.settings = config.Settings(load=False)
 
     def writeAndRead(self, xml_contents):
         # pylint: disable=W0201
@@ -126,57 +124,23 @@ class XMLReaderTestCase(test.TestCase):
     def writeAndReadNotes(self, xml_contents):
         return self.writeAndRead(xml_contents)[2]
 
-    def writeAndReadGUID(self, xml_contents):
-        return self.writeAndRead(xml_contents)[5]
-
     def writeAndReadTasksAndCategories(self, xml_contents):
-        tasks, categories, _, _, _, _ = self.writeAndRead(xml_contents)
+        tasks, categories, _ = self.writeAndRead(xml_contents)
         return tasks, categories
 
     def writeAndReadTasksAndCategoriesAndNotes(self, xml_contents):
-        tasks, categories, notes, _, _, _ = self.writeAndRead(xml_contents)
-        return tasks, categories, notes
+        return self.writeAndRead(xml_contents)
 
     def writeAndReadCategoriesAndNotes(self, xml_contents):
-        _, categories, notes, _, _, _ = self.writeAndRead(xml_contents)
+        _, categories, notes = self.writeAndRead(xml_contents)
         return categories, notes
 
 
-class TempFileLockTest(XMLReaderTestCase):
-    tskversion = 25
-
-    def setUp(self):
-        self.oldMkstemp = tempfile.mkstemp
-
-        def newMkstemp(*args, **kwargs):  # pragma: no cover
-            handle, name = self.oldMkstemp(*args, **kwargs)
-            self.__filename = name  # pylint: disable=W0201
-            return handle, name
-
-        tempfile.mkstemp = newMkstemp
-        super().setUp()
-
-    def tearDown(self):
-        tempfile.mkstemp = self.oldMkstemp
-        super().tearDown()
-
-    @test.stale("inline attachment data is no longer read (#378)")
-    def testLock(self):
-        if os.name == "nt":  # pragma: no cover
-            self.writeAndReadTasks(
-                '<tasks>\n<task status="0">\n'
-                '<attachment type="mail" status="0">\n'
-                '<data extension="eml">%s</data>\n'
-                "</attachment>\n</task>\n</tasks>\n"
-                % base64.encodebytes(b"Data").decode("ascii")
-            )
-            try:
-                os.remove(self.__filename)
-                os.remove(self.__filename + ".delta")
-            except OSError:
-                pass  # File removal may fail on Windows
-
-            self.assertTrue(os.path.exists(self.__filename))
+class XMLReaderWithoutVersionTest(test.TestCase):
+    def test_a_file_without_a_version_is_refused(self):
+        fd = io.StringIO("<tasks/>")
+        fd.name = "testfile.tsk"
+        self.assertRaises(ValueError, persistence.XMLReader(fd).read)
 
 
 class XMLReaderVersion6Test(XMLReaderTestCase):
@@ -199,6 +163,43 @@ class XMLReaderVersion6Test(XMLReaderTestCase):
             </task>
         </tasks>""")
         self.assertEqual("Yo", tasks[0].efforts()[0].description())
+
+
+class XMLReaderDuplicateIdTest(XMLReaderTestCase):
+    tskversion = 37
+
+    def test_a_later_duplicate_id_gets_a_new_one(self):
+        tasks = self.writeAndReadTasks(
+            '<tasks><task id="1" subject="first"/>'
+            '<task id="1" subject="second"/></tasks>'
+        )
+        ids = {each.subject(): each.id() for each in tasks}
+        self.assertEqual(
+            ("1", True), (ids["first"], ids["second"] not in ("", "1"))
+        )
+
+    def test_a_subtask_with_its_parents_id_gets_a_new_one(self):
+        tasks = self.writeAndReadTasks(
+            '<tasks><task id="1"><task id="1"/></task></tasks>'
+        )
+        self.assertNotEqual("1", tasks[0].children()[0].id())
+
+    def test_a_prerequisite_on_a_duplicate_id_is_the_first_task(self):
+        tasks = self.writeAndReadTasks(
+            '<tasks><task id="1" subject="first"/>'
+            '<task id="1" subject="second"/>'
+            '<task id="2" subject="waiting" prerequisites="1"/></tasks>'
+        )
+        by_subject = {each.subject(): each for each in tasks}
+        self.assertEqual(
+            [by_subject["first"]], list(by_subject["waiting"].prerequisites())
+        )
+
+    def test_duplicate_ids_are_reported(self):
+        self.writeAndReadTasks(
+            '<tasks><task id="1"/><task id="1"/><task id="2"/></tasks>'
+        )
+        self.assertEqual(["1"], list(self.reader.get_duplicate_ids()))
 
 
 class XMLReaderVersion8Test(XMLReaderTestCase):
@@ -256,7 +257,7 @@ class XMLReaderVersion13Test(XMLReaderTestCase):
         </tasks>""")
 
         self.assertEqual("test", categories[0].subject())
-        self.assertEqual(set([tasks[0]]), categories[0].categorizables())
+        self.assertEqual(set([tasks[0]]), categories[0].members())
         self.assertEqual(set([categories[0]]), tasks[0].categories())
 
     def testMultipleCategories(self):
@@ -270,7 +271,7 @@ class XMLReaderVersion13Test(XMLReaderTestCase):
         </tasks>""")
 
         for category in categories:
-            self.assertEqual(set([tasks[0]]), category.categorizables())
+            self.assertEqual(set([tasks[0]]), category.members())
             self.assertTrue(category in tasks[0].categories())
 
     def testSubTaskWithCategories(self):
@@ -285,8 +286,8 @@ class XMLReaderVersion13Test(XMLReaderTestCase):
         </tasks>""")
         testCategory = categories[0]
         anotherCategory = categories[1]
-        self.assertEqual("1", list(testCategory.categorizables())[0].id())
-        self.assertEqual("1.1", list(anotherCategory.categorizables())[0].id())
+        self.assertEqual("1", list(testCategory.members())[0].id())
+        self.assertEqual("1.1", list(anotherCategory.members())[0].id())
         self.assertEqual(set([testCategory]), tasks[0].categories())
         self.assertEqual(
             set([anotherCategory]), tasks[0].children()[0].categories()
@@ -444,13 +445,7 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
 
     def testReadEmptyStream(self):
         reader = persistence.XMLReader(io.StringIO())
-        try:
-            reader.read()
-            self.fail("Expected a parse error")  # pragma: no cover
-        except lxml.etree.XMLSyntaxError:
-            pass
-        except xml.etree.ElementTree.ParseError:
-            pass  # pragma: no cover
+        self.assertRaises(ElementTree.ParseError, reader.read)
 
     def testNoTasksAndNoCategories(self):
         tasks, categories, notes = self.writeAndReadTasksAndCategoriesAndNotes(
@@ -821,7 +816,7 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
             <category subject="cat" categorizables="1"/>
             <task id="1"/>
         </tasks>""")
-        self.assertEqual(set(tasks), categories[0].categorizables())
+        self.assertEqual(set(tasks), categories[0].members())
 
     def testTwoRecursiveCategories(self):
         categories = self.writeAndReadCategories("""
@@ -851,9 +846,9 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
             <task subject="task2" id="2"/>
         </tasks>""")
 
-        self.assertEqual(tasks[0], list(categories[0].categorizables())[0])
+        self.assertEqual(tasks[0], list(categories[0].members())[0])
         self.assertEqual(
-            tasks[1], list(categories[0].children()[0].categorizables())[0]
+            tasks[1], list(categories[0].children()[0].members())[0]
         )
 
     def testSubtaskCategory(self):
@@ -865,7 +860,7 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
             </task>
         </tasks>""")
         self.assertEqual(
-            tasks[0].children()[0], list(categories[0].categorizables())[0]
+            tasks[0].children()[0], list(categories[0].members())[0]
         )
 
     def testFilteredCategory(self):
@@ -883,7 +878,7 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
         <tasks>
             <category subject="cat" tasks="some_task_id"/>
         </tasks>""")
-        self.assertFalse(categories[0].categorizables())
+        self.assertFalse(categories[0].members())
 
     def testNote(self):
         notes = self.writeAndReadNotes("""
@@ -948,7 +943,7 @@ class XMLReaderVersion20Test(XMLReaderTestCase):
             <note id="noteId" subject="Note"/>
             <category categorizables="noteId" subject="Category"/>
         </tasks>""")
-        self.assertEqual(notes[0], list(categories[0].categorizables())[0])
+        self.assertEqual(notes[0], list(categories[0].members())[0])
 
     def testNoteId(self):
         notes = self.writeAndReadNotes("""
@@ -1142,11 +1137,20 @@ class XMLReaderVersion21Test(XMLReaderTestCase):
 class XMLReaderVersion22Test(XMLReaderTestCase):
     tskversion = 22
 
-    def testStatus(self):
+    def test_task_with_another_status_is_loaded(self):
         tasks = self.writeAndReadTasks(
             '<tasks><task subject="Task" status="2"></task></tasks>'
         )
-        self.assertEqual(2, tasks[0].getStatus())
+        self.assertEqual(["Task"], [each.subject() for each in tasks])
+
+    def test_task_saved_as_deleted_is_not_loaded(self):
+        # Deleted with SyncML enabled, before 2026: hidden and not
+        # restorable
+        tasks = self.writeAndReadTasks(
+            '<tasks><task subject="Kept" status="1"/>'
+            '<task subject="Deleted" status="3"/></tasks>'
+        )
+        self.assertEqual(["Kept"], [each.subject() for each in tasks])
 
 
 class XMLReaderVersion23Test(XMLReaderTestCase):
@@ -1160,20 +1164,11 @@ class XMLReaderVersion23Test(XMLReaderTestCase):
         )
         self.assertEqual("\nDescription\n", tasks[0].description())
 
-    @test.stale("inline attachment data is unsupported since #378")
-    def testAttachmentData(self):
+    def test_a_file_with_a_guid_still_loads(self):
         tasks = self.writeAndReadTasks(
-            '<tasks>\n<task status="0">\n'
-            '<attachment type="mail" status="0">\n'
-            '<data extension="eml">%s</data>\n'
-            "</attachment>\n</task>\n</tasks>\n"
-            % base64.encodebytes(b"Data").decode("ascii")
+            '<tasks><task id="1"/><guid>GUID</guid></tasks>'
         )
-        self.assertEqual("Data", tasks[0].attachments()[0].data())
-
-    def testGUID(self):
-        guid = self.writeAndReadGUID("<tasks><guid>GUID</guid></tasks>")
-        self.assertEqual("GUID", guid)
+        self.assertEqual(["1"], [each.id() for each in tasks])
 
 
 class XMLReaderVersion24Test(XMLReaderTestCase):
@@ -1191,33 +1186,29 @@ class XMLReaderVersion24Test(XMLReaderTestCase):
         )
         self.assertEqual("Description", tasks[0].description())
 
-    @test.stale("inline attachment data is unsupported since #378")
-    def testAttachmentData(self):
+    def test_inline_attachment_data_is_not_read(self):
+        # Since #378: the attachment stays, its data is lost
         tasks = self.writeAndReadTasks(
             '<tasks>\n<task status="0">\n'
-            '<attachment type="mail" status="0">\n'
+            '<attachment type="mail" subject="Quote" status="0">\n'
             '<data extension="eml">\n%s\n</data>\n'
             "</attachment>\n</task>\n</tasks>\n"
             % base64.encodebytes(b"Data").decode("ascii")
         )
-        self.assertEqual("Data", tasks[0].attachments()[0].data())
-
-    def testGUID(self):
-        guid = self.writeAndReadGUID(
-            "<tasks>\n<guid>\nGUID\n</guid>\n</tasks>"
+        mail = tasks[0].attachments()[0]
+        self.assertEqual(
+            ("Quote", "(embedded eml - data not migrated)"),
+            (mail.subject(), mail.location()),
         )
-        self.assertEqual("GUID", guid)
 
-    def testGUIDWithLegacySyncMLNodes(self):
-        """The GUID is parsed even with legacy SyncML nodes present.
-        Release 0.72.9 (and earlier?) had a bug where tags in the SyncML
-        config information would be split across multiple lines. Fixed
-        in release 0.72.10. SyncML is now removed but old files may
-        still have these nodes.
+    def test_a_file_with_legacy_syncml_nodes_still_loads(self):
+        """Release 0.72.9 (and earlier?) had a bug where tags in the
+        SyncML config information would be split across multiple lines.
+        Fixed in release 0.72.10. SyncML is now removed but old files
+        may still have these nodes.
         """
-        expectedGUID = "0000011d209a4b6c3f9f7c32000a00b100240032"
-        actualGUID = self.writeAndReadGUID(
-            "<tasks>\n<syncml><TaskCoach-\n"
+        tasks = self.writeAndReadTasks(
+            '<tasks>\n<task id="1"/>\n<syncml><TaskCoach-\n'
             "0000011d209a4b6c3f9f7c32000a00b100240032\n"
             "><spds><sources><TaskCoach-\n"
             "0000011d209a4b6c3f9f7c32000a00b100240032\n"
@@ -1229,7 +1220,7 @@ class XMLReaderVersion24Test(XMLReaderTestCase):
             "0000011d209a4b6c3f9f7c32000a00b100240032\n"
             "</guid></tasks>"
         )
-        self.assertEqual(expectedGUID, actualGUID)
+        self.assertEqual(["1"], [each.id() for each in tasks])
 
 
 class XMLReaderVersion26Test(XMLReaderTestCase):
@@ -1379,33 +1370,24 @@ class XMLReaderVersion29Test(XMLReaderTestCase):
         tasks = self.writeAndReadTasks('<tasks><task icon="icon"/></tasks>')
         self.assertEqual("icon", tasks[0].icon_id())
 
-    def testSelectedTaskIcon(self):
+    def test_selected_icon_of_old_files_is_dropped(self):
         tasks = self.writeAndReadTasks(
-            '<tasks><task selectedIcon="icon"/></tasks>'
+            '<tasks><task icon="icon" selectedIcon="open_icon"/></tasks>'
         )
-        self.assertEqual("icon", tasks[0].selected_icon_id())
+        self.assertEqual("icon", tasks[0].icon_id())
+        self.assertFalse(
+            [name for name in fields(tasks[0]) if "selected" in name.lower()]
+        )
 
     def testNoteIcon(self):
         notes = self.writeAndReadNotes('<tasks><note icon="icon"/></tasks>')
         self.assertEqual("icon", notes[0].icon_id())
-
-    def testSelectedNoteIcon(self):
-        notes = self.writeAndReadNotes(
-            '<tasks><note selectedIcon="icon"/></tasks>'
-        )
-        self.assertEqual("icon", notes[0].selected_icon_id())
 
     def testCategoryIcon(self):
         categories = self.writeAndReadCategories(
             '<tasks><category icon="icon"/></tasks>'
         )
         self.assertEqual("icon", categories[0].icon_id())
-
-    def testSelectedCategoryIcon(self):
-        categories = self.writeAndReadCategories(
-            '<tasks><category selectedIcon="icon"/></tasks>'
-        )
-        self.assertEqual("icon", categories[0].selected_icon_id())
 
     def testAttachmentIcon(self):
         tasks = self.writeAndReadTasks(
@@ -1414,14 +1396,6 @@ class XMLReaderVersion29Test(XMLReaderTestCase):
             "</task></tasks>"
         )
         self.assertEqual("icon", tasks[0].attachments()[0].icon_id())
-
-    def testSelectedAttachmentIcon(self):
-        tasks = self.writeAndReadTasks(
-            '<tasks><task subject="Task">'
-            '<attachment type="file" location="whatever" selectedIcon="icon"/>'
-            "</task></tasks>"
-        )
-        self.assertEqual("icon", tasks[0].attachments()[0].selected_icon_id())
 
 
 class XMLReaderVersion30Test(XMLReaderTestCase):
@@ -1683,7 +1657,7 @@ class XMLReaderVersion33Test(XMLReaderTestCase):
         </tasks>\n""")
         self.assertEqual(
             date.DateTime(2004, 1, 1, 9, 0, 0),
-            tasks[0].reminder(includeSnooze=False),
+            tasks[0].reminder(include_snooze=False),
         )
         self.assertEqual(
             date.DateTime(2004, 1, 1, 10, 0, 0), tasks[0].reminder()
@@ -1696,7 +1670,7 @@ class XMLReaderVersion33Test(XMLReaderTestCase):
         </tasks>\n""")
         self.assertEqual(
             date.DateTime(2004, 1, 1, 10, 0, 0),
-            tasks[0].reminder(includeSnooze=False),
+            tasks[0].reminder(include_snooze=False),
         )
         self.assertEqual(
             date.DateTime(2004, 1, 1, 10, 0, 0), tasks[0].reminder()
@@ -1803,7 +1777,7 @@ class XMLReaderVersion34Test(XMLReaderTestCase):
             <category id="cat1" categorizables="note1"/>
         </tasks>\n""")
         self.assertEqual(
-            list(tasks[0].notes())[0], list(categories[0].categorizables())[0]
+            list(tasks[0].notes())[0], list(categories[0].members())[0]
         )
 
 
@@ -1839,13 +1813,109 @@ class XMLReaderVersion36Test(XMLReaderTestCase):
             <task creationDateTime="2012-12-12 12:00:00.12345"/>
         </tasks>""")
         self.assertEqual(
-            date.DateTime(2012, 12, 12, 12, 0, 0, 12345),
+            date.Timestamp(2012, 12, 12, 12, 0, 0, 123450),
             tasks[0].creationDateTime(),
         )
+
+    def test_item_never_modified_was_last_modified_when_created(self):
+        tasks = self.writeAndReadTasks("""
+        <tasks>
+            <task creationDateTime="2012-12-12 12:00:00"/>
+        </tasks>""")
+        self.assertEqual(
+            date.Timestamp(2012, 12, 12, 12, 0, 0),
+            tasks[0].modificationDateTime(),
+        )
+
+    def test_item_without_dates_has_unknown_dates(self):
+        tasks = self.writeAndReadTasks("""
+        <tasks>
+            <task/>
+        </tasks>""")
+        self.assertEqual(
+            (date.DateTime.min, date.DateTime.min),
+            (tasks[0].creationDateTime(), tasks[0].modificationDateTime()),
+        )
+
+    def test_creation_date_in_whole_seconds_has_no_fraction(self):
+        tasks = self.writeAndReadTasks("""
+        <tasks>
+            <task creationDateTime="2012-12-12 12:00:00"/>
+        </tasks>""")
+        self.assertEqual(0, tasks[0].creationDateTime().microsecond)
 
 
 class XMLReaderVersion37Test(XMLReaderTestCase):
     tskversion = 37  # New in release 1.3.23
+
+    def test_items_saved_as_deleted_are_not_loaded(self):
+        tasks, categories, notes = self.writeAndReadTasksAndCategoriesAndNotes(
+            """
+        <tasks>
+            <task id="1" subject="Kept" prerequisites="2">
+                <task id="1.1" subject="Deleted subtask" status="3"/>
+            </task>
+            <task id="2" subject="Deleted" status="3">
+                <task id="2.1" subject="Subtask of deleted"/>
+            </task>
+            <category subject="Category" categorizables="1 2 note2"/>
+            <note id="note1" subject="Kept note"/>
+            <note id="note2" subject="Deleted note" status="3"/>
+        </tasks>"""
+        )
+        self.assertEqual(["Kept"], [each.subject() for each in tasks])
+        self.assertEqual([], tasks[0].children())
+        self.assertEqual(set(), set(tasks[0].prerequisites()))
+        self.assertEqual(set([tasks[0]]), set(categories[0].members()))
+        self.assertEqual(["Kept note"], [each.subject() for each in notes])
+
+    def test_members_are_saved_on_the_items_and_the_category(self):
+        # Converted when read: the next save writes the new form, and
+        # the old one for older releases (legacy.py)
+        tasks, categories, notes = self.writeAndReadTasksAndCategoriesAndNotes(
+            """
+        <tasks>
+            <task id="t1"/>
+            <category id="c1" subject="Category" categorizables="t1 n1"/>
+            <note id="n1"/>
+        </tasks>"""
+        )
+        fd = io.BytesIO()
+        persistence.XMLWriter(fd).write(
+            task.TaskList(tasks),
+            category.CategoryList(categories),
+            note.NoteContainer(notes),
+        )
+        written = fd.getvalue().decode("utf-8")
+        self.assertEqual(
+            (2, True),
+            (
+                written.count('categories="c1"'),
+                'categorizables="n1 t1"' in written,
+            ),
+        )
+
+    def test_categories_are_resolved_in_one_event(self):
+        # Filters reset on each event: one per item would be quadratic
+        self.registerObserver(category.Category.member_added_event_type())
+        self.writeAndReadTasksAndCategories("""
+        <tasks>
+            <task id="1"/><task id="2"/><task id="3"/>
+            <category subject="Category" categorizables="1 2 3"/>
+        </tasks>""")
+        self.assertEqual(1, len(self.events))
+
+    def test_effort_saved_as_deleted_is_not_loaded(self):
+        tasks = self.writeAndReadTasks("""
+        <tasks>
+            <task id="1" subject="Task">
+                <effort id="e1" start="2004-01-01 10:00:00"
+                        stop="2004-01-01 11:00:00"/>
+                <effort id="e2" start="2004-01-02 10:00:00"
+                        stop="2004-01-02 11:00:00" status="3"/>
+            </task>
+        </tasks>""")
+        self.assertEqual(["e1"], [each.id() for each in tasks[0].efforts()])
 
     def testModificationDateTime(self):
         tasks = self.writeAndReadTasks("""
@@ -1853,7 +1923,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
             <task modificationDateTime="2012-12-12 12:00:00.12345"/>
         </tasks>""")
         self.assertEqual(
-            date.DateTime(2012, 12, 12, 12, 0, 0, 12345),
+            date.Timestamp(2012, 12, 12, 12, 0, 0, 123450),
             tasks[0].modificationDateTime(),
         )
 
@@ -1863,8 +1933,73 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
             <task modificationDateTime="2012-12-12 12:00:00.12345"/>
         </tasks>""")
         self.assertEqual(
-            date.DateTime(2012, 12, 12, 12, 0, 0, 12345),
+            date.Timestamp(2012, 12, 12, 12, 0, 0, 123450),
             tasks[0].modificationDateTime(),
+        )
+
+    def test_every_item_keeps_its_stored_modification_date(self):
+        # Setting fields and links while loading sets the date to now,
+        # so the stored one is restored last
+        tasks, categories, notes = self.writeAndReadTasksAndCategoriesAndNotes(
+            """
+        <tasks>
+          <task id="t1" subject="Task" priority="2" hourlyFee="10"
+                fixedFee="5" budget="1:00:00" percentageComplete="50"
+                plannedstartdate="2029-01-01 10:00:00"
+                duedate="2030-01-01 10:00:00"
+                reminder="2029-06-01 10:00:00" prerequisites="t2"
+                modificationDateTime="2012-12-12 12:00:00">
+            <task id="t1.1" subject="Subtask"
+                  modificationDateTime="2012-12-12 12:00:00"/>
+            <effort id="e1" start="2004-01-01 10:00:00"
+                    stop="2004-01-01 11:00:00"
+                    modificationDateTime="2012-12-12 12:00:00"/>
+            <note id="n1" subject="Task note"
+                  modificationDateTime="2012-12-12 12:00:00"/>
+            <attachment id="a1" location="file.txt" type="file"
+                        subject="Attachment"
+                        modificationDateTime="2012-12-12 12:00:00"/>
+            <recurrence unit="daily"/>
+          </task>
+          <task id="t2" subject="Prerequisite"
+                modificationDateTime="2012-12-12 12:00:00"/>
+          <category id="c1" subject="Category" categorizables="t1 n2"
+                    stylePriority="3" filtered="True"
+                    exclusiveSubcategories="True"
+                    modificationDateTime="2012-12-12 12:00:00">
+            <category id="c1.1" subject="Subcategory"
+                      modificationDateTime="2012-12-12 12:00:00"/>
+          </category>
+          <note id="n2" subject="Note"
+                modificationDateTime="2012-12-12 12:00:00">
+            <note id="n2.1" subject="Subnote"
+                  modificationDateTime="2012-12-12 12:00:00"/>
+          </note>
+        </tasks>"""
+        )
+        items = []
+        for each in tasks + categories + notes:
+            for item in [each] + each.children(recursive=True):
+                items.append(item)
+                if hasattr(item, "notes"):
+                    items.extend(item.notes())
+                if hasattr(item, "attachments"):
+                    items.extend(item.attachments())
+                if hasattr(item, "efforts"):
+                    items.extend(item.efforts())
+        self.assertEqual(3, categories[0].stylePriority())
+        self.assertEqual(
+            {"t1", "t1.1", "e1", "n1", "a1", "t2", "c1", "c1.1", "n2", "n2.1"},
+            {item.id() for item in items},
+        )
+        self.assertEqual(
+            [],
+            [
+                item.id()
+                for item in items
+                if item.modificationDateTime()
+                != date.DateTime(2012, 12, 12, 12, 0, 0)
+            ],
         )
 
     def testAdjustDueDateTime(self):
@@ -1916,7 +2051,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           <category categorizables="noteid" />
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
     def testSubtaskNoteCategory(self):
@@ -1930,7 +2065,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           <category categorizables="noteid" />
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
     def testCategoryNoteCategory(self):
@@ -1941,7 +2076,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           </category>
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
     def testSubcategoryNoteCategory(self):
@@ -1955,7 +2090,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           </category>
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
     def testTaskAttachmentNoteCategory(self):
@@ -1969,7 +2104,7 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           <category categorizables="noteid" />
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
         )
 
     def testSubtaskAttachmentNoteCategory(self):
@@ -1985,5 +2120,271 @@ class XMLReaderVersion37Test(XMLReaderTestCase):
           <category categorizables="noteid" subject="Category" />
         </tasks>""")
         self.assertTrue(
-            "noteid" in [obj.id() for obj in categories[0].categorizables()]
+            "noteid" in [obj.id() for obj in categories[0].members()]
+        )
+
+
+class XMLReaderVersion38Test(XMLReaderTestCase):
+    tskversion = 38  # New in release 2.0.3.0: categories on the items
+
+    def test_task_categories(self):
+        tasks, categories = self.writeAndReadTasksAndCategories("""
+        <tasks>
+            <task id="t1" categories="c1 c2"/>
+            <category id="c1" subject="One"/>
+            <category id="c2" subject="Two"/>
+        </tasks>""")
+        self.assertEqual(set(categories), tasks[0].categories())
+
+    def test_subtask_with_subcategory(self):
+        tasks, categories = self.writeAndReadTasksAndCategories("""
+        <tasks>
+            <task id="t1"><task id="t2" categories="c2"/></task>
+            <category id="c1"><category id="c2"/></category>
+        </tasks>""")
+        self.assertEqual(
+            {categories[0].children()[0]},
+            tasks[0].children()[0].categories(),
+        )
+
+    def test_notes_of_every_owner_keep_their_categories(self):
+        categories = self.writeAndReadCategories("""
+        <tasks>
+            <task id="t1">
+                <note id="n1" categories="c1"/>
+                <attachment location="test" type="file">
+                    <note id="n2" categories="c1"/>
+                </attachment>
+            </task>
+            <category id="c1"><note id="n3" categories="c1"/></category>
+            <note id="n4"><note id="n5" categories="c1"/></note>
+        </tasks>""")
+        self.assertEqual(
+            {"n1", "n2", "n3", "n5"},
+            {each.id() for each in categories[0].members()},
+        )
+
+    def test_a_duplicate_id_keeps_its_own_categories(self):
+        tasks, categories = self.writeAndReadTasksAndCategories("""
+        <tasks>
+            <task id="1" subject="first" categories="c1"/>
+            <task id="1" subject="second" categories="c2"/>
+            <category id="c1" subject="One"/>
+            <category id="c2" subject="Two"/>
+        </tasks>""")
+        self.assertEqual(
+            [["One"], ["Two"]],
+            [[c.subject() for c in each.categories()] for each in tasks],
+        )
+
+    def test_other_forms_of_a_default_read_as_it(self):
+        # defaults.DEFAULTS: the values after each default
+        tasks = self.writeAndReadTasks("""
+        <tasks>
+            <task id="t1" duedate="None" plannedDurationMode="">
+                <effort id="e1" start="2004-01-01 10:00:00" entryMode=""/>
+            </task>
+        </tasks>""")
+        self.assertEqual(
+            (date.DateTime(), "implicit", "standard"),
+            (
+                tasks[0].dueDateTime(),
+                tasks[0].plannedDurationMode(),
+                tasks[0].efforts()[0].entryMode(),
+            ),
+        )
+
+    def test_mail_attachment_fields(self):
+        mail = self.writeAndReadTasks("""
+        <tasks>
+            <task id="t1">
+                <attachment id="a1" type="mail" location="mid:1@example.com"
+                    subject="Quote" fromName="Alice"
+                    fromAddress="alice@example.com"
+                    sentDateTime="2026-09-29 14:05:00"/>
+            </task>
+        </tasks>""")[0].attachments()[0]
+        self.assertEqual(
+            (
+                "mid:1@example.com",
+                "Quote",
+                "Alice",
+                "alice@example.com",
+                date.DateTime(2026, 9, 29, 14, 5, 0),
+            ),
+            (
+                mail.location(),
+                mail.subject(),
+                mail.from_name(),
+                mail.from_address(),
+                mail.sent_datetime(),
+            ),
+        )
+
+    def test_a_mail_whose_file_is_gone_still_loads(self):
+        # Before tskversion 38, a dropped mail's location was a
+        # temporary file, deleted at exit
+        mail = self.writeAndReadTasks("""
+        <tasks>
+            <task id="t1">
+                <attachment id="a1" type="mail" location="/gone/1.eml"
+                    subject="Quote">
+                    <description>Mail text</description>
+                    <note id="n1" subject="Call back"/>
+                </attachment>
+            </task>
+        </tasks>""")[0].attachments()[0]
+        self.assertEqual(
+            ("/gone/1.eml", "Quote", "Mail text", ["Call back"]),
+            (
+                mail.location(),
+                mail.subject(),
+                mail.description(),
+                [each.subject() for each in mail.notes()],
+            ),
+        )
+        self.assertEqual(
+            ("", "", date.DateTime()),
+            (mail.from_name(), mail.from_address(), mail.sent_datetime()),
+        )
+
+    def test_characters_xml_forbids_are_dropped(self):
+        # Saved before stored text dropped them (P34), raw or referenced
+        tasks = self.writeAndReadTasks(
+            '<tasks><task subject="a&#12;b">'
+            "<description>c\x00d&#x1f;e\tf</description>"
+            "</task></tasks>"
+        )
+        self.assertEqual(
+            ("ab", "cde\tf"), (tasks[0].subject(), tasks[0].description())
+        )
+
+
+class XMLReaderVersionsTest(XMLReaderTestCase):
+    """Since 2.0.3.0 the PI holds two numbers: tskversion, the format a
+    reader needs, and tskformat, the format written, which says how to
+    read (docs/PERSISTENCE_XML.md, Versions and Compatibility)."""
+
+    def read(self, versions, xml_contents):
+        fd = io.StringIO(
+            '<?taskcoach release="whatever" %s?>\n' % versions + xml_contents
+        )
+        fd.name = "testfile.tsk"
+        self.reader = persistence.XMLReader(fd)
+        return self.reader.read()
+
+    @staticmethod
+    def write(tasks, categories=(), notes=()):
+        fd = io.BytesIO()
+        persistence.XMLWriter(fd).write(
+            task.TaskList(tasks),
+            category.CategoryList(categories),
+            note.NoteContainer(notes),
+        )
+        return fd.getvalue().decode("utf-8")
+
+    def test_the_format_written_says_how_to_read(self):
+        # Both forms of membership: the items' own is read
+        tasks, categories, _ = self.read(
+            'tskversion="37" tskformat="38"',
+            """
+        <tasks>
+            <task id="t1" categories="c1"/>
+            <task id="t2"/>
+            <category id="c1" categorizables="t2"/>
+        </tasks>""",
+        )
+        self.assertEqual(
+            [{categories[0]}, set()], [each.categories() for each in tasks]
+        )
+
+    def test_versions_read(self):
+        self.read('tskversion="37" tskformat="38"', "<tasks/>")
+        self.assertEqual(
+            (37, 38), (self.reader.version_needed(), self.reader.tskversion())
+        )
+
+    def test_versions_in_single_quotes(self):
+        self.read("tskversion='37' tskformat='38'", "<tasks/>")
+        self.assertEqual(
+            (37, 38), (self.reader.version_needed(), self.reader.tskversion())
+        )
+
+    def test_the_version_line_after_another_instruction(self):
+        fd = io.StringIO(
+            '<?xml version="1.0" encoding="utf-8"?>\n'
+            '<?xml-stylesheet href="tasks.css"?>\n'
+            '<?taskcoach release="whatever" tskversion="37"?>\n'
+            '<tasks><task id="t1" subject="read"/></tasks>'
+        )
+        fd.name = "testfile.tsk"
+        tasks, _, _ = persistence.XMLReader(fd).read()
+        self.assertEqual(["read"], [each.subject() for each in tasks])
+
+    def test_one_number_is_both(self):
+        self.read('tskversion="38"', "<tasks/>")
+        self.assertEqual(
+            (38, 38), (self.reader.version_needed(), self.reader.tskversion())
+        )
+
+    def test_a_file_needing_a_newer_reader_is_refused(self):
+        self.assertRaises(
+            persistence.xml.reader.XMLReaderTooNewException,
+            self.read,
+            'tskversion="39"',
+            "<tasks/>",
+        )
+
+    def test_a_newer_format_needing_no_newer_reader_is_read(self):
+        tasks, _, _ = self.read(
+            'tskversion="37" tskformat="39"',
+            '<tasks><task id="t1" subject="Task"/></tasks>',
+        )
+        self.assertEqual("Task", tasks[0].subject())
+
+    def test_a_mail_link_is_read_as_a_mail(self):
+        # How older releases keep a mail: a link
+        tasks, _, _ = self.read(
+            'tskversion="37"',
+            """
+        <tasks><task id="t1">
+            <attachment id="a1" type="uri" location="mid:1@example.com"/>
+        </task></tasks>""",
+        )
+        self.assertIsInstance(
+            tasks[0].attachments()[0], attachment.MailAttachment
+        )
+
+    def test_a_selected_icon_is_written_back_while_the_icon_is_unchanged(
+        self,
+    ):
+        tasks, _, _ = self.read(
+            'tskversion="37"',
+            '<tasks><task id="t1" icon="nuvola_apps_clock" '
+            'selectedIcon="nuvola_actions_go-next"/></tasks>',
+        )
+        written = self.write(tasks)
+        tasks[0].set_icon_id("nuvola_actions_go-next")
+        self.assertEqual(
+            (True, False),
+            (
+                'selectedIcon="nuvola_actions_go-next"' in written,
+                "selectedIcon" in self.write(tasks),
+            ),
+        )
+
+    def test_a_stated_modification_date_is_written_back(self):
+        # Also when equal to the creation date, which is left out
+        # otherwise
+        tasks, _, _ = self.read(
+            'tskversion="37"',
+            """
+        <tasks>
+            <task id="t1" creationDateTime="2026-01-01 10:00:00"
+                modificationDateTime="2026-01-01 10:00:00"/>
+            <task id="t2" creationDateTime="2026-01-01 10:00:00"/>
+        </tasks>""",
+        )
+        self.assertEqual(
+            1, self.write(tasks).count('modificationDateTime="2026-01-01')
         )

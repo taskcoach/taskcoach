@@ -22,5 +22,5 @@ override_dh_auto_install:
 	# Install Welcome.tsk example file for first-run experience
 	install -D -m 644 Welcome.tsk \
 		debian/taskcoach/usr/share/taskcoach/Welcome.tsk
-	# Note: The wxPython hypertreelist patch is now bundled inside taskcoachlib/patches/
-	# and installed automatically by pybuild. No manual installation needed.
+	# Note: the bundled tree widget (taskcoachlib/patches/) is installed
+	# by pybuild with the package. No manual installation needed.

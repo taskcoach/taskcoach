@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.domain import base
 from .category import Category
 
@@ -24,10 +25,6 @@ from .category import Category
 class CategoryFilter(base.Filter):
     def __init__(self, *args, **kwargs):
         self.__categories = kwargs.pop("categories")
-        self.__settings = kwargs.pop("settings")
-        self.__filterOnlyWhenAllCategoriesMatch = kwargs.pop(
-            "filterOnlyWhenAllCategoriesMatch", False
-        )
         for event_type in (
             self.__categories.addItemEventType(),
             self.__categories.removeItemEventType(),
@@ -37,32 +34,33 @@ class CategoryFilter(base.Filter):
                 eventType=event_type,
                 eventSource=self.__categories,
             )
-        event_types = (
-            Category.categorizableAddedEventType(),
-            Category.categorizableRemovedEventType(),
-            Category.filterChangedEventType(),
-        )
-        for event_type in event_types:
+        for event_type in (
+            Category.member_added_event_type(),
+            Category.member_removed_event_type(),
+        ):
             patterns.Publisher().registerObserver(
-                self.onCategoryChanged, eventType=event_type
+                self.on_membership_changed, eventType=event_type
             )
+        patterns.Publisher().registerObserver(
+            self.onCategoryChanged, eventType=Category.filterChangedEventType()
+        )
         patterns.Publisher().registerObserver(
             self.onFilterMatchingChanged,
             eventType="view.categoryfiltermatchall",
-            eventSource=self.__settings,
         )
         super().__init__(*args, **kwargs)
 
     def detach(self):
         super().detach()
         self.removeObserver(self.onCategoryChanged)
+        self.removeObserver(self.on_membership_changed)
 
     def filter_items(self, categorizables):
         filtered_categories = self.__categories.filteredCategories()
         if not filtered_categories:
             return categorizables
 
-        if self.__filterOnlyWhenAllCategoriesMatch:
+        if settings.view.categoryfiltermatchall:
             filtered_categorizables = set(categorizables)
             for category in filtered_categories:
                 filtered_categorizables &= (
@@ -80,15 +78,23 @@ class CategoryFilter(base.Filter):
 
     @staticmethod
     def __categorizablesBelongingToCategory(category):
-        categorizables = category.categorizables(recursive=True)
+        categorizables = category.members(recursive=True)
         for categorizable in categorizables.copy():
             categorizables |= set(categorizable.children(recursive=True))
         return categorizables
 
     def onFilterMatchingChanged(self, event):  # pylint: disable=W0613
-        self.__filterOnlyWhenAllCategoriesMatch = \
-            self.__settings.getboolean("view", "categoryfiltermatchall")
         self.reset()
 
     def onCategoryChanged(self, event):  # pylint: disable=W0613
         self.reset()
+
+    def on_membership_changed(self, event):
+        # Assigning a category filters nothing unless it, or a category
+        # it is under, is filtered
+        for category in event.sources():
+            if any(
+                each.isFiltered() for each in [category] + category.ancestors()
+            ):
+                self.reset()
+                return

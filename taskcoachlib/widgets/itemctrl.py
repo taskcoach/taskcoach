@@ -16,13 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-""" Base classes for controls with items, such as ListCtrl, TreeCtrl, 
-    and TreeListCtrl. """  # pylint: disable=W0105
+# Base classes for controls with items, such as ListCtrl, TreeCtrl,
+# and TreeListCtrl.
 
 
 import wx, inspect
 from . import draganddrop, autowidth, tooltip
 from wx.lib.agw import hypertreelist
+from taskcoachlib import patterns
 
 
 class _CtrlWithItemsMixin(object):
@@ -68,14 +69,22 @@ class _CtrlWithPopupMenuMixin(_CtrlWithItemsMixin):
 class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
     """Popupmenu's on items."""
 
+    def _popup_item_menu(self):
+        # Items shown only in some states (Edit in place) first
+        self._itemPopupMenu.show_visible_items()
+        # PopupMenu() asks the items' states first (EVT_UPDATE_UI)
+        self.PopupMenu(self._itemPopupMenu)
+
     def __init__(self, *args, **kwargs):
         self._itemPopupMenu = kwargs.pop("itemPopupMenu")
         super().__init__(*args, **kwargs)
         if self._itemPopupMenu is not None:
             # Determine if this is a ListCtrl or tree control
             # ListCtrl has GetItemRect but not GetRootItem
-            isListCtrl = hasattr(self, 'GetItemRect') and not hasattr(self, 'GetRootItem')
-            if isListCtrl:
+            is_list_ctrl = hasattr(self, "GetItemRect") and not hasattr(
+                self, "GetRootItem"
+            )
+            if is_list_ctrl:
                 # For ListCtrl: use EVT_LIST_ITEM_RIGHT_CLICK for item clicks
                 # (provides GetIndex() directly) and EVT_CONTEXT_MENU for empty space
                 self._attachPopupMenu(
@@ -110,16 +119,10 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         if not self._itemIsOk(item):
             # Clicked on empty space - clear selection and show popup
             self.clear_selection()
-            self._updateMenuUI()
-            self.PopupMenu(self._itemPopupMenu)
+            self._popup_item_menu()
         else:
             # Clicked on an item - let normal event handling take over
             event.Skip()
-
-    def _updateMenuUI(self):
-        """Update enabled state of menu items based on current selection."""
-        if hasattr(self._itemPopupMenu, '_update_menu_state'):
-            self._itemPopupMenu._update_menu_state()
 
     def on_item_popup_menu(self, event):
         """Handle popup menu for tree controls (EVT_TREE_ITEM_RIGHT_CLICK, EVT_CONTEXT_MENU)."""
@@ -136,7 +139,9 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         elif hasattr(event, "GetPosition"):
             pos = event.GetPosition()
             if pos != wx.DefaultPosition:
-                point = self.ScreenToClient(pos)
+                # In the rows' window, as HitTest() takes it: the
+                # control's own coordinates count the column header
+                point = self.GetMainWindow().ScreenToClient(pos)
         if point is not None:
             # Make sure the item under the mouse is selected because that
             # is what users expect and what is most user-friendly. Not all
@@ -146,15 +151,12 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
                 # Clicked on empty space - clear selection so menu items
                 # properly reflect no selection
                 self.clear_selection()
-                self._updateMenuUI()
-                self.PopupMenu(self._itemPopupMenu)
+                self._popup_item_menu()
                 return
             if not self.IsSelected(item):
                 self.clear_selection()
                 self.SelectItem(item)
-        # Update menu item enabled states and show popup
-        self._updateMenuUI()
-        self.PopupMenu(self._itemPopupMenu)
+        self._popup_item_menu()
 
     def on_list_item_right_click(self, event):
         """Handle EVT_LIST_ITEM_RIGHT_CLICK for ListCtrl controls.
@@ -170,9 +172,7 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
         if not self.IsSelected(item_index):
             self.clear_selection()
             self.Select(item_index, True)
-        # Update menu and show popup
-        self._updateMenuUI()
-        self.PopupMenu(self._itemPopupMenu)
+        self._popup_item_menu()
 
     def on_list_context_menu(self, event):
         """Handle EVT_CONTEXT_MENU for ListCtrl controls.
@@ -191,9 +191,7 @@ class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
                 return
             # Click on empty space - clear selection
             self.clear_selection()
-        # Update menu and show popup
-        self._updateMenuUI()
-        self.PopupMenu(self._itemPopupMenu)
+        self._popup_item_menu()
 
 
 class _CtrlWithColumnPopupMenuMixin(_CtrlWithPopupMenuMixin):
@@ -238,10 +236,6 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         self.__on_drop_files_callback = kwargs.pop("on_drop_files", None)
         self.__on_drop_mail_callback = kwargs.pop("on_drop_mail", None)
         self.__dropHighlightItem = None  # Track highlighted item during drag
-        # Hover-expand timer: auto-expand collapsed items after hover delay
-        self.__hoverExpandTimerId = wx.NewIdRef()
-        self.__hoverExpandTimer = None  # Created lazily when drop target is set
-        self.__hoverExpandItem = None  # Item currently being hovered for expansion
         super().__init__(*args, **kwargs)
         if (
             self.__on_drop_url_callback
@@ -255,100 +249,55 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
                 self.on_drag_over,
             )
             self.GetMainWindow().SetDropTarget(drop_target)
-            # Initialize hover-expand timer
-            self.__hoverExpandTimer = wx.Timer(self, self.__hoverExpandTimerId)
-            self.Bind(wx.EVT_TIMER, self.__onHoverExpandTimer, id=self.__hoverExpandTimerId)
 
     def on_drop_url(self, x, y, url):
         self._clearDropHighlight()  # Clear highlight on drop
-        self.__stopHoverExpandTimer()  # Cancel any pending expand
+        draganddrop.hover_expander(self).stop()
         item = self.HitTest((x, y))[0]
         if self.__on_drop_url_callback:
             self.__on_drop_url_callback(self._objectBelongingTo(item), url)
 
     def on_drop_files(self, x, y, filenames):
         self._clearDropHighlight()  # Clear highlight on drop
-        self.__stopHoverExpandTimer()  # Cancel any pending expand
+        draganddrop.hover_expander(self).stop()
         item = self.HitTest((x, y))[0]
         if self.__on_drop_files_callback:
-            self.__on_drop_files_callback(self._objectBelongingTo(item), filenames)
+            self.__on_drop_files_callback(
+                self._objectBelongingTo(item), filenames
+            )
 
-    def on_drop_mail(self, x, y, mail):
+    def on_drop_mail(self, x, y, mails):
         self._clearDropHighlight()  # Clear highlight on drop
-        self.__stopHoverExpandTimer()  # Cancel any pending expand
+        draganddrop.hover_expander(self).stop()
         item = self.HitTest((x, y))[0]
         if self.__on_drop_mail_callback:
-            self.__on_drop_mail_callback(self._objectBelongingTo(item), mail)
+            self.__on_drop_mail_callback(self._objectBelongingTo(item), mails)
 
     def on_drag_over(self, x, y, defaultResult):
         item, flags = self.HitTest((x, y))[:2]
         if self._itemIsOk(item):
             # Auto-expand collapsed items on hover (modern UX behavior)
-            self.__handleHoverExpand(item, flags)
+            draganddrop.hover_expander(self).hover(item, flags)
             # Highlight the row being hovered over
             self._setDropHighlight(item)
         else:
             self._clearDropHighlight()
-            self.__stopHoverExpandTimer()
+            draganddrop.hover_expander(self).stop()
         return defaultResult
-
-    def __handleHoverExpand(self, item, flags):
-        """Handle auto-expand of collapsed items during drag hover.
-
-        Expands collapsed items after a brief hover delay (500ms) for better UX.
-        Immediate expand when hovering directly on the expand button.
-        """
-        # Immediate expand when on the expand/collapse button
-        if flags & wx.TREE_HITTEST_ONITEMBUTTON:
-            self.__stopHoverExpandTimer()
-            self.Expand(item)
-            return
-
-        # Check if item is expandable (has children and is collapsed)
-        try:
-            isExpandable = self.ItemHasChildren(item) and not self.IsExpanded(item)
-        except (RuntimeError, AttributeError):
-            isExpandable = False
-
-        if isExpandable:
-            # Start or continue timer for this item
-            if item != self.__hoverExpandItem:
-                self.__hoverExpandItem = item
-                if self.__hoverExpandTimer:
-                    self.__hoverExpandTimer.Start(500, oneShot=True)
-        else:
-            # Not over an expandable item, cancel any pending expand
-            self.__stopHoverExpandTimer()
-
-    def __stopHoverExpandTimer(self):
-        """Stop the hover-expand timer and clear state."""
-        if self.__hoverExpandTimer:
-            self.__hoverExpandTimer.Stop()
-        self.__hoverExpandItem = None
-
-    def __onHoverExpandTimer(self, event):
-        """Timer fired - expand the hovered item."""
-        if self.__hoverExpandItem:
-            try:
-                if self.ItemHasChildren(self.__hoverExpandItem) and not self.IsExpanded(self.__hoverExpandItem):
-                    self.Expand(self.__hoverExpandItem)
-            except (RuntimeError, AttributeError):
-                pass  # Item may have been deleted
-        self.__hoverExpandItem = None
 
     def _setDropHighlight(self, item):
         """Set visual highlight on item during drag-over."""
         if item != self.__dropHighlightItem:
             self.__dropHighlightItem = item
             # Use SetDragItem which is used by internal DnD for highlighting
-            if hasattr(self, 'SetDragItem'):
+            if hasattr(self, "SetDragItem"):
                 self.SetDragItem(item)
 
     def _clearDropHighlight(self):
         """Clear any existing drop highlight."""
         if self.__dropHighlightItem is not None:
             self.__dropHighlightItem = None
-            if hasattr(self, 'SetDragItem'):
+            if hasattr(self, "SetDragItem"):
                 try:
                     self.SetDragItem(None)
                 except Exception:
@@ -416,9 +365,6 @@ class Column(object):
         self.__editCallback = kwargs.get("editCallback", None)
         self.__editControlClass = kwargs.get("editControl", None)
         self.__parse = kwargs.get("parse", lambda value: value)
-        self.__settings = kwargs.get(
-            "settings", None
-        )  # FIXME: Column shouldn't need to know about settings
 
     def name(self):
         return self.__name
@@ -441,20 +387,16 @@ class Column(object):
         if self.__sortCallback:
             self.__sortCallback(*args, **kwargs)
 
-    def __filterArgs(self, func, kwargs):
-        actualKwargs = dict()
-        argNames = inspect.getargspec(func).args
-        return dict(
-            [
-                (name, value)
-                for name, value in list(kwargs.items())
-                if name in argNames
-            ]
-        )
+    @staticmethod
+    def __accepted(func, kwargs):
+        """The keyword arguments func takes."""
+        spec = inspect.getfullargspec(func)
+        names = spec.args + spec.kwonlyargs
+        return {name: value for name, value in kwargs.items() if name in names}
 
     def render(self, *args, **kwargs):
         return self.__renderCallback(
-            *args, **self.__filterArgs(self.__renderCallback, kwargs)
+            *args, **self.__accepted(self.__renderCallback, kwargs)
         )
 
     def defaultRenderer(self, *args, **kwargs):  # pylint: disable=W0613
@@ -488,10 +430,8 @@ class Column(object):
 
     def editControl(self, parent, item, columnIndex, domainObject):
         value = self.value(domainObject)
-        kwargs = dict(settings=self.__settings) if self.__settings else dict()
-        # pylint: disable=W0142
         return self.__editControlClass(
-            parent, wx.ID_ANY, item, columnIndex, parent, value, **kwargs
+            parent, wx.ID_ANY, item, columnIndex, parent, value
         )
 
     def parse(self, value):
@@ -553,9 +493,6 @@ class _BaseCtrlWithColumnsMixin(object):
                 newMap.append((colIndex, col))
         self.__indexMap = newMap
         self.DeleteColumn(columnIndex)
-
-    def _allColumns(self):
-        return self.__allColumns
 
     def _getColumn(self, columnIndex):
         for colIndex, col in self.__indexMap:
@@ -635,9 +572,9 @@ class _CtrlWithSortableColumnsMixin(_BaseCtrlWithColumnsMixin):
         columnIndex = event.GetColumn()
         if 0 <= columnIndex < self.GetColumnCount():
             column = self._getColumn(columnIndex)
-            # Use CallAfter to make sure the window this control is in is
+            # Later, to make sure the window this control is in is
             # activated before we process the column click:
-            wx.CallAfter(self.__safeColumnSort, column, event)
+            patterns.later.soon(self, self.__safeColumnSort, column, event)
 
     def __safeColumnSort(self, column, event):
         """Safely call column.sort, guarding against deleted C++ objects."""
@@ -684,6 +621,7 @@ class _CtrlWithAutoResizedColumnsMixin(autowidth.AutoColumnWidthMixin):
     automatically fills remaining window space. When disabled, columns use
     standard wxWidgets resize behavior.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.Bind(wx.EVT_LIST_COL_END_DRAG, self.on_end_column_resize)

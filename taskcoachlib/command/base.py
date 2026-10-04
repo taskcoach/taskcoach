@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.domain import date
 from taskcoachlib.i18n import _
 from .clipboard import Clipboard
 
@@ -31,15 +30,6 @@ class BaseCommand(patterns.Command):
         super().__init__(*args, **kwargs)
         self.list = list
         self.items = [item for item in items] if items else []
-        self.save_modification_datetimes()
-
-    def save_modification_datetimes(self):
-        self.__old_modification_datetimes = [
-            (item, item.modificationDateTime())
-            for item in self.modified_items()
-            if item
-        ]
-        self.__now = date.Now()
 
     def __str__(self):
         return self.name()
@@ -65,91 +55,16 @@ class BaseCommand(patterns.Command):
         """The items this command operates on."""
         return self.items
 
-    def modified_items(self):
-        """Return the items that are modified by this command."""
-        return self.items
-
-    def canDo(self):
+    def can_do(self):
         return bool(self.items)
 
     def do(self):
-        if self.canDo():
+        if self.can_do():
             super().do()
-            self.do_command()
-
-    def undo(self):
-        super().undo()
-        self.undo_command()
-
-    def redo(self):
-        super().redo()
-        self.redo_command()
-
-    def __tryInvokeMethodOnSuper(self, methodName, *args, **kwargs):
-        try:
-            method = getattr(super(), methodName)
-        except AttributeError:
-            return  # no 'method' in any super class
-        return method(*args, **kwargs)
-
-    def do_command(self):
-        self.__tryInvokeMethodOnSuper("do_command")
-        for item in self.modified_items():
-            item.setModificationDateTime(self.__now)
-
-    def undo_command(self):
-        self.__tryInvokeMethodOnSuper("undo_command")
-        for (
-            item,
-            old_modification_datetime,
-        ) in self.__old_modification_datetimes:
-            item.setModificationDateTime(old_modification_datetime)
-
-    def redo_command(self):
-        self.__tryInvokeMethodOnSuper("redo_command")
-        for item in self.modified_items():
-            item.setModificationDateTime(self.__now)
-
-
-class SaveStateMixin(object):
-    """Mixin class for commands that need to keep the states of objects.
-    Objects should provide __getstate__ and __setstate__ methods."""
-
-    # pylint: disable=W0201
-
-    def saveStates(self, objects):
-        self.objectsToBeSaved = objects
-        self.oldStates = self.__getStates()
-
-    @patterns.eventSource
-    def undoStates(self, event=None):
-        self.newStates = self.__getStates()
-        self.__setStates(self.oldStates, event=event)
-
-    @patterns.eventSource
-    def redoStates(self, event=None):
-        self.__setStates(self.newStates, event=event)
-
-    def __getStates(self):
-        return [
-            objectToBeSaved.__getstate__()
-            for objectToBeSaved in self.objectsToBeSaved
-        ]
-
-    @patterns.eventSource
-    def __setStates(self, states, event=None):
-        for objectToBeSaved, state in zip(self.objectsToBeSaved, states):
-            objectToBeSaved.__setstate__(state, event=event)
 
 
 class CompositeMixin(object):
     """Mixin class for commands that deal with composites."""
-
-    def getAncestors(self, composites):
-        ancestors = []
-        for composite in composites:
-            ancestors.extend(composite.ancestors())
-        return ancestors
 
     def getAllChildren(self, composites):
         allChildren = []
@@ -174,25 +89,9 @@ class NewItemCommand(BaseCommand):
     def items_are_new(self):
         return True
 
-    def modified_items(self):
-        return []
-
     @patterns.eventSource
     def do_command(self, event=None):
         super().do_command()
-        self.list.extend(
-            self.items
-        )  # Don't use the event to force this change to be notified first
-        event.addSource(self, type="newitem", *self.items)
-
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command()
-        self.list.removeItems(self.items, event=event)
-
-    @patterns.eventSource
-    def redo_command(self, event=None):
-        super().redo_command()
         self.list.extend(
             self.items
         )  # Don't use the event to force this change to be notified first
@@ -206,87 +105,31 @@ class NewSubItemCommand(NewItemCommand):
         # interesting because it's something like 'New subitem'.
         return subitem.parent().subject()
 
-    def modified_items(self):
-        return [item.parent() for item in self.items]
-
 
 class CopyCommand(BaseCommand):
-    plular_name = _("Copy")
+    plural_name = _("Copy")
     singular_name = _('Copy "%s"')
 
     def do_command(self):
-        self.__copies = [
-            item.copy() for item in self.items
-        ]  # pylint: disable=W0201
-        Clipboard().put(self.__copies, self.list)
-
-    def undo_command(self):
-        Clipboard().clear()
-
-    def redo_command(self):
-        Clipboard().put(self.__copies, self.list)
+        Clipboard().put([item.copy() for item in self.items], self.list)
 
 
-class DeleteCommand(BaseCommand, SaveStateMixin):
+class DeleteCommand(BaseCommand):
     plural_name = _("Delete")
     singular_name = _('Delete "%s"')
 
-    def __init__(self, *args, **kwargs):
-        self.__shadow = kwargs.pop("shadow", False)
-        super().__init__(*args, **kwargs)
-
-    def modified_items(self):
-        return [item.parent() for item in self.items if item.parent()]
-
     def do_command(self):
         super().do_command()
-        if self.__shadow:
-            self.saveStates(self.items)
-
-            for item in self.items:
-                item.markDeleted()
-        else:
-            self.list.removeItems(self.items)
-
-    def undo_command(self):
-        super().undo_command()
-        if self.__shadow:
-            self.undoStates()
-        else:
-            self.list.extend(self.items)
-
-    def redo_command(self):
-        super().redo_command()
-        if self.__shadow:
-            self.redoStates()
-        else:
-            self.list.removeItems(self.items)
+        self.list.removeItems(self.items)
 
 
 class CutCommandMixin(object):
     plural_name = _("Cut")
     singular_name = _('Cut "%s"')
 
-    def __putItemsOnClipboard(self):
-        cb = Clipboard()
-        self.__previousClipboardContents = cb.get()  # pylint: disable=W0201
-        cb.put(self.itemsToCut(), self.sourceOfItemsToCut())
-
-    def __removeItemsFromClipboard(self):
-        cb = Clipboard()
-        cb.put(*self.__previousClipboardContents)
-
     def do_command(self):
-        self.__putItemsOnClipboard()
+        Clipboard().put(self.itemsToCut(), self.sourceOfItemsToCut(), cut=True)
         super().do_command()
-
-    def undo_command(self):
-        self.__removeItemsFromClipboard()
-        super().undo_command()
-
-    def redo_command(self):
-        self.__putItemsOnClipboard()
-        super().redo_command()
 
 
 class CutCommand(CutCommandMixin, DeleteCommand):
@@ -297,7 +140,7 @@ class CutCommand(CutCommandMixin, DeleteCommand):
         return self.list
 
 
-class PasteCommand(BaseCommand, SaveStateMixin):
+class PasteCommand(BaseCommand):
     """Command to paste items from the clipboard.
 
     When a destination container is provided via the constructor, items are
@@ -306,6 +149,7 @@ class PasteCommand(BaseCommand, SaveStateMixin):
     destination for paste operations, such as when pasting between tasks
     in the task editor dialog.
     """
+
     plural_name = _("Paste")
     singular_name = _('Paste "%s"')
 
@@ -314,35 +158,23 @@ class PasteCommand(BaseCommand, SaveStateMixin):
         self.__itemsToPaste, self.__sourceOfItemsToPaste = (
             self.getItemsToPaste()
         )
-        self.saveStates(self.getItemsToSave())
 
-    def getItemsToSave(self):
-        return self.__itemsToPaste
-
-    def canDo(self):
+    def can_do(self):
         return bool(self.__itemsToPaste)
 
     def do_command(self):
         self.setParentOfPastedItems()
         self.__sourceOfItemsToPaste.extend(self.__itemsToPaste)
 
-    def undo_command(self):
-        self.__sourceOfItemsToPaste.removeItems(self.__itemsToPaste)
-        self.undoStates()
-
-    def redo_command(self):
-        self.redoStates()
-        self.__sourceOfItemsToPaste.extend(self.__itemsToPaste)
-
     def setParentOfPastedItems(self, newParent=None):
         for item in self.__itemsToPaste:
-            item.setParent(newParent)
+            item.set_parent(newParent)
 
     def getItemsToPaste(self):
-        items, source = Clipboard().get()
+        _items, source = Clipboard().get()
         # Use provided destination container, or fall back to clipboard's source container
         target = self.list if self.list is not None else source
-        return [item.copy() for item in items], target
+        return Clipboard().items_to_paste(), target
 
 
 class PasteAsSubItemCommand(PasteCommand, CompositeMixin):
@@ -353,11 +185,8 @@ class PasteAsSubItemCommand(PasteCommand, CompositeMixin):
         newParent = self.items[0]
         super().setParentOfPastedItems(newParent)
 
-    def getItemsToSave(self):
-        return self.getAncestors([self.items[0]]) + super().getItemsToSave()
 
-
-class DragAndDropCommand(BaseCommand, SaveStateMixin, CompositeMixin):
+class DragAndDropCommand(BaseCommand, CompositeMixin):
     plural_name = _("Drag and drop")
     singular_name = _('Drag and drop "%s"')
 
@@ -365,28 +194,8 @@ class DragAndDropCommand(BaseCommand, SaveStateMixin, CompositeMixin):
         dropTargets = kwargs.pop("drop")
         self._itemToDropOn = dropTargets[0] if dropTargets else None
         super().__init__(*args, **kwargs)
-        self.saveStates(self.getItemsToSave())
 
-    def getItemsToSave(self):
-        toSave = self.items[:]
-        if self._itemToDropOn is not None:
-            toSave.insert(0, self._itemToDropOn)
-        # Completion cascades up both trees: the new parent's completed
-        # ancestors reopen, the old parent's ancestors may complete
-        for ancestor in self.getAncestors(toSave):
-            if not any(ancestor is item for item in toSave):
-                toSave.append(ancestor)
-        return toSave
-
-    def modified_items(self):
-        return (
-            [item.parent() for item in self.items if item.parent()]
-            + [self._itemToDropOn]
-            if self._itemToDropOn
-            else []
-        )
-
-    def canDo(self):
+    def can_do(self):
         return self._itemToDropOn not in (
             self.items
             + self.getAllChildren(self.items)
@@ -397,19 +206,7 @@ class DragAndDropCommand(BaseCommand, SaveStateMixin, CompositeMixin):
         super().do_command()
         self.list.removeItems(self.items)
         for item in self.items:
-            item.setParent(self._itemToDropOn)
-        self.list.extend(self.items)
-
-    def undo_command(self):
-        super().undo_command()
-        self.list.removeItems(self.items)
-        self.undoStates()
-        self.list.extend(self.items)
-
-    def redo_command(self):
-        super().redo_command()
-        self.list.removeItems(self.items)
-        self.redoStates()
+            item.set_parent(self._itemToDropOn)
         self.list.extend(self.items)
 
 
@@ -441,16 +238,10 @@ class OrderingDragAndDropCommand(DragAndDropCommand):
         # Everything, almost
         return [item for item in self.list if item not in self.items]
 
-    def getItemsToSave(self):
-        items = super().getItemsToSave()
-        if self.isOrdering():
-            items.extend(self.getOrderingSiblings())
-        return items
-
-    def canDo(self):
+    def can_do(self):
         if self.isOrdering():
             return True  # Already checked when drag and droppin
-        return super().canDo()
+        return super().can_do()
 
     def do_command(self):
         if self.isOrdering():
@@ -493,20 +284,6 @@ class OrderingDragAndDropCommand(DragAndDropCommand):
                         item.ordering()
                         for idx, item in enumerate(siblings)
                         if idx < insertIndex
-                    ]
-                )
-                minOrderingOfPreviousSiblings = min(
-                    [
-                        item.ordering()
-                        for idx, item in enumerate(siblings)
-                        if idx < insertIndex
-                    ]
-                )
-                maxOrderingOfNextSiblings = max(
-                    [
-                        item.ordering()
-                        for idx, item in enumerate(siblings)
-                        if idx >= insertIndex
                     ]
                 )
                 minOrderingOfNextSiblings = min(
@@ -563,22 +340,12 @@ class EditSubjectCommand(BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newSubject = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__old_subjects = [(item, item.subject()) for item in self.items]
 
     @patterns.eventSource
     def do_command(self, event=None):
         super().do_command()
         for item in self.items:
             item.setSubject(self.__newSubject, event=event)
-
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command()
-        for item, old_subject in self.__old_subjects:
-            item.setSubject(old_subject, event=event)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditDescriptionCommand(BaseCommand):
@@ -588,7 +355,6 @@ class EditDescriptionCommand(BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__new_description = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__old_descriptions = [item.description() for item in self.items]
 
     @patterns.eventSource
     def do_command(self, event=None):
@@ -596,50 +362,20 @@ class EditDescriptionCommand(BaseCommand):
         for item in self.items:
             item.setDescription(self.__new_description, event=event)
 
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command()
-        for item, old_description in zip(self.items, self.__old_descriptions):
-            item.setDescription(old_description, event=event)
-
-    def redo_command(self):
-        self.do_command()
-
 
 class EditIconCommand(BaseCommand):
     plural_name = _("Change icons")
     singular_name = _('Change icon "%s"')
 
     def __init__(self, *args, **kwargs):
-        self.__new_icon_id = new_icon_id = kwargs.pop("newValue")
-        self.__new_selected_icon_id = (
-            new_icon_id[: -len("_icon")] + "_open_icon"
-            if (new_icon_id.startswith("folder") and new_icon_id.count("_") == 2)
-            else new_icon_id
-        )
+        self.__new_icon_id = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__old_icon_ids = [
-            (item.icon_id(), item.selected_icon_id()) for item in self.items
-        ]
 
     @patterns.eventSource
     def do_command(self, event=None):
         super().do_command()
         for item in self.items:
             item.set_icon_id(self.__new_icon_id, event=event)
-            item.set_selected_icon_id(self.__new_selected_icon_id, event=event)
-
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command()
-        for item, (old_icon_id, old_selected_icon_id) in zip(
-            self.items, self.__old_icon_ids
-        ):
-            item.set_icon_id(old_icon_id, event=event)
-            item.set_selected_icon_id(old_selected_icon_id, event=event)
-
-    def redo_command(self):
-        self.do_command()
 
 
 class EditFontCommand(BaseCommand):
@@ -649,7 +385,6 @@ class EditFontCommand(BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newFont = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldFonts = [item.font() for item in self.items]
 
     @patterns.eventSource
     def do_command(self, event=None):
@@ -657,25 +392,11 @@ class EditFontCommand(BaseCommand):
         for item in self.items:
             item.setFont(self.__newFont, event=event)
 
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command()
-        for item, oldFont in zip(self.items, self.__oldFonts):
-            item.setFont(oldFont, event=event)
-
-    def redo_command(self):
-        self.do_command()
-
 
 class EditColorCommand(BaseCommand):
     def __init__(self, *args, **kwargs):
         self.__newColor = kwargs.pop("newValue")
         super().__init__(*args, **kwargs)
-        self.__oldColors = [self.getItemColor(item) for item in self.items]
-
-    @staticmethod
-    def getItemColor(item):
-        raise NotImplementedError
 
     @staticmethod
     def setItemColor(item, color, event):
@@ -687,23 +408,10 @@ class EditColorCommand(BaseCommand):
         for item in self.items:
             self.setItemColor(item, self.__newColor, event)
 
-    @patterns.eventSource
-    def undo_command(self, event=None):
-        super().undo_command()
-        for item, oldColor in zip(self.items, self.__oldColors):
-            self.setItemColor(item, oldColor, event)
-
-    def redo_command(self):
-        self.do_command()
-
 
 class EditForegroundColorCommand(EditColorCommand):
     plural_name = _("Change foreground colors")
     singular_name = _('Change foreground color "%s"')
-
-    @staticmethod
-    def getItemColor(item):
-        return item.foregroundColor()
 
     @staticmethod
     def setItemColor(item, color, event):
@@ -713,10 +421,6 @@ class EditForegroundColorCommand(EditColorCommand):
 class EditBackgroundColorCommand(EditColorCommand):
     plural_name = _("Change background colors")
     singular_name = _('Change background color "%s"')
-
-    @staticmethod
-    def getItemColor(item):
-        return item.backgroundColor()
 
     @staticmethod
     def setItemColor(item, color, event):

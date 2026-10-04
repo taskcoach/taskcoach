@@ -63,7 +63,7 @@ picker.GetSelectedBgColour() / picker.SetSelectedBgColour(colour)
 `SetCanFocus(False)` is unreliable on native GTK widgets (only works on pure Python controls like `GenButton`). The cross-platform approach uses two event bindings:
 
 1. **`EVT_NAVIGATION_KEY`** — intercepts tab traversal before focus is set. Calls `Navigate(event.GetDirection())` to skip the control while preserving forward/backward direction (Tab vs Shift+Tab).
-2. **`EVT_SET_FOCUS`** — catches click-focus and any other focus paths. Checks `wx.GetKeyState(wx.WXK_SHIFT)` to determine direction, then calls `wx.CallAfter(self.Navigate, forward)` to move focus away in the correct direction.
+2. **`EVT_SET_FOCUS`**: catches click-focus and any other focus paths. Checks `wx.GetKeyState(wx.WXK_SHIFT)` to determine direction, then calls `patterns.later.soon(self, self.Navigate, forward)` to move focus away in the correct direction.
 
 This pattern is used by:
 - **FontPickerCtrl**: binds both events when `readOnly=True`.

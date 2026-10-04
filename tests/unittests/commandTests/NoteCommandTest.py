@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittests import asserts
 from .CommandTestCase import CommandTestCase
 from taskcoachlib import command, patterns
-from taskcoachlib.domain import base, note, category, task
+from taskcoachlib.domain import base, note, category
 
 
 class NoteOwnerUnderTest(note.NoteOwner, base.Object):
@@ -28,8 +28,9 @@ class NoteOwnerUnderTest(note.NoteOwner, base.Object):
 
 class NoteCommandTestCase(CommandTestCase, asserts.CommandAssertsMixin):
     def setUp(self):
-        self.notes = note.NoteContainer()
-        self.taskList = task.TaskList()
+        super().setUp()
+        self.notes = self.task_file.notes()
+        self.taskList = self.task_file.tasks()
 
 
 class NewNoteCommandTest(NoteCommandTestCase):
@@ -64,6 +65,49 @@ class AddNoteCommandTest(NoteCommandTestCase):
         self.assertTrue(
             owner.notes()[0].parent() is None
         )  # pylint: disable=E1101
+
+    def cut_subnote(self):
+        # As in the task editor, whose notes page lists its owner's
+        # notes
+        self.owner = NoteOwnerUnderTest()
+        self.parent = note.Note(subject="parent")
+        self.child = note.Note(subject="child")
+        self.parent.addChild(self.child)
+        self.owner.addNote(self.parent)
+        notes = note.NoteContainer(self.owner.notes())
+        command.CutCommand(notes, [self.child]).do()
+
+    def assert_child_back_under_its_parent(self):
+        self.undo()  # The paste
+        self.undo()  # The cut
+        self.assertEqual(
+            (self.parent, [self.child]),
+            (self.child.parent(), self.parent.children()),
+        )
+
+    def test_undoing_a_moved_subnote_puts_it_back(self):
+        self.cut_subnote()
+        pasted = command.Clipboard().items_to_paste()
+        command.AddNoteCommand(None, [self.owner], notes=pasted).do()
+        self.assertIsNone(self.child.parent())
+        self.assert_child_back_under_its_parent()
+
+    def test_undoing_a_subnote_moved_as_subnote_puts_it_back(self):
+        self.cut_subnote()
+        other = note.Note(subject="other")
+        self.owner.addNote(other)
+        pasted = command.Clipboard().items_to_paste()
+        command.AddSubNoteCommand(
+            None, [other], owner=self.owner, notes=pasted
+        ).do()
+        self.assertEqual(other, self.child.parent())
+        self.assert_child_back_under_its_parent()
+
+    def test_every_pasted_note_is_added(self):
+        owner = NoteOwnerUnderTest()
+        pasted = [note.Note(subject="a"), note.Note(subject="b")]
+        command.AddNoteCommand(None, [owner] * 2, notes=pasted).do()
+        self.assertEqual(pasted, owner.notes())
 
 
 class NewSubNoteCommandTest(NoteCommandTestCase):
@@ -108,15 +152,15 @@ class DragAndDropNoteCommand(NoteCommandTestCase):
 
     def testCannotDropOnParent(self):
         self.dragAndDrop([self.parent], [self.child])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testCannotDropOnChild(self):
         self.dragAndDrop([self.child], [self.parent])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testCannotDropOnGrandchild(self):
         self.dragAndDrop([self.grandchild], [self.parent])
-        self.assertFalse(patterns.CommandHistory().hasHistory())
+        self.assertFalse(patterns.CommandHistory().has_history())
 
     def testDropAsRootTask(self):
         self.dragAndDrop([], [self.grandchild])

@@ -21,7 +21,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import os, wx
-from taskcoachlib import command, widgets
+from taskcoachlib import render, widgets
+from taskcoachlib.config import settings
 from taskcoachlib.domain import attachment
 from taskcoachlib.i18n import _
 from taskcoachlib.gui import uicommand, dialog
@@ -41,7 +42,6 @@ class AttachmentViewer(
     SorterClass = attachment.AttachmentSorter
     defaultTitle = _("Attachments")
     coreObjectType = "attachments"
-
 
     # Map type_ values to human-readable names
     TYPE_NAMES = {
@@ -64,6 +64,7 @@ class AttachmentViewer(
         location = anAttachment.location()
         if location.startswith("file://"):
             import urllib.request
+
             try:
                 path = urllib.request.url2pathname(location[7:])
                 return os.path.isdir(path)
@@ -84,14 +85,22 @@ class AttachmentViewer(
             (None, [item.location()]),
         ]
         if item.description():
-            lines = [line.rstrip("\r") for line in item.description().split("\n")]
+            lines = [
+                line.rstrip("\r") for line in item.description().split("\n")
+            ]
             if lines and lines != [""]:
                 result.append((None, lines))
         return result
 
-    def _addAttachments(self, attachments, item, **itemDialogKwargs):
+    @staticmethod
+    def render_sent_datetime(item, human_readable=True):
+        return render.dateTime(
+            item.sent_datetime(), human_readable=human_readable
+        )
+
+    def _add_attachments(self, attachments, item, **item_dialog_kwargs):
         # Don't try to add attachments to attachments.
-        super()._addAttachments(attachments, None, **itemDialogKwargs)
+        super()._add_attachments(attachments, None, **item_dialog_kwargs)
 
     def domainObjectsToView(self):
         return self.attachments
@@ -102,10 +111,10 @@ class AttachmentViewer(
     def getSupportedPasteTypes(self):
         return (attachment.Attachment,)
 
-    def createWidget(self):
+    def create_widget(self):
         imageList = self.createImageList()
         itemPopupMenu = taskcoachlib.gui.menu.AttachmentPopupMenu(
-            self.parent, self.settings, self.presentation(), self
+            self.parent, self.presentation(), self
         )
         columnPopupMenu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
         self._popupMenus.extend([itemPopupMenu, columnPopupMenu])
@@ -118,7 +127,7 @@ class AttachmentViewer(
             itemPopupMenu,
             columnPopupMenu,
             resizeableColumn=1,
-            **self.widgetCreationKeywordArguments()
+            **self.widgetCreationKeywordArguments(),
         )
         widget.SetColumnWidth(0, 150)
         widget.SetImageList(imageList, wx.IMAGE_LIST_SMALL)
@@ -129,7 +138,6 @@ class AttachmentViewer(
             widgets.Column(
                 "type",
                 _("Type"),
-                "",
                 width=self.getColumnWidth("type"),
                 imageIndicesCallback=self.typeImageIndices,
                 renderCallback=self.getTypeName,
@@ -149,6 +157,63 @@ class AttachmentViewer(
                 ),
                 width=self.getColumnWidth("subject"),
                 renderCallback=lambda item: item.subject(),
+                resizeCallback=self.onResizeColumn,
+            ),
+            widgets.Column(
+                "location",
+                _("Location"),
+                attachment.Attachment.locationChangedEventType(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self,
+                    value="location",
+                    menu_text=_("&Location"),
+                    help_text=_("Sort by location"),
+                ),
+                width=self.getColumnWidth("location"),
+                renderCallback=lambda item: item.location(),
+                resizeCallback=self.onResizeColumn,
+            ),
+            # A mail's fields (docs/EMAIL_ATTACHMENTS.md)
+            widgets.Column(
+                "fromName",
+                _("From"),
+                attachment.MailAttachment.mail_changed_event_type(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self,
+                    value="fromName",
+                    menu_text=_("&From"),
+                    help_text=_("Sort by sender"),
+                ),
+                width=self.getColumnWidth("fromName"),
+                renderCallback=lambda item: item.from_name(),
+                resizeCallback=self.onResizeColumn,
+            ),
+            widgets.Column(
+                "fromAddress",
+                _("From address"),
+                attachment.MailAttachment.mail_changed_event_type(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self,
+                    value="fromAddress",
+                    menu_text=_("From &address"),
+                    help_text=_("Sort by sender address"),
+                ),
+                width=self.getColumnWidth("fromAddress"),
+                renderCallback=lambda item: item.from_address(),
+                resizeCallback=self.onResizeColumn,
+            ),
+            widgets.Column(
+                "sentDateTime",
+                _("Sent"),
+                attachment.MailAttachment.mail_changed_event_type(),
+                sortCallback=uicommand.ViewerSortByCommand(
+                    viewer=self,
+                    value="sentDateTime",
+                    menu_text=_("&Sent"),
+                    help_text=_("Sort by sent date"),
+                ),
+                width=self.getColumnWidth("sentDateTime"),
+                renderCallback=self.render_sent_datetime,
                 resizeCallback=self.onResizeColumn,
             ),
             widgets.Column(
@@ -176,7 +241,9 @@ class AttachmentViewer(
                 width=self.getColumnWidth("notes"),
                 alignment=wx.LIST_FORMAT_LEFT,
                 imageIndicesCallback=self.noteImageIndices,  # pylint: disable=E1101
-                headerImageIndex=image_list_cache.get_index("nuvola_apps_knotes"),
+                headerImageIndex=image_list_cache.get_index(
+                    "nuvola_apps_knotes"
+                ),
                 renderCallback=lambda item: "",
                 resizeCallback=self.onResizeColumn,
             ),
@@ -196,6 +263,14 @@ class AttachmentViewer(
             widgets.Column(
                 "modificationDateTime",
                 _("Modification date"),
+                *[
+                    each.modification_datetime_changed_event_type()
+                    for each in (
+                        attachment.FileAttachment,
+                        attachment.URIAttachment,
+                        attachment.MailAttachment,
+                    )
+                ],
                 width=self.getColumnWidth("modificationDateTime"),
                 renderCallback=self.renderModificationDateTime,
                 sortCallback=uicommand.ViewerSortByCommand(
@@ -205,7 +280,6 @@ class AttachmentViewer(
                     help_text=_("Sort by last modification date"),
                 ),
                 resizeCallback=self.onResizeColumn,
-                *attachment.Attachment.modificationEventTypes()
             ),
             widgets.Column(
                 "id",
@@ -224,10 +298,32 @@ class AttachmentViewer(
 
     def createColumnUICommands(self):
         return [
-            uicommand.ToggleAutoColumnResizing(
-                viewer=self, settings=self.settings
-            ),
+            uicommand.ToggleAutoColumnResizing(viewer=self),
             uicommand.Separator(),
+            uicommand.ViewColumn(
+                menu_text=_("&Location"),
+                help_text=_("Show/hide location column"),
+                setting="location",
+                viewer=self,
+            ),
+            uicommand.ViewColumn(
+                menu_text=_("&From"),
+                help_text=_("Show/hide sender column"),
+                setting="fromName",
+                viewer=self,
+            ),
+            uicommand.ViewColumn(
+                menu_text=_("From &address"),
+                help_text=_("Show/hide sender address column"),
+                setting="fromAddress",
+                viewer=self,
+            ),
+            uicommand.ViewColumn(
+                menu_text=_("&Sent"),
+                help_text=_("Show/hide sent date column"),
+                setting="sentDateTime",
+                viewer=self,
+            ),
             uicommand.ViewColumn(
                 menu_text=_("&Description"),
                 help_text=_("Show/hide description column"),
@@ -264,7 +360,6 @@ class AttachmentViewer(
         return (
             uicommand.AttachmentNew(
                 attachments=self.presentation(),
-                settings=self.settings,
                 viewer=self,
             ),
         ) + super().createCreationToolBarUICommands()
@@ -274,7 +369,6 @@ class AttachmentViewer(
             uicommand.AttachmentOpen(
                 attachments=attachment.AttachmentList(),
                 viewer=self,
-                settings=self.settings,
             ),
         ) + super().createActionToolBarUICommands()
 
@@ -282,19 +376,27 @@ class AttachmentViewer(
         self, anAttachment, exists=os.path.exists
     ):  # pylint: disable=W0613
         if anAttachment.type_ == "file":
-            attachmentBase = self.settings.get("file", "attachmentbase")
-            if exists(anAttachment.normalizedLocation(attachmentBase)):
-                index = image_list_cache.get_index("nuvola_mimetypes_application-x-dvi")
+            attachment_base = settings.file.attachmentbase
+            if exists(anAttachment.normalizedLocation(attachment_base)):
+                index = image_list_cache.get_index(
+                    "nuvola_mimetypes_application-x-dvi"
+                )
             else:
-                index = image_list_cache.get_index("taskcoach_actions_fileopen_red")
+                index = image_list_cache.get_index(
+                    "taskcoach_actions_fileopen_red"
+                )
         elif self._isFolderUri(anAttachment):
             # Folder URI - use folder icon
-            index = image_list_cache.get_index("nuvola_mimetypes_inode-directory")
+            index = image_list_cache.get_index(
+                "nuvola_mimetypes_inode-directory"
+            )
         else:
             try:
                 index = image_list_cache.get_index(
-                    {"uri": "nuvola_categories_applications-internet",
-                     "mail": "nuvola_apps_email"}[anAttachment.type_]
+                    {
+                        "uri": "nuvola_categories_applications-internet",
+                        "mail": "nuvola_apps_email",
+                    }[anAttachment.type_]
                 )
             except KeyError:
                 index = -1

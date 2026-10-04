@@ -126,7 +126,9 @@ running owner.
 Within one process, `acquire()` returns the lock already held for that
 path. This is how the task file adopts the lock taken by the early
 startup check, or by File > Open before it closes the current file,
-without a gap between the check and opening the file. `holding()`
+without a gap between the check and opening the file. Opening the open
+file again (a reload) keeps its lock held through the close
+(`LockedTaskFile.pass_lock()`). `holding()`
 holds a lock only while one write runs: it releases a lock it took and
 keeps one the process already held.
 
@@ -154,16 +156,15 @@ version on the same file at the same time is not supported.
 | No lock file can be opened | Opens unlocked; logged. |
 
 Save As, Save selection and restoring a backup lock the target before
-touching anything there (the file, its `.delta`, the auto import/export
-files of a replaced file), so a file open elsewhere is never changed.
+touching anything there (the file, the auto import/export files of a
+replaced file), so a file open elsewhere is never changed.
 Save As keeps that lock and releases the one of the previous file; if
 saving fails, the previous file name and lock are kept. Save selection
 and restoring release it afterwards, unless it is the open file's.
 Save selection onto the open file is refused: the open copy still has
 all tasks and would write them back at its next save.
 Merge only reads the other file: it takes no lock on it, writes
-nothing next to it (not even its `.delta`) and sends no `taskfile.*`
-messages about it.
+nothing next to it and sends no `taskfile.*` messages about it.
 
 ## Logging
 

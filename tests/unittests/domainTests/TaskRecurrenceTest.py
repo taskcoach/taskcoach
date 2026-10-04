@@ -17,13 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import test
-from taskcoachlib import config
 from taskcoachlib.domain import task, date
 
 
 class RecurringTaskTestCase(test.TestCase):
     def setUp(self):
-        self.settings = task.Task.settings = config.Settings(load=False)
         self.now = date.Now()
         self.yesterday = self.now - date.ONE_DAY
         self.tomorrow = self.now + date.ONE_DAY
@@ -75,24 +73,24 @@ class CommonRecurrenceTestsMixin(object):
 
     def testMarkCompletedSetsNewPlannedStartDateIfItWasSetPreviously(self):
         plannedStartDateTime = self.task.plannedStartDateTime()
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertEqual(
             self.createRecurrence()(plannedStartDateTime),
             self.task.plannedStartDateTime(),
         )
 
     def testNoActualStartDateAfterRecurrence(self):
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertEqual(date.DateTime(), self.task.actualStartDateTime())
 
     def testMarkCompletedResetsActualStartDateIfItWasSetPreviously(self):
-        self.task.setActualStartDateTime(date.Now())
-        self.task.setCompletionDateTime()
+        self.task.set_actual_start_date_time(date.Now())
+        self.task.set_completion_date_time()
         self.assertEqual(date.DateTime(), self.task.actualStartDateTime())
 
     def testMarkCompletedSetsNewDueDateIfItWasSetPreviously(self):
-        self.task.setDueDateTime(self.tomorrow)
-        self.task.setCompletionDateTime(self.tomorrow)
+        self.task.set_due_date_time(self.tomorrow)
+        self.task.set_completion_date_time(self.tomorrow)
         self.assertEqual(
             self.createRecurrence()(self.tomorrow), self.task.dueDateTime()
         )
@@ -100,44 +98,44 @@ class CommonRecurrenceTestsMixin(object):
     def testMarkCompletedDoesNotSetPlannedStartDateIfItWasNotSetPreviously(
         self,
     ):
-        self.task.setPlannedStartDateTime(date.DateTime())
-        self.task.setCompletionDateTime()
+        self.task.set_planned_start_date_time(date.DateTime())
+        self.task.set_completion_date_time()
         self.assertEqual(date.DateTime(), self.task.plannedStartDateTime())
 
     def testMarkCompletedDoesNotSetDueDateIfItWasNotSetPreviously(self):
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertEqual(date.DateTime(), self.task.dueDateTime())
 
     def testRecurringTaskIsNotCompletedWhenMarkedCompleted(self):
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertFalse(self.task.completed())
 
     def testMarkCompletedDoesNotSetReminderIfItWasNotSetPreviously(self):
-        self.task.setCompletionDateTime()
-        self.assertEqual(None, self.task.reminder())
+        self.task.set_completion_date_time()
+        self.assertEqual(date.DateTime(), self.task.reminder())
 
     def testMarkCompletedSetsNewReminderIfItWasSetPreviously(self):
         reminder = self.now + date.TimeDelta(seconds=10)
-        self.task.setReminder(reminder)
-        self.task.setCompletionDateTime()
+        self.task.set_reminder(reminder)
+        self.task.set_completion_date_time()
         self.assertEqual(
             self.createRecurrence()(reminder), self.task.reminder()
         )
 
     def testMarkCompletedIgnoresSnoozeWhenSettingNewReminder(self):
         reminder = self.now + date.TimeDelta(seconds=10)
-        self.task.setReminder(reminder)
-        self.task.snoozeReminder(
+        self.task.set_reminder(reminder)
+        self.task.snooze_reminder(
             date.TimeDelta(seconds=30), now=lambda: self.now
         )
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertEqual(
             self.createRecurrence()(reminder), self.task.reminder()
         )
 
     def testMarkCompletedResetPercentageComplete(self):
         self.task.setPercentageComplete(50)
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertEqual(0, self.task.percentageComplete())
 
     def testCopyRecurrence(self):
@@ -191,13 +189,20 @@ class TaskWithDailyRecurrenceThatHasMaxRecurrenceCountFixture(
 
     def testRecurLessThanMaxRecurrenceCount(self):
         for _ in range(self.maxRecurrenceCount):
-            self.task.setCompletionDateTime()
+            self.task.set_completion_date_time()
         self.assertFalse(self.task.completed())
 
     def testRecurExactlyMaxRecurrenceCount(self):
         for _ in range(self.maxRecurrenceCount + 1):
-            self.task.setCompletionDateTime()
+            self.task.set_completion_date_time()
         self.assertTrue(self.task.completed())
+
+    def test_recurring_saves_the_count_through_the_setter(self):
+        before = self.task.recurrence()
+        self.task.set_modification_datetime(date.DateTime.min)
+        self.task.set_completion_date_time()
+        self.assertEqual((0, 1), (before.count, self.task.recurrence().count))
+        self.assertTrue(date.DateTime.min < self.task.modificationDateTime())
 
 
 class TaskWithDailyRecurrenceBasedOnCompletionFixture(
@@ -207,74 +212,78 @@ class TaskWithDailyRecurrenceBasedOnCompletionFixture(
         return date.Recurrence("daily", recurBasedOnCompletion=True)
 
     def testNoDates(self):
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertEqual(date.DateTime(), self.task.plannedStartDateTime())
         self.assertEqual(date.DateTime(), self.task.dueDateTime())
         self.assertEqual(date.DateTime(), self.task.completionDateTime())
 
     def testPlannedStartDateDayBeforeYesterday(self):
-        self.task.setPlannedStartDateTime(self.now - date.TimeDelta(hours=48))
-        self.task.setCompletionDateTime(self.now)
+        self.task.set_planned_start_date_time(
+            self.now - date.TimeDelta(hours=48)
+        )
+        self.task.set_completion_date_time(self.now)
         self.assertEqual(
             self.now + date.ONE_DAY, self.task.plannedStartDateTime()
         )
 
     def testPlannedStartDateToday(self):
-        self.task.setPlannedStartDateTime(self.now.startOfDay())
-        self.task.setCompletionDateTime(self.now)
+        self.task.set_planned_start_date_time(self.now.startOfDay())
+        self.task.set_completion_date_time(self.now)
         self.assertEqual(
             self.tomorrow.startOfDay(), self.task.plannedStartDateTime()
         )
 
     def testPlannedStartDateTomorrow(self):
-        self.task.setPlannedStartDateTime(self.tomorrow.startOfDay())
-        self.task.setCompletionDateTime(self.now)
+        self.task.set_planned_start_date_time(self.tomorrow.startOfDay())
+        self.task.set_completion_date_time(self.now)
         self.assertEqual(
             self.tomorrow.startOfDay(), self.task.plannedStartDateTime()
         )
 
     def testDueDateToday(self):
-        self.task.setDueDateTime(self.now.endOfDay())
-        self.task.setCompletionDateTime(self.now)
+        self.task.set_due_date_time(self.now.endOfDay())
+        self.task.set_completion_date_time(self.now)
         self.assertEqual(self.tomorrow.endOfDay(), self.task.dueDateTime())
 
     def testDueDateYesterday(self):
-        self.task.setDueDateTime(self.yesterday)
-        self.task.setCompletionDateTime(self.now)
+        self.task.set_due_date_time(self.yesterday)
+        self.task.set_completion_date_time(self.now)
         self.assertEqual(self.tomorrow, self.task.dueDateTime())
 
     def testDueDateTomorrow(self):
-        self.task.setDueDateTime(self.tomorrow)
-        self.task.setCompletionDateTime(self.now)
+        self.task.set_due_date_time(self.tomorrow)
+        self.task.set_completion_date_time(self.now)
         self.assertEqual(self.tomorrow, self.task.dueDateTime())
 
     def testPlannedStartAndDueToday(self):
-        self.task.setPlannedStartDateTime(self.now.startOfDay())
-        self.task.setDueDateTime(self.now.endOfDay())
-        self.task.setCompletionDateTime(self.now)
+        self.task.set_planned_start_date_time(self.now.startOfDay())
+        self.task.set_due_date_time(self.now.endOfDay())
+        self.task.set_completion_date_time(self.now)
         self.assertEqual(
             self.tomorrow.startOfDay(), self.task.plannedStartDateTime()
         )
         self.assertEqual(self.tomorrow.endOfDay(), self.task.dueDateTime())
 
     def testPlannedStartAndDueDateInThePast(self):
-        self.task.setPlannedStartDateTime(self.now - date.TimeDelta(hours=48))
-        self.task.setDueDateTime(self.yesterday)
-        self.task.setCompletionDateTime(self.now)
+        self.task.set_planned_start_date_time(
+            self.now - date.TimeDelta(hours=48)
+        )
+        self.task.set_due_date_time(self.yesterday)
+        self.task.set_completion_date_time(self.now)
         self.assertEqual(self.now, self.task.plannedStartDateTime())
         self.assertEqual(self.tomorrow, self.task.dueDateTime())
 
     def testPlannedStartInThePastAndDueInTheFuture(self):
-        self.task.setPlannedStartDateTime(self.yesterday)
-        self.task.setDueDateTime(self.tomorrow)
-        self.task.setCompletionDateTime(self.now)
+        self.task.set_planned_start_date_time(self.yesterday)
+        self.task.set_due_date_time(self.tomorrow)
+        self.task.set_completion_date_time(self.now)
         self.assertEqual(self.yesterday, self.task.plannedStartDateTime())
         self.assertEqual(self.tomorrow, self.task.dueDateTime())
 
     def testPlannedStartAndDueInTheFuture(self):
-        self.task.setPlannedStartDateTime(self.tomorrow)
-        self.task.setDueDateTime(self.tomorrow + date.ONE_DAY)
-        self.task.setCompletionDateTime(self.now)
+        self.task.set_planned_start_date_time(self.tomorrow)
+        self.task.set_due_date_time(self.tomorrow + date.ONE_DAY)
+        self.task.set_completion_date_time(self.now)
         self.assertEqual(self.now, self.task.plannedStartDateTime())
         self.assertEqual(self.tomorrow, self.task.dueDateTime())
 
@@ -283,14 +292,14 @@ class CommonRecurrenceTestsMixinWithChild(CommonRecurrenceTestsMixin):
     # pylint: disable=E1101
 
     def testChildPlannedStartDateRecursToo(self):
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertAlmostEqual(
             self.task.plannedStartDateTime().toordinal(),
             self.task.children()[0].plannedStartDateTime().toordinal(),
         )
 
     def testChildDueDateRecursToo_ParentAndChildHaveNoDueDate(self):
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertAlmostEqual(
             self.task.dueDateTime().toordinal(),
             self.task.children()[0].dueDateTime().toordinal(),
@@ -298,9 +307,9 @@ class CommonRecurrenceTestsMixinWithChild(CommonRecurrenceTestsMixin):
 
     def testChildDueDateRecursToo_ParentAndChildHaveSameDueDate(self):
         child = self.task.children()[0]
-        self.task.setDueDateTime(self.tomorrow)
-        child.setDueDateTime(self.tomorrow)
-        self.task.setCompletionDateTime()
+        self.task.set_due_date_time(self.tomorrow)
+        child.set_due_date_time(self.tomorrow)
+        self.task.set_completion_date_time()
         self.assertAlmostEqual(
             self.task.dueDateTime().toordinal(),
             self.task.children()[0].dueDateTime().toordinal(),
@@ -308,9 +317,9 @@ class CommonRecurrenceTestsMixinWithChild(CommonRecurrenceTestsMixin):
 
     def testChildDueDateRecursToo_ChildHasEarlierDueDate(self):
         child = self.task.children()[0]
-        self.task.setDueDateTime(self.tomorrow)
-        child.setDueDateTime(self.now)
-        self.task.setCompletionDateTime()
+        self.task.set_due_date_time(self.tomorrow)
+        child.set_due_date_time(self.now)
+        self.task.set_completion_date_time()
         self.assertEqual(
             self.createRecurrence()(self.now),
             self.task.children()[0].dueDateTime(),
@@ -324,7 +333,7 @@ class CommonRecurrenceTestsMixinWithRecurringChild(CommonRecurrenceTestsMixin):
         origPlannedStartDateTime = self.task.children()[
             0
         ].plannedStartDateTime()
-        self.task.setCompletionDateTime()
+        self.task.set_completion_date_time()
         self.assertEqual(
             origPlannedStartDateTime,
             self.task.children()[0].plannedStartDateTime(),

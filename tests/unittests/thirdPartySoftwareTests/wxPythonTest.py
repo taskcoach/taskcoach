@@ -26,17 +26,19 @@ from taskcoachlib import operating_system
 
 
 class TextCtrlTest(test.wxTestCase):
-    def testClearEmitsNoEventOnMacOSX(self):
-        self.clearTextCausesEvent = False  # pylint: disable=W0201
-        textCtrl = wx.TextCtrl(self.frame)
-        textCtrl.Bind(wx.EVT_TEXT, self.onTextChanged)
-        textCtrl.Clear()
-        if operating_system.isMac():  # pragma: no cover
-            self.assertFalse(self.clearTextCausesEvent)
-        else:  # pragma: no cover
-            self.assertTrue(self.clearTextCausesEvent)
+    def clear_events(self, text):
+        events = []
+        text_ctrl = wx.TextCtrl(self.frame)
+        text_ctrl.ChangeValue(text)
+        text_ctrl.Bind(wx.EVT_TEXT, events.append)
+        text_ctrl.Clear()
+        return events
 
-    def onTextChanged(self, event):  # pylint: disable=W0613
-        self.clearTextCausesEvent = (
-            True  # pragma: no cover pylint: disable=W0201
-        )
+    def test_clearing_text_emits_an_event(self):
+        self.assertEqual(1, len(self.clear_events("text")))
+
+    def test_clearing_an_empty_control_emits_no_event(self):
+        # macOS always; GTK since wxWidgets 3.2
+        if operating_system.isWindows():  # pragma: no cover
+            self.skipTest("not checked on Windows")
+        self.assertEqual([], self.clear_events(""))

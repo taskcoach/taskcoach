@@ -17,26 +17,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from taskcoachlib import patterns
 from taskcoachlib.domain.base.attribute import Attribute
-from pubsub import pub
-import weakref
+from taskcoachlib.patterns.field import LinkField
 
 
 class BaseEffort(object):
     def __init__(self, task, start, stop, *args, **kwargs):
-        self._task = None if task is None else weakref.ref(task)
-        self._start = Attribute(start, self, self._onStartChanged)
-        self._stop = Attribute(stop, self, self._onStopChanged)
+        # A stored field (docs/UNDO_REDO.md, Architecture)
+        self._task = LinkField(task, self, self._task_restored)
+        self._start = Attribute(start, self, self._on_start_changed)
+        self._stop = Attribute(stop, self, self._on_stop_changed)
         super().__init__(*args, **kwargs)
 
-    def _onStartChanged(self, event):
+    @patterns.eventSource
+    def _task_restored(self, event=None):
+        pass  # An effort of the file tells its observers
+
+    def _on_start_changed(self, event):
         pass
 
-    def _onStopChanged(self, event):
+    def _on_stop_changed(self, event):
         pass
 
     def task(self):
-        return None if self._task is None else self._task()
+        return self._task.get()
 
     def parent(self):
         # Efforts don't have real parents since they are not composite.
@@ -58,20 +63,19 @@ class BaseEffort(object):
         task = self.task()
         return task.categories(*args, **kwargs) if task else set()
 
-    def foregroundColor(self, recursive=False):
-        task = self.task()
-        return task.foregroundColor(recursive) if task else None
+    # An effort is drawn in its task's styles
 
-    def backgroundColor(self, recursive=False):
+    def shown_fg_color(self):
         task = self.task()
-        return task.backgroundColor(recursive) if task else None
+        return task.shown_fg_color() if task else None
 
-    def font(self, recursive=False):
+    def shown_bg_color(self):
         task = self.task()
-        return task.font(recursive) if task else None
+        return task.shown_bg_color() if task else None
 
-    def duration(self, recursive=False):
-        raise NotImplementedError  # pragma: no cover
+    def shown_font(self):
+        task = self.task()
+        return task.shown_font() if task else None
 
     def revenue(self, recursive=False):
         raise NotImplementedError  # pragma: no cover
@@ -81,26 +85,22 @@ class BaseEffort(object):
 
     @classmethod
     def trackingChangedEventType(class_):
-        return "pubsub.effort.track"
+        return "effort.track"
 
-    def sendDurationChangedMessage(self):
-        pub.sendMessage(
-            self.durationChangedEventType(),
-            newValue=self.timeSpent(),
-            sender=self,
-        )
+    def send_duration_changed(self):
+        patterns.Event(
+            self.durationChangedEventType(), self, self.timeSpent()
+        ).send()
 
     @classmethod
     def durationChangedEventType(class_):
-        return "pubsub.effort.duration"
+        return "effort.duration"
 
-    def sendRevenueChangedMessage(self):
-        pub.sendMessage(
-            self.revenueChangedEventType(),
-            newValue=self.revenue(),
-            sender=self,
-        )
+    def send_revenue_changed(self):
+        patterns.Event(
+            self.revenueChangedEventType(), self, self.revenue()
+        ).send()
 
     @classmethod
     def revenueChangedEventType(class_):
-        return "pubsub.effort.revenue"
+        return "effort.revenue"

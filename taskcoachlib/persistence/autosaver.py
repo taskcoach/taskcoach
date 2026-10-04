@@ -18,10 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
 
-from pubsub import pub
 import wx
 
 from taskcoachlib import patterns
+from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.meta.debug import log_step
 
@@ -34,20 +34,22 @@ class AutoSaver(object):
     # file stays dirty, so no new "taskfile.dirty" message comes
     RETRY_SECONDS = 60
 
-    def __init__(self, settings, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.__settings = settings
         self.__task_files = set()
         self.__bound = False
         self.__failures = {}  # task file: failed autosaves in a row
         self.__retries = {}  # task file: time.monotonic() of next try
-        pub.subscribe(self.on_task_file_dirty, "taskfile.dirty")
+        patterns.Publisher().registerObserver(
+            self.on_task_file_dirty, eventType="taskfile.dirty"
+        )
 
-    def on_task_file_dirty(self, taskFile):
+    def on_task_file_dirty(self, event):
         """When a task file gets dirty and auto save is on, note it so
         it can be saved during idle time."""
-        if self._need_save(taskFile):
-            self.__task_files.add(taskFile)
+        for task_file in event.sources():
+            if self._need_save(task_file):
+                self.__task_files.add(task_file)
         self.__save_when_idle()
 
     def __save_when_idle(self):
@@ -57,15 +59,13 @@ class AutoSaver(object):
 
     def _need_save(self, task_file):
         """Return whether the task file needs to be saved."""
+        # Paused while another program's changes on disk are not
+        # merged: saving would replace them
         return (
             task_file.filename()
             and task_file.need_save()
-            and self.__settings.getboolean("file", "autosave")
-        )
-
-    def _need_load(self, taskFile):
-        return taskFile.changed_on_disk() and self.__settings.getboolean(
-            "file", "autoload"
+            and not task_file.changed_on_disk()
+            and settings.file.autosave
         )
 
     def on_idle(self, event):
@@ -75,6 +75,9 @@ class AutoSaver(object):
         self.__bound = False
         while self.__task_files:
             task_file = self.__task_files.pop()
+            # Also when the watcher did not report it (yet): the user
+            # is told, and autosave pauses until it is resolved
+            task_file.check_disk()
             if not self._need_save(task_file):
                 # Saved some other way meanwhile, e.g. File > Save
                 self.__failures.pop(task_file, None)

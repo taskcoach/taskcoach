@@ -71,11 +71,6 @@ class wxSchedule(wx.EvtHandler):
 
         raise AttributeError(name)
 
-    def __eq__(self, other):
-        if isinstance(other, wxSchedule):
-            return id(other) == id(self)
-        return False
-
     def __hash__(self):
         return id(self)
 

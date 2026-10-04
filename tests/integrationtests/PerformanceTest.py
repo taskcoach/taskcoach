@@ -26,7 +26,6 @@ from taskcoachlib.domain import task, category, note
 
 class PerformanceTest(test.TestCase):
     def createTestFile(self):
-        task.Task.settings = config.Settings(load=False)
         taskList = task.TaskList(
             [task.Task("test") for _ in range(self.nrTasks)]
         )
@@ -36,8 +35,6 @@ class PerformanceTest(test.TestCase):
             taskList,
             category.CategoryList(),
             note.NoteContainer(),
-            None,  # SyncML removed
-            "fake",
         )
         taskfile.close()
 
@@ -48,6 +45,8 @@ class PerformanceTest(test.TestCase):
 
     def tearDown(self):
         os.remove(self.taskfilename)
+        if os.path.isfile(self.taskfilename + ".lock"):
+            os.remove(self.taskfilename + ".lock")
         super().tearDown()
 
     def testRead(self):

@@ -23,7 +23,6 @@ from taskcoachlib.domain import category, task
 
 class CategoryContainerTest(test.TestCase):
     def setUp(self):
-        task.Task.settings = config.Settings(load=False)
         self.categories = category.CategoryList()
         self.category = category.Category("Unfiltered category")
         self.filteredCategory = category.Category(
@@ -37,14 +36,13 @@ class CategoryContainerTest(test.TestCase):
 
     def testAddCategoryWithCategorizable(self):
         aTask = task.Task()
-        self.category.addCategorizable(aTask)
+        aTask.addCategory(self.category)
         self.categories.append(self.category)
         self.assertEqual(set([self.category]), aTask.categories())
 
     def testRemoveCategoryWithTask(self):
         aTask = task.Task()
         self.categories.append(self.category)
-        self.category.addCategorizable(aTask)
         aTask.addCategory(self.category)
         self.categories.removeItems([self.category])
         self.assertFalse(aTask.categories())

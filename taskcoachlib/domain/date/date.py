@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import time, string, datetime, re  # pylint: disable=W0402
+import datetime
 from taskcoachlib import patterns
 from .fix import StrftimeFix
 from . import timedelta
@@ -32,9 +32,7 @@ class RealDate(StrftimeFix, datetime.date):
     def __sub__(self, other):
         newdate = super().__sub__(other)
         if isinstance(newdate, datetime.timedelta):
-            return timedelta.TimeDelta(
-                newdate.days, newdate.seconds, newdate.microseconds
-            )
+            return timedelta.TimeDelta(newdate.days, newdate.seconds)
         else:
             return RealDate(newdate.year, newdate.month, newdate.day)
 
@@ -75,16 +73,6 @@ class InfiniteDate(datetime.date, metaclass=patterns.Singleton):
 
 
 # factories:
-
-
-def parseDate(dateString, default=None):
-    try:
-        return Date(*[int(part) for part in dateString.split("-")])
-    except ValueError:
-        if default:
-            return default
-        else:
-            return Date()
 
 
 def Date(year=infinite.year, month=infinite.month, day=infinite.day):

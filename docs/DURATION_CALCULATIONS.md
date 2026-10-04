@@ -17,6 +17,7 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
   - [Field Change Effects](#field-change-effects)
   - [Action Sequence](#action-sequence-1)
 - [Preset Dropdown Sync](#preset-dropdown-sync)
+- [Stored Duration](#stored-duration)
 - [Persistence](#persistence)
 
 ---
@@ -24,20 +25,14 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
 ## TODO
 
 5. ~~Add cross-references to ATTRIBUTE_PATTERN.md~~ — **Done.** Cross-reference
-   added to section 0.2. No-mode safety cross-ref deferred to TODO items 6/7.
-6. Add section 0.5: No-mode safety. If mode is None or invalid, sync
-   functions must return immediately without entering any mode branch.
-   No silent fallback to a default mode.
-   - 0.5.1 __syncTaskState: if mode not in valid set → return.
-   - 0.5.2 __sync_effort_state: if mode not in valid set → return.
-     Current gap: else branch catches None mode incorrectly.
-7. Add section 0.6: Calculation mode is always explicitly required.
-   If no mode explicitly set, never default to a calculation mode.
-   In logic flow, add final item (e.g. item 5 for Task, item 4 for
-   Effort): "If no calculation mode specified, do nothing."
-   OPEN QUESTION: How to differentiate between loading in process
-   (mode not yet set, should wait) and invalid value requiring reset
-   to automatic?
+   added to section 0.2.
+6. ~~No-mode safety~~: done. Both sync functions branch on each mode
+   explicitly, with no catch-all `else`; an unknown mode enters no
+   branch.
+7. ~~Calculation mode always explicit~~: decided. A new task starts in
+   Implicit mode ([Logic Flow](#logic-flow), note), an effort in
+   Standard; the mode is set when the item is created, read from the
+   file or defaulted, so there is no "not yet set" state to wait for.
 9. ~~DateTimeComboCtrl Checkbox toggle EVT_KILL_FOCUS gap~~ — **Resolved.**
    ~~Editor binds `EVT_CHECKBOX` via `combo.Bind(wx.EVT_CHECKBOX, handler)`
    and calls `sync.commit()` explicitly.~~
@@ -46,7 +41,12 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
    which fires on checkbox toggle AND date/time edits. External
    EVT_CHECKBOX handlers and `sync.commit()` hacks removed.
    See [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) TODO item 3.
-10. **Reconcile legacy "datestied" preference with duration mode.**
+10. ~~**Reconcile legacy "datestied" preference with duration mode.**~~
+   **Done 2026-10-02 for the adjust modes** (P150, **asked by
+   designer**): a list cell follows the task's mode there and the
+   preference applies only in Implicit mode ([Stored
+   Duration](#stored-duration)). Left: whether the preference stays
+   for Implicit mode.
    The `view.datestied` setting (`preferences.py:2029`) is a legacy
    predecessor to duration mode. It has three options: nothing, "changing
    start shifts due" (`startdue`), or "changing due shifts start"
@@ -102,12 +102,19 @@ for the next user change.
    0.4 Sync-mode guard. If sync is already in progress, early exit.
        Flag lives on the domain SSOT instance (task or effort), shared
        across all editor windows editing the same object. Prevents
-       re-entry from synchronous pubsub callbacks triggered by commands
+       re-entry from synchronous change callbacks triggered by commands
        within the sync function. The loop (direct recursion) is the
        guaranteed path for processing mode changes — suppressed
        callbacks are harmless because the loop completes the state
        transition. Any deferred callback that arrives after sync-mode
        clears will run against the correct final state.
+   0.5 A change from elsewhere (undo, redo, another window, the tray)
+       is no user action: the fields show it and their states follow
+       (__updateFieldStates(), __show_effort_change()); the logic
+       flow does not run, so it writes nothing back. AttributeSync
+       tells its callback which it is (edited), and compares an edit
+       with what the field shows, not the stored value (a time
+       without seconds) (UNDO_REDO.md, Actions).
 ```
 
 ---
@@ -487,7 +494,7 @@ selecting a matching preset when the duration matches, or resetting to the
 ### Sync Pattern
 
 The preset dropdown subscribes directly to the domain's duration-changed
-pubsub event. This decouples it from the source of the change — whether the
+event. This decouples it from the source of the change: whether the
 user typed a value, selected a preset, or an external source updated the
 domain, the dropdown updates itself.
 
@@ -502,13 +509,45 @@ domain, the dropdown updates itself.
 The alternative is calling the preset update from the duration change handler
 or `AttributeSync` callback. This couples the preset to the commit path —
 any code that changes duration must remember to also update the preset.
-Pubsub subscription ensures the preset is always correct regardless of how
+The subscription ensures the preset is always correct regardless of how
 the duration changed.
 
 ### Lifecycle
 
-Subscriptions are created during `addEntries()` / `addDurationEntry()` and
+Subscriptions are created in `DatesPage._add_planned_date_section()` (task)
+and `EffortEditBook.__add_start_and_stop_entries()` (effort), and
 unsubscribed in `close()` / `close_edit_book()`.
+
+---
+
+## Stored Duration
+
+The task stores its planned duration. In Implicit mode it is due minus
+planned start, and the task keeps it so whichever way a date changes,
+the editor or elsewhere (a task list cell), in the same undo step
+(`Task.__derive_planned_duration()`, P133 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
+In whole minutes, as the editor's date fields hold them: the editor
+then finds its own value (4.3.1.2) and changes nothing when it opens.
+Not while undo or redo puts values back, which restore the duration
+with the dates.
+
+In the adjust modes a planned date changed outside the editor (a task
+list cell, a calendar drag) follows the mode as in the editor, in the
+date command (`PlannedPeriodMixin` in `command/taskCommands.py`, P150):
+a change of the mode's input end (the start in Adjust Due, the due
+date in Adjust Start) moves the other end by the duration; a change
+of the other end sets the duration to the difference, the user's date
+kept. Both ends at once (a calendar move, given as one change) keep
+both dates and set the duration to their difference. The task itself
+does not touch the duration in these modes: the editor moves the
+other date by it (2.7, 3.7), and a duration already following the
+date would leave that date where it was. The editor's own changes
+run the same commands and find nothing left to change.
+
+A file whose stored duration differs (written before this, or by an
+older release) is corrected the first time the task's editor opens,
+which marks the file changed once.
 
 ---
 
@@ -524,9 +563,10 @@ All values are stored in hardcoded formats — no locale involvement. Locale for
 
 | Data type | XML format | Example | Writer code |
 |-----------|-----------|---------|-------------|
-| DateTime | `%Y-%m-%d %H:%M:%S` | `2026-01-29 15:30:00` | `writer.py:formatDateTime()` |
+| DateTime | `%Y-%m-%d %H:%M:%S` | `2026-01-29 15:30:00` | `str()`; effort start and stop: `writer.py:formatDateTime()` |
+| Creation and modification date (`date.Timestamp`) | `%Y-%m-%d %H:%M:%S.%f` (no fraction when the microseconds are 0) | `2026-09-27 21:00:43.123456` | `str()` in `writer.py` |
 | Duration (budget, plannedDuration) | `H:MM:SS` (days folded into hours) | `74:30:00` (= 3d 2h 30m) | `writer.py:budgetAsAttribute()` via `TimeDelta.hoursMinutesSeconds()` |
-| Float (hourlyFee, fixedFee) | `str(float)` | `25.5` | `writer.py:taskNode()` |
+| Float (hourlyFee, fixedFee) | `str(float)` | `25.5` | `writer.py:task_node()` |
 
 ### Internal Types
 - Durations use `date.TimeDelta` (extends `datetime.timedelta`, adds `hoursMinutesSeconds()`)

@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # lacks events
 
 import wx
-from wx.lib.embeddedimage import PyEmbeddedImage
+from taskcoachlib import patterns
 
 
 class BalloonTip(wx.Frame):
@@ -34,7 +34,7 @@ class BalloonTip(wx.Frame):
         message=None,
         title=None,
         bitmap=None,
-        getRect=None,
+        get_rect=None,
     ):
         """Baloon tip."""
 
@@ -51,7 +51,7 @@ class BalloonTip(wx.Frame):
         self.SetBackgroundColour(wheat)
 
         self._target = target
-        self._getRect = getRect
+        self._get_rect = get_rect
         self._interior = wx.Panel(self)
         self._interior.Bind(wx.EVT_LEFT_DOWN, self.DoClose)
         self._interior.SetBackgroundColour(wheat)
@@ -111,7 +111,7 @@ class BalloonTip(wx.Frame):
         wx.GetTopLevelParent(self._target).Unbind(wx.EVT_MOVE)
 
     def _OnDim(self, event):
-        wx.CallAfter(self.__safePosition)
+        patterns.later.soon(self, self.__safePosition)
         event.Skip()
 
     def __safePosition(self):
@@ -131,11 +131,11 @@ class BalloonTip(wx.Frame):
     def Position(self):
         w, h = self._interior.GetClientSize()
         h += self.ARROWSIZE
-        if self._getRect is None:
+        if self._get_rect is None:
             tw, th = self._target.GetSize()
             tx, ty = 0, 0
         else:
-            tx, ty, tw, th = self._getRect()
+            tx, ty, tw, th = self._get_rect()
         tx, ty = self._target.ClientToScreen(wx.Point(tx, ty))
         dpyIndex = max(0, wx.Display.GetFromPoint(wx.Point(tx, ty)) or 0)
         rect = wx.Display(dpyIndex).GetClientArea()
@@ -224,19 +224,20 @@ class BalloonTipManager(object):
         message=None,
         title=None,
         bitmap=None,
-        getRect=None,
+        get_rect=None,
         **kwargs
     ):
-        """Schedules a tip. Extra keyword arguments will be passed to L{OnBalloonTipShow} and L{OnBalloonTipClosed}."""
+        """Schedules a tip. Extra keyword arguments will be passed to
+        L{on_balloon_tip_show} and L{on_balloon_tip_closed}."""
         for eTarget, eMessage, eTitle, eBitmap, eGetRect, eArgs in self.__tips:
             if (eTitle, eMessage) == (title, message):
                 return
-        self.__tips.append((target, message, title, bitmap, getRect, kwargs))
+        self.__tips.append((target, message, title, bitmap, get_rect, kwargs))
         self.__Try()
 
     def __Try(self):
         if self.__tips and not self.__shutdown and self.__displaying is None:
-            target, message, title, bitmap, getRect, kwargs = self.__tips.pop(
+            target, message, title, bitmap, get_rect, kwargs = self.__tips.pop(
                 0
             )
             tip = BalloonTip(
@@ -245,10 +246,10 @@ class BalloonTipManager(object):
                 message=message,
                 title=title,
                 bitmap=bitmap,
-                getRect=getRect,
+                get_rect=get_rect,
             )
             self.__displaying = tip
-            self.OnBalloonTipShow(**kwargs)
+            self.on_balloon_tip_show(**kwargs)
             self.__kwargs = kwargs
             tip.Bind(wx.EVT_CLOSE, self.__OnCloseTip)
 
@@ -259,11 +260,11 @@ class BalloonTipManager(object):
     def __OnCloseTip(self, event):
         event.Skip()
         self.__displaying = None
-        self.OnBalloonTipClosed(**self.__kwargs)
+        self.on_balloon_tip_closed(**self.__kwargs)
         self.__Try()
 
-    def OnBalloonTipShow(self, **kwargs):
+    def on_balloon_tip_show(self, **kwargs):
         pass
 
-    def OnBalloonTipClosed(self, **kwargs):
+    def on_balloon_tip_closed(self, **kwargs):
         pass

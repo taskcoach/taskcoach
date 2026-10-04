@@ -30,9 +30,6 @@ class AbstractNotifier(object):
     _notifier = None
     _enabled = True
 
-    def getName(self):
-        raise NotImplementedError
-
     def isAvailable(self):
         raise NotImplementedError
 
@@ -46,11 +43,6 @@ class AbstractNotifier(object):
             klass._notifier = notifier
 
     @classmethod
-    def get(klass):
-        """Get the universal notifier instance."""
-        return klass._notifier
-
-    @classmethod
     def getSimple(klass):
         """
         Returns a notifier suitable for simple notifications.
@@ -62,9 +54,6 @@ class AbstractNotifier(object):
         else:
 
             class DummyNotifier(AbstractNotifier):
-                def getName(self):
-                    return "Dummy"
-
                 def isAvailable(self):
                     return True
 

@@ -18,8 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 import test
-from taskcoachlib.domain import attachment
-from pubsub import pub
+from unittest import mock
+from taskcoachlib.domain import attachment, date
+from taskcoachlib.tools import openfile
 
 
 class GetRelativePathTest(test.TestCase):
@@ -97,4 +98,62 @@ class FileAttachmentTest(test.TestCase):
                 Attachment.locationChangedEventType(),
             ],
             Attachment.modificationEventTypes(),
+        )
+
+
+class MailAttachmentTest(test.TestCase):
+    """A mail's subject, sender, sent date and mid: link, not the mail
+    (docs/EMAIL_ATTACHMENTS.md)."""
+
+    def setUp(self):
+        super().setUp()
+        self.mail = attachment.MailAttachment(
+            "mid:1@example.com",
+            subject="Quote",
+            from_name="Alice",
+            from_address="alice@example.com",
+            sent_datetime=date.DateTime(2026, 9, 29, 14, 5, 0),
+        )
+
+    def test_its_fields_are_one_line_of_text(self):
+        # docs/ATTRIBUTE_PATTERN.md, Text
+        mail = attachment.MailAttachment(
+            "mid:2@example.com\n",
+            from_name="Bob\x00\tSmith",
+            from_address="bob@example.com\r\n",
+        )
+        self.assertEqual(
+            ("mid:2@example.com ", "Bob Smith", "bob@example.com "),
+            (mail.location(), mail.from_name(), mail.from_address()),
+        )
+
+    def fields(self, mail):
+        return (
+            mail.location(),
+            mail.subject(),
+            mail.from_name(),
+            mail.from_address(),
+            mail.sent_datetime(),
+        )
+
+    def test_a_new_mail_has_no_sender_nor_date(self):
+        mail = attachment.MailAttachment("mid:2@example.com")
+        self.assertEqual(
+            ("", "", date.DateTime()),
+            (mail.from_name(), mail.from_address(), mail.sent_datetime()),
+        )
+
+    def test_copy(self):
+        self.assertEqual(self.fields(self.mail), self.fields(self.mail.copy()))
+
+    def test_open_hands_the_link_to_the_system(self):
+        with mock.patch.object(openfile, "openFile") as open_file:
+            self.mail.open()
+        open_file.assert_called_once_with("mid:1@example.com")
+
+    def test_other_attachments_have_no_mail_fields(self):
+        link = attachment.URIAttachment("http://example.com")
+        self.assertEqual(
+            ("", "", date.DateTime()),
+            (link.from_name(), link.from_address(), link.sent_datetime()),
         )

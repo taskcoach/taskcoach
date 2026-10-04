@@ -20,23 +20,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib.i18n import _
-from taskcoachlib.domain import categorizable
+from taskcoachlib.domain import base
 from taskcoachlib import help, operating_system  # pylint: disable=W0622
 from . import task
 
 
 class TaskListQueryMixin(object):
     def nr_of_tasks_per_status(self):
-        statuses = [
-            eachTask.status() for eachTask in self if not eachTask.isDeleted()
-        ]
+        statuses = [each_task.computedStatus() for each_task in self]
         count = dict()
         for status in task.Task.possibleStatuses():
             count[status] = statuses.count(status)
         return count
 
 
-class TaskList(TaskListQueryMixin, categorizable.CategorizableContainer):
+class TaskList(TaskListQueryMixin, base.Collection):
     # FIXME: TaskList should be called TaskCollection or TaskSet
 
     newItemMenuText = _("&New task...") + (
@@ -58,7 +56,7 @@ class TaskList(TaskListQueryMixin, categorizable.CategorizableContainer):
 
     def original_length(self):
         """Provide a way for bypassing the __len__ method of decorators."""
-        return len([t for t in self if not t.isDeleted()])
+        return len(list(self))
 
     def min_priority(self):
         return min(self.__allPriorities())
@@ -67,6 +65,6 @@ class TaskList(TaskListQueryMixin, categorizable.CategorizableContainer):
         return max(self.__allPriorities())
 
     def __allPriorities(self):
-        return [task.priority() for task in self if not task.isDeleted()] or (
+        return [task.priority() for task in self] or (
             0,
         )  # pylint: disable=W0621

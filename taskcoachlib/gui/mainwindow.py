@@ -40,8 +40,7 @@ from taskcoachlib.gui.dialog.editor import Editor
 from taskcoachlib.i18n import _
 from taskcoachlib.powermgt import PowerStateMixin
 from taskcoachlib.help.balloontips import BalloonTipManager
-from pubsub import pub
-from taskcoachlib.config.settings import Settings
+from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
 import re
 import wx.lib.agw.aui as aui
@@ -71,23 +70,20 @@ class MainWindow(
     patterns.Observer,
     widgets.AuiManagedFrameWithDynamicCenterPane,
 ):
-    def __init__(
-        self, iocontroller, taskFile, settings: Settings, *args, **kwargs
-    ):
+    def __init__(self, iocontroller, task_file, *args, **kwargs):
         # Initialize with valid default size to prevent GTK warnings
         # The WindowDimensionsTracker will set the actual saved size/position
         if "size" not in kwargs:
             kwargs["size"] = (800, 600)
         super().__init__(None, -1, "", *args, **kwargs)
         # This prevents the viewers from flickering on Windows 7 when refreshed:
-        if operating_system.isWindows7_OrNewer():
+        if operating_system.isWindows():
             turn_on_double_buffering_on_windows(self)
         self.__dimensions_tracker = (
-            windowdimensionstracker.WindowDimensionsTracker(self, settings)
+            windowdimensionstracker.WindowDimensionsTracker(self)
         )
         self.iocontroller = iocontroller
-        self.taskFile = taskFile
-        self.settings = settings
+        self.taskFile = task_file
         self.__filename = None
         self.__dirty = False
         self.__shutdown = False
@@ -100,7 +96,7 @@ class MainWindow(
         self.__register_for_window_component_changes()
 
         self._idleController = idlecontroller.IdleController(
-            self, self.settings, self.taskFile.efforts()
+            self.taskFile.efforts()
         )
 
         # Follow system light/dark switches, see docs/SETTINGS.md
@@ -114,6 +110,11 @@ class MainWindow(
     def setShutdownInProgress(self):
         self.__shutdown = True
 
+    def close_global_timer(self):
+        """Free the per-second clock; the application's last step, once
+        its event loop has ended."""
+        self._globalTimer.close()
+
     def _create_window_components(self):  # Not private for test purposes
         # Freeze to prevent flickering during viewer creation
         self.Freeze()
@@ -121,21 +122,22 @@ class MainWindow(
             # Start global timer FIRST - other components subscribe to its events
             self._globalTimer = scheduler.GlobalTimer(self)
             self._globalTimer.start()
-            # MasterScheduler handles all per-second processing (status, styles, auto-complete)
+            # MasterScheduler: statuses, reminders and styles, at the
+            # seconds that change them (docs/SCHEDULERS.md)
             self._masterScheduler = scheduler.MasterScheduler(self.taskFile)
 
             self._create_viewer_container()
-            viewer.addViewers(self.viewer, self.taskFile, self.settings)
+            viewer.addViewers(self.viewer, self.taskFile)
             self._create_status_bar()
             self.__create_menu_bar()
             self.__create_reminder_controller()
         finally:
             self.Thaw()
-        wx.CallAfter(self.viewer.components_created)
+        patterns.later.soon(self, self.viewer.components_created)
 
     def _create_viewer_container(self):  # Not private for test purposes
         # pylint: disable=W0201
-        self.viewer = viewer.ViewerContainer(self, self.settings)
+        self.viewer = viewer.ViewerContainer(self)
 
     def _create_status_bar(self):
         from taskcoachlib.gui import status  # pylint: disable=W0404
@@ -148,7 +150,6 @@ class MainWindow(
         self.SetMenuBar(
             menu.MainMenu(
                 self,
-                self.settings,
                 self.iocontroller,
                 self.viewer,
                 self.taskFile,
@@ -158,7 +159,7 @@ class MainWindow(
     def __create_reminder_controller(self):
         # pylint: disable=W0201
         self.reminderController = remindercontroller.ReminderController(
-            self, self.taskFile.tasks(), self.taskFile.efforts(), self.settings
+            self, self.taskFile.tasks(), self.taskFile.efforts()
         )
 
     def add_pane(self, page, caption, floating=False):  # pylint: disable=W0221
@@ -179,15 +180,15 @@ class MainWindow(
         try:
             self.showToolBar()
 
-            # We use CallAfter because otherwise the statusbar will appear at the
-            # top of the window when it is initially hidden and later shown.
-            wx.CallAfter(self.showStatusBar)
+            # Later, or a status bar hidden at start appears at the top
+            # of the window once shown
+            patterns.later.soon(self, self.showStatusBar)
             self.__restore_perspective()
         finally:
             self.Thaw()
 
         # Reset toolbar position after perspective is loaded
-        wx.CallAfter(self._resetToolbarPosition)
+        patterns.later.soon(self, self._resetToolbarPosition)
 
     @staticmethod
     def __unmatched_pane_names(perspective, panes):
@@ -212,7 +213,7 @@ class MainWindow(
         )
 
     def __restore_perspective(self):
-        perspective = self.settings.get("view", "perspective")
+        perspective = settings.view.perspective
         no_window, no_entry = self.__unmatched_pane_names(
             perspective, self.manager.GetAllPanes()
         )
@@ -271,33 +272,32 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.manager.Update()
 
     def __register_for_window_component_changes(self):
-        pub.subscribe(self.__onFilenameChanged, "taskfile.filenameChanged")
-        pub.subscribe(self.__onDirtyChanged, "taskfile.dirty")
-        pub.subscribe(self.__onDirtyChanged, "taskfile.clean")
+        for event_type, handler in (
+            ("taskfile.filenameChanged", self.__on_filename_changed),
+            ("taskfile.dirty", self.__on_dirty_changed),
+            ("taskfile.clean", self.__on_dirty_changed),
+        ):
+            self.registerObserver(
+                handler, eventType=event_type, eventSource=self.taskFile
+            )
         self.registerObserver(
             self.showStatusBar,
             eventType="view.statusbar",
-            eventSource=self.settings,
         )
         self.registerObserver(
             self.showToolBar,
             eventType="view.toolbar",
-            eventSource=self.settings,
         )
         self.Bind(aui.EVT_AUI_PANE_CLOSE, self.onCloseToolBar)
         # Detect toolbar drag-end and float-to-dock transitions to reset position
-        self.manager.Bind(aui.EVT_AUI_RENDER, self._onAuiRender)
+        self.manager.Bind(aui.EVT_AUI_RENDER, self._on_aui_render)
 
-    def __onFilenameChanged(self, filename):
-        if filename != self.taskFile.filename():
-            return  # Another task file, e.g. a saved selection
-        self.__filename = filename
+    def __on_filename_changed(self, event):
+        self.__filename = event.value()
         self.__setTitle()
 
-    def __onDirtyChanged(self, taskFile):
-        if taskFile is not self.taskFile:
-            return
-        self.__dirty = taskFile.is_dirty()
+    def __on_dirty_changed(self, event):  # pylint: disable=W0613
+        self.__dirty = self.taskFile.is_dirty()
         self.__setTitle()
 
     def __setTitle(self):
@@ -332,11 +332,11 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 )
             else:
                 count = 0
-            self.settings.set("view", viewer_type + "count", str(count))
+            settings.set("view", viewer_type + "count", count)
 
     def __save_perspective(self):
         perspective = self.manager.SavePerspective()
-        self.settings.set("view", "perspective", perspective)
+        settings.view.perspective = perspective
 
     def __save_position(self):
         self.__dimensions_tracker.save_position()
@@ -362,17 +362,18 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         if is_dark == self._last_detected_dark:
             return
         self._last_detected_dark = is_dark
-        theme = self.settings.get("window", "theme")
+        theme = settings.window.theme
         log_step(
             "System theme is now %s (%s), window theme %s"
             % ("dark" if is_dark else "light", found_by, theme),
             prefix="THEME",
         )
-        # Recomputes settings2.window.theme_is_dark, which the
-        # settings.window.theme listeners read
+        # The Theme page shows the system's theme; theme_is_dark is
+        # computed at each read
         patterns.Event("system.theme_colour_changed", self).send()
         if theme == "automatic":
-            pub.sendMessage("settings.window.theme", value=theme)
+            # The theme follows the system: as if it had changed
+            settings.send_changed("window", "theme")
 
     def onClose(self, event):
         self.closeEditors()
@@ -383,24 +384,18 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             self.manager.UnInit()
             event.Skip()
             return
-        if event.CanVeto() and self.settings.getboolean(
-            "window", "hidewhenclosed"
-        ):
-            event.Veto()
-            self.Iconize()
-        else:
-            if application.Application().quit_application():
-                # UnInit AUI manager before window destruction to avoid
-                # wxAssertionError about pushed event handlers
-                self.manager.UnInit()
-                event.Skip()
-                self.taskFile.stop()
-                self._idleController.stop()
-                if hasattr(self, "_masterScheduler"):
-                    self._masterScheduler.shutdown()
+        # Close quits (docs/SYSTEM_TRAY.md, Minimize and Hide)
+        if application.Application().quit_application():
+            # UnInit AUI manager before window destruction to avoid
+            # wxAssertionError about pushed event handlers
+            self.manager.UnInit()
+            event.Skip()
+            # Nothing else stops: closing the file stopped its watcher,
+            # and the per-second tick ends with this window
+            # (docs/DEFERRED_CALLS.md, lazy teardown)
 
     def restore(self, event):  # pylint: disable=W0613
-        if self.settings.getboolean("window", "maximized"):
+        if settings.window.maximized:
             self.Maximize()
         self.Iconize(False)
         self.Show()
@@ -435,34 +430,30 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.manager.Update()
 
         # Reset viewer counts to fresh install defaults
-        self.settings.set("view", "taskviewercount", "1")
-        self.settings.set("view", "categoryviewercount", "1")
-        self.settings.set("view", "noteviewercount", "0")
-        self.settings.set("view", "effortviewercount", "0")
-        self.settings.set("view", "effortviewerforselectedtaskscount", "0")
-        self.settings.set("view", "squaretaskviewercount", "0")
-        self.settings.set("view", "timelineviewercount", "0")
-        self.settings.set("view", "calendarviewercount", "0")
-        self.settings.set("view", "hierarchicalcalendarviewercount", "0")
-        self.settings.set("view", "taskstatsviewercount", "0")
-        self.settings.set("view", "taskinterdepsviewercount", "0")
+        view = settings.view
+        view.taskviewercount = 1
+        view.categoryviewercount = 1
+        view.noteviewercount = 0
+        view.effortviewercount = 0
+        view.effortviewerforselectedtaskscount = 0
+        view.squaretaskviewercount = 0
+        view.timelineviewercount = 0
+        view.calendarviewercount = 0
+        view.hierarchicalcalendarviewercount = 0
+        view.taskstatsviewercount = 0
 
         # Clear saved perspective
-        self.settings.set("view", "perspective", "")
+        view.perspective = ""
 
         # Recreate viewers with default counts
-        viewer.addViewers(self.viewer, self.taskFile, self.settings)
+        viewer.addViewers(self.viewer, self.taskFile)
 
         # Explicitly position the first TaskViewer in center (in case auto-positioning failed)
         for pane in self.manager.GetAllPanes():
             if pane.IsToolbar():
                 continue
             name = pane.name
-            if (
-                "taskviewer" in name
-                and "stats" not in name
-                and "interdeps" not in name
-            ):
+            if "taskviewer" in name and "stats" not in name:
                 pane.dock_direction = aui.AUI_DOCK_CENTER
                 pane.dock_layer = 0
                 pane.dock_row = 0
@@ -472,14 +463,9 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.manager.Update()
 
     def onIconify(self, event):
-        if event.IsIconized() and self.settings.getboolean(
-            "window", "hidewheniconized"
-        ):
-            self.Hide()
-        else:
-            if not event.IsIconized():
-                wx.CallAfter(self.viewer.focus_skipped_viewer)
-            event.Skip()
+        if not event.IsIconized():
+            patterns.later.soon(self, self.viewer.focus_skipped_viewer)
+        event.Skip()
 
     def onResize(self, event):
         current_toolbar = self.manager.GetPane("toolbar")
@@ -498,11 +484,9 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         event.Skip()
 
     def showStatusBar(self, event=None):
-        # FIXME: First hiding the statusbar, then hiding the toolbar, then
-        # showing the statusbar puts it in the wrong place (only on Linux?)
         status_bar = self.GetStatusBar()
         if status_bar:
-            status_bar.Show(self.settings.getboolean("view", "statusbar"))
+            status_bar.Show(settings.view.statusbar)
             self.SendSizeEvent()
 
     def createToolBarUICommands(self):
@@ -510,8 +494,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         ui_commands = [
             uicommand.FileOpen(iocontroller=self.iocontroller),
             uicommand.FileSave(iocontroller=self.iocontroller),
-            uicommand.FileMergeDiskChanges(iocontroller=self.iocontroller),
-            uicommand.Print(viewer=self.viewer, settings=self.settings),
+            uicommand.Print(viewer=self.viewer),
             None,
             uicommand.EditUndo(),
             uicommand.EditRedo(),
@@ -526,25 +509,25 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                     taskList=self.taskFile.tasks(),
                 ),
                 None,
-                uicommand.ToggleAutoScroll(settings=self.settings),
+                uicommand.ToggleAutoScroll(),
             ]
         )
         return ui_commands
 
     def getToolBarPerspective(self):
-        return self.settings.get("view", "toolbarperspective")
+        return settings.view.toolbarperspective
 
     def saveToolBarPerspective(self, perspective):
-        self.settings.set("view", "toolbarperspective", perspective)
+        settings.view.toolbarperspective = perspective
 
     def showToolBar(self, event=None):
-        value = self.settings.getvalue("view", "toolbar")
+        value = settings.view.toolbar
         current_toolbar = self.manager.GetPane("toolbar")
         if current_toolbar.IsOk():
             self.manager.DetachPane(current_toolbar.window)
             current_toolbar.window.Destroy()
         if value:
-            bar = toolbar.MainToolBar(self, self.settings, size=value)
+            bar = toolbar.MainToolBar(self, size=value)
             # Use GetBestSize() for height - toolbar calculates this during Realize()
             best_size = bar.GetBestSize()
             self.manager.AddPane(
@@ -561,7 +544,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
 
     def onCloseToolBar(self, event):
         if event.GetPane().IsToolbar():
-            self.settings.setvalue("view", "toolbar", None)
+            settings.view.toolbar = None
         event.Skip()
 
     def _resetToolbarPosition(self):
@@ -589,14 +572,14 @@ If this happens again, please make a copy of your TaskCoach.ini file """
                 pane.MinSize((-1, self.GetSize().GetHeight()))
             self.manager.Update()
 
-    def _onAuiRender(self, event):
+    def _on_aui_render(self, event):
         """Detect toolbar drag-end and float-to-dock to reset position."""
         action = getattr(self.manager, "_action", 0)
         prev_action = getattr(self, "_prev_manager_action", 0)
 
         # Detect transition from dragging to idle
         if prev_action != 0 and action == 0:
-            wx.CallAfter(self._resetToolbarPosition)
+            patterns.later.soon(self, self._resetToolbarPosition)
 
         # Detect floating->docked transition
         pane = self.manager.GetPane("toolbar")
@@ -604,7 +587,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             was_floating = getattr(self, "_toolbar_was_floating", False)
             is_floating = pane.IsFloating()
             if was_floating and not is_floating:
-                wx.CallAfter(self._resetToolbarPosition)
+                patterns.later.soon(self, self._resetToolbarPosition)
             self._toolbar_was_floating = is_floating
 
         self._prev_manager_action = action

@@ -16,7 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import re, os, codecs
+import os
+import re
 from taskcoachlib.domain import task, category, date
 from taskcoachlib import patterns
 
@@ -37,7 +38,7 @@ class TodoTxtReader(object):
         if os.path.exists(metaName):
             todoTxtRE = self.compileTodoTxtRE()
             keyValueRE = self.compileKeyValueRE()
-            with codecs.open(metaName, "r", "utf-8") as fp:
+            with open(metaName, "r", encoding="utf-8") as fp:
                 match = re.match(r"VERSION: (\d+)", fp.readline().strip())
                 if match:
                     self.__version = int(match.group(1))
@@ -64,7 +65,7 @@ class TodoTxtReader(object):
                     metaLines[
                         "->".join(subjects) if self.__version == 0 else taskId
                     ] = line
-        with codecs.open(filename, "r", "utf-8") as fp:
+        with open(filename, "r", encoding="utf-8") as fp:
             self.readFile(fp, metaLines=metaLines)
 
     @patterns.eventSource
@@ -164,12 +165,11 @@ class TodoTxtReader(object):
                 newTask.setSubject(subjects[-1])
 
         newTask.setPriority(priority)
-        newTask.setPlannedStartDateTime(plannedStartDateTime)
-        newTask.setCompletionDateTime(completionDateTime)
-        newTask.setDueDateTime(dueDateTime)
+        newTask.set_planned_start_date_time(plannedStartDateTime)
+        newTask.set_completion_date_time(completionDateTime)
+        newTask.set_due_date_time(dueDateTime)
         for eachCategory in categories:
             newTask.addCategory(eachCategory, event=event)
-            eachCategory.addCategorizable(newTask, event=event)
 
     @staticmethod
     def priority(match):
@@ -248,7 +248,7 @@ class TodoTxtReader(object):
             return subjectCache[(subject, parent)]
         newItem = itemClass(subject=subject)
         if parent:
-            newItem.setParent(parent)
+            newItem.set_parent(parent)
             parent.addChild(newItem, event=event)
         itemContainer.append(newItem, event=event)
         subjectCache[(subject, parent)] = newItem
