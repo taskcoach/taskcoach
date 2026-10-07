@@ -29,11 +29,14 @@ References:
 - https://lazka.github.io/pgi-docs/AyatanaAppIndicator3-0.1/
 """
 
+import warnings
+
 # Try to import AppIndicator (Ayatana version preferred, fallback to legacy)
 _appindicator = None
 _gi = None
 _Gtk = None
 _GLib = None
+_GdkPixbuf = None
 APPINDICATOR_AVAILABLE = False
 APPINDICATOR_ERROR = None
 
@@ -42,10 +45,12 @@ try:
 
     _gi = gi
     gi.require_version("Gtk", "3.0")
-    from gi.repository import Gtk, GLib
+    gi.require_version("GdkPixbuf", "2.0")
+    from gi.repository import Gtk, GLib, GdkPixbuf
 
     _Gtk = Gtk
     _GLib = GLib
+    _GdkPixbuf = GdkPixbuf
 
     # Try Ayatana first (actively maintained)
     try:
@@ -70,6 +75,51 @@ except ImportError as e:
     APPINDICATOR_ERROR = f"GObject introspection not available: {e}"
 except Exception as e:
     APPINDICATOR_ERROR = f"Failed to initialize AppIndicator: {e}"
+
+
+class _MenuImages:
+    """The menu items' icons, each read from its file once, as the
+    lists' shared image list. Where GTK draws the menu (no tray host:
+    the fallback icon), an item names its icon, so the tray library
+    hands over a name instead of turning every item's picture into
+    image data (docs/SYSTEM_TRAY.md, Menu Icons)."""
+
+    def __init__(self):
+        self.__pixbufs = {}  # path: GdkPixbuf.Pixbuf, None if unreadable
+        self.__names = {}  # path: icon name, registered with GTK
+
+    def image(self, path, by_name):
+        pixbuf = self.__pixbuf(path)
+        if pixbuf is None:
+            return None
+        if not by_name:
+            # A tray host draws the menu: it needs the picture itself
+            return _Gtk.Image.new_from_pixbuf(pixbuf)
+        name = self.__names.get(path)
+        if name is None:
+            name = "taskcoach-menu-%d" % len(self.__names)
+            with warnings.catch_warnings():
+                # Deprecated since GTK 3.14 for resource bundles; the
+                # tray library is GTK 3's
+                warnings.simplefilter("ignore", DeprecationWarning)
+                _Gtk.IconTheme.add_builtin_icon(
+                    name, pixbuf.get_width(), pixbuf
+                )
+            self.__names[path] = name
+        return _Gtk.Image.new_from_icon_name(name, _Gtk.IconSize.MENU)
+
+    def __pixbuf(self, path):
+        if path not in self.__pixbufs:
+            try:
+                pixbuf = _GdkPixbuf.Pixbuf.new_from_file(path)
+            except _GLib.Error:
+                pixbuf = None
+            self.__pixbufs[path] = pixbuf
+        return self.__pixbufs[path]
+
+
+# GTK's icon names are the process's: one set for every menu
+_menu_images = _MenuImages()
 
 
 class AppIndicatorIcon:
@@ -149,6 +199,18 @@ class AppIndicatorIcon:
         """Set the tooltip/title text."""
         self._tooltip = tooltip
         self._indicator.set_title(tooltip)
+
+    def menu_image(self, path):
+        """The Gtk.Image of a menu item's icon file, prepared once."""
+        return _menu_images.image(path, by_name=not self.is_connected())
+
+    def is_connected(self):
+        """Whether a tray host draws the menu (StatusNotifierItem);
+        otherwise GTK draws it in this process (the fallback icon)."""
+        return bool(self._indicator.get_property("connected"))
+
+    def on_connection_changed(self, callback):
+        self._indicator.connect("connection-changed", lambda *args: callback())
 
     def set_gtk_menu(self, menu):
         """Set a pre-built GTK menu."""

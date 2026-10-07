@@ -38,7 +38,7 @@ class RealDate(StrftimeFix, datetime.date):
 
 
 class InfiniteDate(datetime.date, metaclass=patterns.Singleton):
-    def __new__(self):
+    def __new__(cls):
         return super().__new__(
             InfiniteDate, infinite.year, infinite.month, infinite.day
         )

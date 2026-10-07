@@ -57,23 +57,23 @@ class TreeCtrlDragAndDropMixinTest(test.wxTestCase):
         self.assertTrue(event.allowed)
         self.assertFalse(event.vetoed)
 
-    def testEventIsVetoedWhenDragBeginsWithoutItem(self):
+    def test_event_is_vetoed_when_drag_begins_without_item(self):
         event = DummyEvent()
-        self.treeCtrl._dragStartPos = wx.Point(0, 0)
-        self.treeCtrl.OnBeginDrag(event)
+        self.treeCtrl._drag_start_pos = wx.Point(0, 0)
+        self.treeCtrl.on_begin_drag(event)
         self.assertEventIsVetoed(event)
 
-    def testEventIsAllowedWhenDragBeginsWithItem(self):
+    def test_event_is_allowed_when_drag_begins_with_item(self):
         event = DummyEvent(self.item)
-        self.treeCtrl._dragStartPos = wx.Point(0, 0)
-        self.treeCtrl.OnBeginDrag(event)
+        self.treeCtrl._drag_start_pos = wx.Point(0, 0)
+        self.treeCtrl.on_begin_drag(event)
         self.assertEventIsAllowed(event)
 
-    def testEventIsAllowedWhenDragBeginWithSelectedItem(self):
+    def test_event_is_allowed_when_drag_begin_with_selected_item(self):
         self.treeCtrl.SelectItem(self.item)
         event = DummyEvent(self.item)
-        self.treeCtrl._dragStartPos = wx.Point(0, 0)
-        self.treeCtrl.OnBeginDrag(event)
+        self.treeCtrl._drag_start_pos = wx.Point(0, 0)
+        self.treeCtrl.on_begin_drag(event)
         self.assertEventIsAllowed(event)
 
 

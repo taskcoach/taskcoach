@@ -45,8 +45,10 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
    **Done 2026-10-02 for the adjust modes** (P150, **asked by
    designer**): a list cell follows the task's mode there and the
    preference applies only in Implicit mode ([Stored
-   Duration](#stored-duration)). Left: whether the preference stays
-   for Implicit mode.
+   Duration](#stored-duration)). The preference stays for Implicit
+   mode, **ruled by designer 2026-10-06** (P97, "keep as released");
+   its note in Preferences says where it applies, no longer that it
+   will be removed.
    The `view.datestied` setting (`preferences.py:2029`) is a legacy
    predecessor to duration mode. It has three options: nothing, "changing
    start shifts due" (`startdue`), or "changing due shifts start"
@@ -296,6 +298,8 @@ Called on: Every change of Start-Date, Due-Date, or Duration (after main calc lo
 
 ## Edit Effort Window
 
+Efforts in general (views, filters, tracking): [EFFORTS.md](EFFORTS.md).
+
 ### Entry Modes
 
 | Mode | Inputs | Output (Calculated) | Read-Only Field | Presets |
@@ -325,10 +329,10 @@ Start: Standard mode, Duration 0, Stop-Date disabled
        1.7.2 If Duration > 0, Then adj Duration
    1.8 If Start-Date changed, Then
        1.8.1 If Duration > 0, Then
-           1.8.1.1 Set Sync-Mode [0.4]
+           1.8.1.1 Set Sync-Mode [0.4]: setting the Stop-Date sends
+                   its own change, which would run this flow again
            1.8.1.2 Adj Stop-Date
-           1.8.1.3 Adj Duration *Impossible* TODO remove step? remove sync-mode?
-           1.8.1.4 Unset Sync-Mode
+           1.8.1.3 Unset Sync-Mode
        1.8.2 If Duration = 0, Then do nothing
    1.9 If Duration changed and exists, Then
        1.9.1 If Duration > 0, Then

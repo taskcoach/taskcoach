@@ -54,27 +54,27 @@ class HistoryTest(test.TestCase, asserts.CommandAssertsMixin):
         self.commands.clear()
         super().tearDown()
 
-    def testSingleton(self):
+    def test_singleton(self):
         another = patterns.CommandHistory()
         self.assertTrue(self.commands is another)
 
-    def testClear(self):
+    def test_clear(self):
         self.command.do()
         self.commands.clear()
         self.assert_history_and_future([], [])
 
-    def testDo(self):
+    def test_do(self):
         self.command.do()
         self.assert_history_and_future([self.command], [])
         self.assertEqual("After", self.item.subject())
 
-    def testUndo(self):
+    def test_undo(self):
         self.command.do()
         self.commands.undo()
         self.assert_history_and_future([], [self.command])
         self.assertEqual("Before", self.item.subject())
 
-    def testRedo(self):
+    def test_redo(self):
         self.command.do()
         self.commands.undo()
         self.commands.redo()
@@ -90,29 +90,29 @@ class HistoryTest(test.TestCase, asserts.CommandAssertsMixin):
         self.commands.redo()
         self.assertEqual(date_after, self.item.modificationDateTime())
 
-    def testUndoStr_EmptyHistory(self):
+    def test_undo_str_empty_history(self):
         self.assertEqual("Undo", self.commands.undostr())
 
-    def testUndoStr(self):
+    def test_undo_str(self):
         self.command.do()
         self.assertEqual("Undo %s" % self.command, self.commands.undostr())
 
-    def testRedoStr_EmptyFuture(self):
+    def test_redo_str_empty_future(self):
         self.assertEqual("Redo", self.commands.redostr())
 
-    def testRedoStr(self):
+    def test_redo_str(self):
         self.command.do()
         self.commands.undo()
         self.assertEqual("Redo %s" % self.command, self.commands.redostr())
 
-    def testHasHistory(self):
+    def test_has_history(self):
         self.assertFalse(self.commands.has_history())
         self.command.do()
         self.assertTrue(self.commands.has_history())
         self.commands.undo()
         self.assertFalse(self.commands.has_history())
 
-    def testHasFuture(self):
+    def test_has_future(self):
         self.command.do()
         self.assertFalse(self.commands.has_future())
         self.commands.undo()

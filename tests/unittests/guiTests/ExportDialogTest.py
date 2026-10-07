@@ -63,21 +63,21 @@ class DummyViewerContainer(object):
 
 
 class ExportDialogTest(test.wxTestCase):
-    def testCreate(self):
+    def test_create(self):
         self.frame.viewer = DummyViewerContainer()
         self.set_main_window_task_file(self.frame)
         dialog.export.ExportAsHTMLDialog(self.frame)
 
 
 class ColumnPickerTest(test.wxTestCase):
-    def testCreate(self):
+    def test_create(self):
         panel = sized_controls.SizedPanel(self.frame)
         dialog.export.ColumnPicker(panel, DummyViewer())
 
     def test_only_selectable_columns(self):
         panel = sized_controls.SizedPanel(self.frame)
         picker = dialog.export.ColumnPicker(panel, DummyViewer())
-        picker.populateFromViewer(DummyViewer(), checkAll=True)
+        picker.populateFromViewer(DummyViewer(), check_all=True)
         self.assertEqual(
             ["two"], [column.name() for column in picker.selectedColumns()]
         )

@@ -109,7 +109,6 @@ Task Coach uses pure Python implementations for macOS-specific features via `cty
 | Idle detection | `ctypes` | IOKit |
 | Power management | Base class (no-op) | — |
 | Date formatting | Python `strftime` | — |
-| Text-to-speech | Subprocess | `say` command |
 | Thunderbird paths | Python | `~/Library/Thunderbird` |
 
 ### Historical Note

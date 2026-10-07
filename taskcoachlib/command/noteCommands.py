@@ -105,7 +105,7 @@ class AddNoteCommand(base.BaseCommand):
             ]
         self.items = self.__notes
 
-    def name_subject(self, newNote):  # pylint: disable=W0613
+    def name_subject(self, new_note):  # pylint: disable=W0613
         # Override to use the subject of the owner of the new note instead
         # of the subject of the new note itself, which wouldn't be very
         # interesting because it's something like 'New note'.
@@ -171,9 +171,9 @@ class RemoveNoteCommand(base.BaseCommand):
         # pylint: disable=W0142
         kwargs = dict(event=event)
         for item in self.items:
-            for eachNote in self.__notes:
-                if eachNote.parent():
-                    eachNote.parent().removeChild(eachNote, **kwargs)
+            for each_note in self.__notes:
+                if each_note.parent():
+                    each_note.parent().removeChild(each_note, **kwargs)
             item.removeNotes(*self.__notes, **kwargs)
 
     def do_command(self):

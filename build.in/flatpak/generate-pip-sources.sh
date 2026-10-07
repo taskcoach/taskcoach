@@ -26,16 +26,13 @@ GENERATOR_URL="https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/m
 OUT="$SCRIPT_DIR/python3-sources.json"
 
 # Mirror the manifest's python3-deps set exactly so the offline build installs
-# the same packages. Most are pure-Python; dbus-python is a C extension (idle
-# detection) built from its pinned sdist in the runtime, whose Sdk ships the
-# dbus/glib dev headers. wxPython/wxWidgets are separate pinned source modules.
+# the same packages, all pure-Python. wxPython/wxWidgets are separate pinned
+# source modules.
 REQUIREMENTS=(
     "chardet>=5.2.0"
     "python-dateutil>=2.9.0"
-    "keyring"
     "squaremap>=1.0.5"
     "pyenchant>=3.2.0"
-    "dbus-python>=1.3.2"
 )
 
 # Python build backends the OFFLINE build needs but pip cannot fetch from PyPI
@@ -43,19 +40,12 @@ REQUIREMENTS=(
 # before any module that builds from an sdist:
 #   - wxPython: setuptools/wheel/cython/sip/requests (its build-system.requires;
 #     keep these in sync with wxpython-4.3.1).
-#   - dbus-python 1.4.x: meson-python (it builds with meson; meson and ninja
-#     themselves come from the Sdk, only the Python backend is missing), plus
-#     patchelf, which meson-python shells out to for fixing the built C
-#     extension's rpath and which the Sdk does not ship. The patchelf PyPI
-#     wheel bundles the binary; pip installs it to /app/bin (on PATH at build).
 BUILD_REQUIREMENTS=(
     "setuptools>=70.1"
     "wheel"
     "cython>=3.0.10"
     "requests>=2.26.0"
     "sip==6.12.0"
-    "meson-python"
-    "patchelf"
 )
 
 echo "Fetching flatpak-pip-generator..."
@@ -65,11 +55,7 @@ wget -q "$GENERATOR_URL" -O "$TMP/flatpak-pip-generator"
 python3 -m pip install --quiet --user requirements-parser packaging || true
 
 # --runtime makes the generator read the TARGET Python's version/ABI tags from
-# the GNOME Sdk, so cryptography resolves to the correct cp3xx
-# manylinux wheels (generating on the host would pin the wrong ABI).
-# --prefer-wheels avoids compiling those heavy binary deps from sdist;
-# dbus-python is intentionally left off it (no wheels exist) and builds from its
-# sdist against the Sdk's dbus/glib headers.
+# the GNOME Sdk (generating on the host would pin the wrong ABI).
 # --ignore-installed lists packages pip must install into /app even when the
 # build's org.gnome.Sdk already ships them: without it pip sees
 # them "already satisfied", skips them, and they are MISSING at runtime against
@@ -82,7 +68,6 @@ IGNORE_INSTALLED="$(printf '%s\n' "${REQUIREMENTS[@]}" | sed -E 's/[<>=!~,].*//'
 echo "Generating $OUT ..."
 python3 "$TMP/flatpak-pip-generator" \
     --runtime "org.gnome.Sdk//$RUNTIME_VERSION" \
-    --prefer-wheels=cryptography,cffi \
     --ignore-installed="$IGNORE_INSTALLED" \
     --output "$SCRIPT_DIR/python3-sources" \
     "${REQUIREMENTS[@]}"
@@ -96,7 +81,7 @@ BUILD_OUT="$SCRIPT_DIR/python3-build-deps.json"
 echo "Generating $BUILD_OUT ..."
 python3 "$TMP/flatpak-pip-generator" \
     --runtime "org.gnome.Sdk//$RUNTIME_VERSION" \
-    --prefer-wheels=setuptools,wheel,cython,requests,sip,meson-python,patchelf \
+    --prefer-wheels=setuptools,wheel,cython,requests,sip \
     --output "$SCRIPT_DIR/python3-build-deps" \
     "${BUILD_REQUIREMENTS[@]}"
 echo "Wrote $BUILD_OUT"

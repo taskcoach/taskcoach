@@ -23,15 +23,19 @@ from .xml import TemplateXMLWriter, TemplateXMLReader
 
 
 class TemplateList(object):
-    def __init__(self, path, TemplateReader=TemplateXMLReader, openFile=open):
+    def __init__(
+        self, path, template_reader=TemplateXMLReader, open_file=open
+    ):
         self._path = path
-        self._templates = self._readTemplates(TemplateReader, openFile)
+        self._templates = self._readTemplates(template_reader, open_file)
         self._toDelete = []
 
-    def _readTemplates(self, TemplateReader, openFile):
+    def _readTemplates(self, template_reader, open_file):
         templates = []
         for filename in self._template_filenames():
-            template = self._read_template(filename, TemplateReader, openFile)
+            template = self._read_template(
+                filename, template_reader, open_file
+            )
             if template:
                 templates.append((template, filename))
         return templates

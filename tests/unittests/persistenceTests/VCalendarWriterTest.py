@@ -54,13 +54,13 @@ class VCalTestCase(test.wxTestCase):
 
 
 class VCalendarCommonTestsMixin(object):
-    def testStart(self):
+    def test_start(self):
         self.assertEqual("BEGIN:VCALENDAR", self.vcalFile.split("\r\n")[0])
 
-    def testVersion(self):
+    def test_version(self):
         self.assertEqual("VERSION:2.0", self.vcalFile.split("\r\n")[1])
 
-    def testProdId(self):
+    def test_prod_id(self):
         domain = meta.url.split("://", 1)[1].strip("/")
         self.assertEqual(
             "PRODID:-//%s//NONSGML %s V%s//EN"
@@ -68,7 +68,7 @@ class VCalendarCommonTestsMixin(object):
             self.vcalFile.split("\r\n")[2],
         )
 
-    def testEnd(self):
+    def test_end(self):
         self.assertEqual("END:VCALENDAR", self.vcalFile.split("\r\n")[-2])
 
 
@@ -93,26 +93,26 @@ class VCalEffortWriterTestCase(VCalTestCase):
 
 
 class VCalEffortCommonTestsMixin(VCalendarCommonTestsMixin):
-    def testBeginVEvent(self):
+    def test_begin_vevent(self):
         self.assertEqual(
             self.expectedNumberOfItems(), self.vcalFile.count("BEGIN:VEVENT")
         )
 
-    def testEndVEvent(self):
+    def test_end_vevent(self):
         self.assertEqual(
             self.expectedNumberOfItems(), self.vcalFile.count("END:VEVENT")
         )
 
-    def testEffortSubject(self):
+    def test_effort_subject(self):
         self.assertTrue("SUMMARY:Task 1" in self.vcalFile)
 
-    def testEffortDescription(self):
+    def test_effort_description(self):
         self.assertTrue("DESCRIPTION:Description" in self.vcalFile)
 
-    def testEffortStart(self):
-        startLocal = date.DateTime(2000, 1, 1, 1, 1, 1)
+    def test_effort_start(self):
+        start_local = date.DateTime(2000, 1, 1, 1, 1, 1)
         start_utc = datetime.datetime.fromtimestamp(
-            time.mktime(startLocal.timetuple()), datetime.timezone.utc
+            time.mktime(start_local.timetuple()), datetime.timezone.utc
         )
         self.assertIn(
             "DTSTART:%04d%02d%02dT%02d%02d%02dZ"
@@ -127,10 +127,10 @@ class VCalEffortCommonTestsMixin(VCalendarCommonTestsMixin):
             self.vcalFile,
         )
 
-    def testEffortEnd(self):
-        endLocal = date.DateTime(2000, 2, 2, 2, 2, 2)
+    def test_effort_end(self):
+        end_local = date.DateTime(2000, 2, 2, 2, 2, 2)
         end_utc = datetime.datetime.fromtimestamp(
-            time.mktime(endLocal.timetuple()), datetime.timezone.utc
+            time.mktime(end_local.timetuple()), datetime.timezone.utc
         )
         self.assertIn(
             "DTEND:%04d%02d%02dT%02d%02d%02dZ"
@@ -145,7 +145,7 @@ class VCalEffortCommonTestsMixin(VCalendarCommonTestsMixin):
             self.vcalFile,
         )
 
-    def testEffortId(self):
+    def test_effort_id(self):
         self.assertTrue("UID:%s" % self.effort1.id() in self.vcalFile)
 
 
@@ -191,34 +191,34 @@ class VCalTaskWriterTestCase(VCalTestCase):
 
 
 class VCalTaskCommonTestsMixin(VCalendarCommonTestsMixin):
-    def testTaskSubject(self):
+    def test_task_subject(self):
         self.assertTrue("SUMMARY:Task subject 2" in self.vcalFile)
 
-    def testTaskDescription(self):
+    def test_task_description(self):
         self.assertTrue(
             "DESCRIPTION:Task description 2\r\n with newline\r\n 微软雅黑"
             in self.vcalFile,
             self.vcalFile,
         )
 
-    def testNumber(self):
+    def test_number(self):
         self.assertEqual(
             self.expectedNumberOfItems(), self.vcalFile.count("BEGIN:VTODO")
         )  # pylint: disable=W0511
 
-    def testTaskId(self):
+    def test_task_id(self):
         self.assertTrue("UID:%s" % self.task2.id() in self.vcalFile)
 
-    def testCreationDateTime(self):
+    def test_creation_date_time(self):
         creation_datetime = persistence.icalendar.ical.fmt_date_time(
             self.task2.creationDateTime()
         )
         self.assertTrue("CREATED:%s" % creation_datetime in self.vcalFile)
 
-    def testMissingCreationDateTime(self):
+    def test_missing_creation_date_time(self):
         self.assertEqual(1, self.vcalFile.count("CREATED:"))
 
-    def testModificationDateTime(self):
+    def test_modification_date_time(self):
         modification_datetime = persistence.icalendar.ical.fmt_date_time(
             date.DateTime(2012, 1, 1)
         )
@@ -226,7 +226,7 @@ class VCalTaskCommonTestsMixin(VCalendarCommonTestsMixin):
             "LAST-MODIFIED:%s" % modification_datetime in self.vcalFile
         )
 
-    def testMissingModificationDateTime(self):
+    def test_missing_modification_date_time(self):
         self.assertEqual(1, self.vcalFile.count("LAST-MODIFIED"))
 
 
@@ -251,7 +251,7 @@ class TestNotSelectionOnlyMixin(VCalTaskCommonTestsMixin):
     def expectedNumberOfItems(self):
         return self.numberOfVisibleItems()
 
-    def testPercentageComplete(self):
+    def test_percentage_complete(self):
         self.assertTrue("PERCENT-COMPLETE:56" in self.vcalFile)
 
 
@@ -268,31 +268,31 @@ class FoldTest(test.TestCase):
         super().setUp()
         self.fold = persistence.icalendar.ical.fold
 
-    def testEmptyText(self):
+    def test_empty_text(self):
         self.assertEqual("", self.fold([]))
 
-    def testDontFoldAShortLine(self):
+    def test_dont_fold_a_short_line(self):
         self.assertEqual("Short line\r\n", self.fold(["Short line"]))
 
-    def testFoldALongLine(self):
+    def test_fold_a_long_line(self):
         self.assertEqual(
             "Long \r\n line\r\n", self.fold(["Long line"], linewidth=5)
         )
 
-    def testFoldAReallyLongLine(self):
+    def test_fold_a_really_long_line(self):
         self.assertEqual(
             "Long\r\n  li\r\n ne\r\n", self.fold(["Long line"], linewidth=4)
         )
 
-    def testFoldTwoShortLines(self):
+    def test_fold_two_short_lines(self):
         self.assertEqual("Short line\r\n" * 2, self.fold(["Short line"] * 2))
 
-    def testFoldTwoLongLines(self):
+    def test_fold_two_long_lines(self):
         self.assertEqual(
             "Long \r\n line\r\n" * 2, self.fold(["Long line"] * 2, linewidth=5)
         )
 
-    def testFoldALineWithNewLines(self):
+    def test_fold_a_line_with_new_lines(self):
         self.assertEqual(
             "Line 1\r\n Line 2\r\n", self.fold(["Line 1\nLine 2"])
         )

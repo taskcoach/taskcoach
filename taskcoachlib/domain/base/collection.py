@@ -29,8 +29,8 @@ class Collection(patterns.CompositeSet):
         if added:
             patterns.ObservableSet.extend(self, added, event=event)
 
-    def getObjectById(self, domainObjectId):
-        for domainObject in self:
-            if domainObjectId == domainObject.id():
-                return domainObject
+    def getObjectById(self, domain_object_id):
+        for domain_object in self:
+            if domain_object_id == domain_object.id():
+                return domain_object
         raise IndexError

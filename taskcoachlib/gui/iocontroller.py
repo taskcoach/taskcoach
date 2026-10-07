@@ -64,6 +64,35 @@ def copy_name(path, file_exists=os.path.exists):
         number += 1
 
 
+def task_file_folder(task_file):
+    """The open task file's folder, or "" while it is not saved."""
+    filename = task_file.filename() if task_file else ""
+    return os.path.dirname(os.path.abspath(filename)) if filename else ""
+
+
+def documents_folder():
+    """The platform's Documents folder (XDG's on Linux, else home)."""
+    return wx.StandardPaths.Get().GetDocumentsDir()
+
+
+def attachment_folder(task_file=None):
+    """Where a file dialog for an attachment opens: the folder last
+    chosen for one, kept across sessions; else the open task file's;
+    else Documents (docs/FILE_DIALOGS.md)."""
+    folder = settings.file.lastattachmentpath
+    if folder and os.path.isdir(folder):
+        return folder
+    if task_file is None:
+        task_file = getattr(wx.GetApp(), "taskFile", None)
+    return task_file_folder(task_file) or documents_folder()
+
+
+def remember_attachment_folder(filename):
+    settings.file.lastattachmentpath = os.path.dirname(
+        os.path.abspath(filename)
+    )
+
+
 def open_text(filename, mode, encoding):
     """A text file written as is, without newline translation: the
     iCalendar and CSV exports write their own CRLF line ends."""
@@ -79,15 +108,15 @@ class IOController(object):
         super().__init__()
         self.__task_file = task_file
         self.__message_callback = message_callback
-        default_path = os.path.expanduser("~")
+        self.__last_folders = {}  # The folder last chosen, per dialog kind
         self.__tsk_file_save_dialog_opts = {
-            "default_path": default_path,
+            "kind": "taskfile",
             "default_extension": "tsk",
             "wildcard": _("%s files (*.tsk)|*.tsk|All files (*.*)|*")
             % meta.name,
         }
         self.__tsk_file_open_dialog_opts = {
-            "default_path": default_path,
+            "kind": "taskfile",
             "default_extension": "tsk",
             "wildcard": _(
                 "%s files (*.tsk)|*.tsk|Backup files (*.tsk.bak)|*.tsk.bak|"
@@ -96,34 +125,26 @@ class IOController(object):
             % meta.name,
         }
         self.__ics_file_dialog_opts = {
-            "default_path": default_path,
+            "kind": "ics",
             "default_extension": "ics",
             "wildcard": _("iCalendar files (*.ics)|*.ics|All files (*.*)|*"),
         }
         self.__html_file_dialog_opts = {
-            "default_path": default_path,
+            "kind": "html",
             "default_extension": "html",
             "wildcard": _("HTML files (*.html)|*.html|All files (*.*)|*"),
         }
         self.__csv_file_dialog_opts = {
-            "default_path": default_path,
+            "kind": "csv",
             "default_extension": "csv",
             "wildcard": _(
                 "CSV files (*.csv)|*.csv|Text files (*.txt)|*.txt|"
                 "All files (*.*)|*"
             ),
         }
-        self.__todotxt_file_dialog_opts = {
-            "default_path": default_path,
-            "default_extension": "txt",
-            "wildcard": _("Todo.txt files (*.txt)|*.txt|All files (*.*)|*"),
-        }
         self.__error_message_options = dict(
             caption=_("%s file error") % meta.name, style=wx.ICON_ERROR
         )
-        # A task file the user agreed to replace; _save_save removes its
-        # auto import/export files once it holds the lock
-        self.__replacing = None
         patterns.Publisher().registerObserver(
             self.on_changed_on_disk,
             eventType="taskfile.changed",
@@ -167,7 +188,6 @@ class IOController(object):
             )
         if not filename:
             return
-        self.__update_default_path(filename)
         if file_exists(filename):
             # Lock the file before closing the current one, so a file in
             # use elsewhere leaves the current file open; load() adopts
@@ -183,14 +203,20 @@ class IOController(object):
             try:
                 if self.__holds_lock(lock):
                     self.__task_file.pass_lock()  # Reopening: held on
-                self.__close_unconditionally()
+                if not self.__untouched():
+                    self.__close_unconditionally()
             except BaseException:
                 if not self.__holds_lock(lock):
                     lock.release()
                 raise
             self.__add_recent_file(filename)
+            # The window cannot answer while the file is read and its
+            # statuses and styles computed (docs/WINDOW_GEOMETRY.md,
+            # Opening the File)
+            self.__message_callback(_("Opening %s...") % filename)
             try:
-                self.__task_file.load(filename)
+                with wx.BusyCursor():
+                    self.__task_file.load(filename)
             except resourcelock.LockInUse as in_use:
                 showerror(
                     resourcelock.in_use_message(filename, in_use.owner),
@@ -280,8 +306,10 @@ class IOController(object):
                 _("Merge"), self.__tsk_file_open_dialog_opts
             )
         if filename:
+            self.__message_callback(_("Merging %s...") % filename)
             try:
-                self.__task_file.merge(filename)
+                with wx.BusyCursor():
+                    self.__task_file.merge(filename)
             except persistence.xml.reader.XMLReaderTooNewException:
                 self.__show_too_new_error_message(filename, showerror)
                 return
@@ -487,7 +515,6 @@ class IOController(object):
         task file adopts the lock (Save as); otherwise it is released
         afterwards."""
         lock = None
-        replacing, self.__replacing = self.__replacing, None
         try:
             if filename:
                 lock = resourcelock.acquire(filename, "task file")
@@ -503,8 +530,6 @@ class IOController(object):
                         **self.__error_message_options
                     )
                     return False
-                if filename == replacing and not open_file:
-                    self.__remove_auto_files(filename)
                 task_file.saveas(filename)
             else:
                 filename = task_file.filename()
@@ -535,17 +560,6 @@ class IOController(object):
         holds_lock = getattr(self.__task_file, "holds_lock", None)
         return bool(holds_lock and holds_lock(lock))
 
-    def __remove_auto_files(self, filename):
-        """Remove the auto import/export files of the task file that
-        filename replaces, so they are not imported into the new one."""
-        extensions = {"Todo.txt": ".txt"}
-        for auto in set(settings.file.autoimport + settings.file.autoexport):
-            auto_name = os.path.splitext(filename)[0] + extensions[auto]
-            if os.path.exists(auto_name):
-                os.remove(auto_name)
-            if os.path.exists(auto_name + "-meta"):
-                os.remove(auto_name + "-meta")
-
     def save_as_template(self, task):
         templates = persistence.TemplateList(settings.templates_dir())
         templates.add_template(task)
@@ -555,6 +569,7 @@ class IOController(object):
         filename = self.__ask_user_for_file(
             _("Import template"),
             file_dialog_opts={
+                "kind": "template",
                 "default_extension": "tsktmpl",
                 "wildcard": _("%s template files (*.tsktmpl)|" "*.tsktmpl")
                 % meta.name,
@@ -714,37 +729,11 @@ class IOController(object):
             taskFile=self.__task_file,
         )
 
-    def export_as_todo_txt(
-        self,
-        viewer,
-        selectionOnly=False,
-        file_exists=os.path.exists,
-        default_filename=None,
-    ):
-        file_opts = self.__todotxt_file_dialog_opts.copy()
-        if default_filename:
-            file_opts["default_filename"] = default_filename
-        return self.export(
-            _("Export as Todo.txt"),
-            file_opts,
-            persistence.TodoTxtWriter,
-            viewer,
-            selectionOnly,
-            file_exists=file_exists,
-            taskFile=self.__task_file,
-        )
-
     def import_csv(self, **kwargs):
         with patterns.CommandHistory().action(_("Import CSV")):
             persistence.CSVReader(
                 self.__task_file.tasks(), self.__task_file.categories()
             ).read(**kwargs)
-
-    def import_todo_txt(self, filename):
-        with patterns.CommandHistory().action(_("Import Todo.txt")):
-            persistence.TodoTxtReader(
-                self.__task_file.tasks(), self.__task_file.categories()
-            ).read(filename)
 
     def filename(self):
         return self.__task_file.filename()
@@ -784,9 +773,14 @@ class IOController(object):
         flag=wx.FD_OPEN,
         file_exists=os.path.exists,
     ):
-        filename = wx.FileSelector(
-            title, flags=flag, **file_dialog_opts
-        )  # pylint: disable=W0142
+        options = dict(file_dialog_opts)
+        kind = options.pop("kind")
+        options.setdefault("default_path", self.start_folder(kind))
+        filename = wx.FileSelector(title, flags=flag, **options)
+        if filename:
+            self.__last_folders[kind] = os.path.dirname(
+                os.path.abspath(filename)
+            )
         if filename and (flag & wx.FD_SAVE):
             # On Ubuntu, the default extension is not added automatically to
             # a filename typed by the user. Add the extension if necessary.
@@ -809,8 +803,6 @@ class IOController(object):
             style=wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION | wx.NO_DEFAULT,
         )
         if result == wx.YES:
-            if file_dialog_opts["default_extension"] == "tsk":
-                self.__replacing = filename
             return filename
         elif result == wx.NO:
             return self.__ask_user_for_file(
@@ -833,6 +825,17 @@ class IOController(object):
         elif result == wx.CANCEL:
             return False
         return True
+
+    def __untouched(self):
+        """Nothing to close: no file, nothing in it, nothing to undo
+        (the start, before the file opens)."""
+        history = patterns.CommandHistory()
+        return not (
+            self.__task_file.filename()
+            or not self.__task_file.isEmpty()
+            or history.has_history()
+            or history.has_future()
+        )
 
     def __close_unconditionally(self):
         self.__message_callback(_("Closed %s") % self.__task_file.filename())
@@ -886,12 +889,17 @@ class IOController(object):
             finally:
                 dlg.Destroy()
 
-    def __update_default_path(self, filename):
-        for options in [
-            self.__tsk_file_open_dialog_opts,
-            self.__tsk_file_save_dialog_opts,
-            self.__csv_file_dialog_opts,
-            self.__ics_file_dialog_opts,
-            self.__html_file_dialog_opts,
-        ]:
-            options["default_path"] = os.path.dirname(filename)
+    def start_folder(self, kind):
+        """Where a file dialog of this kind opens: the folder last
+        chosen in one this session; before that, the open task file's;
+        with no saved file, Documents (docs/FILE_DIALOGS.md)."""
+        folder = self.__last_folders.get(kind)
+        if folder and os.path.isdir(folder):
+            return folder
+        return task_file_folder(self.__task_file) or documents_folder()
+
+    def ask_import_csv_file(self):
+        return self.__ask_user_for_file(
+            _("Import CSV"),
+            {"kind": "csvimport", "wildcard": "*.csv"},
+        )

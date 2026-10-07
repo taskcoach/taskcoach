@@ -43,11 +43,11 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         self,
         parent,
         taskList,
-        onSelect,
-        onEdit,
-        onCreate,
-        onChangeConfig,
-        popupMenu,
+        on_select,
+        on_edit,
+        on_create,
+        on_change_config,
+        popup_menu,
         *args,
         **kwargs
     ):
@@ -65,11 +65,11 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
 
         self.SetDropTarget(self.dropTarget)
 
-        self.selectCommand = onSelect
-        self.editCommand = onEdit
-        self.createCommand = onCreate
-        self.changeConfigCb = onChangeConfig
-        self.popupMenu = popupMenu
+        self.selectCommand = on_select
+        self.editCommand = on_edit
+        self.createCommand = on_create
+        self.changeConfigCb = on_change_config
+        self.popupMenu = popup_menu
 
         self.__tip = tooltip.SimpleToolTip(self)
         self.__selection = []
@@ -97,20 +97,20 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
             TaskSchedule.tcDateTime(dateTime), minutes=includeMinutes
         )
 
-    def _handleDrop(self, x, y, droppedObject, cb):
+    def _handleDrop(self, x, y, dropped_object, cb):
         if cb is not None:
             _, _, item = self._findSchedule(wx.Point(x, y))
 
             if item is not None:
                 if isinstance(item, TaskSchedule):
-                    cb(item.task, droppedObject)
+                    cb(item.task, dropped_object)
                 else:
                     datetime = date.DateTime(
                         item.GetYear(), item.GetMonth() + 1, item.GetDay()
                     )
                     cb(
                         None,
-                        droppedObject,
+                        dropped_object,
                         plannedStartDateTime=datetime,
                         dueDateTime=datetime.endOfDay(),
                     )
@@ -135,16 +135,16 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
     def on_drop_mail(self, x, y, mails):
         self._handleDrop(x, y, mails, self.__on_drop_mail_callback)
 
-    def SetShowNoStartDate(self, doShow):
-        self.__showNoPlannedStartDate = doShow
+    def SetShowNoStartDate(self, do_show):
+        self.__showNoPlannedStartDate = do_show
         self.RefreshAllItems(0)
 
-    def SetShowNoDueDate(self, doShow):
-        self.__showNoDueDate = doShow
+    def SetShowNoDueDate(self, do_show):
+        self.__showNoDueDate = do_show
         self.RefreshAllItems(0)
 
-    def SetShowUnplanned(self, doShow):
-        self.__showUnplanned = doShow
+    def SetShowUnplanned(self, do_show):
+        self.__showUnplanned = do_show
         self.RefreshAllItems(0)
 
     def OnChangeConfig(self, event):  # pylint: disable=W0613
@@ -210,38 +210,38 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
 
     def RefreshAllItems(self, count):  # pylint: disable=W0613
         x, y = self.GetViewStart()
-        selectionId = None
+        selection_id = None
         if self.__selection:
-            selectionId = self.__selection[0].id()
+            selection_id = self.__selection[0].id()
         self.__selection = []
 
         self.DeleteAll()
 
         schedules = []
         self.taskMap = {}  # pylint: disable=W0201
-        maxDateTime = date.DateTime()
+        max_date_time = date.DateTime()
 
         for task in self.taskList:
             if (
-                task.plannedStartDateTime() == maxDateTime
+                task.plannedStartDateTime() == max_date_time
                 or not task.completed()
             ):
                 if (
-                    task.plannedStartDateTime() == maxDateTime
+                    task.plannedStartDateTime() == max_date_time
                     and not self.__showNoPlannedStartDate
                 ):
                     continue
 
                 if (
-                    task.dueDateTime() == maxDateTime
+                    task.dueDateTime() == max_date_time
                     and not self.__showNoDueDate
                 ):
                     continue
 
                 if not self.__showUnplanned:
                     if (
-                        task.plannedStartDateTime() == maxDateTime
-                        and task.dueDateTime() == maxDateTime
+                        task.plannedStartDateTime() == max_date_time
+                        and task.dueDateTime() == max_date_time
                     ):
                         continue
 
@@ -249,7 +249,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
             schedules.append(schedule)
             self.taskMap[task.id()] = schedule
 
-            if task.id() == selectionId:
+            if task.id() == selection_id:
                 self.__selection = [task]
                 schedule.SetSelected(True)
 
@@ -258,32 +258,32 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         self.Scroll(x, y)
 
     def RefreshItems(self, *args):
-        selectionId = None
+        selection_id = None
         if self.__selection:
-            selectionId = self.__selection[0].id()
+            selection_id = self.__selection[0].id()
         self.__selection = []
 
         for task in args:
-            doShow = True
+            do_show = True
 
             if (
                 task.plannedStartDateTime() == date.DateTime()
                 and task.dueDateTime() == date.DateTime()
                 and not self.__showUnplanned
             ):
-                doShow = False
+                do_show = False
 
             if (
                 task.plannedStartDateTime() == date.DateTime()
                 and not self.__showNoPlannedStartDate
             ):
-                doShow = False
+                do_show = False
 
             if (
                 task.dueDateTime() == date.DateTime()
                 and not self.__showNoDueDate
             ):
-                doShow = False
+                do_show = False
 
             # Special case
 
@@ -291,9 +291,9 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                 task.plannedStartDateTime() != date.DateTime()
                 and task.completed()
             ):
-                doShow = True
+                do_show = True
 
-            if doShow:
+            if do_show:
                 if task.id() in self.taskMap:
                     schedule = self.taskMap[task.id()]
                     schedule.update()
@@ -302,7 +302,7 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
                     self.taskMap[task.id()] = schedule
                     self.Add([schedule])
 
-                if task.id() == selectionId:
+                if task.id() == selection_id:
                     self.__selection = [task]
                     schedule.SetSelected(True)
             else:
@@ -320,12 +320,12 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         return len(self.GetSchedules())
 
     def OnBeforeShowToolTip(self, x, y):
-        originX, originY = self.GetViewStart()
-        unitX, unitY = self.GetScrollPixelsPerUnit()
+        origin_x, origin_y = self.GetViewStart()
+        unit_x, unit_y = self.GetScrollPixelsPerUnit()
 
         try:
             _, _, schedule = self._findSchedule(
-                wx.Point(x + originX * unitX, y + originY * unitY)
+                wx.Point(x + origin_x * unit_x, y + origin_y * unit_y)
             )
         except TypeError:
             return
@@ -333,10 +333,10 @@ class _CalendarContent(tooltip.ToolTipMixin, wxScheduler):
         if schedule and isinstance(schedule, TaskSchedule):
             item = schedule.task
 
-            tooltipData = self.getItemTooltipData(item)
-            doShow = any(data[1] for data in tooltipData)
-            if doShow:
-                self.__tip.SetData(tooltipData)
+            tooltip_data = self.getItemTooltipData(item)
+            do_show = any(data[1] for data in tooltip_data)
+            if do_show:
+                self.__tip.SetData(tooltip_data)
                 return self.__tip
             else:
                 return None
@@ -363,10 +363,10 @@ class Calendar(wx.Panel):
         self,
         parent,
         taskList,
-        onSelect,
-        onEdit,
-        onCreate,
-        popupMenu,
+        on_select,
+        on_edit,
+        on_create,
+        popup_menu,
         *args,
         **kwargs
     ):
@@ -378,10 +378,10 @@ class Calendar(wx.Panel):
         self._content = _CalendarContent(
             self,
             taskList,
-            onSelect,
-            onEdit,
-            onCreate,
-            popupMenu,
+            on_select,
+            on_edit,
+            on_create,
+            popup_menu,
             *args,
             **kwargs
         )
@@ -399,14 +399,14 @@ class Calendar(wx.Panel):
     def Draw(self, dc):
         self._content.Draw(dc)
 
-    def SetShowNoStartDate(self, doShow):
-        self._content.SetShowNoStartDate(doShow)
+    def SetShowNoStartDate(self, do_show):
+        self._content.SetShowNoStartDate(do_show)
 
-    def SetShowNoDueDate(self, doShow):
-        self._content.SetShowNoDueDate(doShow)
+    def SetShowNoDueDate(self, do_show):
+        self._content.SetShowNoDueDate(do_show)
 
-    def SetShowUnplanned(self, doShow):
-        self._content.SetShowUnplanned(doShow)
+    def SetShowUnplanned(self, do_show):
+        self._content.SetShowUnplanned(do_show)
 
     def SetWeekStartMonday(self):
         self._content.SetWeekStart(wxSCHEDULER_WEEKSTART_MONDAY)

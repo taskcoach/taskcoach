@@ -43,7 +43,8 @@ single-file `.flatpak` bundle.
 - **System tray** uses Flathub's maintained `shared-modules` libappindicator
   (git submodule at `shared-modules/`); run `git submodule update --init` before
   building locally. See [docs/FLATPAK.md](../../docs/FLATPAK.md).
-- **Idle detection** is enabled via bundled `dbus-python`.
+- **Idle detection** asks GNOME's idle monitor through PyGObject's Gio, from
+  the runtime.
 - For **Flathub**: commit the generated `python3-*.json` and swap the `taskcoach`
   module's `type: dir` for a pinned `git`/`archive` source. See
   [docs/FLATPAK.md](../../docs/FLATPAK.md).

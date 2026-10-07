@@ -2,7 +2,10 @@
 
 The unit and integration tests in `tests/` are a regression net; a
 change is verified in the full app
-([DEVELOPMENT.md](DEVELOPMENT.md#verifying-changes)).
+([DEVELOPMENT.md](DEVELOPMENT.md#verifying-changes)). The tests and
+their scripts are the worker's to keep working, testing the app
+completely and correctly, with no ruling asked (ruled by the decider,
+[DEVELOPMENT.md](DEVELOPMENT.md#working-plan) 5).
 
 ## Certified Platform
 
@@ -11,7 +14,7 @@ The suite is written for, and passes on, one platform:
 | Component | Version |
 |-----------|---------|
 | OS | Linux (Debian 13 trixie) |
-| Display | X11, under `xvfb-run` |
+| Display | X11, the run's own Xvfb |
 | Python | 3.13.5 |
 | wxPython | 4.2.3 |
 | wxWidgets | 3.2.8 |
@@ -32,19 +35,34 @@ change `CERTIFIED` and the table above in the same commit.
 From `tests/`, one file:
 
 ```
-xvfb-run -a ../.venv/bin/python test.py unittests/domainTests/TaskTest.py
+../.venv/bin/python test.py unittests/domainTests/TaskTest.py
 ```
+
+Each run starts its own X display, a private Xvfb, and stops it at
+the end (`start_display()`): the tests never use the desktop's, and
+need no `xvfb-run`. Xvfb picks a free display number itself
+(`-displayfd`), so runs side by side never take the same one (with
+`xvfb-run -a` two could), and does not reset when its last client
+leaves (`-noreset`): a reset can drop a client still connecting, the
+likely cause of P90 below. `TASKCOACH_TEST_DISPLAY=:61` runs on a
+given display instead, to watch the tests.
 
 The catalog, every test file, each in its own process as when run
 alone (`run_catalog()`): one line per file, the failures' reports and
-a summary.
+a summary. A file that fails before any test also gets the display's
+state (`display_report()`): its socket, key and lock owner, whether
+`xdpyinfo` connects, and the load; so does the runner, or a file,
+when its `wx.App` finds no display, with the Xvfb's last output.
+Under `xvfb-run` a file, and once the runner itself, now and then
+could not reach the display (P90 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues));
+it is not run again, so a cause left would show.
 
 ```
-xvfb-run -a ../.venv/bin/python test.py --alltests
+../.venv/bin/python test.py --alltests
 ```
 
 Without `--alltests` it runs the unit tests; `--help` lists the parts.
-`xvfb-run` keeps the test windows off the desktop.
 
 `--profile` runs the files given in one process under `cProfile`, so
 the report covers them together (`--help` lists its sort and limit

@@ -22,12 +22,12 @@ from taskcoachlib import meta
 
 
 def extendedWithAncestors(selection):
-    extendedSelection = selection[:]
+    extended_selection = selection[:]
     for item in selection:
         for ancestor in item.ancestors():
-            if ancestor not in extendedSelection:
-                extendedSelection.append(ancestor)
-    return extendedSelection
+            if ancestor not in extended_selection:
+                extended_selection.append(ancestor)
+    return extended_selection
 
 
 class iCalendarWriter(object):

@@ -63,11 +63,21 @@ class NoteContainerAssertsMixin(object):
             self.assertTrue(note in expected)
 
 
+def assert_copied_stop(test_case, stop1, stop2):
+    """The same stop, or one tracked and its copy stopped: a copy never
+    tracks (docs/EFFORTS.md, Tracking)."""
+    if stop1 is None or stop2 is None:
+        test_case.assertNotEqual(stop1 is None, stop2 is None)
+    else:
+        test_case.assertEqual(stop1, stop2)
+
+
 class EffortAssertsMixin(object):
     def assertEqualEfforts(self, effort1, effort2):
+        """An effort and its copy."""
         self.assertEqual(effort1.task(), effort2.task())
         self.assertEqual(effort1.getStart(), effort2.getStart())
-        self.assertEqual(effort1.getStop(), effort2.getStop())
+        assert_copied_stop(self, effort1.getStop(), effort2.getStop())
         self.assertEqual(effort1.description(), effort2.description())
 
 
@@ -109,16 +119,16 @@ class TaskAssertsMixin(object):
             copy.shouldMarkCompletedWhenAllChildrenCompleted(),
         )
         self.assertEqual(len(orig.children()), len(copy.children()))
-        for origChild, copyChild in zip(orig.children(), copy.children()):
-            self.assertTaskCopy(origChild, copyChild)
-        for origEffort, copyEffort in zip(orig.efforts(), copy.efforts()):
-            self.assertEffortCopy(origEffort, copyEffort)
+        for orig_child, copy_child in zip(orig.children(), copy.children()):
+            self.assertTaskCopy(orig_child, copy_child)
+        for orig_effort, copy_effort in zip(orig.efforts(), copy.efforts()):
+            self.assertEffortCopy(orig_effort, copy_effort)
 
     def assertEffortCopy(self, orig, copy):
         self.assertFalse(orig.id() == copy.id())
         self.assertFalse(orig.task() == copy.task())
         self.assertEqual(orig.getStart(), copy.getStart())
-        self.assertEqual(orig.getStop(), copy.getStop())
+        assert_copied_stop(self, orig.getStop(), copy.getStop())
         self.assertEqual(orig.description(), copy.description())
 
 
@@ -137,14 +147,14 @@ class CommandAssertsMixin(object):
             [str(step) for step in commands.get_future()],
         )
 
-    def assertDoUndoRedo(self, assertDone, assertUndone=None):
-        if not assertUndone:
-            assertUndone = assertDone
-        assertDone()
+    def assertDoUndoRedo(self, assert_done, assert_undone=None):
+        if not assert_undone:
+            assert_undone = assert_done
+        assert_done()
         self.undo()
-        assertUndone()
+        assert_undone()
         self.redo()
-        assertDone()
+        assert_done()
 
 
 class Mixin(

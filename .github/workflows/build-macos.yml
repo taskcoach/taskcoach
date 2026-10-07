@@ -51,7 +51,9 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.11'
+          # 3.13: setup-python's newest 3.11 is 3.11.9, whose Expat
+          # 2.6.0 a hostile task file crashes
+          python-version: '3.13'
 
       - name: Get version info
         id: version
@@ -81,7 +83,6 @@ jobs:
           python -m pip install \
             "chardet>=4.0.0,<5.2.0" \
             "python-dateutil>=2.9.0" \
-            keyring \
             "squaremap>=1.0.5" \
             "pyenchant>=3.2.0"
 
@@ -108,6 +109,11 @@ jobs:
           idle = iq.get_idle_seconds()
           print(f'Idle time: {idle} seconds')
           "
+
+          # Expat reads task files: 2.7.0 and 2.7.2 fix a crash and a
+          # memory blow-up from a hostile file
+          echo "Testing the XML parser's version..."
+          python -c "import pyexpat, sys; print(pyexpat.EXPAT_VERSION); sys.exit(pyexpat.version_info < (2, 7, 2))"
 
           echo "All tests passed!"
 
@@ -152,7 +158,7 @@ jobs:
                       }
                   ],
               },
-              'packages': ['taskcoachlib', 'wx', 'keyring', 'dateutil', 'chardet', 'squaremap'],
+              'packages': ['taskcoachlib', 'wx', 'dateutil', 'chardet', 'squaremap'],
               'includes': ['ctypes', 'ctypes.util'],
               'excludes': ['tkinter', 'test'],
           }
@@ -236,7 +242,7 @@ jobs:
 
           # Set up Python path to use bundled libraries
           export PYTHONHOME="$RESOURCES"
-          export PYTHONPATH="$RESOURCES/lib/python3.11:$RESOURCES/lib/python3.11/site-packages"
+          export PYTHONPATH="$RESOURCES/lib/python3.13:$RESOURCES/lib/python3.13/site-packages"
 
           echo "Testing widget initialization..."
           "$PYTHON_BIN" << 'TEST_EOF'

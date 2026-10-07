@@ -121,8 +121,8 @@ class ObservableComposite(Composite):
         event.addSource(self, *children, **dict(type=self.addChildEventType()))
 
     @classmethod
-    def addChildEventType(class_):
-        return "composite(%s).child.add" % class_
+    def addChildEventType(cls):
+        return "composite(%s).child.add" % cls
 
     @observer.eventSource
     def removeChild(self, child, event=None):  # pylint: disable=W0221
@@ -135,27 +135,27 @@ class ObservableComposite(Composite):
         )
 
     @classmethod
-    def removeChildEventType(class_):
-        return "composite(%s).child.remove" % class_
+    def removeChildEventType(cls):
+        return "composite(%s).child.remove" % cls
 
     @classmethod
-    def modificationEventTypes(class_):
+    def modificationEventTypes(cls):
         try:
-            eventTypes = super(
-                ObservableComposite, class_
+            event_types = super(
+                ObservableComposite, cls
             ).modificationEventTypes()
         except AttributeError:
-            eventTypes = []
-        return eventTypes + [
-            class_.addChildEventType(),
-            class_.removeChildEventType(),
+            event_types = []
+        return event_types + [
+            cls.addChildEventType(),
+            cls.removeChildEventType(),
         ]
 
 
 class CompositeCollection(object):
-    def __init__(self, initList=None, *args, **kwargs):
+    def __init__(self, init_list=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.extend(initList or [])
+        self.extend(init_list or [])
 
     def append(self, composite, event=None):
         return self.extend([composite], event=event)
@@ -164,15 +164,19 @@ class CompositeCollection(object):
     def extend(self, composites, event=None):
         if not composites:
             return
-        compositesAndAllChildren = self._compositesAndAllChildren(composites)
-        super().extend(compositesAndAllChildren, event=event)
+        composites_and_all_children = self._compositesAndAllChildren(
+            composites
+        )
+        super().extend(composites_and_all_children, event=event)
         self._addCompositesToParent(composites, event)
 
     def _compositesAndAllChildren(self, composites):
-        compositesAndAllChildren = set(composites)
+        composites_and_all_children = set(composites)
         for composite in composites:
-            compositesAndAllChildren |= set(composite.children(recursive=True))
-        return list(compositesAndAllChildren)
+            composites_and_all_children |= set(
+                composite.children(recursive=True)
+            )
+        return list(composites_and_all_children)
 
     def _addCompositesToParent(self, composites, event):
         for composite in composites:
@@ -195,8 +199,10 @@ class CompositeCollection(object):
     def removeItems(self, composites, event=None):
         if not composites:
             return
-        compositesAndAllChildren = self._compositesAndAllChildren(composites)
-        super().removeItems(compositesAndAllChildren, event=event)
+        composites_and_all_children = self._compositesAndAllChildren(
+            composites
+        )
+        super().removeItems(composites_and_all_children, event=event)
         self._removeCompositesFromParent(composites, event)
 
     def _removeCompositesFromParent(self, composites, event):

@@ -1,5 +1,8 @@
 # Contributing
 
+Start with [docs/README.md](docs/README.md): running from source,
+the tests, and what each document covers.
+
 ## Development standards
 
 See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for the standing

@@ -218,9 +218,12 @@ What marks, and what runs the full loop:
   children), so typing a leaf's name runs nothing.
 - A task's planned start, actual start, due or reminder changed, or
   tasks added: their entries; tasks removed: theirs removed.
-- A file read or merged, the due soon hours, the clock set back: the
-  list rebuilt and the full loop. The appearance settings, the theme
-  and the system colours: the full loop.
+- A file read or merged: the list rebuilt and the full loop at once,
+  so the views first draw the file styled; within a read
+  (`taskfile.settle`), quietly
+  ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#order-and-quiet)). The due soon hours, the
+  clock set back: the list rebuilt and the full loop. The appearance
+  settings, the theme and the system colours: the full loop.
 
 `TASKCOACH_SCHEDULER_CHECK=1` runs the full loop after every tick's
 pass and logs each change it still makes (`[SCHEDULER] missed at

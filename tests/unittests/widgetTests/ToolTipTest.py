@@ -43,22 +43,24 @@ class ToolTipMixinTestCase(test.TestCase):
     def setUp(self):
         self.tooltipMixin = ToolTipUnderTest(None)
 
-    def testShowTip(self):
-        tipWindow = DummyToolTipWindow()
-        self.tooltipMixin.DoShowTip(0, 0, tipWindow)
-        self.assertEqual((0, 0, 10, 10), tipWindow.rect)
+    def test_show_tip(self):
+        tip_window = DummyToolTipWindow()
+        self.tooltipMixin.DoShowTip(0, 0, tip_window)
+        self.assertEqual((0, 0, 10, 10), tip_window.rect)
 
-    def testReallyBigTip(self):
+    def test_really_big_tip(self):
         width, height = wx.ClientDisplayRect()[2:]
-        tipWindow = DummyToolTipWindow((2 * width, 2 * height))
-        self.tooltipMixin.DoShowTip(0, 0, tipWindow)
-        self.assertEqual((5, 5, 2 * width, height - 10), tipWindow.rect)
+        tip_window = DummyToolTipWindow((2 * width, 2 * height))
+        self.tooltipMixin.DoShowTip(0, 0, tip_window)
+        self.assertEqual((5, 5, 2 * width, height - 10), tip_window.rect)
 
-    def testTipThatFallsOfBottomOfScreen(self):
-        _, displayY, _, height = wx.ClientDisplayRect()
-        tipWindow = DummyToolTipWindow((10, 100))
-        self.tooltipMixin.DoShowTip(0, height - 10, tipWindow)
-        self.assertEqual((0, height - 105 + displayY, 10, 100), tipWindow.rect)
+    def test_tip_that_falls_of_bottom_of_screen(self):
+        _, display_y, _, height = wx.ClientDisplayRect()
+        tip_window = DummyToolTipWindow((10, 100))
+        self.tooltipMixin.DoShowTip(0, height - 10, tip_window)
+        self.assertEqual(
+            (0, height - 105 + display_y, 10, 100), tip_window.rect
+        )
 
 
 class SimpleToolTipUnderTest(tooltip.SimpleToolTip):
@@ -71,11 +73,11 @@ class SimpleToolTipTestCase(test.wxTestCase):
     def setUp(self):
         self.tip = SimpleToolTipUnderTest(self.frame)
 
-    def testOneShortLine(self):
+    def test_one_short_line(self):
         self.tip.SetData([(None, ["First line"])])
         self.assertEqual([(None, ["First line"])], self.tip.data)
 
-    def testOneLongLine(self):
+    def test_one_long_line(self):
         self.tip.SetData([(None, ["First line " * 10])])
         self.assertEqual(
             [
@@ -87,6 +89,6 @@ class SimpleToolTipTestCase(test.wxTestCase):
             self.tip.data,
         )
 
-    def testCalculateSize(self):
+    def test_calculate_size(self):
         self.tip.SetData([(None, ["First line"])])
         self.assertEqual(wx.Size(16, 27), self.tip._calculateSize())

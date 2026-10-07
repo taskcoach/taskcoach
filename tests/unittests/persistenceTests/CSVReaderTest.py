@@ -66,7 +66,7 @@ class CSVReaderTestCase(test.TestCase):
         self.addCleanup(os.remove, tmp_file.name)
         return tmp_file.name
 
-    def testTwoTasksWithSubject(self):
+    def test_two_tasks_with_subject(self):
         filename = self.createCSVFile("Subject 1\nSubject 2\n")
         self.reader.read(
             filename=filename,
@@ -78,7 +78,7 @@ class CSVReaderTestCase(test.TestCase):
             set([t.subject() for t in self.taskList]),
         )
 
-    def testTwoTasksWithSubjectAndDescription(self):
+    def test_two_tasks_with_subject_and_description(self):
         filename = self.createCSVFile(
             "Subject 1,Description 1\nSubject 2,Description 2\n"
         )
@@ -97,7 +97,7 @@ class CSVReaderTestCase(test.TestCase):
             set([(t.subject(), t.description()) for t in self.taskList]),
         )
 
-    def testTaskWithPlannedStartDate(self):
+    def test_task_with_planned_start_date(self):
         filename = self.createCSVFile("Subject,2011-6-30\n")
         self.reader.read(
             filename=filename,
@@ -109,7 +109,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].plannedStartDateTime(),
         )
 
-    def testTaskWithPlannedStartDateTime(self):
+    def test_task_with_planned_start_date_time(self):
         filename = self.createCSVFile("Subject,2011-6-30 12:00\n")
         self.reader.read(
             filename=filename,
@@ -121,7 +121,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].plannedStartDateTime(),
         )
 
-    def testTaskWithEmptyPlannedStartDate(self):
+    def test_task_with_empty_planned_start_date(self):
         filename = self.createCSVFile("Subject,\n")
         self.reader.read(
             filename=filename,
@@ -132,7 +132,7 @@ class CSVReaderTestCase(test.TestCase):
             date.DateTime(), list(self.taskList)[0].plannedStartDateTime()
         )
 
-    def testTaskWithActualStartDate(self):
+    def test_task_with_actual_start_date(self):
         filename = self.createCSVFile("Subject,2011-6-30\n")
         self.reader.read(
             filename=filename,
@@ -144,7 +144,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].actualStartDateTime(),
         )
 
-    def testTaskWithActualStartDateTime(self):
+    def test_task_with_actual_start_date_time(self):
         filename = self.createCSVFile("Subject,2011-6-30 12:00\n")
         self.reader.read(
             filename=filename,
@@ -156,7 +156,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].actualStartDateTime(),
         )
 
-    def testTaskWithEmptyActualStartDate(self):
+    def test_task_with_empty_actual_start_date(self):
         filename = self.createCSVFile("Subject,\n")
         self.reader.read(
             filename=filename,
@@ -167,7 +167,7 @@ class CSVReaderTestCase(test.TestCase):
             date.DateTime(), list(self.taskList)[0].actualStartDateTime()
         )
 
-    def testTaskWithDueDate(self):
+    def test_task_with_due_date(self):
         filename = self.createCSVFile("Subject,2011-6-30\n")
         self.reader.read(
             filename=filename,
@@ -179,7 +179,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].dueDateTime(),
         )
 
-    def testTaskWithDueDateTime(self):
+    def test_task_with_due_date_time(self):
         filename = self.createCSVFile("Subject,2011-6-30 1:34:01 pm\n")
         self.reader.read(
             filename=filename,
@@ -191,7 +191,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].dueDateTime(),
         )
 
-    def testTaskWithCompletionDate(self):
+    def test_task_with_completion_date(self):
         filename = self.createCSVFile("Subject,2011-6-30\n")
         self.reader.read(
             filename=filename,
@@ -203,7 +203,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].completionDateTime(),
         )
 
-    def testTaskWithCompletionDateTime(self):
+    def test_task_with_completion_date_time(self):
         filename = self.createCSVFile("Subject,1:33 am 2011-6-30\n")
         self.reader.read(
             filename=filename,
@@ -215,7 +215,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].completionDateTime(),
         )
 
-    def testTaskWithReminderDate(self):
+    def test_task_with_reminder_date(self):
         filename = self.createCSVFile("Subject,2012-6-30\n")
         self.reader.read(
             filename=filename,
@@ -227,7 +227,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].reminder(),
         )
 
-    def testTaskWithReminderDateTime(self):
+    def test_task_with_reminder_date_time(self):
         filename = self.createCSVFile("Subject,12:31 2012-6-30\n")
         self.reader.read(
             filename=filename,
@@ -239,7 +239,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].reminder(),
         )
 
-    def testTaskWithHourMinuteBudget(self):
+    def test_task_with_hour_minute_budget(self):
         filename = self.createCSVFile("Subject,60:30\n")
         self.reader.read(
             filename=filename,
@@ -251,7 +251,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].budget(),
         )
 
-    def testTaskWithHourMinuteSecondBudget(self):
+    def test_task_with_hour_minute_second_budget(self):
         filename = self.createCSVFile("Subject,60:30:15\n")
         self.reader.read(
             filename=filename,
@@ -263,7 +263,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].budget(),
         )
 
-    def testTaskWithFloatBudget(self):
+    def test_task_with_float_budget(self):
         filename = self.createCSVFile("Subject,1.5\n")
         self.reader.read(
             filename=filename,
@@ -275,7 +275,7 @@ class CSVReaderTestCase(test.TestCase):
             list(self.taskList)[0].budget(),
         )
 
-    def testTaskWithFixedFee(self):
+    def test_task_with_fixed_fee(self):
         filename = self.createCSVFile("Subject,1600\n")
         self.reader.read(
             filename=filename,
@@ -284,7 +284,7 @@ class CSVReaderTestCase(test.TestCase):
         )
         self.assertEqual(1600, list(self.taskList)[0].fixedFee())
 
-    def testTaskWithHourlyFee(self):
+    def test_task_with_hourly_fee(self):
         filename = self.createCSVFile("Subject,160\n")
         self.reader.read(
             filename=filename,
@@ -293,7 +293,7 @@ class CSVReaderTestCase(test.TestCase):
         )
         self.assertEqual(160, list(self.taskList)[0].hourlyFee())
 
-    def testTaskWith50PercentComplete(self):
+    def test_task_with_50_percent_complete(self):
         filename = self.createCSVFile("Subject,50\n")
         self.reader.read(
             filename=filename,
@@ -302,18 +302,18 @@ class CSVReaderTestCase(test.TestCase):
         )
         self.assertEqual(50, list(self.taskList)[0].percentageComplete())
 
-    def testTaskWith100PercentComplete(self):
+    def test_task_with_100_percent_complete(self):
         filename = self.createCSVFile("Subject,100\n")
         self.reader.read(
             filename=filename,
             mappings={0: "Subject", 1: "Percent complete"},
             **self.defaultReaderKwArgs
         )
-        newTask = list(self.taskList)[0]
-        self.assertEqual(100, newTask.percentageComplete())
-        self.assertTrue(newTask.completed())
+        new_task = list(self.taskList)[0]
+        self.assertEqual(100, new_task.percentageComplete())
+        self.assertTrue(new_task.completed())
 
-    def testTwoTasksWithPriority(self):
+    def test_two_tasks_with_priority(self):
         filename = self.createCSVFile("Subject 1,123\nSubject 2,-3")
         self.reader.read(
             filename=filename,
@@ -325,7 +325,7 @@ class CSVReaderTestCase(test.TestCase):
             set([(t.subject(), t.priority()) for t in self.taskList]),
         )
 
-    def testTwoTasksWithTheSameCategory(self):
+    def test_two_tasks_with_the_same_category(self):
         filename = self.createCSVFile(
             "Subject 1,Category\nSubject 2,Category\n"
         )
@@ -335,13 +335,13 @@ class CSVReaderTestCase(test.TestCase):
             **self.defaultReaderKwArgs
         )
         self.assertEqual(1, len(self.categoryList))
-        newCategory = list(self.categoryList)[0]
+        new_category = list(self.categoryList)[0]
         self.assertEqual(
-            [set([newCategory]), set([newCategory])],
+            [set([new_category]), set([new_category])],
             [t.categories() for t in self.taskList],
         )
 
-    def testTwoTasksWithCategoryAndSubcategory(self):
+    def test_two_tasks_with_category_and_subcategory(self):
         filename = self.createCSVFile(
             "Subject 1,Category -> Subcategory\nSubject 2,Category\n"
         )
@@ -351,16 +351,16 @@ class CSVReaderTestCase(test.TestCase):
             **self.defaultReaderKwArgs
         )
         self.assertEqual(2, len(self.categoryList))
-        parentCategory = [c for c in self.categoryList if not c.parent()][0]
-        childCategory = parentCategory.children()[0]
+        parent_category = [c for c in self.categoryList if not c.parent()][0]
+        child_category = parent_category.children()[0]
         self.assertEqual(
-            "Subject 1", list(childCategory.members())[0].subject()
+            "Subject 1", list(child_category.members())[0].subject()
         )
         self.assertEqual(
-            "Subject 2", list(parentCategory.members())[0].subject()
+            "Subject 2", list(parent_category.members())[0].subject()
         )
 
-    def testHierarchy(self):
+    def test_hierarchy(self):
         filename = self.createCSVFile(
             "Subject 1,1\nSubject 1.1,1.1\nSubject 1.2,1.2\n"
         )
@@ -372,7 +372,7 @@ class CSVReaderTestCase(test.TestCase):
         parent = [t for t in self.taskList if not t.parent()][0]
         self.assertEqual(2, len(parent.children()))
 
-    def testDayFirstDates(self):
+    def test_day_first_dates(self):
         filename = self.createCSVFile("T1,30-6-2011\nT2,1-1-2011\nT3,4-4-2011")
         self.reader.read(
             filename=filename,
@@ -383,7 +383,7 @@ class CSVReaderTestCase(test.TestCase):
             set([1, 4, 6]), set(t.dueDateTime().month for t in self.taskList)
         )
 
-    def testMonthFirstDates(self):
+    def test_month_first_dates(self):
         filename = self.createCSVFile("T1,3-6-2011\nT2,1-1-2011\nT3,4-20-2011")
         self.defaultReaderKwArgs["dayfirst"] = False
         self.reader.read(

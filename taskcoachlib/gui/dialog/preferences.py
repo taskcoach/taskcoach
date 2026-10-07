@@ -44,13 +44,13 @@ class FontColorSyncer(object):
     font button. The FontColorSyncer updates the one when the font color
     is changed via the other and vice versa."""
 
-    def __init__(self, fgColorButton, bgColorButton, fontButton):
-        self._fgColorButton = fgColorButton
-        self._bgColorButton = bgColorButton
-        self._fontButton = fontButton
-        fgColorButton.Bind(wx.EVT_COLOURPICKER_CHANGED, self.onFgColorPicked)
-        bgColorButton.Bind(wx.EVT_COLOURPICKER_CHANGED, self.onBgColorPicked)
-        fontButton.Bind(wx.EVT_FONTPICKER_CHANGED, self.onFontPicked)
+    def __init__(self, fg_color_button, bg_color_button, font_button):
+        self._fgColorButton = fg_color_button
+        self._bgColorButton = bg_color_button
+        self._fontButton = font_button
+        fg_color_button.Bind(wx.EVT_COLOURPICKER_CHANGED, self.onFgColorPicked)
+        bg_color_button.Bind(wx.EVT_COLOURPICKER_CHANGED, self.onBgColorPicked)
+        font_button.Bind(wx.EVT_FONTPICKER_CHANGED, self.onFontPicked)
 
     def onFgColorPicked(self, event):  # pylint: disable=W0613
         self._fontButton.SetSelectedColour(self._fgColorButton.GetColour())
@@ -59,10 +59,10 @@ class FontColorSyncer(object):
         self._fontButton.SetSelectedBgColour(self._bgColorButton.GetColour())
 
     def onFontPicked(self, event):  # pylint: disable=W0613
-        fontColor = self._fontButton.GetSelectedColour()
+        font_color = self._fontButton.GetSelectedColour()
         if (
-            fontColor != self._fgColorButton.GetColour()
-            and fontColor != wx.BLACK
+            font_color != self._fgColorButton.GetColour()
+            and font_color != wx.BLACK
         ):
             self._fgColorButton.SetColour(self._fontButton.GetSelectedColour())
         else:
@@ -89,13 +89,13 @@ class SettingsPage(widgets.ScrolledBookPage):
             ctrl.Reparent(panel)
             flags = wx.EXPAND if (growable and i == 0) else 0
             sizer.Add(ctrl, 0, flags | wx.RIGHT, self._columnGap)
-        helpCtrl = wx.StaticText(panel, label=help_text)
-        helpCtrl.SetForegroundColour(
+        help_ctrl = wx.StaticText(panel, label=help_text)
+        help_ctrl.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        sizer.Add(helpCtrl, 0)
+        sizer.Add(help_ctrl, 0)
         panel.SetSizer(sizer)
-        self._inlineHelpCtrls.append((helpCtrl, panel))
+        self._inlineHelpCtrls.append((help_ctrl, panel))
         return panel
 
     def __init__(self, *args, **kwargs):
@@ -114,48 +114,48 @@ class SettingsPage(widgets.ScrolledBookPage):
     def addBooleanSetting(
         self, section, setting, text, help_text="", **kwargs
     ):
-        checkBox = wx.CheckBox(self, -1)
-        checkBox.SetValue(settings.get(section, setting))
-        panel = self._makeInlinePanel(checkBox, help_text=help_text)
+        check_box = wx.CheckBox(self, -1)
+        check_box.SetValue(settings.get(section, setting))
+        panel = self._makeInlinePanel(check_box, help_text=help_text)
         self.addEntry(text, panel, **kwargs)
-        self._booleanSettings.append((section, setting, checkBox))
-        return checkBox
+        self._booleanSettings.append((section, setting, check_box))
+        return check_box
 
     def addChoiceSetting(
-        self, section, setting, text, help_text, *listsOfChoices, **kwargs
+        self, section, setting, text, help_text, *lists_of_choices, **kwargs
     ):
-        choiceCtrls = []
+        choice_ctrls = []
         current_value = str(settings.get(section, setting))
         sep = kwargs.pop("sep", "_")
-        for choices, currentValuePart in zip(
-            listsOfChoices, current_value.split(sep)
+        for choices, current_value_part in zip(
+            lists_of_choices, current_value.split(sep)
         ):
-            choiceCtrl = wx.Choice(self)
-            choiceCtrls.append(choiceCtrl)
-            for choiceValue, choiceText in choices:
-                choiceCtrl.Append(choiceText, choiceValue)
-                if choiceValue == currentValuePart:
-                    choiceCtrl.SetSelection(choiceCtrl.GetCount() - 1)
+            choice_ctrl = wx.Choice(self)
+            choice_ctrls.append(choice_ctrl)
+            for choice_value, choice_text in choices:
+                choice_ctrl.Append(choice_text, choice_value)
+                if choice_value == current_value_part:
+                    choice_ctrl.SetSelection(choice_ctrl.GetCount() - 1)
             # Force a selection if necessary:
-            if choiceCtrl.GetSelection() == wx.NOT_FOUND:
-                choiceCtrl.SetSelection(0)
-        panel = self._makeInlinePanel(*choiceCtrls, help_text=help_text)
+            if choice_ctrl.GetSelection() == wx.NOT_FOUND:
+                choice_ctrl.SetSelection(0)
+        panel = self._makeInlinePanel(*choice_ctrls, help_text=help_text)
         self.addEntry(text, panel, flags=kwargs.get("flags", None))
-        self._choiceSettings.append((section, setting, choiceCtrls))
-        return choiceCtrls
+        self._choiceSettings.append((section, setting, choice_ctrls))
+        return choice_ctrls
 
     def addMultipleChoiceSettings(
         self, section, setting, text, choices, help_text="", **kwargs
     ):
         # choices is a list of (number, text) tuples.
-        multipleChoice = wx.CheckListBox(
+        multiple_choice = wx.CheckListBox(
             self, choices=[choice[1] for choice in choices]
         )
         checked_numbers = settings.get(section, setting)
         for index, choice in enumerate(choices):
-            multipleChoice.Check(index, choice[0] in checked_numbers)
+            multiple_choice.Check(index, choice[0] in checked_numbers)
         panel = self._makeInlinePanel(
-            multipleChoice,
+            multiple_choice,
             help_text=help_text,
             growable=kwargs.get("growable", True),
         )
@@ -169,7 +169,7 @@ class SettingsPage(widgets.ScrolledBookPage):
             (
                 section,
                 setting,
-                multipleChoice,
+                multiple_choice,
                 [choice[0] for choice in choices],
             )
         )
@@ -247,17 +247,17 @@ class SettingsPage(widgets.ScrolledBookPage):
         """Ensure at least 1 hour gap when start hour changes."""
         if self._workingHourEndOfDayCheck.IsChecked():
             return  # End of day means midnight, any start hour is valid
-        startHour = self._workingHourStartChoice.GetSelection()
-        endHour = self._workingHourEndChoice.GetSelection()
-        if startHour >= endHour:
-            self._workingHourEndChoice.SetSelection(min(startHour + 1, 23))
+        start_hour = self._workingHourStartChoice.GetSelection()
+        end_hour = self._workingHourEndChoice.GetSelection()
+        if start_hour >= end_hour:
+            self._workingHourEndChoice.SetSelection(min(start_hour + 1, 23))
 
     def _onWorkingHourEndChanged(self, event):
         """Ensure at least 1 hour gap when end hour changes."""
-        startHour = self._workingHourStartChoice.GetSelection()
-        endHour = self._workingHourEndChoice.GetSelection()
-        if endHour <= startHour:
-            self._workingHourStartChoice.SetSelection(max(endHour - 1, 0))
+        start_hour = self._workingHourStartChoice.GetSelection()
+        end_hour = self._workingHourEndChoice.GetSelection()
+        if end_hour <= start_hour:
+            self._workingHourStartChoice.SetSelection(max(end_hour - 1, 0))
 
     def _onEndOfDayChecked(self, event):
         """Handle end of day checkbox toggle."""
@@ -267,39 +267,40 @@ class SettingsPage(widgets.ScrolledBookPage):
         else:
             self._workingHourEndChoice.Enable(True)
 
-    def _saveWorkingHoursSettings(self):
-        """Save working hours settings. Called from ok()."""
-        if hasattr(self, "_workingHourStartChoice"):
-            settings.set(
+    def _working_hours_values(self):
+        """The working hours, as values() lists them."""
+        return [
+            (
                 "view",
                 "efforthourstart",
                 self._workingHourStartChoice.GetSelection(),
-            )
-            settings.set(
+            ),
+            (
                 "view",
                 "efforthourend",
                 self._workingHourEndChoice.GetSelection(),
-            )
-            settings.set(
+            ),
+            (
                 "view",
                 "efforthourend_endofday",
                 self._workingHourEndOfDayCheck.IsChecked(),
-            )
+            ),
+        ]
 
     def addAppearanceHeader(self):
         # Row 0: Group headers - only Light and Dark bold headers (cols 2-5, 6-9)
-        lightLabel = wx.StaticText(self, label=_("Light Theme"))
-        darkLabel = wx.StaticText(self, label=_("Dark Theme"))
-        boldFont = lightLabel.GetFont().Bold()
-        lightLabel.SetFont(boldFont)
-        darkLabel.SetFont(boldFont)
+        light_label = wx.StaticText(self, label=_("Light Theme"))
+        dark_label = wx.StaticText(self, label=_("Dark Theme"))
+        bold_font = light_label.GetFont().Bold()
+        light_label.SetFont(bold_font)
+        dark_label.SetFont(bold_font)
 
         # Skip cols 0-1 (Label, Priority have no bold group header)
         self._position.next(1)
         self._position.next(1)
         pos = self._position.next(4)
         self._sizer.Add(
-            lightLabel,
+            light_label,
             pos,
             span=(1, 4),
             flag=wx.ALL | wx.ALIGN_CENTER,
@@ -307,7 +308,7 @@ class SettingsPage(widgets.ScrolledBookPage):
         )
         pos = self._position.next(4)
         self._sizer.Add(
-            darkLabel,
+            dark_label,
             pos,
             span=(1, 4),
             flag=wx.ALL | wx.ALIGN_CENTER,
@@ -374,118 +375,130 @@ class SettingsPage(widgets.ScrolledBookPage):
 
     def _createAppearanceControls(
         self,
-        fgColorSection,
-        fgColorSetting,
-        bgColorSection,
-        bgColorSetting,
-        fontSection,
-        fontSetting,
-        iconSection,
-        iconSetting,
+        fg_color_section,
+        fg_color_setting,
+        bg_color_section,
+        bg_color_setting,
+        font_section,
+        font_setting,
+        icon_section,
+        icon_setting,
     ):
         """Create a set of appearance controls (fg, bg, font, icon) for one theme."""
-        current_fg_color = settings.get(fgColorSection, fgColorSetting)
-        fgColorButton = widgets.ColourPickerCtrl(
+        current_fg_color = settings.get(fg_color_section, fg_color_setting)
+        fg_color_button = widgets.ColourPickerCtrl(
             self, colour=wx.Colour(*current_fg_color)
         )
-        current_bg_color = settings.get(bgColorSection, bgColorSetting)
-        bgColorButton = widgets.ColourPickerCtrl(
+        current_bg_color = settings.get(bg_color_section, bg_color_setting)
+        bg_color_button = widgets.ColourPickerCtrl(
             self, colour=wx.Colour(*current_bg_color)
         )
-        defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-        native_info_string = settings.get(fontSection, fontSetting)
+        default_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        native_info_string = settings.get(font_section, font_setting)
         current_font = wxhelper.font_from_native_info(native_info_string)
-        fontButton = widgets.FontPickerCtrl(
+        font_button = widgets.FontPickerCtrl(
             self,
-            font=current_font or defaultFont,
+            font=current_font or default_font,
             colour=current_fg_color,
             bgColour=current_bg_color,
             fixedWidth=75,
         )
-        iconEntry = self._createIconEntry(exclude="data")
-        current_icon_id = settings.get(iconSection, iconSetting)
-        iconEntry.SetValue(current_icon_id)
+        icon_entry = self._createIconEntry(exclude="data")
+        current_icon_id = settings.get(icon_section, icon_setting)
+        icon_entry.SetValue(current_icon_id)
 
         self._colorSettings.append(
-            (fgColorSection, fgColorSetting, fgColorButton)
+            (fg_color_section, fg_color_setting, fg_color_button)
         )
         self._colorSettings.append(
-            (bgColorSection, bgColorSetting, bgColorButton)
+            (bg_color_section, bg_color_setting, bg_color_button)
         )
-        self._iconSettings.append((iconSection, iconSetting, iconEntry))
-        self._fontSettings.append((fontSection, fontSetting, fontButton))
+        self._iconSettings.append((icon_section, icon_setting, icon_entry))
+        self._fontSettings.append((font_section, font_setting, font_button))
         self._syncers.append(
-            FontColorSyncer(fgColorButton, bgColorButton, fontButton)
+            FontColorSyncer(fg_color_button, bg_color_button, font_button)
         )
 
-        return fgColorButton, bgColorButton, fontButton, iconEntry
+        return fg_color_button, bg_color_button, font_button, icon_entry
 
     def addAppearanceSetting(
         self,
-        fgColorSection,
-        fgColorSetting,
-        bgColorSection,
-        bgColorSetting,
-        fontSection,
-        fontSetting,
-        iconSection,
-        iconSetting,
+        fg_color_section,
+        fg_color_setting,
+        bg_color_section,
+        bg_color_setting,
+        font_section,
+        font_setting,
+        icon_section,
+        icon_setting,
         text,
     ):
         # Priority dropdown
-        priorityChoice = wx.Choice(self, choices=[str(i) for i in range(1, 7)])
-        current_priority = settings.get("statussortpriority", fgColorSetting)
-        priorityChoice.SetSelection(current_priority - 1)
-        self._priorityChoices.append((fgColorSetting, priorityChoice))
-        self._previousPriorities[priorityChoice] = current_priority
-        priorityChoice.Bind(wx.EVT_CHOICE, self._onPriorityChanged)
+        priority_choice = wx.Choice(
+            self, choices=[str(i) for i in range(1, 7)]
+        )
+        current_priority = settings.get("statussortpriority", fg_color_setting)
+        priority_choice.SetSelection(current_priority - 1)
+        self._priorityChoices.append((fg_color_setting, priority_choice))
+        self._previousPriorities[priority_choice] = current_priority
+        priority_choice.Bind(wx.EVT_CHOICE, self._onPriorityChanged)
 
         # Light controls
-        lightFg, lightBg, lightFont, lightIcon = (
+        light_fg, light_bg, light_font, light_icon = (
             self._createAppearanceControls(
-                fgColorSection,
-                fgColorSetting,
-                bgColorSection,
-                bgColorSetting,
-                fontSection,
-                fontSetting,
-                iconSection,
-                iconSetting,
+                fg_color_section,
+                fg_color_setting,
+                bg_color_section,
+                bg_color_setting,
+                font_section,
+                font_setting,
+                icon_section,
+                icon_setting,
             )
         )
         # Dark controls
-        darkFg, darkBg, darkFont, darkIcon = self._createAppearanceControls(
-            fgColorSection + "_dark",
-            fgColorSetting,
-            bgColorSection + "_dark",
-            bgColorSetting,
-            fontSection + "_dark",
-            fontSetting,
-            iconSection + "_dark",
-            iconSetting,
+        dark_fg, dark_bg, dark_font, dark_icon = (
+            self._createAppearanceControls(
+                fg_color_section + "_dark",
+                fg_color_setting,
+                bg_color_section + "_dark",
+                bg_color_setting,
+                font_section + "_dark",
+                font_setting,
+                icon_section + "_dark",
+                icon_setting,
+            )
         )
 
         # Reset button (resets appearance only, not priority)
-        resetBtn = wx.Button(self, label=_("Reset"), size=(60, -1))
-        resetBtn.Bind(
-            wx.EVT_BUTTON,
-            lambda evt, s=fgColorSetting, lf=lightFg, lb=lightBg, lfn=lightFont, li=lightIcon, df=darkFg, db=darkBg, dfn=darkFont, di=darkIcon: self._onResetAppearanceRow(
-                s, lf, lb, lfn, li, df, db, dfn, di
-            ),
+        reset_btn = wx.Button(self, label=_("Reset"), size=(60, -1))
+        row = (
+            fg_color_setting,
+            light_fg,
+            light_bg,
+            light_font,
+            light_icon,
+            dark_fg,
+            dark_bg,
+            dark_font,
+            dark_icon,
+        )
+        reset_btn.Bind(
+            wx.EVT_BUTTON, lambda evt: self._onResetAppearanceRow(*row)
         )
 
         self.addEntry(
             text,
-            priorityChoice,
-            lightFg,
-            lightBg,
-            lightFont,
-            lightIcon,
-            darkFg,
-            darkBg,
-            darkFont,
-            darkIcon,
-            resetBtn,
+            priority_choice,
+            light_fg,
+            light_bg,
+            light_font,
+            light_icon,
+            dark_fg,
+            dark_bg,
+            dark_font,
+            dark_icon,
+            reset_btn,
             flags=(
                 wx.ALL | wx.ALIGN_LEFT | wx.ALIGN_CENTRE_VERTICAL,
                 wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_CENTER_HORIZONTAL,
@@ -504,50 +517,50 @@ class SettingsPage(widgets.ScrolledBookPage):
     def _onResetAppearanceRow(
         self,
         setting,
-        lightFg,
-        lightBg,
-        lightFont,
-        lightIcon,
-        darkFg,
-        darkBg,
-        darkFont,
-        darkIcon,
+        light_fg,
+        light_bg,
+        light_font,
+        light_icon,
+        dark_fg,
+        dark_bg,
+        dark_font,
+        dark_icon,
     ):
         """Reset appearance controls in a row to defaults (not priority)."""
         import ast
         from taskcoachlib.config import defaults as defaults_mod
 
         defs = defaults_mod.defaults
-        defaultSysFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        default_sys_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
 
         # Reset light theme
-        lfgColor = wx.Colour(*ast.literal_eval(defs["fgcolor"][setting]))
-        lbgColor = wx.Colour(*ast.literal_eval(defs["bgcolor"][setting]))
-        lightFg.SetColour(lfgColor)
-        lightBg.SetColour(lbgColor)
-        lightFont.SetSelectedFont(defaultSysFont)
-        lightFont.SetSelectedColour(lfgColor)
-        lightFont.SetSelectedBgColour(lbgColor)
-        lightIcon.SetValue(defs["icon"][setting])
+        lfg_color = wx.Colour(*ast.literal_eval(defs["fgcolor"][setting]))
+        lbg_color = wx.Colour(*ast.literal_eval(defs["bgcolor"][setting]))
+        light_fg.SetColour(lfg_color)
+        light_bg.SetColour(lbg_color)
+        light_font.SetSelectedFont(default_sys_font)
+        light_font.SetSelectedColour(lfg_color)
+        light_font.SetSelectedBgColour(lbg_color)
+        light_icon.SetValue(defs["icon"][setting])
 
         # Reset dark theme
-        dfgColor = wx.Colour(*ast.literal_eval(defs["fgcolor_dark"][setting]))
-        dbgColor = wx.Colour(*ast.literal_eval(defs["bgcolor_dark"][setting]))
-        darkFg.SetColour(dfgColor)
-        darkBg.SetColour(dbgColor)
-        darkFont.SetSelectedFont(defaultSysFont)
-        darkFont.SetSelectedColour(dfgColor)
-        darkFont.SetSelectedBgColour(dbgColor)
-        darkIcon.SetValue(defs["icon_dark"][setting])
+        dfg_color = wx.Colour(*ast.literal_eval(defs["fgcolor_dark"][setting]))
+        dbg_color = wx.Colour(*ast.literal_eval(defs["bgcolor_dark"][setting]))
+        dark_fg.SetColour(dfg_color)
+        dark_bg.SetColour(dbg_color)
+        dark_font.SetSelectedFont(default_sys_font)
+        dark_font.SetSelectedColour(dfg_color)
+        dark_font.SetSelectedBgColour(dbg_color)
+        dark_icon.SetValue(defs["icon_dark"][setting])
 
     def addPathSetting(self, section, setting, text, help_text="", **kwargs):
-        pathChooser = widgets.DirectoryChooser(
+        path_chooser = widgets.DirectoryChooser(
             self, wx.ID_ANY, gap=self._columnGap, help_text=help_text
         )
-        pathChooser.SetPath(settings.get(section, setting))
-        self._inlineHelpCtrls.append((pathChooser.helpCtrl, pathChooser))
-        self.addEntry(text, pathChooser, **kwargs)
-        self._pathSettings.append((section, setting, pathChooser))
+        path_chooser.SetPath(settings.get(section, setting))
+        self._inlineHelpCtrls.append((path_chooser.helpCtrl, path_chooser))
+        self.addEntry(text, path_chooser, **kwargs)
+        self._pathSettings.append((section, setting, path_chooser))
 
     def addText(self, label, text, **kwargs):
         self.addEntry(label, text, **kwargs)
@@ -561,74 +574,91 @@ class SettingsPage(widgets.ScrolledBookPage):
         self._inlineHelpCtrls.append((hint, self))
         self.addText("", hint)
 
-    def ok(self):
-        for section, setting, checkBox in self._booleanSettings:
-            settings.set(section, setting, checkBox.IsChecked())
-        for section, setting, choiceCtrls in self._choiceSettings:
+    def values(self):
+        """What OK and Apply save: (section, option, value) for each
+        setting on the page. Apply is enabled while they differ from
+        those the page showed (docs/PREFERENCES.md, OK, Apply and
+        Cancel)."""
+        values = [
+            (section, setting, check_box.IsChecked())
+            for section, setting, check_box in self._booleanSettings
+        ]
+        for section, setting, choice_ctrls in self._choiceSettings:
             value = "_".join(
                 [
                     choice.GetClientData(choice.GetSelection())
-                    for choice in choiceCtrls
+                    for choice in choice_ctrls
                 ]
             )
-            settings.set(
-                section,
-                setting,
-                settings.from_text(section, setting, value),
+            values.append(
+                (section, setting, settings.from_text(section, setting, value))
             )
         for (
             section,
             setting,
-            multipleChoice,
+            multiple_choice,
             choices,
         ) in self._multipleChoiceSettings:
-            settings.set(
-                section,
-                setting,
-                [
-                    choices[index]
-                    for index in range(len(choices))
-                    if multipleChoice.IsChecked(index)
-                ],
-            )
+            checked = [
+                choices[index]
+                for index in range(len(choices))
+                if multiple_choice.IsChecked(index)
+            ]
+            values.append((section, setting, checked))
         for section, setting, spin in self._integerSettings:
-            settings.set(section, setting, spin.GetValue())
-        for section, setting, colorButton in self._colorSettings:
-            settings.set(section, setting, colorButton.GetColour())
-        for section, setting, fontButton in self._fontSettings:
-            selectedFont = fontButton.GetSelectedFont()
-            defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-            fontInfoDesc = (
+            values.append((section, setting, spin.GetValue()))
+        for section, setting, color_button in self._colorSettings:
+            values.append((section, setting, color_button.GetColour()))
+        default_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        for section, setting, font_button in self._fontSettings:
+            selected_font = font_button.GetSelectedFont()
+            font_info_desc = (
                 ""
-                if selectedFont == defaultFont
-                else selectedFont.GetNativeFontInfoDesc()
+                if selected_font == default_font
+                else selected_font.GetNativeFontInfoDesc()
             )
-            settings.set(section, setting, fontInfoDesc)
-        for section, setting, iconEntry in self._iconSettings:
-            icon_id = iconEntry.GetValue()
-            settings.set(section, setting, icon_id)
+            values.append((section, setting, font_info_desc))
+        for section, setting, icon_entry in self._iconSettings:
+            values.append((section, setting, icon_entry.GetValue()))
         for section, setting, btn in self._pathSettings:
-            settings.set(section, setting, btn.GetPath())
+            values.append((section, setting, btn.GetPath()))
+        return values
+
+    def ok(self):
+        for section, setting, value in self.values():
+            settings.set(section, setting, value)
+
+    def edited(self):
+        """A change the dialog's watch does not see (a button made
+        later): Apply follows."""
+        wx.GetTopLevelParent(self).update_buttons_soon()
 
     def fit(self):
         """Wrap column 0 labels and inline help texts before final layout."""
         for item in self._sizer.GetChildren():
-            pos = item.GetPos()
-            if pos.GetCol() == 0 and item.GetSpan().GetColspan() == 1:
-                window = item.GetWindow()
-                if window and isinstance(window, wx.StaticText):
-                    window.Wrap(self._label_width)
+            window = item.GetWindow()
+            # Asked of the sizer: wxPython may give an item as a plain
+            # SizerItem, without GetPos() (seen in a test, 2026-10-07)
+            if (
+                isinstance(window, wx.StaticText)
+                and self._sizer.GetItemPosition(window).GetCol() == 0
+                and self._sizer.GetItemSpan(window).GetColspan() == 1
+            ):
+                window.Wrap(self._label_width)
         # First layout pass to compute actual positions
         super().fit()
         # Wrap inline help texts based on actual position
         if self._inlineHelpCtrls:
-            for helpCtrl, panel in self._inlineHelpCtrls:
-                helpX = (
-                    helpCtrl.GetScreenPosition().x - self.GetScreenPosition().x
+            for help_ctrl, panel in self._inlineHelpCtrls:
+                help_x = (
+                    help_ctrl.GetScreenPosition().x
+                    - self.GetScreenPosition().x
                 )
-                wrap_width = max(self._max_help_right - helpX, 100)
-                helpCtrl.SetLabel(helpCtrl.GetLabel())  # Reset any prior wrap
-                helpCtrl.Wrap(wrap_width)
+                wrap_width = max(self._max_help_right - help_x, 100)
+                help_ctrl.SetLabel(
+                    help_ctrl.GetLabel()
+                )  # Reset any prior wrap
+                help_ctrl.Wrap(wrap_width)
             # Re-layout after wrapping changed control sizes
             super().fit()
 
@@ -665,32 +695,6 @@ class SavePage(SettingsPage):
                 "its path relative to this one."
             ),
         )
-        self.addMultipleChoiceSettings(
-            "file",
-            "autoimport",
-            _("Before saving, automatically import from"),
-            [("Todo.txt", _("Todo.txt format"))],
-            help_text=_(
-                "Before saving, %s automatically imports tasks "
-                "from a Todo.txt file with the same name as the task file, "
-                "but with extension .txt"
-            )
-            % meta.name,
-            growable=False,
-        )
-        self.addMultipleChoiceSettings(
-            "file",
-            "autoexport",
-            _("When saving, automatically export to"),
-            [("Todo.txt", _("Todo.txt format"))],
-            help_text=_(
-                "When saving, %s automatically exports tasks "
-                "to a Todo.txt file with the same name as the task file, "
-                "but with extension .txt"
-            )
-            % meta.name,
-            growable=False,
-        )
         self.fit()
 
 
@@ -700,7 +704,7 @@ class WindowBehaviorPage(SettingsPage):
     pageIcon = "nuvola_apps_window_list"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=2, growable_column=-1, *args, **kwargs)
         self.addBooleanSetting(
             "window",
             "tips",
@@ -721,12 +725,34 @@ class WindowBehaviorPage(SettingsPage):
 
 
 class ThemePage(SettingsPage):
+    """Saved by OK or Apply, as every page, so Cancel drops a change
+    (docs/PREFERENCES.md, OK, Apply and Cancel)."""
+
     pageName = "theme"
     pageTitle = _("Theme")
     pageIcon = "nuvola_apps_fsview"
 
+    _CALENDAR_KEYS = [
+        (section, key)
+        for section in ("calendar_light", "calendar_dark")
+        for key in (
+            "weekday_header_bg",
+            "weekday_header_fg",
+            "other_month_bg",
+            "other_month_bg_system",
+            "weekend_day_fg",
+            "today_border",
+        )
+    ]
+    _SQUIGGLE_KEYS = [
+        ("spellcheck_light", "squiggle_color"),
+        ("spellcheck_dark", "squiggle_color"),
+    ]
+
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=7, growableColumn=6, *args, **kwargs)
+        super().__init__(columns=7, growable_column=6, *args, **kwargs)
+        # Other month colours picked, saved by OK: theme -> wx.Colour
+        self._other_month_picked = {}
 
         # --- Mode Dropdown ---
         # Colours as drawn now; the label shows the system setting,
@@ -822,17 +848,6 @@ class ThemePage(SettingsPage):
                 self, colour=wx.Colour(*dark_color)
             )
 
-            bound = ("calendar_light", setting_key, light_picker)
-            light_picker.Bind(
-                wx.EVT_COLOURPICKER_CHANGED,
-                lambda evt, a=bound: self._on_colour_changed(*a),
-            )
-            bound = ("calendar_dark", setting_key, dark_picker)
-            dark_picker.Bind(
-                wx.EVT_COLOURPICKER_CHANGED,
-                lambda evt, a=bound: self._on_colour_changed(*a),
-            )
-
             reset_btn = wx.Button(self, label=_("Reset"), size=(60, -1))
             light_default = ast.literal_eval(
                 defaults_mod.defaults["calendar_light"][setting_key]
@@ -845,7 +860,6 @@ class ThemePage(SettingsPage):
                 dark_picker,
                 light_default,
                 dark_default,
-                setting_key,
             )
             reset_btn.Bind(
                 wx.EVT_BUTTON,
@@ -1028,17 +1042,6 @@ class ThemePage(SettingsPage):
                 self, colour=wx.Colour(*dark_color)
             )
 
-            bound = ("calendar_light", setting_key, light_picker)
-            light_picker.Bind(
-                wx.EVT_COLOURPICKER_CHANGED,
-                lambda evt, a=bound: self._on_colour_changed(*a),
-            )
-            bound = ("calendar_dark", setting_key, dark_picker)
-            dark_picker.Bind(
-                wx.EVT_COLOURPICKER_CHANGED,
-                lambda evt, a=bound: self._on_colour_changed(*a),
-            )
-
             reset_btn = wx.Button(self, label=_("Reset"), size=(60, -1))
             light_default = ast.literal_eval(
                 defaults_mod.defaults["calendar_light"][setting_key]
@@ -1051,7 +1054,6 @@ class ThemePage(SettingsPage):
                 dark_picker,
                 light_default,
                 dark_default,
-                setting_key,
             )
             reset_btn.Bind(
                 wx.EVT_BUTTON,
@@ -1115,17 +1117,6 @@ class ThemePage(SettingsPage):
         )
         dark_squiggle_picker = widgets.ColourPickerCtrl(
             self, colour=wx.Colour(*dark_squiggle_color)
-        )
-
-        bound = ("spellcheck_light", "squiggle_color", light_squiggle_picker)
-        light_squiggle_picker.Bind(
-            wx.EVT_COLOURPICKER_CHANGED,
-            lambda evt, a=bound: self._on_squiggle_colour_changed(*a),
-        )
-        bound = ("spellcheck_dark", "squiggle_color", dark_squiggle_picker)
-        dark_squiggle_picker.Bind(
-            wx.EVT_COLOURPICKER_CHANGED,
-            lambda evt, a=bound: self._on_squiggle_colour_changed(*a),
         )
 
         squiggle_reset_btn = wx.Button(self, label=_("Reset"), size=(60, -1))
@@ -1196,24 +1187,15 @@ class ThemePage(SettingsPage):
 
         self.fit()
 
-    def _on_colour_changed(self, section, key, picker):
-        colour = picker.GetColour()
-        settings.set(section, key, colour)
-        patterns.Event("calendar.colours.changed", self).send()
-
     def _on_reset(
-        self, light_picker, dark_picker, light_default, dark_default, key
+        self, light_picker, dark_picker, light_default, dark_default
     ):
         light_picker.SetColour(wx.Colour(*light_default))
         dark_picker.SetColour(wx.Colour(*dark_default))
-        settings.set("calendar_light", key, light_picker.GetColour())
-        settings.set("calendar_dark", key, dark_picker.GetColour())
-        patterns.Event("calendar.colours.changed", self).send()
 
     def _on_other_month_system_toggle(self, theme):
         if theme == "light":
             checked = self._other_month_light_check.IsChecked()
-            settings.set("calendar_light", "other_month_bg_system", checked)
             # N/A only when system checked but we can't show the color
             # (wrong theme)
             show_na = checked and self._is_dark
@@ -1224,10 +1206,13 @@ class ThemePage(SettingsPage):
                 self._other_month_light_picker.SetColour(
                     wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
                 )
+            elif not checked:
+                self._other_month_light_picker.SetColour(
+                    self._other_month_colour("light")
+                )
             self._other_month_light_panel.Layout()
         else:
             checked = self._other_month_dark_check.IsChecked()
-            settings.set("calendar_dark", "other_month_bg_system", checked)
             show_na = checked and not self._is_dark
             self._other_month_dark_picker.Show(not show_na)
             self._other_month_dark_na.Show(show_na)
@@ -1236,28 +1221,35 @@ class ThemePage(SettingsPage):
                 self._other_month_dark_picker.SetColour(
                     wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
                 )
+            elif not checked:
+                self._other_month_dark_picker.SetColour(
+                    self._other_month_colour("dark")
+                )
             self._other_month_dark_panel.Layout()
-        patterns.Event("calendar.colours.changed", self).send()
+
+    def _other_month_colour(self, theme):
+        """The colour used without System: picked, else saved; the
+        picker shows it once System is unchecked."""
+        return wx.Colour(
+            self._other_month_picked.get(
+                theme, settings.get("calendar_" + theme, "other_month_bg")
+            )
+        )
 
     def _on_other_month_color_picked(self, theme):
         if theme == "light":
             picked = self._other_month_light_picker.GetColour()
             self._other_month_light_check.SetValue(False)
-            settings.set("calendar_light", "other_month_bg_system", False)
-            settings.set("calendar_light", "other_month_bg", picked)
         else:
             picked = self._other_month_dark_picker.GetColour()
             self._other_month_dark_check.SetValue(False)
-            settings.set("calendar_dark", "other_month_bg_system", False)
-            settings.set("calendar_dark", "other_month_bg", picked)
-        patterns.Event("calendar.colours.changed", self).send()
+        self._other_month_picked[theme] = picked
 
     def _on_reset_other_month(self, event):
         from taskcoachlib.config import defaults as defaults_mod
 
         # Light: reset to system
         self._other_month_light_check.SetValue(True)
-        settings.set("calendar_light", "other_month_bg_system", True)
         light_show_na = (
             self._is_dark
         )  # can't show system color if we're in dark
@@ -1274,34 +1266,41 @@ class ThemePage(SettingsPage):
         )
         self._other_month_dark_picker.SetColour(wx.Colour(*dark_default))
         self._other_month_dark_check.SetValue(False)
-        settings.set(
-            "calendar_dark",
-            "other_month_bg",
-            self._other_month_dark_picker.GetColour(),
-        )
-        settings.set("calendar_dark", "other_month_bg_system", False)
+        self._other_month_picked["dark"] = wx.Colour(*dark_default)
         self._other_month_dark_picker.Show()
         self._other_month_dark_na.Hide()
         self._other_month_dark_panel.Layout()
-        patterns.Event("calendar.colours.changed", self).send()
-
-    def _on_squiggle_colour_changed(self, section, key, picker):
-        colour = picker.GetColour()
-        settings.set(section, key, colour)
-        patterns.Event("spellcheck.colours.changed", self).send()
 
     def _on_reset_squiggle(
         self, light_picker, dark_picker, light_default, dark_default
     ):
         light_picker.SetColour(wx.Colour(*light_default))
         dark_picker.SetColour(wx.Colour(*dark_default))
-        settings.set(
-            "spellcheck_light", "squiggle_color", light_picker.GetColour()
-        )
-        settings.set(
-            "spellcheck_dark", "squiggle_color", dark_picker.GetColour()
-        )
-        patterns.Event("spellcheck.colours.changed", self).send()
+
+    def values(self):
+        values = super().values()
+        for theme, check in (
+            ("light", self._other_month_light_check),
+            ("dark", self._other_month_dark_check),
+        ):
+            section = "calendar_" + theme
+            values.append(
+                (section, "other_month_bg_system", check.IsChecked())
+            )
+            values.append(
+                (section, "other_month_bg", self._other_month_colour(theme))
+            )
+        return values
+
+    def ok(self):
+        calendar = [settings.get(*key) for key in self._CALENDAR_KEYS]
+        squiggle = [settings.get(*key) for key in self._SQUIGGLE_KEYS]
+        super().ok()
+        # Open calendars, date pickers and text fields redraw
+        if [settings.get(*key) for key in self._CALENDAR_KEYS] != calendar:
+            patterns.Event("calendar.colours.changed", self).send()
+        if [settings.get(*key) for key in self._SQUIGGLE_KEYS] != squiggle:
+            patterns.Event("spellcheck.colours.changed", self).send()
 
     def _add_restart_note(self, theme_choice):
         """Add the restart note below Mode, if a restart is ever needed.
@@ -1484,15 +1483,15 @@ class LanguagePage(SettingsPage):
             ("vi_VI", "tiếng Việt (Vietnamese)"),
         ]
         choices = [("", _("Let the system determine the language"))]
-        allLanguages = dict(list(data.languages.values()))
+        all_languages = dict(list(data.languages.values()))
         for code, label in languages:
             if code == "en_US":
                 label = "English (US)"
                 enabled = True
-            elif code in allLanguages:
-                enabled = allLanguages[code]
+            elif code in all_languages:
+                enabled = all_languages[code]
             elif "_" in code:
-                enabled = allLanguages.get(code.split("_")[0], False)
+                enabled = all_languages.get(code.split("_")[0], False)
             else:
                 enabled = False
             if enabled:
@@ -1535,8 +1534,8 @@ class LanguagePage(SettingsPage):
         )
         sizer.Add(text)
         url = meta.github_url + "/issues"
-        urlCtrl = HyperLinkCtrl(panel, -1, label=url, URL=url)
-        sizer.Add(urlCtrl, 0, wx.TOP, 2)
+        url_ctrl = HyperLinkCtrl(panel, -1, label=url, URL=url)
+        sizer.Add(url_ctrl, 0, wx.TOP, 2)
         panel.SetSizer(sizer)
         self.addEntry("", panel)
 
@@ -1547,9 +1546,9 @@ class LanguagePage(SettingsPage):
         self._update_locale_warning()
 
         # Bind to dropdown change to update warnings dynamically
-        for section, setting, choiceCtrls in self._choiceSettings:
+        for section, setting, choice_ctrls in self._choiceSettings:
             if setting == "language_set_by_user":
-                choiceCtrls[0].Bind(wx.EVT_CHOICE, self._on_language_change)
+                choice_ctrls[0].Bind(wx.EVT_CHOICE, self._on_language_change)
 
         # Separator line between language and spell check sections
         self.addLine()
@@ -1894,21 +1893,21 @@ class LanguagePage(SettingsPage):
 
         # Show warning if enchant is not available
         if not ENCHANT_AVAILABLE:
-            warningText = wx.StaticText(
+            warning_text = wx.StaticText(
                 self,
                 label=_(
                     "Warning: Spell checking is not available. Install pyenchant to enable this feature."
                 ),
             )
-            warningText.SetForegroundColour(wx.Colour(180, 0, 0))
-            self.addEntry("", warningText)
+            warning_text.SetForegroundColour(wx.Colour(180, 0, 0))
+            self.addEntry("", warning_text)
             self._spellCheckEnabledCheck.Enable(False)
 
         # Language dropdown for spell check
-        spellLangPanel = wx.Panel(self)
-        spellLangSizer = wx.BoxSizer(wx.HORIZONTAL)
+        spell_lang_panel = wx.Panel(self)
+        spell_lang_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self._spellCheckLangChoice = wx.Choice(spellLangPanel)
+        self._spellCheckLangChoice = wx.Choice(spell_lang_panel)
 
         # Add automatic option first
         self._spellCheckLangChoice.Append(
@@ -1916,42 +1915,42 @@ class LanguagePage(SettingsPage):
         )
 
         # Get available languages
-        availableLangs = (
+        available_langs = (
             SpellCheckMixin.getAvailableLanguages()
             if ENCHANT_AVAILABLE
             else []
         )
         current_spell_lang = settings.get("spellcheck", "language")
-        selectedIdx = 0
+        selected_idx = 0
 
-        for i, lang in enumerate(sorted(availableLangs)):
+        for i, lang in enumerate(sorted(available_langs)):
             self._spellCheckLangChoice.Append(lang, lang)
             if lang == current_spell_lang:
-                selectedIdx = i + 1  # +1 because of "Automatic" option
+                selected_idx = i + 1  # +1 because of "Automatic" option
 
-        self._spellCheckLangChoice.SetSelection(selectedIdx)
+        self._spellCheckLangChoice.SetSelection(selected_idx)
         self._spellCheckLangChoice.Enable(
             self._spellCheckEnabled and ENCHANT_AVAILABLE
         )
-        spellLangSizer.Add(
+        spell_lang_sizer.Add(
             self._spellCheckLangChoice, 0, wx.ALIGN_CENTER_VERTICAL
         )
 
         # Show detected language
         if ENCHANT_AVAILABLE:
-            detectedLang = SpellCheckMixin._detectLanguage()
-            detectedLabel = wx.StaticText(
-                spellLangPanel, label=_("Detected: %s") % detectedLang
+            detected_lang = SpellCheckMixin._detectLanguage()
+            detected_label = wx.StaticText(
+                spell_lang_panel, label=_("Detected: %s") % detected_lang
             )
-            detectedLabel.SetForegroundColour(
+            detected_label.SetForegroundColour(
                 wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
             )
-            spellLangSizer.Add(
-                detectedLabel, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15
+            spell_lang_sizer.Add(
+                detected_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 15
             )
 
-        spellLangPanel.SetSizer(spellLangSizer)
-        self.addEntry(_("Spell check language"), spellLangPanel)
+        spell_lang_panel.SetSizer(spell_lang_sizer)
+        self.addEntry(_("Spell check language"), spell_lang_panel)
 
         # Note about dropdown and how to install more dictionaries
         if ENCHANT_AVAILABLE:
@@ -1959,7 +1958,7 @@ class LanguagePage(SettingsPage):
 
             system = platform.system()
 
-            if not availableLangs:
+            if not available_langs:
                 self.addHintRow(
                     _(
                         "Language missing? Install hunspell packages for your language."
@@ -1968,18 +1967,18 @@ class LanguagePage(SettingsPage):
 
             # Platform-specific note combining dropdown info and install instructions
             if system == "Linux":
-                noteText = _(
+                note_text = _(
                     "Dropdown shows installed dictionaries. Install via: apt install hunspell-en-us"
                 )
             elif system == "Darwin":
-                noteText = _(
+                note_text = _(
                     "Dropdown shows installed dictionaries. Install via: brew install hunspell"
                 )
             else:  # Windows
-                noteText = _(
+                note_text = _(
                     "Dropdown shows installed dictionaries. Additional languages must be prepackaged."
                 )
-            self.addHintRow(noteText)
+            self.addHintRow(note_text)
 
     def _onSpellCheckEnabledChange(self, event):
         """Handle spell check enabled checkbox change."""
@@ -1997,9 +1996,9 @@ class LanguagePage(SettingsPage):
 
     def _get_selected_language_code(self):
         """Get the currently selected language code from the dropdown."""
-        for section, setting, choiceCtrls in self._choiceSettings:
+        for section, setting, choice_ctrls in self._choiceSettings:
             if setting == "language_set_by_user":
-                choice = choiceCtrls[0]
+                choice = choice_ctrls[0]
                 return choice.GetClientData(choice.GetSelection())
         return ""
 
@@ -2232,45 +2231,28 @@ class LanguagePage(SettingsPage):
         self._locale_warning.Show(show_warning)
         self.Layout()
 
-    def ok(self):
-        super().ok()
-        settings.set(
-            "view", "language", settings.get("view", "language_set_by_user")
-        )
-        # Save date format setting
-        selected_format = self._date_format_choice.GetClientData(
-            self._date_format_choice.GetSelection()
-        )
-        settings.set("view", "dateformat", selected_format)
-        # Save display-only override (applies only to rendering)
-        selected_display_override = (
-            self._display_override_choice.GetClientData(
-                self._display_override_choice.GetSelection()
-            )
-        )
-        settings.set(
-            "view", "dateformat_display_override", selected_display_override
-        )
-        # Save time format setting
-        selected_time_format = self._time_format_choice.GetClientData(
-            self._time_format_choice.GetSelection()
-        )
-        settings.set("view", "timeformat", selected_time_format)
-        # Save decimal separator setting
-        selected_dec_sep = self._decimal_sep_choice.GetClientData(
-            self._decimal_sep_choice.GetSelection()
-        )
-        settings.set("view", "decimal_separator", selected_dec_sep)
-        # Save currency decimal places setting
-        selected_curr_dp = self._currency_dp_choice.GetClientData(
-            self._currency_dp_choice.GetSelection()
-        )
-        settings.set("view", "currency_decimal_places", selected_curr_dp)
-        # Save spell check language (enabled checkbox saved by base ok())
-        selected_spell_lang = self._spellCheckLangChoice.GetClientData(
-            self._spellCheckLangChoice.GetSelection()
-        )
-        settings.set("spellcheck", "language", selected_spell_lang)
+    def values(self):
+        def selected(choice):
+            return choice.GetClientData(choice.GetSelection())
+
+        return super().values() + [
+            ("view", "language", self._get_selected_language_code()),
+            ("view", "dateformat", selected(self._date_format_choice)),
+            # Applies only to rendering
+            (
+                "view",
+                "dateformat_display_override",
+                selected(self._display_override_choice),
+            ),
+            ("view", "timeformat", selected(self._time_format_choice)),
+            ("view", "decimal_separator", selected(self._decimal_sep_choice)),
+            (
+                "view",
+                "currency_decimal_places",
+                selected(self._currency_dp_choice),
+            ),
+            ("spellcheck", "language", selected(self._spellCheckLangChoice)),
+        ]
 
 
 class StatusesPage(SettingsPage):
@@ -2279,7 +2261,7 @@ class StatusesPage(SettingsPage):
     pageIcon = "nuvola_apps_kcoloredit"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=11, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=11, growable_column=-1, *args, **kwargs)
         self._priorityChoices = []  # [(setting, choiceCtrl), ...]
         self._previousPriorities = {}  # choiceCtrl -> int
         self.addAppearanceHeader()
@@ -2298,76 +2280,76 @@ class StatusesPage(SettingsPage):
                 label,
             )
         # Bind validation to prevent selecting object-used icons
-        for section, setting, iconEntry in self._iconSettings:
-            iconEntry.Bind(
+        for section, setting, icon_entry in self._iconSettings:
+            icon_entry.Bind(
                 wx.EVT_COMBOBOX,
-                lambda evt, ie=iconEntry: self._onStatusIconChanged(evt, ie),
+                lambda evt, ie=icon_entry: self._onStatusIconChanged(evt, ie),
             )
         # Separator lines under the table, matching header lines
-        lineRow = self._position.next(11)  # consume full row, get row number
+        line_row = self._position.next(11)  # consume full row, get row number
         self._sizer.Add(
             wx.StaticLine(self),
-            (lineRow[0], 0),
+            (line_row[0], 0),
             span=(1, 1),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
             border=self._borderWidth,
         )
         self._sizer.Add(
             wx.StaticLine(self),
-            (lineRow[0], 1),
+            (line_row[0], 1),
             span=(1, 1),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
             border=self._borderWidth,
         )
         self._sizer.Add(
             wx.StaticLine(self),
-            (lineRow[0], 2),
+            (line_row[0], 2),
             span=(1, 4),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
             border=self._borderWidth,
         )
         self._sizer.Add(
             wx.StaticLine(self),
-            (lineRow[0], 6),
+            (line_row[0], 6),
             span=(1, 4),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
             border=self._borderWidth,
         )
         # Reset priorities button placed directly in col 1 (priority column)
-        resetPrioritiesBtn = wx.Button(self, label=_("Reset"), size=(60, -1))
-        resetPrioritiesBtn.Bind(wx.EVT_BUTTON, self._onResetPriorities)
-        resetRow = self._position.next(11)  # consume full row, get row number
+        reset_priorities_btn = wx.Button(self, label=_("Reset"), size=(60, -1))
+        reset_priorities_btn.Bind(wx.EVT_BUTTON, self._onResetPriorities)
+        reset_row = self._position.next(11)  # consume full row, get row number
         self._sizer.Add(
-            resetPrioritiesBtn,
-            (resetRow[0], 1),
+            reset_priorities_btn,
+            (reset_row[0], 1),
             span=(1, 1),
             flag=wx.ALL | wx.ALIGN_CENTER,
             border=self._borderWidth,
         )
         # Note text spanning all columns, left-aligned
-        noteText = wx.StaticText(
+        note_text = wx.StaticText(
             self,
             label=_(
                 "These appearance settings can be overridden "
                 "for individual tasks in the task edit dialog."
             ),
         )
-        noteText.SetForegroundColour(
+        note_text.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        noteRow = self._position.next(11)  # consume full row
+        note_row = self._position.next(11)  # consume full row
         self._sizer.Add(
-            noteText,
-            (noteRow[0], 0),
+            note_text,
+            (note_row[0], 0),
             span=(1, 11),
             flag=wx.ALL | wx.ALIGN_LEFT,
             border=self._borderWidth,
         )
         # Divider before legacy option
-        legacyLineRow = self._position.next(11)
+        legacy_line_row = self._position.next(11)
         self._sizer.Add(
             wx.StaticLine(self),
-            (legacyLineRow[0], 0),
+            (legacy_line_row[0], 0),
             span=(1, 11),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
             border=self._borderWidth,
@@ -2388,7 +2370,7 @@ class StatusesPage(SettingsPage):
         )
         self.fit()
 
-    def _onStatusIconChanged(self, event, iconEntry):
+    def _onStatusIconChanged(self, event, icon_entry):
         """Handle icon selection change. Excluded icons are handled by IconPicker."""
         # The new IconPicker prevents selection of excluded icons internally
         event.Skip()
@@ -2396,21 +2378,21 @@ class StatusesPage(SettingsPage):
     def _onPriorityChanged(self, event):
         """Handle priority dropdown change with insert-before semantics."""
         changed = event.GetEventObject()
-        newPriority = changed.GetSelection() + 1  # 0-indexed -> 1-indexed
-        oldPriority = self._previousPriorities[changed]
-        if newPriority == oldPriority:
+        new_priority = changed.GetSelection() + 1  # 0-indexed -> 1-indexed
+        old_priority = self._previousPriorities[changed]
+        if new_priority == old_priority:
             return
         for setting, ctrl in self._priorityChoices:
             if ctrl is changed:
                 continue
             p = ctrl.GetSelection() + 1
-            if newPriority < oldPriority:
+            if new_priority < old_priority:
                 # Moving up: priorities in [new, old) get +1
-                if newPriority <= p < oldPriority:
+                if new_priority <= p < old_priority:
                     ctrl.SetSelection(p)  # p+1 in 0-indexed = p
             else:
                 # Moving down: priorities in (old, new] get -1
-                if oldPriority < p <= newPriority:
+                if old_priority < p <= new_priority:
                     ctrl.SetSelection(p - 2)  # p-1 in 0-indexed = p-2
         # Update all previous priorities
         for setting, ctrl in self._priorityChoices:
@@ -2422,19 +2404,28 @@ class StatusesPage(SettingsPage):
 
         defs = defaults_mod.defaults
         for setting, ctrl in self._priorityChoices:
-            defaultPriority = int(defs["statussortpriority"][setting])
-            ctrl.SetSelection(defaultPriority - 1)
+            default_priority = int(defs["statussortpriority"][setting])
+            ctrl.SetSelection(default_priority - 1)
         for setting, ctrl in self._priorityChoices:
             self._previousPriorities[ctrl] = ctrl.GetSelection() + 1
 
+    def values(self):
+        return [
+            ("statussortpriority", setting, ctrl.GetSelection() + 1)
+            for setting, ctrl in self._priorityChoices
+        ] + super().values()
+
     def ok(self):
-        # Save priority values to settings
-        for setting, ctrl in self._priorityChoices:
-            settings.set(
-                "statussortpriority", setting, ctrl.GetSelection() + 1
-            )
-        patterns.Event("settings.statussortpriority.changed", self).send()
+        before = self.__priorities()
         super().ok()
+        if self.__priorities() != before:
+            patterns.Event("settings.statussortpriority.changed", self).send()
+
+    def __priorities(self):
+        return [
+            settings.get("statussortpriority", setting)
+            for setting, unused_ctrl in self._priorityChoices
+        ]
 
 
 class FeaturesPage(SettingsPage):
@@ -2443,7 +2434,7 @@ class FeaturesPage(SettingsPage):
     pageIcon = "nuvola_apps_preferences-system-session-services"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=2, growable_column=-1, *args, **kwargs)
         # The other settings on this tab apply at once
         self._restart_warning_base = (
             _("Working hours reach calendar views after a restart of %s.")
@@ -2632,9 +2623,11 @@ class FeaturesPage(SettingsPage):
             )
         self._restart_warning.Refresh()
 
+    def values(self):
+        return super().values() + self._working_hours_values()
+
     def ok(self):
         super().ok()
-        self._saveWorkingHoursSettings()
         calendar.setfirstweekday(
             dict(monday=0, sunday=6)[settings.get("view", "weekstart")]
         )
@@ -2646,7 +2639,7 @@ class IconsPage(SettingsPage):
     pageIcon = "nuvola_apps_kview"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=2, growable_column=-1, *args, **kwargs)
         self.addBooleanSetting(
             "iconpicker",
             "theme_nuvola",
@@ -2706,7 +2699,7 @@ class TaskDatesPage(SettingsPage):
     pageIcon = "nuvola_apps_date"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=2, growable_column=-1, *args, **kwargs)
         self.addBooleanSetting(
             "behavior",
             "markparentcompletedwhenallchildrencompleted",
@@ -2745,9 +2738,9 @@ class TaskDatesPage(SettingsPage):
         )
         self.addHintRow(
             _(
-                "Deprecated: replaced by the duration mode in the task editor. "
-                "Inline editing in the task list has not yet been refactored "
-                "and still uses this legacy option. It will be removed eventually."
+                "Applies to a date typed in the task list, for tasks in "
+                "Implicit mode; the other modes, and the task editor, follow "
+                "each task's duration mode."
             )
         )
 
@@ -2834,7 +2827,7 @@ class TaskReminderPage(SettingsPage):
     pageIcon = "nuvola_apps_kalarm"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=2, growableColumn=-1, *args, **kwargs)
+        super().__init__(columns=2, growable_column=-1, *args, **kwargs)
         from taskcoachlib.sounds import choices as sound_choices, play
 
         choice_ctrls = self.addChoiceSetting(
@@ -2874,13 +2867,6 @@ class TaskReminderPage(SettingsPage):
             wx.RIGHT,
             self._columnGap,
         )
-        if operating_system.isMac() or operating_system.isGTK():
-            self.addBooleanSetting(
-                "feature",
-                "sayreminder",
-                _("Let the computer say the reminder"),
-                _("(Needs espeak)") if operating_system.isGTK() else "",
-            )
         snooze_choices = [
             (str(choice[0]), choice[1]) for choice in date.snoozeChoices
         ]
@@ -2909,7 +2895,7 @@ class DurationPresetsPage(SettingsPage):
     pageIcon = "nuvola_apps_clock"
 
     def __init__(self, *args, **kwargs):
-        super().__init__(columns=2, growableColumn=1, *args, **kwargs)
+        super().__init__(columns=2, growable_column=1, *args, **kwargs)
 
         # Preset field configurations: (setting_key, display_name, help_text)
         self._preset_fields = [
@@ -3010,11 +2996,15 @@ class DurationPresetsPage(SettingsPage):
                 pass
         return sorted(presets)
 
-    def __savePresets(self, setting_key):
-        """Save presets to settings."""
-        presets = self.__presets[setting_key]
-        value = ",".join(str(m) for m in sorted(presets))
-        settings.set("feature", setting_key, value)
+    def values(self):
+        return super().values() + [
+            (
+                "feature",
+                setting_key,
+                ",".join(str(m) for m in sorted(self.__presets[setting_key])),
+            )
+            for setting_key, unused_name in self._preset_fields
+        ]
 
     def __getCurrentSettingKey(self):
         return self._preset_fields[self.__currentFieldIndex][0]
@@ -3080,21 +3070,21 @@ class DurationPresetsPage(SettingsPage):
 
             # Create a real Delete button for this row (same style as Add button)
             # Use wx.BU_EXACTFIT to reduce padding and make button smaller
-            deleteBtn = wx.Button(
+            delete_btn = wx.Button(
                 self.__listCtrl,
                 wx.ID_ANY,
                 " " + _("Delete"),
                 style=wx.BU_EXACTFIT,
             )
-            deleteBtn.SetBitmap(
+            delete_btn.SetBitmap(
                 icon_catalog.get_bitmap(
                     "nuvola_status_dialog-error", LIST_ICON_SIZE
                 )
             )
-            deleteBtn.presetValue = value  # Store preset value on button
-            deleteBtn.Bind(wx.EVT_BUTTON, self.__onDeleteButton)
-            self.__deleteButtons.append(deleteBtn)
-            self.__listCtrl.SetItemWindow(index, 2, deleteBtn, expand=True)
+            delete_btn.presetValue = value  # Store preset value on button
+            delete_btn.Bind(wx.EVT_BUTTON, self.__onDeleteButton)
+            self.__deleteButtons.append(delete_btn)
+            self.__listCtrl.SetItemWindow(index, 2, delete_btn, expand=True)
 
     def __formatMinutesParts(self, total_minutes):
         """Format minutes as (compact_value, description) tuple."""
@@ -3230,9 +3220,8 @@ class DurationPresetsPage(SettingsPage):
 
         presets.append(new_value)
         presets.sort()
-
-        self.__savePresets(self.__getCurrentSettingKey())
         self.__populateList()
+        self.edited()
 
     def __onDeleteButton(self, event):
         """Handle Delete button click - remove the preset."""
@@ -3242,12 +3231,28 @@ class DurationPresetsPage(SettingsPage):
 
         if value in presets:
             presets.remove(value)
-
-        self.__savePresets(self.__getCurrentSettingKey())
         self.__populateList()
+        self.edited()
 
 
 class Preferences(widgets.NotebookDialog):
+    """OK and Cancel always enabled; Apply only while a page differs
+    from what it showed (docs/PREFERENCES.md, OK, Apply and Cancel)."""
+
+    # The event each kind of control sends when the user changes it
+    _EDIT_EVENTS = (
+        (wx.CheckListBox, wx.EVT_CHECKLISTBOX),
+        (wx.CheckBox, wx.EVT_CHECKBOX),
+        (wx.Choice, wx.EVT_CHOICE),
+        (wx.TextCtrl, wx.EVT_TEXT),
+        (wx.Button, wx.EVT_BUTTON),
+        (wx.ColourPickerCtrl, wx.EVT_COLOURPICKER_CHANGED),
+        (wx.DirPickerCtrl, wx.EVT_DIRPICKER_CHANGED),
+        (widgets.SpinCtrl, wx.EVT_SPINCTRL),
+        (widgets.FontPickerCtrl, wx.EVT_FONTPICKER_CHANGED),
+        (widgets.IconPicker, wx.EVT_COMBOBOX),
+    )
+
     all_page_names = [
         "window",
         "save",
@@ -3276,20 +3281,61 @@ class Preferences(widgets.NotebookDialog):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("buttonTypes", wx.OK | wx.CANCEL | wx.APPLY)
         super().__init__(icon_id="nuvola_actions_configure", *args, **kwargs)
+        self.__update_pending = False
+        self.__shown = self.__values()
+        self.__apply_button = wxhelper.get_dialog_button(
+            self._buttons, wx.ID_APPLY
+        )
+        self.__apply_button.Disable()
+        self.__watch(self._interior)
         if operating_system.isMac():
-            self.CentreOnParent()
+            self.place()
+
+    def __watch(self, window):
+        """Follow every change: bound last, so it sees each event
+        before the page's own handlers, which may not pass it on."""
+        for kind, event_type in self._EDIT_EVENTS:
+            if isinstance(window, kind):
+                window.Bind(event_type, self.__on_edit)
+                break
+        for child in window.GetChildren():
+            self.__watch(child)
+
+    def __on_edit(self, event):
+        event.Skip()
+        self.update_buttons_soon()
+
+    def update_buttons_soon(self):
+        """Once the change's handlers ran: they may change other
+        controls (a status's priorities, the working hours)."""
+        if not self.__update_pending:
+            self.__update_pending = True
+            patterns.later.soon(self, self.__update_buttons)
+
+    def __update_buttons(self):
+        self.__update_pending = False
+        self.__apply_button.Enable(self.__values() != self.__shown)
+
+    def __values(self):
+        return [
+            [
+                (section, option, str(value))
+                for section, option, value in values
+            ]
+            for values in (page.values() for page in self._interior)
+        ]
+
+    def apply(self, event=None):
+        super().apply(event)
+        self.__shown = self.__values()
+        self.__update_buttons()
 
     def addPages(self):
-        screenHeight = (
-            wx.Display(wx.Display.GetFromWindow(self))
-            .GetClientArea()
-            .GetHeight()
-        )
-        height = min(650, int(screenHeight * 0.9))
-        self._interior.SetMinSize((1250, height))
+        # The first size; at most 80% of the screen, the pages scroll
+        self._interior.SetMinSize((1250, 650))
         for page_name in self.all_page_names:
             page = self.createPage(page_name)
             self._interior.AddPage(page, page.pageTitle, page.pageIcon)
 
-    def createPage(self, pageName):
-        return self.pages[pageName](parent=self._interior)
+    def createPage(self, page_name):
+        return self.pages[page_name](parent=self._interior)

@@ -68,8 +68,8 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         for owned_object in owned_objects:
             owned_object.modified_now(event=event)
 
-    def changed_event_type(class_):
-        return "%s.%ss" % (class_, klass.__ownedType__.lower())
+    def changed_event_type(cls):
+        return "%s.%ss" % (cls, klass.__ownedType__.lower())
 
     setattr(
         klass,
@@ -77,8 +77,8 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         classmethod(changed_event_type),
     )
 
-    def added_event_type(class_):
-        return "%s.%s.added" % (class_, klass.__ownedType__.lower())
+    def added_event_type(cls):
+        return "%s.%s.added" % (cls, klass.__ownedType__.lower())
 
     setattr(
         klass,
@@ -86,8 +86,8 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         classmethod(added_event_type),
     )
 
-    def removed_event_type(class_):
-        return "%s.%s.removed" % (class_, klass.__ownedType__.lower())
+    def removed_event_type(cls):
+        return "%s.%s.removed" % (cls, klass.__ownedType__.lower())
 
     setattr(
         klass,
@@ -95,12 +95,12 @@ def DomainObjectOwnerMetaclass(name, bases, ns):
         classmethod(removed_event_type),
     )
 
-    def modification_event_types(class_):
+    def modification_event_types(cls):
         try:
-            event_types = super(klass, class_).modificationEventTypes()
+            event_types = super(klass, cls).modificationEventTypes()
         except AttributeError:
             event_types = []
-        return event_types + [changed_event_type(class_)]
+        return event_types + [changed_event_type(cls)]
 
     klass.modificationEventTypes = classmethod(modification_event_types)
 

@@ -9,8 +9,8 @@ Windows builds use Python's embeddable distribution + Inno Setup (same approach 
 
 | Build | Python | Arch | Target |
 |-------|--------|------|--------|
-| `TaskCoach-X.Y.Z-windows-x64-setup.exe` | 3.11 | 64-bit | Most users |
-| `TaskCoach-X.Y.Z-windows-x64-portable.zip` | 3.11 | 64-bit | Portable |
+| `TaskCoach-X.Y.Z-windows-x64-setup.exe` | 3.13 | 64-bit | Most users |
+| `TaskCoach-X.Y.Z-windows-x64-portable.zip` | 3.13 | 64-bit | Portable |
 
 **32-bit builds (disabled):** The following builds are commented out in the workflow since no current users require them. To reactivate, uncomment the x86 matrix entry in `.github/workflows/build-windows.yml`:
 
@@ -77,7 +77,7 @@ The Python embeddable package requires careful configuration to work with pip-in
 The `pythonXX._pth` file controls `sys.path`. The order matters - `import site` must come **AFTER** all paths:
 
 ```
-python311.zip
+python313.zip
 .
 Lib\site-packages
 ..
@@ -116,6 +116,18 @@ Copy-Item "C:\Windows\System32\vcruntime140_1.dll" -Destination "python\"
 ```
 
 **Note:** The Python embeddable package includes `vcruntime140.dll` but NOT `msvcp140.dll`. wxPython (built with C++) requires `msvcp140.dll`.
+
+### 5. Packages Built from Source
+
+squaremap is published as source only, so pip builds it. With a
+`._pth` file Python ignores `PYTHONPATH`, which pip's isolated build
+environment relies on: the build runs with the embedded Python's own
+packages. The workflow installs setuptools and wheel into it and
+builds with `--no-build-isolation`. On Python 3.11 this worked by
+chance: `get-pip.py` installs setuptools and wheel only before Python
+3.12 (its `include_setuptools()`), so the first build on 3.13 failed
+with "Cannot import 'setuptools.build_meta'" (2026-10-07). Each pip
+install stops the step when it fails.
 
 ### Runtime DLL Setup in Application
 

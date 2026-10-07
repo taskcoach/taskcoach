@@ -21,26 +21,26 @@ from taskcoachlib import widgets
 
 
 class SpinCtrlTest(test.wxTestCase):
-    def testPositiveValue(self):
-        spinCtrl = widgets.SpinCtrl(self.frame, value=5)
-        self.assertEqual(5, spinCtrl.GetValue())
+    def test_positive_value(self):
+        spin_ctrl = widgets.SpinCtrl(self.frame, value=5)
+        self.assertEqual(5, spin_ctrl.GetValue())
 
-    def testNegativeValue(self):
-        spinCtrl = widgets.SpinCtrl(self.frame, value=-5)
-        self.assertEqual(-5, spinCtrl.GetValue())
+    def test_negative_value(self):
+        spin_ctrl = widgets.SpinCtrl(self.frame, value=-5)
+        self.assertEqual(-5, spin_ctrl.GetValue())
 
-    def testMinRange(self):
-        spinCtrl = widgets.SpinCtrl(self.frame, min=1)
-        self.assertEqual(1, spinCtrl.GetMin())
+    def test_min_range(self):
+        spin_ctrl = widgets.SpinCtrl(self.frame, min=1)
+        self.assertEqual(1, spin_ctrl.GetMin())
 
-    def testDefaultValueIsAtLeastMinRange(self):
-        spinCtrl = widgets.SpinCtrl(self.frame, min=1)
-        self.assertEqual(1, spinCtrl.GetValue())
+    def test_default_value_is_at_least_min_range(self):
+        spin_ctrl = widgets.SpinCtrl(self.frame, min=1)
+        self.assertEqual(1, spin_ctrl.GetValue())
 
-    def testMaxRange(self):
-        spinCtrl = widgets.SpinCtrl(self.frame, max=100)
-        self.assertEqual(100, spinCtrl.GetMax())
+    def test_max_range(self):
+        spin_ctrl = widgets.SpinCtrl(self.frame, max=100)
+        self.assertEqual(100, spin_ctrl.GetMax())
 
-    def testDefaultValueIsAtMostMaxRange(self):
-        spinCtrl = widgets.SpinCtrl(self.frame, max=-1)
-        self.assertEqual(-1, spinCtrl.GetValue())
+    def test_default_value_is_at_most_max_range(self):
+        spin_ctrl = widgets.SpinCtrl(self.frame, max=-1)
+        self.assertEqual(-1, spin_ctrl.GetValue())

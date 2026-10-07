@@ -24,7 +24,6 @@ from . import notebook
 import wx
 import wx.html
 from wx.lib import sized_controls
-import os
 from ..tools import wxhelper
 from taskcoachlib import patterns
 
@@ -57,13 +56,13 @@ class Dialog(sized_controls.SizedDialog):
             # what we want.
             import win32gui, win32con
 
-            exStyle = win32gui.GetWindowLong(
+            ex_style = win32gui.GetWindowLong(
                 self.GetHandle(), win32con.GWL_EXSTYLE
             )
             win32gui.SetWindowLong(
                 self.GetHandle(),
                 win32con.GWL_EXSTYLE,
-                exStyle | win32con.WS_EX_APPWINDOW,
+                ex_style | win32con.WS_EX_APPWINDOW,
             )
 
         self._panel = self.GetContentsPane()
@@ -76,7 +75,11 @@ class Dialog(sized_controls.SizedDialog):
         self._buttons = self.createButtons()
         self._panel.Fit()
         self.Fit()
-        self.CentreOnParent()
+        self.place()
+        # A size given to the interior is for the first fit only: the
+        # dialog may be cut to the screen and made smaller, its
+        # contents scrolling (docs/WINDOW_GEOMETRY.md, Decisions 10)
+        self._interior.SetMinSize(wx.DefaultSize)
         if not operating_system.isGTK():
             patterns.later.soon(self, self.__safeRaise)
         patterns.later.soon(self, self.__safePanelSetFocus)
@@ -128,6 +131,11 @@ class Dialog(sized_controls.SizedDialog):
             # wrapped C/C++ object has been deleted
             pass
 
+    def place(self):
+        """Centre on the parent, also through the first show, at most
+        80% of its monitor each way."""
+        wxhelper.centre_on_parent(self)
+
     def createInterior(self):
         raise NotImplementedError
 
@@ -135,30 +143,30 @@ class Dialog(sized_controls.SizedDialog):
         pass
 
     def createButtons(self):
-        buttonTypes = (
+        button_types = (
             wx.OK if self._buttonTypes == wx.ID_CLOSE else self._buttonTypes
         )
-        buttonSizer = self.CreateStdDialogButtonSizer(
-            buttonTypes
+        button_sizer = self.CreateStdDialogButtonSizer(
+            button_types
         )  # type: wx.StdDialogButtonSizer
         if self._buttonTypes & wx.OK or self._buttonTypes & wx.ID_CLOSE:
-            wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
+            wxhelper.get_dialog_button(button_sizer, wx.ID_OK).Bind(
                 wx.EVT_BUTTON, self.ok
             )
         if self._buttonTypes & wx.CANCEL:
-            wxhelper.get_dialog_button(buttonSizer, wx.ID_CANCEL).Bind(
+            wxhelper.get_dialog_button(button_sizer, wx.ID_CANCEL).Bind(
                 wx.EVT_BUTTON, self.cancel
             )
         if self._buttonTypes & wx.APPLY:
-            wxhelper.get_dialog_button(buttonSizer, wx.ID_APPLY).Bind(
+            wxhelper.get_dialog_button(button_sizer, wx.ID_APPLY).Bind(
                 wx.EVT_BUTTON, self.apply
             )
         if self._buttonTypes == wx.ID_CLOSE:
-            wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).SetLabel(
+            wxhelper.get_dialog_button(button_sizer, wx.ID_OK).SetLabel(
                 _("Close")
             )
-        self.SetButtonSizer(buttonSizer)
-        return buttonSizer
+        self.SetButtonSizer(button_sizer)
+        return button_sizer
 
     def ok(self, event=None):
         if event:
@@ -208,25 +216,25 @@ class NotebookDialog(Dialog):
 
 
 class HtmlWindowThatUsesWebBrowserForExternalLinks(wx.html.HtmlWindow):
-    def OnLinkClicked(self, linkInfo):  # pylint: disable=W0221
-        openedLinkInExternalBrowser = False
-        if linkInfo.GetTarget() == "_blank":
+    def OnLinkClicked(self, link_info):  # pylint: disable=W0221
+        opened_link_in_external_browser = False
+        if link_info.GetTarget() == "_blank":
             import webbrowser  # pylint: disable=W0404
 
             try:
-                webbrowser.open(linkInfo.GetHref())
-                openedLinkInExternalBrowser = True
+                webbrowser.open(link_info.GetHref())
+                opened_link_in_external_browser = True
             except webbrowser.Error:
                 pass
-        if not openedLinkInExternalBrowser:
+        if not opened_link_in_external_browser:
             super(
                 HtmlWindowThatUsesWebBrowserForExternalLinks, self
-            ).OnLinkClicked(linkInfo)
+            ).OnLinkClicked(link_info)
 
 
 class HTMLDialog(Dialog):
-    def __init__(self, title, htmlText, parent=None, *args, **kwargs):
-        self._htmlText = htmlText
+    def __init__(self, title, html_text, parent=None, *args, **kwargs):
+        self._htmlText = html_text
         super().__init__(
             parent, title, buttonTypes=wx.ID_CLOSE, *args, **kwargs
         )
@@ -242,16 +250,15 @@ class HTMLDialog(Dialog):
     def fillInterior(self):
         self._interior.AppendToPage(self._htmlText)
 
-    def OnLinkClicked(self, linkInfo):
+    def OnLinkClicked(self, link_info):
         pass
 
 
-def AttachmentSelector(**callerKeywordArguments):
+def AttachmentSelector(**caller_keyword_arguments):
     kwargs = {
         "message": _("Add attachment"),
-        "default_path": os.getcwd(),
         "wildcard": _("All files (*.*)|*"),
         "flags": wx.FD_OPEN,
     }
-    kwargs.update(callerKeywordArguments)
+    kwargs.update(caller_keyword_arguments)
     return wx.FileSelector(**kwargs)  # pylint: disable=W0142

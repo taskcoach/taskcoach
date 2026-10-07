@@ -149,7 +149,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             self.CmdKeyClear(stc.STC_KEY_RETURN, 0)
             self.CmdKeyClear(stc.STC_KEY_RETURN, stc.STC_SCMOD_SHIFT)
 
-        # Live update squiggle color from preferences
+        # The squiggle colour Preferences saves (OK or Apply)
         patterns.Publisher().registerObserver(
             self._on_squiggle_colour_changed,
             eventType="spellcheck.colours.changed",
@@ -182,17 +182,17 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         Multiline:
           Enter → insert newline (normal behavior)
         """
-        keyCode = event.GetKeyCode()
+        key_code = event.GetKeyCode()
         # Tab/Shift+Tab: always navigate focus (no literal tabs)
-        if keyCode == wx.WXK_TAB:
+        if key_code == wx.WXK_TAB:
             self.Navigate(not event.ShiftDown())
             return
         # Single-line: Enter navigates, Ctrl+V strips newlines
         if self._single_line:
-            if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
+            if key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER):
                 self.Navigate(True)
                 return
-            if event.ControlDown() and keyCode == ord("V"):
+            if event.ControlDown() and key_code == ord("V"):
                 self._pasteWithoutNewlines()
                 return
         event.Skip()
@@ -687,10 +687,10 @@ class MultiLineTextCtrl(wx.Panel):
             font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
             dc = wx.ScreenDC()
             dc.SetFont(font)
-            textHeight = dc.GetTextExtent("Ay")[1]
-            totalHeight = textHeight + (self._padding * 2) + 4
-            self.SetMinSize((-1, totalHeight))
-            self.SetMaxSize((-1, totalHeight))
+            text_height = dc.GetTextExtent("Ay")[1]
+            total_height = text_height + (self._padding * 2) + 4
+            self.SetMinSize((-1, total_height))
+            self.SetMaxSize((-1, total_height))
 
         # Bind focus events to update focus state and repaint
         self._textCtrl.Bind(wx.EVT_SET_FOCUS, self._onFocus)
@@ -721,9 +721,9 @@ class MultiLineTextCtrl(wx.Panel):
         renderer.DrawTextCtrl(self, dc, rect, flags)
         # Detect theme change here: EVT_SYS_COLOUR_CHANGED does not get
         # past the AuiManager of an AGW AuiNotebook (editor pages)
-        windowBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-        if self._lastWindowBg != windowBg:
-            self._lastWindowBg = windowBg
+        window_bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        if self._lastWindowBg != window_bg:
+            self._lastWindowBg = window_bg
             patterns.later.soon(
                 self._textCtrl, self._textCtrl._applyThemeColours
             )

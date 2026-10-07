@@ -156,9 +156,9 @@ class NotificationFrameBase(_NotifyBase):
         font.SetPointSize(8)
         font.SetWeight(wx.FONTWEIGHT_BOLD)
 
-        titleCtrl = wx.StaticText(panel, wx.ID_ANY, self.title)
-        titleCtrl.SetFont(font)
-        hsz.Add(titleCtrl, 1, wx.ALL | wx.ALIGN_CENTRE, 2)
+        title_ctrl = wx.StaticText(panel, wx.ID_ANY, self.title)
+        title_ctrl.SetFont(font)
+        hsz.Add(title_ctrl, 1, wx.ALL | wx.ALIGN_CENTRE, 2)
 
         btn = self.close_button(panel)
         if btn is not None:
@@ -291,7 +291,7 @@ class _NotificationCenter(wx.EvtHandler):
 
         bottom = dy + dh - self.notificationMargin
 
-        for otherFrame, height, tmo in self.displayedFrames:
+        for other_frame, height, tmo in self.displayedFrames:
             bottom -= height + self.notificationMargin
             if bottom - h < 0:
                 self.waitingFrames.append((frm, timeout))
@@ -359,10 +359,10 @@ class _NotificationCenter(wx.EvtHandler):
         Returns the geometry of the main application frame's display
         """
 
-        dpyIndex = wx.Display.GetFromWindow(wx.GetApp().GetTopWindow())
-        if dpyIndex == wx.NOT_FOUND:
+        dpy_index = wx.Display.GetFromWindow(wx.GetApp().GetTopWindow())
+        if dpy_index == wx.NOT_FOUND:
             return wx.ClientDisplayRect()
-        return wx.Display(dpyIndex).GetClientArea()
+        return wx.Display(dpy_index).GetClientArea()
 
     def _on_tick(self):
         s = 0
@@ -418,7 +418,7 @@ class _NotificationCenter(wx.EvtHandler):
 class NotificationCenter(object):
     _instance = None
 
-    def __new__(self):
+    def __new__(cls):
         if NotificationCenter._instance is None:
             NotificationCenter._instance = _NotificationCenter()
         return NotificationCenter._instance

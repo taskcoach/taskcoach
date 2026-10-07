@@ -31,6 +31,7 @@ import collections
 import datetime
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -265,12 +266,21 @@ def main():
     work = tempfile.mkdtemp(prefix="format_compat_")
     old = os.path.join(work, "old")
     os.mkdir(old)
-    archive = subprocess.run(
-        ["git", "-C", REPOSITORY, "archive", options.tag],
-        check=True,
-        capture_output=True,
-    ).stdout
-    subprocess.run(["tar", "-x", "-C", old], input=archive, check=True)
+    try:
+        # Also when the tag or its extraction fails
+        archive = subprocess.run(
+            ["git", "-C", REPOSITORY, "archive", options.tag],
+            check=True,
+            capture_output=True,
+        ).stdout
+        subprocess.run(["tar", "-x", "-C", old], input=archive, check=True)
+        return compare_releases(options, work, old)
+    finally:
+        # The release's tree is large; the task files stay to look at
+        shutil.rmtree(old)
+
+
+def compare_releases(options, work, old):
     new, python = REPOSITORY, sys.executable
 
     def path(name):

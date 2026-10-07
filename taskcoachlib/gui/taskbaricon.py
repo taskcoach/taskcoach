@@ -154,6 +154,12 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             self.on_change_due_date_time,
             eventType=task.Task.statusChangedEventType(),
         )
+        # A read sets the statuses quietly: counted anew once read
+        self.registerObserver(
+            self.on_task_list_changed,
+            eventType="taskfile.justRead",
+            eventSource=mainwindow.taskFile,
+        )
         if operating_system.isGTK():
             events = [wx.adv.EVT_TASKBAR_LEFT_DOWN]
             log_step(
@@ -384,6 +390,125 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             pass
 
 
+class _Line:
+    """A line of the Linux tray menu: the key that finds its item again
+    at the next update, its text, icon and action, and its submenu's
+    lines (None: no submenu). Without text, a separator. task keeps the
+    task of a key made with id() alive while its item is shown."""
+
+    __slots__ = (
+        "key",
+        "label",
+        "on_activate",
+        "icon_id",
+        "image",
+        "children",
+        "task",
+    )
+
+    def __init__(
+        self,
+        key,
+        label=None,
+        on_activate=None,
+        icon_id="",
+        image=False,
+        children=None,
+        task=None,
+    ):
+        self.key = key
+        self.label = label
+        self.on_activate = on_activate
+        self.icon_id = icon_id or ""
+        self.image = image
+        self.children = children
+        self.task = task
+
+
+class _Shown:
+    """A line as the menu shows it."""
+
+    __slots__ = ("key", "item", "label", "icon_id", "level", "task")
+
+    def __init__(self, line, item):
+        self.key = line.key
+        self.item = item
+        self.label = line.label
+        self.icon_id = ""
+        self.level = None
+        self.task = line.task
+
+
+class _MenuLevel:
+    """A GTK menu of the Linux tray, brought to its lines in place: an
+    item is added, removed, moved or changed only where its line
+    changed, so the tray library converts only those items
+    (docs/SYSTEM_TRAY.md, Menu Updates)."""
+
+    def __init__(self, gtk):
+        self.__gtk = gtk
+        self.menu = gtk.Menu()
+        self.__shown = []  # _Shown, in menu order
+
+    def update(self, lines, image_of):
+        shown = self.__shown
+        wanted = {line.key for line in lines}
+        by_key = {each.key: each for each in shown}
+        for index, line in enumerate(lines):
+            while index < len(shown) and shown[index].key not in wanted:
+                self.menu.remove(shown.pop(index).item)
+            if index < len(shown) and shown[index].key == line.key:
+                self.__refresh(shown[index], line, image_of)
+                continue
+            each = by_key.get(line.key)
+            if each is None:
+                each = self.__new(line)
+            else:
+                # Moved, as a renamed task sorts elsewhere
+                shown.remove(each)
+                self.menu.remove(each.item)
+            self.__refresh(each, line, image_of)
+            shown.insert(index, each)
+            self.menu.insert(each.item, index)
+            each.item.show()
+        while len(shown) > len(lines):
+            self.menu.remove(shown.pop().item)
+
+    def __new(self, line):
+        gtk = self.__gtk
+        if line.label is None:
+            item = gtk.SeparatorMenuItem()
+        elif line.image:
+            # ImageMenuItem: StatusNotifier hosts get menu icons
+            # through dbusmenu, which takes them from this (deprecated)
+            # item type
+            item = gtk.ImageMenuItem(label=line.label)
+        else:
+            item = gtk.MenuItem(label=line.label)
+        if line.on_activate:
+            item.connect("activate", line.on_activate)
+        return _Shown(line, item)
+
+    def __refresh(self, each, line, image_of):
+        if line.label is not None and line.label != each.label:
+            each.item.set_label(line.label)
+            each.label = line.label
+        if line.image and line.icon_id != each.icon_id:
+            image = image_of(line.icon_id) if line.icon_id else None
+            each.item.set_image(image)
+            each.item.set_always_show_image(image is not None)
+            each.icon_id = line.icon_id
+        if line.children is None:
+            if each.level is not None:
+                each.item.set_submenu(None)
+                each.level = None
+            return
+        if each.level is None:
+            each.level = _MenuLevel(self.__gtk)
+            each.item.set_submenu(each.level.menu)
+        each.level.update(line.children, image_of)
+
+
 class AppIndicatorTaskBarIcon(patterns.Observer):
     """TaskBarIcon implementation using AppIndicator for Linux.
 
@@ -411,7 +536,9 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         self.__toplevel = None
         self.__task_list = task_list
         self.__trackable_tasks = task_list
-        self.__menu_rebuild_pending = False
+        self.__menu_update_pending = False
+        self.__menu = None  # The menu's _MenuLevel, once built
+        self.__menu_for_host = None  # Whether made for a tray host
 
         # Under Flatpak the SNI host runs outside the sandbox and cannot
         # read the bundled tray theme path, so use the app-id-namespaced
@@ -454,6 +581,9 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             icon_theme_path=theme_path,
             tooltip=meta.name,
         )
+        # A tray host coming or going changes who draws the menu, so how
+        # its icons are given (docs/SYSTEM_TRAY.md, Menu Icons)
+        self.__indicator.on_connection_changed(self._on_connection_changed)
 
         # Set up observers
         self.registerObserver(
@@ -489,6 +619,23 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             self._on_any_subject_changed,
             eventType=task.Task.subjectChangedEventType(),
         )
+        # A task's icon follows its status, which the clock changes:
+        # once after the scheduler's pass (docs/SYSTEM_TRAY.md, Menu
+        # Updates)
+        self.__update_menu_after_bursts = _OnceAfterBursts(
+            self, self._schedule_menu_update
+        )
+        self.registerObserver(
+            self._on_icon_changed,
+            eventType=task.Task.effectiveIconChangedEventType(),
+        )
+        # A read sets the statuses and icons quietly: taken anew once
+        # read (docs/WINDOW_GEOMETRY.md, Opening the File)
+        self.registerObserver(
+            self.on_task_list_changed,
+            eventType="taskfile.justRead",
+            eventSource=mainwindow.taskFile,
+        )
 
         self.__set_tooltip_text()
         self.__set_icon()
@@ -498,13 +645,16 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
     def on_task_list_changed(self, event):  # pylint: disable=W0613
         self.__set_tooltip_text()
         self.__start_or_stop_ticking()
-        self._rebuild_gtk_menu()  # Update menu with new task list
+        self._schedule_menu_update()  # Update menu with new task list
 
     def _on_completion_changed(self, event):  # pylint: disable=W0613
-        self._rebuild_gtk_menu()
+        self._schedule_menu_update()
 
     def _on_any_subject_changed(self, event):  # pylint: disable=W0613
-        self._rebuild_gtk_menu()
+        self._schedule_menu_update()
+
+    def _on_icon_changed(self, event):  # pylint: disable=W0613
+        self.__update_menu_after_bursts()
 
     def on_tracking_changed(self, event):
         for sender in event.sources():
@@ -525,11 +675,11 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             self.__start_ticking()
         else:
             self.__stop_ticking()
-        self._rebuild_gtk_menu()  # Update menu with tracking state
+        self._schedule_menu_update()  # Update menu with tracking state
 
     def on_change_subject(self, event):  # pylint: disable=W0613
         self.__set_tooltip_text()
-        self._rebuild_gtk_menu()  # Update menu with new task subject
+        self._schedule_menu_update()  # Update menu with new task subject
 
     def on_change_due_date_time(self, event):  # pylint: disable=W0613
         self.__update_tooltip()
@@ -568,22 +718,33 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         the wx.Menu directly.
         """
         self.__popupmenu = menu
-        self._build_gtk_menu()
+        self._update_gtk_menu()
 
-    def _rebuild_gtk_menu(self):
-        """Rebuild the GTK menu to reflect current state, once for a
-        burst of changes (e.g. a task and its ancestors completing).
+    def _schedule_menu_update(self):
+        """Update the GTK menu to the current state, once for a burst of
+        changes (e.g. a task and its ancestors completing).
 
         Called when task list, tracking state, or task subjects change.
         Runs later, on the main thread.
         """
-        if self.__indicator and not self.__menu_rebuild_pending:
-            self.__menu_rebuild_pending = True
-            patterns.later.soon(self.__window, self._build_gtk_menu)
+        if self.__indicator and not self.__menu_update_pending:
+            self.__menu_update_pending = True
+            patterns.later.soon(self.__window, self._update_gtk_menu)
 
-    def _build_gtk_menu(self):
-        """Build a GTK menu for the AppIndicator."""
-        self.__menu_rebuild_pending = False
+    def _on_connection_changed(self):
+        # Another drawer gives its icons another way: the menu is made
+        # anew. Also sent when nothing changed (at the start)
+        if self.__menu_for_host == self.__indicator.is_connected():
+            return
+        self.__menu = None
+        self._schedule_menu_update()
+
+    def _update_gtk_menu(self):
+        """Bring the GTK menu to the current state in place: only the
+        lines that changed are touched (docs/SYSTEM_TRAY.md, Menu
+        Updates). The first time, and after a tray host came or went,
+        the menu is made and handed to the indicator."""
+        self.__menu_update_pending = False
         if not _APPINDICATOR_MODULE:
             return
 
@@ -592,103 +753,80 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             return
 
         # Import GTK from the appindicator module's cached reference
-        Gtk = _APPINDICATOR_MODULE._Gtk
-        if not Gtk:
+        gtk = _APPINDICATOR_MODULE._Gtk
+        if not gtk:
             return
 
-        menu = Gtk.Menu()
-
-        # Show/Hide main window (acts as left-click replacement)
-        show_item = Gtk.MenuItem(label=_("Show/Hide Task Coach"))
-        show_item.connect(
-            "activate",
-            lambda w: patterns.later.soon(
-                self.__window, self.on_taskbar_click
-            ),
-        )
-        menu.append(show_item)
-
-        menu.append(Gtk.SeparatorMenuItem())
-
-        # New Task
-        new_task_item = Gtk.MenuItem(label=_("New task..."))
-        new_task_item.connect("activate", self._on_new_task)
-        menu.append(new_task_item)
-
-        # New task from template submenu
-        template_submenu = self._build_template_submenu(Gtk)
-        if template_submenu:
-            template_item = Gtk.MenuItem(label=_("New task from template"))
-            template_item.set_submenu(template_submenu)
-            menu.append(template_item)
-
-        menu.append(Gtk.SeparatorMenuItem())
-
-        # New Effort
-        new_effort_item = Gtk.MenuItem(label=_("New effort..."))
-        new_effort_item.connect("activate", self._on_new_effort)
-        menu.append(new_effort_item)
-
-        # New Category
-        new_category_item = Gtk.MenuItem(label=_("New category..."))
-        new_category_item.connect("activate", self._on_new_category)
-        menu.append(new_category_item)
-
-        # New Note
-        new_note_item = Gtk.MenuItem(label=_("New note..."))
-        new_note_item.connect("activate", self._on_new_note)
-        menu.append(new_note_item)
-
-        menu.append(Gtk.SeparatorMenuItem())
-
-        # Start tracking effort submenu
-        tracking_submenu = self._build_start_tracking_submenu(Gtk)
-        if tracking_submenu:
-            tracking_item = Gtk.MenuItem(label=_("Start tracking effort"))
-            tracking_item.set_submenu(tracking_submenu)
-            menu.append(tracking_item)
-
-        # Stop/Resume tracking - dynamic based on state
-        tracked_tasks = self.__task_list.tasks_being_tracked()
-        if tracked_tasks:
-            # Currently tracking - show Stop
-            if len(tracked_tasks) == 1:
-                label = _("Stop tracking %s") % tracked_tasks[0].subject()
-            else:
-                label = _("Stop tracking %d tasks") % len(tracked_tasks)
-            stop_item = Gtk.MenuItem(label=label)
-            stop_item.connect("activate", self._on_stop_tracking)
-            menu.append(stop_item)
+        if self.__menu is None:
+            self.__menu = _MenuLevel(gtk)
+            self.__menu_for_host = self.__indicator.is_connected()
+            self.__menu.update(self._menu_lines(), self.__menu_image)
+            self.__indicator.set_gtk_menu(self.__menu.menu)
         else:
-            # Not tracking - check if we can resume
-            most_recent = self._get_most_recent_tracked_task()
-            if most_recent:
-                label = _("Resume tracking %s") % most_recent.subject()
-                stop_item = Gtk.MenuItem(label=label)
-                stop_item.connect(
-                    "activate",
-                    lambda w, t=most_recent: patterns.later.soon(
-                        self.__window, self._do_start_tracking, t
-                    ),
+            self.__menu.update(self._menu_lines(), self.__menu_image)
+
+    def _menu_lines(self):
+        """The menu's lines, in order."""
+        lines = [
+            # Show/Hide main window (acts as left-click replacement)
+            _Line(
+                "show",
+                _("Show/Hide Task Coach"),
+                lambda w: patterns.later.soon(
+                    self.__window, self.on_taskbar_click
+                ),
+            ),
+            _Line("separator 1"),
+            _Line("new task", _("New task..."), self._on_new_task),
+        ]
+        templates = self._template_lines()
+        if templates:
+            lines.append(
+                _Line(
+                    "new task from template",
+                    _("New task from template"),
+                    children=templates,
                 )
-                menu.append(stop_item)
-            # If no recent task, don't show the item at all
-
-        menu.append(Gtk.SeparatorMenuItem())
-
-        # Quit
-        quit_item = Gtk.MenuItem(label=_("Quit"))
-        quit_item.connect(
-            "activate",
-            lambda w: patterns.later.soon(self.__window, self.__window.Close),
+            )
+        lines.extend(
+            [
+                _Line("separator 2"),
+                _Line("new effort", _("New effort..."), self._on_new_effort),
+                _Line(
+                    "new category",
+                    _("New category..."),
+                    self._on_new_category,
+                ),
+                _Line("new note", _("New note..."), self._on_new_note),
+                _Line("separator 3"),
+            ]
         )
-        menu.append(quit_item)
+        tracking = self._tracking_lines()
+        if tracking:
+            lines.append(
+                _Line(
+                    "start tracking",
+                    _("Start tracking effort"),
+                    children=tracking,
+                )
+            )
+        lines.extend(self._stop_or_resume_lines())
+        lines.extend(
+            [
+                _Line("separator 4"),
+                _Line(
+                    "quit",
+                    _("Quit"),
+                    lambda w: patterns.later.soon(
+                        self.__window, self.__window.Close
+                    ),
+                ),
+            ]
+        )
+        return lines
 
-        menu.show_all()
-        self.__indicator.set_gtk_menu(menu)
-
-    def _build_template_submenu(self, Gtk):
-        """Build submenu for task templates."""
+    def _template_lines(self):
+        """A line per task template, by subject."""
         from taskcoachlib import persistence
 
         path = settings.templates_dir()
@@ -697,76 +835,86 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
             templates = list(zip(template_list.tasks(), template_list.names()))
         except Exception:
             templates = []
-
-        if not templates:
-            return None
-
-        submenu = Gtk.Menu()
         # Sort by subject (display name) rather than filename
         templates.sort(key=lambda t: t[0].subject().lower())
+        lines = []
         for task_item, filename in templates:
             template_path = os.path.join(path, filename)
-            # Fallback to filename if no subject
-            subject = task_item.subject() or filename
-            item = Gtk.MenuItem(label=subject)
-            # Use default argument to capture template_path in closure
-            item.connect(
-                "activate",
-                lambda w, p=template_path: patterns.later.soon(
-                    self.__window, self._do_new_task_from_template, p
-                ),
+            lines.append(
+                _Line(
+                    ("template", template_path),
+                    # Fallback to filename if no subject
+                    task_item.subject() or filename,
+                    lambda w, p=template_path: patterns.later.soon(
+                        self.__window, self._do_new_task_from_template, p
+                    ),
+                )
             )
-            submenu.append(item)
+        return lines
 
-        return submenu
-
-    def _build_start_tracking_submenu(self, Gtk):
-        """Submenu for starting effort tracking: the same tree as the
+    def _tracking_lines(self, nodes=None):
+        """Lines for starting effort tracking: the same tree as the
         toolbar's StartEffortForTaskMenu."""
         from taskcoachlib.gui.menu import trackable_task_tree
 
-        tree = trackable_task_tree(self.__trackable_tasks)
-        if not tree:
-            return None
-        submenu = Gtk.Menu()
-        self._add_tracking_items(Gtk, submenu, tree)
-        return submenu
-
-    def _add_tracking_items(self, gtk, gtk_menu, nodes):
+        if nodes is None:
+            nodes = trackable_task_tree(self.__trackable_tasks)
+        lines = []
         for task_item, trackable, children in nodes:
             subject = task_item.subject() or _("(No subject)")
             if trackable:
-                item = self._image_menu_item(
-                    gtk, subject, task_item.shown_icon_id()
+                lines.append(
+                    _Line(
+                        ("track", id(task_item)),
+                        subject,
+                        lambda w, t=task_item: patterns.later.soon(
+                            self.__window, self._do_start_tracking, t
+                        ),
+                        icon_id=task_item.shown_icon_id(),
+                        image=True,
+                        task=task_item,
+                    )
                 )
-                item.connect(
-                    "activate",
-                    lambda w, t=task_item: patterns.later.soon(
-                        self.__window, self._do_start_tracking, t
-                    ),
-                )
-                gtk_menu.append(item)
             if children:
-                item = self._image_menu_item(
-                    gtk, subject, "taskcoach_actions_arrow_down_right"
+                lines.append(
+                    _Line(
+                        ("subtasks", id(task_item)),
+                        subject,
+                        icon_id="taskcoach_actions_arrow_down_right",
+                        image=True,
+                        children=self._tracking_lines(children),
+                        task=task_item,
+                    )
                 )
-                child_menu = gtk.Menu()
-                self._add_tracking_items(gtk, child_menu, children)
-                item.set_submenu(child_menu)
-                gtk_menu.append(item)
+        return lines
 
-    @staticmethod
-    def _image_menu_item(gtk, label, icon_id):
-        # ImageMenuItem: StatusNotifier hosts get menu icons through
-        # dbusmenu, which takes them from this (deprecated) item type
-        item = gtk.ImageMenuItem(label=label)
-        path = (
-            icon_catalog.get_path(icon_id, LIST_ICON_SIZE) if icon_id else None
-        )
-        if path:
-            item.set_image(gtk.Image.new_from_file(path))
-            item.set_always_show_image(True)
-        return item
+    def _stop_or_resume_lines(self):
+        """Stop tracking while tracking; else resume the task tracked
+        last, if any."""
+        tracked_tasks = self.__task_list.tasks_being_tracked()
+        if tracked_tasks:
+            if len(tracked_tasks) == 1:
+                label = _("Stop tracking %s") % tracked_tasks[0].subject()
+            else:
+                label = _("Stop tracking %d tasks") % len(tracked_tasks)
+            return [_Line("stop tracking", label, self._on_stop_tracking)]
+        most_recent = self._get_most_recent_tracked_task()
+        if not most_recent:
+            return []
+        return [
+            _Line(
+                ("resume tracking", id(most_recent)),
+                _("Resume tracking %s") % most_recent.subject(),
+                lambda w, t=most_recent: patterns.later.soon(
+                    self.__window, self._do_start_tracking, t
+                ),
+                task=most_recent,
+            )
+        ]
+
+    def __menu_image(self, icon_id):
+        path = icon_catalog.get_path(icon_id, LIST_ICON_SIZE)
+        return self.__indicator.menu_image(path) if path else None
 
     def _on_new_task(self, widget):
         """Handle New Task menu item."""

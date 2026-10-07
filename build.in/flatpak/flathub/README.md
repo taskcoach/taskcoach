@@ -63,10 +63,10 @@ build.
 
 6. Likely review points (justifications in
    [docs/FLATPAK.md](../../../docs/FLATPAK.md)): the **X11-only** display (runs via
-   XWayland on Wayland); the idle `--talk-name` grants
-   (`org.freedesktop.ScreenSaver` / `org.gnome.Mutter.IdleMonitor`) — there is no
-   idle portal; and **`--filesystem=home`** (the portal migration that would drop
-   it is postponed — see the File access section in docs/FLATPAK.md).
+   XWayland on Wayland); the idle `--talk-name` grant
+   (`org.gnome.Mutter.IdleMonitor`): there is no idle portal; and
+   **`--filesystem=home`** (the portal migration that would drop it is
+   postponed: see the File access section in docs/FLATPAK.md).
 
 ## Updates after the first submission (automated)
 

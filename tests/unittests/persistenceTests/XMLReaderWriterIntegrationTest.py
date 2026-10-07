@@ -58,10 +58,10 @@ class IntegrationTestCase(test.TestCase):
 
 
 class IntegrationTest_EmptyList(IntegrationTestCase):
-    def testEmptyTaskList(self):
+    def test_empty_task_list(self):
         self.assertEqual([], self.tasksWrittenAndRead)
 
-    def testNoCategories(self):
+    def test_no_categories(self):
         self.assertEqual([], self.categoriesWrittenAndRead)
 
 
@@ -134,80 +134,80 @@ class IntegrationTest(IntegrationTestCase):
             date.DateTime(2012, 1, 1, 10, 9, 8)
         )
 
-    def getTaskWrittenAndRead(self, targetId):
+    def getTaskWrittenAndRead(self, target_id):
         # pylint: disable=W0621
         return [
-            task for task in self.tasksWrittenAndRead if task.id() == targetId
+            task for task in self.tasksWrittenAndRead if task.id() == target_id
         ][0]
 
-    def assertAttributeWrittenAndRead(self, aTask, attribute):
-        taskWrittenAndRead = self.getTaskWrittenAndRead(aTask.id())
+    def assertAttributeWrittenAndRead(self, a_task, attribute):
+        task_written_and_read = self.getTaskWrittenAndRead(a_task.id())
         self.assertEqual(
-            getattr(aTask, attribute)(),
-            getattr(taskWrittenAndRead, attribute)(),
+            getattr(a_task, attribute)(),
+            getattr(task_written_and_read, attribute)(),
         )
 
-    def assertContainedDomainObjectsWrittenAndRead(self, aTask, attribute):
-        taskWrittenAndRead = self.getTaskWrittenAndRead(aTask.id())
+    def assertContainedDomainObjectsWrittenAndRead(self, a_task, attribute):
+        task_written_and_read = self.getTaskWrittenAndRead(a_task.id())
         self.assertEqual(
-            [obj.id() for obj in getattr(aTask, attribute)()],
-            [obj.id() for obj in getattr(taskWrittenAndRead, attribute)()],
+            [obj.id() for obj in getattr(a_task, attribute)()],
+            [obj.id() for obj in getattr(task_written_and_read, attribute)()],
         )
 
-    def testCreationDateTime(self):
+    def test_creation_date_time(self):
         self.assertAttributeWrittenAndRead(self.task, "creationDateTime")
 
-    def testModificationDateTime(self):
+    def test_modification_date_time(self):
         self.assertAttributeWrittenAndRead(self.task, "modificationDateTime")
 
-    def testSubject(self):
+    def test_subject(self):
         self.assertAttributeWrittenAndRead(self.task, "subject")
 
-    def testDescription(self):
+    def test_description(self):
         self.assertAttributeWrittenAndRead(self.task, "description")
 
-    def testForegroundColor(self):
+    def test_foreground_color(self):
         self.assertAttributeWrittenAndRead(self.task, "foregroundColor")
 
-    def testBackgroundColor(self):
+    def test_background_color(self):
         self.assertAttributeWrittenAndRead(self.task, "backgroundColor")
 
-    def testFont(self):
+    def test_font(self):
         self.assertAttributeWrittenAndRead(self.task, "font")
 
-    def testIcon(self):
+    def test_icon(self):
         self.assertAttributeWrittenAndRead(self.task, "icon_id")
 
-    def testExpansionState(self):
+    def test_expansion_state(self):
         self.assertAttributeWrittenAndRead(self.task, "isExpanded")
 
-    def testPlannedStartDateTime(self):
+    def test_planned_start_date_time(self):
         self.assertAttributeWrittenAndRead(self.task, "plannedStartDateTime")
 
-    def testDueDateTime(self):
+    def test_due_date_time(self):
         self.assertAttributeWrittenAndRead(self.task, "dueDateTime")
 
-    def testActualStartDateTime(self):
+    def test_actual_start_date_time(self):
         self.assertAttributeWrittenAndRead(self.task, "actualStartDateTime")
 
-    def testCompletionDateTime(self):
+    def test_completion_date_time(self):
         self.assertAttributeWrittenAndRead(self.task, "completionDateTime")
 
-    def testPercentageComplete(self):
+    def test_percentage_complete(self):
         self.assertAttributeWrittenAndRead(self.task, "percentageComplete")
 
-    def testBudget(self):
+    def test_budget(self):
         self.assertAttributeWrittenAndRead(self.task, "budget")
 
-    def testBudget_MoreThan24Hour(self):
+    def test_budget_more_than_24_hour(self):
         self.task.set_budget(date.TimeDelta(hours=25))
         self.tasksWrittenAndRead = task.TaskList(self.readAndWrite()[0])
         self.assertAttributeWrittenAndRead(self.task, "budget")
 
-    def testEffort(self):
+    def test_effort(self):
         self.assertAttributeWrittenAndRead(self.task, "timeSpent")
 
-    def testEffortDescription(self):
+    def test_effort_description(self):
         self.assertEqual(
             self.task.efforts()[0].description(),
             self.getTaskWrittenAndRead(self.task.id())
@@ -215,13 +215,13 @@ class IntegrationTest(IntegrationTestCase):
             .description(),
         )
 
-    def testChildren(self):
+    def test_children(self):
         self.assertEqual(
             len(self.task.children()),
             len(self.getTaskWrittenAndRead(self.task.id()).children()),
         )
 
-    def testGrandChildren(self):
+    def test_grand_children(self):
         self.assertEqual(
             len(self.task.children(recursive=True)),
             len(
@@ -231,92 +231,92 @@ class IntegrationTest(IntegrationTestCase):
             ),
         )
 
-    def testCategory(self):
+    def test_category(self):
         categorizables = list(self.categoriesWrittenAndRead)[0].members()
-        categorizableIds = set([item.id() for item in categorizables])
+        categorizable_ids = set([item.id() for item in categorizables])
         self.assertEqual(
-            set([self.task.id(), self.note.id()]), categorizableIds
+            set([self.task.id(), self.note.id()]), categorizable_ids
         )
 
-    def testFilteredCategory(self):
+    def test_filtered_category(self):
         self.assertTrue(list(self.categoriesWrittenAndRead)[0].isFiltered())
 
-    def testExclusiveSubcategories(self):
+    def test_exclusive_subcategories(self):
         self.assertTrue(
             list(self.categoriesWrittenAndRead)[0].hasExclusiveSubcategories()
         )
 
-    def testPriority(self):
+    def test_priority(self):
         self.assertAttributeWrittenAndRead(self.task, "priority")
 
-    def testNegativePriority(self):
+    def test_negative_priority(self):
         self.assertAttributeWrittenAndRead(self.task2, "priority")
 
-    def testHourlyFee(self):
+    def test_hourly_fee(self):
         self.assertAttributeWrittenAndRead(self.task, "hourlyFee")
 
-    def testFixedFee(self):
+    def test_fixed_fee(self):
         self.assertAttributeWrittenAndRead(self.task, "fixedFee")
 
-    def testReminder(self):
+    def test_reminder(self):
         self.assertAttributeWrittenAndRead(self.task, "reminder")
 
-    def testNoReminder(self):
+    def test_no_reminder(self):
         self.assertAttributeWrittenAndRead(self.task2, "reminder")
 
-    def testMarkCompletedWhenAllChildrenCompletedSetting_True(self):
+    def test_mark_completed_when_all_children_completed_setting_true(self):
         self.assertAttributeWrittenAndRead(
             self.task, "shouldMarkCompletedWhenAllChildrenCompleted"
         )
 
-    def testMarkCompletedWhenAllChildrenCompletedSetting_None(self):
+    def test_mark_completed_when_all_children_completed_setting_none(self):
         self.assertAttributeWrittenAndRead(
             self.task2, "shouldMarkCompletedWhenAllChildrenCompleted"
         )
 
-    def testAttachment(self):
+    def test_attachment(self):
         self.assertAttributeWrittenAndRead(self.task, "attachments")
 
-    def testRecurrence(self):
+    def test_recurrence(self):
         self.assertAttributeWrittenAndRead(self.task, "recurrence")
 
-    def testNote(self):
+    def test_note(self):
         self.assertEqual(len(self.notes), len(self.notesWrittenAndRead))
 
-    def testRootNote(self):
+    def test_root_note(self):
         self.assertEqual(
             self.notes.rootItems()[0].subject(),
             self.notesWrittenAndRead.rootItems()[0].subject(),
         )
 
-    def testChildNote(self):
+    def test_child_note(self):
         self.assertEqual(
             self.notes.rootItems()[0].children()[0].subject(),
             self.notesWrittenAndRead.rootItems()[0].children()[0].subject(),
         )
 
-    def testCategoryDescription(self):
+    def test_category_description(self):
         self.assertEqual(
             list(self.categories)[0].description(),
             list(self.categoriesWrittenAndRead)[0].description(),
         )
 
-    def testNoteId(self):
+    def test_note_id(self):
         self.assertEqual(
             self.notes.rootItems()[0].id(),
             self.notesWrittenAndRead.rootItems()[0].id(),
         )
 
-    def testCategoryId(self):
+    def test_category_id(self):
         self.assertEqual(
             self.category.id(), list(self.categoriesWrittenAndRead)[0].id()
         )
 
-    def testNoteWithCategory(self):
+    def test_note_with_category(self):
         self.assertTrue(
             self.notesWrittenAndRead.rootItems()[0]
             in list(self.categoriesWrittenAndRead)[0].members()
         )
 
-    def testTaskNote(self):
+    def test_task_note(self):
         self.assertContainedDomainObjectsWrittenAndRead(self.task, "notes")

@@ -28,7 +28,7 @@ import platform
 import subprocess
 
 
-def openFile(filename):
+def open_file(filename):
     """Open a file with the system's default application.
 
     Args:

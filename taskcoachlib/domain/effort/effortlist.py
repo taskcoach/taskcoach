@@ -25,10 +25,10 @@ from . import effort
 
 class MaxDateTimeMixin(object):
     def maxDateTime(self):
-        stopTimes = [
+        stop_times = [
             effort.getStop() for effort in self if effort.getStop() is not None
         ]
-        return max(stopTimes) if stopTimes else None
+        return max(stop_times) if stop_times else None
 
 
 class EffortUICommandNamesMixin(object):
@@ -55,11 +55,11 @@ class EffortList(
         behaviour is to add the item that is added to the observed
         list to the observing list (this list) unchanged. But we want to
         add the efforts of the tasks, rather than the tasks themselves."""
-        effortsToAdd = []
+        efforts_to_add = []
         for task in tasks:
-            effortsToAdd.extend(task.efforts())
-        super().extendSelf(effortsToAdd, event)
-        _send_tracking_changed(effortsToAdd, True)
+            efforts_to_add.extend(task.efforts())
+        super().extendSelf(efforts_to_add, event)
+        _send_tracking_changed(efforts_to_add, True)
 
     def removeItemsFromSelf(self, tasks, event=None):
         """This method is called when a task is removed from the observed
@@ -68,11 +68,11 @@ class EffortList(
         from the observed list from the observing list (this list)
         unchanged. But we want to remove the efforts of the tasks, rather
         than the tasks themselves."""
-        effortsToRemove = []
+        efforts_to_remove = []
         for task in tasks:
-            effortsToRemove.extend(task.efforts())
-        _send_tracking_changed(effortsToRemove, False)
-        super().removeItemsFromSelf(effortsToRemove, event)
+            efforts_to_remove.extend(task.efforts())
+        _send_tracking_changed(efforts_to_remove, False)
+        super().removeItemsFromSelf(efforts_to_remove, event)
 
     def on_efforts_changed(self, event):
         for sender in event.sources():
@@ -134,14 +134,14 @@ class EffortListTracker(patterns.Observer):
     """EffortListTracker observes an EffortList and keeps track of
     currently tracked efforts."""
 
-    def __init__(self, effortList, includeComposites=False):
+    def __init__(self, effortList, include_composites=False):
         """@param effortList: The effort list to observe.
         @param includeComposites: if False, composite efforts will be
             ignored."""
         super().__init__()
 
         self.__effortList = effortList
-        self.__includeComposites = includeComposites
+        self.__includeComposites = include_composites
 
         # __trackedEfforts is a list and not a set because when an effort is
         # moved from one task to another task we might get the event that the

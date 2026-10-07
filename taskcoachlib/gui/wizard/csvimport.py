@@ -388,17 +388,17 @@ class CSVImportMappingPage(wiz.WizardPageSimple):
         )
         gsz.Add((3, 3))
         gsz.Add((3, 3))
-        tcFieldNames = [field[0] for field in self.fields]
-        for fieldName in options["fields"]:
+        tc_field_names = [field[0] for field in self.fields]
+        for field_name in options["fields"]:
             gsz.Add(
-                wx.StaticText(self.interior, wx.ID_ANY, fieldName),
+                wx.StaticText(self.interior, wx.ID_ANY, field_name),
                 flag=wx.ALIGN_CENTER_VERTICAL,
             )
 
             choice = wx.Choice(self.interior, wx.ID_ANY)
-            for tcFieldName in tcFieldNames:
-                choice.Append(tcFieldName)
-            choice.SetSelection(self.findFieldName(fieldName, tcFieldNames))
+            for tc_field_name in tc_field_names:
+                choice.Append(tc_field_name)
+            choice.SetSelection(self.findFieldName(field_name, tc_field_names))
             self.choices.append(choice)
 
             gsz.Add(choice, flag=wx.ALIGN_CENTER_VERTICAL)
@@ -407,49 +407,51 @@ class CSVImportMappingPage(wiz.WizardPageSimple):
         self.interior.SetSizer(gsz)
         gsz.Layout()
 
-    def findFieldName(self, fieldName, fieldNames):
-        def fieldNameIndex(fieldName, fieldNames):
+    def findFieldName(self, field_name, field_names):
+        def fieldNameIndex(field_name, field_names):
             return (
-                fieldNames.index(fieldName) if fieldName in fieldNames else 0
+                field_names.index(field_name)
+                if field_name in field_names
+                else 0
             )
 
-        index = fieldNameIndex(fieldName, fieldNames)
+        index = fieldNameIndex(field_name, field_names)
         return (
             index
             if index
             else fieldNameIndex(
-                fieldName[:6], [fieldName[:6] for fieldName in fieldNames]
+                field_name[:6], [field_name[:6] for field_name in field_names]
             )
         )
 
     def CanGoNext(self):
-        wrongFields = []
-        countNotNone = 0
+        wrong_fields = []
+        count_not_none = 0
 
-        for index, (fieldName, canMultiple) in enumerate(self.fields):
+        for index, (field_name, can_multiple) in enumerate(self.fields):
             count = 0
             for choice in self.choices:
                 if choice.GetSelection() == index:
                     count += 1
                 if choice.GetSelection() != 0:
-                    countNotNone += 1
-            if count > 1 and not canMultiple:
-                wrongFields.append(fieldName)
+                    count_not_none += 1
+            if count > 1 and not can_multiple:
+                wrong_fields.append(field_name)
 
-        if countNotNone == 0:
+        if count_not_none == 0:
             return False, _("No field mapping.")
 
-        if len(wrongFields) == 1:
+        if len(wrong_fields) == 1:
             return (
                 False,
                 _('The "%s" field cannot be selected several times.')
-                % wrongFields[0],
+                % wrong_fields[0],
             )
 
-        if len(wrongFields):
+        if len(wrong_fields):
             return False, _(
                 "The fields %s cannot be selected several times."
-            ) % ", ".join(['"%s"' % fieldName for fieldName in wrongFields])
+            ) % ", ".join(['"%s"' % field_name for field_name in wrong_fields])
 
         return True, None
 

@@ -23,10 +23,14 @@ GlobalTimer sends the Publisher event 'timer.second' every second
 (source is the GlobalTimer, value is the tick timestamp).
 """
 
+import os
+import shutil
+import tempfile
+
 import test
 import wx
 from taskcoachlib import patterns
-from taskcoachlib.domain import date, effort, task
+from taskcoachlib.domain import category, date, effort, task
 from taskcoachlib.gui import scheduler
 
 
@@ -430,3 +434,110 @@ class MasterTimerListTest(test.wxTestCase):
     def test_setting_the_clock_back_runs_the_loop(self):
         self.settle()
         self.assertTrue(self.tick(-3600))
+
+
+class FileReadTest(test.wxTestCase):
+    """A file read or merged is processed at once, not at the next
+    tick: the views first draw it with its statuses and styles."""
+
+    red = (255, 0, 0, 255)
+
+    def setUp(self):
+        super().setUp()
+        from taskcoachlib import persistence
+
+        directory = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, directory)
+        self.filename = os.path.join(directory, "read.tsk")
+        written = persistence.TaskFile()
+        red = category.Category("red", fgColor=self.red)
+        late = task.Task(
+            subject="late",
+            dueDateTime=date.DateTime(2000, 1, 1),
+            reminder=date.DateTime(2000, 1, 1),
+        )
+        late.addCategory(red)
+        written.categories().append(red)
+        written.tasks().append(late)
+        written.setFilename(self.filename)
+        written.save()
+        written.close()
+        written.stop()
+        self.task_file = persistence.TaskFile()
+        self.master = scheduler.MasterScheduler(self.task_file)
+
+    def tearDown(self):
+        self.master.shutdown()
+        self.task_file.close()
+        self.task_file.stop()
+        super().tearDown()
+
+    def assert_styled(self):
+        (late,) = self.task_file.tasks()
+        self.assertEqual(
+            (task.status.overdue, self.red),
+            (late.computedStatus(), tuple(late.effectiveFgColor())),
+        )
+
+    def test_a_file_read_is_styled_before_the_next_tick(self):
+        self.task_file.load(self.filename)
+        self.assert_styled()
+
+    def test_a_file_merged_is_styled_before_the_next_tick(self):
+        self.task_file.merge(self.filename)
+        self.assert_styled()
+
+    def record(self, event_types):
+        self.recorded = []
+        for event_type in event_types:
+            patterns.Publisher().registerObserver(
+                self.on_recorded, eventType=event_type
+            )
+        self.addCleanup(patterns.Publisher().removeObserver, self.on_recorded)
+        return self.recorded
+
+    def on_recorded(self, event):
+        self.recorded.append(event)
+
+    def computed_value_events(self):
+        types = [task.Task.statusChangedEventType()]
+        for kind in ("derived", "effective"):
+            for field in ("FgColor", "BgColor", "Icon", "Font"):
+                name = "%s%sChangedEventType" % (kind, field)
+                types.append(getattr(task.Task, name)())
+        return self.record(types)
+
+    def on_read(self, event):  # pylint: disable=W0613
+        (late,) = self.task_file.tasks()
+        self.status_when_read = late.computedStatus()
+
+    def test_whoever_hears_the_file_was_read_finds_it_computed(self):
+        # Observers of one notice run in no fixed order: the values
+        # settle on an earlier one
+        patterns.Publisher().registerObserver(
+            self.on_read, eventType="taskfile.justRead"
+        )
+        self.addCleanup(patterns.Publisher().removeObserver, self.on_read)
+        notices = self.record(["taskfile.settle", "taskfile.justRead"])
+        self.task_file.load(self.filename)
+        self.assertEqual(
+            (["taskfile.settle", "taskfile.justRead"], task.status.overdue),
+            ([each.type() for each in notices], self.status_when_read),
+        )
+
+    def test_a_file_read_sends_no_computed_value_events(self):
+        # The views are frozen and take every value anew once it is read
+        events = self.computed_value_events()
+        self.task_file.load(self.filename)
+        self.assertEqual([], events)
+
+    def test_a_reminder_due_at_a_read_still_fires(self):
+        triggers = self.record(["task.reminder.trigger"])
+        self.task_file.load(self.filename)
+        self.assertEqual(1, len(triggers))
+
+    def test_a_merge_sends_them(self):
+        # The views are not frozen during a merge
+        events = self.computed_value_events()
+        self.task_file.merge(self.filename)
+        self.assertTrue(events)

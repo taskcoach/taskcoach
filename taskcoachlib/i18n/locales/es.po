@@ -7945,3 +7945,20 @@ msgstr "s"
 #: taskcoachlib/gui/viewer/task.py
 msgid "Show the \"Manual ordering\" column, then drag and drop items from this column to sort them arbitrarily."
 msgstr "Muestre la columna \"Ordenación manual\" y arrastre y suelte elementos de esta columna para ordenarlos libremente."
+
+#: taskcoachlib/mailer/thunderbird.py
+msgid ""
+"Thunderbird gave only this mail's address, not the mail, so Task Coach "
+"cannot read it.\n"
+"Save the mail as a file in Thunderbird, then drag the file onto the task."
+msgstr ""
+"Thunderbird solo entregó la dirección de este correo, no el correo, así que Task Coach no puede leerlo.\n"
+"Guarde el correo como archivo en Thunderbird y luego arrastre el archivo a la tarea."
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Opening %s..."
+msgstr "Abriendo %s..."
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Merging %s..."
+msgstr "Combinando %s..."

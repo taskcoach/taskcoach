@@ -122,6 +122,7 @@ defaults = {
         "searchdescription": "False",
         "regularexpression": "False",
         "columns": "['plannedStartDateTime', 'dueDateTime']",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
         "columnautoresizing": "True",
@@ -163,6 +164,7 @@ defaults = {
         "regularexpression": "False",
         "columns": "['prerequisites', 'dependencies', 'plannedStartDateTime', "
         "'dueDateTime']",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28}",
         "columnautoresizing": "True",
@@ -271,6 +273,7 @@ defaults = {
         "searchdescription": "False",
         "regularexpression": "False",
         "columns": "[]",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
         "columnautoresizing": "True",
@@ -285,6 +288,7 @@ defaults = {
         "searchdescription": "False",
         "regularexpression": "False",
         "columns": "[]",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
         "columnautoresizing": "True",
@@ -299,6 +303,7 @@ defaults = {
         "searchdescription": "False",
         "regularexpression": "False",
         "columns": "[]",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'notes': 28, 'ordering': 28}",
         "columnautoresizing": "True",
@@ -315,6 +320,7 @@ defaults = {
         "regularexpression": "False",
         "columns": "['attachments', 'description', 'creationDateTime', \
                  'modificationDateTime']",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'description': 200, 'ordering': 28}",
         "columnautoresizing": "True",
@@ -325,6 +331,7 @@ defaults = {
         "sortcasesensitive": "False",
         "columns": "['attachments', 'description', 'creationDateTime', \
                  'modificationDateTime']",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'attachments': 28, 'description': 200, 'ordering': 28}",
         "columnautoresizing": "True",
@@ -339,6 +346,7 @@ defaults = {
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
         "columns": "['subject']",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'ordering': 28}",
         "columnautoresizing": "True",
@@ -353,6 +361,7 @@ defaults = {
         "sortby": '["subject"]',
         "sortcasesensitive": "False",
         "columns": "['subject']",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['subject']",
         "columnwidths": "{'ordering': 28}",
         "columnautoresizing": "True",
@@ -369,6 +378,7 @@ defaults = {
         "sortby": '["-period"]',
         "sortcasesensitive": "False",
         "columns": "['description', 'timeSpent']",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['period', 'task']",
         "columnwidths": "{'period': 160, 'monday': 70, 'tuesday': 70, "
         "'wednesday': 70, 'thursday': 70, 'friday': 70, "
@@ -390,6 +400,7 @@ defaults = {
         "sortby": '["-period"]',
         "sortcasesensitive": "False",
         "columns": "['description', 'timeSpent']",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['period', 'task']",
         "columnwidths": "{'period': 160, 'monday': 70, 'tuesday': 70, "
         "'wednesday': 70, 'thursday': 70, 'friday': 70, "
@@ -410,6 +421,7 @@ defaults = {
         "sortby": '["-period"]',
         "sortcasesensitive": "False",
         "columns": "['description', 'timeSpent']",
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['period', 'task']",
         "columnwidths": "{'period': 160, 'monday': 70, 'tuesday': 70, "
         "'wednesday': 70, 'thursday': 70, 'friday': 70, "
@@ -434,6 +446,7 @@ defaults = {
         "searchdescription": "False",
         "regularexpression": "False",
         "columns": _ATTACHMENT_COLUMNS,
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
@@ -448,6 +461,7 @@ defaults = {
         "searchdescription": "False",
         "regularexpression": "False",
         "columns": _ATTACHMENT_COLUMNS,
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
@@ -462,6 +476,7 @@ defaults = {
         "searchdescription": "False",
         "regularexpression": "False",
         "columns": _ATTACHMENT_COLUMNS,
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
@@ -476,6 +491,7 @@ defaults = {
         "searchdescription": "False",
         "regularexpression": "False",
         "columns": _ATTACHMENT_COLUMNS,
+        "columnorder": "[]",  # Display order, names; [] the view's own
         "columnsalwaysvisible": "['type', 'subject']",
         "columnwidths": "{'notes': 28, 'type': 28}",
         "columnautoresizing": "True",
@@ -501,12 +517,6 @@ defaults = {
         "maxrecentfiles": "9",
         "lastfile": "",
         "autosave": "True",
-        # Formats to automatically import from, only "Todo.txt" supported at this
-        # time:
-        "autoimport": "[]",
-        # Formats to automatically export to, only "Todo.txt" supported at this
-        # time:
-        "autoexport": "[]",
         "saveinifileinprogramdir": "False",
         "attachmentbase": "",
         "lastattachmentpath": "",
@@ -602,7 +612,6 @@ defaults = {
     "feature": {
         "minidletime": "0",
         "reminder_sound": "gentle-chime",  # Key from taskcoachlib.sounds.SOUNDS
-        "sayreminder": "False",
         "task_duration_presets": "60,120,1440,2880",  # Minutes: 1h, 2h, 1 day, 2 days
         "effort_duration_presets": "300,900,1800,3600,7200",  # Seconds: 5m, 15m, 30m, 1h, 2h
         # New settings should use snake_case naming convention (PEP 8)

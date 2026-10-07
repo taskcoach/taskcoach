@@ -133,7 +133,7 @@ This adds new strings (untranslated) and marks removed strings as obsolete.
 
 ```bash
 # Run with specific language
-python taskcoach.py --language fr_FR
+python taskcoach.py --language fr
 
 # Or load a .po file directly
 python taskcoach.py --pofile path/to/test.po

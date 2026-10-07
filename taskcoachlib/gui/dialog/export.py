@@ -45,16 +45,16 @@ class ExportDialog(sized_controls.SizedDialog):
         pane = self.GetContentsPane()
         pane.SetSizerType("vertical")
         self.components = self.createInterior(pane)
-        buttonSizer = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
-        self.SetButtonSizer(buttonSizer)
-        wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
+        button_sizer = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
+        self.SetButtonSizer(button_sizer)
+        wxhelper.get_dialog_button(button_sizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.onOk
         )
         self.Fit()
         # Set starting size to 600x700 for better usability
         self.SetSize(600, 700)
         self.SetMinSize((500, 400))
-        self.CentreOnParent()
+        wxhelper.centre_on_parent(self)
 
     def createInterior(self, pane):
         raise NotImplementedError
@@ -92,14 +92,14 @@ class ColumnPicker(sized_controls.SizedPanel):
         label = wx.StaticText(self, label=_("Columns to export:"))
         label.SetSizerProps(valign="top")
 
-        agwStyle = (
+        agw_style = (
             wx.TR_DEFAULT_STYLE
             | wx.TR_HIDE_ROOT
             | wx.TR_NO_BUTTONS
             | wx.TR_FULL_ROW_HIGHLIGHT
         )
 
-        self.tree = hypertreelist.HyperTreeList(self, agwStyle=agwStyle)
+        self.tree = hypertreelist.HyperTreeList(self, agwStyle=agw_style)
         self.tree.SetSizerProps(expand=True, proportion=1)
         self.tree.AddColumn(_("Field"))
 
@@ -120,7 +120,7 @@ class ColumnPicker(sized_controls.SizedPanel):
         "attachments": {"notes"},
     }
 
-    def populateFromViewer(self, viewer, checkAll=False):
+    def populateFromViewer(self, viewer, check_all=False):
         """Populate columns from a viewer.
 
         Args:
@@ -144,7 +144,7 @@ class ColumnPicker(sized_controls.SizedPanel):
             item = self.tree.AppendItem(root, column.header(), ct_type=1)
             self._columnMap[id(item)] = column
             headers.append(column.header())
-            if checkAll or column in visible_columns:
+            if check_all or column in visible_columns:
                 self.tree.CheckItem(item, True)
         self._sizeColumnsFromContent(headers)
 
@@ -166,13 +166,15 @@ class ColumnPicker(sized_controls.SizedPanel):
         """Calculate column width from header text using DC text measurement."""
         dc = wx.ScreenDC()
         dc.SetFont(self.tree.GetMainWindow().GetFont())
-        checkboxPad = 24
-        colPad = 16
-        maxWidth = 0
+        checkbox_pad = 24
+        col_pad = 16
+        max_width = 0
         for header in headers:
             w, _ = dc.GetTextExtent(header)
-            maxWidth = max(maxWidth, w)
-        self.tree.SetColumnWidth(0, max(maxWidth + checkboxPad + colPad, 150))
+            max_width = max(max_width, w)
+        self.tree.SetColumnWidth(
+            0, max(max_width + checkbox_pad + col_pad, 150)
+        )
 
     def options(self):
         return dict(columns=self.selectedColumns())
@@ -269,9 +271,9 @@ class ExportAsCSVDialog(ExportDialog):
         self._exportCallback = kwargs.pop("exportCallback", None)
         super().__init__(*args, **kwargs)
         self.Bind(wx.EVT_CLOSE, self.onClose)
-        cancelBtn = self.FindWindowById(wx.ID_CANCEL)
-        if cancelBtn:
-            cancelBtn.Bind(wx.EVT_BUTTON, self.onCancel)
+        cancel_btn = self.FindWindowById(wx.ID_CANCEL)
+        if cancel_btn:
+            cancel_btn.Bind(wx.EVT_BUTTON, self.onCancel)
 
     def createInterior(self, pane):
         from taskcoachlib.gui.viewer import (
@@ -288,7 +290,7 @@ class ExportAsCSVDialog(ExportDialog):
         self.viewerPicker = EnhancedViewerPicker(
             pane,
             self.window,
-            supportedTypes=[
+            supported_types=[
                 TaskViewer,
                 EffortViewer,
                 CategoryViewer,
@@ -320,12 +322,12 @@ class ExportAsCSVDialog(ExportDialog):
         2. Use cached hidden viewer
         3. Create a new hidden viewer instance
         """
-        objectType = viewerClass.coreObjectType
+        object_type = viewerClass.coreObjectType
 
         # 1. Search open viewers by coreObjectType
         for v in self.window.viewer:
             if (
-                getattr(v, "coreObjectType", None) == objectType
+                getattr(v, "coreObjectType", None) == object_type
                 and v.hasHideableColumns()
             ):
                 return v
@@ -339,16 +341,16 @@ class ExportAsCSVDialog(ExportDialog):
             self._hiddenPanel = wx.Panel(self)
             self._hiddenPanel.Hide()
         kwargs = {}
-        if objectType == "attachments":
+        if object_type == "attachments":
             from taskcoachlib.domain.attachment import AttachmentList
 
             kwargs["attachmentsToShow"] = AttachmentList()
-        hiddenViewer = viewerClass(
+        hidden_viewer = viewerClass(
             self._hiddenPanel, self.window.taskFile, **kwargs
         )
-        hiddenViewer.Hide()
-        self._hiddenViewers[viewerClass] = hiddenViewer
-        return hiddenViewer
+        hidden_viewer.Hide()
+        self._hiddenViewers[viewerClass] = hidden_viewer
+        return hidden_viewer
 
     def _destroyHiddenViewers(self):
         """Clean up any hidden viewers created for column definitions."""
@@ -378,9 +380,9 @@ class ExportAsCSVDialog(ExportDialog):
             viewer = None
             if viewer_class:
                 viewer = self._getViewerForColumns(viewer_class)
-            self.columnPicker.populateFromViewer(viewer, checkAll=True)
+            self.columnPicker.populateFromViewer(viewer, check_all=True)
         else:
-            self.columnPicker.populateFromViewer(selected, checkAll=False)
+            self.columnPicker.populateFromViewer(selected, check_all=False)
 
         # Separate date/time only relevant for tasks and efforts
         has_datetime = (
@@ -432,7 +434,7 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
     searches open viewers to match.
     """
 
-    def __init__(self, parent, mainWindow, supportedTypes):
+    def __init__(self, parent, main_window, supported_types):
         """Initialize the enhanced viewer picker.
 
         Args:
@@ -445,17 +447,17 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
                           Markers derived from cls.coreObjectType.
         """
         super().__init__(parent)
-        self.mainWindow = mainWindow
-        self._supportedTypes = supportedTypes
+        self.mainWindow = main_window
+        self._supportedTypes = supported_types
         self.SetSizerType("horizontal")
         # Maps display string to viewer or allMarker string
         self._viewerMap = {}
         self.createPicker()
         self.populatePicker()
         self._subscribe_to_selection_changes()
-        topLevel = self.GetTopLevelParent()
-        if topLevel:
-            topLevel.Bind(wx.EVT_ACTIVATE, self._onDialogActivate)
+        top_level = self.GetTopLevelParent()
+        if top_level:
+            top_level.Bind(wx.EVT_ACTIVATE, self._onDialogActivate)
 
     def createPicker(self):
         label = wx.StaticText(self, label=_("Export items from:"))
@@ -467,12 +469,12 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         """Find open viewers matching each supported type using coreObjectType."""
         viewers = list(self.mainWindow.viewer)
         grouped = {}
-        for viewerClass in self._supportedTypes:
-            objectType = viewerClass.coreObjectType
-            grouped[objectType] = [
+        for viewer_class in self._supportedTypes:
+            object_type = viewer_class.coreObjectType
+            grouped[object_type] = [
                 v
                 for v in viewers
-                if getattr(v, "coreObjectType", None) == objectType
+                if getattr(v, "coreObjectType", None) == object_type
                 and v.hasHideableColumns()
             ]
         return grouped
@@ -484,34 +486,34 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         except (RuntimeError, AttributeError):
             return 0
 
-    def _buildEntries(self, groupedViewers):
+    def _buildEntries(self, grouped_viewers):
         """Build dropdown entries from supported types and open viewers."""
         entries = []
 
         # Section 1: "All" entries - one per supported type, sorted by label
-        allEntries = []
-        for viewerClass in self._supportedTypes:
-            label = _("%s (All)") % viewerClass.defaultTitle
-            marker = "ALL_" + viewerClass.coreObjectType.upper()
-            allEntries.append((label, marker))
-        allEntries.sort(key=lambda x: x[0])
-        entries.extend(allEntries)
+        all_entries = []
+        for viewer_class in self._supportedTypes:
+            label = _("%s (All)") % viewer_class.defaultTitle
+            marker = "ALL_" + viewer_class.coreObjectType.upper()
+            all_entries.append((label, marker))
+        all_entries.sort(key=lambda x: x[0])
+        entries.extend(all_entries)
 
         # Section 2: Open viewers matching supported types
-        viewerEntries = []
-        for viewerClass in self._supportedTypes:
-            objectType = viewerClass.coreObjectType
-            for viewer in groupedViewers.get(objectType, []):
+        viewer_entries = []
+        for viewer_class in self._supportedTypes:
+            object_type = viewer_class.coreObjectType
+            for viewer in grouped_viewers.get(object_type, []):
                 count = self._getSelectionCount(viewer)
                 title = viewer.title()
-                displayText = _("%s (%d selected)") % (title, count)
-                viewerEntries.append((title, -count, displayText, viewer))
+                display_text = _("%s (%d selected)") % (title, count)
+                viewer_entries.append((title, -count, display_text, viewer))
 
-        if viewerEntries:
+        if viewer_entries:
             entries.append(("---", None))
-            viewerEntries.sort(key=lambda x: (x[0], x[1]))
-            for title, negCount, displayText, viewer in viewerEntries:
-                entries.append((displayText, viewer))
+            viewer_entries.sort(key=lambda x: (x[0], x[1]))
+            for title, neg_count, display_text, viewer in viewer_entries:
+                entries.append((display_text, viewer))
 
         return entries
 
@@ -520,15 +522,15 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
         self.viewerComboBox.Clear()
         self._viewerMap.clear()
 
-        groupedViewers = self._findOpenViewers()
-        entries = self._buildEntries(groupedViewers)
+        grouped_viewers = self._findOpenViewers()
+        entries = self._buildEntries(grouped_viewers)
 
-        for displayText, viewerOrMarker in entries:
-            if displayText == "---":
+        for display_text, viewer_or_marker in entries:
+            if display_text == "---":
                 self.viewerComboBox.Append("─" * 20)
             else:
-                self.viewerComboBox.Append(displayText)
-                self._viewerMap[displayText] = viewerOrMarker
+                self.viewerComboBox.Append(display_text)
+                self._viewerMap[display_text] = viewer_or_marker
 
         if self.viewerComboBox.GetCount() > 0:
             self.viewerComboBox.SetSelection(0)
@@ -550,32 +552,32 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
 
     def _on_viewer_status_changed(self, event=None):  # pylint: disable=W0613
         """Handle viewer status changes (including selection changes)."""
-        currentSelection = self.viewerComboBox.GetStringSelection()
-        currentViewer = self._viewerMap.get(currentSelection)
+        current_selection = self.viewerComboBox.GetStringSelection()
+        current_viewer = self._viewerMap.get(current_selection)
 
-        groupedViewers = self._findOpenViewers()
-        entries = self._buildEntries(groupedViewers)
+        grouped_viewers = self._findOpenViewers()
+        entries = self._buildEntries(grouped_viewers)
 
         self.viewerComboBox.Clear()
         self._viewerMap.clear()
 
-        newSelectionIndex = 0
-        for displayText, viewerOrMarker in entries:
-            if displayText == "---":
+        new_selection_index = 0
+        for display_text, viewer_or_marker in entries:
+            if display_text == "---":
                 self.viewerComboBox.Append("─" * 20)
             else:
-                self.viewerComboBox.Append(displayText)
-                self._viewerMap[displayText] = viewerOrMarker
-                if viewerOrMarker == currentViewer:
-                    newSelectionIndex = self.viewerComboBox.GetCount() - 1
+                self.viewerComboBox.Append(display_text)
+                self._viewerMap[display_text] = viewer_or_marker
+                if viewer_or_marker == current_viewer:
+                    new_selection_index = self.viewerComboBox.GetCount() - 1
 
         if self.viewerComboBox.GetCount() > 0:
-            self.viewerComboBox.SetSelection(newSelectionIndex)
+            self.viewerComboBox.SetSelection(new_selection_index)
 
     def selectedViewer(self):
         """Return the selected viewer instance or ALL_* marker string."""
-        displayText = self.viewerComboBox.GetStringSelection()
-        return self._viewerMap.get(displayText)
+        display_text = self.viewerComboBox.GetStringSelection()
+        return self._viewerMap.get(display_text)
 
     def isAllSelected(self):
         """Return True if an 'All' option is selected."""
@@ -585,22 +587,22 @@ class EnhancedViewerPicker(sized_controls.SizedPanel):
     def selectedViewerClass(self):
         """Return the viewer class for the current selection."""
         selected = self.selectedViewer()
-        for viewerClass in self._supportedTypes:
-            marker = "ALL_" + viewerClass.coreObjectType.upper()
+        for viewer_class in self._supportedTypes:
+            marker = "ALL_" + viewer_class.coreObjectType.upper()
             if selected == marker:
-                return viewerClass
+                return viewer_class
             if (
                 hasattr(selected, "coreObjectType")
-                and selected.coreObjectType == viewerClass.coreObjectType
+                and selected.coreObjectType == viewer_class.coreObjectType
             ):
-                return viewerClass
+                return viewer_class
         return None
 
     def selectedTypeName(self):
         """Return the type name for the current selection (for filenames)."""
-        viewerClass = self.selectedViewerClass()
-        if viewerClass:
-            return viewerClass.defaultTitle
+        viewer_class = self.selectedViewerClass()
+        if viewer_class:
+            return viewer_class.defaultTitle
         return "Export"
 
     def options(self):
@@ -723,11 +725,11 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
         ("dtend", _("End"), "DTEND", False, _("UTC datetime")),
     ]
 
-    def __init__(self, parent, forTasks=True):
+    def __init__(self, parent, for_tasks=True):
         super().__init__(parent)
         self.SetSizerType("vertical")
         self.SetSizerProps(expand=True, proportion=1)
-        self._forTasks = forTasks
+        self._forTasks = for_tasks
         self._checkedFields = set()
         self._itemMap = {}  # Maps field_key to tree item
         self.createFieldPicker()
@@ -737,7 +739,7 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
         label = wx.StaticText(self, label=_("Fields to export:"))
         label.SetSizerProps(valign="top")
 
-        agwStyle = (
+        agw_style = (
             wx.TR_DEFAULT_STYLE
             | wx.TR_HIDE_ROOT
             | wx.TR_NO_BUTTONS
@@ -746,7 +748,7 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
         )
 
         # Use default border style to match system theme
-        self.tree = hypertreelist.HyperTreeList(self, agwStyle=agwStyle)
+        self.tree = hypertreelist.HyperTreeList(self, agwStyle=agw_style)
         self.tree.SetSizerProps(expand=True, proportion=1)
 
         # Add columns - widths will be auto-sized after population
@@ -795,33 +797,35 @@ class ICalendarFieldPicker(sized_controls.SizedPanel):
         fields = self.TASK_FIELDS if self._forTasks else self.EFFORT_FIELDS
         dc = wx.ScreenDC()
         dc.SetFont(self.tree.GetMainWindow().GetFont())
-        numCols = self.tree.GetColumnCount()
-        maxWidths = [0] * numCols
+        num_cols = self.tree.GetColumnCount()
+        max_widths = [0] * num_cols
         # Column 0 needs extra padding for checkbox (approx 24px)
-        checkboxPad = 24
-        colPad = 16  # General padding per column
+        checkbox_pad = 24
+        col_pad = 16  # General padding per column
         for field in fields:
             # tc_label, ical_field, formatting
             texts = [field[1], field[2], field[4]]
-            for col in range(numCols):
+            for col in range(num_cols):
                 w, _ = dc.GetTextExtent(texts[col])
-                maxWidths[col] = max(maxWidths[col], w)
-        for col in range(numCols):
-            width = maxWidths[col] + colPad + (checkboxPad if col == 0 else 0)
+                max_widths[col] = max(max_widths[col], w)
+        for col in range(num_cols):
+            width = (
+                max_widths[col] + col_pad + (checkbox_pad if col == 0 else 0)
+            )
             self.tree.SetColumnWidth(col, max(width, 100))
 
-    def setForTasks(self, forTasks):
+    def setForTasks(self, for_tasks):
         """Switch between task and effort field lists."""
-        if self._forTasks != forTasks:
-            self._forTasks = forTasks
+        if self._forTasks != for_tasks:
+            self._forTasks = for_tasks
             self.populateFields()
 
     def onItemChecked(self, event):
         """Handle checkbox changes."""
         item = event.GetItem()
         # Find the field key for this item
-        for field_key, treeItem in self._itemMap.items():
-            if treeItem == item:
+        for field_key, tree_item in self._itemMap.items():
+            if tree_item == item:
                 if self.tree.IsItemChecked(item):
                     self._checkedFields.add(field_key)
                 else:
@@ -854,21 +858,21 @@ class ExportAsICalendarDialog(ExportDialog):
         super().__init__(*args, **kwargs)
         # Bind cancel button and close event
         self.Bind(wx.EVT_CLOSE, self.onClose)
-        cancelBtn = self.FindWindowById(wx.ID_CANCEL)
-        if cancelBtn:
-            cancelBtn.Bind(wx.EVT_BUTTON, self.onCancel)
+        cancel_btn = self.FindWindowById(wx.ID_CANCEL)
+        if cancel_btn:
+            cancel_btn.Bind(wx.EVT_BUTTON, self.onCancel)
 
     def createInterior(self, pane):
         from taskcoachlib.gui.viewer import TaskViewer, EffortViewer
 
         self.viewerPicker = EnhancedViewerPicker(
-            pane, self.window, supportedTypes=[TaskViewer, EffortViewer]
+            pane, self.window, supported_types=[TaskViewer, EffortViewer]
         )
         self.viewerPicker.Bind(EVT_VIEWERPICKED, self.onViewerChanged)
 
         # Determine initial field type based on active viewer
-        forTasks = self.viewerPicker.selectedViewerClass() is TaskViewer
-        self.fieldPicker = ICalendarFieldPicker(pane, forTasks=forTasks)
+        for_tasks = self.viewerPicker.selectedViewerClass() is TaskViewer
+        self.fieldPicker = ICalendarFieldPicker(pane, for_tasks=for_tasks)
 
         return self.viewerPicker, self.fieldPicker
 
@@ -903,8 +907,8 @@ class ExportAsICalendarDialog(ExportDialog):
         event.Skip()
         from taskcoachlib.gui.viewer import TaskViewer
 
-        forTasks = self.viewerPicker.selectedViewerClass() is TaskViewer
-        self.fieldPicker.setForTasks(forTasks)
+        for_tasks = self.viewerPicker.selectedViewerClass() is TaskViewer
+        self.fieldPicker.setForTasks(for_tasks)
 
 
 class ExportAsHTMLDialog(ExportDialog):
@@ -916,9 +920,9 @@ class ExportAsHTMLDialog(ExportDialog):
         self._exportCallback = kwargs.pop("exportCallback", None)
         super().__init__(*args, **kwargs)
         self.Bind(wx.EVT_CLOSE, self.onClose)
-        cancelBtn = self.FindWindowById(wx.ID_CANCEL)
-        if cancelBtn:
-            cancelBtn.Bind(wx.EVT_BUTTON, self.onCancel)
+        cancel_btn = self.FindWindowById(wx.ID_CANCEL)
+        if cancel_btn:
+            cancel_btn.Bind(wx.EVT_BUTTON, self.onCancel)
 
     def createInterior(self, pane):
         from taskcoachlib.gui.viewer import (
@@ -935,7 +939,7 @@ class ExportAsHTMLDialog(ExportDialog):
         self.viewerPicker = EnhancedViewerPicker(
             pane,
             self.window,
-            supportedTypes=[
+            supported_types=[
                 TaskViewer,
                 EffortViewer,
                 CategoryViewer,
@@ -946,7 +950,7 @@ class ExportAsHTMLDialog(ExportDialog):
         self.viewerPicker.Bind(EVT_VIEWERPICKED, self.onViewerChanged)
 
         self.columnPicker = ColumnPicker(pane, None)
-        separateCSSChooser = SeparateCSSCheckBox(
+        separate_css_chooser = SeparateCSSCheckBox(
             pane, self.section, "html_separatecss"
         )
         self._updateColumnPickerState()
@@ -954,7 +958,7 @@ class ExportAsHTMLDialog(ExportDialog):
         return (
             self.viewerPicker,
             self.columnPicker,
-            separateCSSChooser,
+            separate_css_chooser,
         )
 
     def _getViewerForColumns(self, viewerClass):
@@ -963,11 +967,11 @@ class ExportAsHTMLDialog(ExportDialog):
         2. Use cached hidden viewer
         3. Create a new hidden viewer instance
         """
-        objectType = viewerClass.coreObjectType
+        object_type = viewerClass.coreObjectType
 
         for v in self.window.viewer:
             if (
-                getattr(v, "coreObjectType", None) == objectType
+                getattr(v, "coreObjectType", None) == object_type
                 and v.hasHideableColumns()
             ):
                 return v
@@ -979,16 +983,16 @@ class ExportAsHTMLDialog(ExportDialog):
             self._hiddenPanel = wx.Panel(self)
             self._hiddenPanel.Hide()
         kwargs = {}
-        if objectType == "attachments":
+        if object_type == "attachments":
             from taskcoachlib.domain.attachment import AttachmentList
 
             kwargs["attachmentsToShow"] = AttachmentList()
-        hiddenViewer = viewerClass(
+        hidden_viewer = viewerClass(
             self._hiddenPanel, self.window.taskFile, **kwargs
         )
-        hiddenViewer.Hide()
-        self._hiddenViewers[viewerClass] = hiddenViewer
-        return hiddenViewer
+        hidden_viewer.Hide()
+        self._hiddenViewers[viewerClass] = hidden_viewer
+        return hidden_viewer
 
     def _destroyHiddenViewers(self):
         """Clean up any hidden viewers created for column definitions."""
@@ -1018,9 +1022,9 @@ class ExportAsHTMLDialog(ExportDialog):
             viewer = None
             if viewer_class:
                 viewer = self._getViewerForColumns(viewer_class)
-            self.columnPicker.populateFromViewer(viewer, checkAll=True)
+            self.columnPicker.populateFromViewer(viewer, check_all=True)
         else:
-            self.columnPicker.populateFromViewer(selected, checkAll=False)
+            self.columnPicker.populateFromViewer(selected, check_all=False)
 
     def onViewerChanged(self, event):
         event.Skip()
@@ -1053,136 +1057,4 @@ class ExportAsHTMLDialog(ExportDialog):
 
     def onClose(self, event):
         self._destroyHiddenViewers()
-        self.Destroy()
-
-
-class TodoTxtFieldMapping(sized_controls.SizedPanel):
-    """Read-only field mapping display for Todo.txt export.
-    Shows source fields, output format, and transformation details.
-    All fields are required (checked but disabled)."""
-
-    # (source_label, output_field, transformation)
-    FIELDS = [
-        (_("Priority"), "(A)", _("Number 1-26 mapped to letter A-Z")),
-        (_("Completion date"), "X YYYY-MM-DD", _("Prefix 'X', date only")),
-        (_("Planned start date"), "YYYY-MM-DD", _("Date only, time stripped")),
-        (_("Subject"), _("text"), _("Recursive with arrow separator")),
-        (
-            _("Categories"),
-            "@context +project",
-            _("@ and + prefixed, spaces to underscores"),
-        ),
-        (_("Due date"), "due:YYYY-MM-DD", _("Key:value, date only")),
-        (_("Task ID"), "tcid:<id>", _("Key:value, internal identifier")),
-    ]
-
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.SetSizerType("vertical")
-        self.SetSizerProps(expand=True, proportion=1)
-        self.createFieldMapping()
-        self.populateFields()
-
-    def createFieldMapping(self):
-        label = wx.StaticText(self, label=_("Fields exported (all required):"))
-        label.SetSizerProps(valign="top")
-
-        agwStyle = (
-            wx.TR_DEFAULT_STYLE
-            | wx.TR_HIDE_ROOT
-            | wx.TR_NO_BUTTONS
-            | wx.TR_FULL_ROW_HIGHLIGHT
-        )
-
-        self.tree = hypertreelist.HyperTreeList(self, agwStyle=agwStyle)
-        self.tree.SetSizerProps(expand=True, proportion=1)
-
-        self.tree.AddColumn(_("Source Field"))
-        self.tree.AddColumn(_("Output Field"))
-        self.tree.AddColumn(_("Formatting"))
-
-    def populateFields(self):
-        self.tree.DeleteAllItems()
-        root = self.tree.AddRoot("")
-
-        for source_label, output_field, transformation in self.FIELDS:
-            item = self.tree.AppendItem(root, source_label, ct_type=1)
-            self.tree.SetItemText(item, output_field, 1)
-            self.tree.SetItemText(item, transformation, 2)
-            self.tree.CheckItem(item, True)
-            self.tree.EnableItem(item, False)
-
-        # Size columns from text content (no deferred sizing needed)
-        self._sizeColumnsFromContent()
-
-    def _sizeColumnsFromContent(self):
-        """Calculate column widths from field text using DC text measurement."""
-        dc = wx.ScreenDC()
-        dc.SetFont(self.tree.GetMainWindow().GetFont())
-        numCols = self.tree.GetColumnCount()
-        maxWidths = [0] * numCols
-        checkboxPad = 24
-        colPad = 16
-        for field in self.FIELDS:
-            texts = [field[0], field[1], field[2]]
-            for col in range(numCols):
-                w, _ = dc.GetTextExtent(texts[col])
-                maxWidths[col] = max(maxWidths[col], w)
-        for col in range(numCols):
-            width = maxWidths[col] + colPad + (checkboxPad if col == 0 else 0)
-            self.tree.SetColumnWidth(col, max(width, 100))
-
-    def options(self):
-        return {}
-
-    def saveSettings(self):
-        pass
-
-
-class ExportAsTodoTxtDialog(ExportDialog):
-    """Non-modal Todo.txt export dialog with enhanced viewer picker."""
-
-    title = _("Export as Todo.txt")
-
-    def __init__(self, *args, **kwargs):
-        self._exportCallback = kwargs.pop("exportCallback", None)
-        super().__init__(*args, **kwargs)
-        self.Bind(wx.EVT_CLOSE, self.onClose)
-        cancelBtn = self.FindWindowById(wx.ID_CANCEL)
-        if cancelBtn:
-            cancelBtn.Bind(wx.EVT_BUTTON, self.onCancel)
-
-    def createInterior(self, pane):
-        from taskcoachlib.gui.viewer import TaskViewer
-
-        self.viewerPicker = EnhancedViewerPicker(
-            pane, self.window, supportedTypes=[TaskViewer]
-        )
-        self.fieldMapping = TodoTxtFieldMapping(pane)
-        return (self.viewerPicker, self.fieldMapping)
-
-    def onOk(self, event):
-        for component in self.components:
-            component.saveSettings()
-
-        if self._exportCallback:
-            export_options = self.options()
-            selected_viewer = export_options.pop("selectedViewer")
-            export_options["selectionOnly"] = (
-                not self.viewerPicker.isAllSelected()
-            )
-
-            date_str = datetime.date.today().strftime("%Y%m%d")
-            export_options["default_filename"] = "%s-%s" % (
-                self.viewerPicker.selectedTypeName(),
-                date_str,
-            )
-            self._exportCallback(selected_viewer, **export_options)
-
-        self.Destroy()
-
-    def onCancel(self, event):
-        self.Destroy()
-
-    def onClose(self, event):
         self.Destroy()

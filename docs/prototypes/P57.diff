@@ -1,0 +1,12 @@
+diff -ru -x __pycache__ -x '*.pyc' -x '*.log' -x '*.ini' -x '*.tsk' a/taskcoachlib/i18n/__init__.py b/taskcoachlib/i18n/__init__.py
+--- a/taskcoachlib/i18n/__init__.py
++++ b/taskcoachlib/i18n/__init__.py
+@@ -147,6 +147,8 @@
+         self._fixBrokenLocales()
+ 
+     def _fixBrokenLocales(self):
++        if not operating_system.isWindows():
++            return  # Norwegian dates: the picker below is Windows' own
+         try:
+             current_language = locale.getlocale(locale.LC_TIME)[0]
+         except Exception as e:

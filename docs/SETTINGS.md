@@ -1,5 +1,7 @@
 # Settings
 
+The Preferences dialog: [PREFERENCES.md](PREFERENCES.md).
+
 ## Table of Contents
 
 1. [TODO](#todo)
@@ -252,10 +254,16 @@ only; templates and backups are in `$XDG_DATA_HOME/Task Coach`
 them, in place of the pyxdg package (To Do 74 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
 
-The INI file is written **once at shutdown** by `Settings.save()`,
-called from `application.py`; changes during the session, Preferences'
-too, are in memory until then. With the legacy status icons on, the
-file gets the status icons by the names releases before 2.0.1.72 know.
+The INI file is written while Task Coach runs, 2 s after the last
+change of an option (`Settings.notify_changes()`), and every 30 s with
+the main window's viewers, layout, position and size, which are copied
+into the settings then; only when its text changed
+(`Settings.save_if_changed()`), and at quit (`Settings.save()`). Each
+write replaces the file in one step once the new text is on disk, so
+a logout, a crash or a power cut loses at most the last moments
+([SESSION_END.md](SESSION_END.md)). With the legacy status icons on,
+the file gets the status icons by the names releases before 2.0.1.72
+know.
 
 At startup `Settings()` takes:
 

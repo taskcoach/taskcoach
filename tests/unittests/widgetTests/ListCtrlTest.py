@@ -20,6 +20,17 @@ from unittest import mock
 import test, wx
 from unittests import dummy
 from taskcoachlib import widgets
+from taskcoachlib.config import settings
+
+
+class Row(int):
+    """A row the list can paint, equal to its row number."""
+
+    @staticmethod
+    def shown_fg_color():
+        return None
+
+    shown_bg_color = shown_font = shown_fg_color
 
 
 class VirtualListCtrlTestCase(test.wxTestCase):
@@ -27,10 +38,7 @@ class VirtualListCtrlTestCase(test.wxTestCase):
     onSelect = lambda *args: None
 
     def createListCtrl(self):
-        self.frame.get_item_with_index = lambda index: index
-        self.frame.get_index_of_item = lambda item: (
-            item if type(item) == type(0) else 0
-        )
+        self.frame.get_item_with_index = Row
         self.frame.getItemText = lambda item, column: ""
         self.frame.getItemTooltipData = lambda item: []
         self.frame.getItemImages = lambda item, column: {
@@ -40,38 +48,38 @@ class VirtualListCtrlTestCase(test.wxTestCase):
             self.frame, self.columns, self.onSelect, dummy.DummyUICommand()
         )
 
-    def createColumns(self, nrColumns):
+    def createColumns(self, nr_columns):
         columns = []
-        for columnIndex in range(1, nrColumns + 1):
-            name = "column%d" % columnIndex
+        for column_index in range(1, nr_columns + 1):
+            name = "column%d" % column_index
             columns.append(widgets.Column(name, name, None, None))
         return columns
 
     def setUp(self):
         super().setUp()
-        self.columns = self.createColumns(nrColumns=3)
+        self.columns = self.createColumns(nr_columns=3)
         self.listctrl = self.createListCtrl()
 
-    def testOneItem(self):
+    def test_one_item(self):
         self.listctrl.RefreshAllItems(1)
         self.assertEqual(1, self.listctrl.GetItemCount())
 
-    def testNrOfColumns(self):
+    def test_nr_of_columns(self):
         self.assertEqual(3, self.listctrl.GetColumnCount())
 
-    def testCurselection_EmptyList(self):
+    def test_curselection_empty_list(self):
         self.assertEqual([], self.listctrl.curselection())
 
-    def testShowColumn_Hide(self):
+    def test_show_column_hide(self):
         self.listctrl.showColumn(self.columns[2], False)
         self.assertEqual(2, self.listctrl.GetColumnCount())
 
-    def testShowColumn_HideAndShow(self):
+    def test_show_column_hide_and_show(self):
         self.listctrl.showColumn(self.columns[2], False)
         self.listctrl.showColumn(self.columns[2], True)
         self.assertEqual(3, self.listctrl.GetColumnCount())
 
-    def testShowColumn_ColumnOrderIsKept(self):
+    def test_show_column_column_order_is_kept(self):
         self.listctrl.showColumn(self.columns[1], False)
         self.listctrl.showColumn(self.columns[2], False)
         self.listctrl.showColumn(self.columns[1], True)
@@ -84,50 +92,63 @@ class VirtualListCtrlTestCase(test.wxTestCase):
             self.columns[2].header(), self.listctrl._getColumnHeader(2)
         )
 
-    def testShowColumn_HideTwice(self):
+    def test_show_column_hide_twice(self):
         self.listctrl.showColumn(self.columns[2], False)
         self.listctrl.showColumn(self.columns[2], False)
         self.assertEqual(2, self.listctrl.GetColumnCount())
 
-    def testSelect(self):
+    def test_select(self):
         self.listctrl.RefreshAllItems(1)
         self.listctrl.select([0])
         self.assertEqual([0], self.listctrl.curselection())
 
-    def testSelect_EmptySelection(self):
+    def test_select_empty_selection(self):
         self.listctrl.RefreshAllItems(1)
         self.listctrl.select([])
         self.assertEqual([], self.listctrl.curselection())
 
-    def testSelect_MultipleSelection(self):
+    def test_select_multiple_selection(self):
         self.listctrl.RefreshAllItems(2)
         self.listctrl.select([0, 1])
         self.assertEqual([0, 1], self.listctrl.curselection())
 
-    def testSelect_DisjunctMultipleSelection(self):
+    def test_select_disjunct_multiple_selection(self):
         self.listctrl.RefreshAllItems(3)
         self.listctrl.select([0, 2])
         self.assertEqual([0, 2], self.listctrl.curselection())
 
-    def testSelect_SetsFocus(self):
+    def test_select_sets_focus(self):
         self.listctrl.RefreshAllItems(1)
         self.listctrl.select([0])
         self.assertEqual(0, self.listctrl.GetFocusedItem())
 
-    def testSelect_EmptySelection_SetsFocus(self):
+    def test_select_empty_selection_sets_focus(self):
         self.listctrl.RefreshAllItems(1)
         self.listctrl.select([])
         self.assertEqual(-1, self.listctrl.GetFocusedItem())
 
-    def testSelect_MultipleSelection_SetsFocus(self):
+    def test_select_multiple_selection_sets_focus(self):
         self.listctrl.RefreshAllItems(2)
         self.listctrl.select([0, 1])
         self.assertEqual(0, self.listctrl.GetFocusedItem())
 
-    def testSelect_DisjunctMultipleSelection_SetsFocus(self):
+    def test_select_disjunct_multiple_selection_sets_focus(self):
         self.listctrl.RefreshAllItems(3)
         self.listctrl.select([0, 2])
         self.assertEqual(0, self.listctrl.GetFocusedItem())
+
+    def test_a_stable_viewport_selects_without_scrolling(self):
+        # After a delete with auto-scroll off, as the trees
+        settings.view.autoscrollselection = False
+        self.listctrl.RefreshAllItems(3)
+        # wx's Focus() scrolls to the row
+        with mock.patch.object(
+            self.listctrl, "Focus"
+        ) as focus, self.listctrl.stable_viewport():
+            self.listctrl.select([2])
+        focus.assert_not_called()
+        self.assertEqual(2, self.listctrl.GetFocusedItem())
+        self.assertEqual([2], self.listctrl.curselection())
 
 
 class WxOwnWindowsTest(test.wxTestCase):
@@ -154,20 +175,12 @@ class VirtualListCtrlPointerTest(test.wxTestCase):
     """Rows moving under a pointer at rest hide the tooltip and move the
     hover outline to the row now under it (P148)."""
 
-    class Row:
-        @staticmethod
-        def shown_fg_color():
-            return None
-
-        shown_bg_color = shown_font = shown_fg_color
-
     onSelect = VirtualListCtrlTestCase.onSelect
 
     def setUp(self):
         super().setUp()
         self.columns = VirtualListCtrlTestCase.createColumns(self, 3)
         self.listctrl = VirtualListCtrlTestCase.createListCtrl(self)
-        self.frame.get_item_with_index = lambda index: self.Row()
         self.listctrl.SetSize(400, 300)
         self.listctrl.RefreshAllItems(50)
         self.tips_cancelled = []

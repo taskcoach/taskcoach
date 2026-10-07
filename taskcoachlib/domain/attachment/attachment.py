@@ -25,16 +25,16 @@ from taskcoachlib.domain.note.noteowner import NoteOwner
 from functools import total_ordering
 
 
-def getRelativePath(path, basePath=os.getcwd()):
+def getRelativePath(path, base_path=os.getcwd()):
     """Tries to guess the relative version of 'path' from 'basePath'. If
     not possible, return absolute 'path'. Both 'path' and 'basePath' must
     be absolute."""
 
     path = os.path.realpath(os.path.normpath(path))
-    basePath = os.path.realpath(os.path.normpath(basePath))
+    base_path = os.path.realpath(os.path.normpath(base_path))
 
     drive1, path1 = os.path.splitdrive(path)
-    drive2, path2 = os.path.splitdrive(basePath)
+    drive2, path2 = os.path.splitdrive(base_path)
 
     # No relative path is possible if the two are on different drives.
     if drive1 != drive2:
@@ -109,7 +109,7 @@ class Attachment(base.Object, NoteOwner):
         event.addSource(self, type=self.locationChangedEventType())
 
     @classmethod
-    def locationChangedEventType(class_):
+    def locationChangedEventType(cls):
         return "attachment.location"
 
     @staticmethod
@@ -159,7 +159,7 @@ class Attachment(base.Object, NoteOwner):
     def sentDateTimeSortEventTypes(cls):
         return (cls.mail_changed_event_type(),)
 
-    def open(self, workingDir=None):
+    def open(self, working_dir=None):
         raise NotImplementedError
 
     # Note: We intentionally do NOT override __hash__ or __eq__ here.
@@ -181,24 +181,24 @@ class Attachment(base.Object, NoteOwner):
         return state
 
     @classmethod
-    def modificationEventTypes(class_):
-        eventTypes = super(Attachment, class_).modificationEventTypes()
-        return eventTypes + [class_.locationChangedEventType()]
+    def modificationEventTypes(cls):
+        event_types = super(Attachment, cls).modificationEventTypes()
+        return event_types + [cls.locationChangedEventType()]
 
 
 class FileAttachment(Attachment):
     type_ = "file"
 
     def open(
-        self, workingDir=None, openAttachment=openfile.openFile
+        self, working_dir=None, open_attachment=openfile.open_file
     ):  # pylint: disable=W0221
-        return openAttachment(self.normalizedLocation(workingDir))
+        return open_attachment(self.normalized_location(working_dir))
 
-    def normalizedLocation(self, workingDir=None):
+    def normalized_location(self, working_dir=None):
         location = self.location()
         if self.isLocalFile():
-            if workingDir and not os.path.isabs(location):
-                location = os.path.join(workingDir, location)
+            if working_dir and not os.path.isabs(location):
+                location = os.path.join(working_dir, location)
             location = os.path.normpath(location)
         return location
 
@@ -214,8 +214,8 @@ class URIAttachment(Attachment):
             kwargs["subject"] = _("Mail.app message")
         super().__init__(location, *args, **kwargs)
 
-    def open(self, workingDir=None):
-        return openfile.openFile(self.location())
+    def open(self, working_dir=None):
+        return openfile.open_file(self.location())
 
 
 class MailAttachment(Attachment):
@@ -250,9 +250,9 @@ class MailAttachment(Attachment):
             self._on_mail_changed,
         )
 
-    def open(self, workingDir=None):
+    def open(self, working_dir=None):
         # The mail program registered for mid: links shows the mail
-        return openfile.openFile(self.location())
+        return openfile.open_file(self.location())
 
     def from_name(self):
         return self.__from_name.get()

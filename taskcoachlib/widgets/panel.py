@@ -61,6 +61,6 @@ class PanelWithBoxSizer(wx.Panel):
         self.Layout()
 
     def add(self, *args, **kwargs):
-        defaultKwArgs = dict(flag=wx.EXPAND | wx.ALL, proportion=1)
-        defaultKwArgs.update(kwargs)
-        self.__panelSizer.Add(*args, **defaultKwArgs)
+        default_kw_args = dict(flag=wx.EXPAND | wx.ALL, proportion=1)
+        default_kw_args.update(kwargs)
+        self.__panelSizer.Add(*args, **default_kw_args)

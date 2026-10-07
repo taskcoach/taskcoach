@@ -80,7 +80,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         event.addSource(self, self.task(), type=self.taskChangedEventType())
 
     @classmethod
-    def taskChangedEventType(class_):
+    def taskChangedEventType(cls):
         return "effort.task"
 
     def __str__(self):
@@ -125,7 +125,9 @@ class Effort(baseeffort.BaseEffort, base.Object):
             dict(
                 task=self.task(),
                 start=self._start.get(),
-                stop=self._stop.get(),
+                # The time spent so far: a copy never tracks, one task
+                # tracked at a time (docs/EFFORTS.md, Tracking)
+                stop=self._stop.get() or date.DateTime.now(),
                 entryMode=self.__entryMode.get(),
                 duration=self.__duration.get(),
             )
@@ -165,11 +167,11 @@ class Effort(baseeffort.BaseEffort, base.Object):
         """The stored duration: None while the effort is tracked."""
         return self.__duration.get()
 
-    def setDuration(self, newDuration, event=None):
+    def setDuration(self, new_duration, event=None):
         """Setter — normalizes and delegates to Attribute."""
-        if newDuration is not None and newDuration == date.TimeDelta():
-            newDuration = None
-        self.__duration.set(newDuration, event=event)
+        if new_duration is not None and new_duration == date.TimeDelta():
+            new_duration = None
+        self.__duration.set(new_duration, event=event)
 
     def setStart(self, startDateTime, event=None):
         self._start.set(startDateTime, event=event)
@@ -183,15 +185,15 @@ class Effort(baseeffort.BaseEffort, base.Object):
             task.send_time_spent_changed()
 
     @classmethod
-    def startChangedEventType(class_):
+    def startChangedEventType(cls):
         return "effort.start"
 
-    def setStop(self, newStop=None, event=None):
-        if newStop is None:
-            newStop = date.DateTime.now()
-        elif newStop == date.DateTime.max or newStop == date.DateTime():
-            newStop = None
-        self._stop.set(newStop, event=event)
+    def setStop(self, new_stop=None, event=None):
+        if new_stop is None:
+            new_stop = date.DateTime.now()
+        elif new_stop == date.DateTime.max or new_stop == date.DateTime():
+            new_stop = None
+        self._stop.set(new_stop, event=event)
 
     def _on_stop_changed(self, event):
         previous_stop, new_stop = self.__stop_seen, self._stop.get()
@@ -210,7 +212,7 @@ class Effort(baseeffort.BaseEffort, base.Object):
         event.addSource(self, new_stop, type=self.stopChangedEventType())
 
     @classmethod
-    def stopChangedEventType(class_):
+    def stopChangedEventType(cls):
         return "effort.stop"
 
     def isBeingTracked(self, recursive=False):  # pylint: disable=W0613
@@ -218,8 +220,8 @@ class Effort(baseeffort.BaseEffort, base.Object):
 
     def revenue(self):
         task = self.task()
-        hourlyFee = task.hourlyFee() if task else 0
-        return self.timeSpent().hours() * hourlyFee
+        hourly_fee = task.hourlyFee() if task else 0
+        return self.timeSpent().hours() * hourly_fee
 
     @staticmethod
     def periodSortFunction(**kwargs):
@@ -232,22 +234,22 @@ class Effort(baseeffort.BaseEffort, base.Object):
         )
 
     @classmethod
-    def periodSortEventTypes(class_):
+    def periodSortEventTypes(cls):
         """The event types that influence the effort sort order."""
         return (
-            class_.startChangedEventType(),
-            class_.taskChangedEventType(),
+            cls.startChangedEventType(),
+            cls.taskChangedEventType(),
             task.Task.subjectChangedEventType(),
         )
 
     @classmethod
-    def modificationEventTypes(class_):
-        eventTypes = super(Effort, class_).modificationEventTypes()
-        return eventTypes + [
-            class_.taskChangedEventType(),
-            class_.startChangedEventType(),
-            class_.stopChangedEventType(),
-            class_.entryModeChangedEventType(),
+    def modificationEventTypes(cls):
+        event_types = super(Effort, cls).modificationEventTypes()
+        return event_types + [
+            cls.taskChangedEventType(),
+            cls.startChangedEventType(),
+            cls.stopChangedEventType(),
+            cls.entryModeChangedEventType(),
         ]
 
     # Entry mode (standard, retroactive, or implicit)
@@ -265,5 +267,5 @@ class Effort(baseeffort.BaseEffort, base.Object):
         )
 
     @classmethod
-    def entryModeChangedEventType(class_):
+    def entryModeChangedEventType(cls):
         return "effort.entryMode"

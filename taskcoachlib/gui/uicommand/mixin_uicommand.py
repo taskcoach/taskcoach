@@ -38,10 +38,13 @@ class PopupButtonMixin(object):
         # Check if menu has any items
         if self.__menu.GetMenuItemCount() == 0:
             wx.MessageBox(
-                _("No templates available. Create a template first by saving a task as a template."),
+                _(
+                    "No templates available. Create a template first by "
+                    "saving a task as a template."
+                ),
                 _("No Templates"),
                 wx.OK | wx.ICON_INFORMATION,
-                self.main_window()
+                self.main_window(),
             )
             return
 
@@ -55,22 +58,22 @@ class PopupButtonMixin(object):
 
     def menuX(self):
         # Get the tool's position in the toolbar
-        toolRect = self.toolbar.GetToolRect(self.id)
-        if toolRect is not None:
+        tool_rect = self.toolbar.GetToolRect(self.id)
+        if tool_rect is not None:
             # Convert toolbar-local position to screen coordinates
-            toolbarScreenPos = self.toolbar.GetScreenPosition()
+            toolbar_screen_pos = self.toolbar.GetScreenPosition()
             # Align to the left edge of the button
-            return toolbarScreenPos[0] + toolRect[0]
+            return toolbar_screen_pos[0] + tool_rect[0]
         else:
             # Fallback to mouse position if tool rect not available
-            buttonWidth = self.toolbar.GetToolSize()[0]
-            mouseX = wx.GetMousePosition()[0]
-            return mouseX - 0.5 * buttonWidth
+            button_width = self.toolbar.GetToolSize()[0]
+            mouse_x = wx.GetMousePosition()[0]
+            return mouse_x - 0.5 * button_width
 
     def menuY(self):
-        toolbarY = self.toolbar.GetScreenPosition()[1]
-        toolbarHeight = self.toolbar.GetSize()[1]
-        return toolbarY + toolbarHeight
+        toolbar_y = self.toolbar.GetScreenPosition()[1]
+        toolbar_height = self.toolbar.GetSize()[1]
+        return toolbar_y + toolbar_height
 
     def createPopupMenu(self):
         raise NotImplementedError  # pragma: no cover

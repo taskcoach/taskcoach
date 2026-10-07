@@ -33,11 +33,13 @@ jobs:
     strategy:
       matrix:
         include:
-          # 64-bit build with Python 3.11
+          # 64-bit build with Python 3.13: 3.11 has no Windows build
+          # after 3.11.9, whose Expat 2.6.0 a hostile task file crashes
+          # (docs/PERSISTENCE_XML.md, Expat by Package)
           - arch: x64
-            python_version: "3.11.9"
+            python_version: "3.13.16"
             python_arch: "amd64"
-            pth_file: "python311._pth"
+            pth_file: "python313._pth"
             pip_url: "https://bootstrap.pypa.io/get-pip.py"
             suffix: "x64"
           # 32-bit build with Python 3.9 (for older Windows/VM compatibility)
@@ -139,7 +141,7 @@ jobs:
           # IMPORTANT: "import site" must come AFTER paths are added,
           # so site.main() can find and process .pth files in site-packages
           $pthFile = "build\TaskCoach\python\${{ matrix.pth_file }}"
-          # Derive zip filename from pth filename (python311._pth -> python311.zip)
+          # Derive zip filename from pth filename (python313._pth -> python313.zip)
           $zipFile = "${{ matrix.pth_file }}".Replace("._pth", ".zip")
           # Build pth content as array then join with newlines
           $pthLines = @(
@@ -172,17 +174,28 @@ jobs:
           # dark mode on Windows; it ships wheels for Python 3.10+ only.
           Write-Host "Installing wxPython..."
           & $pythonExe -m pip install "wxPython==4.3.1" --no-warn-script-location
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          # squaremap is published as source only, so pip builds it. The
+          # embeddable Python ignores PYTHONPATH (its ._pth file), which
+          # hides pip's isolated build environment: it builds with this
+          # Python's own setuptools, which get-pip.py installs only
+          # before Python 3.12 (docs/WINDOWS.md)
+          Write-Host "Installing setuptools and wheel to build squaremap..."
+          & $pythonExe -m pip install setuptools wheel --no-warn-script-location
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           # Install all TaskCoach dependencies
           Write-Host "Installing TaskCoach dependencies..."
           & $pythonExe -m pip install `
             "chardet>=5.2.0" `
             "python-dateutil>=2.9.0" `
-            keyring `
             "squaremap>=1.0.5" `
             "pyenchant>=3.2.0" `
             pywin32 `
+            --no-build-isolation `
             --no-warn-script-location
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           Write-Host "All dependencies installed"
 
@@ -284,6 +297,12 @@ jobs:
           Write-Host "Testing taskcoachlib import..."
           & "build\TaskCoach\python\python.exe" -c "import taskcoachlib; print('taskcoachlib imported successfully')"
           if ($LASTEXITCODE) { throw "taskcoachlib does not import" }
+
+          # Expat reads task files: 2.7.0 and 2.7.2 fix a crash and a
+          # memory blow-up from a hostile file
+          Write-Host "Testing the XML parser's version..."
+          & "build\TaskCoach\python\python.exe" -c "import pyexpat, sys; print(pyexpat.EXPAT_VERSION); sys.exit(pyexpat.version_info < (2, 7, 2))"
+          if ($LASTEXITCODE) { throw "Expat older than 2.7.2" }
 
           Write-Host "All tests passed!"
 

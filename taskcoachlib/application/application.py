@@ -124,7 +124,6 @@ def _log_required_packages():
     packages = [
         ("chardet", None),
         ("python-dateutil", "dateutil"),
-        ("keyring", None),
         ("squaremap", None),
     ]
 
@@ -319,10 +318,22 @@ def _log_linux_tray_diagnostics():
     # Is an SNI host registered? Without one there is no tray at all (e.g.
     # GNOME with no AppIndicator extension).
     try:
-        import dbus
+        from gi.repository import Gio, GLib
 
-        owned = dbus.SessionBus().name_has_owner(
-            "org.kde.StatusNotifierWatcher"
+        owned = (
+            Gio.bus_get_sync(Gio.BusType.SESSION, None)
+            .call_sync(
+                "org.freedesktop.DBus",
+                "/org/freedesktop/DBus",
+                "org.freedesktop.DBus",
+                "NameHasOwner",
+                GLib.Variant("(s)", ("org.kde.StatusNotifierWatcher",)),
+                GLib.VariantType("(b)"),
+                Gio.DBusCallFlags.NONE,
+                1000,
+                None,
+            )
+            .unpack()[0]
         )
         log_message("  StatusNotifierWatcher present: %s" % owned)
     except Exception as e:
@@ -468,6 +479,17 @@ def _log_wx_info():
 # pylint: disable=W0404
 
 
+def _logged(step, *args, **kwargs):
+    """Run a step of saving; a failure is logged, not raised."""
+    try:
+        step(*args, **kwargs)
+    except Exception:  # pylint: disable=W0703
+        from taskcoachlib.meta.debug import log_step
+
+        name = getattr(step, "__name__", repr(step))
+        log_step("%s failed" % name, prefix="SETTINGS", exc=True)
+
+
 class WxApp(wx.App):
     def __init__(self, session_callback, reopen_callback, *args, **kwargs):
         self.session_callback = session_callback
@@ -535,6 +557,7 @@ class Application(object, metaclass=patterns.Singleton):
     def __init__(self, options=None, args=None, **kwargs):
         self._options = options
         self._args = args
+        self.__startup_open_pending = False
 
         # 1. Log environment info first (no dependencies)
         _log_environment()
@@ -687,20 +710,33 @@ class Application(object, metaclass=patterns.Singleton):
         self.taskFile = persistence.LockedTaskFile()
         self.__wx_app.taskFile = self.taskFile
         self.__auto_saver = persistence.AutoSaver()
-        self.__auto_exporter = persistence.AutoImporterExporter()
         self.__auto_backup = persistence.AutoBackup()
         self.iocontroller = IOController(self.taskFile, self.display_message)
         self.mainwindow = MainWindow(self.iocontroller, self.taskFile)
         self.__wx_app.SetTopWindow(self.mainwindow)
         if not settings.file.inifileloaded:
             self.__warn_user_that_ini_file_was_not_loaded()
+        # Ended before the start-up open ran (a logout at once): the
+        # file to open next time stays
+        self.__startup_open_pending = bool(load_task_file)
+        self.mainwindow.call_once_drawn(
+            lambda: self.__after_first_draw(load_task_file)
+        )
+        self.__register_signal_handlers()
+        self.__save_state_while_running()
+        self.__create_mutex()
+
+    def __after_first_draw(self, load_task_file):
+        # The window shows at once, however long the file takes to read;
+        # the tray once the file's list is built, its menu made once
+        # (docs/WINDOW_GEOMETRY.md, Opening the File)
         if load_task_file:
             self.iocontroller.open_after_start(
                 self._args, self.__early_lock_result
             )
-        self.__register_signal_handlers()
-        self.__create_mutex()
-        self.__create_task_bar_icon()
+        # Runs after the open, which open_after_start() put first
+        patterns.later.soon(None, self.__end_startup_open)
+        patterns.later.soon(self.mainwindow, self.__create_task_bar_icon)
         patterns.later.soon(self.mainwindow, self.__show_tips)
 
     def __check_file_lock_early(self):
@@ -824,15 +860,12 @@ class Application(object, metaclass=patterns.Singleton):
         """
         import signal
 
-        def handle_signal(signum, frame):
-            """Handle SIGINT/SIGTERM by scheduling clean shutdown."""
-            # Quit on the main thread, from the event loop
-            patterns.later.soon(None, self.quit_application)
-
-        # Register SIGINT/SIGTERM handlers for Unix
         if not operating_system.isWindows():
-            signal.signal(signal.SIGINT, handle_signal)
-            signal.signal(signal.SIGTERM, handle_signal)
+            for signum in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+                # One ignored when started stays so: SIGHUP under nohup,
+                # SIGINT in a background job
+                if signal.getsignal(signum) != signal.SIG_IGN:
+                    signal.signal(signum, self.on_signal)
 
         # NOTE: We intentionally do NOT use SetConsoleCtrlHandler on Windows.
         # According to Microsoft docs, if an app loads gdi32.dll or user32.dll
@@ -907,6 +940,19 @@ class Application(object, metaclass=patterns.Singleton):
         except RuntimeError:
             pass  # MainWindow C++ object already deleted
 
+    def on_signal(self, signum, frame):  # pylint: disable=W0613
+        """Quit from the event loop, on the main thread. SIGTERM and
+        SIGHUP are the system or the ending session asking, with nobody
+        to answer: the session end's close, which saves without asking;
+        Ctrl+C in a terminal asks as File > Quit does
+        (docs/SESSION_END.md)."""
+        import signal
+
+        if signum in (signal.SIGTERM, signal.SIGHUP):
+            patterns.later.soon(None, self.on_end_session)
+        else:
+            patterns.later.soon(None, self.quit_application)
+
     def on_end_session(self):
         self.mainwindow.setShutdownInProgress()
         self.quit_application(force=True)
@@ -916,24 +962,44 @@ class Application(object, metaclass=patterns.Singleton):
             self.taskBarIcon.on_taskbar_click(None)
 
     def save_all_settings(self):
-        """Save all settings to disk on normal exit and in signal handlers.
+        """At quit, whatever ends Task Coach: each step on its own, so
+        one failing skips no other; a failure is logged."""
+        _logged(self.__remember_last_file)
+        _logged(self.__save_window_state)
+        _logged(self.settings.save)
+        _logged(self.settings.release_ini_lock)
 
-        This is the single place for saving settings, ensuring consistency
-        between normal close, Ctrl-C, and other exit paths.
-        """
-        try:
-            # Remember what the user was working on
-            if hasattr(self, "taskFile"):
-                settings.file.lastfile = self.taskFile.lastFilename()
-            # Save window position, size, perspective
-            if hasattr(self, "mainwindow"):
-                self.mainwindow.save_settings()
-            # Write settings to disk
-            self.settings.save()
-            # Release ini file lock after saving
-            self.settings.release_ini_lock()
-        except Exception:
-            pass  # Best effort - don't prevent exit
+    def save_state(self):
+        """Keep the settings file current while Task Coach runs, so an
+        end of the session that gives no notice loses at most the last
+        moments (docs/SESSION_END.md)."""
+        if wx.GetApp().quitting:
+            return
+        _logged(self.__remember_last_file)
+        if self.mainwindow.is_placed():
+            _logged(self.__save_window_state, trace=False)
+        _logged(self.settings.save_if_changed)
+
+    def __end_startup_open(self):
+        self.__startup_open_pending = False
+
+    def __remember_last_file(self):
+        if hasattr(self, "taskFile") and not self.__startup_open_pending:
+            settings.file.lastfile = self.taskFile.lastFilename()
+
+    def __save_window_state(self, trace=True):
+        """Viewers, layout, position and size into the settings."""
+        if hasattr(self, "mainwindow"):
+            self.mainwindow.save_settings(trace=trace)
+
+    def __save_state_while_running(self):
+        """2 s after the last change of a setting, and every 30 s for
+        the window's layout and position, which change no setting until
+        saved."""
+        self.settings.notify_changes(
+            patterns.later.debounced(None, 2000, self.save_state)
+        )
+        patterns.later.every(self.mainwindow, 30000, self.save_state)
 
     def _stop_all_timers(self):
         """Stop the timers of bundled library code, owned by its

@@ -8054,3 +8054,20 @@ msgstr "Em modo de árvore, a ordenação manual só é possível quando todos o
 #: taskcoachlib/gui/viewer/base.py
 msgid "When in tree mode, you can only put objects at the same level (parent)."
 msgstr "Em modo de árvore, só pode colocar objetos no mesmo nível (pai)."
+
+#: taskcoachlib/mailer/thunderbird.py
+msgid ""
+"Thunderbird gave only this mail's address, not the mail, so Task Coach "
+"cannot read it.\n"
+"Save the mail as a file in Thunderbird, then drag the file onto the task."
+msgstr ""
+"O Thunderbird só entregou o endereço desta mensagem, não a mensagem, por isso o Task Coach não a consegue ler.\n"
+"Guarde a mensagem como ficheiro no Thunderbird e depois arraste o ficheiro para a tarefa."
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Opening %s..."
+msgstr "A abrir %s..."
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Merging %s..."
+msgstr "A reunir %s..."

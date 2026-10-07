@@ -44,8 +44,8 @@ prerequisites or dependents.
 - Data only, never time: the master loop neither reads nor computes
   it, and a priority change runs no pass
   ([SCHEDULERS.md](SCHEDULERS.md#todo)).
-- Exports: Todo.txt (a letter), iCalendar (`PRIORITY`, capped at 3),
-  the task's own priority; CSV and HTML as the column shows it.
+- Exports: iCalendar (`PRIORITY`, capped at 3), the task's own
+  priority; CSV and HTML as the column shows it.
 - The square map ordered by priority sizes by the subtree priority.
 
 ## Subtree Values in Other Columns

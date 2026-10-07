@@ -21,7 +21,6 @@ from taskcoachlib import (
     patterns,
     command,
     render,
-    speak,
 )
 from taskcoachlib.config import settings
 from taskcoachlib.domain import date
@@ -95,7 +94,7 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         self.openTaskAfterClose = self.ignoreSnoozeOption = False
 
         # Main sizer
-        mainSizer = wx.BoxSizer(wx.VERTICAL)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
 
         # Grid for form layout - all controls directly on dialog for proper tabbing
         grid = wx.FlexGridSizer(cols=2, vgap=8, hgap=8)
@@ -107,18 +106,20 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             flag=wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_RIGHT,
         )
 
-        taskButtonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        task_button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.openTask = wx.Button(
             self, label=self.task.subject(recursive=True)
         )
         self.openTask.Bind(wx.EVT_BUTTON, self.onOpenTask)
-        taskButtonSizer.Add(self.openTask, flag=wx.ALIGN_CENTER_VERTICAL)
-        taskButtonSizer.AddSpacer(3)
+        task_button_sizer.Add(self.openTask, flag=wx.ALIGN_CENTER_VERTICAL)
+        task_button_sizer.AddSpacer(3)
         self.startTracking = wx.BitmapButton(self)
         self.setTrackingIcon()
         self.startTracking.Bind(wx.EVT_BUTTON, self.onStartOrStopTracking)
-        taskButtonSizer.Add(self.startTracking, flag=wx.ALIGN_CENTER_VERTICAL)
-        grid.Add(taskButtonSizer, flag=wx.EXPAND)
+        task_button_sizer.Add(
+            self.startTracking, flag=wx.ALIGN_CENTER_VERTICAL
+        )
+        grid.Add(task_button_sizer, flag=wx.EXPAND)
 
         # Row 2: Reminder date/time label and value
         grid.Add(
@@ -138,16 +139,16 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         self.snoozeOptions = wx.Choice(self)
         snooze_times = [0] + settings.view.snoozetimes
         default_snooze_time = settings.view.defaultsnoozetime
-        selectionIndex = 1
+        selection_index = 1
         for minutes, label in date.snoozeChoices:
             if minutes in snooze_times:
                 self.snoozeOptions.Append(
                     label, date.TimeDelta(minutes=minutes)
                 )
                 if minutes == default_snooze_time:
-                    selectionIndex = self.snoozeOptions.Count - 1
+                    selection_index = self.snoozeOptions.Count - 1
         self.snoozeOptions.SetSelection(
-            min(selectionIndex, self.snoozeOptions.Count - 1)
+            min(selection_index, self.snoozeOptions.Count - 1)
         )
         grid.Add(self.snoozeOptions, flag=wx.ALIGN_CENTER_VERTICAL)
 
@@ -165,10 +166,10 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         )
         grid.Add(self.replaceDefaultSnoozeTime, flag=wx.EXPAND)
 
-        mainSizer.Add(grid, proportion=1, flag=wx.ALL | wx.EXPAND, border=10)
+        main_sizer.Add(grid, proportion=1, flag=wx.ALL | wx.EXPAND, border=10)
 
         # Button row
-        buttonSizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.okButton = wx.Button(self, wx.ID_OK, _("OK"))
         self.okButton.Bind(wx.EVT_BUTTON, self.onOK)
         self.markCompleted = wx.Button(self, label=_("Mark task completed"))
@@ -177,13 +178,13 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
             self.markCompleted.Disable()
 
         # Right-align buttons (standard UX)
-        buttonSizer.AddStretchSpacer()
-        buttonSizer.Add(self.okButton, flag=wx.RIGHT, border=5)
-        buttonSizer.Add(self.markCompleted)
+        button_sizer.AddStretchSpacer()
+        button_sizer.Add(self.okButton, flag=wx.RIGHT, border=5)
+        button_sizer.Add(self.markCompleted)
 
-        mainSizer.Add(buttonSizer, flag=wx.ALL | wx.EXPAND, border=10)
+        main_sizer.Add(button_sizer, flag=wx.ALL | wx.EXPAND, border=10)
 
-        self.SetSizer(mainSizer)
+        self.SetSizer(main_sizer)
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
         # Set tab order: OK first, then left-to-right, top-to-bottom
@@ -210,9 +211,6 @@ class ReminderDialog(patterns.Observer, wx.Dialog):
         from taskcoachlib import sounds
 
         sounds.play(settings.feature.reminder_sound)
-        # Speak the reminder text
-        if settings.feature.sayreminder:
-            speak.Speaker().say('"%s: %s"' % (_("Reminder"), task.subject()))
 
     def _freeze_dialog(self):
         """Freeze dialog to prevent accidental actions."""

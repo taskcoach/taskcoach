@@ -7,7 +7,8 @@ This document covers AUI-related topics for Task Coach, which uses wxPython's AG
 1. [Layout Persistence](#layout-persistence)
    - [Pane Names Carry Instance Numbers](#pane-names-carry-instance-numbers)
    - [AUI-Generated Panes](#aui-generated-panes)
-   - [Planned: Fit Floating Panes to the Monitors](#planned-fit-floating-panes-to-the-monitors)
+   - [Floating Panes on the Main Window's Monitor](#floating-panes-on-the-main-windows-monitor)
+   - [Floating Views and the Keys](#floating-views-and-the-keys)
 2. [Sash Cursor Seep-Through Fix](#sash-cursor-seep-through-fix)
 3. [System Colour Change Event](#system-colour-change-event)
 4. [Destroy Event](#destroy-event)
@@ -172,18 +173,50 @@ Task Coach viewer names follow this pattern:
 
 The name is determined by `viewer.settingsSection()` in `taskcoachlib/gui/viewer/base.py`.
 
-### Planned: Fit Floating Panes to the Monitors
+### Floating Panes on the Main Window's Monitor
 
 The perspective stores each floating pane's position and size, and
 `LoadPerspective()` restores them as saved, whatever the current
-monitors: a pane saved on a monitor that is gone can open off screen.
-Plan: after `LoadPerspective()`, pass each floating pane's rect through
-the shared `fit_to_monitors()`
-([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#planned-refactoring)) and set
-the result with `FloatingPosition()` and `FloatingSize()` before
-`Update()`. This adapts the loaded geometry only; it does not validate
-the perspective string
+monitors: a pane saved on a monitor that is gone opened off screen.
+After `LoadPerspective()`, `__fit_floating_panes()` passes each
+floating pane's rect through `fit_to_main_window()` and sets the
+result with `FloatingPosition()` and `FloatingSize()` before
+`Update()`: a pane not whole on the main window's monitor is centred
+on the main window, cut to 80% of the monitor where larger
+([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#floating-views), ruled
+2026-10-06). This adapts the loaded geometry only; it does not
+validate the perspective string
 ([Best Practice](#best-practice-trust-auis-built-in-mismatch-handling)).
+
+### Floating Views and the Keys
+
+The keys go to the view clicked, docked or floating (**ruled by
+designer 2026-10-06**, P162). A click in a floating view makes AUI
+report the pane activated twice (`EVT_AUI_PANE_ACTIVATED`): first from
+the floating frame's own manager, while the main window's manager
+still has the old view active, then from the main window's manager
+with the view clicked. `ViewerContainer.on_page_changed()` gives the
+active view the focus (`__ensure_active_viewer_has_focus()`, for
+Ctrl+PgDn and the menus), so it answers only a report of the view
+the main window's manager has active (or of a notebook holding it):
+answering the first report focused the old view, and that request,
+landing a moment later, took the main window back (in 2.0.3.0 the
+floating view kept the keys in 0 of 10 clicks). AUI's report names no
+manager (`FireEvent()` sets none), so the pane decides: until the
+release review of 2026-10-07 the check asked the report's manager,
+always none, and no activation moved the keys (Ctrl+PgDn to a docked
+view left them in the old one). The main window's report reaches the
+handler twice (the frame's handlers, then the manager's own); focusing
+again is harmless. An AUI notebook's own manager never reports (no
+`AUI_MGR_ALLOW_ACTIVE_PANE`).
+
+A view made active (a click, Ctrl+PgDn, the View menu) brings its
+window to the front when that window is shown and not the active one
+(`ViewerContainer.activate_viewer()`): a floating view's own, or the
+main window when the keys come from a floating view. Before, only
+floating views were raised, and Ctrl+PgDn from a floating view back
+into the main window reached it through the same late focus request
+that took the keys from a clicked floating view.
 
 ### Related Files
 

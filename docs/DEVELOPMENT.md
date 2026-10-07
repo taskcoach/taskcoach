@@ -40,7 +40,29 @@ the records); the worker analyses, proposes and does the work.
    each finished piece.
 4. **Report back** what was done as user steps and results, what was
    found on the way (a new issue numbered with its steps; a regression
-   of the branch fixed), then the next proposals.
+   of the branch fixed), then the next proposals. A defect found, a
+   feature not doing what it is for, comes with its fix, not a
+   question (ruled by the decider 2026-10-06): fixed with its tests
+   and an app check when the fix follows from the feature's design,
+   prototyped and proposed when a design choice is open.
+5. **The tests are the worker's** (ruled by the decider 2026-10-04,
+   and twice 2026-10-06). The tests and the scripts that run them are
+   the worker's responsibility: "Do not ask me about correcting test
+   suites. You must absolutely correct test suites when you find
+   error ... This is your job. This is your scope. It has no
+   functional impact." Anything that stops them working is fixed "in
+   the direct scripts or higher up in the flow of the test scripts",
+   with "the best business practices": "This is not a concern you ask
+   me." The end result is ruled: "the tests must be working in a sense
+   that you're testing the app completely and correctly for all the
+   functionalities and the design intent of the tests." So a wrong,
+   unsafe or flaky test or harness is fixed as found, to the standard
+   practice (not a diagnosis left open), with before and after runs,
+   and reported as done: never a question, an issue to rule on, or an
+   item in a list of next or open work. Asked a third time,
+   2026-10-06: "I already ruled that test script are fully your
+   responsibility. I also already ruled on the end results of the
+   tests."
 
 ## Design
 
@@ -65,6 +87,13 @@ Canon decision by designer, 2026-09-28.
   dates in the editors, never in an input box: a box that ignores
   typing misleads. `widgets.read_only_text()` draws it; a control that
   turns read-only greys out, as the date controls do.
+- **Interaction rules are ruled (designer 2026-10-05):** how the
+  selection, the focus and the scrolling answer an action (the row a
+  delete selects, where the keys move from) follows the platforms'
+  conventions, is the same in every view, and changes only with a
+  ruling, after researching those conventions; never as a side effect
+  of another fix. Tests tell each rule from its alternatives. The
+  rules: [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md).
 - **Deferred calls through `patterns.later`:** a debounce, delay,
   repeat or "when idle" call names its owner and never uses
   `wx.CallLater`, `wx.CallAfter` or `wx.Timer` directly, so none can
@@ -173,5 +202,8 @@ docstrings, docs and log messages.
 - Title: what the change does, imperative, short. No version numbers
   and no issue references (issue links are added to the PR).
 - Body: a sentence or two of why, then short bullets of what changed.
-- Squash a branch's commits into one concise commit when its pull
-  request is ready; pushes before that keep the full history.
+- During a long stretch of development, keep every commit and push
+  it: versions stay comparable commit by commit. Once the pull
+  request is open and the work stabilizes, every push is the branch
+  squashed into one concise commit (**ruled by designer 2026-10-07**:
+  "once we have pushed a PR and we're stabilizing we always squash").

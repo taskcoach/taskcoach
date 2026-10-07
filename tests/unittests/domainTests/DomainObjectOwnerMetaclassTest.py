@@ -25,7 +25,7 @@ class OwnerUnderTest(object, metaclass=base.DomainObjectOwnerMetaclass):
 
 
 class DomainObjectOwnerMetaclassTest(test.TestCase):
-    def testModificationEventTypes(self):
+    def test_modification_event_types(self):
         owner = OwnerUnderTest()
         # pylint: disable=E1101
         self.assertTrue(

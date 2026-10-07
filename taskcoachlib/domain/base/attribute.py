@@ -112,9 +112,9 @@ class SetAttribute(Field):
         self,
         values,
         owner,
-        addEvent=None,
-        removeEvent=None,
-        changeEvent=None,
+        add_event=None,
+        remove_event=None,
+        change_event=None,
         weak=False,
         dates=True,
     ):
@@ -122,9 +122,9 @@ class SetAttribute(Field):
         self.__setClass = WeakSet if weak else set
         self.__set = self.__setClass(values) if values else self.__setClass()
         self.__owner = weakref.ref(owner)
-        self.__addEvent = (addEvent or self.__nullEvent).__func__
-        self.__removeEvent = (removeEvent or self.__nullEvent).__func__
-        self.__changeEvent = (changeEvent or self.__nullEvent).__func__
+        self.__addEvent = (add_event or self.__nullEvent).__func__
+        self.__removeEvent = (remove_event or self.__nullEvent).__func__
+        self.__changeEvent = (change_event or self.__nullEvent).__func__
 
     def get(self):
         return set(self.__set)

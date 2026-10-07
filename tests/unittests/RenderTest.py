@@ -25,60 +25,63 @@ from taskcoachlib.domain import date
 
 
 class RenderDateTime(test.TestCase):
-    def assertRenderedDateTime(self, expectedDateTime, *dateTimeArgs):
-        renderedDateTime = render.dateTime(date.DateTime(*dateTimeArgs))
-        if expectedDateTime:
-            renderedParts = renderedDateTime.split(" ", 1)
-            if len(renderedParts) > 1:
-                renderedDate, renderedTime = renderedParts
-                expectedDate, expectedTime = expectedDateTime.split(" ", 1)
-                self.assertEqual(expectedTime, renderedTime)
+    def assertRenderedDateTime(self, expected_date_time, *date_time_args):
+        rendered_date_time = render.dateTime(date.DateTime(*date_time_args))
+        if expected_date_time:
+            rendered_parts = rendered_date_time.split(" ", 1)
+            if len(rendered_parts) > 1:
+                rendered_date, rendered_time = rendered_parts
+                expected_date, expected_time = expected_date_time.split(" ", 1)
+                self.assertEqual(expected_time, rendered_time)
             else:
-                expectedDate, renderedDate = expectedDateTime, renderedDateTime
-            self.assertEqual(expectedDate, renderedDate)
+                expected_date, rendered_date = (
+                    expected_date_time,
+                    rendered_date_time,
+                )
+            self.assertEqual(expected_date, rendered_date)
         else:
-            self.assertEqual(expectedDateTime, renderedDateTime)
+            self.assertEqual(expected_date_time, rendered_date_time)
 
     @staticmethod
-    def expectedDateTime(*dateTimeArgs):
-        return render.dateTimeFunc(date.DateTime(*dateTimeArgs))
+    def expectedDateTime(*date_time_args):
+        return render.dateTimeFunc(date.DateTime(*date_time_args))
 
     @staticmethod
-    def expectedDate(*dateTimeArgs):
-        return render.dateFunc(date.DateTime(*dateTimeArgs))
+    def expectedDate(*date_time_args):
+        return render.dateFunc(date.DateTime(*date_time_args))
 
-    def testSomeRandomDateTime(self):
-        expectedDateTime = self.expectedDateTime(2010, 4, 5, 12, 54)
-        self.assertRenderedDateTime(expectedDateTime, 2010, 4, 5, 12, 54, 42)
+    def test_some_random_date_time(self):
+        expected_date_time = self.expectedDateTime(2010, 4, 5, 12, 54)
+        self.assertRenderedDateTime(expected_date_time, 2010, 4, 5, 12, 54, 42)
 
-    def testInfiniteDateTime(self):
+    def test_infinite_date_time(self):
         self.assertRenderedDateTime("")
 
-    def testStartOfDay(self):
-        expectedDateTime = self.expectedDate(2010, 4, 5)
-        self.assertRenderedDateTime(expectedDateTime, 2010, 4, 5)
+    def test_start_of_day(self):
+        expected_date_time = self.expectedDate(2010, 4, 5)
+        self.assertRenderedDateTime(expected_date_time, 2010, 4, 5)
 
-    def testEndOfDay(self):
-        expectedDateTime = self.expectedDate(2010, 4, 5)
-        self.assertRenderedDateTime(expectedDateTime, 2010, 4, 5, 23, 59, 59)
+    def test_end_of_day(self):
+        expected_date_time = self.expectedDate(2010, 4, 5)
+        self.assertRenderedDateTime(expected_date_time, 2010, 4, 5, 23, 59, 59)
 
-    def testEndOfDayWithoutSeconds(self):
-        expectedDateTime = self.expectedDate(2010, 4, 5)
-        self.assertRenderedDateTime(expectedDateTime, 2010, 4, 5, 23, 59)
+    def test_end_of_day_without_seconds(self):
+        expected_date_time = self.expectedDate(2010, 4, 5)
+        self.assertRenderedDateTime(expected_date_time, 2010, 4, 5, 23, 59)
 
-    def testAlmostStartOfDay(self):
-        expectedDateTime = self.expectedDateTime(2010, 4, 5, 0, 1)
-        self.assertRenderedDateTime(expectedDateTime, 2010, 4, 5, 0, 1, 0)
+    def test_almost_start_of_day(self):
+        expected_date_time = self.expectedDateTime(2010, 4, 5, 0, 1)
+        self.assertRenderedDateTime(expected_date_time, 2010, 4, 5, 0, 1, 0)
 
-    def testAlmostEndOfDay(self):
-        expectedDateTime = self.expectedDateTime(2010, 4, 5, 23, 58)
-        self.assertRenderedDateTime(expectedDateTime, 2010, 4, 5, 23, 58, 59)
+    def test_almost_end_of_day(self):
+        expected_date_time = self.expectedDateTime(2010, 4, 5, 23, 58)
+        self.assertRenderedDateTime(expected_date_time, 2010, 4, 5, 23, 58, 59)
 
-    def testElevenOClock(self):
-        expectedDateTime = self.expectedDateTime(2010, 4, 5, 23, 0)
-        self.assertRenderedDateTime(expectedDateTime, 2010, 4, 5, 23, 0, 0)
+    def test_eleven_o_clock(self):
+        expected_date_time = self.expectedDateTime(2010, 4, 5, 23, 0)
+        self.assertRenderedDateTime(expected_date_time, 2010, 4, 5, 23, 0, 0)
 
-    def testDateBefore1900(self):
+    def test_date_before_1900(self):
         # Don't check for '1801' since the year may be formatted on only 2
         # digits.
         result = render.dateTime(date.DateTime(1801, 4, 5, 23, 0, 0))
@@ -86,7 +89,7 @@ class RenderDateTime(test.TestCase):
 
 
 class RenderDate(test.TestCase):
-    def testRenderDateWithDateTime(self):
+    def test_render_date_with_date_time(self):
         self.assertEqual(
             render.date(date.DateTime(2000, 1, 1)),
             render.date(date.DateTime(2000, 1, 1, 10, 11, 12)),
@@ -94,86 +97,86 @@ class RenderDate(test.TestCase):
 
 
 class RenderTimeLeftTest(test.TestCase):
-    def testNoTimeLeftWhenActive(self):
-        timeLeft = date.TimeDelta()
-        self.assertEqual("0:00", render.timeLeft(timeLeft, False))
+    def test_no_time_left_when_active(self):
+        time_left = date.TimeDelta()
+        self.assertEqual("0:00", render.timeLeft(time_left, False))
 
-    def testNoTimeLeftWhenCompleted(self):
+    def test_no_time_left_when_completed(self):
         self.assertEqual("", render.timeLeft(date.TimeDelta(), True))
 
-    def testNoTimeLeftWhenNoDueDate(self):
+    def test_no_time_left_when_no_due_date(self):
         self.assertEqual("", render.timeLeft(date.TimeDelta.max, False))
 
-    def testInfiniteTimeLeftWhenCompleted(self):
+    def test_infinite_time_left_when_completed(self):
         self.assertEqual("", render.timeLeft(date.TimeDelta.max, True))
 
-    def testOneDayLeftWhenActive(self):
-        timeLeft = date.TimeDelta(days=1)
-        self.assertEqual("1 day, 0:00", render.timeLeft(timeLeft, False))
+    def test_one_day_left_when_active(self):
+        time_left = date.TimeDelta(days=1)
+        self.assertEqual("1 day, 0:00", render.timeLeft(time_left, False))
 
-    def testOneDayLeftWhenCompleted(self):
-        timeLeft = date.TimeDelta(days=1)
-        self.assertEqual("", render.timeLeft(timeLeft, True))
+    def test_one_day_left_when_completed(self):
+        time_left = date.TimeDelta(days=1)
+        self.assertEqual("", render.timeLeft(time_left, True))
 
-    def testTwoDaysLeftWhenActive(self):
-        timeLeft = date.TimeDelta(days=2)
-        self.assertEqual("2 days, 0:00", render.timeLeft(timeLeft, False))
+    def test_two_days_left_when_active(self):
+        time_left = date.TimeDelta(days=2)
+        self.assertEqual("2 days, 0:00", render.timeLeft(time_left, False))
 
-    def testTwoDaysLeftWhenCompleted(self):
-        timeLeft = date.TimeDelta(days=2)
-        self.assertEqual("", render.timeLeft(timeLeft, True))
+    def test_two_days_left_when_completed(self):
+        time_left = date.TimeDelta(days=2)
+        self.assertEqual("", render.timeLeft(time_left, True))
 
-    def testOneDayLateWhenActive(self):
-        timeLeft = date.TimeDelta(days=-1)
-        self.assertEqual("-1 day, 0:00", render.timeLeft(timeLeft, False))
+    def test_one_day_late_when_active(self):
+        time_left = date.TimeDelta(days=-1)
+        self.assertEqual("-1 day, 0:00", render.timeLeft(time_left, False))
 
-    def testOneDayLateWhenCompleted(self):
-        timeLeft = date.TimeDelta(days=-1)
-        self.assertEqual("", render.timeLeft(timeLeft, True))
+    def test_one_day_late_when_completed(self):
+        time_left = date.TimeDelta(days=-1)
+        self.assertEqual("", render.timeLeft(time_left, True))
 
-    def testOneHourLateWhenActive(self):
-        timeLeft = -date.ONE_HOUR
-        self.assertEqual("-1:00", render.timeLeft(timeLeft, False))
+    def test_one_hour_late_when_active(self):
+        time_left = -date.ONE_HOUR
+        self.assertEqual("-1:00", render.timeLeft(time_left, False))
 
-    def testOneDayHourWhenCompleted(self):
-        timeLeft = -date.ONE_HOUR
-        self.assertEqual("", render.timeLeft(timeLeft, True))
+    def test_one_day_hour_when_completed(self):
+        time_left = -date.ONE_HOUR
+        self.assertEqual("", render.timeLeft(time_left, True))
 
 
 class RenderTimeSpentTest(test.TestCase):
-    def testZeroTime(self):
+    def test_zero_time(self):
         self.assertEqual("", render.time_spent(date.TimeDelta()))
 
-    def testOneSecond(self):
+    def test_one_second(self):
         self.assertEqual("0:00:01", render.time_spent(date.ONE_SECOND))
 
-    def testTenHours(self):
+    def test_ten_hours(self):
         self.assertEqual(
             "10:00:00", render.time_spent(date.TimeDelta(hours=10))
         )
 
-    def testNegativeHours(self):
+    def test_negative_hours(self):
         self.assertEqual(
             "-1:00:00", render.time_spent(date.TimeDelta(hours=-1))
         )
 
-    def testNegativeSeconds(self):
+    def test_negative_seconds(self):
         self.assertEqual(
             "-0:00:01", render.time_spent(date.TimeDelta(seconds=-1))
         )
 
-    def testDecimal(self):
+    def test_decimal(self):
         self.assertEqual(
             "0.50",
             render.time_spent(date.TimeDelta(minutes=30), decimal=True),
         )
 
-    def testDecimalNul(self):
+    def test_decimal_nul(self):
         self.assertEqual(
             "", render.time_spent(date.TimeDelta(hours=0), decimal=True)
         )
 
-    def testDecimalNegative(self):
+    def test_decimal_negative(self):
         self.assertEqual(
             "-1.25",
             render.time_spent(
@@ -183,94 +186,94 @@ class RenderTimeSpentTest(test.TestCase):
 
 
 class RenderWeekNumberTest(test.TestCase):
-    def testWeek1(self):
+    def test_week_1(self):
         self.assertEqual(
             "2005-1", render.weekNumber(date.DateTime(2005, 1, 3))
         )
 
-    def testWeek53(self):
+    def test_week_53(self):
         self.assertEqual(
             "2004-53", render.weekNumber(date.DateTime(2004, 12, 31))
         )
 
 
 class RenderRecurrenceTest(test.TestCase):
-    def testNoRecurrence(self):
+    def test_no_recurrence(self):
         self.assertEqual("", render.recurrence(date.Recurrence()))
 
-    def testDailyRecurrence(self):
+    def test_daily_recurrence(self):
         self.assertEqual(
             _("Daily"), render.recurrence(date.Recurrence("daily"))
         )
 
-    def testWeeklyRecurrence(self):
+    def test_weekly_recurrence(self):
         self.assertEqual(
             _("Weekly"), render.recurrence(date.Recurrence("weekly"))
         )
 
-    def testMonthlyRecurrence(self):
+    def test_monthly_recurrence(self):
         self.assertEqual(
             _("Monthly"), render.recurrence(date.Recurrence("monthly"))
         )
 
-    def testYearlyRecurrence(self):
+    def test_yearly_recurrence(self):
         self.assertEqual(
             _("Yearly"), render.recurrence(date.Recurrence("yearly"))
         )
 
-    def testEveryOtherDay(self):
+    def test_every_other_day(self):
         self.assertEqual(
             _("Every other day"),
             render.recurrence(date.Recurrence("daily", amount=2)),
         )
 
-    def testEveryOtherWeek(self):
+    def test_every_other_week(self):
         self.assertEqual(
             _("Every other week"),
             render.recurrence(date.Recurrence("weekly", amount=2)),
         )
 
-    def testEveryOtherMonth(self):
+    def test_every_other_month(self):
         self.assertEqual(
             _("Every other month"),
             render.recurrence(date.Recurrence("monthly", amount=2)),
         )
 
-    def testEveryOtherYear(self):
+    def test_every_other_year(self):
         self.assertEqual(
             _("Every other year"),
             render.recurrence(date.Recurrence("yearly", amount=2)),
         )
 
-    def testThreeDaily(self):
+    def test_three_daily(self):
         self.assertEqual(
             "Every 3 days",
             render.recurrence(date.Recurrence("daily", amount=3)),
         )
 
-    def testThreeWeekly(self):
+    def test_three_weekly(self):
         self.assertEqual(
             "Every 3 weeks",
             render.recurrence(date.Recurrence("weekly", amount=3)),
         )
 
-    def testThreeMonthly(self):
+    def test_three_monthly(self):
         self.assertEqual(
             "Every 3 months", render.recurrence(date.Recurrence("monthly", 3))
         )
 
-    def testThreeYearly(self):
+    def test_three_yearly(self):
         self.assertEqual(
             "Every 3 years", render.recurrence(date.Recurrence("yearly", 3))
         )
 
 
 class RenderException(test.TestCase):
-    def testRenderException(self):
+    def test_render_exception(self):
         instance = Exception()
         self.assertEqual(str(instance), render.exception(Exception, instance))
 
-    def testRenderUnicodeDecodeError(self):
+    def test_render_unicode_decode_error(self):
         try:
             "abc".encode("utf-16").decode("utf-8")
         except UnicodeDecodeError as instance:
@@ -278,7 +281,7 @@ class RenderException(test.TestCase):
                 str(instance), render.exception(UnicodeDecodeError, instance)
             )
 
-    def testExceptionThatCannotBePrinted(self):
+    def test_exception_that_cannot_be_printed(self):
         """win32all exceptions may contain localized error
         messages. But Exception.__str__ does not handle non-ASCII
         characters in the args instance variable; calling

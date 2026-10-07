@@ -24,19 +24,19 @@ from taskcoachlib import patterns
 
 
 class TcSquareMap(tooltip.ToolTipMixin, squaremap.SquareMap):
-    def __init__(self, parent, rootNode, onSelect, onEdit, popupMenu):
+    def __init__(self, parent, root_node, on_select, on_edit, popup_menu):
         self.__selection = []
         self.getItemTooltipData = parent.getItemTooltipData
         super().__init__(
-            parent, model=rootNode, adapter=parent, highlight=False
+            parent, model=root_node, adapter=parent, highlight=False
         )
 
         self.__tip = tooltip.SimpleToolTip(self)
-        self.selectCommand = onSelect
+        self.selectCommand = on_select
         self.Bind(squaremap.EVT_SQUARE_SELECTED, self.onSelect)
-        self.editCommand = onEdit
+        self.editCommand = on_edit
         self.Bind(squaremap.EVT_SQUARE_ACTIVATED, self.onEdit)
-        self.popupMenu = popupMenu
+        self.popupMenu = popup_menu
         self.Bind(wx.EVT_RIGHT_DOWN, self.onPopup)
 
     def FontForLabels(self, dc):
@@ -92,14 +92,14 @@ class TcSquareMap(tooltip.ToolTipMixin, squaremap.SquareMap):
         )
         if item is None or item == self.model:
             return None
-        tooltipData = self.getItemTooltipData(item)
-        doShow = reduce(
+        tooltip_data = self.getItemTooltipData(item)
+        do_show = reduce(
             operator.__or__,
-            list(map(bool, [data[1] for data in tooltipData])),
+            list(map(bool, [data[1] for data in tooltip_data])),
             False,
         )
-        if doShow:
-            self.__tip.SetData(tooltipData)
+        if do_show:
+            self.__tip.SetData(tooltip_data)
             return self.__tip
         else:
             return None

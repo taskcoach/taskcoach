@@ -9,8 +9,8 @@ The AppImage build system creates a portable, self-contained Linux executable th
 
 | Component | Version | Source |
 |-----------|---------|--------|
-| Python | 3.11.x (latest from the python3.11 release tag, resolved at build time) | python-appimage (manylinux_2_28) |
-| wxPython | 4.2.5 (pinned, newest cp311 wheel in extras) | wxPython extras (Ubuntu 22.04) |
+| Python | 3.13.x (latest from the python3.13 release tag, resolved at build time) | python-appimage (manylinux_2_28) |
+| wxPython | 4.2.5 (pinned, newest cp313 wheel in extras) | wxPython extras (Ubuntu 22.04) |
 | wxWidgets | 3.2.9 | Bundled with wxPython |
 | Image libs | libjpeg, libpng, libtiff, libjbig, libwebp | Copied from build system |
 
@@ -68,24 +68,20 @@ If users report "cannot open shared object file" errors on specific distribution
 
 ## Design Decisions
 
-### Why Python 3.11 (not 3.12 or 3.13)?
+### Why Python 3.13
 
-| Factor | Python 3.11 | Python 3.12/3.13 |
-|--------|-------------|------------------|
-| wxPython wheels | Pre-built available | May require compilation |
-| Stability | Mature, well-tested | Newer, less tested with wx |
-| Compatibility | Broad library support | Some packages may lag |
-
-**Primary reason:** The wxPython extras repository provides pre-built wheels for Python 3.11 on Ubuntu 22.04 (the build platform). Using pre-built wheels:
-- Avoids lengthy compilation during CI builds
-- Ensures consistent, tested binaries
-- Reduces build failures
-
-**Future consideration:** When wxPython wheels are reliably available for Python 3.12+, upgrading is straightforward - just change the URL in `build-appimage.yml`.
+The build needs wxPython's pre-built wheel: PyPI has no Linux wheels,
+and the wxPython extras repository has them for Ubuntu 22.04, the
+build platform, for Python 3.9 to 3.14 in 4.2.5. 3.13 is the version
+the test suite runs on ([TESTING.md](TESTING.md)), and python-appimage's
+3.13 carries a current Expat
+([PERSISTENCE_XML.md](PERSISTENCE_XML.md#expat-by-package)). The
+AppImage used 3.11 until 2026-10-06, from when the extras had no newer
+wheels.
 
 ### Why wxPython is pinned to 4.2.5
 
-The wxPython extras repository for Ubuntu 22.04 provides cp311 wheels only up to 4.2.5 (no 4.3 Linux wheels exist), and PyPI ships no Linux wheels at all. An unpinned `pip install wxPython` therefore resolves to the newest PyPI sdist (4.3+) and tries to compile wxWidgets from source, which fails on the bundled AppImage Python (no python-config or headers) after several minutes. The build pins `wxPython==4.2.5` with `--only-binary wxPython` so it always installs the pre-built wheel and fails fast if that wheel ever disappears. To upgrade wxPython, check the extras repository for a newer cp311 wheel first and bump the pin.
+The wxPython extras repository for Ubuntu 22.04 provides wheels only up to 4.2.5 (no 4.3 Linux wheels exist), and PyPI ships no Linux wheels at all. An unpinned `pip install wxPython` therefore resolves to the newest PyPI sdist (4.3+) and tries to compile wxWidgets from source, which fails on the bundled AppImage Python (no python-config or headers) after several minutes. The build pins `wxPython==4.2.5` with `--only-binary wxPython` so it always installs the pre-built wheel and fails fast if that wheel ever disappears. To upgrade wxPython, check the extras repository for a newer cp313 wheel first and bump the pin.
 
 ### Why manylinux_2_28?
 
@@ -121,9 +117,9 @@ TaskCoach.AppDir/
 ├── taskcoach.desktop   # Desktop entry
 ├── taskcoach.png       # App icon
 ├── opt/
-│   └── python3.11/     # Bundled Python
-│       ├── bin/python3.11
-│       └── lib/python3.11/site-packages/
+│   └── python3.13/     # Bundled Python
+│       ├── bin/python3.13
+│       └── lib/python3.13/site-packages/
 └── usr/
     ├── lib/            # Bundled shared libraries
     │   ├── libjpeg.so.8

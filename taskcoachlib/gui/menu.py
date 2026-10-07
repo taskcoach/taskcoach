@@ -63,8 +63,8 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
 
     def clearMenu(self):
         """Remove all menu items."""
-        for menuItem in self.MenuItems:
-            self.DestroyItem(menuItem)
+        for menu_item in self.MenuItems:
+            self.DestroyItem(menu_item)
         for observer in self._observers:
             observer.removeInstance()
         self._observers = list()
@@ -106,15 +106,15 @@ class Menu(wx.Menu, uicommand.UICommandContainerMixin):
     appendUICommand = append_ui_command
 
     def appendMenu(self, text, subMenu, icon_id=None):
-        subMenuItem = wx.MenuItem(
+        sub_menu_item = wx.MenuItem(
             self, id=IdProvider.get(), text=text, subMenu=subMenu
         )
         if icon_id:
-            subMenuItem.SetBitmap(
+            sub_menu_item.SetBitmap(
                 icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
             )
         self._accels.extend(subMenu.accelerators())
-        self.Append(subMenuItem)
+        self.Append(sub_menu_item)
 
     def invokeMenuItem(self, menuItem):
         """Programmatically invoke the menuItem. This is mainly for testing
@@ -212,18 +212,18 @@ class DynamicMenuThatGetsUICommandsFromViewer(DynamicMenu):
         self._window.Bind(wx.EVT_MENU_OPEN, self.on_update_menu)
 
     def updateMenuItems(self):
-        newCommands = self.getUICommands()
+        new_commands = self.getUICommands()
         try:
-            if newCommands == self._uiCommands:
+            if new_commands == self._uiCommands:
                 return
         except wx._core.PyDeadObjectError:  # pylint: disable=W0212
             pass  # Old viewer was closed
         self.clearMenu()
-        self.fillMenu(newCommands)
-        self._uiCommands = newCommands
+        self.fillMenu(new_commands)
+        self._uiCommands = new_commands
 
-    def fillMenu(self, uiCommands):
-        self.appendUICommands(*uiCommands)  # pylint: disable=W0142
+    def fillMenu(self, ui_commands):
+        self.appendUICommands(*ui_commands)  # pylint: disable=W0142
 
     def getUICommands(self):
         raise NotImplementedError
@@ -382,7 +382,6 @@ class ExportMenu(Menu):
             uicommand.FileExportAsHTML(**kwargs),
             uicommand.FileExportAsCSV(**kwargs),
             uicommand.FileExportAsICalendar(**kwargs),
-            uicommand.FileExportAsTodoTxt(**kwargs),
         )
 
 
@@ -391,7 +390,6 @@ class ImportMenu(Menu):
         super().__init__(mainwindow)
         self.appendUICommands(
             uicommand.FileImportCSV(iocontroller=iocontroller),
-            uicommand.FileImportTodoTxt(iocontroller=iocontroller),
         )
 
 
@@ -419,8 +417,8 @@ class TaskTemplateMenu(DynamicMenu):
         self.clearMenu()
         self.fillMenu(self.getUICommands())
 
-    def fillMenu(self, uiCommands):
-        self.appendUICommands(*uiCommands)  # pylint: disable=W0142
+    def fillMenu(self, ui_commands):
+        self.appendUICommands(*ui_commands)  # pylint: disable=W0142
 
     def getUICommands(self):
         path = settings.templates_dir()
@@ -464,14 +462,14 @@ class ViewMenu(Menu):
             ViewViewerMenu(mainwindow, viewer_container, task_file),
             "nuvola_actions_tab-new-background",
         )
-        activateNextViewer = uicommand.ActivateViewer(
+        activate_next_viewer = uicommand.ActivateViewer(
             viewer=viewer_container,
             menu_text=_("&Activate next viewer\tCtrl+PgDn"),
             help_text=help.viewNextViewer,
             forward=True,
             icon_id="nuvola_actions_tab-duplicate",
         )
-        activatePreviousViewer = uicommand.ActivateViewer(
+        activate_previous_viewer = uicommand.ActivateViewer(
             viewer=viewer_container,
             menu_text=_("Activate &previous viewer\tCtrl+PgUp"),
             help_text=help.viewPreviousViewer,
@@ -479,8 +477,8 @@ class ViewMenu(Menu):
             icon_id="taskcoach_actions_tab-duplicate-left",
         )
         self.appendUICommands(
-            activateNextViewer,
-            activatePreviousViewer,
+            activate_next_viewer,
+            activate_previous_viewer,
             uicommand.RenameViewer(viewer=viewer_container),
             None,
         )
@@ -511,11 +509,11 @@ class ViewMenu(Menu):
 class ViewViewerMenu(Menu):
     def __init__(self, mainwindow, viewer_container, task_file):
         super().__init__(mainwindow)
-        ViewViewer = uicommand.ViewViewer
+        view_viewer = uicommand.ViewViewer
         kwargs = dict(viewer=viewer_container, taskFile=task_file)
         # pylint: disable=W0142
-        viewViewerCommands = [
-            ViewViewer(
+        view_viewer_commands = [
+            view_viewer(
                 menu_text=_("&Task"),
                 help_text=_(
                     "Open a new tab with a viewer that displays tasks"
@@ -523,7 +521,7 @@ class ViewViewerMenu(Menu):
                 viewerClass=taskcoachlib.gui.viewer.TaskViewer,
                 **kwargs
             ),
-            ViewViewer(
+            view_viewer(
                 menu_text=_("Task &statistics"),
                 help_text=_(
                     "Open a new tab with a viewer that displays task statistics"
@@ -534,8 +532,8 @@ class ViewViewerMenu(Menu):
         ]
         # Add square map viewer only if squaremap is available
         if taskcoachlib.gui.viewer.SquareTaskViewer is not None:
-            viewViewerCommands.append(
-                ViewViewer(
+            view_viewer_commands.append(
+                view_viewer(
                     menu_text=_("Task &square map"),
                     help_text=_(
                         "Open a new tab with a viewer that displays tasks in a square map"
@@ -544,8 +542,8 @@ class ViewViewerMenu(Menu):
                     **kwargs
                 )
             )
-        viewViewerCommands += [
-            ViewViewer(
+        view_viewer_commands += [
+            view_viewer(
                 menu_text=_("T&imeline"),
                 help_text=_(
                     "Open a new tab with a viewer that displays a timeline of tasks and effort"
@@ -553,7 +551,7 @@ class ViewViewerMenu(Menu):
                 viewerClass=taskcoachlib.gui.viewer.TimelineViewer,
                 **kwargs
             ),
-            ViewViewer(
+            view_viewer(
                 menu_text=_("&Calendar"),
                 help_text=_(
                     "Open a new tab with a viewer that displays tasks in a calendar"
@@ -561,7 +559,7 @@ class ViewViewerMenu(Menu):
                 viewerClass=taskcoachlib.gui.viewer.CalendarViewer,
                 **kwargs
             ),
-            ViewViewer(
+            view_viewer(
                 menu_text=_("&Hierarchical calendar"),
                 help_text=_(
                     "Open a new tab with a viewer that displays task hierarchy in a calendar"
@@ -569,7 +567,7 @@ class ViewViewerMenu(Menu):
                 viewerClass=taskcoachlib.gui.viewer.HierarchicalCalendarViewer,
                 **kwargs
             ),
-            ViewViewer(
+            view_viewer(
                 menu_text=_("&Category"),
                 help_text=_(
                     "Open a new tab with a viewer that displays categories"
@@ -577,7 +575,7 @@ class ViewViewerMenu(Menu):
                 viewerClass=taskcoachlib.gui.viewer.CategoryViewer,
                 **kwargs
             ),
-            ViewViewer(
+            view_viewer(
                 menu_text=_("&Effort"),
                 help_text=_(
                     "Open a new tab with a viewer that displays efforts"
@@ -593,7 +591,7 @@ class ViewViewerMenu(Menu):
                 viewerClass=taskcoachlib.gui.viewer.EffortViewer,
                 **kwargs
             ),
-            ViewViewer(
+            view_viewer(
                 menu_text=_("&Note"),
                 help_text=_(
                     "Open a new tab with a viewer that displays notes"
@@ -602,7 +600,7 @@ class ViewViewerMenu(Menu):
                 **kwargs
             ),
         ]
-        self.appendUICommands(*viewViewerCommands)
+        self.appendUICommands(*view_viewer_commands)
 
 
 class ModeMenu(DynamicMenuThatGetsUICommandsFromViewer):
@@ -617,7 +615,7 @@ class ModeMenu(DynamicMenuThatGetsUICommandsFromViewer):
 
 class FilterMenu(DynamicMenuThatGetsUICommandsFromViewer):
     def enabled(self):
-        return self._window.viewer.isFilterable() and bool(
+        return self._window.viewer.is_filterable() and bool(
             self._window.viewer.getFilterUICommands()
         )
 
@@ -652,29 +650,29 @@ class RoundingMenu(DynamicMenuThatGetsUICommandsFromViewer):
 class ToolBarMenu(Menu):
     def __init__(self, mainwindow):
         super().__init__(mainwindow)
-        toolbarCommands = []
-        _S = MAIN_TOOLBAR_ICON_SIZE_SMALL
-        _M = MAIN_TOOLBAR_ICON_SIZE_MEDIUM
-        _L = MAIN_TOOLBAR_ICON_SIZE_LARGE
+        toolbar_commands = []
+        _s = MAIN_TOOLBAR_ICON_SIZE_SMALL
+        _m = MAIN_TOOLBAR_ICON_SIZE_MEDIUM
+        _l = MAIN_TOOLBAR_ICON_SIZE_LARGE
         for value, menu_text, help_text in [
             (None, _("&Hide"), _("Hide the toolbar")),
             (
-                (_S, _S),
+                (_s, _s),
                 _("&Small images"),
-                _("Small images (%dx%d) on the toolbar") % (_S, _S),
+                _("Small images (%dx%d) on the toolbar") % (_s, _s),
             ),
             (
-                (_M, _M),
+                (_m, _m),
                 _("&Medium-sized images"),
-                _("Medium-sized images (%dx%d) on the toolbar") % (_M, _M),
+                _("Medium-sized images (%dx%d) on the toolbar") % (_m, _m),
             ),
             (
-                (_L, _L),
+                (_l, _l),
                 _("&Large images"),
-                _("Large images (%dx%d) on the toolbar") % (_L, _L),
+                _("Large images (%dx%d) on the toolbar") % (_l, _l),
             ),
         ]:
-            toolbarCommands.append(
+            toolbar_commands.append(
                 uicommand.UIRadioCommand(
                     setting="toolbar",
                     value=value,
@@ -683,7 +681,7 @@ class ToolBarMenu(Menu):
                 )
             )
         # pylint: disable=W0142
-        self.appendUICommands(*toolbarCommands)
+        self.appendUICommands(*toolbar_commands)
 
 
 class NewMenu(Menu):
@@ -847,13 +845,13 @@ class ToggleCategoryMenu(DynamicMenu):
         super().__init__(mainwindow)
 
     def register_for_menu_update(self):
-        for eventType in (
+        for event_type in (
             self.categories.addItemEventType(),
             self.categories.removeItemEventType(),
         ):
             patterns.Publisher().registerObserver(
                 self.on_update_menu,
-                eventType=eventType,
+                eventType=event_type,
                 eventSource=self.categories,
             )
         patterns.Publisher().registerObserver(
@@ -863,28 +861,30 @@ class ToggleCategoryMenu(DynamicMenu):
 
     def updateMenuItems(self):
         self.clearMenu()
-        rootItems = self.categories.rootItems()
-        if rootItems:
-            self.addMenuItemsForCategories(rootItems, self)
+        root_items = self.categories.rootItems()
+        if root_items:
+            self.addMenuItemsForCategories(root_items, self)
         else:
-            menuItem = self.Append(wx.ID_ANY, _("(No categories defined yet)"))
-            menuItem.Enable(False)
+            menu_item = self.Append(
+                wx.ID_ANY, _("(No categories defined yet)")
+            )
+            menu_item.Enable(False)
 
     def addMenuItemsForCategories(self, categories, menu):
         # pylint: disable=W0621
         categories = categories[:]
         categories.sort(key=lambda category: category.subject().lower())
         for category in categories:
-            uiCommand = uicommand.ToggleCategory(
+            ui_command = uicommand.ToggleCategory(
                 category=category, viewer=self.viewer
             )
-            uiCommand.add_to_menu(menu, self._window)
+            ui_command.add_to_menu(menu, self._window)
             if category.children():
-                subMenu = Menu(self._window)
-                self.addMenuItemsForCategories(category.children(), subMenu)
+                sub_menu = Menu(self._window)
+                self.addMenuItemsForCategories(category.children(), sub_menu)
                 menu.appendMenu(
                     category.subject(),
-                    subMenu,
+                    sub_menu,
                     "taskcoach_actions_arrow_down_right",
                 )
 
@@ -1125,8 +1125,8 @@ class ColumnPopupMenuMixin(object):
     indicate which column the user clicked. See
     widgets._CtrlWithColumnPopupMenuMixin."""
 
-    def __setColumn(self, columnIndex):
-        self.__columnIndex = columnIndex  # pylint: disable=W0201
+    def __setColumn(self, column_index):
+        self.__columnIndex = column_index  # pylint: disable=W0201
 
     def __getColumn(self):
         return self.__columnIndex

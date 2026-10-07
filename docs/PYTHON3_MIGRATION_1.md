@@ -41,6 +41,8 @@ pass
 
 **Why it failed:** `LoadPerspective()` was restoring a stale AuiNotebook perspective that contained broken sizing information from previous sessions.
 
+**Re-enabled 2026-10-06** (P93 in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)): with the other three layers fixed, a loaded layout no longer locks the editor's size (checked in the app and by `EditorLayoutTest` with `EditorFirstSizeTest`).
+
 #### Layer 2: Viewer.initLayout() (base.py:212)
 ```python
 # BEFORE - Broken

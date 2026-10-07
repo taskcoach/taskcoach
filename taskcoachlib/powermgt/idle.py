@@ -57,6 +57,10 @@ def _summarize_exception(exc):
 
 if operating_system.isGTK():
 
+    # A D-Bus idle reading is asked each second on the window's thread:
+    # an answer takes milliseconds, and the default wait is 25 s
+    _DBUS_TIMEOUT_MS = 1000
+
     class XScreenSaverInfo(Structure):
         _fields_ = [
             ("window", c_ulong),
@@ -70,12 +74,11 @@ if operating_system.isGTK():
     class LinuxIdleQuery(object):
         """Query idle time on Linux.
 
-        Tries multiple methods in order:
+        Tries these methods in order (docs/IDLE.md):
         1. DBus org.gnome.Mutter.IdleMonitor (GNOME on Wayland/X11)
-        2. DBus org.freedesktop.ScreenSaver (KDE Plasma 5)
-        3. ext-idle-notify-v1 Wayland protocol (KDE Plasma 6,
+        2. X11 MIT-SCREEN-SAVER extension (any X11 session)
+        3. ext-idle-notify-v1 Wayland protocol (KDE Plasma 5.27+,
            wlroots, COSMIC) via pywayland
-        4. X11 MIT-SCREEN-SAVER extension (legacy X11)
 
         Uses lazy initialization to avoid loading libraries until
         actually needed. This prevents warnings when the idle detection
@@ -90,14 +93,14 @@ if operating_system.isGTK():
 
         def __init__(self):
             self._initialized = False
-            # 'dbus_mutter', 'dbus_screensaver', 'ext_idle_notify',
-            # 'x11_mit_screensaver', or None
+            # 'dbus_mutter', 'x11_mit_screensaver', 'ext_idle_notify'
+            # or None
             self._method = None
             self._warned = False
             self._probe_log = []  # list of (name, ok, detail)
             self.dpy = None
-            self._dbus_proxy = None
-            self._dbus_iface = None
+            self._dbus = None
+            self._reading_failed = False  # The last GNOME reading
             # ext-idle-notify-v1 state. _idle_since is the wall-clock
             # time the compositor reported the seat went idle, or
             # None while active. The idled/resumed handlers and the
@@ -113,45 +116,55 @@ if operating_system.isGTK():
             self._wl_seat = None
             self._wl_notifier = None
 
+        def _gnome_idle_seconds(self):
+            """GNOME's reading; a failed one counts as not idle, and
+            the next is asked again (GNOME Shell restarting)."""
+            try:
+                idle_seconds = self._read_mutter() / 1000
+            except Exception as e:
+                if not self._reading_failed:
+                    self._reading_failed = True
+                    log_step(
+                        "GNOME idle monitor not read (%s): not idle"
+                        % _summarize_exception(e),
+                        prefix="IDLE",
+                    )
+                return 0
+            if self._reading_failed:
+                self._reading_failed = False
+                log_step("GNOME idle monitor read again", prefix="IDLE")
+            return idle_seconds
+
         def _try_dbus_mutter(self):
-            """Try GNOME Mutter IdleMonitor via DBus. Returns (ok, detail)."""
+            """Try GNOME Mutter IdleMonitor via DBus. Returns (ok,
+            detail)."""
             try:
-                import dbus
+                from gi.repository import Gio
 
-                bus = dbus.SessionBus()
-                proxy = bus.get_object(
-                    "org.gnome.Mutter.IdleMonitor",
-                    "/org/gnome/Mutter/IdleMonitor/Core",
-                )
-                iface = dbus.Interface(proxy, "org.gnome.Mutter.IdleMonitor")
-                # Test that it works
-                iface.GetIdletime()
-                self._dbus_proxy = proxy
-                self._dbus_iface = iface
+                self._dbus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+                self._read_mutter()  # Test that it works
                 return True, None
             except Exception as e:
                 return False, _summarize_exception(e)
 
-        def _try_dbus_screensaver(self):
-            """Try freedesktop ScreenSaver via DBus (KDE).
+        def _read_mutter(self):
+            """Idle milliseconds, asked of whoever owns the name now, so
+            a restarted GNOME Shell still answers; a hung one costs at
+            most the timeout."""
+            from gi.repository import Gio, GLib
 
-            Returns (ok, detail).
-            """
-            try:
-                import dbus
-
-                bus = dbus.SessionBus()
-                proxy = bus.get_object(
-                    "org.freedesktop.ScreenSaver", "/ScreenSaver"
-                )
-                iface = dbus.Interface(proxy, "org.freedesktop.ScreenSaver")
-                # Test that it works
-                iface.GetSessionIdleTime()
-                self._dbus_proxy = proxy
-                self._dbus_iface = iface
-                return True, None
-            except Exception as e:
-                return False, _summarize_exception(e)
+            answer = self._dbus.call_sync(
+                "org.gnome.Mutter.IdleMonitor",
+                "/org/gnome/Mutter/IdleMonitor/Core",
+                "org.gnome.Mutter.IdleMonitor",
+                "GetIdletime",
+                None,
+                GLib.VariantType("(t)"),
+                Gio.DBusCallFlags.NONE,
+                _DBUS_TIMEOUT_MS,
+                None,
+            )
+            return answer.unpack()[0]
 
         def _wl_on_idled(self, notification):
             """ext-idle-notify-v1 'idled' event (main thread)."""
@@ -340,14 +353,9 @@ if operating_system.isGTK():
             self._initialized = True
 
             # Try methods in order of preference; record outcome of
-            # each. x11_mit_screensaver is probed before the DBus
-            # screensaver because on an X11 session it queries the X
-            # server's real input idle directly, whereas KDE Plasma 6
-            # answers org.freedesktop.ScreenSaver.GetSessionIdleTime
-            # with a bogus non-zero value (instead of raising), which
-            # would otherwise be wrongly selected and make the notice
-            # fire constantly. dbus_screensaver is kept last as a
-            # fallback for the few Plasma 5 setups that rely on it.
+            # each. No org.freedesktop.ScreenSaver: where the others
+            # fail it gives no true reading (0 on Plasma 5.24 Wayland,
+            # errors elsewhere; docs/IDLE.md)
             ok, detail = self._try_dbus_mutter()
             self._probe_log.append(("dbus_mutter", ok, detail))
             if ok:
@@ -364,12 +372,6 @@ if operating_system.isGTK():
             self._probe_log.append(("ext_idle_notify", ok, detail))
             if ok:
                 self._method = "ext_idle_notify"
-                return
-
-            ok, detail = self._try_dbus_screensaver()
-            self._probe_log.append(("dbus_screensaver", ok, detail))
-            if ok:
-                self._method = "dbus_screensaver"
                 return
 
             self._method = None
@@ -390,17 +392,7 @@ if operating_system.isGTK():
             self._initialize()
 
             if self._method == "dbus_mutter":
-                try:
-                    # Returns milliseconds
-                    return self._dbus_iface.GetIdletime() / 1000
-                except Exception:
-                    pass
-            elif self._method == "dbus_screensaver":
-                try:
-                    # Returns seconds
-                    return self._dbus_iface.GetSessionIdleTime()
-                except Exception:
-                    pass
+                return self._gnome_idle_seconds()
             elif self._method == "ext_idle_notify":
                 self._wl_pump()
                 since = self._idle_since

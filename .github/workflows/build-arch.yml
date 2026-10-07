@@ -73,7 +73,6 @@ jobs:
             python-wxpython \
             python-dateutil \
             python-chardet \
-            python-keyring \
             libxss \
             xdg-utils
 

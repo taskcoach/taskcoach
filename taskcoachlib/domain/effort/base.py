@@ -84,7 +84,7 @@ class BaseEffort(object):
         return False  # Are we a detail effort or a total effort? For sorting.
 
     @classmethod
-    def trackingChangedEventType(class_):
+    def trackingChangedEventType(cls):
         return "effort.track"
 
     def send_duration_changed(self):
@@ -93,7 +93,7 @@ class BaseEffort(object):
         ).send()
 
     @classmethod
-    def durationChangedEventType(class_):
+    def durationChangedEventType(cls):
         return "effort.duration"
 
     def send_revenue_changed(self):
@@ -102,5 +102,5 @@ class BaseEffort(object):
         ).send()
 
     @classmethod
-    def revenueChangedEventType(class_):
+    def revenueChangedEventType(cls):
         return "effort.revenue"

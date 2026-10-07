@@ -21,6 +21,7 @@ import os
 import shutil
 import stat
 import tempfile
+from unittest import mock
 import wx
 import test
 from taskcoachlib import command, patterns, persistence
@@ -101,7 +102,7 @@ class TaskFileTestCase(test.TestCase):
 
 
 class TaskFileTest(TaskFileTestCase):
-    def testIsEmptyInitially(self):
+    def test_is_empty_initially(self):
         self.assertTrue(self.emptyTaskFile.isEmpty())
 
     def test_owners_of_a_note_of_an_attachment(self):
@@ -119,118 +120,118 @@ class TaskFileTest(TaskFileTestCase):
             ),
         )
 
-    def testHasNoTasksInitially(self):
+    def test_has_no_tasks_initially(self):
         self.assertFalse(self.emptyTaskFile.tasks())
 
-    def testHasNoCategoriesInitially(self):
+    def test_has_no_categories_initially(self):
         self.assertFalse(self.emptyTaskFile.categories())
 
-    def testHasNoNotesInitially(self):
+    def test_has_no_notes_initially(self):
         self.assertFalse(self.emptyTaskFile.notes())
 
-    def testHasNoEffortsInitially(self):
+    def test_has_no_efforts_initially(self):
         self.assertFalse(self.emptyTaskFile.efforts())
 
-    def testFileNameAfterCreate(self):
+    def test_file_name_after_create(self):
         self.assertEqual("", self.taskFile.filename())
 
-    def testFileName(self):
+    def test_file_name(self):
         self.taskFile.setFilename(self.filename)
         self.assertEqual(self.filename, self.taskFile.filename())
 
-    def testLoadWithoutFilename(self):
+    def test_load_without_filename(self):
         self.taskFile.load()
         self.assertTrue(self.taskFile.isEmpty())
 
-    def testLoadFromNotExistingFile(self):
+    def test_load_from_not_existing_file(self):
         self.taskFile.setFilename(self.filename)
         self.assertFalse(os.path.isfile(self.taskFile.filename()))
         self.taskFile.load()
         self.assertTrue(self.taskFile.isEmpty())
 
-    def testClose_EmptyTaskFileWithoutFilename(self):
+    def test_close_empty_task_file_without_filename(self):
         self.taskFile.close()
         self.assertEqual("", self.taskFile.filename())
         self.assertTrue(self.taskFile.isEmpty())
 
-    def testClose_EmptyTaskFileWithFilename(self):
+    def test_close_empty_task_file_with_filename(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.close()
         self.assertEqual("", self.taskFile.filename())
         self.assertTrue(self.taskFile.isEmpty())
 
-    def testClose_TaskFileWithTasksDeletesTasks(self):
+    def test_close_task_file_with_tasks_deletes_tasks(self):
         self.taskFile.close()
         self.assertTrue(self.taskFile.isEmpty())
 
-    def testClose_TaskFileWithCategoriesDeletesCategories(self):
+    def test_close_task_file_with_categories_deletes_categories(self):
         self.taskFile.categories().append(self.category)
         self.taskFile.close()
         self.assertTrue(self.taskFile.isEmpty())
 
-    def testClose_TaskFileWithNotesDeletesNotes(self):
+    def test_close_task_file_with_notes_deletes_notes(self):
         self.taskFile.notes().append(note.Note())
         self.taskFile.close()
         self.assertTrue(self.taskFile.isEmpty())
 
-    def testDoesNotNeedSave_Initial(self):
+    def test_does_not_need_save_initial(self):
         self.assertFalse(self.emptyTaskFile.need_save())
 
-    def testDoesNotNeedSave_AfterSetFileName(self):
+    def test_does_not_need_save_after_set_file_name(self):
         self.emptyTaskFile.setFilename(self.filename)
         self.assertFalse(self.emptyTaskFile.need_save())
 
-    def testLastFilename_IsEmptyInitially(self):
+    def test_last_filename_is_empty_initially(self):
         self.assertEqual("", self.taskFile.lastFilename())
 
-    def testLastFilename_EqualsCurrentFilenameAfterSetFilename(self):
+    def test_last_filename_equals_current_filename_after_set_filename(self):
         self.taskFile.setFilename(self.filename)
         self.assertEqual(self.filename, self.taskFile.lastFilename())
 
-    def testLastFilename_EqualsPreviousFilenameAfterClose(self):
+    def test_last_filename_equals_previous_filename_after_close(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.close()
         self.assertEqual(self.filename, self.taskFile.lastFilename())
 
-    def testLastFilename_IsEmptyAfterClosingTwice(self):
+    def test_last_filename_is_empty_after_closing_twice(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.close()
         self.taskFile.close()
         self.assertEqual(self.filename, self.taskFile.lastFilename())
 
-    def testLastFilename_EqualsCurrentFilenameAfterSaveAs(self):
+    def test_last_filename_equals_current_filename_after_save_as(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.saveas(self.filename2)
         self.assertEqual(self.filename2, self.taskFile.lastFilename())
 
-    def testTaskFileContainsTask(self):
+    def test_task_file_contains_task(self):
         self.assertTrue(self.task in self.taskFile)
 
-    def testTaskFileDoesNotContainTask(self):
+    def test_task_file_does_not_contain_task(self):
         self.assertFalse(task.Task() in self.taskFile)
 
-    def testTaskFileContainsNote(self):
-        newNote = note.Note()
-        self.taskFile.notes().append(newNote)
-        self.assertTrue(newNote in self.taskFile)
+    def test_task_file_contains_note(self):
+        new_note = note.Note()
+        self.taskFile.notes().append(new_note)
+        self.assertTrue(new_note in self.taskFile)
 
-    def testTaskFileDoesNotContainNote(self):
+    def test_task_file_does_not_contain_note(self):
         self.assertFalse(note.Note() in self.taskFile)
 
-    def testTaskFileContainsCategory(self):
-        newCategory = category.Category("Category")
-        self.taskFile.categories().append(newCategory)
-        self.assertTrue(newCategory in self.taskFile)
+    def test_task_file_contains_category(self):
+        new_category = category.Category("Category")
+        self.taskFile.categories().append(new_category)
+        self.assertTrue(new_category in self.taskFile)
 
-    def testTaskFileDoesNotContainCategory(self):
+    def test_task_file_does_not_contain_category(self):
         self.assertFalse(category.Category("Category") in self.taskFile)
 
-    def testTaskFileContainsEffort(self):
-        newEffort = effort.Effort(self.task)
-        self.task.addEffort(newEffort)
-        self.assertTrue(newEffort in self.taskFile)
+    def test_task_file_contains_effort(self):
+        new_effort = effort.Effort(self.task)
+        self.task.addEffort(new_effort)
+        self.assertTrue(new_effort in self.taskFile)
 
-    def testTaskFileDoesNotContainEffort(self):
+    def test_task_file_does_not_contain_effort(self):
         self.assertFalse(effort.Effort(self.task) in self.taskFile)
 
 
@@ -240,38 +241,38 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
 
-    def testSetupFileDoesNotNeedSave(self):
+    def test_setup_file_does_not_need_save(self):
         self.assertFalse(self.taskFile.need_save())
 
-    def testNeedSave_AfterNewTaskAdded(self):
-        newTask = task.Task(subject="Task")
-        self.emptyTaskFile.tasks().append(newTask)
+    def test_need_save_after_new_task_added(self):
+        new_task = task.Task(subject="Task")
+        self.emptyTaskFile.tasks().append(new_task)
         self.assertTrue(self.emptyTaskFile.need_save())
 
-    def testNeedSave_AfterNewNoteAdded(self):
-        newNote = note.Note(subject="Note")
-        self.emptyTaskFile.notes().append(newNote)
+    def test_need_save_after_new_note_added(self):
+        new_note = note.Note(subject="Note")
+        self.emptyTaskFile.notes().append(new_note)
         self.assertTrue(self.emptyTaskFile.need_save())
 
-    def testNeedSave_AfterNoteRemoved(self):
+    def test_need_save_after_note_removed(self):
         self.taskFile.notes().remove(self.note)
         self.assertTrue(self.taskFile.need_save())
 
-    def testDoesNotNeedSave_AfterSave(self):
+    def test_does_not_need_save_after_save(self):
         self.emptyTaskFile.tasks().append(task.Task())
         self.emptyTaskFile.setFilename(self.filename)
         self.emptyTaskFile.save()
         self.assertFalse(self.emptyTaskFile.need_save())
 
-    def testDoesNotNeedSave_AfterClose(self):
+    def test_does_not_need_save_after_close(self):
         self.taskFile.close()
         self.assertFalse(self.taskFile.need_save())
 
-    def testNeedSave_AfterMerge(self):
+    def test_need_save_after_merge(self):
         self.emptyTaskFile.merge(self.filename)
         self.assertTrue(self.emptyTaskFile.need_save())
 
-    def testDoesNotNeedSave_AfterLoad(self):
+    def test_does_not_need_save_after_load(self):
         self.taskFile.tasks().append(task.Task())
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
@@ -329,17 +330,17 @@ class DirtyTaskFileTest(TaskFileTestCase):
             ),
         )
 
-    def testNeedSave_AfterEffortAdded(self):
+    def test_need_save_after_effort_added(self):
         self.task.addEffort(effort.Effort(self.task, None, None))
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEffortRemoved(self):
-        newEffort = effort.Effort(self.task, None, None)
-        self.task.addEffort(newEffort)
+    def test_need_save_after_effort_removed(self):
+        new_effort = effort.Effort(self.task, None, None)
+        self.task.addEffort(new_effort)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.assertFalse(self.taskFile.need_save())
-        self.task.removeEffort(newEffort)
+        self.task.removeEffort(new_effort)
         self.assertTrue(self.taskFile.need_save())
 
     def edit_subject(self):
@@ -398,27 +399,27 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.task.setPlannedDurationMode("adjdue")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditTaskSubject(self):
+    def test_need_save_after_edit_task_subject(self):
         self.task.setSubject("new subject")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditTaskDescription(self):
+    def test_need_save_after_edit_task_description(self):
         self.task.setDescription("new description")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditTaskForegroundColor(self):
+    def test_need_save_after_edit_task_foreground_color(self):
         self.task.setForegroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditTaskBackgroundColor(self):
+    def test_need_save_after_edit_task_background_color(self):
         self.task.setBackgroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditTaskPlannedStartDateTime(self):
+    def test_need_save_after_edit_task_planned_start_date_time(self):
         self.task.set_planned_start_date_time(date.Now() + date.ONE_HOUR)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditTaskDueDate(self):
+    def test_need_save_after_edit_task_due_date(self):
         self.task.set_due_date_time(date.Tomorrow())
         self.assertTrue(self.taskFile.need_save())
 
@@ -430,36 +431,36 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.assertEqual(task.status.overdue, self.task.computedStatus())
         self.assertFalse(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditTaskCompletionDate(self):
+    def test_need_save_after_edit_task_completion_date(self):
         self.task.set_completion_date_time(date.Now())
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditPercentageComplete(self):
+    def test_need_save_after_edit_percentage_complete(self):
         self.task.setPercentageComplete(50)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditEffortDescription(self):
+    def test_need_save_after_edit_effort_description(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.assertFalse(self.taskFile.need_save())
         self.effort.setDescription("new description")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditEffortStart(self):
+    def test_need_save_after_edit_effort_start(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.assertFalse(self.taskFile.need_save())
         self.effort.setStart(date.DateTime(2005, 1, 1, 10, 0, 0))
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditEffortStop(self):
+    def test_need_save_after_edit_effort_stop(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.assertFalse(self.taskFile.need_save())
         self.effort.setStop(date.DateTime(2005, 1, 1, 10, 0, 0))
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditEffortTask(self):
+    def test_need_save_after_edit_effort_task(self):
         task2 = task.Task()
         self.taskFile.tasks().append(task2)
         self.taskFile.setFilename(self.filename)
@@ -468,25 +469,25 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.effort.set_task(task2)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditEffortForegroundColor(self):
+    def test_need_save_after_edit_effort_foreground_color(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.assertFalse(self.taskFile.need_save())
         self.effort.setForegroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterEditEffortBackgroundColor(self):
+    def test_need_save_after_edit_effort_background_color(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.assertFalse(self.taskFile.need_save())
         self.effort.setBackgroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterTaskAddedToCategory(self):
+    def test_need_save_after_task_added_to_category(self):
         self.task.addCategory(self.category)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterTaskRemovedFromCategory(self):
+    def test_need_save_after_task_removed_from_category(self):
         self.task.addCategory(self.category)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
@@ -494,11 +495,11 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.task.removeCategory(self.category)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterNoteAddedToCategory(self):
+    def test_need_save_after_note_added_to_category(self):
         self.note.addCategory(self.category)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterNoteRemovedFromCategory(self):
+    def test_need_save_after_note_removed_from_category(self):
         self.note.addCategory(self.category)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
@@ -506,37 +507,37 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.note.removeCategory(self.category)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterAddingNoteToTask(self):
+    def test_need_save_after_adding_note_to_task(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.task.addNote(note.Note(subject="Note"))  # pylint: disable=E1101
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterTaskNoteChanged(self):
+    def test_need_save_after_task_note_changed(self):
         self.taskFile.setFilename(self.filename)
-        newNote = note.Note(subject="Note")
-        self.task.addNote(newNote)  # pylint: disable=E1101
+        new_note = note.Note(subject="Note")
+        self.task.addNote(new_note)  # pylint: disable=E1101
         self.taskFile.save()
-        newNote.setSubject("New subject")
+        new_note.setSubject("New subject")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangePriority(self):
+    def test_need_save_after_change_priority(self):
         self.task.setPriority(10)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangeBudget(self):
+    def test_need_save_after_change_budget(self):
         self.task.set_budget(date.TimeDelta(10))
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangeHourlyFee(self):
+    def test_need_save_after_change_hourly_fee(self):
         self.task.set_hourly_fee(100)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangeFixedFee(self):
+    def test_need_save_after_change_fixed_fee(self):
         self.task.set_fixed_fee(500)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterAddChild(self):
+    def test_need_save_after_add_child(self):
         self.taskFile.setFilename(self.filename)
         child = task.Task()
         self.taskFile.tasks().append(child)
@@ -544,7 +545,7 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.task.addChild(child)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterRemoveChild(self):
+    def test_need_save_after_remove_child(self):
         self.taskFile.setFilename(self.filename)
         child = task.Task()
         self.taskFile.tasks().append(child)
@@ -553,94 +554,94 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.task.removeChild(child)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterSetReminder(self):
+    def test_need_save_after_set_reminder(self):
         self.task.set_reminder(date.DateTime(2005, 1, 1, 10, 0, 0))
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangeRecurrence(self):
+    def test_need_save_after_change_recurrence(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.task.set_recurrence(date.Recurrence("daily"))
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangeSetting(self):
+    def test_need_save_after_change_setting(self):
         self.task.set_should_mark_completed_when_all_children_completed(True)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterAddingCategory(self):
+    def test_need_save_after_adding_category(self):
         self.taskFile.categories().append(self.category)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterRemovingCategory(self):
+    def test_need_save_after_removing_category(self):
         self.taskFile.categories().append(self.category)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.taskFile.categories().remove(self.category)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterFilteringCategory(self):
+    def test_need_save_after_filtering_category(self):
         self.taskFile.categories().append(self.category)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.category.setFiltered()
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterCategorySubjectChanged(self):
+    def test_need_save_after_category_subject_changed(self):
         self.taskFile.categories().append(self.category)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.category.setSubject("new subject")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterCategoryDescriptionChanged(self):
+    def test_need_save_after_category_description_changed(self):
         self.taskFile.categories().append(self.category)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.category.setDescription("new description")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangingCategoryForegroundColor(self):
+    def test_need_save_after_changing_category_foreground_color(self):
         self.taskFile.categories().append(self.category)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.category.setForegroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangingCategoryBackgroundColor(self):
+    def test_need_save_after_changing_category_background_color(self):
         self.taskFile.categories().append(self.category)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.category.setBackgroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterMakingSubclassesExclusive(self):
+    def test_need_save_after_making_subclasses_exclusive(self):
         self.taskFile.categories().append(self.category)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.category.makeSubcategoriesExclusive()
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterNoteSubjectChanged(self):
+    def test_need_save_after_note_subject_changed(self):
         list(self.taskFile.notes())[0].setSubject("new subject")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterNoteDescriptionChanged(self):
+    def test_need_save_after_note_description_changed(self):
         list(self.taskFile.notes())[0].setDescription("new description")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterNoteForegroundColorChanged(self):
+    def test_need_save_after_note_foreground_color_changed(self):
         list(self.taskFile.notes())[0].setForegroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterNoteBackgroundColorChanged(self):
+    def test_need_save_after_note_background_color_changed(self):
         list(self.taskFile.notes())[0].setBackgroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterAddNoteChild(self):
+    def test_need_save_after_add_note_child(self):
         list(self.taskFile.notes())[0].addChild(note.Note())
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterRemoveNoteChild(self):
+    def test_need_save_after_remove_note_child(self):
         child = note.Note()
         list(self.taskFile.notes())[0].addChild(child)
         self.taskFile.setFilename(self.filename)
@@ -648,69 +649,69 @@ class DirtyTaskFileTest(TaskFileTestCase):
         list(self.taskFile.notes())[0].removeChild(child)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangingTaskExpansionState(self):
+    def test_need_save_after_changing_task_expansion_state(self):
         self.task.expand()
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangingCategoryExpansionState(self):
+    def test_need_save_after_changing_category_expansion_state(self):
         self.taskFile.categories().append(self.category)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.category.expand()
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterChangingNoteExpansionState(self):
+    def test_need_save_after_changing_note_expansion_state(self):
         self.taskFile.notes().append(self.note)
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.note.expand()
         self.assertTrue(self.taskFile.need_save())
 
-    def testLastFilename_EqualsCurrentFilenameAfterSetFilename(self):
+    def test_last_filename_equals_current_filename_after_set_filename(self):
         self.taskFile.setFilename(self.filename)
         self.assertEqual(self.filename, self.taskFile.lastFilename())
 
-    def testLastFilename_EqualsPreviousFilenameAfterClose(self):
+    def test_last_filename_equals_previous_filename_after_close(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.close()
         self.assertEqual(self.filename, self.taskFile.lastFilename())
 
-    def testLastFilename_EqualsPreviousFilenameAfterClosingTwice(self):
+    def test_last_filename_equals_previous_filename_after_closing_twice(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.close()
         self.taskFile.close()
         self.assertEqual(self.filename, self.taskFile.lastFilename())
 
-    def testLastFilename_EqualsCurrentFilenameAfterSaveAs(self):
+    def test_last_filename_equals_current_filename_after_save_as(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.saveas(self.filename2)
         self.assertEqual(self.filename2, self.taskFile.lastFilename())
 
 
 class ChangingAttachmentsTestsMixin(object):
-    def testNeedSave_AfterAttachmentAdded(self):
+    def test_need_save_after_attachment_added(self):
         self.taskFile.setFilename(self.filename)
         self.taskFile.save()
         self.item.addAttachments(self.attachment)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterAttachmentRemoved(self):
+    def test_need_save_after_attachment_removed(self):
         self.taskFile.setFilename(self.filename)
         self.item.addAttachments(self.attachment)
         self.taskFile.save()
         self.item.removeAttachments(self.attachment)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterAttachmentsReplaced(self):
+    def test_need_save_after_attachments_replaced(self):
         self.taskFile.setFilename(self.filename)
         self.item.addAttachments(self.attachment)
         self.taskFile.save()
         self.item.setAttachments([FakeAttachment("file", "attachment2")])
         self.assertTrue(self.taskFile.need_save())
 
-    def addAttachment(self, anAttachment):
+    def addAttachment(self, an_attachment):
         self.taskFile.setFilename(self.filename)
-        self.item.addAttachments(anAttachment)
+        self.item.addAttachments(an_attachment)
         self.taskFile.save()
 
     def addFileAttachment(self):
@@ -719,32 +720,32 @@ class ChangingAttachmentsTestsMixin(object):
         )  # pylint: disable=W0201
         self.addAttachment(self.fileAttachment)
 
-    def testNeedSave_AfterFileAttachmentLocationChanged(self):
+    def test_need_save_after_file_attachment_location_changed(self):
         self.addFileAttachment()
         self.fileAttachment.setLocation("New location")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterFileAttachmentSubjectChanged(self):
+    def test_need_save_after_file_attachment_subject_changed(self):
         self.addFileAttachment()
         self.fileAttachment.setSubject("New subject")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterFileAttachmentDescriptionChanged(self):
+    def test_need_save_after_file_attachment_description_changed(self):
         self.addFileAttachment()
         self.fileAttachment.setDescription("New description")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterFileAttachmentForegroundColorChanged(self):
+    def test_need_save_after_file_attachment_foreground_color_changed(self):
         self.addFileAttachment()
         self.fileAttachment.setForegroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterFileAttachmentBackgroundColorChanged(self):
+    def test_need_save_after_file_attachment_background_color_changed(self):
         self.addFileAttachment()
         self.fileAttachment.setBackgroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterFileAttachmentNoteAdded(self):
+    def test_need_save_after_file_attachment_note_added(self):
         self.addFileAttachment()
         self.fileAttachment.addNote(
             note.Note(subject="Note")
@@ -757,32 +758,32 @@ class ChangingAttachmentsTestsMixin(object):
         )  # pylint: disable=W0201
         self.addAttachment(self.uriAttachment)
 
-    def testNeedSave_AfterURIAttachmentLocationChanged(self):
+    def test_need_save_after_uri_attachment_location_changed(self):
         self.addURIAttachment()
         self.uriAttachment.setLocation("New location")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterURIAttachmentSubjectChanged(self):
+    def test_need_save_after_uri_attachment_subject_changed(self):
         self.addURIAttachment()
         self.uriAttachment.setSubject("New subject")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterURIAttachmentDescriptionChanged(self):
+    def test_need_save_after_uri_attachment_description_changed(self):
         self.addURIAttachment()
         self.uriAttachment.setDescription("New description")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterURIAttachmentForegroundColorChanged(self):
+    def test_need_save_after_uri_attachment_foreground_color_changed(self):
         self.addURIAttachment()
         self.uriAttachment.setForegroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterURIAttachmentBackgroundColorChanged(self):
+    def test_need_save_after_uri_attachment_background_color_changed(self):
         self.addURIAttachment()
         self.uriAttachment.setBackgroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterURIAttachmentNoteAdded(self):
+    def test_need_save_after_uri_attachment_note_added(self):
         self.addURIAttachment()
         self.uriAttachment.addNote(
             note.Note(subject="Note")
@@ -794,32 +795,32 @@ class ChangingAttachmentsTestsMixin(object):
         self.mailAttachment = attachment.MailAttachment("mid:1@example.com")
         self.addAttachment(self.mailAttachment)
 
-    def testNeedSave_AfterMailAttachmentLocationChanged(self):
+    def test_need_save_after_mail_attachment_location_changed(self):
         self.addMailAttachment()
         self.mailAttachment.setLocation("New location")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterMailAttachmentSubjectChanged(self):
+    def test_need_save_after_mail_attachment_subject_changed(self):
         self.addMailAttachment()
         self.mailAttachment.setSubject("New subject")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterMailAttachmentDescriptionChanged(self):
+    def test_need_save_after_mail_attachment_description_changed(self):
         self.addMailAttachment()
         self.mailAttachment.setDescription("New description")
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterMailAttachmentForegroundColorChanged(self):
+    def test_need_save_after_mail_attachment_foreground_color_changed(self):
         self.addMailAttachment()
         self.mailAttachment.setForegroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterMailAttachmentBackgroundColorChanged(self):
+    def test_need_save_after_mail_attachment_background_color_changed(self):
         self.addMailAttachment()
         self.mailAttachment.setBackgroundColor(wx.RED)
         self.assertTrue(self.taskFile.need_save())
 
-    def testNeedSave_AfterMailAttachmentNoteAdded(self):
+    def test_need_save_after_mail_attachment_note_added(self):
         self.addMailAttachment()
         self.mailAttachment.addNote(
             note.Note(subject="Note")
@@ -873,42 +874,48 @@ class TaskFileSaveAndLoadTest(TaskFileTestCase):
         self.emptyTaskFile.save()
         self.emptyTaskFile.load()
         self.assertEqual(
-            sorted([eachTask.subject() for eachTask in tasks]),
-            sorted(
-                [eachTask.subject() for eachTask in self.emptyTaskFile.tasks()]
-            ),
-        )
-        self.assertEqual(
-            sorted([eachCategory.subject() for eachCategory in categories]),
+            sorted([each_task.subject() for each_task in tasks]),
             sorted(
                 [
-                    eachCategory.subject()
-                    for eachCategory in self.emptyTaskFile.categories()
+                    each_task.subject()
+                    for each_task in self.emptyTaskFile.tasks()
                 ]
             ),
         )
         self.assertEqual(
-            sorted([eachNote.subject() for eachNote in notes]),
+            sorted([each_category.subject() for each_category in categories]),
             sorted(
-                [eachNote.subject() for eachNote in self.emptyTaskFile.notes()]
+                [
+                    each_category.subject()
+                    for each_category in self.emptyTaskFile.categories()
+                ]
+            ),
+        )
+        self.assertEqual(
+            sorted([each_note.subject() for each_note in notes]),
+            sorted(
+                [
+                    each_note.subject()
+                    for each_note in self.emptyTaskFile.notes()
+                ]
             ),
         )
 
-    def testSaveAndLoad(self):
+    def test_save_and_load(self):
         self.saveAndLoad(
             [task.Task(subject="ABC"), task.Task(dueDateTime=date.Tomorrow())]
         )
 
-    def testSaveAndLoadTaskWithChild(self):
-        parentTask = task.Task()
-        childTask = task.Task(parent=parentTask)
-        parentTask.addChild(childTask)
-        self.saveAndLoad([parentTask, childTask])
+    def test_save_and_load_task_with_child(self):
+        parent_task = task.Task()
+        child_task = task.Task(parent=parent_task)
+        parent_task.addChild(child_task)
+        self.saveAndLoad([parent_task, child_task])
 
-    def testSaveAndLoadCategory(self):
+    def test_save_and_load_category(self):
         self.saveAndLoad([], [self.category])
 
-    def testSaveAndLoadNotes(self):
+    def test_save_and_load_notes(self):
         self.saveAndLoad([], [], [self.note])
 
     def test_save_and_load_keep_exclusivity_and_its_date(self):
@@ -930,14 +937,14 @@ class TaskFileSaveAndLoadTest(TaskFileTestCase):
             (loaded.stylePriority(), loaded.modificationDateTime()),
         )
 
-    def testSaveAs(self):
+    def test_save_as(self):
         self.taskFile.saveas("new.tsk")
         self.taskFile.load()
         self.assertEqual(1, len(self.taskFile.tasks()))
         self.taskFile.close()
         self.remove("new.tsk")
 
-    def testSaveAsOverwrites(self):
+    def test_save_as_overwrites(self):
         self.taskFile.saveas("new.tsk")
         self.taskFile.close()
         self.taskFile.tasks().extend([task.Task(subject="foo")])
@@ -990,7 +997,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.mergeFile.save()
         self.taskFile.merge("merge.tsk")
 
-    def testMerge_Tasks(self):
+    def test_merge_tasks(self):
         self.mergeFile.tasks().append(task.Task())
         self.merge()
         self.assertEqual(2, len(self.taskFile.tasks()))
@@ -1018,7 +1025,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.assertEqual(10**18, os.stat("merge.tsk").st_mtime_ns)
         self.assertEqual(["merge.tsk"], glob.glob("merge.tsk*"))
 
-    def testMerge_TasksWithSubtask(self):
+    def test_merge_tasks_with_subtask(self):
         parent = task.Task(subject="parent")
         child = task.Task(subject="child")
         parent.addChild(child)
@@ -1028,7 +1035,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.assertEqual(3, len(self.taskFile.tasks()))
         self.assertEqual(2, len(self.taskFile.tasks().rootItems()))
 
-    def testMerge_OneCategoryInMergeFile(self):
+    def test_merge_one_category_in_merge_file(self):
         self.taskFile.categories().remove(self.category)
         self.mergeFile.categories().append(self.category)
         self.merge()
@@ -1037,14 +1044,14 @@ class TaskFileMergeTest(TaskFileTestCase):
             [cat.subject() for cat in self.taskFile.categories()],
         )
 
-    def testMerge_DifferentCategories(self):
+    def test_merge_different_categories(self):
         self.mergeFile.categories().append(
             category.Category("another category")
         )
         self.merge()
         self.assertEqual(2, len(self.taskFile.categories()))
 
-    def testMerge_SameSubject(self):
+    def test_merge_same_subject(self):
         self.mergeFile.categories().append(
             category.Category(self.category.subject())
         )
@@ -1054,21 +1061,21 @@ class TaskFileMergeTest(TaskFileTestCase):
             [cat.subject() for cat in self.taskFile.categories()],
         )
 
-    def testMerge_CategoryWithTask(self):
+    def test_merge_category_with_task(self):
         self.taskFile.categories().remove(self.category)
         self.mergeFile.categories().append(self.category)
-        aTask = task.Task(subject="merged task")
-        self.mergeFile.tasks().append(aTask)
-        aTask.addCategory(self.category)
+        a_task = task.Task(subject="merged task")
+        self.mergeFile.tasks().append(a_task)
+        a_task.addCategory(self.category)
         self.merge()
         self.assertEqual(
-            aTask.id(),
+            a_task.id(),
             list(list(self.taskFile.categories())[0].members())[0].id(),
         )
 
-    def testMerge_Notes(self):
-        newNote = note.Note(subject="new note")
-        self.mergeFile.notes().append(newNote)
+    def test_merge_notes(self):
+        new_note = note.Note(subject="new note")
+        self.mergeFile.notes().append(new_note)
         self.merge()
         self.assertEqual(2, len(self.taskFile.notes()))
 
@@ -1324,7 +1331,7 @@ class TaskFileMergeTest(TaskFileTestCase):
             all(each.task() is self.task for each in self.task.efforts())
         )
 
-    def testMerge_SameNote(self):
+    def test_merge_same_note(self):
         self.mergeFile.notes().append(
             self.their_copy(
                 self.note, "merged note", date.DateTime(2021, 1, 1)
@@ -1336,7 +1343,7 @@ class TaskFileMergeTest(TaskFileTestCase):
             "merged note", list(self.taskFile.notes())[0].subject()
         )
 
-    def testMerge_SameCategory(self):
+    def test_merge_same_category(self):
         self.mergeFile.categories().append(
             self.their_copy(
                 self.category, "merged category", date.DateTime(2021, 1, 1)
@@ -1385,7 +1392,7 @@ class TaskFileMergeTest(TaskFileTestCase):
         self.assertIs(winner, list(self.task.categories())[0])
         self.assertEqual({self.task}, winner.members())
 
-    def testMerge_CategoryLinkedToTask(self):
+    def test_merge_category_linked_to_task(self):
         self.task.addCategory(self.category)
         # An older copy, without the link: the open file's stays
         self.mergeFile.categories().append(
@@ -1398,7 +1405,7 @@ class TaskFileMergeTest(TaskFileTestCase):
             self.category.id(), list(self.task.categories())[0].id()
         )
 
-    def testMerge_CategoryLinkedToNote(self):
+    def test_merge_category_linked_to_note(self):
         self.note.addCategory(self.category)
         # An older copy, without the link: the open file's stays
         self.mergeFile.categories().append(
@@ -1689,3 +1696,107 @@ class TaskFileChangedOnDiskTest(TaskFileTestCase):
     @staticmethod
     def fail_to_write(*args, **kwargs):
         raise IOError("disk full")
+
+
+class TaskFileSavedOnDiskTest(TaskFileTestCase):
+    """A save puts the new file on disk before it replaces the old one,
+    then the folder's entry, so a power cut right after a save leaves
+    the old file or the new, never an empty one
+    (docs/PERSISTENCE_XML.md, Saving)."""
+
+    def save(self):
+        """Save; what reached the disk, in order: ("file"|"folder") for
+        each sync, the name for the replace."""
+        events = []
+        real_fsync, real_replace = os.fsync, os.replace
+
+        def fsync(descriptor):
+            folder = stat.S_ISDIR(os.fstat(descriptor).st_mode)
+            events.append("folder" if folder else "file")
+            real_fsync(descriptor)
+
+        def replace(source, destination):
+            events.append(os.path.basename(destination))
+            real_replace(source, destination)
+
+        with mock.patch.object(
+            os, "fsync", side_effect=fsync
+        ), mock.patch.object(os, "replace", side_effect=replace):
+            self.taskFile.setFilename(self.filename)
+            self.taskFile.save()
+        return events
+
+    def test_the_new_file_is_on_disk_before_it_replaces_the_old(self):
+        self.assertEqual(["file", self.filename], self.save()[:2])
+
+    def test_then_the_folder(self):
+        events = self.save()
+        self.assertIn("folder", events[events.index(self.filename) :])
+
+    def test_a_file_written_in_place_is_on_disk_too(self):
+        # In a synced cloud folder
+        with mock.patch.object(
+            persistence.taskfile.SafeWriteFile, "_isCloud", return_value=True
+        ):
+            self.assertIn("file", self.save())
+
+
+class OneTrackedTaskTest(TaskFileTestCase):
+    """One task tracked at a time: an effort of the file that starts
+    being tracked ends the file's other tracked efforts
+    (docs/EFFORTS.md, Tracking)."""
+
+    def setUp(self):
+        super().setUp()
+        self.task2 = task.Task(subject="task 2")
+        self.taskFile.tasks().append(self.task2)
+        self.tracked = effort.Effort(self.task)
+        self.task.addEffort(self.tracked)
+
+    def test_a_new_tracked_effort_ends_the_other(self):
+        self.task2.addEffort(effort.Effort(self.task2))
+        self.assertFalse(self.tracked.isBeingTracked())
+
+    def test_an_effort_tracked_again_ends_the_other(self):
+        stopped = effort.Effort(
+            self.task2, date.DateTime(2026, 1, 1), date.DateTime(2026, 1, 2)
+        )
+        self.task2.addEffort(stopped)
+        self.assertTrue(self.tracked.isBeingTracked())
+        stopped.setStop(date.DateTime.max)  # The effort editor's no stop
+        self.assertFalse(self.tracked.isBeingTracked())
+
+    def test_undoing_a_new_effort_tracks_the_other_again(self):
+        patterns.CommandHistory().clear()
+        command.NewEffortCommand(self.taskFile.efforts(), [self.task2]).do()
+        self.assertFalse(self.tracked.isBeingTracked())
+        patterns.CommandHistory().undo()
+        self.assertTrue(self.tracked.isBeingTracked())
+
+    def test_a_file_holding_several_keeps_them(self):
+        # Saved by an older release
+        with open(self.filename, "w", encoding="utf-8") as tsk:
+            tsk.write(
+                '<?taskcoach release="2.0.2.26" tskversion="37"?>\n'
+                "<tasks>"
+                '<task id="a" subject="A">'
+                '<effort id="ea" start="2026-01-01 10:00:00"/></task>'
+                '<task id="b" subject="B">'
+                '<effort id="eb" start="2026-01-01 11:00:00"/></task>'
+                "</tasks>"
+            )
+        self.emptyTaskFile.load(self.filename)
+        self.assertEqual(2, self.tracked_count())
+
+    def tracked_count(self):
+        return len(
+            [e for e in self.emptyTaskFile.efforts() if e.isBeingTracked()]
+        )
+
+    def test_a_view_of_one_keeps_the_others_tracked(self):
+        # A view's list announces the tracked efforts it takes in, as
+        # the task editor's Effort tab does for its task
+        self.test_a_file_holding_several_keeps_them()
+        task_a = [t for t in self.emptyTaskFile.tasks() if t.id() == "a"]
+        effort.EffortList(task.TaskList(task_a))
+        self.assertEqual(2, self.tracked_count())

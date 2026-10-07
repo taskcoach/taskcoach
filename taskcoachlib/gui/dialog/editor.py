@@ -425,16 +425,16 @@ class CategorySubjectPage(SubjectPage):
 
     def add_style_priority_entry(self):
         # pylint: disable=W0201
-        currentPriority = (
+        current_priority = (
             self.items[0].stylePriority() if len(self.items) == 1 else 0
         )
         self._stylePriorityEntry = widgets.SpinCtrl(
-            self, size=(100, -1), value=currentPriority, min=-999, max=999
+            self, size=(100, -1), value=current_priority, min=-999, max=999
         )
         self._stylePrioritySync = attributesync.AttributeSync(
             "stylePriority",
             self._stylePriorityEntry,
-            currentPriority,
+            current_priority,
             self.items,
             command.EditStylePriorityCommand,
             wx.EVT_SPINCTRL,
@@ -539,7 +539,7 @@ class AttachmentSubjectPage(SubjectPage):
                 if item_type == "file":
                     attachment_base = settings.file.attachmentbase
                     if not os.path.exists(
-                        item.normalizedLocation(attachment_base)
+                        item.normalized_location(attachment_base)
                     ):
                         icon_id = "taskcoach_actions_fileopen_red"
         else:
@@ -605,15 +605,15 @@ class AttachmentSubjectPage(SubjectPage):
         self.addEntry(_("Location"), panel, flags=[None, wx.EXPAND])
 
     def onSelectLocation(self, event):  # pylint: disable=W0613
-        base_path = settings.file.lastattachmentpath
-        if not base_path:
-            base_path = os.getcwd()
-        filename = widgets.AttachmentSelector(default_path=base_path)
+        # Here: iocontroller imports the dialogs
+        from taskcoachlib.gui import iocontroller
+
+        filename = widgets.AttachmentSelector(
+            default_path=iocontroller.attachment_folder()
+        )
 
         if filename:
-            settings.file.lastattachmentpath = os.path.abspath(
-                os.path.split(filename)[0]
-            )
+            iocontroller.remember_attachment_folder(filename)
             if settings.file.attachmentbase:
                 filename = attachment.getRelativePath(
                     filename, settings.file.attachmentbase
@@ -649,7 +649,7 @@ class TaskAppearancePage(ScrolledPage):
         if len(self.items) == 1:
             self._updateDerivedValues()
 
-    def addSectionHeader(self, title, sourceLabel=None):
+    def addSectionHeader(self, title, source_label=None):
         """Add a bold section header spanning columns 0-1, optional label in column 2."""
         header = wx.StaticText(self, label=title)
         header.SetFont(header.GetFont().Bold())
@@ -661,8 +661,8 @@ class TaskAppearancePage(ScrolledPage):
             flag=flag,
             border=self._borderWidth,
         )
-        if sourceLabel:
-            source = wx.StaticText(self, label=sourceLabel)
+        if source_label:
+            source = wx.StaticText(self, label=source_label)
             source.SetFont(source.GetFont().Bold())
             self._sizer.Add(
                 source,
@@ -1202,14 +1202,16 @@ class TaskAppearancePage(ScrolledPage):
         item = self.items[0]
 
         # --- Icon ---
-        iconActual = item.effectiveIcon()
-        iconSource = item.effectiveIconSource()
+        icon_actual = item.effectiveIcon()
+        icon_source = item.effectiveIconSource()
         # Icons have no system default - use empty string if no value
-        iconValue = iconActual if iconActual else ""
-        if iconValue:
+        icon_value = icon_actual if icon_actual else ""
+        if icon_value:
             from taskcoachlib.gui.icons.icon_library import icon_catalog
 
-            icon_id = iconValue  # iconValue follows the *Value/*Source pattern
+            icon_id = (
+                icon_value  # iconValue follows the *Value/*Source pattern
+            )
             self._effectiveIconDisplay.SetBitmap(
                 icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
             )
@@ -1219,7 +1221,7 @@ class TaskAppearancePage(ScrolledPage):
             self._effectiveIconName.Show()
             self._effectiveIconNA.Hide()
             self._effectiveIconSource.SetLabel(
-                iconSource or _("Initializing...")
+                icon_source or _("Initializing...")
             )
         else:
             self._effectiveIconDisplay.Hide()
@@ -1229,43 +1231,49 @@ class TaskAppearancePage(ScrolledPage):
         self._effectiveIconPanel.Layout()
 
         # --- Foreground Color ---
-        fgActual = item.effectiveFgColor()
-        fgDefault = item.effectiveFgColorDefault()
-        fgSource = item.effectiveFgColorSource()
-        effectiveFgColour = resolve_color(fgActual if fgActual else fgDefault)
-        self._effectiveFgPicker.SetColour(effectiveFgColour)
-        self._effectiveFgSource.SetLabel(fgSource or _("Initializing..."))
+        fg_actual = item.effectiveFgColor()
+        fg_default = item.effectiveFgColorDefault()
+        fg_source = item.effectiveFgColorSource()
+        effective_fg_colour = resolve_color(
+            fg_actual if fg_actual else fg_default
+        )
+        self._effectiveFgPicker.SetColour(effective_fg_colour)
+        self._effectiveFgSource.SetLabel(fg_source or _("Initializing..."))
 
         # --- Background Color ---
-        bgActual = item.effectiveBgColor()
-        bgDefault = item.effectiveBgColorDefault()
-        bgSource = item.effectiveBgColorSource()
-        effectiveBgColour = resolve_color(bgActual if bgActual else bgDefault)
-        self._effectiveBgPicker.SetColour(effectiveBgColour)
-        self._effectiveBgSource.SetLabel(bgSource or _("Initializing..."))
+        bg_actual = item.effectiveBgColor()
+        bg_default = item.effectiveBgColorDefault()
+        bg_source = item.effectiveBgColorSource()
+        effective_bg_colour = resolve_color(
+            bg_actual if bg_actual else bg_default
+        )
+        self._effectiveBgPicker.SetColour(effective_bg_colour)
+        self._effectiveBgSource.SetLabel(bg_source or _("Initializing..."))
 
         # --- Font ---
-        fontActual = item.effectiveFont()
-        fontDefault = item.effectiveFontDefault()
-        fontSource = item.effectiveFontSource()
+        font_actual = item.effectiveFont()
+        font_default = item.effectiveFontDefault()
+        font_source = item.effectiveFontSource()
         self._effectiveFontPicker.SetSelectedFont(
-            resolve_font(fontActual if fontActual else fontDefault)
+            resolve_font(font_actual if font_actual else font_default)
         )
-        self._effectiveFontSource.SetLabel(fontSource or _("Initializing..."))
+        self._effectiveFontSource.SetLabel(font_source or _("Initializing..."))
 
         # Update font picker demo colors
-        self._effectiveFontPicker.SetSelectedColour(effectiveFgColour)
-        self._effectiveFontPicker.SetSelectedBgColour(effectiveBgColour)
+        self._effectiveFontPicker.SetSelectedColour(effective_fg_colour)
+        self._effectiveFontPicker.SetSelectedBgColour(effective_bg_colour)
 
         # Update override entries to track effective values
         # (shown when override checkbox is unchecked; always for colors on font picker)
-        effectiveFont = resolve_font(fontActual if fontActual else fontDefault)
+        effective_font = resolve_font(
+            font_actual if font_actual else font_default
+        )
         if hasattr(self, "_foregroundColorEntry"):
-            self._foregroundColorEntry.setEffectiveColor(effectiveFgColour)
+            self._foregroundColorEntry.setEffectiveColor(effective_fg_colour)
         if hasattr(self, "_backgroundColorEntry"):
-            self._backgroundColorEntry.setEffectiveColor(effectiveBgColour)
+            self._backgroundColorEntry.setEffectiveColor(effective_bg_colour)
         if hasattr(self, "_fontEntry"):
-            self._fontEntry.setEffectiveFont(effectiveFont)
+            self._fontEntry.setEffectiveFont(effective_font)
 
     def _updateFontDemoColors(self):
         if len(self.items) != 1:
@@ -1484,7 +1492,7 @@ class DatesPage(ScrolledPage):
     def _add_planned_date_section(self):
         """Add the planned date section using the main grid (5 columns: label, checkbox, date, time, rest)."""
         # Row 1: Planned start date
-        plannedStartDateTime = (
+        planned_start_date_time = (
             self.items[0].plannedStartDateTime()
             if len(self.items) == 1
             else date.DateTime()
@@ -1492,8 +1500,8 @@ class DatesPage(ScrolledPage):
 
         # value=None means no date set, value=datetime means date exists
         value = (
-            plannedStartDateTime
-            if plannedStartDateTime != date.DateTime()
+            planned_start_date_time
+            if planned_start_date_time != date.DateTime()
             else None
         )
 
@@ -1509,7 +1517,7 @@ class DatesPage(ScrolledPage):
         self._plannedStartDateTimeSync = attributesync.AttributeSync(
             "plannedStartDateTime",
             self._plannedStartDateTimeCombo,
-            plannedStartDateTime,
+            planned_start_date_time,
             self.items,
             command.EditPlannedStartDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
@@ -1529,20 +1537,20 @@ class DatesPage(ScrolledPage):
         )
 
         # Get due date value early so we can determine the initial mode
-        dueDateTime = (
+        due_date_time = (
             self.items[0].dueDateTime()
             if len(self.items) == 1
             else date.DateTime()
         )
 
         # Row 2: Planned duration
-        plannedDuration = (
+        planned_duration = (
             self.items[0].plannedDuration()
             if len(self.items) == 1
             else date.TimeDelta()
         )
 
-        total_seconds = int(plannedDuration.total_seconds())
+        total_seconds = int(planned_duration.total_seconds())
         days = total_seconds // 86400
         hours = (total_seconds % 86400) // 3600
         minutes = (total_seconds % 3600) // 60
@@ -1560,7 +1568,7 @@ class DatesPage(ScrolledPage):
         self._plannedDurationSync = attributesync.AttributeSync(
             "plannedDuration",
             self._plannedDurationCtrl,
-            plannedDuration,
+            planned_duration,
             self.items,
             command.EditPlannedDurationCommand,
             widgets.EVT_VALUE_CHANGED,
@@ -1663,7 +1671,7 @@ class DatesPage(ScrolledPage):
         # Row 3: Due date (value already retrieved above)
 
         # value=None means no date set, value=datetime means date exists
-        value = dueDateTime if dueDateTime != date.DateTime() else None
+        value = due_date_time if due_date_time != date.DateTime() else None
 
         self._dueDateTimeCombo = widgets.DateTimeComboCtrl(
             self,
@@ -1677,7 +1685,7 @@ class DatesPage(ScrolledPage):
         self._dueDateTimeSync = attributesync.AttributeSync(
             "dueDateTime",
             self._dueDateTimeCombo,
-            dueDateTime,
+            due_date_time,
             self.items,
             command.EditDueDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
@@ -1703,7 +1711,7 @@ class DatesPage(ScrolledPage):
 
     def _addActualStartDateEntry(self):
         """Add actual start date entry using DateTimeComboCtrl."""
-        actualStartDateTime = (
+        actual_start_date_time = (
             self.items[0].actualStartDateTime()
             if len(self.items) == 1
             else date.DateTime()
@@ -1711,8 +1719,8 @@ class DatesPage(ScrolledPage):
 
         # value=None means no date set, value=datetime means date exists
         value = (
-            actualStartDateTime
-            if actualStartDateTime != date.DateTime()
+            actual_start_date_time
+            if actual_start_date_time != date.DateTime()
             else None
         )
 
@@ -1728,7 +1736,7 @@ class DatesPage(ScrolledPage):
         self._actualStartDateTimeSync = attributesync.AttributeSync(
             "actualStartDateTime",
             self._actualStartDateTimeCombo,
-            actualStartDateTime,
+            actual_start_date_time,
             self.items,
             command.EditActualStartDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
@@ -1743,7 +1751,7 @@ class DatesPage(ScrolledPage):
 
     def _addCompletionDateEntry(self):
         """Add completion date entry using DateTimeComboCtrl with AttributeSync."""
-        completionDateTime = (
+        completion_date_time = (
             self.items[0].completionDateTime()
             if len(self.items) == 1
             else date.DateTime()
@@ -1751,8 +1759,8 @@ class DatesPage(ScrolledPage):
 
         # value=None means no date set, value=datetime means date exists
         value = (
-            completionDateTime
-            if completionDateTime != date.DateTime()
+            completion_date_time
+            if completion_date_time != date.DateTime()
             else None
         )
 
@@ -1769,7 +1777,7 @@ class DatesPage(ScrolledPage):
         self._completionDateTimeSync = attributesync.AttributeSync(
             "completionDateTime",
             self._completionDateTimeCombo,
-            completionDateTime,
+            completion_date_time,
             self.items,
             command.EditCompletionDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
@@ -2122,16 +2130,16 @@ class DatesPage(ScrolledPage):
         # Presets enabled in all modes except Implicit (per UI Field States table)
         self._durationPresetsChoice.Enable(mode != "implicit")
 
-    def __setDurationMode(self, newMode):
+    def __setDurationMode(self, new_mode):
         """Set the duration mode and update dropdown."""
-        if newMode == self._currentPlannedDurationMode:
+        if new_mode == self._currentPlannedDurationMode:
             return
-        self._currentPlannedDurationMode = newMode
+        self._currentPlannedDurationMode = new_mode
         # Update dropdown to reflect available choices and selection
         self.__updateDurationModeDropdown()
         # Save mode change
         cmd = command.EditPlannedDurationModeCommand(
-            items=self.items, newValue=newMode
+            items=self.items, newValue=new_mode
         )
         cmd.do()
 
@@ -2168,20 +2176,20 @@ class DatesPage(ScrolledPage):
     def __onDurationModeChanged(self, event):
         """Handle manual mode dropdown change."""
         selection = self._durationModeChoice.GetSelection()
-        newMode = self._durationModeChoice.GetClientData(selection)
+        new_mode = self._durationModeChoice.GetClientData(selection)
 
         # Prevent selecting disabled Automatic mode (both dates checked)
-        if newMode == "automatic" and getattr(
+        if new_mode == "automatic" and getattr(
             self, "_automaticModeDisabled", False
         ):
             self.__updateDurationModeDropdown()  # Revert visual
             return
 
         # Set the mode (if different) - __syncTaskState will handle any forcing
-        if newMode != self._currentPlannedDurationMode:
-            self._currentPlannedDurationMode = newMode
+        if new_mode != self._currentPlannedDurationMode:
+            self._currentPlannedDurationMode = new_mode
             cmd = command.EditPlannedDurationModeCommand(
-                items=self.items, newValue=newMode
+                items=self.items, newValue=new_mode
             )
             cmd.do()
 
@@ -2193,7 +2201,7 @@ class DatesPage(ScrolledPage):
 
     def add_reminder_entry(self):
         """Add reminder entry using DateTimeComboCtrl."""
-        reminderDateTime = (
+        reminder_date_time = (
             self.items[0].reminder()
             if len(self.items) == 1
             else date.DateTime()
@@ -2201,7 +2209,9 @@ class DatesPage(ScrolledPage):
 
         # value=None means no date set, value=datetime means date exists
         value = (
-            reminderDateTime if reminderDateTime != date.DateTime() else None
+            reminder_date_time
+            if reminder_date_time != date.DateTime()
+            else None
         )
 
         self._reminderDateTimeCombo = widgets.DateTimeComboCtrl(
@@ -2216,7 +2226,7 @@ class DatesPage(ScrolledPage):
         self._reminderDateTimeSync = attributesync.AttributeSync(
             "reminder",
             self._reminderDateTimeCombo,
-            reminderDateTime,
+            reminder_date_time,
             self.items,
             command.EditReminderDateTimeCommand,
             widgets.EVT_VALUE_CHANGED,
@@ -2287,18 +2297,18 @@ class ProgressPage(Page):
 
     def add_progress_entry(self):
         # pylint: disable=W0201
-        currentPercentageComplete = (
+        current_percentage_complete = (
             self.items[0].percentageComplete()
             if len(self.items) == 1
             else self.averagePercentageComplete(self.items)
         )
         self._percentageCompleteEntry = entry.PercentageEntry(
-            self, currentPercentageComplete
+            self, current_percentage_complete
         )
         self._percentageCompleteSync = attributesync.AttributeSync(
             "percentageComplete",
             self._percentageCompleteEntry,
-            currentPercentageComplete,
+            current_percentage_complete,
             self.items,
             command.EditPercentageCompleteCommand,
             entry.EVT_PERCENTAGEENTRY,
@@ -2326,18 +2336,18 @@ class ProgressPage(Page):
             (False, _("No")),
             (True, _("Yes")),
         ]
-        currentChoice = (
+        current_choice = (
             self.items[0].shouldMarkCompletedWhenAllChildrenCompleted()
             if len(self.items) == 1
             else None
         )
         self._shouldMarkCompletedEntry = entry.ChoiceEntry(
-            self, choices, currentChoice
+            self, choices, current_choice
         )
         self._shouldMarkCompletedSync = attributesync.AttributeSync(
             "shouldMarkCompletedWhenAllChildrenCompleted",
             self._shouldMarkCompletedEntry,
-            currentChoice,
+            current_choice,
             self.items,
             command.EditShouldMarkCompletedCommand,
             entry.EVT_CHOICEENTRY,
@@ -2593,13 +2603,22 @@ class PageWithViewer(Page):
         super().close()
 
 
+class LocalEffortViewer(viewer.EffortViewer):  # pylint: disable=W0223
+    """The editor shows all the efforts of the task and its subtasks,
+    as it shows all its notes and attachments: the category filter is
+    the main window's (docs/EFFORTS.md, Filters)."""
+
+    def is_filterable(self):
+        return False
+
+
 class EffortPage(PageWithViewer):
     pageName = "effort"
     pageTitle = _("Effort")
     pageIcon = "nuvola_apps_clock"
 
     def create_viewer(self, task_file, settings_section):
-        return viewer.EffortViewer(
+        return LocalEffortViewer(
             self,
             task_file,
             settingsSection=settings_section,
@@ -2690,13 +2709,13 @@ class CategoriesPage(PageWithViewer):
 
     def create_viewer(self, task_file, settings_section):
         for item in self.items:
-            for eventType in (
+            for event_type in (
                 item.categoryAddedEventType(),
                 item.categoryRemovedEventType(),
             ):
                 self.registerObserver(
                     self.onCategoryChanged,
-                    eventType=eventType,
+                    eventType=event_type,
                     eventSource=item,
                 )
         return LocalCategoryViewer(
@@ -2802,11 +2821,11 @@ class LocalNoteViewer(viewer.BaseNoteViewer):  # pylint: disable=W0223
             None, [self.__note_owner], notes=self.curselection()
         )
 
-    def _expandNoteAndChildren(self, aNote):
+    def _expandNoteAndChildren(self, a_note):
         """Recursively expand a note and all its children in this viewer."""
         context = self.settingsSection()
-        aNote.expand(True, context=context, notify=False)
-        for child in aNote.children():
+        a_note.expand(True, context=context, notify=False)
+        for child in a_note.children():
             self._expandNoteAndChildren(child)
 
     def pasteItemCommand(self):
@@ -3022,10 +3041,10 @@ class PathPage(ScrolledPage):
             + attachment.MailAttachment.modificationEventTypes()
         )
 
-        for eventType in all_event_types:
+        for event_type in all_event_types:
             patterns.Publisher().registerObserver(
                 self._on_any_change,
-                eventType=eventType,
+                eventType=event_type,
             )
 
     def _on_any_change(self, event=None, **kwargs):
@@ -3503,10 +3522,10 @@ class EditBook(widgets.Notebook):
         self.__load_perspective(items_are_new)
 
     def NavigateBook(self, forward):
-        curSel = self.GetSelection()
-        curSel = curSel + 1 if forward else curSel - 1
-        if curSel >= 0 and curSel < self.GetPageCount():
-            self.SetSelection(curSel)
+        cur_sel = self.GetSelection()
+        cur_sel = cur_sel + 1 if forward else cur_sel - 1
+        if cur_sel >= 0 and cur_sel < self.GetPageCount():
+            self.SetSelection(cur_sel)
 
     def addPages(self, task_file, items_are_new):
         page_names = self.options.pages
@@ -3635,10 +3654,11 @@ class EditBook(widgets.Notebook):
         pages from the settings."""
         perspective = self.perspective()
         if perspective:
+            # The tabs as the user moved and split them (P93); disabled
+            # in the 2.0 port as one of four causes of editors stuck at
+            # large sizes, the others fixed (PYTHON3_MIGRATION_1.md)
             try:
-                # DISABLED: LoadPerspective was restoring stale AuiNotebook perspective with broken sizing
-                # self.LoadPerspective(perspective)
-                pass
+                self.LoadPerspective(perspective)
             except Exception:
                 pass  # Perspective loading may fail
         if items_are_new:
@@ -3779,7 +3799,7 @@ class EffortEditBook(Page):
         self._taskFile = task_file
         super().__init__(efforts, parent, *args, **kwargs)
 
-    def getPage(self, pageName):  # pylint: disable=W0613
+    def getPage(self, page_name):  # pylint: disable=W0613
         return None  # An EffortEditBook is not really a notebook...
 
     def settings_section(self):
@@ -3807,8 +3827,8 @@ class EffortEditBook(Page):
         current_task = self.items[0].task()
         self._task_entry = entry.TaskEntry(
             panel,
-            rootTasks=self._task_list.rootItems(),
-            selectedTask=current_task,
+            root_tasks=self._task_list.rootItems(),
+            selected_task=current_task,
         )
         self._task_sync = attributesync.AttributeSync(
             "task",
@@ -4160,7 +4180,7 @@ class EffortEditBook(Page):
         Called on: Every change of Start-Date, Stop-Date, Duration, or Mode dropdown.
 
         Sync-mode guard [0.4] is set inline around multi-adjustment
-        sequences (e.g. 1.9.1) to prevent re-entry from callbacks.
+        sequences (e.g. 1.8.1) to prevent re-entry from callbacks.
         Flag lives on the domain effort instance (SSOT), shared across windows.
 
         Args:
@@ -4203,152 +4223,154 @@ class EffortEditBook(Page):
         total_seconds = int(duration.total_seconds()) if duration else 0
 
         if self._effort_entry_mode == 0:  # 1. If Mode Standard
-            # 1.3 Set Start-Date editable
-            # 1.4 Set Duration editable
+            # 1.2 Set Start-Date editable
+            # 1.3 Set Duration editable
             self.__set_effort_editability(stop)
-            # 1.5 Set Presets dropdown enabled [Ref1]
+            # 1.4 Set Presets dropdown enabled [Ref1]
 
-            # 1.6 If Duration Unset-Action, Then disable Stop-Date
+            # 1.5 If Duration Unset-Action, Then disable Stop-Date
             if source_field == "duration" and total_seconds == 0:
                 self._stop_date_time_combo.DeactivateValue()
 
-            # 1.7 If Stop-Date Unset-Action, Then set Duration = 0
+            # 1.6 If Stop-Date Unset-Action, Then set Duration = 0
             elif source_field == "stop" and stop is None:
                 self._effort_duration_ctrl.SetDuration(date.TimeDelta())
 
-            # 1.8 If Stop-Date Set-Action
+            # 1.7 If Stop-Date Set-Action
             elif (
                 source_field == "stop"
                 and stop is not None
                 and total_seconds == 0
             ):
-                # 1.8.1 If Duration = 0, Then set Implicit mode, Loop
+                # 1.7.1 If Duration = 0, Then set Implicit mode, Loop
                 self.__set_effort_entry_mode("implicit")
                 return self.__sync_effort_state(None, depth=depth + 1)
 
-            # 1.9 If Start-Date changed
+            # 1.8 If Start-Date changed
             elif source_field == "start":
-                # 1.9.1 If Duration > 0
+                # 1.8.1 If Duration > 0
                 if total_seconds > 0:
-                    # 1.9.1.1 Set Sync-Mode [0.4]
+                    # 1.8.1.1 Set Sync-Mode [0.4]
                     effort._effort_sync_in_progress = True
                     try:
-                        # 1.9.1.2 Adj Stop-Date (stop = start + duration)
+                        # 1.8.1.2 Adj Stop-Date (start + duration)
                         if start is not None and duration is not None:
                             self._stop_date_time_combo.ActivateValue(
                                 start + duration
                             )
-                        # 1.9.1.3 Adj Duration *Impossible* — see spec TODO
                     finally:
-                        # 1.9.1.4 Unset Sync-Mode
+                        # 1.8.1.3 Unset Sync-Mode
                         effort._effort_sync_in_progress = False
-                # 1.9.2 If Duration = 0, Then do nothing
+                # 1.8.2 If Duration = 0, Then do nothing
 
-            # 1.10 If Duration changed and exists
+            # 1.9 If Duration changed and exists
             elif source_field == "duration":
-                # 1.10.1 If Duration > 0
+                # 1.9.1 If Duration > 0
                 if total_seconds > 0:
-                    # 1.10.1.1 Enable Stop-Date
+                    # 1.9.1.1 Enable Stop-Date
                     if stop is None:
                         self._stop_date_time_combo.ActivateValue()
-                    # 1.10.1.2 Adj Stop-Date (stop = start + duration)
+                    # 1.9.1.2 Adj Stop-Date (stop = start + duration)
                     if start is not None and duration is not None:
                         self._stop_date_time_combo.ActivateValue(
                             start + duration
                         )
-                # 1.10.2 If Duration = 0, Then disable Stop-Date
-                # (already handled in 1.6 above)
+                # 1.9.2 If Duration = 0, Then disable Stop-Date
+                # (already handled in 1.5 above)
 
-            # 1.11 If Stop-Date changed and exists, Then adj Duration (duration = stop - start)
+            # 1.10 If Stop-Date changed and exists, Then adj Duration
+            # (stop - start)
             elif source_field == "stop":
                 if start is not None and stop is not None:
                     self._effort_duration_ctrl.SetDuration(stop - start)
 
-            # 1.12 If Duration = 0, Then Autoheal, Thus
+            # 1.11 If Duration = 0, Then Autoheal, Thus
             if total_seconds == 0:
-                # 1.12.1 Not possible: Disable Stop-Date Conflicts [Ref3]
+                # 1.11.1 Not possible: Disable Stop-Date Conflicts
+                # [Ref3]
                 pass
-            # 1.13 If Duration > 0, Then Autoheal, Thus
+            # 1.12 If Duration > 0, Then Autoheal, Thus
             elif total_seconds > 0:
-                # 1.13.1 Enable Stop-Date [0.1, 0.2]
+                # 1.12.1 Enable Stop-Date [0.1, 0.2]
                 if source_field != "stop" and stop is None:
                     self._stop_date_time_combo.ActivateValue()
-                # 1.13.2 Adj Stop-Date [0.1, 0.2] (stop = start + duration)
+                # 1.12.2 Adj Stop-Date [0.1, 0.2] (start + duration)
                 if (
                     source_field != "stop"
                     and start is not None
                     and duration is not None
                 ):
                     self._stop_date_time_combo.ActivateValue(start + duration)
-            # 1.14 If Duration < 0, Then Negative Durations permitted
+            # 1.13 If Duration < 0, Then Negative Durations permitted
 
         elif self._effort_entry_mode == 1:  # 2. If Mode Retroactive
-            # 2.3 Set Start-Date read-only
-            # 2.4 Set Duration editable
+            # 2.2 Set Start-Date read-only
+            # 2.3 Set Duration editable
             self.__set_effort_editability(stop)
-            # 2.5 Set Presets dropdown enabled [Ref1]
+            # 2.4 Set Presets dropdown enabled [Ref1]
 
-            # 2.6 If Duration Unset-Action, Then disable Stop-Date
+            # 2.5 If Duration Unset-Action, Then disable Stop-Date
             if source_field == "duration" and total_seconds == 0:
                 self._stop_date_time_combo.DeactivateValue()
 
-            # 2.7 If Stop-Date Unset-Action, Then set Duration = 0
+            # 2.6 If Stop-Date Unset-Action, Then set Duration = 0
             elif source_field == "stop" and stop is None:
                 self._effort_duration_ctrl.SetDuration(date.TimeDelta())
 
-            # 2.8 If Stop-Date changed and exists, Then adj Start-Date (start = stop - duration)
+            # 2.7 If Stop-Date changed and exists, Then adj Start-Date
+            # (stop - duration)
             elif source_field == "stop":
                 if stop is not None and duration is not None:
                     self._start_date_time_combo.ActivateValue(stop - duration)
 
-            # 2.9 If Duration changed and exists
+            # 2.8 If Duration changed and exists
             elif source_field == "duration":
-                # 2.9.1 If Duration > 0
+                # 2.8.1 If Duration > 0
                 if total_seconds > 0:
-                    # 2.9.1.1 Enable Stop-Date
+                    # 2.8.1.1 Enable Stop-Date
                     if stop is None:
                         self._stop_date_time_combo.ActivateValue()
-                    # 2.9.1.2 Adj Start-Date (start = stop - duration)
+                    # 2.8.1.2 Adj Start-Date (start = stop - duration)
                     if stop is not None and duration is not None:
                         self._start_date_time_combo.ActivateValue(
                             stop - duration
                         )
-                # 2.9.2 If Duration = 0, Then disable Stop-Date
-                # (already handled in 2.6 above)
+                # 2.8.2 If Duration = 0, Then disable Stop-Date
+                # (already handled in 2.5 above)
 
-            # 2.10 If Duration = 0, Then Autoheal, Thus
+            # 2.9 If Duration = 0, Then Autoheal, Thus
             if total_seconds == 0:
-                # 2.10.1 Not possible: Disable Stop-Date Conflicts [Ref2]
+                # 2.9.1 Not possible: Disable Stop-Date Conflicts [Ref2]
                 pass
-            # 2.11 If Duration > 0, Then Autoheal, Thus
+            # 2.10 If Duration > 0, Then Autoheal, Thus
             elif total_seconds > 0:
-                # 2.11.1 Enable Stop-Date [0.1, 0.2]
+                # 2.10.1 Enable Stop-Date [0.1, 0.2]
                 if source_field != "stop" and stop is None:
                     self._stop_date_time_combo.ActivateValue()
-                # 2.11.2 Adj Start-Date [0.1, 0.2] (start = stop - duration)
+                # 2.10.2 Adj Start-Date [0.1, 0.2] (stop - duration)
                 if (
                     source_field != "start"
                     and stop is not None
                     and duration is not None
                 ):
                     self._start_date_time_combo.ActivateValue(stop - duration)
-            # 2.12 If Duration < 0, Then Negative Durations permitted
+            # 2.11 If Duration < 0, Then Negative Durations permitted
 
         elif self._effort_entry_mode == 2:  # 3. If Mode Implicit
-            # 3.3 Set Presets dropdown disabled [Ref1]
-            # 3.4 Set Start-Date editable
-            # 3.5 and 3.6.1: Duration disabled without Stop-Date,
+            # 3.2 Set Presets dropdown disabled [Ref1]
+            # 3.3 Set Start-Date editable
+            # 3.4 and 3.5.1: Duration disabled without Stop-Date,
             # else enabled (Read-Only)
             self.__set_effort_editability(stop)
 
-            # 3.5 If Stop-Date does not exist, Disable Duration
+            # 3.4 If Stop-Date does not exist, Disable Duration
             if stop is None:
                 self._effort_duration_ctrl.SetDuration(date.TimeDelta())
 
-            # 3.6 If Stop-Date exists
+            # 3.5 If Stop-Date exists
             elif stop is not None:
-                # 3.6.2 Adj Duration (duration = stop - start)
-                # 3.6.3 Negative Durations permitted
+                # 3.5.2 Adj Duration (duration = stop - start)
+                # 3.5.3 Negative Durations permitted
                 if start is not None and stop is not None:
                     self._effort_duration_ctrl.SetDuration(stop - start)
 
@@ -4771,6 +4793,11 @@ class Editor(BalloonTipManager, widgets.Dialog):
             )
         )
 
+    def place(self):
+        """Centred for the rules leaving the place to the system; the
+        geometry tracker keeps the place through the first show."""
+        self.CentreOnParent()
+
     def __create_ui_commands(self):
         # FIXME: keyboard shortcuts are hardcoded here, but they can be
         # changed in the translations
@@ -4823,12 +4850,18 @@ class Editor(BalloonTipManager, widgets.Dialog):
         self._interior.AdvanceSelectionBackward()
 
     def createInterior(self):
-        return self.EditBookClass(
+        book = self.EditBookClass(
             self._panel,
             self._items,
             self._taskFile,
             self.__items_are_new,
         )
+        if isinstance(book, EditBook):
+            # The pages report no best size, which would keep the editor
+            # from shrinking; the first fit shows the largest one whole
+            # (docs/WINDOW_GEOMETRY.md, Editors)
+            book.SetMinSize(book.largest_page_size())
+        return book
 
     def on_close_editor(self, event):
         # DO NOT call event.Skip() — we call Destroy() explicitly below.

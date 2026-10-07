@@ -23,6 +23,7 @@ import wx
 from taskcoachlib import operating_system, patterns
 from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
+from taskcoachlib.tools.wxhelper import SIZE_SHARE, most_of
 
 # Windows and macOS apply position, size and maximize during the call,
 # also before the first show, proven by years of use without reports
@@ -47,57 +48,98 @@ _ATTEMPTS = 3
 _STEP_LIMIT = 10.0
 
 
-def fit_to_monitors(rect, monitors):
-    """Fit a saved window rect (x, y, width, height) to the monitors.
+def fit_to_monitors(rect, monitors, primary=0):
+    """Fit a saved window rect (x, y, width, height) to the monitors
+    (docs/WINDOW_GEOMETRY.md, Decisions 2): a rect whole on one monitor
+    is kept as it is. Otherwise it is centred on the work area of the
+    monitor it lies on most, or of the primary monitor when most of it
+    lies on none, a size larger than that work area cut to 80% of it.
 
     monitors holds (geometry, work_area) per monitor, each an
-    (x, y, width, height) tuple. A rect whose title bar lies on a
-    monitor and whose size fits that monitor's work area is kept as it
-    is. Otherwise the size is reduced to the work area the rect
-    overlaps most, or else the nearest one, and the rect is moved
-    inside it.
+    (x, y, width, height) tuple; primary is the primary's index.
     """
-    x, y, width, height = rect
-    for geometry, work_area in monitors:
-        fits = width <= work_area[2] and height <= work_area[3]
-        if fits and _title_bar_on(rect, geometry):
-            return tuple(rect)
     if not monitors:
         return tuple(rect)
-    ax, ay, aw, ah = _best_work_area(rect, [area for _, area in monitors])
-    width, height = min(width, aw), min(height, ah)
-    x = max(ax, min(x, ax + aw - width))
-    y = max(ay, min(y, ay + ah - height))
-    return (x, y, width, height)
+    if any(_within(rect, geometry) for geometry, _ in monitors):
+        return tuple(rect)
+    overlaps = [_overlap(rect, geometry) for geometry, _ in monitors]
+    best = max(range(len(monitors)), key=overlaps.__getitem__)
+    if rect[2] * rect[3] - sum(overlaps) > overlaps[best]:
+        best = primary
+    area = monitors[best][1]
+    return _centred(_capped(rect[2:], area), _centre(area), area)
 
 
-def _title_bar_on(rect, geometry):
-    """Whether the rect's top left, where the title bar is, lies on the
-    monitor with at least 100 pixels of it showing."""
-    x, y, width, _ = rect
-    gx, gy, gw, gh = geometry
-    return gx - width + 100 <= x <= gx + gw - 100 and gy <= y <= gy + gh - 100
+def fit_to_window(rect, window_rect, work_area):
+    """Fit a saved rect to the work area of another window's monitor,
+    for the windows that open on the main window's (Decisions 8): kept
+    when whole in it, else centred on the other window, a size larger
+    than the work area cut to 80% of it."""
+    if _within(rect, work_area):
+        return tuple(rect)
+    return _centred(
+        _capped(rect[2:], work_area), _centre(window_rect), work_area
+    )
 
 
-def _best_work_area(rect, work_areas):
-    """The work area the rect overlaps most, or else the nearest."""
+def fit_to_main_window(rect, main_rect):
+    """Fit a floating view's saved rect to the main window's monitor
+    (fit_to_window()); main_rect is where the main window was placed,
+    None when the system places it (then the primary monitor)."""
+    index = -1
+    if main_rect is not None:
+        index = wx.Display.GetFromPoint(wx.Point(*_centre(main_rect)))
+    if index < 0:
+        index = next(
+            (
+                i
+                for i in range(wx.Display.GetCount())
+                if wx.Display(i).IsPrimary()
+            ),
+            0,
+        )
+    area = tuple(wx.Display(index).GetClientArea())
+    return fit_to_window(rect, main_rect or area, area)
+
+
+def _centre(rect):
     x, y, width, height = rect
+    return (x + width // 2, y + height // 2)
 
-    def overlap(area):
-        ax, ay, aw, ah = area
-        dx = min(x + width, ax + aw) - max(x, ax)
-        dy = min(y + height, ay + ah) - max(y, ay)
-        return max(dx, 0) * max(dy, 0)
 
-    def distance(area):
-        ax, ay, aw, ah = area
-        cx, cy = x + width / 2, y + height / 2
-        dx = max(ax - cx, 0, cx - (ax + aw))
-        dy = max(ay - cy, 0, cy - (ay + ah))
-        return dx * dx + dy * dy
+def _within(rect, area):
+    x, y, width, height = rect
+    ax, ay, aw, ah = area
+    return (
+        ax <= x and ay <= y and x + width <= ax + aw and y + height <= ay + ah
+    )
 
-    best = max(work_areas, key=overlap)
-    return best if overlap(best) > 0 else min(work_areas, key=distance)
+
+def _overlap(rect, area):
+    x, y, width, height = rect
+    ax, ay, aw, ah = area
+    dx = min(x + width, ax + aw) - max(x, ax)
+    dy = min(y + height, ay + ah) - max(y, ay)
+    return max(dx, 0) * max(dy, 0)
+
+
+def _capped(size, area):
+    """The size, each way larger than the area cut to 80% of it."""
+    width, height = size
+    if width > area[2]:
+        width = int(area[2] * SIZE_SHARE)
+    if height > area[3]:
+        height = int(area[3] * SIZE_SHARE)
+    return width, height
+
+
+def _centred(size, centre, area):
+    """A rect of this size centred on the point, inside the area."""
+    width, height = size
+    ax, ay, aw, ah = area
+    x = max(ax, min(centre[0] - width // 2, ax + aw - width))
+    y = max(ay, min(centre[1] - height // 2, ay + ah - height))
+    return (x, y, width, height)
 
 
 class WindowGeometryTracker:
@@ -225,10 +267,14 @@ class WindowGeometryTracker:
             % (x, y, width, height, self.maximized, self._window_state())
         )
 
-        # Enforce minimum size
+        # Without a saved size, the size the window fitted to; at least
+        # the minimum
         min_w, min_h = self._min_size
-        width = max(width, min_w) if width > 0 else min_w
-        height = max(height, min_h) if height > 0 else min_h
+        fitted_w, fitted_h = self._window.GetSize()
+        if self._parent is not None:
+            fitted_w, fitted_h = self._fit_to_work_area(fitted_w, fitted_h)
+        width = max(width if width > 0 else fitted_w, min_w)
+        height = max(height if height > 0 else fitted_h, min_h)
 
         if self._parent is not None:
             self._load_dialog_geometry(x, y, width, height)
@@ -250,20 +296,18 @@ class WindowGeometryTracker:
 
     def _load_main_window_geometry(self, x, y, width, height):
         """Load geometry for the main window (any monitor)."""
-        monitors = self._monitors()
+        monitors, primary = self._monitors()
         if (x == -1 and y == -1) or not self._positions_known:
             # The window manager places it, and the size it gets is kept
             # once placed; the saved maximized state is kept
             self._trace("no position to restore: the window manager places it")
             if monitors:
-                area = monitors[0][1]
-                rect = (area[0], area[1], width, height)
-                width, height = fit_to_monitors(rect, monitors)[2:]
+                width, height = _capped((width, height), monitors[primary][1])
             self.position = None
             self.size = None
             self._set_size(width, height)
             return
-        fitted = fit_to_monitors((x, y, width, height), monitors)
+        fitted = fit_to_monitors((x, y, width, height), monitors, primary)
         if fitted != (x, y, width, height):
             self._trace("fitted to the monitors: %s" % (fitted,))
         x, y, width, height = fitted
@@ -299,50 +343,43 @@ class WindowGeometryTracker:
             )
         )
 
-        if x == -1 or y == -1:
-            self._trace("no saved position: center with the saved size")
-            self._center_on_parent_with_size(width, height)
-            return
-        if width > work_area.width or height > work_area.height:
-            self._trace("saved size larger than the monitor: system decides")
-            self._clear_dialog_cache()
-            return
-        if not self._is_position_on_screen(x, y, width, height, work_area):
-            self._trace("saved position off the monitor: center")
-            self._center_on_parent_with_size(width, height)
-            return
-        self.position = (x, y)
-        self.size = (width, height)
-        self._set_size(x, y, width, height)
-
-    def _is_position_on_screen(self, x, y, width, height, work_area):
-        """Whether the editor lies entirely within the work area.
-
-        Positions and sizes include the window decorations.
-        """
-        return (
-            x >= work_area.x
-            and y >= work_area.y
-            and x + width <= work_area.x + work_area.width
-            and y + height <= work_area.y + work_area.height
+        parent = tuple(self._parent.GetPosition()) + tuple(
+            self._parent.GetSize()
         )
+        area = tuple(work_area)
+        if x == -1 or y == -1:
+            fitted = _centred(
+                _capped((width, height), area), _centre(parent), area
+            )
+            self._trace("no saved position: centred, %s" % (fitted,))
+        else:
+            fitted = fit_to_window((x, y, width, height), parent, area)
+            if fitted != (x, y, width, height):
+                self._trace(
+                    "not whole on the monitor: centred, %s" % (fitted,)
+                )
+        self.position = fitted[:2]
+        self.size = fitted[2:]
+        self._set_size(*fitted)
 
-    def _center_on_parent_with_size(self, width, height):
-        """Center on the parent with this size, within its monitor."""
-        parent_pos = self._parent.GetPosition()
-        parent_size = self._parent.GetSize()
-        x = parent_pos.x + (parent_size.width - width) // 2
-        y = parent_pos.y + (parent_size.height - height) // 2
-
-        parent_display_idx = self._get_parent_display_index()
-        if parent_display_idx >= 0:
-            area = wx.Display(parent_display_idx).GetClientArea()
-            x = max(area.x, min(x, area.x + area.width - width))
-            y = max(area.y, min(y, area.y + area.height - height))
-
-        self.position = (x, y)
-        self.size = (width, height)
-        self._set_size(x, y, width, height)
+    def _fit_to_work_area(self, width, height):
+        """An editor's fitted size, at most SIZE_SHARE of the work
+        area (the monitor less its panels) of the main window's monitor
+        each way, so that the whole editor, title bar and buttons,
+        starts on screen; the pages scroll. Set now, before the show,
+        so that the system keeps it where it decides (the main window's
+        monitor unknown)."""
+        index = self._get_parent_display_index()
+        area = tuple(wx.Display(max(index, 0)).GetClientArea())
+        fitted = most_of((width, height), area)
+        if fitted == (width, height):
+            return width, height
+        self._trace(
+            "fitted size cut to %d%% of the work area %dx%d: %dx%d"
+            % ((SIZE_SHARE * 100,) + area[2:] + fitted)
+        )
+        self._window.SetSize(*fitted)
+        return fitted
 
     def _clear_dialog_cache(self):
         """Clear the saved editor geometry; the system decides."""
@@ -352,21 +389,18 @@ class WindowGeometryTracker:
         self.size = None
 
     def _get_parent_display_index(self):
-        """Index of the monitor holding the parent's center, or -1."""
-        parent_pos = self._parent.GetPosition()
-        parent_size = self._parent.GetSize()
-        center = wx.Point(
-            parent_pos.x + parent_size.width // 2,
-            parent_pos.y + parent_size.height // 2,
-        )
-        return wx.Display.GetFromPoint(center)
+        """Index of the main window's monitor as the system reports it
+        (the one it overlaps most; on Wayland, where positions read
+        (0, 0), the one the compositor shows it on), or -1."""
+        return wx.Display.GetFromWindow(self._parent)
 
-    def save(self):
-        """Write the state to the settings."""
+    def save(self, trace=True):
+        """Write the state to the settings; traced unless quiet (the
+        saves while running, docs/SESSION_END.md)."""
         self._trace(
             "save: pos=%s size=%s maximized=%s"
             % (self.position, self.size, self.maximized),
-            always=True,
+            always=trace,
         )
         self._set_setting("maximized", self.maximized)
         if self.position:
@@ -637,17 +671,27 @@ class WindowGeometryTracker:
     # === Monitors ===
 
     def _monitors(self):
-        """(geometry, work area) of each monitor, as tuples."""
-        monitors = []
+        """(geometry, work area) of each monitor, as tuples, and the
+        primary's index: the system's (on X11 the RandR primary output),
+        the first monitor when none is set."""
+        monitors, primary = [], 0
         for i in range(wx.Display.GetCount()):
             display = wx.Display(i)
             geometry = tuple(display.GetGeometry())
             work_area = tuple(display.GetClientArea())  # Excludes taskbar
+            if display.IsPrimary():
+                primary = i
             self._trace(
-                "monitor %d: %s, work area %s" % (i, geometry, work_area)
+                "monitor %d%s: %s, work area %s"
+                % (
+                    i,
+                    " (primary)" if display.IsPrimary() else "",
+                    geometry,
+                    work_area,
+                )
             )
             monitors.append((geometry, work_area))
-        return monitors
+        return monitors, primary
 
 
 class WindowDimensionsTracker(WindowGeometryTracker):
@@ -656,6 +700,13 @@ class WindowDimensionsTracker(WindowGeometryTracker):
     def __init__(self, window):
         super().__init__(window, "window")
 
-    def save_position(self):
+    def placed_rect(self):
+        """Where the main window is placed: (x, y, width, height), or
+        None when the system places it."""
+        if self.position is None or self.size is None:
+            return None
+        return tuple(self.position) + tuple(self.size)
+
+    def save_position(self, trace=True):
         """Save the position of the window in the settings."""
-        self.save()
+        self.save(trace)

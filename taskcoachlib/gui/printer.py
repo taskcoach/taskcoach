@@ -36,8 +36,8 @@ class PrinterSettings(object, metaclass=patterns.Singleton):
         self.__update_print_data(data.GetPrintData())
         self.__save_to_settings()
 
-    def __update_print_data(self, printData):
-        self.printData = wx.PrintData(printData)
+    def __update_print_data(self, print_data):
+        self.printData = wx.PrintData(print_data)
         self.pageSetupData.SetPrintData(self.printData)
 
     def __getattr__(self, attr):

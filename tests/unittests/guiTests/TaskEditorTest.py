@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import command, gui, operating_system
 from taskcoachlib import patterns, persistence
+from taskcoachlib.config import settings
 from taskcoachlib.domain import task, effort, date, note, attachment
 from taskcoachlib.gui import uicommand
 from unittests import dummy
@@ -28,16 +29,16 @@ import wx
 
 
 class TaskEditorSetterMixin(object):
-    def setSubject(self, newSubject):
+    def setSubject(self, new_subject):
         page = self.editor._interior[0]
         page._subjectEntry.SetFocus()
-        page._subjectEntry.SetValue(newSubject)
+        page._subjectEntry.SetValue(new_subject)
         return page
 
-    def setDescription(self, newDescription):
+    def setDescription(self, new_description):
         page = self.editor._interior[0]
         page._descriptionEntry.SetFocus()
-        page._descriptionEntry.SetValue(newDescription)
+        page._descriptionEntry.SetValue(new_description)
         return page
 
     def set_planned_start_date_time(self, date_time):
@@ -69,8 +70,8 @@ class TaskEditorSetterMixin(object):
 
 
 class TaskEditorBySettingFocusMixin(TaskEditorSetterMixin):
-    def setSubject(self, newSubject):
-        page = super().setSubject(newSubject)
+    def setSubject(self, new_subject):
+        page = super().setSubject(new_subject)
         if operating_system.isGTK():
             page._subjectSync.onAttributeEdited(
                 dummy.Event()
@@ -78,8 +79,8 @@ class TaskEditorBySettingFocusMixin(TaskEditorSetterMixin):
         else:
             page._descriptionEntry.SetFocus()  # pragma: no cover
 
-    def setDescription(self, newDescription):
-        page = super().setDescription(newDescription)
+    def setDescription(self, new_description):
+        page = super().setDescription(new_description)
         if operating_system.isGTK():
             page._descriptionSync.onAttributeEdited(
                 dummy.Event()
@@ -140,7 +141,7 @@ class EditorDisplayTest(TaskEditorTestCase):
         )
         return [self.task]
 
-    def testSubject(self):
+    def test_subject(self):
         self.assertEqual(
             "Task to edit", self.editor._interior[0]._subjectEntry.GetValue()
         )
@@ -157,13 +158,13 @@ class EditorDisplayTest(TaskEditorTestCase):
             self.editor._interior[1]._actualStartDateTimeCombo.GetValue(),
         )
 
-    def testRecurrenceUnit(self):
+    def test_recurrence_unit(self):
         choice = self.editor._interior[
             1
         ]._recurrenceEntry._recurrencePeriodEntry
         self.assertEqual("Daily", choice.GetString(choice.GetSelection()))
 
-    def testRecurrenceFrequency(self):
+    def test_recurrence_frequency(self):
         freq = self.editor._interior[
             1
         ]._recurrenceEntry._recurrenceFrequencyEntry
@@ -174,6 +175,60 @@ class EditorDisplayTest(TaskEditorTestCase):
             1
         ]._recurrenceEntry._recurrenceStopDateTimeCombo
         self.assertEqual(self.stop_datetime, stop.GetValue())
+
+
+class EditorFirstSizeTest(TaskEditorTestCase):
+    """The editor fits its largest page, so that each page shows whole
+    when first opened, and may then shrink (P91)."""
+
+    def getItems(self):
+        return [self.task]
+
+    def createTasks(self):
+        self.task = task.Task("Task to edit")  # pylint: disable=W0201
+        return [self.task]
+
+    def test_each_page_fits_in_the_editor(self):
+        book = self.editor._interior
+        client = self.editor.GetClientSize()
+        for page in book:
+            width, height = page.GetSizer().GetMinSize()
+            self.assertGreaterEqual(client.width, width, page.pageName)
+            self.assertGreaterEqual(
+                client.height, height + book.GetTabCtrlHeight(), page.pageName
+            )
+
+    def test_the_editor_may_shrink_below_its_pages(self):
+        self.assertEqual(wx.DefaultSize, self.editor._interior.GetMinSize())
+
+
+class EditorLayoutTest(TaskEditorTestCase):
+    """The tabs as the user arranged them come back in the next editor
+    of the same kind (P93)."""
+
+    def getItems(self):
+        return [self.task]
+
+    def createTasks(self):
+        self.task = task.Task("Task to edit")  # pylint: disable=W0201
+        return [self.task]
+
+    def tab_groups(self, editor):
+        manager = editor._interior.GetAuiManager()
+        return [pane for pane in manager.GetAllPanes() if pane.name != "dummy"]
+
+    def test_a_split_comes_back(self):
+        book = self.editor._interior
+        section = book.settings_section()
+        self.addCleanup(settings.set, section, "perspective", "")
+        book.Split(book.getPageIndex("notes"), wx.RIGHT)
+        self.assertEqual(2, len(self.tab_groups(self.editor)))
+        self.editor.Close()
+        test.settle()
+        self.editor = self.editorClass(
+            self.frame, [self.task], self.taskList, self.taskFile
+        )
+        self.assertEqual(2, len(self.tab_groups(self.editor)))
 
 
 class EditTaskTestMixin(object):
@@ -187,11 +242,11 @@ class EditTaskTestMixin(object):
         self.task.addAttachments(self.attachment)  # pylint: disable=E1101
         return [self.task]
 
-    def testEditSubject(self):
+    def test_edit_subject(self):
         self.setSubject("Done")
         self.assertEqual("Done", self.task.subject())
 
-    def testEditDescription(self):
+    def test_edit_description(self):
         self.setDescription("Description")
         self.assertEqual("Description", self.task.description())
 
@@ -235,66 +290,66 @@ class EditTaskTestMixin(object):
         self.assertEqual(date.DateTime(), self.task.completionDateTime())
 
     def test_set_reminder(self):
-        reminderDateTime = date.DateTime(2005, 1, 1)
-        self.set_reminder(reminderDateTime)
-        self.assertEqual(reminderDateTime, self.task.reminder())
+        reminder_date_time = date.DateTime(2005, 1, 1)
+        self.set_reminder(reminder_date_time)
+        self.assertEqual(reminder_date_time, self.task.reminder())
 
-    def testSetRecurrence(self):
+    def test_set_recurrence(self):
         self.set_recurrence(date.Recurrence("weekly"))
         self.assertEqual("weekly", self.task.recurrence().unit)
 
-    def testSetDailyRecurrence(self):
+    def test_set_daily_recurrence(self):
         self.set_recurrence(date.Recurrence("daily", amount=1))
         self.assertEqual("daily", self.task.recurrence().unit)
         self.assertEqual(1, self.task.recurrence().amount)
 
-    def testSetYearlyRecurrence(self):
+    def test_set_yearly_recurrence(self):
         self.set_recurrence(date.Recurrence("yearly"))
         self.assertEqual("yearly", self.task.recurrence().unit)
 
-    def testSetMaxRecurrence(self):
+    def test_set_max_recurrence(self):
         self.set_recurrence(date.Recurrence("weekly", maximum=10))
         self.assertEqual(10, self.task.recurrence().max)
 
-    def testSetRecurrenceStopDateTime(self):
+    def test_set_recurrence_stop_date_time(self):
         stop = date.DateTime(2012, 3, 4, 10, 0)
         self.set_recurrence(date.Recurrence("weekly", stop_datetime=stop))
         self.assertEqual(stop, self.task.recurrence().stop_datetime)
 
-    def testSetRecurrenceFrequency(self):
+    def test_set_recurrence_frequency(self):
         self.set_recurrence(date.Recurrence("weekly", amount=3))
         self.assertEqual(3, self.task.recurrence().amount)
 
-    def testSetRecurrenceSameWeekday(self):
+    def test_set_recurrence_same_weekday(self):
         self.set_recurrence(date.Recurrence("monthly", sameWeekday=True))
         self.assertTrue(self.task.recurrence().sameWeekday)
 
-    def testPriority(self):
+    def test_priority(self):
         self.editor._interior[0]._priorityEntry.SetValue(45)
         self.assertEqual(
             45, self.editor._interior[0]._priorityEntry.GetValue()
         )
 
-    def testSetNegativePriority(self):
+    def test_set_negative_priority(self):
         self.editor._interior[0]._priorityEntry.SetValue(-1)
         self.editor._interior[0]._prioritySync.onAttributeEdited(dummy.Event())
         self.assertEqual(-1, self.task.priority())
 
-    def testSetHourlyFee(self):
+    def test_set_hourly_fee(self):
         self.editor._interior[5]._hourly_fee_entry.SetValue(100)
         self.editor._interior[5]._hourly_fee_sync.onAttributeEdited(
             dummy.Event()
         )
         self.assertEqual(100, self.task.hourlyFee())
 
-    def testSetFixedFee(self):
+    def test_set_fixed_fee(self):
         self.editor._interior[5]._fixed_fee_entry.SetValue(100.5)
         self.editor._interior[5]._fixed_fee_sync.onAttributeEdited(
             dummy.Event()
         )
         self.assertEqual(100.5, self.task.fixedFee())
 
-    def testBehaviorMarkCompleted(self):
+    def test_behavior_mark_completed(self):
         page = self.editor._interior[3]
         page._shouldMarkCompletedEntry.SetStringSelection("Yes")
         page._shouldMarkCompletedSync.onAttributeEdited(dummy.Event())
@@ -302,7 +357,7 @@ class EditTaskTestMixin(object):
             True, self.task.shouldMarkCompletedWhenAllChildrenCompleted()
         )
 
-    def testAddAttachment(self):
+    def test_add_attachment(self):
         self.editor._interior[8].viewer.on_drop_files(self.task, ["filename"])
         # pylint: disable=E1101
         self.assertTrue(
@@ -312,31 +367,31 @@ class EditTaskTestMixin(object):
             "filename" in [att.subject() for att in self.task.attachments()]
         )
 
-    def testRemoveAttachment(self):
+    def test_remove_attachment(self):
         self.editor._interior[8].viewer.select(self.task.attachments())
         self.editor._interior[8].viewer.deleteItemCommand().do()
         self.assertEqual([], self.task.attachments())  # pylint: disable=E1101
 
-    def testOpenAttachmentWithNonAsciiFileName(self):
+    def test_open_attachment_with_non_ascii_file_name(self):
         self.errorMessage = ""  # pylint: disable=W0201
 
         def onError(*args, **kwargs):  # pylint: disable=W0613
             self.errorMessage = args[0]  # pragma: no cover
 
         att = attachment.FileAttachment("tÃƒÂ©st.ÃƒÂ©")
-        openAttachment = uicommand.AttachmentOpen(
+        open_attachment = uicommand.AttachmentOpen(
             viewer=self.editor._interior[6].viewer,
             attachments=attachment.AttachmentList([att]),
         )
-        openAttachment.do_command(None, showerror=onError)
+        open_attachment.do_command(None, showerror=onError)
         self.assertFalse(self.errorMessage)
 
-    def testAddNote(self):
+    def test_add_note(self):
         viewer = self.editor._interior[7].viewer
         viewer.newItemCommand(viewer.presentation()).do()
         self.assertEqual(1, len(self.task.notes()))
 
-    def testAddNoteWithSubnote(self):
+    def test_add_note_with_subnote(self):
         parent = note.Note(subject="New note")
         child = note.Note(subject="Child")
         parent.addChild(child)
@@ -349,7 +404,7 @@ class EditTaskTestMixin(object):
         # Only the parent note should be added to the notes list:
         self.assertEqual(1, len(self.task.notes()))
 
-    def testNewNote(self):
+    def test_new_note(self):
         viewer = self.editor._interior[7].viewer
         wx.GetApp().TopWindow.taskFile = self.taskFile
         command = gui.uicommand.NoteNew(
@@ -377,7 +432,7 @@ class EditTaskWithChildrenMixin(object):
         self.parent.addChild(self.child)
         return [self.parent]  # self.child is added to tasklist automatically
 
-    def testEditSubject(self):
+    def test_edit_subject(self):
         self.setSubject("New Parent Subject")
         self.assertEqual("New Parent Subject", self.parent.subject())
 
@@ -399,7 +454,7 @@ class EditTaskWithEffortTest(TaskEditorTestCase):
         self.task.addEffort(effort.Effort(self.task))
         return [self.task]
 
-    def testEffortIsShown(self):
+    def test_effort_is_shown(self):
         self.assertEqual(
             1, self.editor._interior[6].viewer.widget.GetItemCount()
         )

@@ -123,8 +123,6 @@ jobs:
           # per distro, rather than as a blanket line in debian/control,
           # mirroring the pip-bundling step above.
           #
-          #   python3-dbus       all targets - GNOME Mutter and KDE
-          #                      Plasma 5 dbus idle backends
           #   python3-pywayland  only releases that ship a Plasma 6
           #                      desktop AND package it - the ext-idle-
           #                      notify-v1 backend. Add new Plasma 6
@@ -135,12 +133,11 @@ jobs:
 
           case "$CODENAME" in
             trixie)
-              sed -i "s@^${H}\$@${H},\n            python3-dbus,\n            python3-pywayland@" debian/control
-              echo "Recommends += python3-dbus, python3-pywayland ($CODENAME)"
+              sed -i "s@^${H}\$@${H},\n            python3-pywayland@" debian/control
+              echo "Recommends += python3-pywayland ($CODENAME)"
               ;;
             bookworm|jammy|noble)
-              sed -i "s@^${H}\$@${H},\n            python3-dbus@" debian/control
-              echo "Recommends += python3-dbus ($CODENAME); python3-pywayland not packaged / not needed here (Plasma 5 / GNOME)"
+              echo "No idle binding for $CODENAME: python3-pywayland not packaged / not needed here (Plasma 5 / GNOME)"
               ;;
             *)
               echo "No idle-binding rule for $CODENAME; leaving debian/control unmodified"

@@ -80,8 +80,7 @@ jobs:
           dnf install -y \
             python3-wxpython4 \
             python3-chardet \
-            python3-dateutil \
-            python3-keyring
+            python3-dateutil
 
           # NOT in Fedora repos - install via pip during RPM build:
           # - squaremap (bundled in RPM via pip install in spec file)

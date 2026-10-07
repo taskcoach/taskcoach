@@ -20,9 +20,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys, unittest, os, time, wx, logging
 import atexit
+import ctypes
 import platform
 import re
+import secrets
 import shutil
+import signal
 import subprocess
 import tempfile
 
@@ -49,6 +52,87 @@ for variable in (
 os.environ["DBUS_SESSION_BUS_ADDRESS"] = "unix:path=" + os.path.join(
     os.environ["TASKCOACH_TEST_FOLDERS"], "no-session-bus"
 )
+
+
+def start_display():
+    """The run's own X display, a private Xvfb, never the desktop's
+    (docs/TESTING.md). The server picks a free number itself
+    (-displayfd), so runs side by side never take the same one, and
+    does not reset when its last client leaves (-noreset), which can
+    drop a client still connecting (P90). The runner's test files
+    use it; TASKCOACH_TEST_DISPLAY names a display to use instead."""
+    if "TASKCOACH_TEST_DISPLAY" in os.environ:
+        os.environ["DISPLAY"] = os.environ["TASKCOACH_TEST_DISPLAY"]
+        return
+    if platform.system() != "Linux":
+        return
+    folder = os.environ["TASKCOACH_TEST_FOLDERS"]
+    cookie = secrets.token_hex(16)
+    server_key = os.path.join(folder, "Xauthority-server")
+    subprocess.run(
+        ["xauth", "-q", "-f", server_key, "add", ":0", ".", cookie],
+        check=True,
+    )
+    read_end, write_end = os.pipe()
+    with open(os.path.join(folder, "xvfb.log"), "w") as log:
+        server = subprocess.Popen(
+            ["Xvfb", "-displayfd", str(write_end), "-auth", server_key]
+            + ["-nolisten", "tcp", "-noreset", "-screen", "0", "1280x1024x24"],
+            pass_fds=(write_end,),
+            stdout=log,
+            stderr=log,
+            preexec_fn=_end_with_the_runner,
+        )
+    os.close(write_end)
+    with os.fdopen(read_end) as ready:
+        number = ready.readline().strip()  # Written once it accepts
+    if not number:
+        sys.exit("Xvfb did not start:\n" + xvfb_log())
+    atexit.register(stop_display, server)
+    # Ended (a CI cancel, kill): exit as usual, so the display and the
+    # run's folders go
+    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
+    client_key = os.path.join(folder, "Xauthority")
+    subprocess.run(
+        ["xauth", "-q", "-f", client_key, "add", ":" + number, ".", cookie],
+        check=True,
+    )
+    os.environ.update(
+        DISPLAY=":" + number,
+        XAUTHORITY=client_key,
+        TASKCOACH_TEST_DISPLAY=":" + number,
+    )
+
+
+def _end_with_the_runner():
+    """In Xvfb before it starts: it ends when the runner does, also
+    one killed outright (Linux's PR_SET_PDEATHSIG)."""
+    try:
+        ctypes.CDLL(None, use_errno=True).prctl(1, signal.SIGTERM)
+    except (OSError, AttributeError):
+        pass  # Then the runner's exit stops it
+
+
+def stop_display(server):
+    server.terminate()
+    try:
+        server.wait(10)
+    except subprocess.TimeoutExpired:
+        server.kill()
+
+
+def xvfb_log():
+    """The last lines of the run's Xvfb output."""
+    try:
+        with open(
+            os.path.join(os.environ["TASKCOACH_TEST_FOLDERS"], "xvfb.log")
+        ) as log:
+            return "".join(log.readlines()[-10:])
+    except OSError as reason:
+        return str(reason)
+
+
+start_display()
 
 projectRoot = os.path.abspath("..")
 if projectRoot not in sys.path:
@@ -197,10 +281,10 @@ def styled(item):
 
 
 class TestCase(unittest.TestCase, object):
-    def assertEqualLists(self, expectedList, actualList):
-        self.assertEqual(len(expectedList), len(actualList))
-        for item in expectedList:
-            self.assertTrue(item in actualList)
+    def assertEqualLists(self, expected_list, actual_list):
+        self.assertEqual(len(expected_list), len(actual_list))
+        for item in expected_list:
+            self.assertTrue(item in actual_list)
 
     def registerObserver(self, eventType, eventSource=None):
         if not hasattr(self, "events"):
@@ -256,9 +340,9 @@ class TestCase(unittest.TestCase, object):
         every module reads, at its defaults (docs/SETTINGS.md)."""
         from taskcoachlib import config
 
-        settings = getattr(app, "settings", None)
-        if settings is None:
-            return
+        # A test that started the application leaves its wx.App current,
+        # which has no settings: reset the harness's all the same
+        settings = getattr(app, "settings", None) or wxTestCase.app.settings
         config.settings.use(settings)
         settings.reset()
         settings.init("window", "theme", "light")
@@ -276,9 +360,62 @@ class TestCaseFrame(wx.Frame):
         pass
 
 
+def display_report():
+    """The X display's state, for the runner or a test file that found
+    no display: now and then one cannot reach it (P90), and this names
+    why. No retry: a retry hid it before."""
+    display = os.environ.get("DISPLAY", "")
+    authority = os.environ.get("XAUTHORITY", "")
+    lines = [
+        "DISPLAY %r, XAUTHORITY %r (%s)"
+        % (
+            display,
+            authority,
+            "there" if authority and os.path.exists(authority) else "missing",
+        )
+    ]
+    number = re.match(r"[^:]*:(\d+)", display)
+    if number:
+        socket = "/tmp/.X11-unix/X" + number.group(1)
+        lines.append(
+            "socket %s: %s"
+            % (socket, "there" if os.path.exists(socket) else "missing")
+        )
+        lock = "/tmp/.X%s-lock" % number.group(1)
+        try:
+            with open(lock) as lock_file:
+                owner = int(lock_file.read().strip())
+            with open("/proc/%d/cmdline" % owner) as cmdline:
+                command = cmdline.read().replace("\0", " ").strip()
+            lines.append("lock %s: process %d, %s" % (lock, owner, command))
+        except (OSError, ValueError) as reason:
+            lines.append("lock %s: %s" % (lock, reason))
+    if shutil.which("xdpyinfo"):
+        try:
+            probe = subprocess.run(
+                ["xdpyinfo"], capture_output=True, text=True, timeout=10
+            )
+            answer = (probe.stderr or "connected").strip().splitlines()
+            lines.append(
+                "xdpyinfo: exit %d, %s" % (probe.returncode, answer[0])
+            )
+        except subprocess.TimeoutExpired:
+            lines.append("xdpyinfo: no answer in 10 s")
+    lines.append("load average %.1f %.1f %.1f" % os.getloadavg())
+    lines.append("Xvfb output:\n" + xvfb_log())
+    return "\n".join(lines)
+
+
 class wxTestCase(TestCase):
     # pylint: disable=W0404
-    app = wx.App(0)
+    try:
+        app = wx.App(0)
+    except (SystemError, SystemExit):
+        # The runner itself, or a test file, found no display (P90):
+        # wx's own check failed (SystemExit), or GTK's connection
+        # after it (SystemError)
+        print(display_report(), file=sys.stderr, flush=True)
+        raise
     # What the application's wx.App provides (application.py)
     app.quitting = False
     from taskcoachlib import config
@@ -335,10 +472,10 @@ class TestResultWithTimings(unittest.TextTestResult):
 
 
 class TextTestRunnerWithTimings(unittest.TextTestRunner):
-    def __init__(self, nrTestsToReport, timeTests=False, *args, **kwargs):
+    def __init__(self, nr_tests_to_report, time_tests=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._timeTests = timeTests
-        self._nrTestsToReport = nrTestsToReport
+        self._timeTests = time_tests
+        self._nrTestsToReport = nr_tests_to_report
 
     def _makeResult(self):
         return TestResultWithTimings(
@@ -348,22 +485,22 @@ class TextTestRunnerWithTimings(unittest.TextTestRunner):
     def run(self, *args, **kwargs):  # pylint: disable=W0221
         result = super().run(*args, **kwargs)
         if self._timeTests:
-            sortableTimings = [
+            sortable_timings = [
                 (timing, test)
                 for test, timing in list(result._timings.items())
             ]  # pylint: disable=W0212
-            sortableTimings.sort(reverse=True)
+            sortable_timings.sort(reverse=True)
             print("\n%d slowest tests:" % self._nrTestsToReport)
-            for timing, test in sortableTimings[: self._nrTestsToReport]:
+            for timing, test in sortable_timings[: self._nrTestsToReport]:
                 print("%s (%.2f)" % (test, timing))
         return result
 
 
 class AllTests(unittest.TestSuite):
-    def __init__(self, options, testFiles=None):
+    def __init__(self, options, test_files=None):
         super().__init__()
         self._options = options
-        self.loadAllTests(testFiles or [])
+        self.loadAllTests(test_files or [])
 
     def filenameToModuleName(self, filename):
         if filename == os.path.abspath(filename):
@@ -373,24 +510,24 @@ class AllTests(unittest.TestSuite):
         module = module.replace("/", ".")
         return module[:-3]  # strip '.py'
 
-    def loadAllTests(self, testFiles):
+    def loadAllTests(self, test_files):
         testloader = unittest.TestLoader()
-        for filename in testFiles or catalog(self._options):
-            moduleName = self.filenameToModuleName(filename)
+        for filename in test_files or catalog(self._options):
+            module_name = self.filenameToModuleName(filename)
             # Importing the module is not strictly necessary because
             # loadTestsFromName will do that too as a side effect. But if the
             # test module contains errors our import will raise an exception
             # while loadTestsFromName ignores exceptions when importing from
             # modules.
-            __import__(moduleName)
-            suite = testloader.loadTestsFromName(moduleName)
+            __import__(module_name)
+            suite = testloader.loadTestsFromName(module_name)
             self.addTests(suite._tests)  # pylint: disable=W0212
 
     def runTests(self):
         testrunner = TextTestRunnerWithTimings(
             verbosity=self._options.verbosity,
-            timeTests=self._options.time,
-            nrTestsToReport=self._options.time_reports,
+            time_tests=self._options.time,
+            nr_tests_to_report=self._options.time_reports,
         )
         return testrunner.run(self)
 
@@ -459,6 +596,8 @@ def run_catalog(options, test_files):
         if result.returncode:
             failed.append(filename)
             print("exit status %d" % result.returncode)
+            if not ran:
+                print(display_report())
             report = output.find("=" * 70)
             lines = output[report:] if report >= 0 else output
             print("\n".join(lines.splitlines()[-60:]) + "\n", flush=True)
@@ -649,8 +788,8 @@ class TestProfiler:
 
         stats = pstats.Stats(self._logfile)
         stats.strip_dirs()
-        for sortKey in self._options.profile_sort:
-            stats.sort_stats(sortKey)
+        for sort_key in self._options.profile_sort:
+            stats.sort_stats(sort_key)
             stats.print_stats(
                 self._options.profile_regex, self._options.profile_limit
             )

@@ -12,170 +12,57 @@ It's over 20 years old, and development was stagnant in recent years. Here, the 
 
 ![Task Coach with Task Edit Tabbed Window](docs/images/App%20Screenshot%202.png)
 
-## Quick Start
+## Install
 
 Download the package for your system from the [latest release](https://github.com/taskcoach/taskcoach/releases):
 
 | Platform | Package |
 |----------|---------|
-| [Any Linux (x86_64)](#appimage) | `TaskCoach-2.0.3.0-x86_64.AppImage` |
-| [Arch Linux / Manjaro](#arch-linux--manjaro) | `taskcoach-2.0.3.0-arch.pkg.tar.zst` |
-| [Debian 12 (Bookworm)](#debian--ubuntu) | `taskcoach_2.0.3.0_debian-12-bookworm.deb` |
-| [Debian 13 (Trixie)](#debian--ubuntu) | `taskcoach_2.0.3.0_debian-13-trixie.deb` |
-| [Debian Sid](#debian--ubuntu) | `taskcoach_2.0.3.0_debian-sid.deb` |
-| [Fedora 42/43](#fedora) | `taskcoach-2.0.3.0-fedora43.rpm` |
-| [Flatpak (any Linux)](#flatpak) | `TaskCoach-2.0.3.0-x86_64.flatpak` |
-| [Linux Mint](#debian--ubuntu) | Use Ubuntu `.deb` (Mint is Ubuntu-based) |
-| [macOS (Apple Silicon)](#macos) | `TaskCoach-2.0.3.0-macos-arm64.dmg` |
-| [macOS (Intel)](#macos) | `TaskCoach-2.0.3.0-macos-intel.dmg` |
-| [Ubuntu 22.04 (Jammy)](#debian--ubuntu) | `taskcoach_2.0.3.0_ubuntu-22.04-jammy.deb` |
-| [Ubuntu 24.04 (Noble)](#debian--ubuntu) | `taskcoach_2.0.3.0_ubuntu-24.04-noble.deb` |
-| [Windows](#windows) | `TaskCoach-2.0.3.0-windows-x64-setup.exe` |
-| [Windows (portable)](#windows) | `TaskCoach-2.0.3.0-windows-x64-portable.zip` |
-
-After installing, Task Coach should be in normal system launchers (Applications → Office → Task Coach). For CLI, the launch command is `taskcoach.py`.
-
-### Linux
-
-#### Debian / Ubuntu
-
-Install instructions for Debian Trixie (similar for other Debian/Ubuntu systems, just use the appropriate .deb file):
-
-```bash
-cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach_2.0.3.0_debian-13-trixie.deb
-sudo apt install ./taskcoach_2.0.3.0_debian-13-trixie.deb
-```
-
-To uninstall:
-```bash
-sudo apt remove taskcoach
-sudo apt autoremove  # optional: remove unused dependencies
-```
-
-#### Arch Linux / Manjaro
-
-```bash
-cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.3.0-arch.pkg.tar.zst
-sudo pacman -U taskcoach-2.0.3.0-arch.pkg.tar.zst
-```
-
-To uninstall:
-```bash
-sudo pacman -R taskcoach
-sudo pacman -Qdtq | sudo pacman -Rs -  # optional: remove orphaned dependencies
-```
-
-#### Fedora
-
-```bash
-cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/taskcoach-2.0.3.0-fedora43.rpm
-sudo dnf install ./taskcoach-2.0.3.0-fedora43.rpm
-```
-
-To uninstall:
-```bash
-sudo dnf remove taskcoach
-sudo dnf autoremove  # optional: remove unused dependencies
-```
-
-#### AppImage
-
-Run on any Linux without installation:
-
-```bash
-cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.3.0-x86_64.AppImage
-chmod +x TaskCoach-2.0.3.0-x86_64.AppImage
-```
-
-To launch the AppImage, open the file or run:
-```
-./TaskCoach-2.0.3.0-x86_64.AppImage
-```
-
-To remove: simply delete the AppImage file.
-
-#### Flatpak
-
-A single-file Flatpak bundle is also published. It needs `flatpak` installed;
-the first install pulls the GNOME runtime from Flathub.
-
-```bash
-cd ~/Downloads
-wget https://github.com/taskcoach/taskcoach/releases/latest/download/TaskCoach-2.0.3.0-x86_64.flatpak
-flatpak install ./TaskCoach-2.0.3.0-x86_64.flatpak
-flatpak run io.github.taskcoach.TaskCoach
-```
-
-To remove:
-```bash
-flatpak uninstall io.github.taskcoach.TaskCoach
-```
-
-The Flatpak bundles its own libayatana-appindicator, so the system-tray icon
-works without host packages (on GNOME you still need the AppIndicator extension,
-as noted below).
-
-#### Linux System Tray
-
-Task Coach uses libayatana-appindicator for the system tray icon on Linux. This provides consistent behavior across all desktop environments (KDE, XFCE, MATE, LXQt, LXDE, Cinnamon) and works on both X11 and Wayland.
-
-The package is installed automatically with the .deb/.rpm packages. For manual installation:
-
-```bash
-# Debian/Ubuntu
-sudo apt install python3-gi gir1.2-ayatanaappindicator3-0.1
-
-# Fedora
-sudo dnf install python3-gobject libayatana-appindicator-gtk3
-
-# Arch Linux
-sudo pacman -S python-gobject libayatana-appindicator
-```
-
-**Note:** GNOME Shell removed built-in system tray support. GNOME users need the [AppIndicator Support](https://extensions.gnome.org/extension/615/appindicator-support/) extension to see tray icons. Ubuntu pre-installs this extension.
-
-### macOS
-
-Download the `.dmg` for your Mac (Apple Silicon for M1/M2/M3/M4, Intel for older Macs). Open the DMG and drag Task Coach to Applications.
-
-On first launch, macOS will block the app because it's not notarized. Open **System Settings → Privacy & Security**, scroll down, and click **"Open Anyway"** next to the Task Coach message.
-
-See [README_INSTALL_MACOS.md](README_INSTALL_MACOS.md) for detailed instructions with screenshots.
+| [Windows](#windows) | `TaskCoach-2.0.3.1-windows-x64-setup.exe` |
+| [Windows (portable)](#windows) | `TaskCoach-2.0.3.1-windows-x64-portable.zip` |
+| [macOS (Apple Silicon)](#macos) | `TaskCoach-2.0.3.1-macos-arm64.dmg` |
+| [macOS (Intel)](#macos) | `TaskCoach-2.0.3.1-macos-intel.dmg` |
+| [Debian 12 (Bookworm)](#linux) | `taskcoach_2.0.3.1_debian-12-bookworm.deb` |
+| [Debian 13 (Trixie)](#linux) | `taskcoach_2.0.3.1_debian-13-trixie.deb` |
+| [Ubuntu 22.04 (Jammy), Linux Mint 21](#linux) | `taskcoach_2.0.3.1_ubuntu-22.04-jammy.deb` |
+| [Ubuntu 24.04 (Noble), Linux Mint 22](#linux) | `taskcoach_2.0.3.1_ubuntu-24.04-noble.deb` |
+| [Fedora 43](#linux) | `taskcoach-2.0.3.1-fedora43.rpm` |
+| [Arch Linux / Manjaro](#linux) | `taskcoach-2.0.3.1-arch.pkg.tar.zst` |
+| [Any Linux (x86_64)](#linux) | `TaskCoach-2.0.3.1-x86_64.AppImage` |
+| [Flatpak (any Linux)](README_INSTALL_LINUX.md#flatpak-any-linux) | `TaskCoach-2.0.3.1-x86_64.flatpak` |
 
 ### Windows
 
-Download the `.exe` installer and run it. Windows will show a security warning because the app is not signed with a Microsoft certificate. Click **"More info"** then **"Run anyway"** to proceed.
+Run the installer. Windows warns that the app is not signed with a Microsoft certificate: click **More info**, then **Run anyway**.
 
-For the portable version, extract the `.zip` and run `TaskCoach.bat` from the folder (or `TaskCoach.vbs` for silent launch without a console window).
+For the portable version, extract the `.zip` and run `TaskCoach.bat`.
 
-See [README_INSTALL_WINDOWS.md](README_INSTALL_WINDOWS.md) for detailed instructions with screenshots.
+Step by step, with screenshots: [README_INSTALL_WINDOWS.md](README_INSTALL_WINDOWS.md).
 
-## Running from Source
+### macOS
 
-For development or if you prefer running from git:
+Open the `.dmg` (Apple Silicon for M1 and later, Intel for older Macs) and drag Task Coach to Applications. On first launch macOS blocks it because it is not notarized: open **System Settings → Privacy & Security** and click **Open Anyway** next to the Task Coach message.
 
-```bash
-git clone --depth 1 https://github.com/taskcoach/taskcoach.git
-cd taskcoach
-./setup.sh
-./taskcoach-run.sh
-```
+Step by step, with screenshots: [README_INSTALL_MACOS.md](README_INSTALL_MACOS.md).
 
-See [docs/DEBIAN_BOOKWORM_SETUP.md](docs/DEBIAN_BOOKWORM_SETUP.md) for detailed setup options, troubleshooting, and platform-specific instructions.
+### Linux
 
-### Testing after git installaion
-
-Quick sanity check to verify the installation:
+Install the downloaded package:
 
 ```bash
-./test_taskcoach.sh
+sudo apt install ./taskcoach_2.0.3.1_debian-13-trixie.deb   # Debian, Ubuntu, Linux Mint
+sudo dnf install ./taskcoach-2.0.3.1-fedora43.rpm           # Fedora
+sudo pacman -U taskcoach-2.0.3.1-arch.pkg.tar.zst           # Arch Linux, Manjaro
 ```
 
-This tests Python version, dependencies, module imports, and that Task Coach's own tree widget is loaded.
+Or make the AppImage executable (`chmod +x TaskCoach-2.0.3.1-x86_64.AppImage`) and open it: it runs without installing.
+
+Uninstalling, the Flatpak, and the tray icon on GNOME: [README_INSTALL_LINUX.md](README_INSTALL_LINUX.md).
+
+## Support
+
+- Report bugs or request features at GitHub Issues: https://github.com/taskcoach/taskcoach/issues
+- Ask for help or have other open discussion at https://github.com/orgs/taskcoach/discussions
 
 ## License
 
@@ -183,41 +70,6 @@ Task Coach is free software licensed under the [GNU General Public License v3](h
 
 Copyright (C) 2004-2026 Task Coach developers
 
-## Architecture Overview
+## Developers
 
-Task Coach is a desktop application developed in Python using wxPython for its GUI. It follows the Model-View-Controller pattern with three main layers:
-
-- **Domain layer**: Classes for tasks, categories, effort, notes and other domain objects
-- **GUI layer**: Viewers, controllers, dialogs, menus and other GUI components
-- **Persistence layer**: Loading/saving domain objects to XML files (.tsk) and exporting to various formats
-
-## Source Code Overview
-
-Key packages:
-
-| Package | Description |
-|---------|-------------|
-| `domain` | Domain objects (tasks, categories, effort, notes) |
-| `gui` | Viewers, dialogs, and UI components |
-| `command` | Undo/redo-capable user actions (Command pattern) |
-| `config` | User settings and TaskCoach.ini handling |
-| `persistence` | .tsk file format (XML) and export functionality |
-| `i18n` | Internationalization and translations |
-| `widgets` | Adapted wxPython widgets |
-
-## Documentation
-
-- [README_INSTALL_MACOS.md](README_INSTALL_MACOS.md) - macOS installation with security bypass
-- [README_INSTALL_WINDOWS.md](README_INSTALL_WINDOWS.md) - Windows installation with SmartScreen bypass
-- [DEBIAN_BOOKWORM_SETUP.md](docs/DEBIAN_BOOKWORM_SETUP.md) - Detailed installation and setup
-- [PACKAGING.md](docs/PACKAGING.md) - Packaging across all platforms (deb, rpm, Arch, AppImage, Flatpak, Windows, macOS)
-- [APPIMAGE.md](docs/APPIMAGE.md) - AppImage build details
-- [FLATPAK.md](docs/FLATPAK.md) - Flatpak build details
-- [BUNDLED_TREE_WIDGET.md](docs/BUNDLED_TREE_WIDGET.md) - Task Coach's copy of wxPython's tree widget
-- [THIRD_PARTY_CODE.md](docs/THIRD_PARTY_CODE.md) - All bundled, copied and runtime-patched third-party code
-- [DEPENDENCIES.md](docs/DEPENDENCIES.md) - Why each third-party package is there, its use, size and alternatives
-
-## Support
-
-- Report bugs or request features at GitHub Issues: https://github.com/taskcoach/taskcoach/issues
-- Ask for help or have other open discussion at https://github.com/orgs/taskcoach/discussions
+Running from source, tests, building the packages and the design documents: [developer documentation](docs/README.md).

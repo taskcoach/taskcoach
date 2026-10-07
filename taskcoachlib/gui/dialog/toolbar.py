@@ -618,7 +618,7 @@ class _ListDropTarget(wx.DropTarget):
         self.__data = wx.TextDataObject()
         self.SetDataObject(self.__data)
 
-    def OnDragOver(self, x, y, defResult):
+    def OnDragOver(self, x, y, def_result):
         if self.__is_visible:
             self.__interior.HandleDragOver(x, y)
         return wx.DragMove
@@ -626,13 +626,13 @@ class _ListDropTarget(wx.DropTarget):
     def OnDrop(self, x, y):
         return True
 
-    def OnData(self, x, y, defResult):
+    def OnData(self, x, y, def_result):
         if self.GetData():
             if self.__is_visible:
                 self.__interior.HandleDrop(x, y)
             else:
                 self.__interior.HandleDropOnRemaining(x, y)
-        return defResult
+        return def_result
 
     def OnLeave(self):
         self.__interior.ClearDropLine()
@@ -643,7 +643,7 @@ class ToolBarEditor(BalloonTipManager, widgets.Dialog):
         self.__toolbar = toolbar
         super().__init__(*args, **kwargs)
         self.SetClientSize(wx.Size(900, 700))
-        self.CentreOnParent()
+        self.place()
 
     def createInterior(self):
         return _ToolBarEditorInterior(self.__toolbar, self._panel)

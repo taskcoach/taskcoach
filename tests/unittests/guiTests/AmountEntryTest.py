@@ -29,10 +29,10 @@ class AmountEntryTest(test.wxTestCase):
         super().setUp()
         self.amountEntry = entry.AmountEntry(self.frame)
 
-    def testCreate(self):
+    def test_create(self):
         self.assertEqual(0.0, self.amountEntry.GetValue())
 
-    def testSetValue(self):
+    def test_set_value(self):
         self.amountEntry.SetValue(1.0)
         self.assertEqual(1.0, self.amountEntry.GetValue())
 
@@ -42,42 +42,44 @@ class NumericCtrlTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.ctrl = NumericCtrl(self.frame, value=0.0, decimal_places=2,
-                                decimal_char=".")
+        self.ctrl = NumericCtrl(
+            self.frame, value=0.0, decimal_places=2, decimal_char="."
+        )
 
-    def testCreateDefault(self):
+    def test_create_default(self):
         self.assertEqual(0.0, self.ctrl.GetValue())
 
-    def testCreateWithValue(self):
-        ctrl = NumericCtrl(self.frame, value=12.34, decimal_places=2,
-                           decimal_char=".")
+    def test_create_with_value(self):
+        ctrl = NumericCtrl(
+            self.frame, value=12.34, decimal_places=2, decimal_char="."
+        )
         self.assertEqual(12.34, ctrl.GetValue())
 
-    def testSetValue(self):
+    def test_set_value(self):
         self.ctrl.SetValue(25.5)
         self.assertEqual(25.5, self.ctrl.GetValue())
 
-    def testSetValueFormatsDisplay(self):
+    def test_set_value_formats_display(self):
         self.ctrl.SetValue(12.3)
         self.assertEqual("12.30", wx.TextCtrl.GetValue(self.ctrl))
 
-    def testGetValueReturnsPythonFloat(self):
+    def test_get_value_returns_python_float(self):
         self.ctrl.SetValue(99.99)
         result = self.ctrl.GetValue()
         self.assertIsInstance(result, float)
         self.assertEqual(99.99, result)
 
-    def testEmptyFieldReturnsZero(self):
+    def test_empty_field_returns_zero(self):
         wx.TextCtrl.SetValue(self.ctrl, "")
         self.assertEqual(0.0, self.ctrl.GetValue())
 
-    def testInvalidTextReturnsLastSetValue(self):
+    def test_invalid_text_returns_last_set_value(self):
         self.ctrl.SetValue(10.0)
         # Directly set invalid text bypassing our SetValue
         wx.TextCtrl.SetValue(self.ctrl, "abc")
         self.assertEqual(10.0, self.ctrl.GetValue())
 
-    def testBlurFormatsValidInput(self):
+    def test_blur_formats_valid_input(self):
         """Valid input is formatted on blur."""
         self.ctrl.SetValue(0.0)
         wx.TextCtrl.SetValue(self.ctrl, "12.34")
@@ -86,7 +88,7 @@ class NumericCtrlTest(test.wxTestCase):
         self.ctrl._onKillFocus(event)
         self.assertEqual("12.34", wx.TextCtrl.GetValue(self.ctrl))
 
-    def testBlurRevertsInvalidInput(self):
+    def test_blur_reverts_invalid_input(self):
         """Invalid input reverts to last set value on blur."""
         self.ctrl.SetValue(5.0)
         wx.TextCtrl.SetValue(self.ctrl, "12.34.56")
@@ -94,7 +96,7 @@ class NumericCtrlTest(test.wxTestCase):
         self.ctrl._onKillFocus(event)
         self.assertEqual("5.00", wx.TextCtrl.GetValue(self.ctrl))
 
-    def testBlurRevertsGarbageInput(self):
+    def test_blur_reverts_garbage_input(self):
         """Garbage text reverts to last set value on blur."""
         self.ctrl.SetValue(7.5)
         wx.TextCtrl.SetValue(self.ctrl, "abc1.00xyz")
@@ -102,7 +104,7 @@ class NumericCtrlTest(test.wxTestCase):
         self.ctrl._onKillFocus(event)
         self.assertEqual("7.50", wx.TextCtrl.GetValue(self.ctrl))
 
-    def testBlurEmptyFieldBecomesZero(self):
+    def test_blur_empty_field_becomes_zero(self):
         """Empty field becomes 0.00 on blur."""
         self.ctrl.SetValue(10.0)
         wx.TextCtrl.SetValue(self.ctrl, "")
@@ -116,18 +118,19 @@ class NumericCtrlFloatingTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.ctrl = NumericCtrl(self.frame, value=0.0, decimal_places=None,
-                                decimal_char=".")
+        self.ctrl = NumericCtrl(
+            self.frame, value=0.0, decimal_places=None, decimal_char="."
+        )
 
-    def testFloatingFormatsNoTrailingZeros(self):
+    def test_floating_formats_no_trailing_zeros(self):
         self.ctrl.SetValue(12.0)
         self.assertEqual("12", wx.TextCtrl.GetValue(self.ctrl))
 
-    def testFloatingPreservesPrecision(self):
+    def test_floating_preserves_precision(self):
         self.ctrl.SetValue(12.3)
         self.assertEqual("12.3", wx.TextCtrl.GetValue(self.ctrl))
 
-    def testFloatingFormatsSmallDecimals(self):
+    def test_floating_formats_small_decimals(self):
         self.ctrl.SetValue(0.5)
         self.assertEqual("0.5", wx.TextCtrl.GetValue(self.ctrl))
 
@@ -137,24 +140,25 @@ class NumericCtrlLocaleTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        self.ctrl = NumericCtrl(self.frame, value=0.0, decimal_places=2,
-                                decimal_char=",")
+        self.ctrl = NumericCtrl(
+            self.frame, value=0.0, decimal_places=2, decimal_char=","
+        )
 
-    def testDisplayUsesLocaleDecimal(self):
+    def test_display_uses_locale_decimal(self):
         self.ctrl.SetValue(25.5)
         self.assertEqual("25,50", wx.TextCtrl.GetValue(self.ctrl))
 
-    def testGetValueReturnsPeriodDecimal(self):
+    def test_get_value_returns_period_decimal(self):
         self.ctrl.SetValue(25.5)
         self.assertEqual(25.5, self.ctrl.GetValue())
 
-    def testBlurParsesLocaleDecimal(self):
+    def test_blur_parses_locale_decimal(self):
         wx.TextCtrl.SetValue(self.ctrl, "12,34")
         event = wx.FocusEvent(wx.wxEVT_KILL_FOCUS)
         self.ctrl._onKillFocus(event)
         self.assertEqual(12.34, self.ctrl.GetValue())
 
-    def testBlurFormatsWithLocaleDecimal(self):
+    def test_blur_formats_with_locale_decimal(self):
         wx.TextCtrl.SetValue(self.ctrl, "12,34")
         event = wx.FocusEvent(wx.wxEVT_KILL_FOCUS)
         self.ctrl._onKillFocus(event)
@@ -168,14 +172,14 @@ class CurrencyCtrlTest(test.wxTestCase):
         super().setUp()
         self.ctrl = CurrencyCtrl(self.frame, value=0.0, decimal_char=".")
 
-    def testCreate(self):
+    def test_create(self):
         self.assertEqual(0.0, self.ctrl.GetValue())
 
-    def testSetValue(self):
+    def test_set_value(self):
         self.ctrl.SetValue(42.0)
         self.assertEqual(42.0, self.ctrl.GetValue())
 
-    def testFormatsToTwoDecimalPlaces(self):
+    def test_formats_to_two_decimal_places(self):
         """Default locale should give 2 decimal places."""
         self.ctrl.SetValue(5.0)
         self.assertEqual("5.00", wx.TextCtrl.GetValue(self.ctrl))

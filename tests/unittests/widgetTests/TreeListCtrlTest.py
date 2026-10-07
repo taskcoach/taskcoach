@@ -43,13 +43,13 @@ class TreeListCtrlTestCase(TreeCtrlTest.TreeCtrlTestCase):
         )
         from taskcoachlib.gui.icons.icon_library import icon_catalog
 
-        imageList = wx.ImageList(16, 16)
+        image_list = wx.ImageList(16, 16)
         for icon_id in [
             "nuvola_actions_ledblue",
             "nuvola_mimetypes_inode-directory",
         ]:
-            imageList.Add(icon_catalog.get_bitmap(icon_id, 16))
-        self.treeCtrl.AssignImageList(imageList)  # pylint: disable=E1101
+            image_list.Add(icon_catalog.get_bitmap(icon_id, 16))
+        self.treeCtrl.AssignImageList(image_list)  # pylint: disable=E1101
 
     def createColumns(self):
         names = ["treeColumn"] + ["column%d" % index for index in range(1, 5)]
@@ -81,7 +81,7 @@ class TreeListCtrlPointerTest(TreeListCtrlTestCase):
         self.treeCtrl.cancel_tip = lambda: self.tips_cancelled.append(True)
 
     def rows(self):
-        return self.treeCtrl.GetItemChildren(recursively=True)
+        return self.treeCtrl.get_item_children(recursively=True)
 
     def pointer_on(self, row):
         # Where the pointer rests: on the row's label
@@ -138,9 +138,9 @@ class TreeListCtrlColumnsTest(TreeListCtrlTestCase):
             len(self.visibleColumns) + 1, self.treeCtrl.GetColumnCount()
         )
         item = self.treeCtrl.GetFirstChild(self.treeCtrl.GetRootItem())[0]
-        for columnIndex in range(1, len(self.visibleColumns)):
+        for column_index in range(1, len(self.visibleColumns)):
             self.assertEqual(
-                "item", self.treeCtrl.GetItemText(item, columnIndex)
+                "item", self.treeCtrl.GetItemText(item, column_index)
             )
 
     def showColumn(self, name, show=True):
@@ -152,7 +152,7 @@ class TreeListCtrlColumnsTest(TreeListCtrlTestCase):
         else:
             self.visibleColumns.remove(column)
 
-    def testAllColumnsVisible(self):
+    def test_all_columns_visible(self):
         self.assertColumns()
 
     def first_row(self):
@@ -193,16 +193,16 @@ class TreeListCtrlColumnsTest(TreeListCtrlTestCase):
         self.showColumn("column1", False)
         self.assertFalse(row.HasExtents(0))
 
-    def testHideColumn(self):
+    def test_hide_column(self):
         self.showColumn("column1", False)
         self.assertColumns()
 
-    def testHideLastColumn(self):
-        lastColumnHeader = "column%d" % len(self.visibleColumns)
-        self.showColumn(lastColumnHeader, False)
+    def test_hide_last_column(self):
+        last_column_header = "column%d" % len(self.visibleColumns)
+        self.showColumn(last_column_header, False)
         self.assertColumns()
 
-    def testShowColumn(self):
+    def test_show_column(self):
         self.showColumn("column2", False)
         hidden = self.treeCtrl.GetColumnCount()
         self.showColumn("column2", True)
@@ -245,7 +245,7 @@ class TreeListCtrlInPlaceEditTest(TreeListCtrlTestCase):
         setattr(settings.feature, option, value)
 
     def rows(self):
-        return self.treeCtrl.GetItemChildren(recursively=True)
+        return self.treeCtrl.get_item_children(recursively=True)
 
     def point(self, row, column):
         rect = self.treeCtrl.GetBoundingRect(self.rows()[row], textOnly=True)

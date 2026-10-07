@@ -34,28 +34,28 @@ class NumberedInstancesTestsMixin(object):
     metaclass as well as for a subclass of a class with NumberedInstances
     as metaclass."""
 
-    def testCounterIncreasesAfterEachInstantation(self):
+    def test_counter_increases_after_each_instantation(self):
         instances = []
         for count in range(3):
             instance = self.classUnderTest()
             self.assertEqual(count, instance.instanceNumber)
             instances.append(instance)
 
-    def testInstanceNumbersAreReusedWhenFreed(self):
+    def test_instance_numbers_are_reused_when_freed(self):
         instance1 = self.classUnderTest()
         del instance1
         instance2 = self.classUnderTest()
         self.assertEqual(0, instance2.instanceNumber)
 
-    def testInstanceNumbersAreTheLowestFreeNumber(self):
+    def test_instance_numbers_are_the_lowest_free_number(self):
         instance1 = self.classUnderTest()
         instance2 = self.classUnderTest()
-        instance2Number = instance2.instanceNumber
+        instance_2_number = instance2.instanceNumber
         del instance2
         instance3 = self.classUnderTest()
-        self.assertEqual(instance3.instanceNumber, instance2Number)
+        self.assertEqual(instance3.instanceNumber, instance_2_number)
 
-    def testInstanceNumbersFillTheGap(self):
+    def test_instance_numbers_fill_the_gap(self):
         instances = []
         for count in range(10):
             instances.append(self.classUnderTest())
@@ -92,8 +92,8 @@ class SubclassOfNumberedInstancesTest(
 ):
     classUnderTest = SubclassOfNumbered
 
-    def testSubclassInstancesHaveTheirOwnNumbers(self):
-        numberedInstance = Numbered()
-        subclassOfNumberedInstance = SubclassOfNumbered()
-        self.assertEqual(0, numberedInstance.instanceNumber)
-        self.assertEqual(0, subclassOfNumberedInstance.instanceNumber)
+    def test_subclass_instances_have_their_own_numbers(self):
+        numbered_instance = Numbered()
+        subclass_of_numbered_instance = SubclassOfNumbered()
+        self.assertEqual(0, numbered_instance.instanceNumber)
+        self.assertEqual(0, subclass_of_numbered_instance.instanceNumber)

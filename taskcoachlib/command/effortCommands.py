@@ -58,7 +58,7 @@ class AddEffortCommand(base.BaseCommand):
         self.__tasks = self.items
         self.items = self.__efforts
 
-    def name_subject(self, anEffort):
+    def name_subject(self, an_effort):
         return self.__tasks[0].subject() if self.__tasks else ""
 
     def do_command(self):

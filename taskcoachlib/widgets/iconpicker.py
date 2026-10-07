@@ -21,6 +21,7 @@ import wx.lib.buttons as buttons
 
 from taskcoachlib import patterns
 from taskcoachlib.config import settings
+from taskcoachlib.tools import wxhelper
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.gui.icons.icon_library import LIST_ICON_SIZE
 from taskcoachlib.gui.icons import image_list_cache
@@ -228,34 +229,31 @@ class _IconDialog(wx.Dialog):
         panel.SetSizer(sizer)
 
         # Dialog layout: panel (search + list) + button bar
-        dlgSizer = wx.BoxSizer(wx.VERTICAL)
-        dlgSizer.Add(panel, 1, wx.EXPAND)
+        dlg_sizer = wx.BoxSizer(wx.VERTICAL)
+        dlg_sizer.Add(panel, 1, wx.EXPAND)
 
         # Button bar — created manually (not CreateStdDialogButtonSizer)
         # so all buttons are siblings and tab order can be controlled.
         # Tab order: list → Clear → Cancel → OK
-        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
         if allow_clear:
             self._clearBtn = wx.Button(self, wx.ID_CLEAR, _("Clear"))
-            btnSizer.Add(self._clearBtn, 0, wx.LEFT | wx.RIGHT, 5)
+            btn_sizer.Add(self._clearBtn, 0, wx.LEFT | wx.RIGHT, 5)
             self.Bind(wx.EVT_BUTTON, self._on_clear, id=wx.ID_CLEAR)
-        btnSizer.AddStretchSpacer()
+        btn_sizer.AddStretchSpacer()
         cancel_btn = wx.Button(self, wx.ID_CANCEL)
         ok_btn = wx.Button(self, wx.ID_OK)
-        btnSizer.Add(cancel_btn, 0, wx.RIGHT, 5)
-        btnSizer.Add(ok_btn, 0, wx.RIGHT, 5)
+        btn_sizer.Add(cancel_btn, 0, wx.RIGHT, 5)
+        btn_sizer.Add(ok_btn, 0, wx.RIGHT, 5)
         ok_btn.SetDefault()
-        dlgSizer.Add(btnSizer, 0, wx.EXPAND | wx.ALL, 5)
+        dlg_sizer.Add(btn_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
-        self.SetSizer(dlgSizer)
+        self.SetSizer(dlg_sizer)
         self.Bind(wx.EVT_BUTTON, self._on_ok, id=wx.ID_OK)
 
-        # Dialog size: fixed width, 75% of screen height
-        display = wx.Display(wx.Display.GetFromWindow(parent))
-        screen_height = display.GetClientArea().GetHeight()
-        total_height = int(screen_height * 0.75)
-
-        self._desired_size = wx.Size(700, total_height)
+        # Fixed width, as tall as a window opens (80% of the screen)
+        area = wxhelper.work_area_of(parent)
+        self._desired_size = wx.Size(*wxhelper.most_of((700, area[3]), area))
 
         def _on_shown(evt):
             self.SetSize(self._desired_size)
@@ -343,18 +341,18 @@ class _IconDialog(wx.Dialog):
             return excluded
         if self._exclude == "data":
             excluded = set()
-            taskFile = getattr(app, "taskFile", None)
-            if taskFile is None:
+            task_file = getattr(app, "taskFile", None)
+            if task_file is None:
                 return excluded
-            for obj in taskFile.tasks():
+            for obj in task_file.tasks():
                 icon_id = obj.icon_id()
                 if icon_id:
                     excluded.add(icon_id)
-            for obj in taskFile.categories():
+            for obj in task_file.categories():
                 icon_id = obj.icon_id()
                 if icon_id:
                     excluded.add(icon_id)
-            for obj in taskFile.notes():
+            for obj in task_file.notes():
                 icon_id = obj.icon_id()
                 if icon_id:
                     excluded.add(icon_id)
@@ -477,7 +475,7 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         rect = wx.Rect(3, 3, w - 6, h - 6)
         wx.RendererNative.Get().DrawFocusRect(self, dc, rect)
 
-    def SetBitmapLabel(self, bitmap, createOthers=True):
+    def SetBitmapLabel(self, bitmap, create_others=True):
         """Set bitmap label. Passing None/invalid bitmap is an error.
 
         For "no icon" state, set bmpLabel=None directly instead of calling this.
@@ -490,7 +488,7 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
                 prefix="ICON",
             )
             return  # Ignore the call, don't crash
-        super().SetBitmapLabel(bitmap, createOthers)
+        super().SetBitmapLabel(bitmap, create_others)
 
     def _get_icon_size(self):
         """Return (width, height) of current icon, or (0, 0) if no icon."""
@@ -547,9 +545,9 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
                 bmp = self.bmpFocus
             if self.bmpSelected and not self.up:
                 bmp = self.bmpSelected
-            hasMask = bmp.GetMask() is not None
+            has_mask = bmp.GetMask() is not None
         else:
-            hasMask = False
+            has_mask = False
 
         if not self.up:
             dx = dy = self.labelDelta
@@ -574,7 +572,7 @@ class IconPicker(buttons.ThemedGenBitmapTextButton):
         # Draw icon if present
         if bw > 0 and bmp:
             dc.DrawBitmap(
-                bmp, self.PADDING + dx, (height - bh) // 2 + dy, hasMask
+                bmp, self.PADDING + dx, (height - bh) // 2 + dy, has_mask
             )
 
         dc.DrawText(label, text_x + dx, (height - th) // 2 + dy)

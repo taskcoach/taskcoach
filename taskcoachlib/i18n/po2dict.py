@@ -27,8 +27,8 @@ def add(id_, string, fuzzy):
 
 def parse(filename):
     """Parse a .po file and return (dict, encoding) directly without writing a file."""
-    ID = 1
-    STR = 2
+    id = 1
+    str = 2
     global MESSAGES
     MESSAGES = {}
 
@@ -45,7 +45,7 @@ def parse(filename):
     msgid = msgstr = ""
 
     for l in lines:
-        if l and l[0] == "#" and section == STR:
+        if l and l[0] == "#" and section == str:
             add(msgid, msgstr, fuzzy)
             section = None
             fuzzy = 0
@@ -54,24 +54,24 @@ def parse(filename):
         if l and l[0] == "#":
             continue
         if l.startswith("msgid"):
-            if section == STR:
+            if section == str:
                 add(msgid, msgstr, fuzzy)
-            section = ID
+            section = id
             l = l[5:]
             msgid = msgstr = ""
         elif l.startswith("msgstr"):
-            section = STR
+            section = str
             l = l[6:]
         l = l.strip()
         if not l:
             continue
         l = ast.literal_eval(l)
-        if section == ID:
+        if section == id:
             msgid += l
-        elif section == STR:
+        elif section == str:
             msgstr += l
 
-    if section == STR:
+    if section == str:
         add(msgid, msgstr, fuzzy)
 
     metadata = MESSAGES.get("", "")

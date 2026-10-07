@@ -74,33 +74,33 @@ class TimeDelta(datetime.timedelta):
             + (self.seconds * self.millisecondsPerSecond)
         )
 
-    def round(self, hours=0, minutes=0, seconds=0, alwaysUp=False):
+    def round(self, hours=0, minutes=0, seconds=0, always_up=False):
         """Round the timedelta to the nearest x units."""
         assert [hours, minutes, seconds].count(0) >= 2
-        roundingUnit = hours * 3600 + minutes * 60 + seconds
-        if roundingUnit:
-            round_ = math.ceil if alwaysUp else round_fix
-            roundedSeconds = (
-                round_(self.totalSeconds() / float(roundingUnit))
-                * roundingUnit
+        rounding_unit = hours * 3600 + minutes * 60 + seconds
+        if rounding_unit:
+            round_ = math.ceil if always_up else round_fix
+            rounded_seconds = (
+                round_(self.totalSeconds() / float(rounding_unit))
+                * rounding_unit
             )
-            return self.__class__(0, roundedSeconds)
+            return self.__class__(0, rounded_seconds)
         else:
             return self
 
     def __add__(self, other):
         """Make sure we return a TimeDelta instance and not a
         datetime.timedelta instance"""
-        timeDelta = super().__add__(other)
-        return self.__class__(timeDelta.days, timeDelta.seconds)
+        time_delta = super().__add__(other)
+        return self.__class__(time_delta.days, time_delta.seconds)
 
     def __sub__(self, other):
-        timeDelta = super().__sub__(other)
-        return self.__class__(timeDelta.days, timeDelta.seconds)
+        time_delta = super().__sub__(other)
+        return self.__class__(time_delta.days, time_delta.seconds)
 
     def __neg__(self):
-        timeDelta = super().__neg__()
-        return self.__class__(timeDelta.days, timeDelta.seconds)
+        time_delta = super().__neg__()
+        return self.__class__(time_delta.days, time_delta.seconds)
 
 
 TimeDelta.max = TimeDelta(

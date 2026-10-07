@@ -75,7 +75,7 @@ class IOControllerTest(test.TestCase):
         saveas=None,  # pylint: disable=W0622
         saveselection=None,
         merge=None,
-        expectedFilenames=None,
+        expected_filenames=None,
     ):
         open = open or []
         saveas = saveas or []
@@ -83,7 +83,7 @@ class IOControllerTest(test.TestCase):
         merge = merge or []
         self.doIO(open, saveas, saveselection, merge)
         self.checkRecentFiles(
-            expectedFilenames or open + saveas + saveselection + merge
+            expected_filenames or open + saveas + saveselection + merge
         )
 
     def doIO(
@@ -98,35 +98,35 @@ class IOControllerTest(test.TestCase):
         for filename in merge:
             self.iocontroller.merge(filename)
 
-    def checkRecentFiles(self, expectedFilenames):
-        expectedFilenames.reverse()
+    def checkRecentFiles(self, expected_filenames):
+        expected_filenames.reverse()
         self.assertEqual(
-            expectedFilenames, settings.get("file", "recentfiles")
+            expected_filenames, settings.get("file", "recentfiles")
         )
 
-    def testOpenFileAddsItToRecentFiles(self):
+    def test_open_file_adds_it_to_recent_files(self):
         self.doIOAndCheckRecentFiles(open=[self.filename1])
 
-    def testOpenTwoFilesAddBothToRecentFiles(self):
+    def test_open_two_files_add_both_to_recent_files(self):
         self.doIOAndCheckRecentFiles(open=[self.filename1, self.filename2])
 
-    def testOpenTheSameFileTwiceAddsItToRecentFilesOnce(self):
+    def test_open_the_same_file_twice_adds_it_to_recent_files_once(self):
         self.doIOAndCheckRecentFiles(
-            open=[self.filename1] * 2, expectedFilenames=[self.filename1]
+            open=[self.filename1] * 2, expected_filenames=[self.filename1]
         )
 
-    def testSaveFileAsAddsItToRecentFiles(self):
+    def test_save_file_as_adds_it_to_recent_files(self):
         self.doIOAndCheckRecentFiles(saveas=[self.filename1])
 
-    def testMergeFileAddsItToRecentFiles(self):
+    def test_merge_file_adds_it_to_recent_files(self):
         self.doIOAndCheckRecentFiles(
             open=[self.filename1], merge=[self.filename2]
         )
 
-    def testSaveSelectionAddsItToRecentFiles(self):
+    def test_save_selection_adds_it_to_recent_files(self):
         self.doIOAndCheckRecentFiles(saveselection=[self.filename1])
 
-    def testMaximumNumberOfRecentFiles(self):
+    def test_maximum_number_of_recent_files(self):
         maximum_number_of_recent_files = settings.get("file", "maxrecentfiles")
         # Opening leaves lock files, which are never deleted
         directory = tempfile.mkdtemp()
@@ -136,28 +136,28 @@ class IOControllerTest(test.TestCase):
             for index in range(maximum_number_of_recent_files + 1)
         ]
         self.doIOAndCheckRecentFiles(
-            filenames, expectedFilenames=filenames[1:]
+            filenames, expected_filenames=filenames[1:]
         )
 
-    def testSaveTaskFileWithoutTasksButWithNotes(self):
+    def test_save_task_file_without_tasks_but_with_notes(self):
         self.taskFile.notes().append(note.Note(subject="Note"))
 
         def saveasReplacement(*args, **kwargs):  # pylint: disable=W0613
             self.saveAsCalled = True  # pylint: disable=W0201
 
-        originalSaveAs = self.iocontroller.__class__.save_as
+        original_save_as = self.iocontroller.__class__.save_as
         self.iocontroller.__class__.save_as = saveasReplacement
         self.iocontroller.save()
         self.assertTrue(self.saveAsCalled)
-        self.iocontroller.__class__.save_as = originalSaveAs
+        self.iocontroller.__class__.save_as = original_save_as
 
-    def testIOErrorOnSave(self):
+    def test_io_error_on_save(self):
         self.taskFile.setFilename(self.filename1)
 
         def saveasReplacement(*args, **kwargs):  # pylint: disable=W0613
             self.saveAsCalled = True
 
-        originalSaveAs = self.iocontroller.__class__.save_as
+        original_save_as = self.iocontroller.__class__.save_as
         self.iocontroller.__class__.save_as = saveasReplacement
         self.taskFile.raiseError = IOError
 
@@ -166,15 +166,15 @@ class IOControllerTest(test.TestCase):
 
         self.iocontroller.save(showerror=showerror)
         self.assertTrue(self.showerrorCalled and self.saveAsCalled)
-        self.iocontroller.__class__.save_as = originalSaveAs
+        self.iocontroller.__class__.save_as = original_save_as
 
-    def testIOErrorOnSaveAs(self):
+    def test_io_error_on_save_as(self):
         self.taskFile.raiseError = IOError
 
         def saveasReplacement(*args, **kwargs):  # pylint: disable=W0613
             self.saveAsCalled = True
 
-        originalSaveAs = self.iocontroller.__class__.save_as
+        original_save_as = self.iocontroller.__class__.save_as
 
         def showerror(*args, **kwargs):  # pylint: disable=W0613
             self.showerrorCalled = True
@@ -183,45 +183,47 @@ class IOControllerTest(test.TestCase):
 
         self.iocontroller.save_as(filename=self.filename1, showerror=showerror)
         self.assertTrue(self.showerrorCalled and self.saveAsCalled)
-        self.iocontroller.__class__.save_as = originalSaveAs
+        self.iocontroller.__class__.save_as = original_save_as
 
-    def testSaveSelectionAddsCategories(self):
+    def test_save_selection_adds_categories(self):
         task1 = task.Task()
         task2 = task.Task()
         self.taskFile.tasks().extend([task1, task2])
-        aCategory = category.Category("A Category")
-        self.taskFile.categories().append(aCategory)
-        for eachTask in self.taskFile.tasks():
-            eachTask.addCategory(aCategory)
+        a_category = category.Category("A Category")
+        self.taskFile.categories().append(a_category)
+        for each_task in self.taskFile.tasks():
+            each_task.addCategory(a_category)
         self.iocontroller.save_selection(
             tasks=self.taskFile.tasks(), filename=self.filename1
         )
-        taskFile = persistence.TaskFile()
-        taskFile.setFilename(self.filename1)
-        taskFile.load()
+        task_file = persistence.TaskFile()
+        task_file.setFilename(self.filename1)
+        task_file.load()
         try:
-            self.assertEqual(1, len(taskFile.categories()))
+            self.assertEqual(1, len(task_file.categories()))
         finally:
-            taskFile.close()
-            taskFile.stop()
+            task_file.close()
+            task_file.stop()
 
-    def testSaveSelectionAddsParentCategoriesWhenSubcategoriesAreUsed(self):
+    def test_save_selection_adds_parent_categories_when_subcategories_are_used(
+        self,
+    ):
         task1 = task.Task()
         self.taskFile.tasks().extend([task1])
-        aCategory = category.Category("A category")
-        aSubCategory = category.Category("A subcategory")
-        aCategory.addChild(aSubCategory)
-        self.taskFile.categories().append(aCategory)
-        task1.addCategory(aSubCategory)
+        a_category = category.Category("A category")
+        a_sub_category = category.Category("A subcategory")
+        a_category.addChild(a_sub_category)
+        self.taskFile.categories().append(a_category)
+        task1.addCategory(a_sub_category)
         self.iocontroller.save_selection(
             tasks=self.taskFile.tasks(), filename=self.filename1
         )
-        taskFile = persistence.TaskFile()
-        taskFile.setFilename(self.filename1)
-        taskFile.load()
-        self.assertEqual(2, len(taskFile.categories()))
+        task_file = persistence.TaskFile()
+        task_file.setFilename(self.filename1)
+        task_file.load()
+        self.assertEqual(2, len(task_file.categories()))
 
-    def testIOErrorOnSaveSave(self):
+    def test_io_error_on_save_save(self):
         self.taskFile.raiseError = IOError
         self.taskFile.setFilename(self.filename1)
 
@@ -262,6 +264,20 @@ class IOControllerTest(test.TestCase):
         messages = []
         self.iocontroller.save_selection(
             [task.Task()],
+            self.filename1,
+            showerror=lambda message, **kwargs: messages.append(message),
+        )
+        self.assertIn("4321", messages[0])
+        with open(self.filename1) as other:
+            self.assertEqual("theirs", other.read())
+
+    def test_save_as_to_a_file_open_elsewhere_is_refused(self):
+        with open(self.filename1, "w") as other:
+            other.write("theirs")
+        in_use_elsewhere(self)
+        select_file_once(self, "")
+        messages = []
+        self.iocontroller.save_as(
             self.filename1,
             showerror=lambda message, **kwargs: messages.append(message),
         )
@@ -335,7 +351,7 @@ class IOControllerTest(test.TestCase):
             iocontroller.open(self.filename1)
         self.assertEqual(([], True), (released, open_file.is_locked()))
 
-    def testIOErrorOnExport(self):
+    def test_io_error_on_export(self):
         self.taskFile.setFilename(self.filename1)
         self.taskFile.tasks().append(task.Task())
 
@@ -350,26 +366,80 @@ class IOControllerTest(test.TestCase):
         )
         self.assertTrue(self.showerrorCalled)
 
-    def testMerge(self):
-        mergeFile = persistence.TaskFile()
-        mergeFile.setFilename(self.filename2)
-        mergeFile.tasks().append(task.Task(subject="Task to merge"))
-        mergeFile.save()
-        mergeFile.close()
-        targetFile = persistence.TaskFile()
+    def test_reading_a_file_shows_the_busy_pointer(self):
+        # The window cannot answer while a file is read
+        busy = []
+        self.taskFile.load = lambda *args: busy.append(wx.IsBusy())
+        self.taskFile.merge = lambda *args: busy.append(wx.IsBusy())
+        self.iocontroller.open(self.filename1, file_exists=lambda name: True)
+        self.iocontroller.merge(self.filename2)
+        self.assertEqual([True, True, False], busy + [wx.IsBusy()])
+
+    def test_reading_a_file_says_so_first(self):
+        # The window cannot answer while a file is read
+        messages, shown_at_read = [], []
         iocontroller = gui.iocontroller.IOController(
-            targetFile, lambda *args: None
+            self.taskFile, messages.append
+        )
+        self.taskFile.load = lambda *args: shown_at_read.append(messages[-1])
+        self.taskFile.merge = lambda *args: shown_at_read.append(messages[-1])
+        iocontroller.open(self.filename1, file_exists=lambda name: True)
+        iocontroller.merge(self.filename2)
+        self.assertEqual(
+            ["Opening whatever.tsk...", "Merging another.tsk..."],
+            shown_at_read,
+        )
+
+    def opening_messages(self):
+        messages = []
+        iocontroller = gui.iocontroller.IOController(
+            self.taskFile, messages.append
+        )
+        iocontroller.open(self.filename1, file_exists=lambda name: True)
+        return [each for each in messages if each.startswith("Closed")]
+
+    def test_nothing_is_closed_before_the_first_file(self):
+        # The start: no file, nothing in it, nothing to undo
+        self.assertEqual([], self.opening_messages())
+
+    def test_an_open_file_is_closed_first(self):
+        self.taskFile.setFilename(self.filename2)
+        self.assertEqual(["Closed another.tsk"], self.opening_messages())
+
+    def test_the_busy_pointer_ends_before_an_error_shows(self):
+        self.taskFile.raiseError = ValueError("unreadable")
+        busy = []
+        self.iocontroller.open(
+            self.filename1,
+            file_exists=lambda name: True,
+            showerror=lambda *args, **kwargs: busy.append(wx.IsBusy()),
+        )
+        self.iocontroller.merge(
+            self.filename2,
+            showerror=lambda *args, **kwargs: busy.append(wx.IsBusy()),
+        )
+        self.assertEqual([False, False], busy)
+
+    def test_merge(self):
+        merge_file = persistence.TaskFile()
+        merge_file.setFilename(self.filename2)
+        merge_file.tasks().append(task.Task(subject="Task to merge"))
+        merge_file.save()
+        merge_file.close()
+        target_file = persistence.TaskFile()
+        iocontroller = gui.iocontroller.IOController(
+            target_file, lambda *args: None
         )
         iocontroller.merge(self.filename2)
         try:
             self.assertEqual(
-                "Task to merge", list(targetFile.tasks())[0].subject()
+                "Task to merge", list(target_file.tasks())[0].subject()
             )
         finally:
-            mergeFile.close()
-            mergeFile.stop()
-            targetFile.close()
-            targetFile.stop()
+            merge_file.close()
+            merge_file.stop()
+            target_file.close()
+            target_file.stop()
 
     def test_open_lists_the_duplicate_ids_it_corrected(self):
         with open(self.filename1, "w", encoding="utf-8") as fd:
@@ -439,77 +509,31 @@ class IOControllerOverwriteExistingFileTest(test.TestCase):
         wx.MessageBox = self.originalMessageBox
         super().tearDown()
 
-    def testCancelSaveAsExistingFile(self):
+    def test_cancel_save_as_existing_file(self):
         self.iocontroller.save_as(file_exists=lambda filename: True)
         self.assertTrue(self.userWarned)
 
-    def testCancelSaveSelectionToExistingFile(self):
+    def test_cancel_save_selection_to_existing_file(self):
         self.iocontroller.save_selection([], file_exists=lambda filename: True)
         self.assertTrue(self.userWarned)
 
-    def testCancelExportAsHTMLToExistingFile(self):
+    def test_cancel_export_as_html_to_existing_file(self):
         self.iocontroller.export_as_html(
             None, file_exists=lambda filename: True
         )
         self.assertTrue(self.userWarned)
 
-    def testCancelExportAsCSVToExistingFile(self):
+    def test_cancel_export_as_csv_to_existing_file(self):
         self.iocontroller.export_as_csv(
             None, file_exists=lambda filename: True
         )
         self.assertTrue(self.userWarned)
 
-    def testCancelExportAsICalendarToExistingFile(self):
+    def test_cancel_export_as_icalendar_to_existing_file(self):
         self.iocontroller.export_as_icalendar(
             None, file_exists=lambda filename: True
         )
         self.assertTrue(self.userWarned)
-
-
-class IOControllerReplaceFileTest(test.TestCase):
-    """Replacing a task file after our own overwrite prompt (a name
-    typed without extension) removes its auto import/export files."""
-
-    def setUp(self):
-        super().setUp()
-        self.directory = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, self.directory)
-        self.name = os.path.join(self.directory, "tasks")
-        for extension in (".tsk", ".txt", ".html"):
-            open(self.name + extension, "w").close()
-        select_file_once(self, self.name)
-        original = wx.MessageBox
-        wx.MessageBox = lambda *args, **kwargs: wx.YES
-        self.addCleanup(setattr, wx, "MessageBox", original)
-        settings.set("file", "autoexport", ["Todo.txt"])
-        self.task_file = dummy.TaskFile()
-        self.addCleanup(self.task_file.stop)
-        self.iocontroller = gui.iocontroller.IOController(
-            self.task_file, lambda *args: None
-        )
-        self.messages = []
-
-    def showerror(self, message, **kwargs):
-        self.messages.append(message)
-
-    def test_replaced_file_loses_its_auto_files(self):
-        self.iocontroller.save_as(showerror=self.showerror)
-        self.assertFalse(os.path.exists(self.name + ".txt"))
-
-    def test_file_open_elsewhere_keeps_its_auto_files(self):
-        in_use_elsewhere(self)
-        self.iocontroller.save_as(showerror=self.showerror)
-        self.assertIn("4321", self.messages[0])
-        self.assertTrue(os.path.exists(self.name + ".txt"))
-
-    def test_export_keeps_the_auto_files_of_a_task_file(self):
-        def openfile(*args, **kwargs):
-            raise IOError("stop before writing")
-
-        self.iocontroller.export_as_html(
-            None, openfile=openfile, showerror=self.showerror
-        )
-        self.assertTrue(os.path.exists(self.name + ".txt"))
 
 
 class IOControllerCloseTest(test.TestCase):
@@ -670,3 +694,103 @@ class IOControllerChangedOnDiskTest(test.TestCase):
         self.change_on_disk(2, 2)  # Later, then Cancel
         self.assertFalse(self.iocontroller.save())
         self.assertEqual(["ours", "theirs"], self.subjects_on_disk())
+
+
+class FileDialogFolderTest(test.TestCase):
+    """Where each file dialog opens: the folder last chosen in a dialog
+    of its kind this session; before that, the open task file's; with
+    no saved file, Documents. Attachments keep theirs across sessions
+    (docs/FILE_DIALOGS.md)."""
+
+    def setUp(self):
+        super().setUp()
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.home = os.path.join(folder.name, "home")
+        self.other = os.path.join(folder.name, "other")
+        os.makedirs(self.home)
+        os.makedirs(self.other)
+        self.task_file = dummy.TaskFile()
+        self.addCleanup(self.task_file.stop)
+        self.iocontroller = gui.iocontroller.IOController(
+            self.task_file, lambda *args: None
+        )
+        self.opened_in, self.answers = [], []
+
+        def file_selector(*args, **kwargs):
+            self.opened_in.append(kwargs.get("default_path"))
+            return self.answers.pop(0) if self.answers else ""
+
+        patcher = mock.patch.object(wx, "FileSelector", file_selector)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.addCleanup(settings.set, "file", "lastattachmentpath", "")
+
+    def open_task_file_in(self, folder):
+        self.task_file.setFilename(os.path.join(folder, "tasks.tsk"))
+
+    def test_without_a_saved_file_documents(self):
+        self.iocontroller.merge()
+        self.assertEqual([gui.iocontroller.documents_folder()], self.opened_in)
+
+    def test_then_the_task_files_folder(self):
+        self.open_task_file_in(self.home)
+        self.iocontroller.ask_import_csv_file()
+        self.assertEqual([self.home], self.opened_in)
+
+    def test_then_the_folder_last_chosen_in_its_kind(self):
+        self.open_task_file_in(self.home)
+        self.answers = [os.path.join(self.other, "a.tsk")]
+        self.iocontroller.merge()
+        self.iocontroller.merge()  # Cancelled
+        self.iocontroller.ask_import_csv_file()  # Another kind
+        self.assertEqual([self.home, self.other, self.home], self.opened_in)
+
+    def test_an_export_follows_its_own_choice(self):
+        self.open_task_file_in(self.home)
+        self.answers = [os.path.join(self.other, "a.ics")]
+        with mock.patch.object(persistence, "iCalendarWriter") as writer:
+            writer.return_value.write.return_value = 0
+            self.iocontroller.export_as_icalendar(None)
+            self.iocontroller.export_as_icalendar(None)
+        self.assertEqual([self.home, self.other], self.opened_in)
+
+    def test_save_as_next_to_the_current_file(self):
+        self.open_task_file_in(self.other)
+        self.iocontroller.save_as()
+        self.assertEqual([self.other], self.opened_in)
+
+    def test_attachments_where_last_chosen(self):
+        settings.set("file", "lastattachmentpath", self.other)
+        self.open_task_file_in(self.home)
+        self.assertEqual(
+            self.other, gui.iocontroller.attachment_folder(self.task_file)
+        )
+
+    def test_attachments_else_the_task_files_folder(self):
+        self.open_task_file_in(self.home)
+        self.assertEqual(
+            self.home, gui.iocontroller.attachment_folder(self.task_file)
+        )
+
+    def test_a_chosen_folder_deleted_since_falls_back(self):
+        self.open_task_file_in(self.home)
+        self.answers = [os.path.join(self.other, "a.tsk")]
+        self.iocontroller.merge()
+        os.rmdir(self.other)
+        self.iocontroller.merge()
+        self.assertEqual([self.home, self.home], self.opened_in)
+
+    def test_an_attachment_folder_deleted_since_falls_back(self):
+        settings.set("file", "lastattachmentpath", self.other)
+        os.rmdir(self.other)
+        self.open_task_file_in(self.home)
+        self.assertEqual(
+            self.home, gui.iocontroller.attachment_folder(self.task_file)
+        )
+
+    def test_attachments_remembered(self):
+        gui.iocontroller.remember_attachment_folder(
+            os.path.join(self.other, "photo.png")
+        )
+        self.assertEqual(self.other, settings.file.lastattachmentpath)

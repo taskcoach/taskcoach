@@ -39,30 +39,30 @@ class AttachmentViewerTest(test.wxTestCase):
         self.taskFile.close()
         self.taskFile.stop()
 
-    def assertIcon(self, expectedIcon, anAttachment, **kwargs):
+    def assertIcon(self, expected_icon, an_attachment, **kwargs):
         self.assertEqual(
-            image_list_cache.get_index(expectedIcon),
-            self.viewer.typeImageIndices(anAttachment, **kwargs)[
+            image_list_cache.get_index(expected_icon),
+            self.viewer.typeImageIndices(an_attachment, **kwargs)[
                 wx.TreeItemIcon_Normal
             ],
         )
 
-    def testTypeImageIndex_WhenFileDoesNotExist(self):
-        fileAttachment = attachment.FileAttachment("whatever")
-        self.assertIcon("taskcoach_actions_fileopen_red", fileAttachment)
+    def test_type_image_index_when_file_does_not_exist(self):
+        file_attachment = attachment.FileAttachment("whatever")
+        self.assertIcon("taskcoach_actions_fileopen_red", file_attachment)
 
-    def testTypeImageIndex_WhenFileDoesExist(self):
-        fileAttachment = attachment.FileAttachment("whatever")
+    def test_type_image_index_when_file_does_exist(self):
+        file_attachment = attachment.FileAttachment("whatever")
         self.assertIcon(
             "nuvola_mimetypes_application-x-dvi",
-            fileAttachment,
+            file_attachment,
             exists=lambda filename: True,
         )
 
-    def testTypeImageIndex_UriAttachment(self):
-        uriAttachment = attachment.URIAttachment("http://whatever.we")
+    def test_type_image_index_uri_attachment(self):
+        uri_attachment = attachment.URIAttachment("http://whatever.we")
         self.assertIcon(
-            "nuvola_categories_applications-internet", uriAttachment
+            "nuvola_categories_applications-internet", uri_attachment
         )
 
     def test_type_image_index_of_a_mail(self):

@@ -51,7 +51,7 @@ class CategorizableCompositeObject(base.CompositeObject):
         return result
 
     @classmethod
-    def categoryAddedEventType(class_):
+    def categoryAddedEventType(cls):
         return "categorizable.category.add"
 
     def addCategory(self, *categories, **kwargs):
@@ -71,7 +71,7 @@ class CategorizableCompositeObject(base.CompositeObject):
             )
 
     @classmethod
-    def categoryRemovedEventType(class_):
+    def categoryRemovedEventType(cls):
         return "categorizable.category.remove"
 
     def removeCategory(self, *categories, **kwargs):
@@ -110,27 +110,27 @@ class CategorizableCompositeObject(base.CompositeObject):
                 return sorted([item.subject(recursive=True) for item in items])
 
             categories = categorizable.categories()
-            sortedCategorySubjects = sortedSubjects(categories)
-            isListMode = not kwargs.get("tree_mode", False)
-            childCategories = (
-                categorizable.categories(recursive=True, upwards=isListMode)
+            sorted_category_subjects = sortedSubjects(categories)
+            is_list_mode = not kwargs.get("tree_mode", False)
+            child_categories = (
+                categorizable.categories(recursive=True, upwards=is_list_mode)
                 - categories
             )
-            sortedCategorySubjects.extend(sortedSubjects(childCategories))
-            return sortedCategorySubjects
+            sorted_category_subjects.extend(sortedSubjects(child_categories))
+            return sorted_category_subjects
 
         return sortKeyFunction
 
     @classmethod
-    def categoriesSortEventTypes(class_):
+    def categoriesSortEventTypes(cls):
         """The event types that influence the categories sort order."""
         return (
-            class_.categoryAddedEventType(),
-            class_.categoryRemovedEventType(),
+            cls.categoryAddedEventType(),
+            cls.categoryRemovedEventType(),
         )
 
     @classmethod
-    def categorySubjectChangedEventType(class_):
+    def categorySubjectChangedEventType(cls):
         return "categorizable.category.subject"
 
     def categorySubjectChangedEvent(self, event, subject):
@@ -142,13 +142,13 @@ class CategorizableCompositeObject(base.CompositeObject):
             )
 
     @classmethod
-    def modificationEventTypes(class_):
-        eventTypes = super(
-            CategorizableCompositeObject, class_
+    def modificationEventTypes(cls):
+        event_types = super(
+            CategorizableCompositeObject, cls
         ).modificationEventTypes()
-        return eventTypes + [
-            class_.categoryAddedEventType(),
-            class_.categoryRemovedEventType(),
+        return event_types + [
+            cls.categoryAddedEventType(),
+            cls.categoryRemovedEventType(),
         ]
 
 

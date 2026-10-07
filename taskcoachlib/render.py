@@ -202,12 +202,12 @@ def rawDateFunc(dt=None):
 
 def dateFunc(dt=None, human_readable=False):
     if human_readable:
-        theDate = dt.date()
-        if theDate == datemodule.Now().date():
+        the_date = dt.date()
+        if the_date == datemodule.Now().date():
             return _("Today")
-        elif theDate == datemodule.Yesterday().date():
+        elif the_date == datemodule.Yesterday().date():
             return _("Yesterday")
-        elif theDate == datemodule.Tomorrow().date():
+        elif the_date == datemodule.Tomorrow().date():
             return _("Tomorrow")
     return rawDateFunc(dt)
 
@@ -220,39 +220,45 @@ def dateTimeFunc(dt=None, human_readable=False):
     )
 
 
-def date(aDateTime, human_readable=False):
+def date(a_date_time, human_readable=False):
     """Render a date/time as date."""
-    if str(aDateTime) == "":
+    if str(a_date_time) == "":
         return ""
-    year = aDateTime.year
+    year = a_date_time.year
     if year >= 1900:
-        return dateFunc(aDateTime, human_readable=human_readable)
+        return dateFunc(a_date_time, human_readable=human_readable)
     else:
         result = date(
-            datemodule.DateTime(year + 1900, aDateTime.month, aDateTime.day),
+            datemodule.DateTime(
+                year + 1900, a_date_time.month, a_date_time.day
+            ),
             human_readable=human_readable,
         )
         return re.sub(str(year + 1900), str(year), result)
 
 
-def dateTime(aDateTime, human_readable=False):
+def dateTime(a_date_time, human_readable=False):
     if (
-        not aDateTime
-        or aDateTime == datemodule.DateTime()
-        or aDateTime == datemodule.DateTime.min
+        not a_date_time
+        or a_date_time == datemodule.DateTime()
+        or a_date_time == datemodule.DateTime.min
     ):
         return ""
-    timeIsMidnight = (aDateTime.hour, aDateTime.minute) in ((0, 0), (23, 59))
-    year = aDateTime.year
+    time_is_midnight = (a_date_time.hour, a_date_time.minute) in (
+        (0, 0),
+        (23, 59),
+    )
+    year = a_date_time.year
     if year >= 1900:
         return (
-            dateFunc(aDateTime, human_readable=human_readable)
-            if timeIsMidnight
-            else dateTimeFunc(aDateTime, human_readable=human_readable)
+            dateFunc(a_date_time, human_readable=human_readable)
+            if time_is_midnight
+            else dateTimeFunc(a_date_time, human_readable=human_readable)
         )
     else:
         result = dateTime(
-            aDateTime.replace(year=year + 1900), human_readable=human_readable
+            a_date_time.replace(year=year + 1900),
+            human_readable=human_readable,
         )
         return re.sub(str(year + 1900), str(year), result)
 
@@ -302,18 +308,18 @@ def weekNumber(dateTime):
     return "%d-%d" % (dateTime.year, dateTime.weeknumber())
 
 
-def monetaryAmount(aFloat):
+def monetaryAmount(a_float):
     """Render a monetary amount, using the user's locale."""
     return (
         ""
-        if round(aFloat, 2) == 0
-        else locale.format_string("%.2f", aFloat, monetary=True)
+        if round(a_float, 2) == 0
+        else locale.format_string("%.2f", a_float, monetary=True)
     )
 
 
-def percentage(aFloat):
+def percentage(a_float):
     """Render a percentage."""
-    return "" if round(aFloat, 0) == 0 else "%.0f%%" % aFloat
+    return "" if round(a_float, 0) == 0 else "%.0f%%" % a_float
 
 
 def exception(exception, instance):

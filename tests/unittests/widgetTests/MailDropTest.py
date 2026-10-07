@@ -23,13 +23,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # application.
 
 import os
+import socket
 import tempfile
 from unittest import mock
 
 import test
 import wx
 from taskcoachlib import mailer
-from taskcoachlib.mailer import outlook, thunderbird
+from taskcoachlib.mailer import outlook
 from taskcoachlib.widgets import draganddrop
 
 
@@ -167,27 +168,101 @@ class ThunderbirdTest(DropTestCase):
     """Thunderbird drags each message's URI as text, a text/uri-list of
     .eml files it writes to the temporary folder, and more that wx does
     not take; it no longer offers text/x-moz-message to other programs
-    (since 52)."""
+    (since 52). Only the .eml files are read: a URI's number is a key
+    into Thunderbird's own index, and an IMAP mail is on the server
+    (docs/EMAIL_ATTACHMENTS.md, Decisions 8)."""
 
     def setUp(self):
         super().setUp()
+        patcher = mock.patch.object(draganddrop.wx, "MessageBox")
+        self.message_box = patcher.start()
+        self.addCleanup(patcher.stop)
         patcher = mock.patch.object(
-            thunderbird,
-            "get_mail",
-            side_effect=lambda uri: mailer.mail_fields(
-                uri.rsplit("#", 1)[-1], "", "", None, ""
-            ),
+            socket, "create_connection", side_effect=OSError("No network")
         )
-        self.get_mail = patcher.start()
+        self.connect = patcher.start()
+        self.addCleanup(patcher.stop)
+        # A profile as Thunderbird keeps it: messages numbered 1, 2, 3
+        # in its index, not by their place in the folder's file
+        home = self.path("home")
+        profile = os.path.join(home, ".thunderbird", "p.default")
+        self.inbox = self.write(
+            mbox(mail("Lunch", "1@x"), mail("Quote", "2@x")),
+            "home",
+            ".thunderbird",
+            "p.default",
+            "Mail",
+            "Local Folders",
+            "Inbox",
+        )
+        self.write(
+            b"[Profile0]\nName=default\nIsRelative=1\nPath=p.default\n"
+            b"Default=1\n",
+            "home",
+            ".thunderbird",
+            "profiles.ini",
+        )
+        self.write(
+            b'user_pref("mail.server.server1.userName", "nobody");\n'
+            b'user_pref("mail.server.server1.hostname", "Local Folders");\n'
+            b'user_pref("mail.server.server1.directory-rel", '
+            b'"[ProfD]Mail/Local Folders");\n',
+            "home",
+            ".thunderbird",
+            "p.default",
+            "prefs.js",
+        )
+        self.assertTrue(os.path.isdir(profile))
+        patcher = mock.patch.dict(os.environ, HOME=home)
+        patcher.start()
         self.addCleanup(patcher.stop)
 
-    def test_linux_x11_one_message(self):
-        # text/plain comes first: the message's URI
-        self.drop_text("mailbox-message://nobody@Local%20Folders/Inbox#1234")
-        self.get_mail.assert_called_once_with(
-            "mailbox-message://nobody@Local%20Folders/Inbox#1234"
+    def assert_says_why(self):
+        self.assertEqual([], self.mails)
+        # Not while the drop runs: the mail program would wait for it
+        self.message_box.assert_not_called()
+        test.settle()
+        self.message_box.assert_called_once()
+        self.connect.assert_not_called()
+
+    def drop_x11(self, uri, files):
+        """On X11 text comes first, the message's URI; the files the
+        drag offers later are asked of it."""
+        with mock.patch.object(
+            draganddrop, "x11_drag_files", return_value=files
+        ):
+            self.drop_text(uri)
+
+    def eml(self):
+        return self.write(
+            mail("Quote", "2@x", crlf=True),
+            "systemtemp",
+            "dnd_file",
+            "Quote.eml",
         )
-        self.assertEqual([["1234"]], self.subjects())
+
+    def test_linux_x11_one_message(self):
+        self.drop_x11(
+            "mailbox-message://nobody@Local%20Folders/Inbox#2", [self.eml()]
+        )
+        self.assertEqual([["Quote"]], self.subjects())
+        self.message_box.assert_not_called()
+
+    def test_linux_x11_one_imap_message(self):
+        self.drop_x11(
+            "imap-message://alice%40example.com@imap.example.com/INBOX#77",
+            [self.eml()],
+        )
+        self.assertEqual([["Quote"]], self.subjects())
+        self.connect.assert_not_called()
+
+    def test_linux_x11_message_without_its_file(self):
+        self.drop_x11("mailbox-message://nobody@Local%20Folders/Inbox#2", [])
+        self.assert_says_why()
+
+    def test_no_x11_drag_outside_a_drop(self):
+        # Its source asked only while a drop is handled
+        self.assertEqual([], draganddrop.x11_drag_files())
 
     def test_linux_wayland_or_several_messages(self):
         # The order reversed on Wayland, and several messages give only
@@ -213,23 +288,27 @@ class ThunderbirdTest(DropTestCase):
         self.drop_text(
             "imap-message://alice%40example.com@imap.example.com/INBOX#77"
         )
-        self.assertEqual([["77"]], self.subjects())
+        self.assert_says_why()
 
     def test_windows_several_messages(self):
         # The URIs concatenated, with no separator
         self.drop_text(
             "mailbox-message://nobody@Local%20Folders/Inbox#1"
-            "mailbox-message://nobody@Local%20Folders/Inbox#2"
+            "imap-message://alice%40example.com@imap.example.com/INBOX#77"
         )
-        self.assertEqual([["1", "2"]], self.subjects())
+        self.assert_says_why()
 
     def test_macos(self):
         # public.url: the message's URL
-        self.drop_mac_url(
-            "mailbox:///Users/alice/Library/Thunderbird/Profiles/p/Mail/"
-            "Local%20Folders/Inbox?number=5#5"
-        )
-        self.assertEqual(1, len(self.mails))
+        for url in (
+            "mailbox://%s?number=2" % self.inbox,
+            "imap://alice%40example.com@imap.example.com:993"
+            "/fetch%3EUID%3E/INBOX%3E77",
+        ):
+            with self.subTest(url=url):
+                self.message_box.reset_mock()
+                self.drop_mac_url(url)
+                self.assert_says_why()
 
 
 class ClawsMailTest(DropTestCase):

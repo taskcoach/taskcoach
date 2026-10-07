@@ -24,20 +24,20 @@ from taskcoachlib.tools import openfile
 
 
 class GetRelativePathTest(test.TestCase):
-    def testBaseAndPathEqual(self):
+    def test_base_and_path_equal(self):
         self.assertEqual("", attachment.getRelativePath("/test", "/test"))
 
-    def testPathIsSubDirOfBase(self):
+    def test_path_is_sub_dir_of_base(self):
         self.assertEqual(
             "subdir", attachment.getRelativePath("/test/subdir", "/test")
         )
 
-    def testBaseIsSubDirOfPath(self):
+    def test_base_is_sub_dir_of_path(self):
         self.assertEqual(
             "..", attachment.getRelativePath("/test", "/test/subdir")
         )
 
-    def testBaseAndPathAreDifferent(self):
+    def test_base_and_path_are_different(self):
         self.assertEqual(
             os.path.join("..", "bar"),
             attachment.getRelativePath("/bar", "/foo"),
@@ -50,42 +50,42 @@ class FileAttachmentTest(test.TestCase):
         self.attachment = attachment.FileAttachment("filename")
         self.events = []
 
-    def openAttachment(self, filename):
+    def open_attachment(self, filename):
         self.filename = filename
 
-    def testCreateFileAttachment(self):
+    def test_create_file_attachment(self):
         self.assertEqual("filename", self.attachment.location())
 
-    def testOpenFileAttachmentWithRelativeFilename(self):
-        self.attachment.open(openAttachment=self.openAttachment)
+    def test_open_file_attachment_with_relative_filename(self):
+        self.attachment.open(open_attachment=self.open_attachment)
         self.assertEqual("filename", self.filename)
 
-    def testOpenFileAttachmentWithRelativeFilenameAndWorkingDir(self):
-        self.attachment.open("/home", openAttachment=self.openAttachment)
+    def test_open_file_attachment_with_relative_filename_and_working_dir(self):
+        self.attachment.open("/home", open_attachment=self.open_attachment)
         self.assertEqual(
             os.path.normpath(os.path.join("/home", "filename")), self.filename
         )
 
-    def testOpenFileAttachmentWithAbsoluteFilenameAndWorkingDir(self):
+    def test_open_file_attachment_with_absolute_filename_and_working_dir(self):
         att = attachment.FileAttachment("/home/frank/attachment.txt")
-        att.open("/home/jerome", openAttachment=self.openAttachment)
+        att.open("/home/jerome", open_attachment=self.open_attachment)
         self.assertEqual(
             os.path.normpath(os.path.join("/home/frank/attachment.txt")),
             self.filename,
         )
 
-    def testCopy(self):
+    def test_copy(self):
         copy = self.attachment.copy()
         self.assertEqual(copy.location(), self.attachment.location())
         self.attachment.setDescription("new")
         self.assertEqual(copy.location(), self.attachment.location())
 
-    def testLocationNotification(self):
+    def test_location_notification(self):
         self.registerObserver(self.attachment.locationChangedEventType())
         self.attachment.setLocation("new location")
         self.assertIn(self.attachment, self.events[0].sources())
 
-    def testModificationEventTypes(self):
+    def test_modification_event_types(self):
         Attachment = attachment.Attachment
         # pylint: disable=E1101
         self.assertEqual(
@@ -147,7 +147,7 @@ class MailAttachmentTest(test.TestCase):
         self.assertEqual(self.fields(self.mail), self.fields(self.mail.copy()))
 
     def test_open_hands_the_link_to_the_system(self):
-        with mock.patch.object(openfile, "openFile") as open_file:
+        with mock.patch.object(openfile, "open_file") as open_file:
             self.mail.open()
         open_file.assert_called_once_with("mid:1@example.com")
 

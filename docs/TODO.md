@@ -6,16 +6,16 @@ This document tracks planned improvements and known issues to address in future 
 
 1. [Simultaneous Processes and Locking](#1-simultaneous-processes-and-locking) *(Done)*
 2. [Configuration Naming Convention](#2-configuration-naming-convention)
-3. [Refactoring Save Patterns](#3-refactoring-save-patterns)
-4. [Backup Feature Review](#4-backup-feature-review)
+3. [Refactoring Save Patterns](#3-refactoring-save-patterns) *(Dropped)*
+4. [Backup Feature Review](#4-backup-feature-review) *(Done)*
 5. [Monkeypatches and Workarounds](#5-monkeypatches-and-workarounds)
-6. [Text-to-Speech Modernization](#6-text-to-speech-modernization)
+6. [Text-to-Speech Modernization](#6-text-to-speech-modernization) *(Removed)*
 7. [GTK3 Widget Sizing Inconsistency](#7-gtk3-widget-sizing-inconsistency) *(No action)*
 8. [BookPage Default Alignment Inconsistency](#8-bookpage-default-alignment-inconsistency) *(Done)*
 9. [Preferences Page Alignment Overrides](#9-preferences-page-alignment-overrides) *(Done)*
-10. [Preferences Dialog: Dirty-Check and Button State](#10-preferences-dialog-dirty-check-and-button-state)
+10. [Preferences Dialog: Dirty-Check and Button State](#10-preferences-dialog-dirty-check-and-button-state) *(Done)*
 11. [EVT_TEXT Compatibility Shim in MultiLineTextCtrl](#11-evt_text-compatibility-shim-in-multilinetextctrl) *(Done)*
-12. [Thunderbird/IMAP Mail Integration Review](#12-thunderbirdimap-mail-integration-review)
+12. [Thunderbird/IMAP Mail Integration Review](#12-thunderbirdimap-mail-integration-review) *(Closed)*
 Signaling system cleanup has moved to
 [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup).
 
@@ -66,32 +66,21 @@ The `defaults.py` file has a comment marking where new snake_case settings begin
 
 ## 3. Refactoring Save Patterns
 
-### Current Status
-
-With autosave on, `AutoSaver` (`persistence/autosaver.py`) saves a task file at the first idle after it gets dirty (`taskfile.dirty`); a failed save is retried after 60 s.
-
-### Proposed Change
-
-Refactor from **per-change at idle** to **per-window active/lost-focus** save pattern.
-
-| Aspect | Current (Idle) | Proposed (Focus-based) |
-|--------|----------------|------------------------|
-| Save trigger | First idle after a change | Window loses focus |
-| Multi-screen | Complex interactions | Cleaner handling |
-
-**Pros:**
-- Cleaner multi-screen/multi-window interactions
-
-**Cons:**
-- Less precise undo log (changes batched per focus session)
-- Less granular save points if crash or power failure occurs mid-session
-- User must switch focus to trigger save
-
-**Status:** To be reviewed
+**Dropped 2026-10-07**, **ruled by designer** ("completely drop the
+whole thing of a save on loss of focus ... we will use auto save,
+which saves all the time, or save on demand. There should not be a
+third mode"): saving when the window loses focus, instead of after
+each change. Added 2025-12-26 to drop autosave's debounce timer,
+which is gone: autosave saves milliseconds after each change, with no
+timer. Leaving Task Coach already saves the field being typed in:
+[PERSISTENCE_XML.md](PERSISTENCE_XML.md#saving).
 
 ---
 
 ## 4. Backup Feature Review
+
+**Done 2026-10-06** (P94): the questions are answered, and the restore
+fixed, in [PERSISTENCE_XML.md](PERSISTENCE_XML.md#backups).
 
 ### Issues to Investigate
 
@@ -133,6 +122,8 @@ months and whenever a dependency's version changes.
 
 **Problem:** When column text is too wide and needs truncation, right-aligned and center-aligned columns display incorrectly. The text is truncated with "..." at the end (right side) regardless of alignment, then positioned per alignment, resulting in text being clipped on both sides.
 
+**Closed 2026-10-06, ruled by designer (REFINEMENT_REFACTOR.md To Do 10):** this applies only with `TR_ELLIPSIZE_LONG_ITEMS`, which Task Coach never sets. In Task Coach a right-aligned value wider than its column is drawn from the column's left edge and cut on the right, without "..." (D15), and stays so.
+
 **Expected behavior:**
 - LEFT-aligned: Truncate from right, "..." at end (current behavior - correct)
 - CENTER-aligned: Truncate from middle, "..." in middle
@@ -161,59 +152,9 @@ months and whenever a dependency's version changes.
 
 ## 6. Text-to-Speech Modernization
 
-### Current Status
-
-See [REMINDERS.md](REMINDERS.md) for the full reminder system (sound, TTS, snooze).
-
-The "Let the computer say the reminder" feature uses a hand-rolled implementation:
-- Mac: subprocess call to `say` command
-- Linux: subprocess call to `espeak` command
-- Windows: No-op (feature unavailable)
-
-The preference is only shown on Mac/Linux, disabled by default.
-
-### Proposed Change
-
-Replace custom implementation with **pyttsx3** library:
-
-| Aspect | Current | With pyttsx3 |
-|--------|---------|--------------|
-| Windows | Not supported | SAPI5 (native) |
-| macOS | subprocess to `say` | NSSpeechSynthesizer (native) |
-| Linux | subprocess to `espeak` | espeak (same) |
-| Code lines | ~68 | ~15-20 |
-| Dependency | None | pyttsx3 |
-
-### Implementation Details
-
-**Files to change:**
-
-| File | Change |
-|------|--------|
-| `taskcoachlib/speak/speaker.py` | Replace with pyttsx3 implementation |
-| `taskcoachlib/gui/dialog/preferences.py` | Remove OS check, show option on all platforms |
-| `taskcoachlib/gui/dialog/reminder.py` | No change - API stays the same |
-
-**New speaker.py implementation:**
-```python
-import pyttsx3
-from taskcoachlib import patterns
-
-class Speaker(metaclass=patterns.Singleton):
-    def __init__(self):
-        self._engine = pyttsx3.init()
-
-    def say(self, text):
-        self._engine.say(text)
-        self._engine.runAndWait()
-```
-
-**References:**
-- [pyttsx3 on PyPI](https://pypi.org/project/pyttsx3/) - Latest version 2.99 (July 2025)
-- Supports Python 3.9-3.13
-- Works offline, no internet required
-
-**Status:** Ready to implement
+**Removed 2026-10-07**, **ruled by designer** (P94): spoken reminders
+were removed instead. This plan (pyttsx3), its costs and a smaller way
+are in [SPOKEN_REMINDERS.md](SPOKEN_REMINDERS.md#a-better-solution).
 
 ---
 
@@ -286,51 +227,10 @@ flags for their multi-column layouts, which is correct.
 
 ## 10. Preferences Dialog: Dirty-Check and Button State
 
-### Goal
-
-Grey out Apply and OK buttons until the user has actually changed a setting.
-
-### Approach
-
-Use `EVT_CHILD_FOCUS` on each page to detect when the user leaves a control
-(blur = confirmed change, not intermediary keystrokes). On each blur, compare
-all tracked controls against the live `Settings` object (the INI file values).
-No need to store "original values" — the settings object is the baseline.
-
-**`SettingsPage`:**
-- Bind `EVT_CHILD_FOCUS` → `_onChildFocus`
-- Add `hasChanges()` that iterates `_booleanSettings`, `_choiceSettings`,
-  `_integerSettings`, `_pathSettings`, `_textSettings`,
-  `_multipleChoiceSettings` and compares each control's current value against
-  `settings.get(section, setting)`
-- Pages with custom controls (Theme, Task Appearance, working hours) override
-  `hasChanges()` to add their own comparisons
-
-**Parent dialog:**
-- On child focus event (bubbled up or polled), check
-  `any(page.hasChanges() for page in self)` and enable/disable Apply/OK
-- After Apply saves, button state is re-evaluated (settings now match controls,
-  so buttons grey out again automatically)
-
-### Comparison per control type
-
-| Method | Compare |
-|--------|---------|
-| `addBooleanSetting` | `checkBox.IsChecked() != settings.get(section, setting)` |
-| `addChoiceSetting` | reconstructed value != `str(settings.get(section, setting))` |
-| `addIntegerSetting` | `spin.GetValue() != settings.get(section, setting)` |
-| `addPathSetting` | `pathChooser.GetPath() != settings.get(section, setting)` |
-| `addTextSetting` | `textCtrl.GetValue() != settings.get(section, setting)` |
-| `addMultipleChoiceSettings` | checked items != `settings.get(section, setting)` |
-
-### Notes
-
-- One binding per page, one `hasChanges()` scan per blur — no per-control wiring
-- Custom pages override `hasChanges()` for non-standard controls
-- `EVT_CHILD_FOCUS` fires on focus transfer between any child controls,
-  which is the right granularity for confirmed-value checking
-
-**Status:** Planned
+**Done 2026-10-07**, **ruled by designer**: Apply greyed until a
+change, OK and Cancel always enabled
+([PREFERENCES.md](PREFERENCES.md#ok-apply-and-cancel)); the first
+plan's flaws are in [its History](PREFERENCES.md#history).
 
 ---
 
@@ -346,30 +246,11 @@ was removed.
 
 ## 12. Thunderbird/IMAP Mail Integration Review
 
-**Status:** answered in part (September 2026)
-
-- The feature is live: dragging a Thunderbird mail onto a task works
-  ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md)); a mail on an IMAP
-  account (`imap-message://`) is read from the server
-  (`mailer/thunderbird.py`, `ThunderbirdImapReader`).
-- The IMAP password comes from `widgets/password.py`: the system
-  keyring through `keyring` when installed, else asked each session.
-  Its Python 2 byte handling was fixed 2026-09-30.
-- NTLM was removed 2026-09-30: the vendored `ntlm` could not run on
-  Python 3 ([PYTHON3_MIGRATION_2.md](PYTHON3_MIGRATION_2.md#ntlm-module)).
-  Login is CRAM-MD5 when offered, else the plain IMAP login.
-- The outgoing "Mail" command ([MENUS.md](MENUS.md)) is separate: it
-  uses neither IMAP nor the keyring.
-
-Left:
-
-1. No OAuth2, which Gmail and Outlook.com require for IMAP; not yet
-   checked against a real server.
-2. Flatpak: the build grants neither `--share=network` nor
-   `--talk-name=org.freedesktop.secrets`
-   ([FLATPAK.md](FLATPAK.md), finish-args). Supporting this path there
-   needs the network and the **Secret portal**
-   (`org.freedesktop.portal.Secret`), not a direct secrets grant.
+**Status:** closed 2026-10-04: mail stays local, no IMAP, **ruled by
+designer** ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#decisions) 8).
+The IMAP reader, its password dialog and `keyring` were removed, so
+OAuth2, NTLM and the Flatpak's network and Secret portal for IMAP are
+no longer needed.
 
 ---
 

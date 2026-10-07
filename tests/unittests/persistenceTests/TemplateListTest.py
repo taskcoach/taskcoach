@@ -59,33 +59,33 @@ class TemplateListUnderTest(persistence.TemplateList):
 
 
 class TemplateListTestCase(test.TestCase):
-    def testPathWithoutTemplates(self):
-        templateList = persistence.TemplateList(".")
-        self.assertEqual([], templateList.tasks())
+    def test_path_without_templates(self):
+        template_list = persistence.TemplateList(".")
+        self.assertEqual([], template_list.tasks())
 
-    def testHandleTooNewException(self):
-        templateList = TemplateListUnderTest(
+    def test_handle_too_new_exception(self):
+        template_list = TemplateListUnderTest(
             ".", TemplateReaderThatThrowsTooNewException, FakeFileClass
         )
-        self.assertEqual([], templateList.tasks())
+        self.assertEqual([], template_list.tasks())
 
-    def testHandleIOErrorWhileOpeningFile(self):
-        templateList = TemplateListUnderTest(
-            ".", openFile=FileClassThatRaisesIOError
+    def test_handle_io_error_while_opening_file(self):
+        template_list = TemplateListUnderTest(
+            ".", open_file=FileClassThatRaisesIOError
         )
-        self.assertEqual([], templateList.tasks())
+        self.assertEqual([], template_list.tasks())
 
-    def testHandleIOErrorWhileReadingTemplate(self):
-        templateList = TemplateListUnderTest(
+    def test_handle_io_error_while_reading_template(self):
+        template_list = TemplateListUnderTest(
             ".", TemplateReaderThatThrowsIOError, FakeFileClass
         )
-        self.assertEqual([], templateList.tasks())
+        self.assertEqual([], template_list.tasks())
 
-    def testHandleParseErrorWhileReadingTemplate(self):
-        templateList = TemplateListUnderTest(
+    def test_handle_parse_error_while_reading_template(self):
+        template_list = TemplateListUnderTest(
             ".", TemplateReaderThatThrowsParseError, FakeFileClass
         )
-        self.assertEqual([], templateList.tasks())
+        self.assertEqual([], template_list.tasks())
 
 
 class TemplateSavedForOlderReleasesTest(test.TestCase):

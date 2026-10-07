@@ -110,34 +110,34 @@ class HTMLWriter(object):
             viewer = self._createProxy(viewer, columns, taskFile)
             selectionOnly = False
 
-        cssFilename = (
+        css_filename = (
             os.path.basename(self.__cssFilename) if separateCSS else ""
         )
-        htmlText, count = generator.viewer2html(
-            viewer, cssFilename, selectionOnly, columns
+        html_text, count = generator.viewer2html(
+            viewer, css_filename, selectionOnly, columns
         )
-        self.__fd.write(htmlText)
+        self.__fd.write(html_text)
         if separateCSS:
             self._write_css()
         return count
 
-    def _createProxy(self, viewerType, columns, taskFile):
+    def _createProxy(self, viewer_type, columns, taskFile):
         """Create a viewer proxy for 'All' exports."""
         items = []
         title = "Export"
         is_showing_tasks = False
         if taskFile:
-            if viewerType == self.ALL_TASKS:
+            if viewer_type == self.ALL_TASKS:
                 items = list(taskFile.tasks())
                 title = "Tasks"
                 is_showing_tasks = True
-            elif viewerType == self.ALL_EFFORTS:
+            elif viewer_type == self.ALL_EFFORTS:
                 items = list(taskFile.efforts())
                 title = "Efforts"
-            elif viewerType == self.ALL_CATEGORIES:
+            elif viewer_type == self.ALL_CATEGORIES:
                 items = list(taskFile.categories())
                 title = "Categories"
-            elif viewerType == self.ALL_NOTES:
+            elif viewer_type == self.ALL_NOTES:
                 items = list(taskFile.notes())
                 title = "Notes"
         return _ViewerProxy(items, columns or [], title, is_showing_tasks)

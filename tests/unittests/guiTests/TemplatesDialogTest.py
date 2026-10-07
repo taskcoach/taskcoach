@@ -51,7 +51,7 @@ class TemplatesDialogTestCase(test.wxTestCase):
         except OSError:  # pragma: no cover
             pass
 
-    def testTwoDefaultTemplates(self):
+    def test_two_default_templates(self):
         self.assertEqual(
             0, len(self.editor._templates.tasks())
         )  # pylint: disable=W0212

@@ -49,31 +49,31 @@ class TaskSorterTest(test.TestCase):
         self.list = task.TaskList([d, b, c, a])
         self.sorter = task.sorter.Sorter(self.list)
 
-    def testInitiallyEmpty(self):
+    def test_initially_empty(self):
         sorter = task.sorter.Sorter(task.TaskList())
         self.assertEqual(0, len(sorter))
 
-    def testLength(self):
+    def test_length(self):
         self.assertEqual(4, len(self.sorter))
 
-    def testGetItem(self):
+    def test_get_item(self):
         self.assertEqual(self.a, self.sorter[0])
 
-    def testOrder(self):
+    def test_order(self):
         self.assertEqual([self.a, self.b, self.c, self.d], list(self.sorter))
 
-    def testRemoveItem(self):
+    def test_remove_item(self):
         self.sorter.remove(self.c)
         self.assertEqual([self.a, self.b, self.d], list(self.sorter))
         self.assertEqual(3, len(self.list))
 
-    def testAppend(self):
+    def test_append(self):
         e = task.Task("e")
         self.list.append(e)
         self.assertEqual(5, len(self.sorter))
         self.assertEqual(e, self.sorter[-1])
 
-    def testChange(self):
+    def test_change(self):
         self.a.setSubject("z")
         self.assertEqual([self.b, self.c, self.d, self.a], list(self.sorter))
 
@@ -86,48 +86,48 @@ class TaskSorterSettingsTest(test.TestCase):
         self.task2 = task.Task(subject="B")
         self.taskList.extend([self.task1, self.task2])
 
-    def testSortBySubject(self):
+    def test_sort_by_subject(self):
         self.sorter.sort_by("subject")
         self.sorter.sort_ascending()
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
-    def testSortBySubjectDescending(self):
+    def test_sort_by_subject_descending(self):
         self.sorter.sort_by("subject")
         self.sorter.sort_ascending(False)
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortDueDateTime(self):
+    def test_sort_due_date_time(self):
         self.task2.set_due_date_time(date.Now() + date.ONE_WEEK)
         self.sorter.sort_by("dueDateTime")
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortBySubject_TurnOff(self):
+    def test_sort_by_subject_turn_off(self):
         self.task2.set_due_date_time(date.Now() + date.ONE_WEEK)
         self.sorter.sort_by("subject")
         self.sorter.sort_by("dueDateTime")
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByCompletionStatus(self):
+    def test_sort_by_completion_status(self):
         self.task1.set_completion_date_time(date.Now())
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByInactiveStatus(self):
+    def test_sort_by_inactive_status(self):
         self.task2.set_actual_start_date_time(date.Now())
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByPlannedStartDateTime(self):
+    def test_sort_by_planned_start_date_time(self):
         self.sorter.sort_by("plannedStartDateTime")
         self.task2.set_planned_start_date_time(date.Tomorrow())
         self.task1.set_planned_start_date_time(date.Now() + date.ONE_WEEK)
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByActualStartDateTime(self):
+    def test_sort_by_actual_start_date_time(self):
         self.sorter.sort_by("actualStartDateTime")
         self.task1.set_actual_start_date_time(date.Yesterday())
         self.task2.set_actual_start_date_time(date.Now() - date.ONE_WEEK)
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByActualStartDateTimeKeepsSortingWhenChangingActualStartDateTime(
+    def test_sort_by_actual_start_resorts_when_actual_start_changes(
         self,
     ):
         self.sorter.sort_by("actualStartDateTime")
@@ -136,14 +136,14 @@ class TaskSorterSettingsTest(test.TestCase):
         self.task1.set_actual_start_date_time(date.Now() - date.ONE_YEAR)
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
-    def testSortByDueDateTimeDescending(self):
+    def test_sort_by_due_date_time_descending(self):
         self.task1.set_due_date_time(date.Now() + date.ONE_YEAR)
         self.task2.set_due_date_time(date.Now() + date.ONE_WEEK)
         self.sorter.sort_by("dueDateTime")
         self.sorter.sort_ascending(False)
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
-    def testByDueDateWithoutFirstSortingByStatus(self):
+    def test_by_due_date_without_first_sorting_by_status(self):
         self.task1.set_due_date_time(date.Now() + date.ONE_YEAR)
         self.task2.set_due_date_time(date.Now() + date.ONE_WEEK)
         self.sorter.sort_by("dueDateTime")
@@ -151,32 +151,32 @@ class TaskSorterSettingsTest(test.TestCase):
         self.task2.set_completion_date_time(date.Now())
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByReminderAscending(self):
+    def test_sort_by_reminder_ascending(self):
         self.sorter.sort_by("reminder")
         self.sorter.sort_ascending(True)
         self.task2.set_reminder(date.Now())
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByReminderDescending(self):
+    def test_sort_by_reminder_descending(self):
         self.sorter.sort_by("reminder")
         self.sorter.sort_ascending(False)
         self.task2.set_reminder(date.Now())
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
-    def testSortBySubjectWithFirstSortingByStatus(self):
+    def test_sort_by_subject_with_first_sorting_by_status(self):
         self.sorter.sort_by_task_status_first(True)
         self.sorter.sort_by("subject")
         self.task1.set_completion_date_time(date.Now())
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortBySubjectWithoutFirstSortingByStatus(self):
+    def test_sort_by_subject_without_first_sorting_by_status(self):
         self.sorter.sort_by_task_status_first(False)
         self.sorter.sort_by("subject")
         self.sorter.sort_ascending()
         self.task1.set_completion_date_time(date.Now())
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
-    def testSortCaseSensitive(self):
+    def test_sort_case_sensitive(self):
         self.sorter.sort_by_task_status_first(False)
         self.sorter.sort_case_sensitive(True)
         self.sorter.sort_by("subject")
@@ -185,7 +185,7 @@ class TaskSorterSettingsTest(test.TestCase):
         self.taskList.append(task3)
         self.assertEqual([self.task1, self.task2, task3], list(self.sorter))
 
-    def testSortCaseInsensitive(self):
+    def test_sort_case_insensitive(self):
         self.sorter.sort_by_task_status_first(False)
         self.sorter.sort_case_sensitive(False)
         self.sorter.sort_by("subject")
@@ -194,34 +194,34 @@ class TaskSorterSettingsTest(test.TestCase):
         self.taskList.append(task3)
         self.assertEqual([self.task1, task3, self.task2], list(self.sorter))
 
-    def testSortByTimeLeftAscending(self):
+    def test_sort_by_time_left_ascending(self):
         self.task1.set_due_date_time(date.Now() + date.ONE_YEAR)
         self.task2.set_due_date_time(date.Now() + date.ONE_WEEK)
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("timeLeft")
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByTimeLeftDescending(self):
+    def test_sort_by_time_left_descending(self):
         self.task1.set_due_date_time(date.Now() + date.ONE_YEAR)
         self.task2.set_due_date_time(date.Now() + date.ONE_WEEK)
         self.sorter.sort_by("timeLeft")
         self.sorter.sort_ascending(False)
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
-    def testSortByBudgetAscending(self):
+    def test_sort_by_budget_ascending(self):
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("budget")
         self.task1.set_budget(date.TimeDelta(100))
         self.task2.set_budget(date.TimeDelta(10))
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByBudgetDescending(self):
+    def test_sort_by_budget_descending(self):
         self.sorter.sort_by("budget")
         self.sorter.sort_ascending(False)
         self.task1.set_budget(date.TimeDelta(100))
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
-    def testSortByTimeSpentAscending(self):
+    def test_sort_by_time_spent_ascending(self):
         self.sorter.sort_by("timeSpent")
         self.task2.addEffort(
             effort.Effort(
@@ -239,7 +239,7 @@ class TaskSorterSettingsTest(test.TestCase):
         )
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByTimeSpentDescending(self):
+    def test_sort_by_time_spent_descending(self):
         self.sorter.sort_ascending(False)
         self.sorter.sort_by("timeSpent")
         self.task1.addEffort(
@@ -251,33 +251,33 @@ class TaskSorterSettingsTest(test.TestCase):
         )
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
-    def testSortByHourlyFeeAscending(self):
+    def test_sort_by_hourly_fee_ascending(self):
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("hourlyFee")
         self.task1.set_hourly_fee(100)
         self.task2.set_hourly_fee(200)
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
-    def testSortByHourlyFeeDescending(self):
+    def test_sort_by_hourly_fee_descending(self):
         self.sorter.sort_by("hourlyFee")
         self.sorter.sort_ascending(False)
         self.task1.set_hourly_fee(100)
         self.task2.set_hourly_fee(200)
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByPrerequisiteAscending(self):
+    def test_sort_by_prerequisite_ascending(self):
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("prerequisites")
         self.task1.add_prerequisites([self.task2])
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByPrerequisiteDescending(self):
+    def test_sort_by_prerequisite_descending(self):
         self.sorter.sort_by("prerequisites")
         self.sorter.sort_ascending(False)
         self.task2.add_prerequisites([self.task1])
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByRecursivePrerequisiteAscending(self):
+    def test_sort_by_recursive_prerequisite_ascending(self):
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("prerequisites")
         child1 = task.Task(subject="Child 1")
@@ -287,21 +287,21 @@ class TaskSorterSettingsTest(test.TestCase):
         self.task2.add_prerequisites([self.task1])
         self.assertEqual([self.task1, self.task2, child1], list(self.sorter))
 
-    def testSortByDependencyAscending(self):
+    def test_sort_by_dependency_ascending(self):
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("dependencies")
         self.task1.add_dependencies([self.task2])
         self.task2.add_dependencies([self.task1])
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByDependencyDescending(self):
+    def test_sort_by_dependency_descending(self):
         self.sorter.sort_by("dependencies")
         self.sorter.sort_ascending(False)
         self.task1.add_dependencies([self.task2])
         self.task2.add_dependencies([self.task1])
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
-    def testSortByRecursiveDependencyAscending(self):
+    def test_sort_by_recursive_dependency_ascending(self):
         self.sorter.sort_ascending(True)
         self.sorter.sort_by("dependencies")
         child1 = task.Task(subject="Child 1")
@@ -311,7 +311,7 @@ class TaskSorterSettingsTest(test.TestCase):
         self.task2.add_dependencies([self.task1])
         self.assertEqual([self.task1, self.task2, child1], list(self.sorter))
 
-    def testAlwaysKeepSubscriptionToCompletionDateTime(self):
+    def test_always_keep_subscription_to_completion_date_time(self):
         """TaskSorter should keep a subscription to task.completionDateTime
         even when the completion date is not the sort key, because sorting
         on task status (active, completed, etc.) depends on the completion
@@ -323,7 +323,7 @@ class TaskSorterSettingsTest(test.TestCase):
         self.task1.set_completion_date_time(date.Now())
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testAlwaysKeepSubscriptionToPlannedStartDateTime(self):
+    def test_always_keep_subscription_to_planned_start_date_time(self):
         """TaskSorter should keep a subscription to task.plannedStartDateTime
         even when the planned start date is not the sort key, because sorting
         on task status (active, completed, etc.) depends on the planned start
@@ -334,7 +334,7 @@ class TaskSorterSettingsTest(test.TestCase):
         self.task2.set_planned_start_date_time(date.Now() - date.ONE_SECOND)
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testAlwaysKeepSubscriptionToActualStartDateTime(self):
+    def test_always_keep_subscription_to_actual_start_date_time(self):
         """TaskSorter should keep a subscription to task.actualStartDateTime
         even when the actual start date is not the sort key, because sorting
         on task status (active, completed, etc.) depends on the actual start
@@ -345,13 +345,13 @@ class TaskSorterSettingsTest(test.TestCase):
         self.task2.set_actual_start_date_time(date.Now())
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByCategories(self):
+    def test_sort_by_categories(self):
         self.sorter.sort_by("categories")
         self.task1.addCategory(category.Category("Category 2"))
         self.task2.addCategory(category.Category("Category 1"))
         self.assertEqual([self.task2, self.task1], list(self.sorter))
 
-    def testSortByInvalidSortKey(self):
+    def test_sort_by_invalid_sort_key(self):
         self.sorter.sort_by("invalidKey")
         self.assertEqual([self.task1, self.task2], list(self.sorter))
 
@@ -448,13 +448,13 @@ class TaskSorterTreeModeTest(test.TestCase):
         self.parent2.addChild(self.child2)
         self.taskList.extend([self.parent1, self.parent2])
 
-    def testDefaultSortOrder(self):
+    def test_default_sort_order(self):
         self.assertEqual(
             [self.parent1, self.child1, self.parent2, self.child2],
             list(self.sorter),
         )
 
-    def testSortByDueDateTime(self):
+    def test_sort_by_due_date_time(self):
         self.sorter.sort_by("dueDateTime")
         self.child2.set_due_date_time(date.Now().endOfDay())
         self.assertTrue(
@@ -462,7 +462,7 @@ class TaskSorterTreeModeTest(test.TestCase):
             < list(self.sorter).index(self.parent1)
         )
 
-    def testSortByPriority(self):
+    def test_sort_by_priority(self):
         self.sorter.sort_by("priority")
         self.sorter.sort_ascending(False)
         self.parent1.setPriority(5)
@@ -472,7 +472,7 @@ class TaskSorterTreeModeTest(test.TestCase):
             < list(self.sorter).index(self.parent1)
         )
 
-    def testSortByCategories_WhenParentsHaveNoCategories(self):
+    def test_sort_by_categories_when_parents_have_no_categories(self):
         self.child1.addCategory(category.Category("Category 2"))
         self.child2.addCategory(category.Category("Category 1"))
         self.sorter.sort_by("categories")
@@ -481,7 +481,7 @@ class TaskSorterTreeModeTest(test.TestCase):
             < list(self.sorter).index(self.parent1)
         )
 
-    def testSortByCategories_WhenParentCategoryEqualsChildCategoryOfAnotherParent(
+    def test_sort_by_categories_with_parent_category_as_other_child_category(
         self,
     ):
         category1 = category.Category("Category 1")
@@ -537,7 +537,7 @@ class TaskSorterTreeModeTest(test.TestCase):
         self.assertNotIn(self.child2, self.sorter.rootItems())
         self.assertEqual([], self.events)  # Not sorted again
 
-    def testSetSorterToListMode(self):
+    def test_set_sorter_to_list_mode(self):
         self.sorter.set_tree_mode(False)
         self.assertEqual(
             [self.child1, self.child2, self.parent1, self.parent2],
@@ -552,7 +552,7 @@ class TaskSorterTreeModeTest(test.TestCase):
         self.sorter.set_tree_mode(False)
         self.assertEqual(False, self.filter.tree_mode_passed)
 
-    def testSortByInvalidSortKey(self):
+    def test_sort_by_invalid_sort_key(self):
         self.sorter.sort_by("invalidKey")
         self.assertEqual(
             [self.parent1, self.child1, self.parent2, self.child2],
@@ -576,38 +576,38 @@ class EffortSorterTest(test.TestCase):
         self.task.addEffort(self.newestEffort)
         self.taskList.append(self.task)
 
-    def testDescending(self):
+    def test_descending(self):
         self.assertEqual([self.newestEffort, self.oldestEffort], self.sorter)
 
-    def testResort(self):
+    def test_resort(self):
         self.oldestEffort.setStart(date.DateTime(2004, 3, 1))
         self.assertEqual([self.oldestEffort, self.newestEffort], self.sorter)
 
-    def testCreateWhenEffortListIsFilled(self):
+    def test_create_when_effort_list_is_filled(self):
         sorter = effort.EffortSorter(self.effortList)
         self.assertEqual([self.newestEffort, self.oldestEffort], sorter)
 
-    def testAddEffort(self):
-        evenNewerEffort = effort.Effort(
+    def test_add_effort(self):
+        even_newer_effort = effort.Effort(
             self.task, date.DateTime(2005, 1, 1), date.DateTime(2005, 1, 2)
         )
-        self.task.addEffort(evenNewerEffort)
+        self.task.addEffort(even_newer_effort)
         self.assertEqual(
-            [evenNewerEffort, self.newestEffort, self.oldestEffort],
+            [even_newer_effort, self.newestEffort, self.oldestEffort],
             self.sorter,
         )
 
-    def testTaskEffortComesBeforeChildEffort(self):
+    def test_task_effort_comes_before_child_effort(self):
         child = task.Task("Child")
         child.set_parent(self.task)
         self.task.addChild(child)
         self.taskList.append(child)
-        childEffort = effort.Effort(
+        child_effort = effort.Effort(
             child, date.DateTime(2004, 1, 1), date.DateTime(2008, 1, 2)
         )
-        child.addEffort(childEffort)
+        child.addEffort(child_effort)
         self.assertEqual(
-            [self.newestEffort, childEffort, self.oldestEffort], self.sorter
+            [self.newestEffort, child_effort, self.oldestEffort], self.sorter
         )
 
 

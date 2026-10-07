@@ -23,20 +23,18 @@ class Singleton(type):
               __metaclass__ = Singleton
     """
 
-    def __call__(class_, *args, **kwargs):
-        if not class_.hasInstance():
+    def __call__(cls, *args, **kwargs):
+        if not cls.hasInstance():
             # pylint: disable=W0201
-            class_.instance = super(Singleton, class_).__call__(
-                *args, **kwargs
-            )
-        return class_.instance
+            cls.instance = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls.instance
 
-    def deleteInstance(class_):
+    def deleteInstance(cls):
         """Delete the (only) instance. This method is mainly for unittests so
         they can start with a clean slate."""
-        if class_.hasInstance():
-            del class_.instance
+        if cls.hasInstance():
+            del cls.instance
 
-    def hasInstance(class_):
+    def hasInstance(cls):
         """Has the (only) instance been created already?"""
-        return "instance" in class_.__dict__
+        return "instance" in cls.__dict__

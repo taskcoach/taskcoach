@@ -317,21 +317,21 @@ class Icon:
         logs error (safety guard — any icon could produce a cursor,
         remove the error and open the else block when needed).
         """
-        scaleFactor = 1.0
+        scale_factor = 1.0
         if window:
             try:
-                scaleFactor = window.GetContentScaleFactor()
+                scale_factor = window.GetContentScaleFactor()
             except (AttributeError, RuntimeError):
                 pass
         # DPI-aware cursor sizing — only 16px cursors exist today.
         # When HiDPI cursors are added, uncomment the size assignments below.
-        if scaleFactor >= 1.75:
+        if scale_factor >= 1.75:
             log_step(
                 "WARNING: HiDPI cursor (32px) not yet available, falling "
                 "back to 16px"
             )
             size = LIST_ICON_SIZE
-        elif scaleFactor >= 1.125:
+        elif scale_factor >= 1.125:
             log_step(
                 "WARNING: MidDPI cursor (22px) not yet available, falling "
                 "back to 16px"

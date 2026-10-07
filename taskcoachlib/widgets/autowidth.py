@@ -117,7 +117,7 @@ class AutoColumnWidthMixin(object):
         """Unbind motion event from header window."""
         header = self._getHeaderWindow()
         if header:
-            header.Unbind(wx.EVT_MOTION)
+            header.Unbind(wx.EVT_MOTION, handler=self._onHeaderMotion)
             # Reset cursor to default
             header.SetCursor(wx.STANDARD_CURSOR)
 

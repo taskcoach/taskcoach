@@ -308,7 +308,7 @@ X11 Session Management (XSMP) is a protocol that allows applications to integrat
 | `EVT_END_SESSION` | wxPython session event handler |
 | `EVT_CLOSE` | Window close event handler |
 
-Modern Linux desktops send `SIGTERM` when logging out or shutting down. The application's existing signal handlers catch this and perform a clean shutdown. The X11 SM protocol added:
+Modern Linux desktops send `SIGTERM` when logging out or shutting down. The application's existing signal handlers catch this and perform a clean shutdown. (Corrected 2026-10-04: LXDE sends nothing at logout, the X server just stops; what Task Coach does instead is in [SESSION_END.md](SESSION_END.md).) The X11 SM protocol added:
 
 - **Extra complexity:** 484 lines of ctypes bindings to `libSM.so` and `libICE.so`
 - **A separate thread:** ICE connection polling loop

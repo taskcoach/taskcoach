@@ -58,18 +58,22 @@ class UpdatePerSecondViewerTestsMixin(object):
     def createUpdateViewer(self):
         return self.ListViewerClass(self.frame, self.taskFile)
 
-    def testClockNotificationResultsInRefreshedItem(self):
+    def test_clock_notification_results_in_refreshed_item(self):
         self.updateViewer.widget = MockWidget()
         self.updateViewer.second_refresher.refresh_items(
             self.updateViewer.second_refresher.currently_tracked_items()
         )
-        usingTaskViewer = self.ListViewerClass != gui.viewer.EffortViewer
-        expected = self.trackedTask if usingTaskViewer else self.trackedEffort
+        using_task_viewer = self.ListViewerClass != gui.viewer.EffortViewer
+        expected = (
+            self.trackedTask if using_task_viewer else self.trackedEffort
+        )
         self.assertEqual(
             set([expected]), self.updateViewer.widget.refreshedItems
         )
 
-    def testClockNotificationResultsInRefreshedItem_OnlyForTrackedItems(self):
+    def test_clock_notification_refreshes_only_tracked_items(
+        self,
+    ):
         self.taskList.append(task.Task("not tracked"))
         self.updateViewer.widget = MockWidget()
         self.updateViewer.second_refresher.refresh_items(
@@ -77,27 +81,29 @@ class UpdatePerSecondViewerTestsMixin(object):
         )
         self.assertEqual(1, len(self.updateViewer.widget.refreshedItems))
 
-    def testStopTrackingRemovesViewerFromClockObservers(self):
+    def test_stop_tracking_removes_viewer_from_clock_observers(self):
         self.trackedTask.stopTracking()
         self.assertFalse(self.updateViewer.second_refresher.is_clock_started())
 
-    def testStopTrackingRefreshesTrackedItems(self):
+    def test_stop_tracking_refreshes_tracked_items(self):
         self.updateViewer.widget = MockWidget()
         self.trackedTask.stopTracking()
         self.assertEqual(1, len(self.updateViewer.widget.refreshedItems))
 
-    def testRemoveTrackedChildAndParentRemovesViewerFromClockObservers(self):
+    def test_removing_tracked_child_and_parent_stops_clock_observing(
+        self,
+    ):
         parent = task.Task()
         self.taskList.append(parent)
         parent.addChild(self.trackedTask)
         self.taskList.remove(parent)
         self.assertFalse(self.updateViewer.second_refresher.is_clock_started())
 
-    def testCreateViewerWithTrackedItemsStartsTheClock(self):
+    def test_create_viewer_with_tracked_items_starts_the_clock(self):
         self.createUpdateViewer()
         self.assertTrue(self.updateViewer.second_refresher.is_clock_started())
 
-    def testViewerDoesNotReactToAddEventsFromOtherContainers(self):
+    def test_viewer_does_not_react_to_add_events_from_other_containers(self):
         categories = base.filter.SearchFilter(category.CategoryList())
         try:
             categories.append(category.Category("Test"))
@@ -106,7 +112,9 @@ class UpdatePerSecondViewerTestsMixin(object):
                 "Adding a category shouldn't affect the UpdatePerSecondViewer."
             )
 
-    def testViewerDoesNotReactToRemoveEventsFromOtherContainers(self):
+    def test_viewer_does_not_react_to_remove_events_from_other_containers(
+        self,
+    ):
         categories = base.filter.SearchFilter(category.CategoryList())
         categories.append(category.Category("Test"))
         try:

@@ -853,9 +853,9 @@ Its pass catches, at the next tick:
 - Parent relationship changes
 - Status changes (time-based transitions)
 - Override value changes
-- File load (volatile fields populated within 1 second)
 
-**No post-load initialization needed:** the loaded tasks push a second due at once.
+A file read or merged runs the full loop at once, before the views
+draw it.
 
 #### SSOT Readers (for UI)
 
@@ -897,17 +897,16 @@ See ATTRIBUTE_PATTERN.md §Volatile vs Persisted Attributes for the general patt
 The derived and effective Attribute fields are:
 - **Not stored**: not written to the file, not in the undo log's
   snapshots
-- **Initialized to None/""** after file load
-- **Populated by ComputeStyles polling** within 1 second of app start
+- **Computed by the full loop** as the file is read, before the
+  views draw it
 
 **Why volatile?**
 - Effective values are computed from persisted data (overrides, parent relationships)
 - No need to persist what can be recomputed
 - Reduces file size and avoids stale value problems
 
-**No post-load initialization needed** — `ComputeStyles` polling replaces all
-post-load handlers. The first pass after loading populates all volatile
-fields.
+**No post-load initialization needed**: the full loop the file read
+runs populates all volatile fields.
 
 ---
 
@@ -921,9 +920,10 @@ with automatic change event firing via `Attribute.set()`.
 ```
 1. App starts, loads data file
    └── Objects created with override values, parent relationships
+   └── The full loop at once: all objects get status + derived + effective values
+       before the views draw them
 
-2. MasterScheduler starts (timer.second)
-   └── Within 1 second, all objects get status + derived + effective values computed
+2. MasterScheduler ticks (timer.second)
 
 3. Ongoing: the master loop runs at each due second
    └── Any data change (override, category, status, parent) is picked up

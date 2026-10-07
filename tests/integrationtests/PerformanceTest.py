@@ -26,13 +26,13 @@ from taskcoachlib.domain import task, category, note
 
 class PerformanceTest(test.TestCase):
     def createTestFile(self):
-        taskList = task.TaskList(
+        task_list = task.TaskList(
             [task.Task("test") for _ in range(self.nrTasks)]
         )
         taskfile = open(self.taskfilename, "w")
-        taskWriter = persistence.XMLWriter(taskfile)
-        taskWriter.write(
-            taskList,
+        task_writer = persistence.XMLWriter(taskfile)
+        task_writer.write(
+            task_list,
             category.CategoryList(),
             note.NoteContainer(),
         )
@@ -49,11 +49,11 @@ class PerformanceTest(test.TestCase):
             os.remove(self.taskfilename + ".lock")
         super().tearDown()
 
-    def testRead(self):
-        mockApp = mock.App()
+    def test_read(self):
+        mock_app = mock.App()
         start = time.time()
-        mockApp.iocontroller.open(self.taskfilename)
+        mock_app.iocontroller.open(self.taskfilename)
         end = time.time()
-        self.assertEqual(self.nrTasks, len(mockApp.taskFile.tasks()))
+        self.assertEqual(self.nrTasks, len(mock_app.taskFile.tasks()))
         self.assertTrue(end - start < self.nrTasks / 10)
-        mockApp.quit_application()
+        mock_app.quit_application()

@@ -38,8 +38,8 @@ def _bulk_modification(command):
 
 class EffortCommand(base.BaseCommand):  # pylint: disable=W0223
     def stopTracking(self):
-        for taskToStop in self.tasksToStopTracking():
-            taskToStop.stopTracking()
+        for task_to_stop in self.tasksToStopTracking():
+            task_to_stop.stopTracking()
 
     def tasksToStopTracking(self):
         return self.list
@@ -88,15 +88,15 @@ class DeleteTaskCommand(base.DeleteCommand, EffortCommand):
         self.__removePrerequisites()
 
     def __removePrerequisites(self):
-        for eachTask in self.items:
+        for each_task in self.items:
             prerequisites, dependencies = (
-                eachTask.prerequisites(),
-                eachTask.dependencies(),
+                each_task.prerequisites(),
+                each_task.dependencies(),
             )
-            eachTask.removeTaskAsDependencyOf(prerequisites)
-            eachTask.removeTaskAsPrerequisiteOf(dependencies)
-            eachTask.set_prerequisites([])
-            eachTask.set_dependencies([])
+            each_task.removeTaskAsDependencyOf(prerequisites)
+            each_task.removeTaskAsPrerequisiteOf(dependencies)
+            each_task.set_prerequisites([])
+            each_task.set_dependencies([])
 
 
 class NewTaskCommand(base.NewItemCommand):
@@ -113,11 +113,11 @@ class NewTaskCommand(base.NewItemCommand):
         self.addDependenciesAndPrerequisites()
 
     def addDependenciesAndPrerequisites(self):
-        for eachTask in self.items:
-            for prerequisite in eachTask.prerequisites():
-                prerequisite.add_dependencies([eachTask])
-            for dependency in eachTask.dependencies():
-                dependency.add_prerequisites([eachTask])
+        for each_task in self.items:
+            for prerequisite in each_task.prerequisites():
+                prerequisite.add_dependencies([each_task])
+            for dependency in each_task.dependencies():
+                dependency.add_prerequisites([each_task])
 
 
 class NewSubTaskCommand(base.NewSubItemCommand):
@@ -127,18 +127,18 @@ class NewSubTaskCommand(base.NewSubItemCommand):
 
     def __init__(self, *args, **kwargs):
         subject = kwargs.pop("subject", _("New subtask"))
-        plannedStartDateTime = kwargs.pop(
+        planned_start_date_time = kwargs.pop(
             "plannedStartDateTime", date.DateTime()
         )
-        dueDateTime = kwargs.pop("dueDateTime", date.DateTime())
+        due_date_time = kwargs.pop("dueDateTime", date.DateTime())
         super().__init__(*args, **kwargs)
         self.items = [
             parent.newChild(
                 subject=subject,
                 plannedStartDateTime=max(
-                    [parent.plannedStartDateTime(), plannedStartDateTime]
+                    [parent.plannedStartDateTime(), planned_start_date_time]
                 ),
-                dueDateTime=min([parent.dueDateTime(), dueDateTime]),
+                dueDateTime=min([parent.dueDateTime(), due_date_time]),
                 **kwargs
             )
             for parent in self.items
@@ -262,9 +262,9 @@ class ExtremePriorityCommand(base.BaseCommand):  # pylint: disable=W0223
         raise NotImplementedError  # pragma: no cover
 
     def setNewExtremePriority(self):
-        newExtremePriority = self.oldExtremePriority + self.delta
+        new_extreme_priority = self.oldExtremePriority + self.delta
         for item in self.items:
-            item.setPriority(newExtremePriority)
+            item.setPriority(new_extreme_priority)
 
     def do_command(self):
         super().do_command()
@@ -339,7 +339,7 @@ class EditDateTimeCommand(base.BaseCommand):
         raise NotImplementedError  # pragma: no cover
 
     @staticmethod
-    def setDateTime(item, newDateTime):
+    def setDateTime(item, new_date_time):
         raise NotImplementedError  # pragma: no cover
 
     def do_command(self):
@@ -379,8 +379,8 @@ class EditPeriodDateTimeCommand(EditDateTimeCommand):
         for item in self.items:
             if self.__shouldAdjustItem(item):
                 delta = self._newDateTime - self.getDateTime(item)
-                newOtherDateTime = self.getOtherDateTime(item) + delta
-                self.setOtherDateTime(item, newOtherDateTime)
+                new_other_date_time = self.getOtherDateTime(item) + delta
+                self.setOtherDateTime(item, new_other_date_time)
 
     def __shouldAdjustItem(self, item):
         """Determine whether the other date/time of the item should be
@@ -397,7 +397,7 @@ class EditPeriodDateTimeCommand(EditDateTimeCommand):
         raise NotImplementedError  # pragma: no cover
 
     @staticmethod
-    def setOtherDateTime(item, newDateTime):
+    def setOtherDateTime(item, new_date_time):
         """Set the date/time that represents the other end of the period."""
         raise NotImplementedError  # pragma: no cover
 

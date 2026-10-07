@@ -30,15 +30,15 @@ class CategoryCommandTestCase(CommandTestCase, asserts.CommandAssertsMixin):
 
 class NewCategoryCommandTest(CategoryCommandTestCase):
     def new(self):
-        newCategoryCommand = command.NewCategoryCommand(self.categories)
-        newCategory = newCategoryCommand.items[0]
-        newCategoryCommand.do()
-        return newCategory
+        new_category_command = command.NewCategoryCommand(self.categories)
+        new_category = new_category_command.items[0]
+        new_category_command.do()
+        return new_category
 
-    def testNewCategory(self):
-        newCategory = self.new()
+    def test_new_category(self):
+        new_category = self.new()
         self.assertDoUndoRedo(
-            lambda: self.assertEqual([newCategory], self.categories),
+            lambda: self.assertEqual([new_category], self.categories),
             lambda: self.assertEqual([], self.categories),
         )
 
@@ -50,23 +50,23 @@ class NewSubCategoryCommandTest(CategoryCommandTestCase):
         self.categories.append(self.category)
 
     def newSubCategory(self, categories=None):
-        newSubCategory = command.NewSubCategoryCommand(
+        new_sub_category = command.NewSubCategoryCommand(
             self.categories, categories or []
         )
-        newSubCategory.do()
+        new_sub_category.do()
 
-    def testNewSubCategory_WithoutSelection(self):
+    def test_new_sub_category_without_selection(self):
         self.newSubCategory()
         self.assertDoUndoRedo(
             lambda: self.assertEqual([self.category], self.categories)
         )
 
-    def testNewSubCategory(self):
+    def test_new_sub_category(self):
         self.newSubCategory([self.category])
-        newSubCategory = self.category.children()[0]
+        new_sub_category = self.category.children()[0]
         self.assertDoUndoRedo(
             lambda: self.assertEqual(
-                [newSubCategory], self.category.children()
+                [new_sub_category], self.category.children()
             ),
             lambda: self.assertEqual([self.category], self.categories),
         )
@@ -82,24 +82,24 @@ class DragAndDropCategoryCommandTest(CategoryCommandTestCase):
         self.child.addChild(self.grandchild)
         self.categories.extend([self.parent, self.child])
 
-    def dragAndDrop(self, dropTarget, categories=None):
+    def dragAndDrop(self, drop_target, categories=None):
         command.DragAndDropCategoryCommand(
-            self.categories, categories or [], drop=dropTarget
+            self.categories, categories or [], drop=drop_target
         ).do()
 
-    def testCannotDropOnParent(self):
+    def test_cannot_drop_on_parent(self):
         self.dragAndDrop([self.parent], [self.child])
         self.assertFalse(patterns.CommandHistory().has_history())
 
-    def testCannotDropOnChild(self):
+    def test_cannot_drop_on_child(self):
         self.dragAndDrop([self.child], [self.parent])
         self.assertFalse(patterns.CommandHistory().has_history())
 
-    def testCannotDropOnGrandchild(self):
+    def test_cannot_drop_on_grandchild(self):
         self.dragAndDrop([self.grandchild], [self.parent])
         self.assertFalse(patterns.CommandHistory().has_history())
 
-    def testDropAsRootTask(self):
+    def test_drop_as_root_task(self):
         self.dragAndDrop([], [self.grandchild])
         self.assertDoUndoRedo(
             lambda: self.assertEqual(None, self.grandchild.parent()),
@@ -114,13 +114,13 @@ class CopyAndPasteCommandTest(CategoryCommandTestCase):
         self.categories.append(self.original)
         self.task = task.Task()
 
-    def copy(self, categoriesToCopy):
-        command.CopyCommand(self.categories, categoriesToCopy).do()
+    def copy(self, categories_to_copy):
+        command.CopyCommand(self.categories, categories_to_copy).do()
 
     def paste(self):
         command.PasteCommand(self.categories).do()
 
-    def testPasteOneCategory(self):
+    def test_paste_one_category(self):
         self.copy([self.original])
         self.paste()
         self.assertDoUndoRedo(
@@ -128,7 +128,7 @@ class CopyAndPasteCommandTest(CategoryCommandTestCase):
             lambda: self.assertEqual([self.original], self.categories),
         )
 
-    def testCopyOneCategoryWithTasks(self):
+    def test_copy_one_category_with_tasks(self):
         self.task.addCategory(self.original)
         self.copy([self.original])
         self.assertDoUndoRedo(
@@ -137,7 +137,7 @@ class CopyAndPasteCommandTest(CategoryCommandTestCase):
             )
         )
 
-    def testPasteOneCategoryWithTasks(self):
+    def test_paste_one_category_with_tasks(self):
         self.task.addCategory(self.original)
         self.copy([self.original])
         self.paste()
@@ -148,16 +148,16 @@ class CopyAndPasteCommandTest(CategoryCommandTestCase):
             ),
         )
 
-    def testPasteCategoryWithSubCategory(self):
-        childCat = category.Category("child")
-        self.categories.append(childCat)
-        self.original.addChild(childCat)
-        self.task.addCategory(childCat)
+    def test_paste_category_with_sub_category(self):
+        child_cat = category.Category("child")
+        self.categories.append(child_cat)
+        self.original.addChild(child_cat)
+        self.task.addCategory(child_cat)
         self.copy([self.original])
         self.paste()
         self.assertDoUndoRedo(
             lambda: self.assertEqual(2, len(self.task.categories())),
-            lambda: self.assertEqual(set([childCat]), self.task.categories()),
+            lambda: self.assertEqual(set([child_cat]), self.task.categories()),
         )
 
 
@@ -166,7 +166,7 @@ class EditExclusiveSubcategoriesCommandTest(CategoryCommandTestCase):
         super().setUp()
         self.category = category.Category("category")
 
-    def testEdit(self):
+    def test_edit(self):
         self.categories.append(self.category)
         edit = command.EditExclusiveSubcategoriesCommand(
             self.categories, [self.category], newValue=True

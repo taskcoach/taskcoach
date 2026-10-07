@@ -49,8 +49,13 @@ class _RebuildInputFilter(wx.EventFilter):
     def FilterEvent(self, event):
         if not self.active:
             return self.Event_Skip
-        if event.GetEventType() in _MOTION_EVENTS:
+        if (
+            event.GetEventType() in _MOTION_EVENTS
+            and wx.Window.GetCapture() is None
+        ):
             return self.Event_Processed
+        # A window holding the mouse is a drag (a column moved or
+        # resized): its motion passes, hovering does not drive it
         return self.Event_Skip
 
     def acquire(self):
@@ -88,39 +93,6 @@ def _ensure_filter_installed():
     if not _filter_installed:
         wx.EvtHandler.AddFilter(_input_filter)
         _filter_installed = True
-
-
-def _install_sash_resize_optimization(manager):
-    """Install throttling for AUI sash resize operations.
-
-    AUI's LIVE_RESIZE mode calls Update() on every mouse move during sash drag,
-    which can cause flickering due to expensive repaints (DoUpdate takes 50-190ms).
-    This wrapper throttles updates to ~30fps to reduce CPU load while maintaining
-    visual feedback.
-    """
-    import time
-
-    original_on_motion = getattr(manager, "OnMotion", None)
-    if not original_on_motion:
-        return
-
-    # Throttle state
-    min_interval = 0.033  # ~30fps max update rate
-    last_update_time = 0
-
-    # Throttle updates during sash drag
-    def throttled_on_motion(event):
-        nonlocal last_update_time
-        action = getattr(manager, "_action", 0)
-        # action 3 = actionResize (sash drag)
-        if action == 3:
-            now = time.time()
-            if now - last_update_time < min_interval:
-                return
-            last_update_time = now
-        return original_on_motion(event)
-
-    manager.OnMotion = throttled_on_motion
 
 
 def free_with_window(window, manager):
@@ -200,9 +172,6 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
             agw_style |= aui.AUI_MGR_USE_NATIVE_MINIFRAMES
 
         self.manager = _AuiManager(self, agw_style)
-
-        # Throttle AUI sash resize updates to ~30fps to reduce flickering
-        _install_sash_resize_optimization(self.manager)
 
         self.manager.SetAutoNotebookStyle(
             aui.AUI_NB_TOP

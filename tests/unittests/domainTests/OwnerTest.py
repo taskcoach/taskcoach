@@ -39,14 +39,14 @@ class OwnerTest(test.TestCase):
 
     # pylint: disable=E1101
 
-    def testSetObjects_NoNotificationWhenUnchanged(self):
+    def test_set_objects_no_notification_when_unchanged(self):
         patterns.Publisher().registerObserver(
             self.onEvent, self.owner.foosChangedEventType()
         )
         self.owner.setFoos([])
         self.assertFalse(self.events)
 
-    def testSetObjects_NotificationWhenCanged(self):
+    def test_set_objects_notification_when_canged(self):
         patterns.Publisher().registerObserver(
             self.onEvent, self.owner.foosChangedEventType()
         )
@@ -63,6 +63,6 @@ class OwnerTest(test.TestCase):
         self.owner.addFoo(Foo())
         self.assertEqual(before, self.owner.modificationDateTime())
 
-    def testRemoveNoObjects(self):
+    def test_remove_no_objects(self):
         self.owner.removeFoos()
         self.assertFalse(self.owner.foos())

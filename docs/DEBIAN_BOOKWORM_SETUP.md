@@ -136,7 +136,6 @@ sudo apt-get install -y \
     python3-wxgtk4.0 \
     python3-dateutil \
     python3-chardet \
-    python3-keyring \
     python3-enchant \
     python3-venv
 ```
@@ -267,7 +266,6 @@ Run from a terminal: the log goes to its output
 - ✅ python3-wxgtk4.0 (4.2.0)
 - ✅ python3-dateutil (2.8.2)
 - ✅ python3-chardet (5.1.0)
-- ✅ python3-keyring (23.13.1)
 - ✅ python3-enchant (spell checking)
 - ✅ python3-squaremap
 
@@ -280,7 +278,7 @@ Run from a terminal: the log goes to its output
 
 - TaskCoach Homepage: https://github.com/taskcoach/taskcoach
 - GitHub Issues: https://github.com/taskcoach/taskcoach/issues
-- Documentation: See README.md in the repository
+- Developer documentation: [README.md](README.md)
 
 ## Related Documentation
 

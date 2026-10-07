@@ -25,8 +25,9 @@ one pass processes the marked objects and what reads them, each once,
 in a fixed order: categories, tasks, notes, attachments, parents
 first. A change of what every object reads (a file read or merged, the
 clock set back, the due soon hours, the status styles, the theme) runs
-the full loop over every object instead. Each tick then sends the date
-and minute events when they changed.
+the full loop over every object instead; a file read or merged runs
+it at once, so the views first draw the file styled. Each tick then
+sends the date and minute events when they changed.
 
 See docs/MASTER_SCHEDULER_REFACTOR.md (Incremental Pass, design and
 rulings) and docs/SCHEDULERS.md.
@@ -350,12 +351,16 @@ class MasterScheduler:
             )
         for event_type in _GLOBAL_EVENT_TYPES:
             register(self._on_everything_changed, eventType=event_type)
-        for event_type in ("taskfile.justRead", "taskfile.merged"):
-            register(
-                self._on_file_read,
-                eventType=event_type,
-                eventSource=self._task_file,
-            )
+        register(
+            self._on_file_settle,
+            eventType="taskfile.settle",
+            eventSource=self._task_file,
+        )
+        register(
+            self._on_file_merged,
+            eventType="taskfile.merged",
+            eventSource=self._task_file,
+        )
         register(
             self._on_due_soon_hours_changed, eventType="behavior.duesoonhours"
         )
@@ -491,9 +496,19 @@ class MasterScheduler:
     def _on_everything_changed(self, event):  # pylint: disable=W0613
         self._full = True
 
-    def _on_file_read(self, event):  # pylint: disable=W0613
-        # Every object is new, or a merge replaced them by their copies
+    def _on_file_settle(self, event):  # pylint: disable=W0613
+        # Every object is new: the full loop now, before anyone shows
+        # the file, quietly, as everyone takes every value once it is
+        # read (docs/WINDOW_GEOMETRY.md, Opening the File)
         self._rebuild()
+        with patterns.computed_values_quietly():
+            self._run_due(datemodule.DateTime.now())
+
+    def _on_file_merged(self, event):  # pylint: disable=W0613
+        # A merge replaced objects by their copies, the views live: the
+        # full loop now, its changes sent
+        self._rebuild()
+        self._run_due(datemodule.DateTime.now())
 
     def _on_due_soon_hours_changed(self, event):  # pylint: disable=W0613
         # Every task's due soon second moves
@@ -526,9 +541,7 @@ class MasterScheduler:
         if minute_changed:
             self._trace_passes()
 
-        self._pop_due(timestamp)
-        if self._full or self._marks or _CHECK:
-            self._run_pass(timestamp)
+        self._run_due(timestamp)
 
         # Publisher events, so each subscriber (viewers, filters) runs
         # isolated from the others' failures. The date event is for a
@@ -544,6 +557,13 @@ class MasterScheduler:
                 "scheduler.minute",
                 patterns.Event("scheduler.minute", self, timestamp).send,
             )
+
+    def _run_due(self, timestamp):
+        """Mark the tasks of the entries due by timestamp and run the
+        pass, if there is anything to process."""
+        self._pop_due(timestamp)
+        if self._full or self._marks or _CHECK:
+            self._run_pass(timestamp)
 
     def _run_pass(self, timestamp):
         """The tick's pass: the full loop when due, else the marked
@@ -743,7 +763,8 @@ class MasterScheduler:
             self._on_change,
             self._on_subject_changed,
             self._on_everything_changed,
-            self._on_file_read,
+            self._on_file_settle,
+            self._on_file_merged,
             self._on_due_soon_hours_changed,
         ):
             publisher.removeObserver(handler)

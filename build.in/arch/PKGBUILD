@@ -13,7 +13,6 @@ depends=(
     'python-wxpython>=4.2.0'
     'python-chardet>=5.2.0'
     'python-dateutil>=2.9.0'
-    'python-keyring'
     'python-pyenchant'
     'python-gobject'
     'libayatana-appindicator'
@@ -28,10 +27,8 @@ makedepends=(
     'python-pip'
 )
 optdepends=(
-    'espeak-ng: Spoken reminders'
     'hunspell-en_us: English spell checking'
     'hunspell-en_gb: British English spell checking'
-    'python-dbus: idle-time detection on GNOME/KDE Plasma 5 (Idle time notice)'
     'python-pywayland: Idle time notice on Wayland (KDE Plasma 6, wlroots, COSMIC); tray hide on KDE Plasma Wayland'
 )
 # Note: squaremap is not in Arch repos, installed via pip at build time

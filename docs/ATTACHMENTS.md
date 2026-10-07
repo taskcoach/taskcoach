@@ -56,7 +56,7 @@ be shared between computers.
 ## Opening
 
 Open (`AttachmentOpen`) and Open all attachments (Shift+Ctrl+O,
-`OpenAllAttachments`) call `openAttachments()`
+`OpenAllAttachments`) call `open_attachments()`
 (`gui/uicommand/uicommand.py`): each attachment's `open()` hands its
 location to the system (`tools/openfile.py`: `os.startfile` on
 Windows, `open` on macOS, `xdg-open` elsewhere); a file's relative

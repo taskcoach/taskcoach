@@ -90,7 +90,7 @@ in memory, compared before and after each action.
 `CommandHistory().action(label)` (`patterns/command.py`) makes a user
 action one step named label; `Command.do()` opens one. What is not a
 command opens one itself: snoozing (`ReminderController`), stopping
-tracking from the tray, File > Merge, the CSV and Todo.txt imports.
+tracking from the tray, File > Merge, the CSV import.
 
 - **Nested actions join** the outer one.
 - **One gesture is one step:** the step stays open until the

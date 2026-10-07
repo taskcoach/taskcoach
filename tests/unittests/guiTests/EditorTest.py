@@ -51,27 +51,29 @@ class EditorTestCase(test.wxTestCase):
         self.taskFile.close()
         self.taskFile.stop()
 
-    def testCloseEditorWhenItemIsDeleted(self):
+    def test_close_editor_when_item_is_deleted(self):
         self.items.remove(self.item)
         self.assertTrue(self.editor.editorClosed)
 
-    def testDontCloseEditorWhenItemIsFiltered(self):
+    def test_dont_close_editor_when_item_is_filtered(self):
         self.items.setSearchFilter("abc")
         self.assertFalse(self.editor.editorClosed)
 
-    def testVeryLongSubject(self):
-        longSubject = "Subject" * 1000
-        self.item.setSubject(longSubject)
+    def test_very_long_subject(self):
+        long_subject = "Subject" * 1000
+        self.item.setSubject(long_subject)
         self.assertEqual(
-            longSubject, self.editor._interior[0]._subjectEntry.GetValue()
+            long_subject, self.editor._interior[0]._subjectEntry.GetValue()
         )
 
-    def testThatPickingAForegroundColorChangesTheItemForegroundColor(self):
+    def test_that_picking_a_foreground_color_changes_the_item_foreground_color(
+        self,
+    ):
         self.appearance._foregroundColorEntry.SetValue(wx.RED)
         self.appearance._foregroundColorSync.onAttributeEdited(dummy.Event())
         self.assertEqual(wx.RED, self.item.foregroundColor())
 
-    def testThatChangingTheItemForegroundColorAffectsTheForegroundColorButton(
+    def test_changing_item_foreground_color_affects_foreground_color_button(
         self,
     ):
         self.item.setForegroundColor(wx.RED)
@@ -79,12 +81,14 @@ class EditorTestCase(test.wxTestCase):
             wx.RED, self.appearance._foregroundColorEntry.GetValue()
         )
 
-    def testThatPickingABackgroundColorChangesTheItemBackgroundColor(self):
+    def test_that_picking_a_background_color_changes_the_item_background_color(
+        self,
+    ):
         self.appearance._backgroundColorEntry.SetValue(wx.RED)
         self.appearance._backgroundColorSync.onAttributeEdited(dummy.Event())
         self.assertEqual(wx.RED, self.item.backgroundColor())
 
-    def testThatChangingTheItemBackgroundColorAffectsTheBackgroundColorButton(
+    def test_changing_item_background_color_affects_background_color_button(
         self,
     ):
         self.item.setBackgroundColor(wx.RED)
@@ -92,46 +96,46 @@ class EditorTestCase(test.wxTestCase):
             wx.RED, self.appearance._backgroundColorEntry.GetValue()
         )
 
-    def testThatPickingAFontChangesTheItemFont(self):
+    def test_that_picking_a_font_changes_the_item_font(self):
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         font.SetPointSize(font.GetPointSize() + 1)
         self.appearance._fontEntry.SetValue(font)
         self.appearance._fontSync.onAttributeEdited(dummy.Event())
         self.assertEqual(font, self.item.font())
 
-    def testThatChangingTheItemFontAffectsTheFontButton(self):
+    def test_that_changing_the_item_font_affects_the_font_button(self):
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         font.SetPointSize(font.GetPointSize() + 1)
         self.item.setFont(font)
         self.assertEqual(font, self.appearance._fontEntry.GetValue())
 
-    def testThatPickingAColoredFontChangesTheItemColor(self):
+    def test_that_picking_a_colored_font_changes_the_item_color(self):
         self.appearance._fontEntry.SetColor(wx.RED)
         self.appearance._fontColorSync.onAttributeEdited(dummy.Event())
         self.assertEqual(wx.RED, self.item.foregroundColor())
 
-    def testThatChangingTheItemColorAffectsTheFontButton(self):
+    def test_that_changing_the_item_color_affects_the_font_button(self):
         self.item.setForegroundColor(wx.RED)
         self.assertEqual(wx.RED, self.appearance._fontEntry.GetColor())
 
-    def testThatPickingAColoredFontChangesTheColorButton(self):
+    def test_that_picking_a_colored_font_changes_the_color_button(self):
         self.appearance._fontEntry.SetColor(wx.RED)
         self.appearance._fontColorSync.onAttributeEdited(dummy.Event())
         self.assertEqual(
             wx.RED, self.appearance._foregroundColorEntry.GetValue()
         )
 
-    def testThatPickingAColorChangesTheFontButtonColor(self):
+    def test_that_picking_a_color_changes_the_font_button_color(self):
         self.appearance._foregroundColorEntry.SetValue(wx.RED)
         self.appearance._foregroundColorSync.onAttributeEdited(dummy.Event())
         self.assertEqual(wx.RED, self.appearance._fontEntry.GetColor())
 
-    def testThatPickingAnIconChangesTheItemIcon(self):
+    def test_that_picking_an_icon_changes_the_item_icon(self):
         self.appearance._iconEntry.SetValue("nuvola_apps_clanbomber")
         self.appearance._iconSync.onAttributeEdited(dummy.Event())
         self.assertEqual("nuvola_apps_clanbomber", self.item.icon_id())
 
-    def testThatChangingTheItemIconAffectsTheIconEntry(self):
+    def test_that_changing_the_item_icon_affects_the_icon_entry(self):
         self.item.set_icon_id("nuvola_apps_clanbomber")
         self.assertEqual(
             "nuvola_apps_clanbomber", self.appearance._iconEntry.GetValue()

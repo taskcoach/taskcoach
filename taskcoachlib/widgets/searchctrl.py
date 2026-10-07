@@ -68,12 +68,12 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         return self
 
     def getTextCtrl(self):
-        textCtrl = [
+        text_ctrl = [
             child
             for child in self.GetChildren()
             if isinstance(child, wx.TextCtrl)
         ]
-        return textCtrl[0] if textCtrl else self
+        return text_ctrl[0] if text_ctrl else self
 
     def getBitmap(self, icon_id):
         return icon_catalog.get_bitmap(icon_id, self.__bitmapSize[0])
@@ -234,12 +234,12 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
             self.DoShowTip(x + 3, y + height + 4, self.__tooltip)
         else:
             self.HideTip()
-        searchString = self.GetValue()
-        if searchString:
-            self.rememberSearchString(searchString)
-        self.ShowCancelButton(bool(searchString))
+        search_string = self.GetValue()
+        if search_string:
+            self.rememberSearchString(search_string)
+        self.ShowCancelButton(bool(search_string))
         self.__callback(
-            searchString,
+            search_string,
             self.__matchCase,
             self.__includeSubItems,
             self.__searchDescription,
@@ -310,8 +310,8 @@ class _SearchCtrlInner(tooltip.ToolTipMixin, wx.SearchCtrl):
         menu.AppendSeparator()
         item = menu.Append(wx.ID_ANY, _("Recent searches"))
         item.Enable(False)
-        for index, searchString in enumerate(self.__recentSearches):
-            menu.Append(self.__recentSearchMenuItemIds[index], searchString)
+        for index, search_string in enumerate(self.__recentSearches):
+            menu.Append(self.__recentSearchMenuItemIds[index], search_string)
 
     def Enable(self, enable=True):  # pylint: disable=W0221
         """When wx.SearchCtrl is disabled it doesn't grey out the buttons,

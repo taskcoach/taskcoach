@@ -50,8 +50,8 @@ class Recurrence(object):
         # Weekdays for weekly recurrence (list of 0-6, where 0=Monday)
         self.weekdays = weekdays if weekdays is not None else []
 
-    def __call__(self, *dateTimes, **kwargs):
-        result = [self._nextDateTime(dateTime) for dateTime in dateTimes]
+    def __call__(self, *date_times, **kwargs):
+        result = [self._nextDateTime(date_time) for date_time in date_times]
         if kwargs.get("next", True):
             # By default we expect our clients to call us once, but we allow
             # the client to tell us to expect more calls

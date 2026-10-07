@@ -17,7 +17,55 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.patterns.snapshot import is_held
+from taskcoachlib.patterns.snapshot import held_item, is_held
+
+
+def _with_subitems(item):
+    """The item and its subitems, if it has any, in order."""
+    children = getattr(item, "children", None)
+    return [item] + (children(recursive=True) if children else [])
+
+
+def copies_of(items):
+    """Copies of the items, subtasks included. A copied task keeps its
+    original's prerequisites: those copied with it as their copies,
+    the others as they are (GitHub #169)."""
+    copies = [item.copy() for item in items]
+    pairs = {}
+    for original, copy in zip(items, copies):
+        pairs.update(zip(_with_subitems(original), _with_subitems(copy)))
+    for original, copy in pairs.items():
+        if hasattr(original, "prerequisites"):  # Tasks only
+            copy.set_prerequisites(
+                {pairs.get(each, each) for each in original.prerequisites()}
+            )
+    return copies
+
+
+def link_pasted(items):
+    """Link the pasted tasks to their prerequisites, the file's own
+    items: whatever a view shows, and also when the file was closed
+    and opened again since the copy. One deleted since, or in another
+    file, is dropped."""
+    for item in items:
+        for each in _with_subitems(item):
+            if not hasattr(each, "prerequisites"):
+                continue
+            pairs = [(p, held_item(p)) for p in each.prerequisites()]
+            stale = {p for p, held in pairs if held is not p}
+            if stale:
+                # Items compare by ID: the old one out, the file's in
+                each.remove_prerequisites(stale)
+                each.add_prerequisites(
+                    {
+                        held
+                        for p, held in pairs
+                        if held is not None and held is not p
+                    }
+                )
+            each.addTaskAsDependencyOf(
+                {held for p, held in pairs if held is not None}
+            )
 
 
 class Clipboard(metaclass=patterns.Singleton):
@@ -31,9 +79,9 @@ class Clipboard(metaclass=patterns.Singleton):
         self._cut = cut
 
     def get(self):
-        currentContents = self._contents
-        currentSource = self._source
-        return currentContents, currentSource
+        current_contents = self._contents
+        current_source = self._source
+        return current_contents, current_source
 
     def items_to_paste(self):
         """The items a paste inserts: cut items themselves while the
@@ -42,7 +90,7 @@ class Clipboard(metaclass=patterns.Singleton):
         docs/UNDO_REDO.md, Design Intent)."""
         if self._cut and not any(is_held(item) for item in self._contents):
             return list(self._contents)
-        return [item.copy() for item in self._contents]
+        return copies_of(self._contents)
 
     def peek(self):
         return self._contents

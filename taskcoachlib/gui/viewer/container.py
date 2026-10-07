@@ -127,9 +127,12 @@ class ViewerContainer(object):
         pane_info = self.containerWidget.manager.GetPane(viewer_to_activate)
         if pane_info.IsNotebookPage():
             self.containerWidget.manager.ShowPane(viewer_to_activate, True)
-        if pane_info.IsFloating() and pane_info.frame:
-            # Its own window, in front for the keys to reach it
-            pane_info.frame.Raise()
+        # Its window in front for the keys to reach it: a floating
+        # view's own, or the main window from a floating view
+        # (docs/AUI.md, Floating Views and the Keys)
+        window = wx.GetTopLevelParent(viewer_to_activate)
+        if window.IsShown() and not window.IsActive():
+            window.Raise()
         self.send_viewer_status_event()
 
     def __del__(self):
@@ -156,12 +159,30 @@ class ViewerContainer(object):
             ).send()
 
     def on_page_changed(self, event):
-        """Handle pane activation events from AUI."""
+        """A pane activated. Answered only for the view the main
+        window's manager has active: a floating view's own frame
+        reports first, while the main window still has the old view
+        active, and focusing that would take the keys back from the
+        view clicked; the main window reports next (docs/AUI.md,
+        Floating Views and the Keys). AUI's report names no manager."""
+        if not self.__is_or_holds(event.GetPane(), self.active_viewer()):
+            event.Skip()
+            return
         self.__ensure_active_viewer_has_focus()
         self.send_viewer_status_event()
         if self._notifyActiveViewer and self.active_viewer() is not None:
             self.active_viewer().activate()
         event.Skip()
+
+    @staticmethod
+    def __is_or_holds(window, viewer):
+        """Whether the pane's window is the viewer or holds it (a
+        notebook's pane is the notebook)."""
+        while viewer is not None:
+            if viewer is window:
+                return True
+            viewer = viewer.GetParent()
+        return False
 
     def focus_skipped_viewer(self):
         """Focus the active viewer if that was skipped while the main
@@ -210,8 +231,8 @@ class ViewerContainer(object):
         window = event.GetPane().window
         if hasattr(window, "GetPage"):
             # Window is a notebook, close each of its pages
-            for pageIndex in range(window.GetPageCount()):
-                self.__close_viewer(window.GetPage(pageIndex))
+            for page_index in range(window.GetPageCount()):
+                self.__close_viewer(window.GetPage(page_index))
         else:
             # Window is a viewer, close it
             self.__close_viewer(window)

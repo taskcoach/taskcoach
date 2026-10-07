@@ -90,6 +90,7 @@ class MainWindow(
         self.Bind(wx.EVT_CLOSE, self.onClose)
         self.Bind(wx.EVT_ICONIZE, self.onIconify)
         self.Bind(wx.EVT_SIZE, self.onResize)
+        self.__once_drawn = []
         self._create_window_components()  # Not private for test purposes
         self.__init_window_components()
         self.__init_window()
@@ -109,6 +110,36 @@ class MainWindow(
 
     def setShutdownInProgress(self):
         self.__shutdown = True
+
+    def call_once_drawn(self, callback):
+        """Call back once the window has painted, so a long first step
+        (opening the file) starts with the window on screen; at the
+        first tick if nothing painted by then (started minimized, on
+        another desktop). docs/WINDOW_GEOMETRY.md, Opening the File."""
+        if not self.__once_drawn:
+            # On the AUI manager: pushed onto the frame, it takes the
+            # frame's paint events
+            self.manager.Bind(wx.EVT_PAINT, self.__on_first_paint)
+            self.registerObserver(
+                self.__on_first_tick, eventType="timer.second"
+            )
+        self.__once_drawn.append(callback)
+
+    def __on_first_paint(self, event):
+        event.Skip()  # AUI draws the frame
+        self.__call_once_drawn()
+
+    def __on_first_tick(self, event):  # pylint: disable=W0613
+        self.__call_once_drawn()
+
+    def __call_once_drawn(self):
+        callbacks, self.__once_drawn = self.__once_drawn, []
+        if not callbacks:
+            return
+        self.manager.Unbind(wx.EVT_PAINT, handler=self.__on_first_paint)
+        self.removeObserver(self.__on_first_tick, eventType="timer.second")
+        for callback in callbacks:
+            callback()
 
     def close_global_timer(self):
         """Free the per-second clock; the application's last step, once
@@ -269,7 +300,55 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             if pane.name == "toolbar":
                 best_size = pane.window.GetBestSize()
                 pane.MinSize((-1, best_size.GetHeight()))
+        self.__fit_floating_panes()
+        self.__show_floating_panes_once_drawn()
         self.manager.Update()
+
+    def __fit_floating_panes(self):
+        """A floating view opens on the main window's monitor: one not
+        whole on it is centred on the main window, cut to 80% of the
+        monitor where too large (docs/WINDOW_GEOMETRY.md, Decisions 8).
+        A size never saved is left to AUI."""
+        main_rect = self.__dimensions_tracker.placed_rect()
+        for pane in self.manager.GetAllPanes():
+            if not pane.IsFloating() or min(pane.floating_size) <= 0:
+                continue
+            rect = tuple(pane.floating_pos) + tuple(pane.floating_size)
+            fitted = windowdimensionstracker.fit_to_main_window(
+                rect, main_rect
+            )
+            if fitted != rect:
+                log_step(
+                    "floating %s at %s: moved to %s"
+                    % (pane.name, rect, fitted),
+                    prefix="GEOMETRY",
+                )
+                pane.FloatingPosition(fitted[:2]).FloatingSize(fitted[2:])
+
+    def __show_floating_panes_once_drawn(self):
+        """Floating views show once the main window has painted: AUI
+        shows them at its next update, which on GTK can come before
+        the main window's deferred first show, and a window manager
+        then stacks the main window over them, out of sight
+        (docs/WINDOW_GEOMETRY.md, Floating Views)."""
+        floating = [
+            pane.name
+            for pane in self.manager.GetAllPanes()
+            if pane.IsFloating() and pane.IsShown()
+        ]
+        if not floating or self.IsShown():
+            return
+        for name in floating:
+            self.manager.GetPane(name).Hide()
+
+        def show():
+            for name in floating:
+                pane = self.manager.GetPane(name)
+                if pane.IsOk():
+                    pane.Show()
+            self.manager.Update()
+
+        self.call_once_drawn(show)
 
     def __register_for_window_component_changes(self):
         for event_type, handler in (
@@ -309,14 +388,20 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         self.SetTitle(title)
 
     def displayMessage(self, message, pane=0):
-        statusBar = self.GetStatusBar()
-        if statusBar:
-            statusBar.SetStatusText(message, pane)
+        status_bar = self.GetStatusBar()
+        if status_bar:
+            status_bar.SetStatusText(message, pane)
+            # Drawn now: a long step may follow (opening a file)
+            status_bar.Update()
 
-    def save_settings(self):
+    def save_settings(self, trace=True):
         self.__save_viewer_counts()
         self.__save_perspective()
-        self.__save_position()
+        self.__save_position(trace)
+
+    def is_placed(self):
+        """Placed at start: its position and size are the user's."""
+        return self.__dimensions_tracker.ready
 
     def __save_viewer_counts(self):
         """Save the number of viewers for each viewer type."""
@@ -338,8 +423,8 @@ If this happens again, please make a copy of your TaskCoach.ini file """
         perspective = self.manager.SavePerspective()
         settings.view.perspective = perspective
 
-    def __save_position(self):
-        self.__dimensions_tracker.save_position()
+    def __save_position(self, trace):
+        self.__dimensions_tracker.save_position(trace)
 
     def closeEditors(self):
         for child in self.GetChildren():

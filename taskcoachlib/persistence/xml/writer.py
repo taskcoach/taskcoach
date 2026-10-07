@@ -146,8 +146,8 @@ class XMLWriter(object):
         )
         for effort in sortedById(task.efforts()):
             self.effort_node(node, effort)
-        for eachNote in sortedById(task.notes()):
-            self.note_node(node, eachNote)
+        for each_note in sortedById(task.notes()):
+            self.note_node(node, each_note)
         for attachment in sortedById(task.attachments()):
             self.attachment_node(node, attachment)
         return node
@@ -205,8 +205,8 @@ class XMLWriter(object):
         members = legacy.members(category, self.__ids_in_file)
         if members:
             node.attrib["categorizables"] = members
-        for eachNote in sortedById(category.notes()):
-            self.note_node(node, eachNote)
+        for each_note in sortedById(category.notes()):
+            self.note_node(node, each_note)
         for attachment in sortedById(category.attachments()):
             self.attachment_node(node, attachment)
         return node
@@ -299,8 +299,8 @@ class XMLWriter(object):
         parent_node,
         item,
         node_name,
-        childNodeFactory,
-        childNodeFactoryArgs=(),
+        child_node_factory,
+        child_node_factory_args=(),
     ):
         """Same as base_node, but also create child nodes by means of
         the childNodeFactory."""
@@ -312,8 +312,8 @@ class XMLWriter(object):
             lambda contexts: str(tuple(sorted(contexts))),
         )
         for child in sortedById(item.children()):
-            childNodeFactory(
-                node, child, *childNodeFactoryArgs
+            child_node_factory(
+                node, child, *child_node_factory_args
             )  # pylint: disable=W0142
         return node
 
@@ -325,8 +325,8 @@ class XMLWriter(object):
             self.__attribute(node, "fromName", attachment.from_name())
             self.__attribute(node, "fromAddress", attachment.from_address())
             self.__attribute(node, "sentDateTime", attachment.sent_datetime())
-        for eachNote in sortedById(attachment.notes()):
-            self.note_node(node, eachNote)
+        for each_note in sortedById(attachment.notes()):
+            self.note_node(node, each_note)
         return node
 
     def budgetAsAttribute(self, budget):

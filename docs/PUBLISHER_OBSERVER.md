@@ -85,6 +85,21 @@ relationship) — signal dispatch exists to serve Attribute change notification.
 
 ---
 
+## Order and Quiet
+
+The observers of one event type are a set: they run in no fixed
+order. When one must run before the others, it gets its own earlier
+event: a file read sends `taskfile.settle` (the scheduler computes the
+statuses and styles) before `taskfile.justRead` (everyone shows them).
+
+While a file is read, every view and listener is frozen and takes
+every value anew once it is read: the computed values (statuses,
+derived and effective styles) are set within
+`patterns.computed_values_quietly()`, and their setters
+(`computed_event_source`) build and send no event. Stored values, and
+events such as a reminder's trigger, are sent as ever. A merge stays
+loud: the views are not frozen then.
+
 ## Signal Dispatch
 
 Attribute change notifications must be **per-instance** — "this specific
@@ -373,7 +388,7 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | `pubsub.task.reminder` | Migrated to Publisher as `task.reminder`; the reminder is an `Attribute`, so snoozing also notifies the ancestors | `taskcoachlib/domain/task/task.py` (Task) |
 | `pubsub.task.status`, `efforts`, `track`, `timeSpent`, `budgetLeft`, `revenue`; `pubsub.effort.track`, `duration`, `revenue`; `pubsub.<class>.expandedContexts`; `pubsub.<sorter>.sorted`; `pubsub.effort.composite.empty` | Migrated to Publisher without the `pubsub.` prefix; a task's change also shown by its ancestors is one event with them as sources; the prefix routing and the `(newValue, sender)` handler twins removed (`onAttributeChanged_Deprecated` is `on_attribute_changed`) | `taskcoachlib/domain/task/task.py`, `taskcoachlib/domain/effort/`, `taskcoachlib/domain/base/object.py`, `taskcoachlib/domain/base/sorter.py`; listeners in `taskcoachlib/gui/viewer/`, `taskcoachlib/gui/dialog/editor.py`, `attributesync.py`, `reminder.py`, `taskcoachlib/gui/taskbaricon.py`, `taskcoachlib/gui/scheduler.py`, `taskcoachlib/persistence/taskfile.py` |
 | `effortlisttracker.changed` (the tracker's own pypubsub publisher) | Migrated to Publisher, the tracker as source | `taskcoachlib/domain/effort/effortlist.py` (EffortListTracker), `taskcoachlib/gui/idlecontroller.py`, `taskcoachlib/gui/uicommand/uicommand.py` (EffortStop) |
-| `taskfile.aboutToRead`, `justRead`, `aboutToClear`, `justCleared`, `aboutToSave`, `dirty`, `clean`, `filenameChanged`, `changed` | Migrated to Publisher, the task file as source (a read-only merged file sends none); the viewers, main window and IO controller listen to their own file only | `taskcoachlib/persistence/taskfile.py`, `autosaver.py`, `autobackup.py`, `autoimporterexporter.py`, `taskcoachlib/gui/viewer/base.py`, `taskcoachlib/gui/mainwindow.py`, `taskcoachlib/gui/iocontroller.py`, `taskcoachlib/gui/uicommand/uicommand.py` (FileSave) |
+| `taskfile.aboutToRead`, `justRead`, `aboutToClear`, `justCleared`, `aboutToSave`, `dirty`, `clean`, `filenameChanged`, `changed` | Migrated to Publisher, the task file as source (a read-only merged file sends none); the viewers, main window and IO controller listen to their own file only | `taskcoachlib/persistence/taskfile.py`, `autosaver.py`, `autobackup.py`, `taskcoachlib/gui/viewer/base.py`, `taskcoachlib/gui/mainwindow.py`, `taskcoachlib/gui/iocontroller.py`, `taskcoachlib/gui/uicommand/uicommand.py` (FileSave) |
 | `command.aboutToBulkModify`, `command.justBulkModified` | Migrated to Publisher, the command as source (`_bulk_modification()`) | `taskcoachlib/command/taskCommands.py`, `taskcoachlib/gui/viewer/base.py` |
 | `viewer<id>.status`, `viewer.status`, `all.viewer.status` | Migrated to Publisher: the viewer, or the container with the viewer as value, as source | `taskcoachlib/gui/viewer/base.py`, `container.py`, `effort.py`, `taskcoachlib/gui/status.py`, `taskcoachlib/gui/dialog/export.py` |
 | `settings.<section>.<option>` | Replaced by the Publisher events `Settings.set()` already sent, plus a section event ([Settings Events](#settings-events)) | `taskcoachlib/config/settings.py`; listeners in `taskcoachlib/domain/task/task.py`, `taskcoachlib/gui/scheduler.py`, `taskcoachlib/gui/viewer/task.py`, `effort.py`, `taskcoachlib/gui/mainwindow.py` |

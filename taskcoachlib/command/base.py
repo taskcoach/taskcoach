@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import patterns
 from taskcoachlib.i18n import _
-from .clipboard import Clipboard
+from .clipboard import Clipboard, copies_of, link_pasted
 
 
 class BaseCommand(patterns.Command):
@@ -51,10 +51,6 @@ class BaseCommand(patterns.Command):
     def items_are_new(self):
         return False
 
-    def getItems(self):
-        """The items this command operates on."""
-        return self.items
-
     def can_do(self):
         return bool(self.items)
 
@@ -67,10 +63,10 @@ class CompositeMixin(object):
     """Mixin class for commands that deal with composites."""
 
     def getAllChildren(self, composites):
-        allChildren = []
+        all_children = []
         for composite in composites:
-            allChildren.extend(composite.children(recursive=True))
-        return allChildren
+            all_children.extend(composite.children(recursive=True))
+        return all_children
 
     def getAllParents(self, composites):
         return [
@@ -111,7 +107,7 @@ class CopyCommand(BaseCommand):
     singular_name = _('Copy "%s"')
 
     def do_command(self):
-        Clipboard().put([item.copy() for item in self.items], self.list)
+        Clipboard().put(copies_of(self.items), self.list)
 
 
 class DeleteCommand(BaseCommand):
@@ -165,10 +161,11 @@ class PasteCommand(BaseCommand):
     def do_command(self):
         self.setParentOfPastedItems()
         self.__sourceOfItemsToPaste.extend(self.__itemsToPaste)
+        link_pasted(self.__itemsToPaste)
 
-    def setParentOfPastedItems(self, newParent=None):
+    def setParentOfPastedItems(self, new_parent=None):
         for item in self.__itemsToPaste:
-            item.set_parent(newParent)
+            item.set_parent(new_parent)
 
     def getItemsToPaste(self):
         _items, source = Clipboard().get()
@@ -182,8 +179,8 @@ class PasteAsSubItemCommand(PasteCommand, CompositeMixin):
     singular_name = _('Paste as subitem of "%s"')
 
     def setParentOfPastedItems(self):  # pylint: disable=W0221
-        newParent = self.items[0]
-        super().setParentOfPastedItems(newParent)
+        new_parent = self.items[0]
+        super().setParentOfPastedItems(new_parent)
 
 
 class DragAndDropCommand(BaseCommand, CompositeMixin):
@@ -191,8 +188,8 @@ class DragAndDropCommand(BaseCommand, CompositeMixin):
     singular_name = _('Drag and drop "%s"')
 
     def __init__(self, *args, **kwargs):
-        dropTargets = kwargs.pop("drop")
-        self._itemToDropOn = dropTargets[0] if dropTargets else None
+        drop_targets = kwargs.pop("drop")
+        self._itemToDropOn = drop_targets[0] if drop_targets else None
         super().__init__(*args, **kwargs)
 
     def can_do(self):
@@ -248,86 +245,86 @@ class OrderingDragAndDropCommand(DragAndDropCommand):
             siblings = self.getOrderingSiblings()
 
             orderings = [item.ordering() for item in self.items]
-            minOrdering = min(orderings)
-            maxOrdering = max(orderings)
+            min_ordering = min(orderings)
+            max_ordering = max(orderings)
 
-            insertIndex = (
+            insert_index = (
                 siblings.index(self._itemToDropOn) + (self.part + 1) // 2
             )
 
             # Simple special cases
-            if insertIndex == 0:
-                minOrderingOfSiblings = min(
+            if insert_index == 0:
+                min_ordering_of_siblings = min(
                     [item.ordering() for item in siblings]
                 )
                 for item in self.items:
                     item.setOrdering(
                         item.ordering()
-                        - maxOrdering
-                        + minOrderingOfSiblings
+                        - max_ordering
+                        + min_ordering_of_siblings
                         - 1
                     )
-            elif insertIndex == len(siblings):
-                maxOrderingOfSiblings = max(
+            elif insert_index == len(siblings):
+                max_ordering_of_siblings = max(
                     [item.ordering() for item in siblings]
                 )
                 for item in self.items:
                     item.setOrdering(
                         item.ordering()
-                        - minOrdering
-                        + maxOrderingOfSiblings
+                        - min_ordering
+                        + max_ordering_of_siblings
                         + 1
                     )
             else:
-                maxOrderingOfPreviousSiblings = max(
+                max_ordering_of_previous_siblings = max(
                     [
                         item.ordering()
                         for idx, item in enumerate(siblings)
-                        if idx < insertIndex
+                        if idx < insert_index
                     ]
                 )
-                minOrderingOfNextSiblings = min(
+                min_ordering_of_next_siblings = min(
                     [
                         item.ordering()
                         for idx, item in enumerate(siblings)
-                        if idx >= insertIndex
+                        if idx >= insert_index
                     ]
                 )
-                if insertIndex < len(siblings) // 2:
+                if insert_index < len(siblings) // 2:
                     for item in self.items:
                         item.setOrdering(
                             item.ordering()
-                            - maxOrdering
+                            - max_ordering
                             - 1
-                            + minOrderingOfNextSiblings
+                            + min_ordering_of_next_siblings
                         )
-                    for item in siblings[:insertIndex]:
+                    for item in siblings[:insert_index]:
                         item.setOrdering(
                             item.ordering()
-                            - maxOrderingOfPreviousSiblings
+                            - max_ordering_of_previous_siblings
                             - 1
-                            + minOrdering
-                            - maxOrdering
+                            + min_ordering
+                            - max_ordering
                             - 1
-                            + minOrderingOfNextSiblings
+                            + min_ordering_of_next_siblings
                         )
                 else:
                     for item in self.items:
                         item.setOrdering(
                             item.ordering()
-                            - minOrdering
+                            - min_ordering
                             + 1
-                            + maxOrderingOfPreviousSiblings
+                            + max_ordering_of_previous_siblings
                         )
-                    for item in siblings[insertIndex:]:
+                    for item in siblings[insert_index:]:
                         item.setOrdering(
                             item.ordering()
-                            - minOrderingOfNextSiblings
+                            - min_ordering_of_next_siblings
                             + 1
-                            + maxOrdering
-                            - minOrdering
+                            + max_ordering
+                            - min_ordering
                             + 1
-                            + maxOrderingOfPreviousSiblings
+                            + max_ordering_of_previous_siblings
                         )
         else:
             super().do_command()
