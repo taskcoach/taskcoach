@@ -10,6 +10,7 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 - [Defaults](#defaults)
 - [Saving](#saving)
   - [Watching the File](#watching-the-file)
+- [Backups](#backups)
 - [Merging](#merging)
 - [Category Membership](#category-membership)
 - [IDs](#ids)
@@ -55,14 +56,18 @@ parser's events, and Help > Anonymize writes it back.
 
 ### Files From Others
 
-A task file or template may come from anyone. The standard library's
-parser, Expat, never reads another file or the network: an external
-entity is refused as undefined, an external DTD is not fetched. Since
-Expat 2.4 it refuses entity expansion bombs (billion laughs, quadratic
-blowup). Expat is the system's, or on Windows and macOS Python's own:
-the Windows build's Python 3.11.9 has Expat 2.6.0, without two later
-crash and memory fixes
-([To Do 82](MASTER_SCHEDULER_REFACTOR.md#to-do)). lxml before 5.0 read a local file named in an external entity
+A task file or template may come from anyone. A DOCTYPE is refused
+before the file is parsed (`reader._refuse_doctype()`, since
+2026-10-06): Task Coach never wrote one, and with it go every entity,
+external DTD and parameter entity, the crash below included
+(`XMLReaderDoctypeTest`). The standard library's parser, Expat, never
+reads another file or the network: an external entity is refused as
+undefined, an external DTD is not fetched. Since Expat 2.4 it refuses
+entity expansion bombs (billion laughs, quadratic blowup). Expat is
+the system's, or on Windows and macOS Python's own: those builds run
+Python 3.13.16, with Expat 2.8.5, and each build stops on an Expat
+older than 2.7.2 ([Expat by Package](#expat-by-package)). lxml before 5.0 read a local
+file named in an external entity
 into the task by default (its 5.0 changelog); Ubuntu 22.04 ships
 4.8.0, Debian 12 4.9.2. What the writer saves is escaped: markup typed
 into a field comes back as the same text.
@@ -74,6 +79,75 @@ XInclude, billion laughs and quadratic blowup (refused in 0.2 s), 60
 MB of text in one field (read), 100,000 nested tasks (refused: the
 reader's recursion limit; lxml stops at 256 levels). The refused files
 show the usual file error dialog.
+
+### Expat by Package
+
+Measured 2026-10-06: the version inside each build's Python; the
+distributions' from their archives and security trackers.
+
+| Package | Python | Expat |
+|---|---|---|
+| Windows | python.org 3.11.9, embeddable | 2.6.0, Python's own |
+| macOS | setup-python "3.11": python.org 3.11.9 (macOS 11) | 2.6.0, Python's own |
+| AppImage | python-appimage's latest 3.11: 3.11.17 | 2.8.5, its own |
+| Flatpak | the GNOME 50 runtime (freedesktop SDK 25.08) | 2.7.1, the runtime's |
+| Debian 12, 13 | the system's | 2.5.0 and 2.8.3, with backported fixes |
+| Ubuntu 22.04, 24.04 | the system's | 2.4.7 and 2.6.1, with backported fixes |
+| Fedora 43, Arch | the system's | 2.8.5 |
+
+Python 3.11 has had no Windows or macOS build since 3.11.9 (April
+2024); its later releases, source only, bundle newer Expat (3.11.17:
+2.8.5). Since To Do 27 (2026-10-06) the Windows, macOS and AppImage
+builds carry Python 3.13 (Expat 2.8.5), and each stops on an Expat
+older than 2.7.2. Ubuntu 22.04 leaves CVE-2025-59375 and CVE-2026-45186 unfixed
+("changes too intrusive"); the Flatpak runtime lacks the fixes from
+2.7.2 on.
+
+Expat has had 15 releases since 2.6.0, with over 40 CVEs (its
+`Changes`), 2.9.0 on 2026-10-05. Through Task Coach's reader
+(ElementTree's pull parser fed UTF-8 text, internal entities
+expanded, no external entity parser; 64-bit builds):
+
+- Reached and seen, CVE-2024-8176 (fixed in 2.7.0): a chain of
+  entities crashes the process. With Expat 2.6.0 built from its
+  release and loaded in place of the system's, `reader.parse()`
+  crashed on a task file of 20,000 chained entities (525 KB, 101 KB
+  gzipped) with a 2 MB stack, as on Windows, and of 100,000 (2.7 MB)
+  with 8 MB, as on macOS; 15,000 and 50,000 were read. Expat 2.8.3
+  read them all within 0.2 s. The last file setting is written at
+  quit, so the next start opens the file before.
+- Of the same kind, not reproduced: memory blow-up (CVE-2025-59375,
+  2.7.2; its published reproducer is refused through the reader, as
+  with 2.8.3) and slow parsing from crafted attributes or weak hash
+  salts (2.8.0, 2.8.1, 2.8.4): a file that holds Task Coach or its
+  memory while it opens.
+- Not reached by Task Coach's use: the ones that need an external
+  entity parser, a negative length, a 32-bit build, UTF-16 input, a
+  handler calling back into the parser, or `xmlwf`.
+
+Ways out for Windows and macOS (To Do 82 in
+[REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#to-do) 4):
+
+- Python 3.13.16 (Expat 2.8.5): the series the suite runs on
+  (3.13.5 on its certified platform, [TESTING.md](TESTING.md)), and
+  3.13's last release with Windows and macOS builds (2026-10-01,
+  PEP 719); Expat stays at 2.8.5 from then on.
+- Python 3.14 (3.14.8, Expat 2.8.5): builds until October 2027
+  (PEP 745). Fedora 43 and Arch run Task Coach on it already (CI
+  imports it only); the suite has not run on it.
+- A DOCTYPE refused by the reader: Task Coach never wrote one (only
+  the HTML export does). It stops every entity-based attack in every
+  package, the crash above included, and none of the others.
+
+Done 2026-10-06, both: the builds on Python 3.13 (To Do 27) and the
+DOCTYPE refused. With Expat 2.6.0 and a 2 MB stack, the app given the
+20,000-entity file as its last file crashed at every start before
+("Fatal Python error: Segmentation fault"); now it shows the file
+error and runs on. The check reads only what comes before the root:
+0.035 ms on a 10,000-task file whose parse takes 42 ms.
+
+On 3.13 and 3.14 alike, wxPython 4.3.1, pywin32 312 and py2app 0.28.10
+have builds, and Windows 8.1 and macOS 11 stay the minimums.
 
 ---
 
@@ -119,6 +193,32 @@ releases ([Versions and Compatibility](#versions-and-compatibility)).
 
 ## Saving
 
+Two ways, **ruled by designer 2026-10-07**: autosave (Preferences >
+Files, on by default) or File > Save on demand. "There should not be
+a third mode": saving when Task Coach loses focus (TODO.md 3) was
+dropped.
+
+Autosave takes two steps:
+
+1. **The change reaches the task.** Text typed in the subject,
+   description, dates, durations and amounts counts when the user
+   leaves the field: Tab, a click elsewhere, closing the editor,
+   another program
+   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo) 1). Until then
+   it is only in the field: a crash loses it. Checkboxes, choices, the
+   priority, menu commands, drags and undo count at once.
+2. **The file is saved** (`persistence/autosaver.py`) once the change
+   and what it sets off (tied dates, a parent completed, the next
+   recurrence) are done: at wx's next idle event, sent as soon as no
+   event is waiting, milliseconds later. No timer, no waiting for the
+   user to pause; the changes of one action make one save.
+
+Checked 2026-10-07 on Linux (openbox): a subject typed in the task
+editor was saved 4 ms after another window took the focus. The lists'
+edit boxes do the same
+([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#in-place-editing)). Windows
+and macOS not checked.
+
 Any change to saved data marks the file unsaved, and so starts an
 autosave: an item's own data (every change to it sets its
 modification date,
@@ -135,13 +235,15 @@ memory; nothing on disk is merged ([Merging](#merging)).
 
 1. It writes the XML through `SafeWriteFile`: to a temporary file next to
    the file, which replaces the file in one step (`os.replace`) only
-   after the whole write, including the final flush, succeeded. The
+   after the whole write succeeded and is on disk (`fsync`); then the
+   folder's entry is put on disk too (`filesystem/ondisk.py`), so a
+   power cut right after a save leaves the old file or the new. The
    temporary file gets the file's mode first (not on Windows, where
    permissions are ACLs), and a task file that is a symbolic link is
    written through, so the link stays a link. In a synced cloud folder
    (Dropbox, ownCloud) the file is written in place instead, from a
-   buffer, once the XML is complete; a failure during that write can
-   still truncate it.
+   buffer, once the XML is complete, and put on disk; a failure during
+   that write can still truncate it.
 2. If writing fails, the file is left as it was (outside cloud
    folders).
 3. Save As moves an existing file at the new name aside instead of
@@ -173,9 +275,10 @@ so a change the watcher has not reported yet is never written over.
   the same, with Merge and save, Save As or Cancel.
 - There is no Overwrite. Save As to the file's own name replaces it,
   after the file dialog's confirmation.
-- A forced close (the session ends; nobody can be asked) saves the
-  changes to a copy beside the file (`copy_name()`, "Tasks copy.tsk")
-  and keeps the file as the other program left it.
+- A forced close (the session ends: a Windows session end, SIGTERM
+  or SIGHUP; nobody can be asked, [SESSION_END.md](SESSION_END.md))
+  saves the changes to a copy beside the file (`copy_name()`, "Tasks
+  copy.tsk") and keeps the file as the other program left it.
 
 ### Watching the File
 
@@ -209,6 +312,41 @@ program changing the open file is exceptional, and the notice only
 asks (nothing is merged or reloaded unasked), so 10 s is soon enough
 (**ruled by designer 2026-10-03**); every save checks the file first
 anyway.
+
+## Backups
+
+Every overwrite of a task file keeps the file as it was, **ruled by
+designer 2026-10-06** (P94, "yes proceed"): before each save
+(`AutoBackup`, on `taskfile.aboutToSave`; with autosave, after each
+change) and before a restore replaces a file
+(`BackupManifest.restore_file()`), so a wrong restore can be restored
+back. A restore that cannot keep the file does not replace it.
+
+- **Where:** the backups folder in the user's data folder
+  (`settings.backups_dir()`), one folder per task file named by the
+  SHA-1 of its path, `backups.xml` mapping those to the paths; each
+  backup a bz2 copy, `YYYYMMDDHHMMSS.bak`.
+- **Named by when its contents were saved** (`backup_name()`: the
+  file's modification time), to the second; the Backup Manager shows
+  that time with its seconds. A version already kept is not copied
+  again, and a copy is whole or not there: it is written beside, then
+  renamed (a copy cut short, disk full or killed, is not taken for
+  one). Until 2026-10-06 a backup was named by when it was replaced,
+  and the Backup Manager showed it to the minute: the newest looked
+  like the latest work but was the save before it, autosave's several
+  a minute looked alike, and a
+  restore over the file lost its latest save for good (the same in
+  2.0.3.0). Backups made before keep their old names.
+- **How many:** at least 3, then the natural log of the oldest one's
+  age in minutes (about 7 after a day, 13 after a year); each save
+  removes at most 3, each time the one closest in time to its
+  neighbours, never the oldest or the newest.
+- **Restore** (File > Manage backups): choose the file and a backup;
+  Restore asks where (the file itself by default), keeps the file
+  there as a backup, replaces it whole (`SafeWriteFile`, the
+  destination locked, [FILE_LOCKING.md](FILE_LOCKING.md)) and opens
+  it. Unsaved changes are offered for saving first. A backup that
+  cannot be read leaves the file as it was.
 
 ## Merging
 
@@ -290,6 +428,18 @@ ID's form or order: sorting breaks ties by creation date first
 **Ruling, 2026-09-28:** the first paste after a cut is a move: it
 pastes the cut items themselves, IDs kept (`Clipboard.items_to_paste()`);
 further pastes, and pastes after a copy, insert copies with new IDs.
+
+**Ruling, 2026-10-05** (GitHub #169, P205): a copied task keeps its
+original's prerequisites: those copied with it as their copies, the
+others as they are. At the paste each prerequisite is the file's own
+item with its ID, whatever the view shows (a filter, a search) and
+also after the file was closed and opened again; one the file no
+longer holds (deleted since the copy, or in another file) is dropped,
+and the reverse links (dependencies) are added. No task that was not
+copied changes; templates, which copy through `Task.copy()` too, are
+unchanged (`copies_of()`, `link_pasted()` in `command/clipboard.py`).
+A copy had no prerequisites before.
+
 Since the undo log (2026-09-30) a cut pastes its items themselves
 while the file does not hold them, so undoing that paste makes the
 next paste a move again

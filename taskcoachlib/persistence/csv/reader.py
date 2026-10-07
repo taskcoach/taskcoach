@@ -111,9 +111,9 @@ def _own_abbreviated(match):
 
 
 class CSVReader(object):
-    def __init__(self, taskList, categoryList):
+    def __init__(self, taskList, category_list):
         self.taskList = taskList
-        self.categoryList = categoryList
+        self.categoryList = category_list
         self.__parser_info = _parser_info()
 
     def createReader(self, fp, dialect, hasHeaders):
@@ -138,7 +138,7 @@ class CSVReader(object):
         rx2 = re.compile(r"^(\d+):(\d+):(\d+)$")
 
         dayfirst = kwargs["dayfirst"]
-        tasksById = dict()
+        tasks_by_id = dict()
         tasks = []
 
         for index, line in enumerate(rows):
@@ -158,20 +158,20 @@ class CSVReader(object):
             completion_date_time = None
             reminder_date_time = None
             budget = TimeDelta()
-            fixedFee = 0.0
-            hourlyFee = 0.0
-            percentComplete = 0
+            fixed_fee = 0.0
+            hourly_fee = 0.0
+            percent_complete = 0
 
-            for idx, fieldValue in enumerate(line):
+            for idx, field_value in enumerate(line):
                 if kwargs["mappings"][idx] == _("ID"):
-                    id_ = fieldValue
+                    id_ = field_value
                 elif kwargs["mappings"][idx] == _("Subject"):
-                    subject = fieldValue
+                    subject = field_value
                 elif kwargs["mappings"][idx] == _("Description"):
-                    description.write(fieldValue)
+                    description.write(field_value)
                     description.write("\n")
-                elif kwargs["mappings"][idx] == _("Category") and fieldValue:
-                    name = fieldValue
+                elif kwargs["mappings"][idx] == _("Category") and field_value:
+                    name = field_value
                     if name.startswith("(") and name.endswith(")"):
                         continue  # Skip categories of subitems
                     cat = self.categoryList.findCategoryByName(name)
@@ -180,39 +180,39 @@ class CSVReader(object):
                     categories.append(cat)
                 elif kwargs["mappings"][idx] == _("Priority"):
                     try:
-                        priority = int(fieldValue)
+                        priority = int(field_value)
                     except ValueError:
                         pass
                 elif kwargs["mappings"][idx] == _("Actual start date"):
                     actual_start_date_time = self.parse_date_time(
-                        fieldValue, dayfirst=dayfirst
+                        field_value, dayfirst=dayfirst
                     )
                 elif kwargs["mappings"][idx] == _("Planned start date"):
                     planned_start_date_time = self.parse_date_time(
-                        fieldValue, dayfirst=dayfirst
+                        field_value, dayfirst=dayfirst
                     )
                 elif kwargs["mappings"][idx] == _("Due date"):
                     due_date_time = self.parse_date_time(
-                        fieldValue, 23, 59, 59, dayfirst=dayfirst
+                        field_value, 23, 59, 59, dayfirst=dayfirst
                     )
                 elif kwargs["mappings"][idx] == _("Completion date"):
                     completion_date_time = self.parse_date_time(
-                        fieldValue, 12, 0, 0, dayfirst=dayfirst
+                        field_value, 12, 0, 0, dayfirst=dayfirst
                     )
                 elif kwargs["mappings"][idx] == _("Reminder date"):
                     reminder_date_time = self.parse_date_time(
-                        fieldValue, dayfirst=dayfirst
+                        field_value, dayfirst=dayfirst
                     )
                 elif kwargs["mappings"][idx] == _("Budget"):
                     try:
-                        value = float(fieldValue)
+                        value = float(field_value)
                         hours = int(math.floor(value))
                         minutes = int(60 * (value - hours))
                         budget = TimeDelta(
                             hours=hours, minutes=minutes, seconds=0
                         )
                     except ValueError:
-                        mt = rx1.search(fieldValue)
+                        mt = rx1.search(field_value)
                         if mt:
                             budget = TimeDelta(
                                 hours=int(mt.group(1)),
@@ -220,7 +220,7 @@ class CSVReader(object):
                                 seconds=0,
                             )
                         else:
-                            mt = rx2.search(fieldValue)
+                            mt = rx2.search(field_value)
                             if mt:
                                 budget = TimeDelta(
                                     hours=int(mt.group(1)),
@@ -229,17 +229,17 @@ class CSVReader(object):
                                 )
                 elif kwargs["mappings"][idx] == _("Fixed fee"):
                     try:
-                        fixedFee = float(fieldValue)
+                        fixed_fee = float(field_value)
                     except ValueError:
                         pass
                 elif kwargs["mappings"][idx] == _("Hourly fee"):
                     try:
-                        hourlyFee = float(fieldValue)
+                        hourly_fee = float(field_value)
                     except ValueError:
                         pass
                 elif kwargs["mappings"][idx] == _("Percent complete"):
                     try:
-                        percentComplete = max(0, min(100, int(fieldValue)))
+                        percent_complete = max(0, min(100, int(field_value)))
                     except ValueError:
                         pass
 
@@ -253,13 +253,13 @@ class CSVReader(object):
                 completionDateTime=completion_date_time,
                 reminder=reminder_date_time,
                 budget=budget,
-                fixedFee=fixedFee,
-                hourlyFee=hourlyFee,
-                percentageComplete=percentComplete,
+                fixedFee=fixed_fee,
+                hourlyFee=hourly_fee,
+                percentageComplete=percent_complete,
             )
 
             if id_ is not None:
-                tasksById[id_] = task
+                tasks_by_id[id_] = task
 
             for category in categories:
                 task.addCategory(category)
@@ -268,9 +268,9 @@ class CSVReader(object):
 
         # OmniFocus uses the task's ID to keep track of hierarchy: 1 => 1.1 and 1.2, etc...
 
-        if tasksById:
+        if tasks_by_id:
             ids = []
-            for id_, task in list(tasksById.items()):
+            for id_, task in list(tasks_by_id.items()):
                 try:
                     ids.append(tuple(map(int, id_.split("."))))
                 except ValueError:
@@ -283,26 +283,26 @@ class CSVReader(object):
                 sid = ".".join(map(str, id_))
                 if len(id_) >= 2:
                     pid = ".".join(map(str, id_[:-1]))
-                    if pid in tasksById:
-                        tasksById[pid].addChild(tasksById[sid])
+                    if pid in tasks_by_id:
+                        tasks_by_id[pid].addChild(tasks_by_id[sid])
                 else:
-                    self.taskList.append(tasksById[sid])
+                    self.taskList.append(tasks_by_id[sid])
         else:
             self.taskList.extend(tasks)
 
     def createCategory(self, name):
         if " -> " in name:
-            parentName, childName = name.rsplit(" -> ", 1)
-            parent = self.categoryList.findCategoryByName(parentName)
+            parent_name, child_name = name.rsplit(" -> ", 1)
+            parent = self.categoryList.findCategoryByName(parent_name)
             if not parent:
-                parent = self.createCategory(parentName)
-            newCategory = Category(subject=childName)
-            parent.addChild(newCategory)
-            newCategory.set_parent(parent)
+                parent = self.createCategory(parent_name)
+            new_category = Category(subject=child_name)
+            parent.addChild(new_category)
+            new_category.set_parent(parent)
         else:
-            newCategory = Category(subject=name)
-        self.categoryList.append(newCategory)
-        return newCategory
+            new_category = Category(subject=name)
+        self.categoryList.append(new_category)
+        return new_category
 
     def parse_date_time(
         self,

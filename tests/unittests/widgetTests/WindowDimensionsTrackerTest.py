@@ -121,44 +121,63 @@ class WindowGeometryTrackerFirstShowTest(test.wxTestCase):
 
 
 class FitToMonitorsTest(test.TestCase):
-    """Saved geometry is fitted to the monitors present, never dropped.
-    Layout: an external monitor above a laptop monitor whose work area
-    leaves out a panel on the left."""
+    """Saved geometry is fitted to the monitors present, never dropped
+    (docs/WINDOW_GEOMETRY.md, Decisions 2). Layout: an external monitor
+    above a laptop monitor whose work area leaves out a panel on the
+    left."""
 
     top = ((0, 0, 1920, 1080), (0, 0, 1920, 1080))
     laptop = ((0, 1080, 1920, 1080), (80, 1080, 1840, 1080))
 
-    def fit(self, rect, monitors):
-        return gui.windowdimensionstracker.fit_to_monitors(rect, monitors)
+    def fit(self, rect, monitors, primary=0):
+        return gui.windowdimensionstracker.fit_to_monitors(
+            rect, monitors, primary
+        )
 
-    def test_rect_on_a_monitor_is_kept_as_saved(self):
-        rect = (510, 1332, 880, 859)  # Bottom edge a little off screen
+    def test_rect_whole_on_a_monitor_is_kept_as_saved(self):
+        rect = (510, 1300, 880, 859)
         self.assertEqual(rect, self.fit(rect, [self.top, self.laptop]))
 
-    def test_rect_on_a_removed_monitor_goes_to_the_nearest(self):
+    def test_rect_partly_off_screen_is_centred_on_its_monitor(self):
+        rect = (510, 1332, 880, 859)  # Bottom edge a little off screen
+        self.assertEqual(
+            (560, 1191, 880, 859), self.fit(rect, [self.top, self.laptop])
+        )
+
+    def test_rect_across_two_monitors_goes_to_the_one_it_is_most_on(self):
+        rect = (500, 700, 800, 600)
+        self.assertEqual(
+            (560, 240, 800, 600), self.fit(rect, [self.top, self.laptop])
+        )
+
+    def test_rect_on_a_removed_monitor_goes_to_the_primary(self):
         rect = (510, 1332, 880, 859)
-        self.assertEqual((510, 221, 880, 859), self.fit(rect, [self.top]))
+        self.assertEqual((520, 111, 880, 859), self.fit(rect, [self.top]))
 
-    def test_rect_on_the_upper_monitor_goes_to_the_laptop(self):
-        rect = (300, 200, 1000, 700)
-        self.assertEqual((300, 1080, 1000, 700), self.fit(rect, [self.laptop]))
-
-    def test_size_larger_than_the_monitor_is_reduced(self):
-        rect = (100, 100, 2500, 1300)
+    def test_rect_mostly_off_screen_goes_to_the_primary(self):
+        rect = (1700, 100, 800, 600)
         self.assertEqual(
-            (0, 0, 1920, 1080), self.fit(rect, [self.top, self.laptop])
+            (600, 1320, 800, 600),
+            self.fit(rect, [self.top, self.laptop], primary=1),
         )
 
-    def test_rect_off_every_monitor_goes_inside_the_nearest(self):
-        rect = (4000, 200, 880, 600)
+    def test_rect_mostly_on_a_monitor_stays_on_it(self):
+        rect = (1400, 100, 800, 600)
         self.assertEqual(
-            (1040, 200, 880, 600), self.fit(rect, [self.top, self.laptop])
+            (560, 240, 800, 600),
+            self.fit(rect, [self.top, self.laptop], primary=1),
         )
 
-    def test_work_area_excludes_the_panel(self):
-        rect = (-900, 1300, 880, 600)
+    def test_size_larger_than_the_monitor_is_cut_to_most_of_it(self):
+        rect = (100, 100, 2500, 1300)  # 80% of 1920x1080
         self.assertEqual(
-            (80, 1300, 880, 600), self.fit(rect, [self.top, self.laptop])
+            (192, 108, 1536, 864), self.fit(rect, [self.top, self.laptop])
+        )
+
+    def test_centred_on_the_work_area_without_the_panel(self):
+        rect = (-400, 1300, 880, 600)
+        self.assertEqual(
+            (560, 1320, 880, 600), self.fit(rect, [self.top, self.laptop])
         )
 
 
@@ -236,11 +255,17 @@ class PlacementTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        patcher = mock.patch.object(
-            gui.windowdimensionstracker, "_DIRECT_PLACEMENT", False
-        )
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        # Monitors of a known size, whatever the test display's
+        for patcher in (
+            mock.patch.object(
+                gui.windowdimensionstracker, "_DIRECT_PLACEMENT", False
+            ),
+            mock.patch.object(
+                gui.windowdimensionstracker.wx, "Display", FakeDisplay
+            ),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
         settings.set("window", "position", (300, 200))
         settings.set("window", "size", (1000, 700))
 
@@ -378,11 +403,16 @@ class DirectPlacementTest(test.wxTestCase):
 
     def setUp(self):
         super().setUp()
-        patcher = mock.patch.object(
-            gui.windowdimensionstracker, "_DIRECT_PLACEMENT", True
-        )
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        for patcher in (
+            mock.patch.object(
+                gui.windowdimensionstracker, "_DIRECT_PLACEMENT", True
+            ),
+            mock.patch.object(
+                gui.windowdimensionstracker.wx, "Display", FakeDisplay
+            ),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
         settings.set("window", "position", (300, 200))
         settings.set("window", "size", (1000, 700))
 
@@ -456,9 +486,12 @@ class WaylandTest(test.wxTestCase):
         settings.set("effortdialog", "size", (700, 500))
         parent = FakeWindow()
         editor = FakeWindow()
-        tracker = gui.windowdimensionstracker.WindowGeometryTracker(
-            editor, "effortdialog", parent=parent
-        )
+        with mock.patch.object(
+            gui.windowdimensionstracker.wx, "Display", FakeDisplay
+        ):
+            tracker = gui.windowdimensionstracker.WindowGeometryTracker(
+                editor, "effortdialog", parent=parent
+            )
         self.assertEqual([("size", (700, 500))], editor.requests)
         tracker.save()
         self.assertEqual((2200, 100), settings.get("effortdialog", "position"))
@@ -468,13 +501,25 @@ class FakeDisplay:
     """wx.Display for two monitors side by side, 1920x1080 each, their
     work area 40 px short of the bottom (a panel)."""
 
+    geometries = [wx.Rect(0, 0, 1920, 1080), wx.Rect(1920, 0, 1920, 1080)]
     areas = [wx.Rect(0, 0, 1920, 1040), wx.Rect(1920, 0, 1920, 1040)]
+    primary = 0
 
     def __init__(self, index):
         self.index = index
 
+    @classmethod
+    def GetCount(cls):
+        return len(cls.areas)
+
+    def GetGeometry(self):
+        return self.geometries[self.index]
+
     def GetClientArea(self):
         return self.areas[self.index]
+
+    def IsPrimary(self):
+        return self.index == self.primary
 
     @classmethod
     def GetFromPoint(cls, point):
@@ -482,6 +527,12 @@ class FakeDisplay:
             if area.Contains(point):
                 return index
         return -1
+
+    @classmethod
+    def GetFromWindow(cls, window):
+        x, y = window.GetPosition()
+        width, height = window.GetSize()
+        return cls.GetFromPoint(wx.Point(x + width // 2, y + height // 2))
 
 
 class EditorPlacementTest(test.wxTestCase):
@@ -505,11 +556,13 @@ class EditorPlacementTest(test.wxTestCase):
         self.parent.position = (100, 100)
         self.parent.size = (1200, 800)
 
-    def open(self, position, size, maximized=False):
+    def open(self, position, size, maximized=False, fitted=(800, 600)):
         settings.set("effortdialog", "position", position)
         settings.set("effortdialog", "size", size)
         settings.set("effortdialog", "maximized", maximized)
         editor = FakeWindow()
+        editor.size = fitted
+        self.editor = editor
         self.tracker = gui.windowdimensionstracker.WindowGeometryTracker(
             editor, "effortdialog", parent=self.parent
         )
@@ -532,18 +585,49 @@ class EditorPlacementTest(test.wxTestCase):
         requests = self.open((-1, -1), (700, 500))
         self.assertEqual([("size", (350, 250, 700, 500))], requests)
 
-    def test_no_saved_size_centers_the_minimum_size(self):
-        # The production rule, kept: see Known Issues
-        requests = self.open((-1, -1), (-1, -1))
+    def test_no_saved_size_centers_the_fitted_size(self):
+        requests = self.open((-1, -1), (-1, -1))  # Fitted to 800x600
+        self.assertEqual([("size", (300, 200, 800, 600))], requests)
+
+    def test_a_fitted_size_below_the_minimum_takes_the_minimum(self):
+        requests = self.open((-1, -1), (-1, -1), fitted=(226, 293))
         width, height = self.tracker._min_size
         x = 100 + (1200 - width) // 2
         y = 100 + (800 - height) // 2
         self.assertEqual([("size", (x, y, width, height))], requests)
 
-    def test_size_larger_than_the_monitor_lets_the_system_decide(self):
+    def test_a_large_fitted_size_is_cut_to_most_of_the_work_area(self):
+        # 80% of the 1920x1040 work area
+        requests = self.open((-1, -1), (-1, -1), fitted=(2500, 1500))
+        self.assertEqual(
+            [("size", (1536, 832)), ("size", (0, 84, 1536, 832))], requests
+        )
+
+    def test_a_fitted_size_within_most_of_the_work_area_is_kept(self):
+        requests = self.open((-1, -1), (-1, -1), fitted=(1500, 800))
+        self.assertEqual([("size", (0, 100, 1500, 800))], requests)
+
+    def test_the_size_follows_the_main_windows_monitor(self):
+        self.parent.position = (2020, 100)  # On monitor 1
+        requests = self.open((-1, -1), (-1, -1), fitted=(2500, 1500))
+        self.assertEqual(
+            [("size", (1536, 832)), ("size", (1920, 84, 1536, 832))],
+            requests,
+        )
+
+    def test_a_saved_size_without_position_is_cut_to_most_of_it(self):
+        requests = self.open((-1, -1), (2000, 1200))
+        self.assertEqual([("size", (0, 84, 1536, 832))], requests)
+
+    def test_a_saved_size_larger_than_the_monitor_is_cut_and_centred(self):
         requests = self.open((200, 150), (2000, 900))
-        self.assertEqual([], requests)
-        self.assertEqual((-1, -1), self.saved_position())
+        self.assertEqual([("size", (0, 50, 1536, 900))], requests)
+        self.tracker.save()
+        self.assertEqual((0, 50), self.saved_position())
+
+    def test_saved_rect_across_two_monitors_centers_on_the_parent(self):
+        requests = self.open((1500, 150), (700, 500))
+        self.assertEqual([("size", (350, 250, 700, 500))], requests)
 
     def test_centering_stays_inside_the_parents_monitor(self):
         self.parent.position = (1500, 700)
@@ -556,3 +640,81 @@ class EditorPlacementTest(test.wxTestCase):
         self.assertEqual(
             [("size", (200, 150, 700, 500)), ("maximize", None)], requests
         )
+
+
+class MainWindowPlacementTest(test.wxTestCase):
+    """The main window opens whole on a monitor: the one it lies on
+    most, the primary when most of it lies on none (docs/
+    WINDOW_GEOMETRY.md, Decisions 2)."""
+
+    def setUp(self):
+        super().setUp()
+        for patcher in (
+            mock.patch.object(
+                gui.windowdimensionstracker, "_DIRECT_PLACEMENT", True
+            ),
+            mock.patch.object(
+                gui.windowdimensionstracker.wx, "Display", FakeDisplay
+            ),
+            mock.patch.object(FakeDisplay, "primary", 1),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        settings.set("window", "maximized", False)
+
+    def open(self, position, size):
+        settings.set("window", "position", position)
+        settings.set("window", "size", size)
+        window = FakeWindow()
+        gui.windowdimensionstracker.WindowGeometryTracker(window, "window")
+        return window.requests
+
+    def test_saved_on_a_removed_monitor_opens_on_the_primary(self):
+        requests = self.open((4000, 100), (1000, 700))
+        self.assertEqual([("size", (2380, 170, 1000, 700))], requests)
+
+    def test_saved_across_two_monitors_opens_on_the_one_most_on(self):
+        requests = self.open((1000, 100), (1000, 700))
+        self.assertEqual([("size", (460, 170, 1000, 700))], requests)
+
+    def test_no_saved_position_cuts_a_size_too_large_for_the_primary(self):
+        requests = self.open((-1, -1), (2500, 900))
+        self.assertEqual([("size", (1536, 900))], requests)
+
+
+class FloatingViewPlacementTest(test.TestCase):
+    """A floating view opens on the main window's monitor, centred on
+    the main window when saved elsewhere (docs/WINDOW_GEOMETRY.md,
+    Decisions 8)."""
+
+    main_rect = (100, 100, 1200, 800)
+
+    def setUp(self):
+        super().setUp()
+        for patcher in (
+            mock.patch.object(
+                gui.windowdimensionstracker.wx, "Display", FakeDisplay
+            ),
+            mock.patch.object(FakeDisplay, "primary", 1),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def fit(self, rect, main_rect):
+        return gui.windowdimensionstracker.fit_to_main_window(rect, main_rect)
+
+    def test_whole_on_the_main_windows_monitor_is_kept(self):
+        rect = (1500, 600, 400, 300)
+        self.assertEqual(rect, self.fit(rect, self.main_rect))
+
+    def test_on_another_monitor_centres_on_the_main_window(self):
+        rect = (2500, 100, 400, 300)
+        self.assertEqual((500, 350, 400, 300), self.fit(rect, self.main_rect))
+
+    def test_too_large_is_cut_to_most_of_the_monitor(self):
+        rect = (2500, 100, 2000, 1100)
+        self.assertEqual((0, 84, 1536, 832), self.fit(rect, self.main_rect))
+
+    def test_main_window_placed_by_the_system_means_the_primary(self):
+        rect = (100, 100, 400, 300)
+        self.assertEqual((2680, 370, 400, 300), self.fit(rect, None))

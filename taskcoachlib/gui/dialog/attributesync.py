@@ -35,28 +35,28 @@ class AttributeSync(object):
 
     def __init__(
         self,
-        attributeGetterName,
+        attribute_getter_name,
         entry,
-        currentValue,
+        current_value,
         items,
-        commandClass,
-        editedEventType,
-        changedEventType,
+        command_class,
+        edited_event_type,
+        changed_event_type,
         callback=None,
         **kwargs
     ):
-        self._getter = attributeGetterName
+        self._getter = attribute_getter_name
         self._entry = entry
-        self._currentValue = currentValue
+        self._currentValue = current_value
         self._items = items
-        self._commandClass = commandClass
+        self._commandClass = command_class
         self.__commandKwArgs = kwargs
         self.__callback = callback
 
-        entry.Bind(editedEventType, self.onAttributeEdited)
+        entry.Bind(edited_event_type, self.onAttributeEdited)
 
         if len(items) == 1:
-            self.__start_observing_attribute(changedEventType, items[0])
+            self.__start_observing_attribute(changed_event_type, items[0])
 
     def onAttributeEdited(self, event):
         event.Skip()

@@ -40,9 +40,9 @@ class HTMLWriterTestCase(test.wxTestCase):
         super().tearDown()
         self.taskFile.close()
         self.taskFile.stop()
-        cssFilename = self.filename + ".css"
-        if os.path.exists(cssFilename):
-            os.remove(cssFilename)
+        css_filename = self.filename + ".css"
+        if os.path.exists(css_filename):
+            os.remove(css_filename)
 
     def createViewer(self):
         raise NotImplementedError  # pragma: no cover
@@ -51,20 +51,20 @@ class HTMLWriterTestCase(test.wxTestCase):
         self.writer.write(self.viewer, selectionOnly, True)
         return self.fd.getvalue()
 
-    def expectInHTML(self, *htmlFragments, **kwargs):
-        selectionOnly = kwargs.pop("selectionOnly", False)
-        html = self.__writeAndRead(selectionOnly)
-        for htmlFragment in htmlFragments:
+    def expectInHTML(self, *html_fragments, **kwargs):
+        selection_only = kwargs.pop("selectionOnly", False)
+        html = self.__writeAndRead(selection_only)
+        for html_fragment in html_fragments:
             self.assertTrue(
-                htmlFragment in html, "%s not in %s" % (htmlFragment, html)
+                html_fragment in html, "%s not in %s" % (html_fragment, html)
             )
 
-    def expectNotInHTML(self, *htmlFragments, **kwargs):
-        selectionOnly = kwargs.pop("selectionOnly", False)
-        html = self.__writeAndRead(selectionOnly)
-        for htmlFragment in htmlFragments:
+    def expectNotInHTML(self, *html_fragments, **kwargs):
+        selection_only = kwargs.pop("selectionOnly", False)
+        html = self.__writeAndRead(selection_only)
+        for html_fragment in html_fragments:
             self.assertFalse(
-                htmlFragment in html, "%s in %s" % (htmlFragment, html)
+                html_fragment in html, "%s in %s" % (html_fragment, html)
             )
 
     def selectItem(self, items):
@@ -72,16 +72,16 @@ class HTMLWriterTestCase(test.wxTestCase):
 
 
 class CommonTestsMixin(object):
-    def testHTML(self):
+    def test_html(self):
         self.expectInHTML("<html>\n", "</html>\n")
 
-    def testHeader(self):
+    def test_header(self):
         self.expectInHTML("  <head>\n", "  </head>\n")
 
-    def testStyle(self):
+    def test_style(self):
         self.expectInHTML('    <style type="text/css">\n', "    </style>\n")
 
-    def testBody(self):
+    def test_body(self):
         self.expectInHTML("  <body>\n", "  </body>\n")
 
 
@@ -92,23 +92,23 @@ class TaskWriterTestCase(HTMLWriterTestCase):
 
 
 class TaskTestsMixin(CommonTestsMixin):
-    def testTaskSubject(self):
+    def test_task_subject(self):
         self.expectInHTML(">Task subject<")
 
-    def testWriteSelectionOnly(self):
+    def test_write_selection_only(self):
         self.expectNotInHTML(">Task subject<", selectionOnly=True)
 
-    def testWriteSelectionOnly_SelectedChild(self):
+    def test_write_selection_only_selected_child(self):
         child = task.Task("Child")
         self.task.addChild(child)
         self.taskFile.tasks().append(child)
         self.selectItem([child])
         self.expectInHTML(">Task subject<")
 
-    def testColumnStyle(self):
+    def test_column_style(self):
         self.expectInHTML("      .subject {text-align: left}\n")
 
-    def testSortIndicator(self):
+    def test_sort_indicator(self):
         self.expectInHTML('id="sorted"')
         if not self.filename:
             self.expectInHTML("<u>")
@@ -161,7 +161,7 @@ class TaskTestsMixin(CommonTestsMixin):
         self.task.addCategory(cat)
         self.expect_row_style("color: #000000; background: #ff0000")
 
-    def testCSSLink(self):
+    def test_css_link(self):
         if self.filename:
             self.expectInHTML(
                 '<link href="filename.css" rel="stylesheet" type="text/css" media="screen">'
@@ -169,7 +169,7 @@ class TaskTestsMixin(CommonTestsMixin):
         else:
             self.expectNotInHTML("stylesheet")
 
-    def testOSErrorWhileWritingCSS(self):
+    def test_os_error_while_writing_css(self):
         def open(*args):  # pylint: disable=W0613,W0622
             raise IOError
 
@@ -177,23 +177,23 @@ class TaskTestsMixin(CommonTestsMixin):
 
 
 class TaskListTestsMixin(object):
-    def testTaskDescription(self):
+    def test_task_description(self):
         self.task.setDescription("Task description")
         self.viewer.showColumnByName("description")
         self.expectInHTML(">Task description<")
 
-    def testTaskDescriptionWithNewLine(self):
+    def test_task_description_with_new_line(self):
         self.task.setDescription("Line1\nLine2")
         self.viewer.showColumnByName("description")
         self.expectInHTML(">Line1<br>Line2<")
 
-    def testCreationDateTime(self):
+    def test_creation_date_time(self):
         self.viewer.showColumnByName("creationDateTime")
         self.expectInHTML(
             render.dateTime(self.task.creationDateTime(), human_readable=False)
         )
 
-    def testMissingCreationDateTime(self):
+    def test_missing_creation_date_time(self):
         self.viewer.showColumnByName("creationDateTime")
         self.taskFile.tasks().append(
             task.Task(creationDateTime=date.DateTime.min)
@@ -201,7 +201,7 @@ class TaskListTestsMixin(object):
         self.taskFile.tasks().remove(self.task)
         self.expectNotInHTML("1/1/1")
 
-    def testModificationDateTime(self):
+    def test_modification_date_time(self):
         self.task.set_modification_datetime(
             date.DateTime(2012, 1, 1, 10, 0, 0)
         )
@@ -212,7 +212,7 @@ class TaskListTestsMixin(object):
             )
         )
 
-    def testMissingModificationDateTime(self):
+    def test_missing_modification_date_time(self):
         self.viewer.showColumnByName("modificationDateTime")
         self.expectInHTML(
             render.dateTime(
@@ -259,18 +259,18 @@ class EffortWriterTestCase(CommonTestsMixin, HTMLWriterTestCase):
     def createViewer(self):
         return gui.viewer.EffortViewer(self.frame, self.taskFile)
 
-    def testTaskSubject(self):
+    def test_task_subject(self):
         self.expectInHTML(">Task subject<")
 
-    def testEffortDuration(self):
+    def test_effort_duration(self):
         self.expectInHTML(">0:00:01<")
 
-    def testColumnStyle(self):
+    def test_column_style(self):
         self.expectInHTML("      .task {text-align: left}\n")
 
 
 class CategoryWriterTestsMixin(CommonTestsMixin):
-    def testCategorySubject(self):
+    def test_category_subject(self):
         self.expectInHTML(">Category<")
 
     def test_category_background_color(self):

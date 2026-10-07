@@ -34,13 +34,47 @@ def SHA(filename):
     return hashlib.sha1(filename.encode("UTF-8")).hexdigest()
 
 
-def compressFile(srcName, dstName):
-    with open(srcName, "rb") as src:
-        dst = bz2.BZ2File(dstName, "w")
+def compressFile(src_name, dst_name):
+    with open(src_name, "rb") as src:
+        dst = bz2.BZ2File(dst_name, "w")
         try:
             shutil.copyfileobj(src, dst)
         finally:
             dst.close()
+
+
+def backup_name(filename, saved=None):
+    """The backup of the task file as saved on disk, named by when it
+    was saved (its modification time, unless given) to the second: the
+    Backup Manager lists the file as saved then
+    (docs/PERSISTENCE_XML.md, Backups)."""
+    if saved is None:
+        saved = date.DateTime.fromtimestamp(os.path.getmtime(filename))
+    return os.path.join(
+        settings.backups_dir(),
+        SHA(filename),
+        saved.strftime("%Y%m%d%H%M%S.bak"),
+    )
+
+
+def back_up(filename, copyfile=compressFile):
+    """Keep a copy of the task file as saved on disk, before it is
+    overwritten; one kept already for that save stays. Whole or not at
+    all: a copy cut short (disk full, killed) is not taken for one."""
+    name = backup_name(filename)
+    folder, base = os.path.split(name)
+    os.makedirs(folder, exist_ok=True)
+    if os.path.exists(name):
+        return
+    # Named so that no listing takes it for a backup
+    temporary = os.path.join(folder, "." + base + ".tmp")
+    try:
+        copyfile(filename, temporary)
+        os.replace(temporary, name)
+    except BaseException:
+        if os.path.exists(temporary):
+            os.remove(temporary)
+        raise
 
 
 class BackupManifest(object):
@@ -107,23 +141,28 @@ class BackupManifest(object):
     def addFile(self, filename):
         self.__files[SHA(filename)] = filename
 
-    def restoreFile(self, filename, dateTime, dstName):
-        """Restore the backup of filename made at dateTime as dstName.
-        dstName is locked while it is written, so a file open in
-        another Task Coach is never replaced (LockInUse), and it is
-        replaced only once the whole backup was read."""
+    def restore_file(self, filename, date_time, dst_name):
+        """Restore the backup of filename made at date_time as dst_name.
+        dst_name is locked while it is written, so a file open in
+        another Task Coach is never replaced (LockInUse); it is backed
+        up first, so a restore can be restored back, and replaced only
+        once the whole backup was read."""
         sha = SHA(filename)
         src = bz2.BZ2File(
             os.path.join(
                 settings.backups_dir(),
                 sha,
-                dateTime.strftime("%Y%m%d%H%M%S.bak"),
+                date_time.strftime("%Y%m%d%H%M%S.bak"),
             ),
             "r",
         )
         try:
-            with resourcelock.holding(dstName, "task file"):
-                dst = SafeWriteFile(dstName)
+            with resourcelock.holding(dst_name, "task file"):
+                if os.path.exists(dst_name):
+                    back_up(dst_name)
+                    self.addFile(dst_name)
+                    self.save()
+                dst = SafeWriteFile(dst_name)
                 try:
                     shutil.copyfileobj(src, dst)
                 except BaseException:
@@ -182,7 +221,7 @@ class AutoBackup(object):
         rx = re.compile(r"\.(\d{8})-(\d{6})\.tsk\.bak$")
         for name in os.listdir(os.path.split(taskFile.filename())[0] or "."):
             try:
-                srcName = os.path.join(
+                src_name = os.path.join(
                     os.path.split(taskFile.filename())[0], name
                 )
             except UnicodeDecodeError:
@@ -191,76 +230,74 @@ class AutoBackup(object):
 
             mt = rx.search(name)
             if mt:
-                dstName = os.path.join(
+                dst_name = os.path.join(
                     man.backupPath(taskFile.filename()),
                     "%s%s.bak" % (mt.group(1), mt.group(2)),
                 )
-                if os.path.exists(dstName):
-                    os.remove(dstName)
-                with open(srcName, "rb") as src:
-                    dst = bz2.BZ2File(dstName, "w")
+                if os.path.exists(dst_name):
+                    os.remove(dst_name)
+                with open(src_name, "rb") as src:
+                    dst = bz2.BZ2File(dst_name, "w")
                     try:
                         shutil.copyfileobj(src, dst)
                     finally:
                         dst.close()
-                os.remove(srcName)
+                os.remove(src_name)
 
     def onTaskFileAboutToSave(self, taskFile):
         """Just before a task file is about to be saved, and backups are on,
         create a backup and remove extraneous backup files."""
         if taskFile.exists():
-            self.createBackup(taskFile)
+            self.create_backup(taskFile)
             self.removeExtraneousBackupFiles(taskFile)
 
-    def createBackup(self, taskFile):
-        filename = self.backupFilename(taskFile)
-        path = os.path.dirname(filename)
-        if not os.path.exists(path):
-            os.makedirs(path)
-        self.__copyfile(taskFile.filename(), filename)
+    def create_backup(self, taskFile):
+        back_up(taskFile.filename(), self.__copyfile)
 
     def removeExtraneousBackupFiles(
         self, taskFile, remove=os.remove, glob=glob.glob
     ):  # pylint: disable=W0621
-        backupFiles = self.backupFiles(taskFile, glob)
+        backup_files = self.backupFiles(taskFile, glob)
         for _ in range(
             min(
                 self.maxNrOfBackupFilesToRemoveAtOnce,
-                self.numberOfExtraneousBackupFiles(backupFiles),
+                self.numberOfExtraneousBackupFiles(backup_files),
             )
         ):
             try:
-                remove(self.leastUniqueBackupFile(backupFiles))
+                remove(self.leastUniqueBackupFile(backup_files))
             except OSError:
                 pass  # Ignore errors
 
-    def numberOfExtraneousBackupFiles(self, backupFiles):
-        return max(0, len(backupFiles) - self.maxNrOfBackupFiles(backupFiles))
+    def numberOfExtraneousBackupFiles(self, backup_files):
+        return max(
+            0, len(backup_files) - self.maxNrOfBackupFiles(backup_files)
+        )
 
-    def maxNrOfBackupFiles(self, backupFiles):
+    def maxNrOfBackupFiles(self, backup_files):
         """The maximum number of backup files we keep depends on the age of
         the oldest backup file. The older the oldest backup file (that is
         never removed), the more backup files we keep."""
-        if not backupFiles:
+        if not backup_files:
             return 0
-        age = date.DateTime.now() - self.backupDateTime(backupFiles[0])
-        ageInMinutes = age.hours() * 60
+        age = date.DateTime.now() - self.backupDateTime(backup_files[0])
+        age_in_minutes = age.hours() * 60
         # We keep log(ageInMinutes) backups, but at least minNrOfBackupFiles:
         return max(
-            self.minNrOfBackupFiles, int(math.log(max(1, ageInMinutes)))
+            self.minNrOfBackupFiles, int(math.log(max(1, age_in_minutes)))
         )
 
-    def leastUniqueBackupFile(self, backupFiles):
+    def leastUniqueBackupFile(self, backup_files):
         """Find the backupFile that is closest (in time) to its neighbors,
         i.e. that is the least unique. Ignore the oldest and newest
         backups."""
-        assert len(backupFiles) > self.minNrOfBackupFiles
+        assert len(backup_files) > self.minNrOfBackupFiles
         deltas = []
-        for index in range(1, len(backupFiles) - 1):
+        for index in range(1, len(backup_files) - 1):
             delta = self.backupDateTime(
-                backupFiles[index + 1]
-            ) - self.backupDateTime(backupFiles[index - 1])
-            deltas.append((delta, backupFiles[index]))
+                backup_files[index + 1]
+            ) - self.backupDateTime(backup_files[index - 1])
+            deltas.append((delta, backup_files[index]))
         deltas.sort()
         return deltas[0][1]
 
@@ -269,20 +306,11 @@ class AutoBackup(object):
         root = os.path.join(settings.backups_dir(), sha)
         return sorted(glob("%s.bak" % os.path.join(root, "[0-9]" * 14)))
 
-    def backupFilename(self, taskFile, now=date.DateTime.now):
-        """Generate a backup filename for the specified date/time."""
-        sha = SHA(taskFile.filename())
-        return os.path.join(
-            settings.backups_dir(),
-            sha,
-            now().strftime("%Y%m%d%H%M%S.bak"),
-        )
-
     @staticmethod
-    def backupDateTime(backupFilename):
+    def backupDateTime(backup_filename):
         """Parse the date and time from the filename and return a DateTime
         instance."""
-        dt = os.path.split(backupFilename)[-1][:-4]
+        dt = os.path.split(backup_filename)[-1][:-4]
         parts = (
             int(part)
             for part in (

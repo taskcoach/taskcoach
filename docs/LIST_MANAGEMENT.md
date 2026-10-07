@@ -13,14 +13,18 @@
 9. [Tree Mode Button Enable/Disable](#tree-mode-button-enabledisable)
 10. [Scroll After Rebuild (Tree Views)](#scroll-after-rebuild-tree-views)
 11. [Stale Item Positions After Rebuild](#stale-item-positions-after-rebuild)
+    - [Reordering Rows in Place](#reordering-rows-in-place)
 12. [Windows: Scrollbar Adjustment on Content Changes](#windows-scrollbar-adjustment-on-content-changes)
 13. [Row Hover Outline](#row-hover-outline)
 14. [Mouse-Move Handler Inventory (Tree Views)](#mouse-move-handler-inventory-tree-views)
 15. [Vampire CPU Usage](#vampire-cpu-usage)
-16. [AUI Sash Resize Throttle](#aui-sash-resize-throttle)
+16. [Divider Drags](#divider-drags)
 17. [AUI Repaint Cascade on GTK3](#aui-repaint-cascade-on-gtk3)
-18. [In-Place Editing](#in-place-editing)
-19. [Key Files](#key-files)
+18. [Moving Columns](#moving-columns)
+19. [In-Place Editing](#in-place-editing)
+20. [Between Sessions](#between-sessions)
+21. [Text Too Wide for Its Column](#text-too-wide-for-its-column)
+22. [Key Files](#key-files)
 
 ---
 
@@ -106,13 +110,35 @@ on_presentation_changed(event):
 
 ### Which Row Gets Selected
 
-The row **above** the deleted one, so that repeated deletes keep walking
-up the list. Only when the deleted row was the topmost one does the
-selection move **down** to the row that took its place.
+**Ruled by designer 2026-10-05**, the same in every view (tasks,
+categories, notes, efforts, attachments): "we should be doing the
+modern best practices, which means that the row stays on its current
+index". The selection stays on the same line: the row that moves up
+into the deleted row's place. When the deleted row was the last one,
+the new last row, above it. Repeated deletes walk down the list.
 
-"Above" and "below" mean adjacent *rows*, not adjacent siblings: the row
-above a top-level task is the last open descendant of the previous
-top-level task, and the row above a first child is its parent.
+Rows, not siblings: the row moving into a deleted child's place may
+be the next top-level task, when the child was the last open one; a
+deleted parent's place goes to the row after its children. Several
+rows deleted: the row after the bottommost one. With auto scroll off
+the view does not scroll to it, the lists as the trees
+(`stable_viewport()`).
+
+Platform conventions behind the ruling: GTK 3's tree view ("If the
+cursor row got deleted, move the cursor to the next row",
+`gtk_tree_view_row_deleted()`, the previous one only when there is
+none), Qt's item views, the W3C listbox example ("focus lands on the
+first of the subsequent options that is still present"), Outlook,
+Thunderbird, Gmail and Apple Mail by default
+([REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#to-do) 18).
+
+History: Task Coach kept the sibling at the same place, else the last
+sibling, else the parent, until 2026-08-24 (f776d544d), when a fix of
+the focus and scroll after a delete also made the trees take the row
+above, with no ruling; the lists kept the same line. Changing this
+rule takes a new ruling ([DEVELOPMENT.md](DEVELOPMENT.md#design));
+`ViewerTest.py` and `EffortViewerTest.py` test it on rows where the
+two rules differ.
 
 ### Solution: Capture Neighbouring Rows Before Refresh
 
@@ -130,8 +156,8 @@ Flow:
    `widget.selection_neighbours()` -> `{"above": [...], "below": [...]}`
 2. Call `refresh()` - widget updates, deleted items gone
 3. AFTER refresh: if selection empty, `select_next_items_after_removal()`
-   selects the first entry of `above` that is still in the presentation,
-   falling back to the first surviving entry of `below`
+   selects the first entry of `below` that is still in the presentation,
+   falling back to the first surviving entry of `above`
 
 Walking chains rather than picking a single neighbour handles
 multi-select deletes: the rows between the survivors are skipped because
@@ -143,8 +169,8 @@ whether the row is scrolled on screen and would skip off-screen rows.
 
 ### Edge Cases
 
-**Deleted from top of list:**
-- Nothing above, so the first surviving row below is selected
+**Deleted the last row:**
+- Nothing below, so the first surviving row above is selected
 
 **Deleted the only row / whole list emptied:**
 - Both chains are empty, nothing is selected
@@ -189,10 +215,15 @@ Restoring the viewport needs one extra step, though. See
 
 ### List Viewers
 
-`ListViewer.select_next_items_after_removal` is still a no-op: native list
-controls keep the selection at the same *index*, which lands on the row
-**below** the deleted one. Effort and attachment viewers therefore do
-not follow the rule above.
+The effort and attachment views use the same rule and code. Their
+native list keeps row *numbers* selected, and the presentation has
+changed before the list refills, so `VirtualListCtrl` keeps the
+objects of its rows at each refill (a list, and a dict for their
+rows): `curselection()` and `selection_neighbours()` read them, and
+after the refill the same objects are selected again, the keyboard's
+current row with them, without scrolling. A row added above, a sort or
+a filter no longer moves the selection to another item (P100). Painting
+reads the presentation, as before.
 
 ---
 
@@ -308,7 +339,28 @@ in `append_to_toolbar` and owns its `enabled()` check. Toolbar signals and
 the menus' update events both call `command.enabled()`: one source of
 truth.
 
-### Key Files
+### Between Sessions
+
+What a list shows again when the file is reopened (checked 2026-10-05
+on the virtual display, two sessions with a 2,000-task file: expand a
+task, sort by subject, scroll down, select a row, quit, reopen):
+
+| Kept | Where |
+|---|---|
+| Expanded rows | The file: each task's `expandedContexts` |
+| Sort, tree or list mode, the columns shown, their widths and order, the search text, the status filters | The settings, each view's section |
+| The panes and the window's size and place | The settings (`[view] perspective`, `[window]`) |
+
+| Not kept | At the start |
+|---|---|
+| The selection | Nothing selected |
+| The scroll position | The top of the list |
+
+The same in the release (master saves neither). Kept so, **ruled by
+designer 2026-10-05** ("Restore the selection and scroll position on
+reopen? No!").
+
+## Key Files
 
 | File | Role |
 |------|------|
@@ -530,6 +582,31 @@ stops firing before the centering call, centering will compute from
 stale positions. Route it through `_recalculated_main_window()` if that
 happens.
 
+## Reordering Rows in Place
+
+A new sort order moves rows and changes nothing they show: an edit
+that moves its row (Mark completed with "sort by status first", a due
+date while the list sorts by due date, a subject while it sorts by
+subject), a click on a column header, the clock turning a task late.
+The viewer's `refresh_order()` (from `on_sort_order_changed()`) asks
+the tree to `reorder_items()`: when every row holding child rows holds
+its object's children, the rows are sorted in place into the
+presentation's order, kept as they are, so the selection stays; the
+scroll is handled as after a rebuild (auto scroll on: to the
+selection; off: the view stays), and the row under the pointer is
+followed. Anything else (a row added or removed, moved to another
+parent, a branch opened, a row without child rows whose expander no
+longer fits its object, such as the undo of a move between two
+parents shown collapsed or empty) falls back to `RefreshAllItems()`.
+The rows
+themselves are refreshed by the attribute changes that moved them
+(`refresh_changed_items()`).
+
+With 2,050 tasks, Mark completed rebuilt the whole list in 730 ms, the
+window unresponsive; reordered in place, 53 ms (2026-10-06, P100). The
+in-place refresh of every row, for a refresh that changes no order,
+takes 364 to 406 ms.
+
 ## Windows: Scrollbar Adjustment on Content Changes
 
 ### Problem
@@ -693,7 +770,7 @@ lambdas, no change subscriptions.
   >0 enables the two-tone outline. User-facing: **Preferences > Theme >
   Hoverover Highlight**.
 - `settings.view.descriptionpopups` — boolean, default True. Enables/disables
-  tooltip popups. User-facing: **Preferences > View > Description popups**.
+  tooltip popups. User-facing: **Preferences > Features > Hoverover popups**.
 
 ---
 
@@ -864,7 +941,7 @@ continuous polling overhead.
 | Command | What `enabled()` checks |
 |---------|-------------------------|
 | `EditPaste` | `TextCtrl.CanPaste()` or clipboard |
-| `RenameViewer` | `activeViewer()` |
+| `RenameViewer` | `active_viewer()` |
 | `ActivateViewer` | `viewerCount() > 1` |
 | `HideCurrentColumn` | `is_hideable_column()` of the column the menu was opened on |
 | `EffortStartForTask` | task not completed/tracked |
@@ -936,9 +1013,17 @@ others are conditional and stop when their context ends.
 
 ---
 
-## AUI Sash Resize Throttle
+## Divider Drags
 
-AUI's `LIVE_RESIZE` mode calls `Update()` on every mouse move during sash drag, which triggers expensive `DoUpdate` repaints (50-190ms). A throttle wrapper in `frame.py` (`_install_sash_resize_optimization`) limits updates to ~30fps during sash drag (action == 3) to reduce CPU load and flickering.
+AUI's `LIVE_RESIZE` lays the window out again at each mouse move while
+a divider between views is dragged: 60 to 75 ms a layout with 2,050
+tasks. GTK merges the moves that come while the app is busy, so the
+drag keeps up with no throttle. A throttle in `frame.py` meant to
+limit the layouts to about 30 a second never ran (bound after AUI's
+own handler, and testing action 3, a caption click, where a drag is
+1); measured working, it made no difference beyond the runs' own
+spread. Removed 2026-10-06 (P245 in
+[REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#found-2026-10-05)).
 
 ---
 
@@ -978,6 +1063,9 @@ immediately after Thaw.  No paint suppression, no idle wait.
 Clicks, keyboard, and scroll events pass through normally so the app
 stays responsive.  Only motion events are suppressed because they drive
 the AUI cascade (OnMotion -> hover state change -> repaint -> repeat).
+Motion while a window holds the mouse (`wx.Window.GetCapture()`) passes:
+that is a drag (a column moved or resized), not hovering, and moving a
+column rebuilds the tree, so a second drag would stall for a second.
 Each `_do_full_rebuild` call increments a refcount via `acquire()` and
 decrements via `release()`.  When the last widget completes, a
 1-second deferred release timer starts to cover the post-rebuild
@@ -1068,26 +1156,89 @@ the motion-only input filter is sufficient to prevent the cascade.
    occur with standard `wx.aui.AuiManager` (C++ implementation) or
    is it specific to the pure-Python `agw` version?
 
-2. **Full rebuild on every editor field change**: partly done
-   (March 2026, 6f5fae795). `RefreshAllItems()` compares the tree's
-   structure with the presentation's and refreshes the rows in place
-   when it is unchanged, so an edit no longer deletes and recreates
-   the nodes. Left: every row is refreshed, not only the changed one;
-   an attribute change that moves no row needs only `RefreshItems()`.
-   A sort order change still needs a rebuild: `HyperTreeList` has no
-   `MoveItem()`.
+2. ~~**Full rebuild on every editor field change**~~: done. An edit
+   that moves no row refreshes only its row (`refresh_changed_items()`;
+   measured 2026-10-06); `RefreshAllItems()` refreshes the rows in
+   place when the structure is unchanged (March 2026, 6f5fae795); a
+   sort order change reorders the rows in place (2026-10-06,
+   [Reordering Rows in Place](#reordering-rows-in-place)).
 
 ### Key Files
 
 | File | Role |
 |------|------|
 | `taskcoachlib/widgets/treectrl.py` | `RefreshAllItems()`, snapshot comparison, synchronous rebuild |
-| `taskcoachlib/widgets/frame.py` | `_RebuildInputFilter` (motion-only EventFilter with refcount + deferred release), sash throttle |
+| `taskcoachlib/widgets/frame.py` | `_RebuildInputFilter` (motion-only EventFilter with refcount + deferred release) |
 | `taskcoachlib/gui/viewer/base.py` | `refresh()` - calls `RefreshAllItems` |
 | `taskcoachlib/meta/debug.py` | `log_step()` - timestamped debug logging |
 
 ---
 
+
+## Moving Columns
+
+**Asked by designer 2026-10-05** (GitHub #311): "make it possible for
+users to slide the columns left and right when one column is clicked
+and it's dragged, there should be an indicating vertical line that
+shows where the column will be dropped", first, between any two or
+last. In every list and tree view, the editors' included; on
+Windows the effort and attachment views, Windows' own list control
+with no header window of wx's (`column_header()`), keep their order.
+
+**What the user sees:** press a column's header and drag it sideways:
+a vertical line across the header and the rows shows where it will
+land, on the border nearest the pointer, from before the first column
+to after the last. Released, the column moves there, its values,
+width and sort indicator with it. Escape, or the mouse taken away,
+cancels. A click without moving sorts, as before, but at the release
+rather than the press. A press on a column border still resizes. The
+order is kept for each view, and a hidden column shown again comes back
+at its place in it. The tree's hierarchy (indentation, expand buttons)
+is drawn in the subject column wherever it is moved, and the column
+that takes the width left (the subject; an effort view's task) stays
+that column.
+
+**How:**
+
+- The headers (the bundled tree's `TreeListHeaderWindow`, wx's generic
+  list header) sort at the press and resize from a press within 3 px of
+  a border. `_CtrlWithMovableColumnsMixin` (`widgets/itemctrl.py`)
+  binds the header's left button and motion; Task Coach's handlers run
+  before the header's own. A press on a label is held, without the
+  header seeing it: moved past the drag threshold it drags; released
+  where it was, the mixin sends the header's `EVT_LIST_COL_CLICK`.
+  A press on a border goes on to the header. The list header is looked
+  up each time, never kept ([DEVELOPMENT.md](DEVELOPMENT.md#design)).
+- Positions: the columns' widths from the scrolled start (the tree's
+  main window's `CalcUnscrolledPosition()`; for the list, which wx does
+  not expose there, `GetScrollPos()` times wx's generic list's 15 px
+  scroll step). The drop slot is how many columns' middles lie left of
+  the pointer. The line is a 2 px window of the system's selection
+  colour, Task Coach's own, destroyed at the drop.
+- The move: the widget's `move_column()` reorders its list of all
+  columns, which is the view's own list (`ViewerWithColumns._columns`),
+  so hidden columns keep their place, and deletes and inserts the
+  header (the tree moves each row's values with it,
+  [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)). The view's
+  `move_column()` then orders its shown columns, places the tree and
+  fill columns by name (`fill_column_name()`), saves the order and
+  refills the rows. The same placement runs after showing or hiding a
+  column, where only the manual ordering column used to be handled.
+- Saved: the option `columnorder` of each view's settings section, the
+  names of all its columns in their order; `[]` is the view's own.
+  `ordered_columns()` applies it when the view makes its columns; a
+  column it does not name (new in a later release) follows the one
+  before it in the view's order.
+
+**Not done:** dragging past a view's edge does not scroll it: where the
+columns are wider than the view, it is scrolled first. A view's own
+order cannot be restored from the menus (no ruling asked).
+
+**Tests:** `MovingColumnsInTreeTest` (`ViewerTest.py`),
+`MovingColumnsInListTest` (`EffortViewerTest.py`), mouse events sent
+to the header (`tests/unittests/headermouse.py`).
+
+---
 
 ## In-Place Editing
 
@@ -1165,6 +1316,24 @@ the list from another view and the release of a drag (P124 in
 and F2 edited the subject of the first selected row. To Do 68 and 69 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do).
 
+## Text Too Wide for Its Column
+
+**Ruled by designer 2026-10-06** ("the task list is usually very
+dense and many columns, so adding ellipses adds noise and takes up
+space ... Same thing for the categories list"). A value keeps its
+column's alignment while it fits (dates and amounts right-aligned).
+When it does not:
+
+- Task and category lists, the dense views, often side by side in
+  the main window: the value is drawn from the column's left edge and
+  cut at its right edge, with no "...". The note list, the same
+  widget, does the same.
+- Effort and attachment lists (wx's own list): the value starts at the
+  left and ends with "...", as wx draws it.
+
+Research and the cases checked: To Do 10 in
+[REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#to-do).
+
 ## Key Files
 
 | File | Purpose |
@@ -1174,9 +1343,10 @@ and F2 edited the subject of the first selected row. To Do 68 and 69 in
 | `taskcoachlib/gui/status.py` | Status bar with 500ms debounce |
 | `taskcoachlib/widgets/treectrl.py` | Tree widget: selection, scroll, hover, synchronous rebuild |
 | `taskcoachlib/widgets/listctrl.py` | List widget with selection handling |
+| `taskcoachlib/widgets/itemctrl.py` | Column mixins: hiding, sorting, moving by drag (`_CtrlWithMovableColumnsMixin`, `move_column()`) |
 | `taskcoachlib/widgets/iconpicker.py` | Icon picker: virtual ListCtrl (`wx.LC_VIRTUAL`) for fast population |
 | `taskcoachlib/widgets/tooltip.py` | Tooltip mixin with deferred data prep |
-| `taskcoachlib/widgets/frame.py` | AUI frame, `_RebuildInputFilter` (EventFilter), sash throttle |
+| `taskcoachlib/widgets/frame.py` | AUI frame, `_RebuildInputFilter` (EventFilter) |
 | `taskcoachlib/patches/hypertreelist.py` | Patched upstream widget — hover outline, drag highlight |
 | `taskcoachlib/patches/customtreectrl.py` | Its base, bundled with it ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)) |
 

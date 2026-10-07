@@ -184,19 +184,19 @@ class SelectedItemsFilter(Filter):
 
 class SearchFilter(Filter):
     def __init__(self, *args, **kwargs):
-        searchString = kwargs.pop("searchString", "")
-        matchCase = kwargs.pop("matchCase", False)
-        includeSubItems = kwargs.pop("includeSubItems", False)
-        searchDescription = kwargs.pop("searchDescription", False)
-        regularExpression = kwargs.pop("regularExpression", False)
+        search_string = kwargs.pop("searchString", "")
+        match_case = kwargs.pop("matchCase", False)
+        include_sub_items = kwargs.pop("includeSubItems", False)
+        search_description = kwargs.pop("searchDescription", False)
+        regular_expression = kwargs.pop("regularExpression", False)
 
         self.setSearchFilter(
-            searchString,
-            matchCase=matchCase,
-            includeSubItems=includeSubItems,
-            searchDescription=searchDescription,
-            regularExpression=regularExpression,
-            doReset=False,
+            search_string,
+            matchCase=match_case,
+            includeSubItems=include_sub_items,
+            searchDescription=search_description,
+            regularExpression=regular_expression,
+            do_reset=False,
         )
 
         super().__init__(*args, **kwargs)
@@ -208,7 +208,7 @@ class SearchFilter(Filter):
         includeSubItems=False,
         searchDescription=False,
         regularExpression=False,
-        doReset=True,
+        do_reset=True,
     ):
         # pylint: disable=W0201
         self.__includeSubItems = includeSubItems
@@ -217,7 +217,7 @@ class SearchFilter(Filter):
         self.__searchPredicate = self.__compileSearchPredicate(
             searchString, matchCase, regularExpression
         )
-        if doReset:
+        if do_reset:
             self.reset()
 
     @staticmethod

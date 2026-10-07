@@ -217,7 +217,7 @@ class HyperTreeList(draganddrop.TreeCtrlDragAndDropMixin, BaseHyperTreeList):
         """
         first_selected_item = None
         self.UnselectAll()
-        for item in self.GetItemChildren(recursively=True):
+        for item in self.get_item_children(recursively=True):
             pydata = self.GetItemPyData(item)
             if pydata in selection:
                 self.SelectItem(item, True)
@@ -356,7 +356,7 @@ class TreeListCtrl(
         parent,
         columns,
         selectCommand,
-        editCommand,
+        edit_command,
         dragAndDropCommand,
         itemPopupMenu=None,
         columnPopupMenu=None,
@@ -391,7 +391,7 @@ class TreeListCtrl(
             **kwargs,
         )
         self.bind_event_handlers(
-            selectCommand, editCommand, dragAndDropCommand
+            selectCommand, edit_command, dragAndDropCommand
         )
         self.GetMainWindow().Bind(wx.EVT_LEAVE_WINDOW, self._on_hover_leave)
         # Rows move under a pointer at rest
@@ -408,11 +408,11 @@ class TreeListCtrl(
         main.Bind(wx.EVT_KILL_FOCUS, self.__on_kill_focus)
 
     def bind_event_handlers(
-        self, selectCommand, editCommand, dragAndDropCommand
+        self, selectCommand, edit_command, dragAndDropCommand
     ):
         # pylint: disable=W0201
         self.selectCommand = selectCommand
-        self.editCommand = editCommand
+        self.editCommand = edit_command
         self.dragAndDropCommand = dragAndDropCommand
         self.Bind(wx.EVT_TREE_SEL_CHANGED, self.on_select)
         self.Bind(wx.EVT_TREE_KEY_DOWN, self.on_key_down)
@@ -531,6 +531,65 @@ class TreeListCtrl(
                 return
 
         self._do_full_rebuild()
+
+    def __expander_changed(self, row, child):
+        """Whether a row without child rows shows its object's children
+        wrongly: an expander to add or to drop, or an open row to fill
+        (a move between parents undone)."""
+        has_children = bool(self.__adapter.children(child))
+        return has_children != bool(self.ItemHasChildren(row)) or (
+            has_children and self.__adapter.get_item_expanded(child)
+        )
+
+    def reorder_items(self):
+        """Put the rows in the adapter's order without recreating them:
+        a new sort order moves rows, it changes nothing they show. Only
+        when each row holding child rows holds its object's children;
+        False otherwise, for a full refresh (docs/LIST_MANAGEMENT.md,
+        Reordering Rows in Place)."""
+        root_item = self.GetRootItem()
+        if not root_item:
+            return False
+        orders = []
+        pending = [(root_item, None)]
+        while pending:
+            item, parent_object = pending.pop()
+            rows = item.GetChildren()
+            order = {
+                child.id(): index
+                for index, child in enumerate(
+                    self.__adapter.children(parent_object)
+                )
+            }
+            objects = [self.GetItemPyData(row) for row in rows]
+            if len(order) != len(rows) or any(
+                child is None or child.id() not in order for child in objects
+            ):
+                return False
+            orders.append((rows, order))
+            for row, child in zip(rows, objects):
+                if row.GetChildren():
+                    # A collapsed row keeps the rows it showed
+                    pending.append((row, child))
+                elif self.__expander_changed(row, child):
+                    return False
+        self.StopEditing()
+        auto_scroll = self._auto_scroll_enabled()
+        main = self.GetMainWindow()
+        saved_view = None if auto_scroll else main.GetViewStart()
+        for rows, order in orders:
+            rows.sort(key=lambda row: order[self.GetItemPyData(row).id()])
+        main._dirty = True  # pylint: disable=W0212
+        main = self._recalculated_main_window()
+        # As after a rebuild (_do_full_rebuild())
+        if auto_scroll:
+            self.scroll_to_selection()
+        else:
+            main.AdjustMyScrollbars()
+            main.Scroll(*saved_view)
+        main.Refresh(eraseBackground=False)
+        self.follow_pointer()
+        return True
 
     def _refresh_all_items_in_place(self, parent_item):
         """Refresh text, colors, font for all items without rebuilding."""
@@ -825,7 +884,7 @@ class TreeListCtrl(
         else:
             event.Skip()
 
-    def OnDrop(self, drop_item, drag_items, part, column):
+    def on_drop(self, drop_item, drag_items, part, column):
         drop_item = (
             None
             if drop_item == self.GetRootItem()
@@ -870,7 +929,7 @@ class TreeListCtrl(
         dropped = set(drag_items)
         if any(
             self.GetItemPyData(item) in dropped
-            for item in self.GetItemChildren(recursively=True)
+            for item in self.get_item_children(recursively=True)
         ):
             self.select(dropped)
             self.scroll_to_selection_centered()
@@ -878,7 +937,7 @@ class TreeListCtrl(
     def _expand_drop_target(self, drop_item):
         """Expand the drop target item so the dropped children are visible."""
         # Find the tree item for the drop target
-        for item in self.GetItemChildren(recursively=True):
+        for item in self.get_item_children(recursively=True):
             if self.GetItemPyData(item) == drop_item:
                 if self.GetChildrenCount(
                     item, recursively=False
@@ -1093,8 +1152,10 @@ class TreeListCtrl(
 
     @staticmethod
     def __get_style():
-        # Enable horizontal scrollbar for natural column resizing
-        return wx.WANTS_CHARS | wx.HSCROLL
+        # Enable horizontal scrollbar for natural column resizing. No
+        # border of its own: wxGTK 3 draws a theme border in a text
+        # entry's style, rounded, inside the pane's square one
+        return wx.WANTS_CHARS | wx.HSCROLL | wx.BORDER_NONE
 
     @staticmethod
     def __get_agw_style():
@@ -1111,6 +1172,19 @@ class TreeListCtrl(
             agw_style |= wx.TR_NO_LINES
         agw_style &= ~hypertreelist.TR_NO_HEADER
         return agw_style
+
+    def show_expand_buttons(self, show):
+        """A tree keeps room for its expand buttons before every row; a
+        list has none, so its rows start where the header's text
+        starts."""
+        buttons = self.__get_agw_style() & (
+            wx.TR_HAS_BUTTONS | wx.TR_LINES_AT_ROOT
+        )
+        style = self.GetAGWWindowStyleFlag()
+        new_style = style | buttons if show else style & ~buttons
+        if new_style != style:
+            self.SetAGWWindowStyleFlag(new_style)
+            self.Refresh()
 
     # pylint: disable=W0221
 
@@ -1172,6 +1246,11 @@ class TreeListCtrl(
         self.StopEditing()
         super().showColumn(*args, **kwargs)
 
+    def move_column(self, *args, **kwargs):
+        """Stop editing first, as for showing or hiding a column."""
+        self.StopEditing()
+        return super().move_column(*args, **kwargs)
+
 
 class CheckTreeCtrl(TreeListCtrl):
     def __init__(
@@ -1179,8 +1258,8 @@ class CheckTreeCtrl(TreeListCtrl):
         parent,
         columns,
         selectCommand,
-        checkCommand,
-        editCommand,
+        check_command,
+        edit_command,
         dragAndDropCommand,
         itemPopupMenu=None,
         *args,
@@ -1191,13 +1270,13 @@ class CheckTreeCtrl(TreeListCtrl):
             parent,
             columns,
             selectCommand,
-            editCommand,
+            edit_command,
             dragAndDropCommand,
             itemPopupMenu,
             *args,
             **kwargs,
         )
-        self.checkCommand = checkCommand
+        self.checkCommand = check_command
         self.Bind(customtree.EVT_TREE_ITEM_CHECKED, self.on_item_checked)
         self.GetMainWindow().Bind(wx.EVT_LEFT_DOWN, self.on_mouse_left_down)
         self.getIsItemCheckable = (
@@ -1306,7 +1385,7 @@ class CheckTreeCtrl(TreeListCtrl):
 
     def refresh_all_check_states(self):
         """Refresh the check state of all items without rebuilding the tree."""
-        for item in self.GetItemChildren(recursively=True):
+        for item in self.get_item_children(recursively=True):
             domain_object = self.GetItemPyData(item)
             if domain_object is not None:
                 self._refresh_check_state(item, domain_object)
@@ -1320,11 +1399,11 @@ class CheckTreeCtrl(TreeListCtrl):
         self.__checking = True
         item = event.GetItem()
         # Uncheck mutually exclusive children:
-        for child in self.GetItemChildren(item):
+        for child in self.get_item_children(item):
             if self.GetItemType(child) == 2:
                 self.CheckItem(child, False)
                 # Recursively uncheck children of mutually exclusive children:
-                for grandchild in self.GetItemChildren(
+                for grandchild in self.get_item_children(
                     child, recursively=True
                 ):
                     self.CheckItem(grandchild, False)
@@ -1332,11 +1411,11 @@ class CheckTreeCtrl(TreeListCtrl):
         # and parent:
         parent = item.GetParent()
         if parent and self.GetItemType(item) == 2:
-            for child in self.GetItemChildren(parent):
+            for child in self.get_item_children(parent):
                 if child == item:
                     continue
                 self.CheckItem(child, False)
-                for grandchild in self.GetItemChildren(
+                for grandchild in self.get_item_children(
                     child, recursively=True
                 ):
                     self.CheckItem(grandchild, False)

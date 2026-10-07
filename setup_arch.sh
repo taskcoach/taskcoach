@@ -73,7 +73,6 @@ if command -v sudo &> /dev/null; then
         python-wxpython \
         python-dateutil \
         python-chardet \
-        python-keyring \
         python-pyenchant \
         libayatana-appindicator \
         libxss \

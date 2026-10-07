@@ -49,7 +49,7 @@ class LoadTest(test.TestCase):
     def mockErrorDialog(self, *args, **kwargs):  # pylint: disable=W0613
         self.errorDialogCalled = True
 
-    def testLoadInvalidFileDoesNotAffectFile(self):
+    def test_load_invalid_file_does_not_affect_file(self):
         self.mockApp.iocontroller.open(
             self.filename, showerror=self.mockErrorDialog
         )
@@ -59,7 +59,7 @@ class LoadTest(test.TestCase):
         self.assertEqual("Line 1\n", lines[0])
         self.assertEqual("Line 2\n", lines[1])
 
-    def testLoadNonExistingFileGivesErrorMessage(self):
+    def test_load_non_existing_file_gives_error_message(self):
         self.mockApp.iocontroller.open(
             "I don't exist.tsk",
             showerror=self.mockErrorDialog,

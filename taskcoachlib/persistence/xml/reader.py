@@ -42,6 +42,7 @@ import re
 import types
 import wx
 from xml.etree import ElementTree
+from xml.parsers import expat
 
 # What date expressions in templates saved before tskversion 32 use
 OLD_TEMPLATE_NAMES = dict(
@@ -81,11 +82,37 @@ def _without_forbidden_reference(match):
 _PSEUDO_ATTRIBUTE = re.compile(r"""\s+(\w+)\s*=\s*(?:'([^']*)'|"([^"]*)")""")
 
 
+class _RootReached(Exception):
+    """The part of a file before its root element is read."""
+
+
+def _refuse_doctype(content):
+    """Task Coach never writes a DOCTYPE, and one can define entities,
+    which crash Expat before 2.7.0 (docs/PERSISTENCE_XML.md, Expat by
+    Package): refused as it starts, before any is read. Only the part
+    before the root element is read here."""
+
+    def doctype(*args):
+        raise ValueError("A task file has no DOCTYPE")
+
+    def root(*args):
+        raise _RootReached
+
+    scanner = expat.ParserCreate()
+    scanner.StartDoctypeDeclHandler = doctype
+    scanner.StartElementHandler = root
+    try:
+        scanner.Parse(content, True)
+    except (_RootReached, expat.ExpatError):
+        pass  # The parse below reports what is not XML
+
+
 def parse(content):
     """The root element of the XML text, and the text of each
     <?taskcoach ...?> version line in order. The version line comes
     before the root, where the parsed tree keeps nothing; the parser's
     events have it."""
+    _refuse_doctype(content)
     parser = ElementTree.XMLPullParser(events=("start", "pi"))
     parser.feed(content)
     parser.close()
@@ -193,22 +220,22 @@ def safe_eval_date_expr(expr, context):
         raise ValueError(f"Invalid expression '{expr}': {e}")
 
 
-def parseAndAdjustDateTime(string, *timeDefaults):
-    dateTime = date.parseDateTime(string, *timeDefaults)
+def parseAndAdjustDateTime(string, *time_defaults):
+    date_time = date.parseDateTime(string, *time_defaults)
     if (
-        dateTime != date.DateTime()
-        and dateTime is not None
-        and dateTime.time() == date.Time(23, 59, 0, 0)
+        date_time != date.DateTime()
+        and date_time is not None
+        and date_time.time() == date.Time(23, 59, 0, 0)
     ):
-        dateTime = date.DateTime(
-            year=dateTime.year,
-            month=dateTime.month,
-            day=dateTime.day,
+        date_time = date.DateTime(
+            year=date_time.year,
+            month=date_time.month,
+            day=date_time.day,
             hour=23,
             minute=59,
             second=59,
         )
-    return dateTime
+    return date_time
 
 
 class XMLReaderTooNewException(Exception):
@@ -366,11 +393,11 @@ class XMLReader(object):
             set the dependencies."""
             for each_task in tasks:
                 prerequisites = set()
-                for prerequisiteId in self.__prerequisites.get(
+                for prerequisite_id in self.__prerequisites.get(
                     each_task.id(), []
                 ):
                     try:
-                        prerequisites.add(tasks_by_id[prerequisiteId])
+                        prerequisites.add(tasks_by_id[prerequisite_id])
                     except KeyError:
                         # Release 1.2.11 and older have a bug where tasks can
                         # have prerequisites listed that don't exist anymore
@@ -467,16 +494,16 @@ class XMLReader(object):
             )
             if self.__tskversion > 20:
                 kwargs["attachments"] = self.__parse_attachments(category_node)
-            theCategory = category.Category(**kwargs)  # pylint: disable=W0142
+            the_category = category.Category(**kwargs)  # pylint: disable=W0142
             if self.__tskversion < 38:
                 members = category_node.attrib.get(
                     "tasks" if self.__tskversion < 19 else "categorizables",
                     "",
                 )
-                self.__members_of.setdefault(theCategory.id(), []).extend(
+                self.__members_of.setdefault(the_category.id(), []).extend(
                     members.split()
                 )
-            return self.__keep_as_read(theCategory)
+            return self.__keep_as_read(the_category)
         finally:
             self.__current_path.pop()
 

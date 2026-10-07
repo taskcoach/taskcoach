@@ -32,9 +32,9 @@ class OptionParser(optparse.OptionParser, object):
     def __addOptions(self):
         self.__getAndAddOptions("Option", self.add_option)
 
-    def __getAndAddOptions(self, suffix, addOption):
-        for getOption in self.__methodsEndingWith(suffix):
-            addOption(getOption(self))
+    def __getAndAddOptions(self, suffix, add_option):
+        for get_option in self.__methodsEndingWith(suffix):
+            add_option(get_option(self))
 
     def __methodsEndingWith(self, suffix):
         return [

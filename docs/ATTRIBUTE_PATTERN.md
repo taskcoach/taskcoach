@@ -347,7 +347,7 @@ so these changes left it as it was:
   (`add_prerequisites()`).
 - Changes outside commands: the scheduler clearing a completed task's
   reminder (`processReminder()`), snoozing in the reminder dialog
-  (`ReminderController`), a Todo.txt import updating an existing task.
+  (`ReminderController`).
 
 Step 0 covers those that change Attributes (completion date, reminder,
 effort stop), step 7 the recurrence (cleared on completed subtasks,

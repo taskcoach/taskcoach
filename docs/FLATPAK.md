@@ -51,12 +51,12 @@ Flathub review:
 | `--socket=x11`, `--share=ipc`, `--device=dri`, `--env=GDK_BACKEND=x11` | Display and rendering. X11-only: wxPython's AUI docking is unusable on native Wayland ([WAYLAND_ISSUES.md](WAYLAND_ISSUES.md#aui-docking)), so Task Coach declares as an X11 app and runs via XWayland on Wayland sessions. Per Flathub, an app without native Wayland support uses `--socket=x11`; also granting `--socket=wayland` is a lint error (`finish-args-contains-both-x11-and-wayland`) and would not provide X11 on Wayland anyway. |
 | `--filesystem=home` | Read/write `.tsk` files (plus attachments and HTML/CSV/iCal exports) at arbitrary paths; wx 3.2.x's file dialogs don't use the XDG portal. Migrating to the portal to drop this is a **postponed** TODO — see [File access and the file-chooser portal](#file-access-and-the-file-chooser-portal). |
 | `--talk-name=org.kde.StatusNotifierWatcher` | System-tray icon |
-| `--talk-name=org.freedesktop.ScreenSaver`, `--talk-name=org.gnome.Mutter.IdleMonitor` | Optional idle detection ([IDLE.md](IDLE.md)) |
+| `--talk-name=org.gnome.Mutter.IdleMonitor` | Optional idle detection on GNOME ([IDLE.md](IDLE.md)) |
+| `--share=network` | The start-up version check ([PACKAGING.md](PACKAGING.md#version-check)), Task Coach's only network use: a bundle installed from the releases has no update channel, so this notice is how its users learn of a new version. **Ruled by designer 2026-10-06** (P110 in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)). |
 
-**Not granted: `--share=network` and `--talk-name=org.freedesktop.secrets`.**
-Their only consumer is a likely-dead Thunderbird/IMAP mail integration; on those
-grounds neither is granted — see
-[TODO.md §12](TODO.md#12-thunderbirdimap-mail-integration-review).
+**Not granted: `--talk-name=org.freedesktop.secrets`.** Its only consumer,
+the Thunderbird IMAP reader, was removed 2026-10-04: mail stays local
+([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#decisions) 8).
 
 There is intentionally **no** `org.freedesktop.Notifications` grant: reminders
 and idle alerts are in-app `wx` popups, so the app never calls the host
@@ -77,7 +77,7 @@ Task Coach reads and writes user-chosen files in **one** place:
 `__ask_user_for_file()` in `taskcoachlib/gui/iocontroller.py`, which calls
 `wx.FileSelector` (a thin wrapper over `wxFileDialog`). Everything funnels
 through it — open / save / save-as / save-selection / save-as-template and **all**
-exports (`exportAsHTML` / `exportAsCSV` / `exportAsICalendar` / `exportAsTodoTxt`
+exports (`exportAsHTML` / `exportAsCSV` / `exportAsICalendar`
 all call `export()` -> `__askUserForFile`). The only other file dialog is the
 Backup Manager's own `wx.FileDialog` in
 `taskcoachlib/gui/dialog/backupmanager.py`. So file access is effectively **two
@@ -135,9 +135,10 @@ through the portal **on its own** (no app code), because 3.3 uses
 `GtkFileChooserNative` (GTK >= 3.20, no `wxFD_PREVIEW`, which Task Coach's
 dialogs never set). The Flatpak now builds wxPython 4.3.1 (wxWidgets 3.3), so
 the open/save dialogs are the desktop's portal picker even though
-`--filesystem=home` is still granted. **Remaining TODO:** build once without
-`--filesystem=home` and confirm that opening, saving and exporting a `.tsk`
-outside the home directory work through the portal; if so, drop the grant.
+`--filesystem=home` is still granted. Dropping the grant is **deferred**
+while Flathub is postponed (D21 in
+[REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#low-priority-deferred), with
+what it would change: the lock file, dropped files, attachments).
 
 Sources: wxWidgets `src/gtk/filedlg.cpp` —
 [v3.2.6 (dialog only)](https://github.com/wxWidgets/wxWidgets/blob/v3.2.6/src/gtk/filedlg.cpp)
@@ -233,10 +234,9 @@ skips installing them into `/app`, so they are **missing at runtime** against
 `ModuleNotFoundError: No module named 'lxml'` on first launch, when Task Coach
 still used lxml, even though the build succeeded.
 
-The set also includes **`dbus-python`**, which enables the optional idle-time
-detection feature (its D-Bus backend does `import dbus`); the matching
-`org.freedesktop.ScreenSaver` / `org.gnome.Mutter.IdleMonitor` talk-name grants
-are in `finish-args`.
+The optional idle-time detection asks GNOME's idle monitor through the
+runtime's PyGObject (Gio), with the `org.gnome.Mutter.IdleMonitor` talk-name
+grant in `finish-args`; `dbus-python` was built here until 2026-10-06.
 
 ### One offline build, the way Flathub builds
 
@@ -360,8 +360,8 @@ the Flathub
 - **Metainfo**: id, license, developer, `content_rating`, `url`s, current 2.x
   screenshots, and a `<releases>` entry with notes.
 - **Permissions**: no notification grant; only tray and idle talk-names (no
-  network, no secrets — see
-  [TODO.md §12](TODO.md#12-thunderbirdimap-mail-integration-review)). File access
+  network, no secrets: mail stays local,
+  [EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#decisions) 8). File access
   uses **`--filesystem=home`** (the portal migration that would drop it is a
   postponed TODO — see [File access](#file-access-and-the-file-chooser-portal)).
   Display is **X11-only** (`--socket=x11`, no wayland socket) so the

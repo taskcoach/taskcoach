@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import contextlib
+
 from taskcoachlib import operating_system
 from taskcoachlib.config import settings
 from taskcoachlib.widgets import itemctrl
@@ -34,7 +36,7 @@ class VirtualListCtrl(
         parent,
         columns,
         selectCommand=None,
-        editCommand=None,
+        edit_command=None,
         itemPopupMenu=None,
         columnPopupMenu=None,
         resizeableColumn=0,
@@ -43,7 +45,7 @@ class VirtualListCtrl(
     ):
         super().__init__(
             parent,
-            style=wx.LC_REPORT | wx.LC_VIRTUAL,
+            style=wx.LC_REPORT | wx.LC_VIRTUAL | wx.BORDER_NONE,
             columns=columns,
             resizeableColumn=resizeableColumn,
             itemPopupMenu=itemPopupMenu,
@@ -55,18 +57,24 @@ class VirtualListCtrl(
         # allows sizer to shrink widget
         self.SetMinSize((100, 50))
         self.__parent = parent
+        # The rows' objects at the last refill, and each one's row: the
+        # native control keeps row numbers selected, so after the
+        # presentation changed the selected objects are read from here
+        self.__rows = []
+        self.__row_of = {}
+        self.__keep_viewport = False  # stable_viewport()
         self._hover_row = -1
-        self.bind_event_handlers(selectCommand, editCommand)
+        self.bind_event_handlers(selectCommand, edit_command)
 
-    def bind_event_handlers(self, selectCommand, editCommand):
+    def bind_event_handlers(self, selectCommand, edit_command):
         # pylint: disable=W0201
         if selectCommand:
             self.selectCommand = selectCommand
             self.Bind(wx.EVT_LIST_ITEM_FOCUSED, self.on_select)
             self.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_select)
             self.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.on_select)
-        if editCommand:
-            self.editCommand = editCommand
+        if edit_command:
+            self.editCommand = edit_command
             self.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_activated)
         self.Bind(wx.EVT_SET_FOCUS, self.on_set_focus)
         self.Bind(wx.EVT_MOTION, self._on_hover_motion)
@@ -174,44 +182,44 @@ class VirtualListCtrl(
         # doesn't properly receive drag/drop events.
         return self
 
-    def get_item_with_index(self, rowIndex):
-        return self.__parent.get_item_with_index(rowIndex)
+    def get_item_with_index(self, row_index):
+        return self.__parent.get_item_with_index(row_index)
 
-    def getItemText(self, domainObject, columnIndex):
-        return self.__parent.getItemText(domainObject, columnIndex)
+    def getItemText(self, domain_object, column_index):
+        return self.__parent.getItemText(domain_object, column_index)
 
-    def getItemTooltipData(self, domainObject):
-        return self.__parent.getItemTooltipData(domainObject)
+    def getItemTooltipData(self, domain_object):
+        return self.__parent.getItemTooltipData(domain_object)
 
-    def getItemImage(self, domainObject, columnIndex=0):
-        return self.__parent.getItemImages(domainObject, columnIndex)[
+    def getItemImage(self, domain_object, column_index=0):
+        return self.__parent.getItemImages(domain_object, column_index)[
             wx.TreeItemIcon_Normal
         ]
 
-    def OnGetItemText(self, rowIndex, columnIndex):
+    def OnGetItemText(self, row_index, column_index):
         try:
-            item = self.get_item_with_index(rowIndex)
+            item = self.get_item_with_index(row_index)
         except IndexError:
             return ""
-        return self.getItemText(item, columnIndex)
+        return self.getItemText(item, column_index)
 
-    def OnGetItemImage(self, rowIndex):
+    def OnGetItemImage(self, row_index):
         try:
-            item = self.get_item_with_index(rowIndex)
+            item = self.get_item_with_index(row_index)
         except IndexError:
             return -1
         return self.getItemImage(item)
 
-    def OnGetItemColumnImage(self, rowIndex, columnIndex):
+    def OnGetItemColumnImage(self, row_index, column_index):
         try:
-            item = self.get_item_with_index(rowIndex)
+            item = self.get_item_with_index(row_index)
         except IndexError:
             return -1
-        return self.getItemImage(item, columnIndex)
+        return self.getItemImage(item, column_index)
 
-    def OnGetItemAttr(self, rowIndex):
+    def OnGetItemAttr(self, row_index):
         try:
-            item = self.get_item_with_index(rowIndex)
+            item = self.get_item_with_index(row_index)
         except IndexError:
             return None
         foreground_color = item.shown_fg_color()
@@ -268,12 +276,24 @@ class VirtualListCtrl(
         self.editCommand(event)
 
     def RefreshAllItems(self, count):
+        selected = self.curselection()
+        self.__rows = [
+            self.__parent.get_item_with_index(row) for row in range(count)
+        ]
+        self.__row_of = {item: row for row, item in enumerate(self.__rows)}
         self.SetItemCount(count)
         if count == 0:
             self.DeleteAllItems()
         else:
             # The VirtualListCtrl makes sure only visible items are updated
             super().RefreshItems(0, count - 1)
+        rows = self.__select_rows(selected)
+        if rows:
+            # Keys move from the selection, not from its old row number;
+            # Focus() would scroll there
+            self.SetItemState(
+                rows[0], wx.LIST_STATE_FOCUSED, wx.LIST_STATE_FOCUSED
+            )
         self.selectCommand()
         if self._hover_row >= 0:
             # Another item may be under the pointer now
@@ -283,7 +303,9 @@ class VirtualListCtrl(
         """Refresh specific items."""
         if len(items) <= 7:
             for item in items:
-                self.RefreshItem(self.__parent.get_index_of_item(item))
+                row = self.__row_of.get(item)
+                if row is not None:  # Else shown at the next refill
+                    self.RefreshItem(row)
         else:
             self.RefreshAllItems(self.GetItemCount())
 
@@ -315,23 +337,62 @@ class VirtualListCtrl(
         # call runs after window destruction (e.g., closing nested
         # dialogs)
         try:
-            # Filter out None values - get_item_with_index can return None
-            # for some indices
+            # The rows' objects at the last refill, which the user sees
+            # selected; rows past the end go while the list shrinks
             return [
-                item
+                self.__rows[index]
                 for index in self.__curselection_indices()
-                if (item := self.get_item_with_index(index)) is not None
+                if index < len(self.__rows)
             ]
         except RuntimeError:
             # wrapped C/C++ object has been deleted
             return []
 
     def select(self, items):
-        indices = [self.__parent.get_index_of_item(item) for item in items]
-        for index in range(self.GetItemCount()):
-            self.Select(index, index in indices)
-        if self.curselection():
-            self.Focus(self.GetFirstSelected())
+        rows = self.__select_rows(items)
+        if not rows:
+            return
+        if self.__keep_viewport:
+            # The keyboard's row only: Focus() scrolls to it
+            self.SetItemState(
+                rows[0], wx.LIST_STATE_FOCUSED, wx.LIST_STATE_FOCUSED
+            )
+        else:
+            self.Focus(rows[0])
+
+    @contextlib.contextmanager
+    def stable_viewport(self):
+        """Select without scrolling while the block runs, when
+        auto-scroll is off: after a delete, as the trees."""
+        self.__keep_viewport = not self._auto_scroll_enabled()
+        try:
+            yield
+        finally:
+            self.__keep_viewport = False
+
+    def __select_rows(self, items):
+        """Select the rows of the shown items, and only those; return
+        their rows, top first."""
+        rows = {self.__row_of[item] for item in items if item in self.__row_of}
+        selected = set(self.__curselection_indices())
+        for row in selected - rows:
+            self.Select(row, False)
+        for row in rows - selected:
+            self.Select(row, True)
+        return sorted(rows)
+
+    def selection_neighbours(self):
+        """Return the objects shown above the topmost selected row and
+        below the bottommost one, nearest row first: the rows that take
+        the selection when the selected ones go."""
+        try:
+            rows = self.__curselection_indices()
+        except RuntimeError:
+            # wrapped C/C++ object has been deleted
+            return [], []
+        if not rows:
+            return [], []
+        return self.__rows[: rows[0]][::-1], self.__rows[rows[-1] + 1 :]
 
     def _auto_scroll_enabled(self):
         """Whether the view may scroll by itself to follow the

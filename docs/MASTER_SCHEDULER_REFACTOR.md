@@ -3,8 +3,9 @@
 Plan to replace the full scan `MasterScheduler` runs every second.
 [SCHEDULERS.md](SCHEDULERS.md) describes the scheduler as it is.
 
-**Status:** every item done or decided but 42 and 43, 2026-09-30
-([Cost After](#cost-after)); what is left: [To Do](#to-do).
+**Status:** done, released as 2.0.3.0 on 2026-10-04
+([Cost After](#cost-after)); what it leaves open is carried by
+[REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md).
 
 ## To Do
 
@@ -98,8 +99,8 @@ go at the end. Details live in the sections and documents linked.
     ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup)).
 41. ~~Editor text fields save on leaving the field~~: by design, not
     an issue ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
-42. The designer's desktop test of the branch, from one consolidated
-    test list.
+42. ~~The designer's desktop test of the branch~~: closed by the
+    release, 2026-10-04.
 43. ~~Squash to one commit~~: done 2026-10-04, **asked by
     designer**, version 2.0.3.0 in the body, released 2026-10-04.
 44. ~~A traceback lost on 2026-09-28~~: both candidates fixed, the
@@ -423,7 +424,8 @@ go at the end. Details live in the sections and documents linked.
       the oldest.
 
     Carried forward 2026-10-04
-    ([REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#to-do) 5).
+    ([REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#to-do) 5); done
+    there 2026-10-06.
 93. ~~PyGObject (was To Do 84)~~: kept, **ruled by designer
     2026-10-03** ([DEPENDENCIES.md](DEPENDENCIES.md#pygobject-to-do-84)).
 94. ~~pywin32 (was To Do 85)~~: kept, **ruled by designer
@@ -826,9 +828,14 @@ In the app:
   now lists every vendored package.
 - P49. ~~Three preferences that did nothing~~: **ruled by designer
   2026-09-30**: "Icon size" and "Show Breeze icons in picker" stay for
-  their planned features. "Check for new version on startup" works
-  again, against GitHub: a newer release is shown once, with a link to
-  it ([PACKAGING.md](PACKAGING.md#version-check)); checked in the app
+  their planned features. Icon size, 2026-10-07: "for future
+  expansion, especially if we have high definition interfaces, so
+  HDPI, which reduces the size of everything, thus we would need icons
+  double the size"; the HiDPI issues (GitHub #121, #457) stay open:
+  too few reproducible cases, no clear direction yet. "Check for new
+  version on startup" works again, against GitHub: a newer release is
+  shown once, with a link to it
+  ([PACKAGING.md](PACKAGING.md#version-check)); checked in the app
   with a copy labelled 2.0.2.25.
 - P50. Deferred: D6.
 - P51. Deferred: D7.
@@ -872,6 +879,8 @@ each with the recommended action, none ruled yet:
   likely Norwegian again, so whether it changes anything on Linux
   needs a Norwegian locale to check (none installed here); the wx
   date picker is used on Windows only (`_NativeDateCtrl`).
+  Deferred 2026-10-06: D18 in
+  [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#low-priority-deferred).
 - P58. ~~`widgets/dialog.py` overrode `SetExtraStyle()` as a no-op~~:
   removed 2026-10-01, **ruled by designer**. Added in 2012 because
   wxPython 2.8's sized dialog turned on recursive validation (7 s to
@@ -1070,7 +1079,7 @@ each with the recommended action, none ruled yet:
   for the user) now patch the popup and check the column the menu
   keeps; the two maximize tests (a test display without a window
   manager grants no maximize) now send the window manager's answer
-  and check the saved state. `TreeListCtrlTest.testShowColumn` checks
+  and check the saved state. `TreeListCtrlTest.test_show_column` checks
   the column is back and filled after the refresh the viewer makes,
   and `NoRecurrenceTest` checks that a maximum count leaves no
   recurrence. Each rewritten test fails with the code it covers broken
@@ -1099,35 +1108,98 @@ each with the recommended action, none ruled yet:
   `test.py`'s own start. In a full run inside one Xvfb shared by every
   file, one file failed this way twice in a row while the display was
   up the whole time: it is the test process connecting, not a display
-  starting. Not traced further.
-- P91. Editors first open at 400x300, tabs scrolled, fields cut off
+  starting. Not traced further. 2026-10-06: one failure was a script
+  importing wx, not `test.py`; the catalog runner now reports the
+  display's state when a file fails before any test
+  ([REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#to-do) 7).
+- P91. ~~Editors first open at 400x300, tabs scrolled, fields cut
+  off~~: done 2026-10-05, ruled
+  ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#decisions) 10;
+  [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#to-do) 18). Was:
   ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md), Left). Pick a first size?
   2026-10-02: the editor's fitted size is 226x297 because its pages
   stopped reporting a best size in the Python 3 migration
   ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#editors) 2); the 400x300 is
   the minimum. Fixing the cause (pages reporting their size) is the
   technical fix Decision 9 allows; to investigate on its own.
-- P92. Fit editors and floating AUI panes to the monitors (planned in
-  WINDOW_GEOMETRY.md and AUI.md; the editors' part conflicts with
-  Decision 8). Do it, or strike it?
-- P93. The editor's layout is saved but not loaded (load disabled;
-  only the active tab is read back). Remove the saving, or fix the
-  load?
-- P94. Planned in TODO.md, not started: Preferences OK/Apply enabled
-  only after a change (10), a backup and restore review (4), speech
-  through pyttsx3 (6), autosave on losing focus (3). Keep, defer or
-  strike each?
+- P92. ~~Fit editors and floating AUI panes to the monitors~~: done
+  2026-10-06, **ruled by designer** ("The purpose here is to make sure
+  that ... it's always available and visible and reachable on your
+  main monitor"): every window opens whole on a monitor. The main
+  window, not whole on one, is centred on the monitor it lies on most,
+  or on the primary when most of it lies on none; editors and floating
+  views, not whole on the main window's monitor, are centred on the
+  main window ("1A"); a size larger than the monitor is cut to 80% of
+  its work area ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#decisions) 2
+  and 8). Before, a main window with its title bar on a monitor
+  stayed as saved, partly off screen or across two; any other went
+  just inside the monitor it overlapped most, else the nearest, cut to
+  that whole work area where larger; an editor larger than the monitor
+  was left to the system; floating views opened where saved, even on
+  a monitor that is gone (not seen on openbox, which pulls them on
+  screen). Found in the app check: at some starts (1 of 4 on master,
+  openbox) a floating view mapped before the main window and stayed
+  behind it; now floating views show once the main window has
+  painted (4 of 4 above). Tests: `FitToMonitorsTest`,
+  `MainWindowPlacementTest`, `FloatingViewPlacementTest`,
+  `EditorPlacementTest`, `FloatingViewTest` (fail before).
+- P93. ~~The editor's layout is saved but not loaded~~: fixed
+  2026-10-06, **ruled by designer** ("1a"): an editor reopens with its
+  tabs as the user moved and split them, as in the 1.x releases. The
+  2.0 port had disabled the load (def3832cf) as one of four causes of
+  editors stuck at large sizes (PYTHON3_MIGRATION_1.md); the other
+  three were fixed then and the pages report their sizes since
+  2026-10-05. Checked in the app: a split layout comes back, and the
+  editor still shrinks to 620x460 with its contents fitting. A new
+  test (`EditorLayoutTest`) fails before.
+- P94. ~~Planned in TODO.md~~, all ruled by 2026-10-07:
+  ~~Preferences OK/Apply enabled only after
+  a change (10)~~ (done 2026-10-07, **ruled by designer**, after a
+  deferral the same day: D24 in
+  [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#low-priority-deferred),
+  [PREFERENCES.md](PREFERENCES.md#ok-apply-and-cancel)), ~~a backup and
+  restore review (4)~~ (done 2026-10-06, **ruled by designer**: a
+  restore over a task file lost its latest save, and backups were
+  labelled one save late;
+  [PERSISTENCE_XML.md](PERSISTENCE_XML.md#backups)), ~~speech through
+  pyttsx3 (6)~~ (spoken reminders removed 2026-10-07, **ruled by
+  designer**: [SPOKEN_REMINDERS.md](SPOKEN_REMINDERS.md)), ~~autosave
+  on losing focus (3)~~ (dropped 2026-10-07, **ruled by designer**:
+  autosave or save on demand, no third mode;
+  [PERSISTENCE_XML.md](PERSISTENCE_XML.md#saving)).
 - P95. Will not do: D15.
-- P96. Toolbar icons on the right jitter while a sash is dragged
-  ("deferred to a separate branch", not ruled). Fix or defer? Its demo
+- P96. ~~Toolbar icons on the right jitter while a sash is dragged~~:
+  will not do, **ruled by designer 2026-10-06** (D23 in
+  [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#low-priority-deferred)).
+  Formerly "deferred to a separate branch". Its demo
   moved 2026-10-02, **ruled by designer**, from the root
   (`test_aui_toolbar_jitter.py`, named like a test) to
   `docs/scripts/aui_toolbar_jitter_demo.py`, with the other demos; it
-  starts as before.
-- P97. `view.datestied` against the duration modes
-  ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) TODO 10), and
-  step 1.8.1.3 "remove step?" (the code numbers steps one ahead of the
-  spec from 1.7). Rule?
+  starts as before. Analysed 2026-10-06 (the toolbar code as on
+  master; frames captured during drags, sizes and paints logged):
+  the tools' positions stay consistent, but during a drag the icons
+  right of the stretch spacer are blank for a frame or two while the
+  Tree and Search controls already stand at their new places (the
+  toolbar paints buffered; the cause of the late paint not found).
+  Separately, a Tasks pane narrower than its toolbar's minimum (675 px
+  with the default tools) hides what does not fit, judged at the
+  items' old places (AGW `AuiToolBar.OnSize`): Search goes below
+  646 px, and the gear with it although 22 px would fit in the gap
+  Search leaves; with no overflow button (`AUI_TB_OVERFLOW` unset)
+  nothing shows they are hidden or reaches them. The sash throttle
+  in `frame.py`, which never ran, was removed 2026-10-06 (P245).
+- P97. ~~`view.datestied` against the duration modes~~: done
+  2026-10-06, **ruled by designer** ("option a, keep as released"):
+  Preferences > Task dates keeps "What to do with planned start and
+  due date if the other one is changed", for a date typed in the task
+  list for a task in Implicit mode (the adjust modes follow the task's
+  mode since P150). Its note said "Deprecated ... It will be removed
+  eventually" and that the list ignored the modes; it now says where
+  the preference applies. The effort spec's step 1.8.1.3 "Adj Duration
+  *Impossible*" is gone; its sync guard stays (setting the stop date
+  sends a change that would run the flow again); the code's step
+  comments, one ahead of the spec, follow it
+  ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) TODO 10).
 - P98. Date and time refactors open in their docs: presets through
   the attribute path ([DATETIME_PRESETS.md](DATETIME_PRESETS.md) 1),
   the popup out of `MaskedFieldsCtrl`, one "N/A" painter
@@ -1145,9 +1217,22 @@ each with the recommended action, none ruled yet:
   Categories "Paste as subcategory"; quit clean. A view's toolbar
   button now says "New subtask..." (or subnote, subcategory) in its
   tooltip, not "New subitem...".
-- P100. Lists: a selection outline (LIST_MANAGEMENT.md 1); the effort
+- P100. Lists: a selection outline (LIST_MANAGEMENT.md 1); ~~the effort
   and attachment viewers select a different row after a delete (a
-  no-op override); two open questions on AUI repaints. Rule?
+  no-op override)~~ (done 2026-10-05, ruled:
+  [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#to-do) 18); two open
+  questions on AUI repaints. Rule? Measured 2026-10-06 with 2,050
+  tasks: a field edit that moves no row refreshes only its row (no
+  full refresh); one that moves a row (Mark completed, sorted by
+  status first) rebuilds the whole list, 730 ms with the window
+  unresponsive; a refresh in place of every row takes 364 to 406 ms.
+  Done 2026-10-06, **ruled by designer** ("OK for issue 1, P100"): a
+  sort order change reorders the rows in place, 53 ms
+  ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#reordering-rows-in-place));
+  tests in `TreeCtrlTest` and `TaskViewerTest` (fail before). App:
+  Mark completed on the 2,050-task file ends as on master (the task
+  last among its siblings, selected, scrolled into view). Left: the
+  selection outline and the open question on `agw.aui`.
 - P101. Links in text fields are always `wx.BLUE`, poor on dark themes
   ([SPELLCHECKING.md](SPELLCHECKING.md), planned). Use the system link
   colour?
@@ -1185,7 +1270,14 @@ each with the recommended action, none ruled yet:
   dropped (`inplace_editor.py`). Check each?
 - P110. Mail: IMAP OAuth2 and NTLM through `pyspnego` ("if wanted");
   FLATPAK.md withholds network because IMAP was "likely dead" (fixed
-  in P41), yet the version check needs it. Rule?
+  in P41), yet the version check needs it. Rule? 2026-10-04: no IMAP,
+  mail stays local, **ruled by designer**
+  ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#decisions) 8); the
+  version check's network in the Flatpak: granted 2026-10-06, **ruled
+  by designer** ("2a"): `--share=network`, so the start-up check tells
+  the bundle's users of a new version (it failed there at every start,
+  logged only). Read in the code; checked by the Flatpak build, not run
+  here (no flatpak).
 - P111. ~~Issue #64 (`XLIB_SKIP_ARGB_VISUALS`) waited for a user's
   test~~: closed 2026-10-02: the issue is closed on GitHub and the
   TODO.md entry was gone; `THIRD_PARTY_CODE.md` no longer asks for the
@@ -1680,14 +1772,39 @@ each with the recommended action, none ruled yet:
   its minimum height is negative too). It now takes the paint context
   first and draws only when there is room. Checked in the app with all
   views open: 0 tracebacks at start (20 to 34 before), the view drawn.
-- P162. After a click in a floating view the keyboard focus goes
+- P162. ~~After a click in a floating view the keyboard focus goes~~:
+  fixed 2026-10-06, **ruled by designer** ("ok, proceed with A"): the
+  keys go to the view clicked
+  ([AUI.md](AUI.md#floating-views-and-the-keys)); test
+  `test_a_floating_frames_own_activation_moves_no_focus` (fails
+  before); a view made active brings its window forward when it is
+  not the active one, the main window included, so Ctrl+PgDn from a
+  floating view still reaches it (`ViewerContainerTest`). App, the
+  designer's LXDE settings: 10 of 10 clicks keep the keys in the view
+  clicked (Categories, Timeline), Down acts there, Ctrl+PgDn and
+  Ctrl+PgUp cycle through the three windows. The record: after a
+  click in a floating view the focus goes
   back and forth between it and the main window for a second or two
   (openbox, 2026-10-02, the same before P122's change): a floating
   Categories list ends with the focus; a floating Timeline, which
   takes none on a click, ends with the main window's, so the keys
   reach the main window's active view. The return to the main window
   comes from the window manager or GTK (no Python caller in the
-  logged stack). Not traced further.
+  logged stack). Not traced further. Traced 2026-10-06 (openbox with
+  the designer's LXDE settings, Categories and Timeline floating,
+  focus and activation logged): a click in a floating view makes AUI
+  report the pane activated twice, first from the floating frame's
+  own manager, while the main manager still marks the Tasks pane
+  active. `ViewerContainer.on_page_changed()` answers each report
+  with `__ensure_active_viewer_has_focus()`, so the first one calls
+  `SetFocus()` on the Tasks list: that request lands a moment later
+  and takes the main window back. The floating view keeps the focus
+  in 0 of 10 clicks on master (Categories and Timeline), 1 of 10
+  (Categories) and 10 of 10 (Timeline) on the branch; then Down moves
+  the Tasks selection, so Delete would act on the selected task.
+  Prototype (a patch in the scratchpad): `on_page_changed()` answers
+  only the main manager's reports; 10 of 10 for both, Down acts on
+  the view clicked, Ctrl+PgDn still cycles into floating views.
 - P163. Moved to To Do 74 to 81.
 - P164. ~~Five setup scripts stopped before the end~~: fixed
   2026-10-02, the same on master. `setup.sh` and the Arch, Debian 13,
@@ -1760,6 +1877,8 @@ each with the recommended action, none ruled yet:
   first expression that parses and ignore the rest
   (`nlTimeExpression.parse_string` without `parse_all`), so "15:00"
   alone is rejected while "2026-10-05" is read as today at 20:26.
+  Deferred 2026-10-06: D17 in
+  [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#low-priority-deferred).
 - P171. ~~A template date "N days before a weekday" goes the wrong
   way~~: fixed 2026-10-03 by To Do 99, **ruled by designer** (found
   analysing pyparsing, To Do 91; checked in the app on master and the
@@ -1991,7 +2110,9 @@ seconds (2026-09-27), then the incremental pass (2026-09-30,
 5. **The full loop**: every object, in the same order, when what every
    object reads changed: a file read or merged, the clock set back
    (the list is rebuilt), the due soon hours, the status styles, the
-   theme and the system colours.
+   theme and the system colours. A file read runs it within the read
+   (`taskfile.settle`), quietly; a merge at once; the others at the
+   next tick.
 
 ## Time Resolution
 
@@ -2145,7 +2266,7 @@ their objects: [Data Changes](#data-changes)):
 | A task's due, planned start, actual start or reminder changed | Publisher `task.<field>` from the field's change callback, the task as source ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)) | Replace the task's entries |
 | Tasks added to the task file's task list | Publisher add event of the task list; `extend()` includes every subtask | Their entries |
 | Tasks removed | Publisher remove event of the task list | Their entries removed |
-| Due soon hours changed, a file read or merged | Publisher `behavior.duesoonhours`, `taskfile.justRead`, `taskfile.merged` | Rebuilt, and the full loop |
+| Due soon hours changed, a file read or merged | Publisher `behavior.duesoonhours`, `taskfile.settle`, `taskfile.merged` | Rebuilt, and the full loop (a file read or merged: at once) |
 
 Each ancestor is a source of the same event too; its entries are
 replaced by the same ones, harmlessly.
@@ -2519,7 +2640,11 @@ Questions for the review:
    once, and again only when a pass processes the task while it is
    due.
 5. ~~When to settle?~~ At the next tick, as before (within a second):
-   one pass per tick, bursts of changes in one pass.
+   one pass per tick, bursts of changes in one pass. A file read
+   settles within the read, quietly, before the list is drawn; a merge
+   at once, its changes sent: **ruled by designer 2026-10-05**, the
+   window first, then the list complete
+   ([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#opening-the-file)).
 6. ~~Category membership held twice (P29): store it on one side, or
    keep both with one writer?~~ **Ruled by designer 2026-09-29:** on
    the item only; the member lookup reads the category's index, less

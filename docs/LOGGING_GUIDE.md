@@ -80,5 +80,6 @@ Guards and errors:
 The other prefixes name their module and mostly log errors and
 fallbacks: `[ICON]`, `[SPELL]`, `[EDITOR]`, `[SYNC]`, `[DURATION]`,
 `[EFFORT]`, `[RECUR]`, `[FILTER]`, `[SORTER]`, `[RENDER]`,
-`[TEXTCTRL]`, `[PREFS]`, `[AUI]`. Find a prefix's sources with
+`[TEXTCTRL]`, `[PREFS]`, `[AUI]`, `[MAIL]` (a Thunderbird message
+dropped as its URI, [EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#the-drop)). Find a prefix's sources with
 `grep -rn 'prefix="NAME"' taskcoachlib`.

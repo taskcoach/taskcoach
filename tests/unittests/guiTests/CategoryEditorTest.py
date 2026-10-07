@@ -58,39 +58,39 @@ class CategoryEditorTest(test.wxTestCase):
         self.category.addAttachments(self.attachment)
         return [self.category]
 
-    def setSubject(self, newSubject):
+    def setSubject(self, new_subject):
         page = self.editor._interior[0]
         page._subjectEntry.SetFocus()
-        page._subjectEntry.SetValue(newSubject)
+        page._subjectEntry.SetValue(new_subject)
         if operating_system.isGTK():  # pragma: no cover
             page._subjectSync.onAttributeEdited(DummyEvent())
         else:  # pragma: no cover
             page._descriptionEntry.SetFocus()
 
-    def setDescription(self, newDescription):
+    def setDescription(self, new_description):
         page = self.editor._interior[0]
         page._descriptionEntry.SetFocus()
-        page._descriptionEntry.SetValue(newDescription)
+        page._descriptionEntry.SetValue(new_description)
         if operating_system.isGTK():  # pragma: no cover
             page._descriptionSync.onAttributeEdited(DummyEvent())
         else:  # pragma: no cover
             page._subjectEntry.SetFocus()
 
-    def testCreate(self):
+    def test_create(self):
         self.assertEqual(
             "Category to edit",
             self.editor._interior[0]._subjectEntry.GetValue(),
         )
 
-    def testEditSubject(self):
+    def test_edit_subject(self):
         self.setSubject("Done")
         self.assertEqual("Done", self.category.subject())
 
-    def testEditDescription(self):
+    def test_edit_description(self):
         self.setDescription("Description")
         self.assertEqual("Description", self.category.description())
 
-    def testAddAttachment(self):
+    def test_add_attachment(self):
         self.editor._interior[2].viewer.on_drop_files(
             self.category, ["filename"]
         )
@@ -103,12 +103,12 @@ class CategoryEditorTest(test.wxTestCase):
             in [att.subject() for att in self.category.attachments()]
         )
 
-    def testRemoveAttachment(self):
+    def test_remove_attachment(self):
         self.editor._interior[2].viewer.select(self.category.attachments())
         self.editor._interior[2].viewer.deleteItemCommand().do()
         self.assertEqual([], self.category.attachments())
 
-    def testEditMutualExclusiveSubcategories(self):
+    def test_edit_mutual_exclusive_subcategories(self):
         self.editor._interior[0]._exclusiveSubcategoriesCheckBox.SetValue(True)
         self.editor._interior[0]._exclusiveSubcategoriesSync.onAttributeEdited(
             DummyEvent()
@@ -127,7 +127,7 @@ class CategoryEditorTest(test.wxTestCase):
             page._modificationTextEntry.GetLabel(),
         )
 
-    def testAddNote(self):
+    def test_add_note(self):
         viewer = self.editor._interior[1].viewer
         viewer.newItemCommand(viewer.presentation()).do()
         self.assertEqual(1, len(self.category.notes()))

@@ -8118,3 +8118,20 @@ msgstr "min"
 #: taskcoachlib/widgets/maskedtimectrl.py
 msgid "secs"
 msgstr "s"
+
+#: taskcoachlib/mailer/thunderbird.py
+msgid ""
+"Thunderbird gave only this mail's address, not the mail, so Task Coach "
+"cannot read it.\n"
+"Save the mail as a file in Thunderbird, then drag the file onto the task."
+msgstr ""
+"Thunderbird n'a transmis que l'adresse de ce courriel, pas le courriel lui-même : Task Coach ne peut donc pas le lire.\n"
+"Enregistrez le courriel dans un fichier depuis Thunderbird, puis glissez ce fichier sur la tâche."
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Opening %s..."
+msgstr "Ouverture de %s..."
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Merging %s..."
+msgstr "Fusion de %s..."

@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from unittest import mock
+
 import test
 import wx
 from unittests import dummy
@@ -112,17 +114,17 @@ class ViewerContainerTest(test.wxTestCase):
     def on_event(self, event):  # pylint: disable=W0613
         self.events += 1
 
-    def testCreate(self):
+    def test_create(self):
         self.assertEqual(0, self.container.size())
 
-    def testAddTask(self):
+    def test_add_task(self):
         self.taskFile.tasks().append(task.Task())
         self.assertEqual(1, self.container.size())
 
-    def testDefaultActiveViewer(self):
+    def test_default_active_viewer(self):
         self.assertEqual(self.viewer1, self.container.active_viewer())
 
-    def testChangePage_ChangesActiveViewer(self):
+    def test_change_page_changes_active_viewer(self):
         self.container.activate_viewer(self.viewer2)
         self.assertEqual(self.viewer2, self.container.active_viewer())
 
@@ -190,16 +192,59 @@ class ViewerContainerTest(test.wxTestCase):
         patterns.Publisher().registerObserver(
             self.on_event, eventType=self.container.status_event_type()
         )
-        self.container.on_page_changed(DummyChangeEvent(self.viewer2))
+        self.events = 0
+        # AUI's own report, as a click or Ctrl+PgDn makes
+        self.mainWindow.manager.ActivatePane(self.viewer2)
         self.assertTrue(self.events > 0)
 
-    def testCloseViewer_RemovesViewerFromContainer(self):
+    def test_the_main_windows_activation_focuses_the_active_view(self):
+        # AUI hands the main window's report to it twice (the frame's
+        # handlers, then the manager's own): focusing again is harmless
+        with mock.patch.object(self.viewer2, "SetFocus") as set_focus:
+            self.mainWindow.manager.ActivatePane(self.viewer2)
+        set_focus.assert_called_with()
+
+    def activate_in(self, shown, active):
+        window = mock.Mock()
+        window.IsShown.return_value = shown
+        window.IsActive.return_value = active
+        with mock.patch.object(
+            gui.viewer.container.wx, "GetTopLevelParent", return_value=window
+        ):
+            self.container.activate_viewer(self.viewer2)
+        return window
+
+    def test_a_view_in_another_window_brings_that_window_forward(self):
+        # From a floating view back to the main window's, and the
+        # other way: the keys follow (Ctrl+PgDn, the View menu)
+        self.activate_in(
+            shown=True, active=False
+        ).Raise.assert_called_once_with()
+
+    def test_a_view_in_the_active_window_raises_nothing(self):
+        self.activate_in(shown=True, active=True).Raise.assert_not_called()
+
+    def test_a_view_in_a_hidden_window_raises_nothing(self):
+        # The main window before its first show: raising would show it
+        self.activate_in(shown=False, active=False).Raise.assert_not_called()
+
+    def test_a_floating_frames_own_activation_moves_no_focus(self):
+        # It comes first, the main window still on the old view: the
+        # keys would go back there from the floating view clicked
+        with mock.patch.object(
+            self.viewer1, "SetFocus"
+        ) as old, mock.patch.object(self.viewer2, "SetFocus") as clicked:
+            self.container.on_page_changed(DummyChangeEvent(self.viewer2))
+        old.assert_not_called()
+        clicked.assert_not_called()
+
+    def test_close_viewer_removes_viewer_from_container(self):
         self.container.on_page_closed(DummyCloseEvent(self.viewer1))
         self.assertEqual([self.viewer2], self.container.viewers)
 
-    def testCloseViewer_ChangesActiveViewer(self):
-        self.container.on_page_changed(DummyChangeEvent(self.viewer2))
-        self.container.on_page_closed(DummyCloseEvent(self.viewer2))
+    def test_close_viewer_changes_active_viewer(self):
+        self.container.activate_viewer(self.viewer2)
+        self.container.close_viewer(self.viewer2)
         self.assertEqual(self.viewer1, self.container.active_viewer())
 
     def test_close_viewer_notifies_observers_about_new_active_viewer(self):

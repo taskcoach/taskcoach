@@ -39,7 +39,6 @@ Requires:       python3 >= 3.10
 Requires:       python3-wxpython4 >= 4.2.0
 Requires:       python3-chardet
 Requires:       python3-dateutil
-Requires:       python3-keyring
 Requires:       python3-enchant
 Requires:       python3-gobject
 Requires:       libayatana-appindicator-gtk3
@@ -47,13 +46,11 @@ Requires:       libXScrnSaver
 Requires:       xdg-utils
 
 # Optional dependencies
-Recommends:     espeak-ng
 Recommends:     hunspell-en-US
-# Bindings for the optional "Idle time notice" (see docs/IDLE.md)
-# and, pywayland, the tray's hide on KDE Plasma Wayland (guarded
-# imports; docs/DEPENDENCIES.md). Weak deps, exactly like the
+# pywayland: the optional "Idle time notice" on Wayland (see
+# docs/IDLE.md) and the tray's hide on KDE Plasma Wayland (guarded
+# imports; docs/DEPENDENCIES.md). A weak dep, exactly like the
 # spell-check dictionary above.
-Recommends:     python3-dbus
 Recommends:     python3-pywayland
 
 # Bundled via pip:

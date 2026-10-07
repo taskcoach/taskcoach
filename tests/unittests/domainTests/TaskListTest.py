@@ -32,66 +32,66 @@ class TaskListTest(test.TestCase):
     def nrStatus(self, status):
         return self.taskList.nr_of_tasks_per_status()[status]
 
-    def testNrOfTasksPerStatusOfAnEmptyTaskList(self):
+    def test_nr_of_tasks_per_status_of_an_empty_task_list(self):
         counts = self.taskList.nr_of_tasks_per_status()
         for status in task.Task.possibleStatuses():
             self.assertEqual(0, counts[status])
 
-    def testNrCompleted(self):
+    def test_nr_completed(self):
         self.assertEqual(0, self.nrStatus(task.status.completed))
         self.taskList.append(self.task1)
         self.assertEqual(0, self.nrStatus(task.status.completed))
         self.task1.set_completion_date_time()
         self.assertEqual(1, self.nrStatus(task.status.completed))
 
-    def testNrOverdue(self):
+    def test_nr_overdue(self):
         self.assertEqual(0, self.nrStatus(task.status.overdue))
         self.taskList.append(self.task1)
         self.assertEqual(0, self.nrStatus(task.status.overdue))
         self.task1.set_due_date_time(date.DateTime(1990, 1, 1))
         self.assertEqual(1, self.nrStatus(task.status.overdue))
 
-    def testNrDueSoon(self):
+    def test_nr_due_soon(self):
         self.assertEqual(0, self.nrStatus(task.status.duesoon))
         self.taskList.append(task.Task(dueDateTime=date.Now() + date.ONE_HOUR))
         self.assertEqual(1, self.nrStatus(task.status.duesoon))
 
-    def testNrBeingTracked(self):
+    def test_nr_being_tracked(self):
         self.assertEqual(0, self.taskList.nr_being_tracked())
-        activeTask = task.Task()
-        activeTask.addEffort(effort.Effort(activeTask))
-        self.taskList.append(activeTask)
+        active_task = task.Task()
+        active_task.addEffort(effort.Effort(active_task))
+        self.taskList.append(active_task)
         self.assertEqual(1, self.taskList.nr_being_tracked())
 
-    def testOriginalLength(self):
+    def test_original_length(self):
         self.assertEqual(0, self.taskList.original_length())
 
-    def testMinPriority_EmptyTaskList(self):
+    def test_min_priority_empty_task_list(self):
         self.assertEqual(0, self.taskList.min_priority())
 
-    def testMinPriority_OneTaskWithDefaultPriority(self):
+    def test_min_priority_one_task_with_default_priority(self):
         self.taskList.append(self.task1)
         self.assertEqual(self.task1.priority(), self.taskList.min_priority())
 
-    def testMinPriority_OneTaskWithNonDefaultPriority(self):
+    def test_min_priority_one_task_with_non_default_priority(self):
         self.taskList.append(task.Task(priority=-5))
         self.assertEqual(-5, self.taskList.min_priority())
 
-    def testMinPriority_TwoTasks(self):
+    def test_min_priority_two_tasks(self):
         self.taskList.extend([task.Task(priority=3), task.Task(priority=5)])
         self.assertEqual(3, self.taskList.min_priority())
 
-    def testMaxPriority_EmptyTaskList(self):
+    def test_max_priority_empty_task_list(self):
         self.assertEqual(0, self.taskList.max_priority())
 
-    def testMaxPriority_OneTaskWithDefaultPriority(self):
+    def test_max_priority_one_task_with_default_priority(self):
         self.taskList.append(self.task1)
         self.assertEqual(self.task1.priority(), self.taskList.max_priority())
 
-    def testMaxPriority_OneTaskWithNonDefaultPriority(self):
+    def test_max_priority_one_task_with_non_default_priority(self):
         self.taskList.append(task.Task(priority=-5))
         self.assertEqual(-5, self.taskList.max_priority())
 
-    def testMaxPriority_TwoTasks(self):
+    def test_max_priority_two_tasks(self):
         self.taskList.extend([task.Task(priority=3), task.Task(priority=5)])
         self.assertEqual(5, self.taskList.max_priority())

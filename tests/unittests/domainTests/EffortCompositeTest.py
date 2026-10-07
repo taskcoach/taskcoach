@@ -80,7 +80,7 @@ class CompositeEffortWithRoundingTest(test.TestCase):
     def test_round_total_up(self):
         self.assertEqual(
             self.composite.totalTimeSpent(
-                recursive=True, rounding=60, roundUp=True
+                recursive=True, rounding=60, round_up=True
             ),
             date.TimeDelta(seconds=4 * 60),
         )
@@ -114,57 +114,57 @@ class CompositeEffortTest(test.TestCase):
         )
         self.fakeAggregator = FakeEffortAggregator(self.composite)
 
-    def testInitialLength(self):
+    def test_initial_length(self):
         self.assertEqual(0, len(self.composite))
 
-    def testInitialDuration(self):
+    def test_initial_duration(self):
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testInitialTrackingState(self):
+    def test_initial_tracking_state(self):
         self.assertFalse(self.composite.isBeingTracked())
 
-    def testInitialTrackingStateWhenTaskIsTracked(self):
+    def test_initial_tracking_state_when_task_is_tracked(self):
         self.task.addEffort(self.trackedEffort)
         composite = effort.CompositeEffort(
             self.task, self.composite.getStart(), self.composite.getStop()
         )
         self.assertTrue(composite.isBeingTracked())
 
-    def testDurationForSingleEffort(self):
+    def test_duration_for_single_effort(self):
         self.task.addEffort(self.effort1)
         self.assertEqual(
             self.effort1.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testAddEffortOutsidePeriodToTask(self):
-        effortOutsidePeriod = effort.Effort(
+    def test_add_effort_outside_period_to_task(self):
+        effort_outside_period = effort.Effort(
             self.task,
             date.DateTime(2004, 1, 11, 13, 0, 0),
             date.DateTime(2004, 1, 11, 14, 0, 0),
         )
-        self.task.addEffort(effortOutsidePeriod)
+        self.task.addEffort(effort_outside_period)
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testAddEffortWithStartTimeEqualToStartOfPeriodToTask(self):
-        effortSameStartTime = effort.Effort(
+    def test_add_effort_with_start_time_equal_to_start_of_period_to_task(self):
+        effort_same_start_time = effort.Effort(
             self.task,
             date.DateTime(2004, 1, 1, 0, 0, 0),
             date.DateTime(2004, 1, 1, 14, 0, 0),
         )
-        self.task.addEffort(effortSameStartTime)
+        self.task.addEffort(effort_same_start_time)
         self.assertEqual(
-            effortSameStartTime.timeSpent(), self.composite.totalTimeSpent()
+            effort_same_start_time.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testAddEffortWithStartTimeEqualToEndOfPeriodToTask(self):
-        effortSameStopTime = effort.Effort(
+    def test_add_effort_with_start_time_equal_to_end_of_period_to_task(self):
+        effort_same_stop_time = effort.Effort(
             self.task,
             date.DateTime(2004, 1, 1, 23, 59, 59),
             date.DateTime(2004, 1, 2, 1, 0, 0),
         )
-        self.task.addEffort(effortSameStopTime)
+        self.task.addEffort(effort_same_stop_time)
         self.assertEqual(
-            effortSameStopTime.timeSpent(), self.composite.totalTimeSpent()
+            effort_same_stop_time.timeSpent(), self.composite.totalTimeSpent()
         )
 
     def test_add_tracked_effort_to_task_does_not_cause_list_empty_notification(
@@ -185,7 +185,7 @@ class CompositeEffortTest(test.TestCase):
             [(self.composite.totalTimeSpent(), self.composite)], events
         )
 
-    def testRemoveEffortFromTask(self):
+    def test_remove_effort_from_task(self):
         self.task.addEffort(self.effort1)
         self.task.removeEffort(self.effort1)
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
@@ -198,13 +198,13 @@ class CompositeEffortTest(test.TestCase):
         self.task.removeEffort(self.effort1)
         self.assertEqual([self.composite], events)
 
-    def testDuration(self):
+    def test_duration(self):
         self.task.addEffort(self.effort1)
         self.assertEqual(
             self.effort1.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testDurationTwoEfforts(self):
+    def test_duration_two_efforts(self):
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
         self.assertEqual(
@@ -212,12 +212,12 @@ class CompositeEffortTest(test.TestCase):
             self.composite.totalTimeSpent(),
         )
 
-    def testRevenue(self):
+    def test_revenue(self):
         self.task.set_hourly_fee(100)
         self.task.addEffort(self.effort1)
         self.assertEqual(100, self.composite.revenue())
 
-    def testRevenueTwoEfforts(self):
+    def test_revenue_two_efforts(self):
         self.task.set_hourly_fee(100)
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
@@ -229,12 +229,12 @@ class CompositeEffortTest(test.TestCase):
         self.task.set_hourly_fee(100)
         self.assertTrue((100.0, self.composite) in events)
 
-    def testIsBeingTracked(self):
+    def test_is_being_tracked(self):
         self.task.addEffort(self.effort1)
         self.effort1.setStop(date.DateTime())
         self.assertTrue(self.composite.isBeingTracked())
 
-    def testChangeStartTimeOfEffort_KeepWithinPeriod(self):
+    def test_change_start_time_of_effort_keep_within_period(self):
         self.task.addEffort(self.effort1)
         self.effort1.setStart(self.effort1.getStart() + date.ONE_HOUR)
         self.assertEqual(
@@ -251,19 +251,19 @@ class CompositeEffortTest(test.TestCase):
             (self.composite.totalTimeSpent(), self.composite) in events
         )
 
-    def testChangeStartTimeOfEffort_MoveOutsidePeriode(self):
+    def test_change_start_time_of_effort_move_outside_periode(self):
         self.task.addEffort(self.effort1)
         self.effort1.setStart(self.effort1.getStart() + date.TimeDelta(days=2))
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testChangeStopTimeOfEffort_KeepWithinPeriod(self):
+    def test_change_stop_time_of_effort_keep_within_period(self):
         self.task.addEffort(self.effort1)
         self.effort1.setStop(self.effort1.getStop() + date.ONE_HOUR)
         self.assertEqual(
             self.effort1.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testChangeStopTimeOfEffort_MoveOutsidePeriod(self):
+    def test_change_stop_time_of_effort_move_outside_period(self):
         self.task.addEffort(self.effort1)
         self.effort1.setStop(self.effort1.getStop() + date.TimeDelta(days=2))
         self.assertEqual(
@@ -286,7 +286,7 @@ class CompositeEffortTest(test.TestCase):
             (self.composite.totalTimeSpent(), self.composite) in events
         )
 
-    def testChangeStartTimeOfEffort_MoveInsidePeriod(self):
+    def test_change_start_time_of_effort_move_inside_period(self):
         self.task.addEffort(self.effort3)
         self.effort3.setStart(self.composite.getStart())
         self.assertEqual(
@@ -301,7 +301,7 @@ class CompositeEffortTest(test.TestCase):
         self.task.removeEffort(self.effort1)
         self.assertEqual([self.composite], events)
 
-    def testChangeTask(self):
+    def test_change_task(self):
         self.task.addEffort(self.effort1)
         self.effort1.set_task(task.Task())
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
@@ -314,16 +314,16 @@ class CompositeEffortTest(test.TestCase):
         self.effort1.set_task(task.Task())
         self.assertEqual([self.composite], events)
 
-    def testGetDescription_ZeroEfforts(self):
+    def test_get_description_zero_efforts(self):
         self.assertEqual("", self.composite.description())
 
-    def testGetDescription_OneEffort(self):
+    def test_get_description_one_effort(self):
         self.task.addEffort(self.effort1)
         for description in ("", "Description"):
             self.effort1.setDescription(description)
             self.assertEqual(description, self.composite.description())
 
-    def testGetDescription_TwoEfforts(self):
+    def test_get_description_two_efforts(self):
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
         for description1, description2 in (
@@ -338,8 +338,10 @@ class CompositeEffortTest(test.TestCase):
                 seperator = "\n"
             else:
                 seperator = ""
-            expectedDescription = description1 + seperator + description2
-            self.assertEqual(expectedDescription, self.composite.description())
+            expected_description = description1 + seperator + description2
+            self.assertEqual(
+                expected_description, self.composite.description()
+            )
 
 
 class CompositeEffortWithSubTasksTest(test.TestCase):
@@ -380,7 +382,7 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
             (self.composite.totalTimeSpent(), self.composite) in events
         )
 
-    def testRemoveEffortFromChildTask(self):
+    def test_remove_effort_from_child_task(self):
         self.child.addEffort(self.childEffort)
         self.child.removeEffort(self.childEffort)
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
@@ -393,18 +395,18 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
         self.child.removeEffort(self.childEffort)
         self.assertEqual([self.composite], events)
 
-    def testDuration(self):
+    def test_duration(self):
         self.child.addEffort(self.childEffort)
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testRecursiveDuration(self):
+    def test_recursive_duration(self):
         self.child.addEffort(self.childEffort)
         self.assertEqual(
             self.childEffort.timeSpent(),
             self.composite.totalTimeSpent(recursive=True),
         )
 
-    def testDurationWithTaskAndChildEffort(self):
+    def test_duration_with_task_and_child_effort(self):
         self.task.addEffort(self.taskEffort)
         self.child.addEffort(self.childEffort)
         self.assertEqual(
@@ -412,7 +414,7 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
             self.composite.totalTimeSpent(recursive=True),
         )
 
-    def testAddEffortToNewChild(self):
+    def test_add_effort_to_new_child(self):
         self.task.addChild(self.child2)
         self.child2.addEffort(self.child2Effort)
         self.assertEqual(
@@ -420,7 +422,7 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
             self.composite.totalTimeSpent(recursive=True),
         )
 
-    def testAddChildWithEffort(self):
+    def test_add_child_with_effort(self):
         self.child2.addEffort(self.child2Effort)
         self.task.addChild(self.child2)
         self.assertEqual(
@@ -428,37 +430,37 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
             self.composite.totalTimeSpent(recursive=True),
         )
 
-    def testAddEffortToGrandChild(self):
+    def test_add_effort_to_grand_child(self):
         self.task.addChild(self.child2)
-        grandChild = task.Task(subject="grandchild")
-        self.child2.addChild(grandChild)
-        grandChildEffort = effort.Effort(
-            grandChild,
+        grand_child = task.Task(subject="grandchild")
+        self.child2.addChild(grand_child)
+        grand_child_effort = effort.Effort(
+            grand_child,
             self.composite.getStart(),
             self.composite.getStart() + date.ONE_HOUR,
         )
-        grandChild.addEffort(grandChildEffort)
+        grand_child.addEffort(grand_child_effort)
         self.assertEqual(
-            grandChildEffort.timeSpent(),
+            grand_child_effort.timeSpent(),
             self.composite.totalTimeSpent(recursive=True),
         )
 
-    def testAddGrandChildWithEffort(self):
+    def test_add_grand_child_with_effort(self):
         self.task.addChild(self.child2)
-        grandChild = task.Task(subject="grandchild")
-        grandChildEffort = effort.Effort(
-            grandChild,
+        grand_child = task.Task(subject="grandchild")
+        grand_child_effort = effort.Effort(
+            grand_child,
             self.composite.getStart(),
             self.composite.getStart() + date.ONE_HOUR,
         )
-        grandChild.addEffort(grandChildEffort)
-        self.child2.addChild(grandChild)
+        grand_child.addEffort(grand_child_effort)
+        self.child2.addChild(grand_child)
         self.assertEqual(
-            grandChildEffort.timeSpent(),
+            grand_child_effort.timeSpent(),
             self.composite.totalTimeSpent(recursive=True),
         )
 
-    def testRemoveEffortFromAddedChild(self):
+    def test_remove_effort_from_added_child(self):
         self.task.addChild(self.child2)
         self.child2.addEffort(self.child2Effort)
         self.child2.removeEffort(self.child2Effort)
@@ -466,7 +468,7 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
             date.TimeDelta(), self.composite.totalTimeSpent(recursive=True)
         )
 
-    def testRemoveChildWithEffort(self):
+    def test_remove_child_with_effort(self):
         self.child.addEffort(self.childEffort)
         self.task.removeChild(self.child)
         self.assertEqual(
@@ -481,19 +483,19 @@ class CompositeEffortWithSubTasksTest(test.TestCase):
         self.task.removeChild(self.child)
         self.assertEqual([self.composite], events)
 
-    def testChangeStartTimeOfChildEffort_MoveInsidePeriod(self):
-        childEffort = effort.Effort(self.child)
-        self.child.addEffort(childEffort)
-        childEffort.setStart(self.composite.getStart())
+    def test_change_start_time_of_child_effort_move_inside_period(self):
+        child_effort = effort.Effort(self.child)
+        self.child.addEffort(child_effort)
+        child_effort.setStart(self.composite.getStart())
         # Make sure the next assertEqual cannot fail due to duration() being
         # called twice:
-        childEffort.setStop()
+        child_effort.setStop()
         self.assertEqual(
-            childEffort.timeSpent(),
+            child_effort.timeSpent(),
             self.composite.totalTimeSpent(recursive=True),
         )
 
-    def testChangeTask(self):
+    def test_change_task(self):
         self.child.addEffort(self.childEffort)
         self.childEffort.set_task(task.Task())
         self.assertEqual(
@@ -525,38 +527,38 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
         self.task.addEffort(self.taskEffort)
         self.child.addEffort(self.childEffort)
 
-    def testRevenueWhenParentHasHourlyFee(self):
+    def test_revenue_when_parent_has_hourly_fee(self):
         self.task.set_hourly_fee(100)
         self.assertEqual(
             self.taskEffort.timeSpent().hours() * 100, self.composite.revenue()
         )
 
-    def testRecursiveRevenueWhenParentHasHourlyFee(self):
+    def test_recursive_revenue_when_parent_has_hourly_fee(self):
         self.task.set_hourly_fee(100)
         self.assertEqual(
             self.taskEffort.timeSpent().hours() * 100,
             self.composite.revenue(recursive=True),
         )
 
-    def testRevenueWhenChildHasHourlyFee(self):
+    def test_revenue_when_child_has_hourly_fee(self):
         self.child.set_hourly_fee(100)
         self.assertEqual(0, self.composite.revenue())
 
-    def testRecursiveRevenueWhenChildHasHourlyFee(self):
+    def test_recursive_revenue_when_child_has_hourly_fee(self):
         self.child.set_hourly_fee(100)
         self.assertEqual(
             self.childEffort.timeSpent().hours() * 100,
             self.composite.revenue(recursive=True),
         )
 
-    def testRevenueWhenChildAndParentHaveHourlyFees(self):
+    def test_revenue_when_child_and_parent_have_hourly_fees(self):
         self.child.set_hourly_fee(100)
         self.task.set_hourly_fee(200)
         self.assertEqual(
             self.taskEffort.timeSpent().hours() * 200, self.composite.revenue()
         )
 
-    def testRecursiveRevenueWhenChildAndParentHaveHourlyFees(self):
+    def test_recursive_revenue_when_child_and_parent_have_hourly_fees(self):
         self.child.set_hourly_fee(100)
         self.task.set_hourly_fee(200)
         self.assertEqual(
@@ -565,23 +567,23 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
             self.composite.revenue(recursive=True),
         )
 
-    def testRevenueWhenParentHasFixedFee(self):
+    def test_revenue_when_parent_has_fixed_fee(self):
         self.task.set_fixed_fee(1000)
         self.assertEqual(0, self.composite.revenue())
 
-    def testRecursiveRevenueWhenParentHasFixedFee(self):
+    def test_recursive_revenue_when_parent_has_fixed_fee(self):
         self.task.set_fixed_fee(1000)
         self.assertEqual(0, self.composite.revenue(recursive=True))
 
-    def testRevenueWhenChildHasFixedFee(self):
+    def test_revenue_when_child_has_fixed_fee(self):
         self.child.set_fixed_fee(1000)
         self.assertEqual(0, self.composite.revenue())
 
-    def testRecursiveRevenueWhenChildHasFixedFee(self):
+    def test_recursive_revenue_when_child_has_fixed_fee(self):
         self.child.set_fixed_fee(1000)
         self.assertEqual(0, self.composite.revenue(recursive=True))
 
-    def testRevenueWhenParentHasFixedFeeAndMultipleEfforts(self):
+    def test_revenue_when_parent_has_fixed_fee_and_multiple_efforts(self):
         self.task.set_fixed_fee(1000)
         self.task.addEffort(
             effort.Effort(
@@ -592,7 +594,7 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
         )
         self.assertEqual(0, self.composite.revenue())
 
-    def testRevenueWhenChildHasFixedFeeAndMultipleEfforts(self):
+    def test_revenue_when_child_has_fixed_fee_and_multiple_efforts(self):
         self.child.set_fixed_fee(1000)
         self.child.addEffort(
             effort.Effort(
@@ -603,7 +605,9 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
         )
         self.assertEqual(0, self.composite.revenue())
 
-    def testRecursiveRevenueWhenChildHasFixedFeeAndMultipleEfforts(self):
+    def test_recursive_revenue_when_child_has_fixed_fee_and_multiple_efforts(
+        self,
+    ):
         self.child.set_fixed_fee(1000)
         self.child.addEffort(
             effort.Effort(
@@ -614,7 +618,7 @@ class CompositeEffortWithSubTasksRevenueTest(test.TestCase):
         )
         self.assertEqual(0, self.composite.revenue(recursive=True))
 
-    def testRevenueWithMixture(self):
+    def test_revenue_with_mixture(self):
         self.child.set_fixed_fee(100)
         self.task.set_hourly_fee(1000)
         self.assertEqual(1000, self.composite.revenue(recursive=True))

@@ -36,40 +36,40 @@ class PrinterTest(test.TestCase):
     def resetPrinterSettings(self):
         gui.printer.PrinterSettings.deleteInstance()  # pylint: disable=E1101
 
-    def testInitialSettings(self):
+    def test_initial_settings(self):
         printer_settings = self.printerSettings
         self.assertEqual(wx.Point(0, 0), printer_settings.GetMarginTopLeft())
         self.assertEqual(0, printer_settings.GetPaperId())
         self.assertEqual(wx.PORTRAIT, printer_settings.GetOrientation())
 
-    def testSetMargin(self):
+    def test_set_margin(self):
         self.pageSetupData.SetMarginTopLeft(wx.Point(10, 1))
         self.printerSettings.updatePageSetupData(self.pageSetupData)
         self.assertEqual(
             wx.Point(10, 1), self.printerSettings.GetMarginTopLeft()
         )
 
-    def testDefaultMarginsFromSettings(self):
+    def test_default_margins_from_settings(self):
         for margin in self.margins:
             self.assertEqual(0, settings.get("printer", "margin_" + margin))
 
-    def testSetPaperId(self):
+    def test_set_paper_id(self):
         self.pageSetupData.SetPaperId(1)
         self.printerSettings.updatePageSetupData(self.pageSetupData)
         self.assertEqual(1, self.printerSettings.GetPaperId())
 
-    def testDefaultPaperIdFromSettings(self):
+    def test_default_paper_id_from_settings(self):
         self.assertEqual(0, settings.get("printer", "paper_id"))
 
-    def testSetOrientation(self):
+    def test_set_orientation(self):
         self.pageSetupData.GetPrintData().SetOrientation(wx.LANDSCAPE)
         self.printerSettings.updatePageSetupData(self.pageSetupData)
         self.assertEqual(wx.LANDSCAPE, self.printerSettings.GetOrientation())
 
-    def testDefaultOrientationFromSettings(self):
+    def test_default_orientation_from_settings(self):
         self.assertEqual(wx.PORTRAIT, settings.get("printer", "orientation"))
 
-    def testUpdateMarginsInPageSetupDataUpdatesSettings(self):
+    def test_update_margins_in_page_setup_data_updates_settings(self):
         self.pageSetupData.SetMarginTopLeft(
             wx.Point(self.margins["left"], self.margins["top"])
         )
@@ -83,17 +83,17 @@ class PrinterTest(test.TestCase):
                 settings.get("printer", "margin_" + margin),
             )
 
-    def testUpdatePaperIdInPageSetupDataUpdatesSettings(self):
+    def test_update_paper_id_in_page_setup_data_updates_settings(self):
         self.pageSetupData.SetPaperId(1)
         self.printerSettings.updatePageSetupData(self.pageSetupData)
         self.assertEqual(1, settings.get("printer", "paper_id"))
 
-    def testUpdateOrientationInPageSetupDataUpdatesSettings(self):
+    def test_update_orientation_in_page_setup_data_updates_settings(self):
         self.pageSetupData.GetPrintData().SetOrientation(wx.LANDSCAPE)
         self.printerSettings.updatePageSetupData(self.pageSetupData)
         self.assertEqual(wx.LANDSCAPE, settings.get("printer", "orientation"))
 
-    def testMarginsInPageSetupDataAreUpdatedFromSettings(self):
+    def test_margins_in_page_setup_data_are_updated_from_settings(self):
         self.resetPrinterSettings()
         for margin in self.margins:
             settings.set("printer", "margin_" + margin, self.margins[margin])
@@ -103,13 +103,13 @@ class PrinterTest(test.TestCase):
             wx.Point(4, 3), printer_settings.GetMarginBottomRight()
         )
 
-    def testPaperIdInPageSetupDataIsUpdatedFromSettings(self):
+    def test_paper_id_in_page_setup_data_is_updated_from_settings(self):
         self.resetPrinterSettings()
         settings.set("printer", "paper_id", 1)
         printer_settings = gui.printer.PrinterSettings()
         self.assertEqual(1, printer_settings.GetPaperId())
 
-    def testOrientationInPageSetupDataIsUpdatedFromSettings(self):
+    def test_orientation_in_page_setup_data_is_updated_from_settings(self):
         self.resetPrinterSettings()
         settings.set("printer", "orientation", wx.LANDSCAPE)
         printer_settings = gui.printer.PrinterSettings()
@@ -117,5 +117,5 @@ class PrinterTest(test.TestCase):
 
 
 class HTMLPrintoutTest(test.TestCase):
-    def testCreate(self):
+    def test_create(self):
         gui.printer.HTMLPrintout("<html></html>")

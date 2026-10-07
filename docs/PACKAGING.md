@@ -29,8 +29,8 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 
 | Package | Min Version | Why Required | Distros with Old Versions |
 |---------|-------------|--------------|---------------------------|
-| Python | >=3.10 | The oldest supported distribution's, Ubuntu 22.04 (the code itself needs 3.8) | — |
-| wxPython | >=4.2.0 | HyperTreeList stability | — |
+| Python | >=3.10 | The oldest supported distribution's, Ubuntu 22.04 (the code itself needs 3.8) | n/a |
+| wxPython | >=4.2.0 | HyperTreeList stability | n/a |
 | wxPython | >=4.3.0 | Native dark mode on Windows (optional, see [WINDOWS.md](WINDOWS.md#dark-mode)) | Windows builds pin 4.3.1 |
 
 **Note**: the tree views run on Task Coach's own copy of wxPython's tree widget (`taskcoachlib/patches/`) on every wxPython version, so the installed wxPython's (4.0.7 to 4.3.1 across the builds) does not matter for them ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md)).
@@ -45,14 +45,12 @@ This table shows how dependencies are handled in **built packages** and **setup 
 | squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
 | chardet | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | python-dateutil | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| keyring | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
 | pyenchant | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | optional | — | — |
-| ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | bundled | — | — |
+| hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | optional | n/a | n/a |
+| ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | bundled | n/a | n/a |
 | hypertreelist, customtreectrl | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** |
-| pywin32 | — | — | — | — | — | — | — | — | pip | — |
-| python3-dbus | optional | optional | optional | optional | optional | optional | — | bundled | — | — |
-| python3-pywayland | — | — | optional | — | optional | optional | — | — | — | — |
+| pywin32 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | pip | n/a |
+| python3-pywayland | n/a | n/a | optional | n/a | optional | optional | n/a | n/a | n/a | n/a |
 
 **Key:**
 - `distro` = Installed from distribution repos (required dependency)
@@ -60,33 +58,32 @@ This table shows how dependencies are handled in **built packages** and **setup 
 - `pip` = Bundled via pip in package build (version too old or not in repos)
 - `patch` = Task Coach's copy of wxPython's tree widget in `taskcoachlib/patches/` ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md))
 - `bundled` = Bundled in package (thirdparty/ for .deb/.rpm, inside the AppImage, or built into the Flatpak). For Flatpak this means pip-installed or built as a manifest module at build time; the base Python, GTK and PyGObject come from the GNOME runtime, not from these rows.
-- ~~`flatpak`~~ (struck through) = **Flathub release postponed** (2026); the Flatpak build still works for a direct `.flatpak` install but is not actively published — see [Flatpak Packaging](#flatpak-packaging).
+- ~~`flatpak`~~ (struck through) = **Flathub release postponed** (2026); the Flatpak build still works for a direct `.flatpak` install but is not actively published n/a see [Flatpak Packaging](#flatpak-packaging).
 - `host` = Uses host system library (AppImage); install on host for Wayland tray support
 - `AUR` = Arch User Repository (rolling release)
-- `—` = Not applicable for this platform
+- `n/a` = Not applicable for this platform
 
-**Note: `python3-dbus` / `python3-pywayland` are optional
-bindings** (guarded imports, degrade silently), mainly for the "Idle
-time notice" (off by default; see [IDLE.md](IDLE.md) for the
-binding-vs-C-library distinction). `python3-pywayland` also serves the
-tray's hide and restore on KDE Plasma Wayland
-([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)), and
-`python3-dbus` the start-up report's tray check (To Do 92). Only
+**Note: `python3-pywayland` is an optional binding** (guarded
+import, degrades silently), mainly for the "Idle time notice" (off by
+default; see [IDLE.md](IDLE.md) for the binding-vs-C-library
+distinction); it also serves the tray's hide and restore on KDE Plasma
+Wayland ([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)). The
+notice's GNOME reading and the start-up report's tray check use
+PyGObject's Gio; `python3-dbus` is no longer used (2026-10-06,
+[DEPENDENCIES.md](DEPENDENCIES.md#dbus-python-to-do-92)). Only
 **core** `python3-pywayland` is needed: distro packages ship just the
 core `wayland` protocol, so the `ext-idle-notify-v1` binding is
 vendored in-tree (`taskcoachlib/thirdparty/ext_idle_notify_v1`); no
-`wayland-protocols` runtime dependency. They
-are **never** hard dependencies and never committed as a blanket line
+`wayland-protocols` runtime dependency. It
+is **never** a hard dependency and never committed as a blanket line
 in the shared `debian/control`. Fedora `.spec` and Arch `PKGBUILD`
-are per-distro files and declare them directly. For the four
-Debian/Ubuntu targets they are injected into `Recommends:` **per
+are per-distro files and declare it directly. For the four
+Debian/Ubuntu targets it is injected into `Recommends:` **per
 codename by the `build-deb.yml` CI step** (same `case "$CODENAME"`
-mechanism as pip-bundling): `python3-dbus` on all four;
-`python3-pywayland` only on codenames that ship a Plasma 6 desktop
-*and* package it (currently `trixie`; add future Plasma 6 codenames
-to that case arm). It is deliberately omitted on Bookworm/Jammy/Noble
-(hence `—`): they ship Plasma 5 / GNOME, already covered by the
-`dbus_*` backends. `—` for AppImage/Windows/macOS: the AppImage
+mechanism as pip-bundling), only on codenames that ship a Plasma 6
+desktop *and* package it (currently `trixie`; add future Plasma 6
+codenames to that case arm). It is deliberately omitted on
+Bookworm/Jammy/Noble (hence `n/a`): they ship Plasma 5 / GNOME. `n/a` for AppImage/Windows/macOS: the AppImage
 bundles its own Python; Windows/macOS use the native `win32`/`iokit`
 backends.
 
@@ -95,18 +92,31 @@ backends.
 | Target | ID | Python | wxPython | Setup Script | GitHub Workflow | Notes |
 |--------|:--:|:------:|:--------:|--------------|-----------------|-------|
 | [Debian 12 Bookworm](#debianubuntu-packaging) | debian12 | 3.11 | 4.2.0 | `setup_debian12_bookworm.sh` | `build-deb.yml` | Distro deps sufficient |
-| [Debian 13 Trixie](#debianubuntu-packaging) | debian13 | 3.12 | 4.2.3 | `setup_debian13_trixie.sh` | `build-deb.yml` | Distro deps sufficient |
+| [Debian 13 Trixie](#debianubuntu-packaging) | debian13 | 3.13 | 4.2.3 | `setup_debian13_trixie.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.0.7 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Ubuntu 24.04 Noble](#debianubuntu-packaging) | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
 | [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
 | [Fedora 43](#fedora-packaging) | fedora43 | 3.14 | 4.2.4 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap |
-| [**AppImage**](#appimage-packaging) | appimage | **3.11** | **4.2.5** | — | `build-appimage.yml` | Bundles Python + all deps |
+| [**AppImage**](#appimage-packaging) | appimage | **3.13** | **4.2.5** | n/a | `build-appimage.yml` | Bundles Python + all deps |
 | [~~**Flatpak**~~](#flatpak-packaging) | flatpak | runtime | **4.3.1 (source)** | `scripts/build-flatpak.sh` | `build-flatpak.yml` | **Flathub release postponed**; GNOME runtime; wxPython from sdist (builds its own bundled wxWidgets) |
-| [**Windows**](#windows-packaging) | windows | **3.11** | **4.3.1** | — | `build-windows.yml` | Python embed + Inno Setup |
-| [**macOS**](#macos-packaging) | macos | **3.11** | **4.3.1** | — | `build-macos.yml` | py2app + DMG (Intel & ARM64) |
+| [**Windows**](#windows-packaging) | windows | **3.13** | **4.3.1** | n/a | `build-windows.yml` | Python embed + Inno Setup |
+| [**macOS**](#macos-packaging) | macos | **3.13** | **4.3.1** | n/a | `build-macos.yml` | py2app + DMG (Intel & ARM64) |
 
-**AppImage note:** Uses Python 3.11 (not 3.12) for wxPython wheel availability. See [AppImage Packaging](#appimage-packaging) section for details.
+**Bundled Python:** the AppImage, Windows and macOS builds carry their own Python, 3.13 since 2026-10-06; the other packages use the system's, 3.10 (Ubuntu 22.04) and up, which the code keeps working on (`python_requires >= 3.10`).
+
+### Systems Below Python 3.13
+
+The packages that run on a system Python older than 3.13, and when
+those systems leave support (looked up 2026-10-06 on the Ubuntu and
+Debian release pages). The code keeps working on the oldest; the CI's
+static checks run on 3.10 for that.
+
+| System | Python | Standard support ends | Then |
+|---|---|---|---|
+| Ubuntu 22.04 | 3.10 | May 2027 | Ubuntu Pro (ESM) to May 2032 |
+| Debian 12 | 3.11 | ended 2026-06-10 | Debian LTS to 2028-06-30 |
+| Ubuntu 24.04 | 3.12 | May 2029 | Ubuntu Pro (ESM) to May 2034 |
 
 ### Workflow Triggers
 
@@ -490,13 +500,13 @@ See `taskcoach.spec` (linked above) for runtime, build, and optional dependencie
 - **AppImage:** [python-appimage](https://github.com/niess/python-appimage) | [wxPython extras](https://extras.wxpython.org/wxPython4/extras/linux/gtk3/ubuntu-22.04) | [AppImage docs](https://docs.appimage.org/)
 - **Project files:** [APPIMAGE.md](APPIMAGE.md) | [`build-appimage.yml`](../.github/workflows/build-appimage.yml)
 
-The AppImage build creates a portable, self-contained Linux executable that bundles Python 3.11, wxPython 4.2.5, and all dependencies into a single file.
+The AppImage build creates a portable, self-contained Linux executable that bundles Python 3.13, wxPython 4.2.5, and all dependencies into a single file.
 
 ### Available Builds
 
 | Build | Python | Architecture | Target |
 |-------|--------|--------------|--------|
-| `TaskCoach-X.Y.Z-x86_64.AppImage` | 3.11 | x86_64 | Most Linux users |
+| `TaskCoach-X.Y.Z-x86_64.AppImage` | 3.13 | x86_64 | Most Linux users |
 
 **Minimum requirements:** glibc 2.28+ (Debian Bookworm, Ubuntu 22.04+, Fedora 40+)
 
@@ -511,7 +521,7 @@ For detailed AppImage documentation including library bundling strategy, design 
 
 The Flatpak build is offered **in addition to** the AppImage. It runs against the **GNOME runtime** (`org.gnome.Platform`), which supplies a consistent GTK / glib / PyGObject stack, so the library-bundling and ABI problems the AppImage fights do not exist here. The trade is that users need `flatpak` installed and the runtime is fetched on first install.
 
-> **Flathub release postponed (2026).** Flathub has been blanket-rejecting submissions it deems "AI slop" and **rejected this one**, so complying with its required changes is no longer relevant — and we didn't want its main ask anyway (dropping `--filesystem=home` for the portal changes file access for all users on every OS; too risky, and wxWidgets 3.3, now bundled through wxPython 4.3.1, delivers the portal automatically). The `.flatpak` is available **directly from this project's GitHub releases**, so Flathub is not required. Details and prior review notes: [FLATPAK.md](FLATPAK.md).
+> **Flathub release postponed (2026).** Flathub has been blanket-rejecting submissions it deems "AI slop" and **rejected this one**, so complying with its required changes is no longer relevant n/a and we didn't want its main ask anyway (dropping `--filesystem=home` for the portal changes file access for all users on every OS; too risky, and wxWidgets 3.3, now bundled through wxPython 4.3.1, delivers the portal automatically). The `.flatpak` is available **directly from this project's GitHub releases**, so Flathub is not required. Details and prior review notes: [FLATPAK.md](FLATPAK.md).
 
 ### Available Builds
 
@@ -532,7 +542,7 @@ The GNOME runtime bundles GTK3, PyGObject and gobject-introspection. Task Coach 
 
 ### Status
 
-The single manifest builds **offline**, the way Flathub builds: no `--share=network`, with every Python dependency pinned (`generate-pip-sources.sh`). wxPython is built from the sdist, letting it compile its own bundled wxWidgets (guaranteeing the version matches its pre-generated bindings, since no prebuilt wxPython wheel works under the runtime), with checksums verified against the official artifacts. System-tray support comes from Flathub's `shared-modules` libappindicator (git submodule), and optional idle detection from bundled `dbus-python`. X11 is prioritized over Wayland (wxPython AUI docking is unusable on Wayland). File access uses `--filesystem=home`; the bundled wxPython 4.3.1 (wxWidgets 3.3) already opens file dialogs through the XDG FileChooser portal, and dropping the grant is a postponed TODO pending a sandbox test. **The Flathub release is postponed** — remaining work and prior review notes are in [FLATPAK.md](FLATPAK.md).
+The single manifest builds **offline**, the way Flathub builds (the network is granted only at run time, for the version check: P110), with every Python dependency pinned (`generate-pip-sources.sh`). wxPython is built from the sdist, letting it compile its own bundled wxWidgets (guaranteeing the version matches its pre-generated bindings, since no prebuilt wxPython wheel works under the runtime), with checksums verified against the official artifacts. System-tray support comes from Flathub's `shared-modules` libappindicator (git submodule), and optional idle detection from the runtime's PyGObject. X11 is prioritized over Wayland (wxPython AUI docking is unusable on Wayland). File access uses `--filesystem=home`; the bundled wxPython 4.3.1 (wxWidgets 3.3) already opens file dialogs through the XDG FileChooser portal; dropping the grant is deferred with Flathub. **The Flathub release is postponed**: remaining work and prior review notes are in [FLATPAK.md](FLATPAK.md).
 
 For detailed Flatpak documentation including the runtime choice, permission rationale, offline pinned-source generation, the wxPython risk, build process, and Flathub submission, see **[FLATPAK.md](FLATPAK.md)**.
 
@@ -549,8 +559,8 @@ Task Coach builds Windows installers using Python's embeddable distribution + In
 
 | Build | Python | Arch | Target |
 |-------|--------|------|--------|
-| `TaskCoach-X.Y.Z-windows-x64-setup.exe` | 3.11 | 64-bit | Most users |
-| `TaskCoach-X.Y.Z-windows-x64-portable.zip` | 3.11 | 64-bit | Portable |
+| `TaskCoach-X.Y.Z-windows-x64-setup.exe` | 3.13 | 64-bit | Most users |
+| `TaskCoach-X.Y.Z-windows-x64-portable.zip` | 3.13 | 64-bit | Portable |
 
 For detailed Windows documentation including packaging options, Python embeddable configuration, DLL handling, shutdown behavior, and troubleshooting, see **[WINDOWS.md](WINDOWS.md)**.
 
@@ -574,7 +584,7 @@ Task Coach builds native macOS .app bundles using py2app for both Intel and Appl
 
 ### Build Process
 
-1. Sets up Python 3.11 on macOS runner
+1. Sets up Python 3.13 on macOS runner
 2. Installs wxPython and dependencies via pip
 3. Creates icns icon file using `iconutil`
 4. Builds .app bundle with py2app
@@ -644,7 +654,8 @@ which leaves out drafts and prereleases) once per start, in a
 background thread (`meta/versionchecker.py`). A tag `vX.Y.Z.P` newer
 than the running `version_full`, and not shown before
 (`[version] notified`), opens a dialog with a link to the release page.
-A failure (no network, the Flatpak's sandbox) is only logged
-(`[VERSION]`). So a release must be tagged `v` + `version_full` and not
+A failure (no network) is only logged (`[VERSION]`). The Flatpak
+has network access for this check alone (P110, 2026-10-06); before, it
+failed there at every start. So a release must be tagged `v` + `version_full` and not
 marked prerelease to be offered.
 

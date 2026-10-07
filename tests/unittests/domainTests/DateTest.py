@@ -22,86 +22,86 @@ from taskcoachlib.domain import date
 
 
 class DateTest(test.TestCase):
-    def testCreateNormalDate(self):
+    def test_create_normal_date(self):
         adate = date.Date(2003, 1, 1)
         self.assertEqual(2003, adate.year)
         self.assertEqual(1, adate.month)
         self.assertEqual(1, adate.day)
         self.assertEqual("2003-01-01", str(adate))
 
-    def testCreateInvalidDate(self):
+    def test_create_invalid_date(self):
         self.assertRaises(ValueError, date.Date, 2003, 2, 31)
         self.assertRaises(ValueError, date.Date, 2003, 12, 32)
         self.assertRaises(ValueError, date.Date, 2003, 13, 1)
         self.assertRaises(ValueError, date.Date, 2003, 2, -1)
         self.assertRaises(ValueError, date.Date, 2003, 2, 0)
 
-    def testCreateInfiniteDate(self):
+    def test_create_infinite_date(self):
         adate = date.Date()
         self.assertEqual(None, adate.year)
         self.assertEqual(None, adate.month)
         self.assertEqual(None, adate.day)
         self.assertEqual("", str(adate))
 
-    def testCreateInfiniteDateWithMaxValues(self):
-        maxDate = datetime.date.max
-        infinite = date.Date(maxDate.year, maxDate.month, maxDate.day)
+    def test_create_infinite_date_with_max_values(self):
+        max_date = datetime.date.max
+        infinite = date.Date(max_date.year, max_date.month, max_date.day)
         self.assertTrue(infinite is date.Date())
 
-    def testInfiniteDateIsSingleton(self):
+    def test_infinite_date_is_singleton(self):
         self.assertTrue(date.Date() is date.Date())
 
-    def testAddTimeDeltaToInfiniteDate(self):
+    def test_add_time_delta_to_infinite_date(self):
         self.assertEqual(date.Date(), date.Date() + date.TimeDelta(days=2))
 
-    def testCompare_TwoInfiniteDates(self):
+    def test_compare_two_infinite_dates(self):
         date1 = date.Date()
         date2 = date.Date()
         self.assertEqual(date1, date2)
 
-    def testCompare_TwoNormalDates(self):
+    def test_compare_two_normal_dates(self):
         date1 = date.Date(2003, 1, 1)
         date2 = date.Date(2003, 4, 5)
         self.assertTrue(date1 < date2)
         self.assertTrue(date2 > date1)
         self.assertFalse(date1 == date2)
 
-    def testCompare_OneNormalDate(self):
+    def test_compare_one_normal_date(self):
         date1 = date.Date(2003, 1, 1)
         date2 = date.Date(2003, 1, 1)
         self.assertEqual(date1, date2)
 
-    def testCompare_NormalDateWithInfiniteDate(self):
+    def test_compare_normal_date_with_infinite_date(self):
         date1 = date.Date()
         date2 = date.Date(2003, 1, 1)
         self.assertTrue(date2 < date1)
         self.assertTrue(date1 > date2)
 
-    def testAddManyDays(self):
+    def test_add_many_days(self):
         self.assertEqual(
             date.Date(2003, 1, 1), date.Date(2002, 1, 1) + date.ONE_YEAR
         )
 
-    def testSubstractTwoDates_ZeroDifference(self):
+    def test_substract_two_dates_zero_difference(self):
         self.assertEqual(
             date.TimeDelta(), date.Date(2004, 2, 29) - date.Date(2004, 2, 29)
         )
 
-    def testSubstractTwoDates_YearDifference(self):
+    def test_substract_two_dates_year_difference(self):
         self.assertEqual(
             date.TimeDelta(days=365),
             date.Date(2004, 2, 29) + date.ONE_YEAR - date.Date(2004, 2, 29),
         )
 
-    def testSubstractTwoDates_Infinite(self):
+    def test_substract_two_dates_infinite(self):
         self.assertEqual(
             date.TimeDelta.max, date.Date() - date.Date(2004, 2, 29)
         )
 
-    def testSubstractTwoDates_BothInfinite(self):
+    def test_substract_two_dates_both_infinite(self):
         self.assertEqual(date.TimeDelta(), date.Date() - date.Date())
 
-    def testFormat1900(self):
+    def test_format_1900(self):
         self.assertEqual(
             date.DateTime(2, 5, 19, 0, 0, 0).strftime("%Y%m%d"), "20519"
         )

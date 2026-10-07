@@ -41,7 +41,7 @@ class MultiLineTextCtrlTest(test.wxTestCase):
         textctrl.SetValue("Set by the program")
         self.assertFalse(textctrl.CanUndo())
 
-    def testSetInsertionPointAtStart(self):
+    def test_set_insertion_point_at_start(self):
         textctrl = widgets.MultiLineTextCtrl(self.frame, text="Hiya")
         self.assertEqual(0, textctrl.GetInsertionPoint())
 

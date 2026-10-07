@@ -29,35 +29,35 @@ class ToolBar(gui.toolbar.ToolBar):
 
 
 class ToolBarTest(test.wxTestCase):
-    def testAppendUICommand(self):
+    def test_append_ui_command(self):
         gui.init()
         toolbar = ToolBar(self.frame)
-        uiCommand = dummy.DummyUICommand(menu_text="undo", bitmap="undo")
-        toolId = toolbar.append_ui_command(uiCommand)
-        self.assertNotEqual(wx.NOT_FOUND, toolbar.GetToolPos(toolId))
+        ui_command = dummy.DummyUICommand(menu_text="undo", bitmap="undo")
+        tool_id = toolbar.append_ui_command(ui_command)
+        self.assertNotEqual(wx.NOT_FOUND, toolbar.GetToolPos(tool_id))
 
 
 class ToolBarSizeTest(test.wxTestCase):
-    def testSizeDefault(self):
+    def test_size_default(self):
         self.createToolBarAndTestSize(None, (22, 22))  # Medium
 
-    def testSizeSmall(self):
+    def test_size_small(self):
         self.createToolBarAndTestSize((16, 16))
 
-    def testSizeMedium(self):
+    def test_size_medium(self):
         self.createToolBarAndTestSize((22, 22))
 
-    def testSizeBig(self):
+    def test_size_big(self):
         self.createToolBarAndTestSize((32, 32))
 
-    def createToolBarAndTestSize(self, size, expectedSize=None):
+    def createToolBarAndTestSize(self, size, expected_size=None):
         toolbar_args = [self.frame]
         if size:
             toolbar_args.append(size)
         toolbar = ToolBar(*toolbar_args)
-        if not expectedSize:
-            expectedSize = size
-        self.assertEqual(wx.Size(*expectedSize), toolbar.GetToolBitmapSize())
+        if not expected_size:
+            expected_size = size
+        self.assertEqual(wx.Size(*expected_size), toolbar.GetToolBitmapSize())
 
 
 class ToolBarPerspectiveTest(test.wxTestCase):

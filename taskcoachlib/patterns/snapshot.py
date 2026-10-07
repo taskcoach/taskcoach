@@ -75,6 +75,17 @@ def after_restoring(callback):
         _after_restoring.append(callback)
 
 
+def held_item(item):
+    """The file's own item with the item's ID, or None: an item kept
+    elsewhere (the clipboard) may be one of a file since closed and
+    opened again, or one deleted since."""
+    for collection in list(_collections.values()):
+        for each in collection:
+            if each == item:
+                return each
+    return None
+
+
 def is_held(item):
     """Whether the file holds the item: a list of the file, or another
     item's list field (its parent's subitems, its owner's notes)."""

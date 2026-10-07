@@ -28,8 +28,12 @@ from taskcoachlib.domain import attachment, categorizable, category, effort
 from taskcoachlib.domain import note, task
 from taskcoachlib.i18n import _
 from taskcoachlib.meta.debug import log_step
-from taskcoachlib.patterns.snapshot import register_collection
-from taskcoachlib.filesystem import resourcelock
+from taskcoachlib.patterns.snapshot import (
+    after_restoring,
+    is_restoring,
+    register_collection,
+)
+from taskcoachlib.filesystem import ondisk, resourcelock
 from taskcoachlib.filesystem.watcher import FilesystemNotifier
 
 
@@ -131,9 +135,15 @@ class SafeWriteFile(object):
             self.__fd.close()
             with open(self.__filename, "wb") as target:
                 target.write(data)
+                ondisk.sync_file(target)
             return
         try:
-            self.__fd.close()  # Flushes, which fails on a full disk
+            try:
+                # On disk before it replaces the file; flushing fails
+                # on a full disk
+                ondisk.sync_file(self.__fd)
+            finally:
+                self.__fd.close()
         except BaseException:
             self.__remove_temporary_file()
             raise
@@ -155,6 +165,7 @@ class SafeWriteFile(object):
         except BaseException:
             self.__remove_temporary_file()
             raise
+        ondisk.sync_folder(os.path.dirname(self.__filename))
 
     def __remove_temporary_file(self):
         try:
@@ -221,6 +232,9 @@ class TaskFile(patterns.Observer):
         self.__categories = category.CategoryList()
         self.__notes = note.NoteContainer()
         self.__efforts = effort.EffortList(self.tasks())
+        # id() of the efforts tracked when last seen: a list announces
+        # those it takes in as started (views' lists too)
+        self.__tracked = set()
         self.__corrected_ids = {}
         self.__changedOnDisk = False
         # The file's (mtime, size) when last loaded or saved
@@ -251,6 +265,11 @@ class TaskFile(patterns.Observer):
         self.registerObserver(
             self.on_command_history_changed, "commandhistory.changed"
         )
+        if not self.__read_only:
+            self.registerObserver(
+                self.__on_tracking_changed,
+                effort.Effort.trackingChangedEventType(),
+            )
 
     def __str__(self):
         return self.filename()
@@ -317,6 +336,39 @@ class TaskFile(patterns.Observer):
             == len(self.tasks())
             == len(self.notes())
         )
+
+    def __on_tracking_changed(self, event):
+        """An effort of this file started being tracked: the file's
+        other tracked efforts end, one task tracked at a time
+        (docs/EFFORTS.md, Tracking). Not while loading or merging, nor
+        while undo and redo put states back as they were."""
+        if self.__loading:
+            return
+        if is_restoring():
+            after_restoring(self.__note_tracked)
+            return
+        efforts = self.efforts()
+        started = [
+            each
+            for each in event.sources()
+            if event.value(each) is True
+            and each.isBeingTracked()
+            and id(each) not in self.__tracked
+            and any(each is mine for mine in efforts)
+        ]
+        for each in list(efforts):
+            if (
+                started
+                and each.isBeingTracked()
+                and not any(each is one for one in started)
+            ):
+                each.setStop()
+        self.__note_tracked()
+
+    def __note_tracked(self):
+        self.__tracked = {
+            id(each) for each in self.efforts() if each.isBeingTracked()
+        }
 
     def onDomainObjectAddedOrRemoved(self, event):  # pylint: disable=W0613
         if self.__loading or self.__saving:
@@ -530,6 +582,7 @@ class TaskFile(patterns.Observer):
             raise
         finally:
             self.__loading = False
+            self.__note_tracked()
             self.mark_clean()
             if duplicate_ids:
                 # Corrected while reading: saving keeps the new IDs
@@ -544,6 +597,11 @@ class TaskFile(patterns.Observer):
                 self.mark_dirty()
             self.__changedOnDisk = False
             self.__saved_stat = stat
+            # Two notices, as the observers of one run in no fixed
+            # order: what is computed from the file settles first (the
+            # scheduler), then everyone takes it
+            # (docs/WINDOW_GEOMETRY.md, Opening the File)
+            self._publish("taskfile.settle")
             self._publish("taskfile.justRead")
 
     def save(self):
@@ -646,6 +704,7 @@ class TaskFile(patterns.Observer):
                 merge_file.close()
                 merge_file.stop()
                 self.__loading = False
+                self.__note_tracked()
             self.mark_dirty(force=True)
         # Items replaced by their copies: the scheduler redoes them all
         self._publish("taskfile.merged")

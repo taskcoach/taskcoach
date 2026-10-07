@@ -43,6 +43,11 @@ class ReminderControllerUnderTest(gui.remindercontroller.ReminderController):
             def GetSize(self):
                 return wx.Size(100, 100)
 
+            GetClientSize = GetBestSize = GetSize
+
+            def GetPosition(self):
+                return wx.Point(0, 0)
+
             def SetPosition(self, position):
                 pass
 
@@ -85,10 +90,16 @@ class ReminderControllerTest(ReminderControllerTestCase):
         self.task = task.Task("Task")
         self.taskList.append(self.task)
 
-    def test_due_reminder_is_shown(self):
+    def test_due_reminder_is_shown_after_the_pass(self):
+        # Its dialog runs wx's event loop: not within the pass
         self.task.set_reminder(date.Now())
         self.task.processReminder(date.Now())
-        self.assertEqual([self.task], self.reminderController.messages)
+        shown_in_the_pass = list(self.reminderController.messages)
+        wx.GetApp().ProcessPendingEvents()
+        self.assertEqual(
+            ([], [self.task]),
+            (shown_in_the_pass, self.reminderController.messages),
+        )
 
     def test_future_reminder_is_not_shown(self):
         self.task.set_reminder(date.Now() + date.ONE_HOUR)
@@ -100,16 +111,16 @@ class ReminderControllerTest(ReminderControllerTestCase):
         self.task.triggerReminder()
         self.assertEqual([], self.reminderController.messages)
 
-    def dummyCloseEvent(self, snoozeTimeDelta=None, openAfterClose=False):
+    def dummyCloseEvent(self, snooze_time_delta=None, open_after_close=False):
         class DummySnoozeOptions(object):
             Selection = 0
 
             def GetClientData(self, *args):  # pylint: disable=W0613
-                return snoozeTimeDelta
+                return snooze_time_delta
 
         class DummyDialog(object):
             task = self.task
-            openTaskAfterClose = openAfterClose
+            openTaskAfterClose = open_after_close
             ignoreSnoozeOption = False
             snoozeOptions = DummySnoozeOptions()
 
@@ -124,14 +135,14 @@ class ReminderControllerTest(ReminderControllerTestCase):
 
         return DummyEvent()
 
-    def testOnCloseReminderResetsReminder(self):
+    def test_on_close_reminder_resets_reminder(self):
         self.task.set_reminder(self.reminderDateTime)
         self.reminderController.on_close_reminder_dialog(
             self.dummyCloseEvent(), show=False
         )
         self.assertEqual(date.DateTime(), self.task.reminder())
 
-    def testOnCloseReminderSetsReminder(self):
+    def test_on_close_reminder_sets_reminder(self):
         self.task.set_reminder(self.reminderDateTime)
         self.reminderController.on_close_reminder_dialog(
             self.dummyCloseEvent(date.ONE_HOUR), show=False
@@ -150,9 +161,9 @@ class ReminderControllerTest(ReminderControllerTestCase):
         patterns.CommandHistory().undo()
         self.assertEqual(self.reminderDateTime, self.task.reminder())
 
-    def testOnCloseMayOpenTask(self):
+    def test_on_close_may_open_task(self):
         self.task.set_reminder(self.reminderDateTime)
         frame = self.reminderController.on_close_reminder_dialog(
-            self.dummyCloseEvent(openAfterClose=True), show=False
+            self.dummyCloseEvent(open_after_close=True), show=False
         )
         self.assertTrue(frame)

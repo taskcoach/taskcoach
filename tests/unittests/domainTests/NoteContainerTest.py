@@ -25,11 +25,11 @@ class NoteContainerTest(test.TestCase):
         self.container = note.NoteContainer()
         self.note = note.Note()
 
-    def testAddNote(self):
+    def test_add_note(self):
         self.container.append(self.note)
         self.assertEqual([self.note], self.container)
 
-    def testAddNoteWithCategory(self):
+    def test_add_note_with_category(self):
         cat = category.Category(subject="Cat")
         self.note.addCategory(cat)
         self.container.append(self.note)

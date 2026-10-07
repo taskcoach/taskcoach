@@ -36,7 +36,7 @@ class DateTime(StrftimeFix, datetime.datetime):
     secondsPerHour = minutesPerHour * secondsPerMinute
     secondsPerDay = hoursPerDay * secondsPerHour
 
-    def __new__(class_, *args, **kwargs):
+    def __new__(cls, *args, **kwargs):
         if not args and not kwargs:
             max = datetime.datetime.max  # pylint: disable=W0622
             args = (
@@ -50,7 +50,7 @@ class DateTime(StrftimeFix, datetime.datetime):
         elif len(args) > 6 and not isinstance(args[0], (bytes, str)):
             args = args[:6] + (0,) + args[7:]  # Whole seconds
         kwargs.pop("microsecond", None)
-        return datetime.datetime.__new__(class_, *args, **kwargs)
+        return datetime.datetime.__new__(cls, *args, **kwargs)
 
     @staticmethod
     def fromDateTime(dateTime):
@@ -182,13 +182,13 @@ class Timestamp(DateTime):
         )
 
 
-def parseDateTime(string, *timeDefaults):
+def parseDateTime(string, *time_defaults):
     if string in ("", "None"):
         return None
     else:
         args = [int(arg) for arg in re.split("[-:. ]", string)]
         if len(args) == 3:  # We parsed a date, no time
-            args.extend(timeDefaults)
+            args.extend(time_defaults)
         return DateTime(*args)  # pylint: disable=W0142
 
 
@@ -211,8 +211,8 @@ def Yesterday():
 
 def LastDayOfCurrentMonth(localtime=time.localtime):
     now = localtime()
-    year, nextMonth = now[0], now[1] + 1
-    if nextMonth > 12:
-        nextMonth = 1
+    year, next_month = now[0], now[1] + 1
+    if next_month > 12:
+        next_month = 1
         year += 1
-    return DateTime(year, nextMonth, 1) - timedelta.ONE_DAY
+    return DateTime(year, next_month, 1) - timedelta.ONE_DAY

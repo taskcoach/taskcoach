@@ -74,7 +74,8 @@ Each style field has three layers per object:
 | **Effective** | Override if set, otherwise derived | No (volatile) |
 
 Volatile fields are recomputed by the master loop within 1 second of any
-change. They are `None` after file load until the loop's first pass.
+change. A file read or merged is computed at once, before the views
+draw it.
 
 ---
 

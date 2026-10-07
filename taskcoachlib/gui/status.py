@@ -45,22 +45,28 @@ class StatusBar(wx.StatusBar):
             self.on_viewer_status_changed,
             eventType=task.Task.statusChangedEventType(),
         )
+        # A read sets the statuses quietly: counted anew once read
+        patterns.Publisher().registerObserver(
+            self.on_viewer_status_changed,
+            eventType="taskfile.justRead",
+            eventSource=parent.taskFile,
+        )
         self.on_viewer_status_changed()
         self.wxEventTypes = (wx.EVT_MENU_HIGHLIGHT_ALL, wx.EVT_TOOL_ENTER)
-        for eventType in self.wxEventTypes:
-            parent.Bind(eventType, self.resetStatusBar)
+        for event_type in self.wxEventTypes:
+            parent.Bind(event_type, self.resetStatusBar)
 
     def resetStatusBar(self, event):
         """Unfortunately, the menu's and toolbar don't restore the
         previous statusbar text after they have displayed their help
         text, so we have to do it by hand."""
         try:
-            toolOrMenuId = (
+            tool_or_menu_id = (
                 event.GetSelection()
             )  # for CommandEvent from the Toolbar
         except AttributeError:
-            toolOrMenuId = event.GetMenuId()  # for MenuEvent
-        if toolOrMenuId == -1:
+            tool_or_menu_id = event.GetMenuId()  # for MenuEvent
+        if tool_or_menu_id == -1:
             self._displayStatus()
         event.Skip()
 
@@ -82,6 +88,6 @@ class StatusBar(wx.StatusBar):
         self.__message_later()
 
     def Destroy(self):  # pylint: disable=W0221
-        for eventType in self.wxEventTypes:
-            self.parent.Unbind(eventType)
+        for event_type in self.wxEventTypes:
+            self.parent.Unbind(event_type)
         super().Destroy()  # Its destroy ends its subscriptions

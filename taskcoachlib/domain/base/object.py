@@ -207,11 +207,11 @@ class Object:
         return self.__id
 
     # Custom attributes
-    def customAttributes(self, sectionName):
+    def customAttributes(self, section_name):
         attributes = set()
         for line in self.description().split("\n"):
             match = self.rx_attributes.match(line.strip())
-            if match and match.group(1) == sectionName:
+            if match and match.group(1) == section_name:
                 attributes.add(match.group(2))
         return attributes
 
@@ -276,8 +276,8 @@ class Object:
         )
 
     @classmethod
-    def subjectChangedEventType(class_):
-        return "%s.subject" % class_
+    def subjectChangedEventType(cls):
+        return "%s.subject" % cls
 
     @staticmethod
     def subjectSortFunction(**kwargs):
@@ -288,9 +288,9 @@ class Object:
             return lambda item: item.subject().lower()
 
     @classmethod
-    def subjectSortEventTypes(class_):
+    def subjectSortEventTypes(cls):
         """The event types that influence the subject sort order."""
-        return (class_.subjectChangedEventType(),)
+        return (cls.subjectChangedEventType(),)
 
     # Ordering:
 
@@ -306,16 +306,16 @@ class Object:
         )
 
     @classmethod
-    def orderingChangedEventType(class_):
-        return "%s.ordering" % class_
+    def orderingChangedEventType(cls):
+        return "%s.ordering" % cls
 
     @staticmethod
     def orderingSortFunction(**kwargs):
         return lambda item: item.ordering()
 
     @classmethod
-    def orderingSortEventTypes(class_):
-        return (class_.orderingChangedEventType(),)
+    def orderingSortEventTypes(cls):
+        return (cls.orderingChangedEventType(),)
 
     # Description:
 
@@ -331,8 +331,8 @@ class Object:
         )
 
     @classmethod
-    def descriptionChangedEventType(class_):
-        return "%s.description" % class_
+    def descriptionChangedEventType(cls):
+        return "%s.description" % cls
 
     @staticmethod
     def descriptionSortFunction(**kwargs):
@@ -343,9 +343,9 @@ class Object:
             return lambda item: item.description().lower()
 
     @classmethod
-    def descriptionSortEventTypes(class_):
+    def descriptionSortEventTypes(cls):
         """The event types that influence the description sort order."""
-        return (class_.descriptionChangedEventType(),)
+        return (cls.descriptionChangedEventType(),)
 
     # Color:
 
@@ -384,8 +384,8 @@ class Object:
     # Event types:
 
     @classmethod
-    def appearanceChangedEventType(class_):
-        return "%s.appearance" % class_
+    def appearanceChangedEventType(cls):
+        return "%s.appearance" % cls
 
     def appearanceChangedEvent(self, event):
         event.addSource(self, type=self.appearanceChangedEventType())
@@ -431,22 +431,22 @@ class Object:
     # --- Derived SSOT Setters (for use by computeDerived) ---
     # Each sends one event for its value and source together
 
-    @patterns.eventSource
+    @patterns.computed_event_source
     def setDerivedFgColor(self, value, source, event=None):
         self.__derivedFgColorValue.set(value, event=event)
         self.__derivedFgColorSource.set(source, event=event)
 
-    @patterns.eventSource
+    @patterns.computed_event_source
     def setDerivedBgColor(self, value, source, event=None):
         self.__derivedBgColorValue.set(value, event=event)
         self.__derivedBgColorSource.set(source, event=event)
 
-    @patterns.eventSource
+    @patterns.computed_event_source
     def setDerivedIcon(self, value, source, event=None):
         self.__derivedIconValue.set(value, event=event)
         self.__derivedIconSource.set(source, event=event)
 
-    @patterns.eventSource
+    @patterns.computed_event_source
     def setDerivedFont(self, value, source, event=None):
         self.__derivedFontValue.set(value, event=event)
         self.__derivedFontSource.set(source, event=event)
@@ -468,19 +468,19 @@ class Object:
     # --- Derived Event Types ---
 
     @classmethod
-    def derivedFgColorChangedEventType(class_):
+    def derivedFgColorChangedEventType(cls):
         return "derived.fgColor"
 
     @classmethod
-    def derivedBgColorChangedEventType(class_):
+    def derivedBgColorChangedEventType(cls):
         return "derived.bgColor"
 
     @classmethod
-    def derivedIconChangedEventType(class_):
+    def derivedIconChangedEventType(cls):
         return "derived.icon"
 
     @classmethod
-    def derivedFontChangedEventType(class_):
+    def derivedFontChangedEventType(cls):
         return "derived.font"
 
     # --- Effective SSOT Getters ---
@@ -550,25 +550,25 @@ class Object:
     # --- Effective SSOT Setters (for use by computeEffective) ---
     # Each sends one event for its value, default and source together
 
-    @patterns.eventSource
+    @patterns.computed_event_source
     def setEffectiveFgColor(self, value, default, source, event=None):
         self.__effectiveFgColorValue.set(value, event=event)
         self.__effectiveFgColorDefault.set(default, event=event)
         self.__effectiveFgColorSource.set(source, event=event)
 
-    @patterns.eventSource
+    @patterns.computed_event_source
     def setEffectiveBgColor(self, value, default, source, event=None):
         self.__effectiveBgColorValue.set(value, event=event)
         self.__effectiveBgColorDefault.set(default, event=event)
         self.__effectiveBgColorSource.set(source, event=event)
 
-    @patterns.eventSource
+    @patterns.computed_event_source
     def setEffectiveIcon(self, value, source, event=None):
         # Icon has no default
         self.__effectiveIconValue.set(value, event=event)
         self.__effectiveIconSource.set(source, event=event)
 
-    @patterns.eventSource
+    @patterns.computed_event_source
     def setEffectiveFont(self, value, default, source, event=None):
         self.__effectiveFontValue.set(value, event=event)
         self.__effectiveFontDefault.set(default, event=event)
@@ -591,19 +591,19 @@ class Object:
     # --- Effective Event Types ---
 
     @classmethod
-    def effectiveFgColorChangedEventType(class_):
+    def effectiveFgColorChangedEventType(cls):
         return "effective.fgColor"
 
     @classmethod
-    def effectiveBgColorChangedEventType(class_):
+    def effectiveBgColorChangedEventType(cls):
         return "effective.bgColor"
 
     @classmethod
-    def effectiveIconChangedEventType(class_):
+    def effectiveIconChangedEventType(cls):
         return "effective.icon"
 
     @classmethod
-    def effectiveFontChangedEventType(class_):
+    def effectiveFontChangedEventType(cls):
         return "effective.font"
 
     @classmethod
@@ -617,18 +617,18 @@ class Object:
         )
 
     @classmethod
-    def modificationEventTypes(class_):
+    def modificationEventTypes(cls):
         # Only invoke super if another class in the MRO provides it
-        parent = super(Object, class_)
+        parent = super(Object, cls)
         if hasattr(parent, "modificationEventTypes"):
-            eventTypes = parent.modificationEventTypes()
+            event_types = parent.modificationEventTypes()
         else:
-            eventTypes = []
-        return eventTypes + [
-            class_.subjectChangedEventType(),
-            class_.descriptionChangedEventType(),
-            class_.appearanceChangedEventType(),
-            class_.orderingChangedEventType(),
+            event_types = []
+        return event_types + [
+            cls.subjectChangedEventType(),
+            cls.descriptionChangedEventType(),
+            cls.appearanceChangedEventType(),
+            cls.orderingChangedEventType(),
         ]
 
 
@@ -722,7 +722,7 @@ class CompositeObject(Object, patterns.ObservableComposite):
     # Event types:
 
     @classmethod
-    def modificationEventTypes(class_):
-        return super(CompositeObject, class_).modificationEventTypes() + [
-            class_.expansionChangedEventType()
+    def modificationEventTypes(cls):
+        return super(CompositeObject, cls).modificationEventTypes() + [
+            cls.expansionChangedEventType()
         ]

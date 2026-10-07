@@ -41,16 +41,23 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
     CAL_MONTHLY = 2
 
     def __init__(
-        self, parent, tasks, onSelect, onEdit, onCreate, popupMenu, **kwargs
+        self,
+        parent,
+        tasks,
+        on_select,
+        on_edit,
+        on_create,
+        popup_menu,
+        **kwargs
     ):
         self.__on_drop_url_callback = kwargs.pop("on_drop_url", None)
         self.__on_drop_files_callback = kwargs.pop("on_drop_files", None)
         self.__on_drop_mail_callback = kwargs.pop("on_drop_mail", None)
         self.__taskList = tasks
-        self.__onSelect = onSelect
-        self.__onEdit = onEdit
-        self.__onCreate = onCreate
-        self.__popupMenu = popupMenu
+        self.__onSelect = on_select
+        self.__onEdit = on_edit
+        self.__onCreate = on_create
+        self.__popupMenu = popup_menu
         self.__calFormat = self.CAL_WEEKLY
         self.__hdrFormat = self.HDR_DATE
         self.__drawNow = True
@@ -107,10 +114,10 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         if hit is None or hit.event is None:
             return None
 
-        tooltipData = self.getItemTooltipData(hit.event)
-        doShow = any(data[1] for data in tooltipData)
-        if doShow:
-            self.__tip.SetData(tooltipData)
+        tooltip_data = self.getItemTooltipData(hit.event)
+        do_show = any(data[1] for data in tooltip_data)
+        if do_show:
+            self.__tip.SetData(tooltip_data)
             return self.__tip
         else:
             return None
@@ -176,8 +183,8 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
         self._invalidate()
         self.Refresh()
 
-    def SetDrawNow(self, drawNow):
-        self.__drawNow = drawNow
+    def SetDrawNow(self, draw_now):
+        self.__drawNow = draw_now
         self.Refresh()
 
     def refresh_now_line(self):

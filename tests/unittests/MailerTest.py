@@ -19,13 +19,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import datetime
 import os
 import tempfile
+import urllib.parse
 from unittest import mock
 
 import test
 import taskcoachlib.mailer
 from taskcoachlib import mailer
 from taskcoachlib.domain import date
-from taskcoachlib.mailer import thunderbird
 
 MAIL = b"""\
 From: =?UTF-8?Q?Ren=C3=A9e_Martin?= <renee@example.com>
@@ -50,12 +50,64 @@ def local(*args, offset_hours):
 
 
 class TestMailer(test.TestCase):
-    def testWriteMail(self):
-        def openURL(mailtoString):
-            self.mailtoString = mailtoString  # pylint: disable=W0201
+    def test_write_mail(self):
+        opened = []
+        taskcoachlib.mailer.send_mail(
+            "to", "subject", "body", open_url=opened.append
+        )
+        self.assertTrue(opened[0].startswith("mailto:"))
 
-        taskcoachlib.mailer.sendMail("to", "subject", "body", openURL=openURL)
-        self.assertTrue(self.mailtoString.startswith("mailto:"))
+
+class SendMailLinkTest(test.TestCase):
+    """The subject reaches the mail program whole: & and # in it are
+    escaped as in the body; on macOS, where the link goes unescaped,
+    they become _ (P189)."""
+
+    @staticmethod
+    def link(subject, body="body", mac=False):
+        opened = []
+        with mock.patch(
+            "taskcoachlib.operating_system.isMac", return_value=mac
+        ):
+            mailer.send_mail(
+                "to@example.com", subject, body, open_url=opened.append
+            )
+        return opened[0]
+
+    @staticmethod
+    def fields(link):
+        """The fields as a mail program reads them (RFC 6068): the
+        query split at &, then unescaped."""
+        query = urllib.parse.urlsplit(link).query
+        return dict(
+            (name, urllib.parse.unquote(value))
+            for name, value in (
+                part.split("=", 1) for part in query.split("&")
+            )
+        )
+
+    def test_an_ampersand_stays_in_the_subject(self):
+        fields = self.fields(self.link("R&D review"))
+        self.assertEqual("R&D review", fields["subject"])
+        self.assertEqual("body", fields["body"])
+
+    def test_the_subject_adds_no_recipient(self):
+        fields = self.fields(self.link("Budget&bcc=someone@example.org"))
+        self.assertEqual({"subject", "body"}, set(fields))
+
+    def test_a_hash_stays_in_the_subject(self):
+        link = self.link("Issue #12")
+        self.assertEqual("", urllib.parse.urlsplit(link).fragment)
+        self.assertEqual("Issue #12", self.fields(link)["subject"])
+
+    def test_letters_beyond_ascii_stay_as_they_are(self):
+        self.assertIn("Devis%20révisé", self.link("Devis révisé"))
+
+    def test_on_macos_ampersands_and_hashes_become_underscores(self):
+        link = self.link("R&D review #12", body="Q&A #3", mac=True)
+        self.assertEqual(
+            "mailto:to@example.com?subject=R_D review _12&body=Q_A _3", link
+        )
 
 
 class ParseMailTest(test.TestCase):
@@ -143,57 +195,4 @@ class ParseMailTest(test.TestCase):
         )
         self.assertEqual(
             "mid:CA+x=y$z/w%25%231@mail.example.com", fields["location"]
-        )
-
-
-class ThunderbirdTest(test.TestCase):
-    """A mail dragged from Thunderbird is read from its profile's
-    mailbox files."""
-
-    def setUp(self):
-        super().setUp()
-        self.home = tempfile.TemporaryDirectory()
-        self.addCleanup(self.home.cleanup)
-        profile = os.path.join(self.home.name, ".thunderbird", "p.default")
-        self.folder = os.path.join(profile, "Mail", "Local Folders")
-        os.makedirs(self.folder)
-        with open(
-            os.path.join(self.home.name, ".thunderbird", "profiles.ini"), "w"
-        ) as ini:
-            ini.write(
-                "[Profile0]\nName=default\nIsRelative=1\n"
-                "Path=p.default\nDefault=1\n"
-            )
-        with open(os.path.join(profile, "prefs.js"), "w") as prefs:
-            prefs.write(
-                'user_pref("mail.server.server1.userName", "nobody");\n'
-                'user_pref("mail.server.server1.hostname", '
-                '"Local Folders");\n'
-                'user_pref("mail.server.server1.directory-rel", '
-                '"[ProfD]Mail/Local Folders");\n'
-            )
-        first = b"From - Mon Sep 28 10:00:00 2026\nSubject: First\n\nOne\n"
-        self.offset = len(first)
-        with open(os.path.join(self.folder, "Inbox"), "wb") as inbox:
-            inbox.write(first + b"From - Tue Sep 29 14:05:00 2026\n" + MAIL)
-        patcher = mock.patch.dict(os.environ, HOME=self.home.name)
-        patcher.start()
-        self.addCleanup(patcher.stop)
-
-    def test_a_local_folder_mail(self):
-        self.assertEqual(
-            mailer.parse_mail(MAIL)["location"],
-            thunderbird.get_mail(
-                "mailbox-message://nobody@Local%%20Folders/Inbox#%d"
-                % self.offset
-            )["location"],
-        )
-
-    def test_a_mailbox_mail(self):
-        self.assertEqual(
-            mailer.parse_mail(MAIL)["subject"],
-            thunderbird.get_mail(
-                "mailbox://%s?number=%d"
-                % (os.path.join(self.folder, "Inbox"), self.offset)
-            )["subject"],
         )

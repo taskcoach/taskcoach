@@ -95,6 +95,11 @@ In `hypertreelist.py`; the commit first making each change.
 it restores after a rebuild through `SetItemHilight()`, which keeps the
 tree's selection set
 ([LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#restoring-the-selection-after-a-rebuild)).
+In the task list's list mode it turns the expand buttons off
+(`show_expand_buttons()`), so the rows start under the header's text;
+tree mode keeps their room, so a task without subtasks lines up with
+its siblings that have them (P242 in
+[REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#pre-existing-issues)).
 
 ## Changing the Copy
 
@@ -165,7 +170,8 @@ macOS, AppImage and Flatpak builds copy the package as files.
 
 ## Known Issues
 
-- Truncated text in right-aligned and centred columns is cut on the
-  wrong side: `ChopText()` in `customtreectrl.py`, now bundled, so it
-  can be fixed here
-  ([TODO.md](TODO.md#hypertreelist-text-truncation-bug-standard-wxpython-issue)).
+- Text wider than its column is drawn from the column's left edge and
+  cut on the right, without "...", whatever the column's alignment,
+  as ruled 2026-10-06: Task Coach does not set
+  `TR_ELLIPSIZE_LONG_ITEMS`, so `ChopText()` never runs (To Do 10 and
+  D15 in [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md)).

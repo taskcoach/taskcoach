@@ -67,14 +67,14 @@ class FontPickerCtrl(buttons.GenButton):
     def DrawLabel(self, dc, width, height, dx=0, dy=0):
         """Override to draw text left-aligned with ellipsis if needed."""
         if self.hasFocus:
-            focusRect = wx.Rect(2, 2, width - 4, height - 4)
-            wx.RendererNative.Get().DrawFocusRect(self, dc, focusRect)
+            focus_rect = wx.Rect(2, 2, width - 4, height - 4)
+            wx.RendererNative.Get().DrawFocusRect(self, dc, focus_rect)
         dc.SetFont(self.GetFont())
         label = self.GetLabel()
-        availableWidth = width - (self.PADDING * 2)
-        if availableWidth > 0:
+        available_width = width - (self.PADDING * 2)
+        if available_width > 0:
             label = wx.Control.Ellipsize(
-                label, dc, wx.ELLIPSIZE_END, availableWidth
+                label, dc, wx.ELLIPSIZE_END, available_width
             )
         dc.DrawText(
             label, self.PADDING, (height - dc.GetTextExtent(label)[1]) // 2
@@ -112,14 +112,14 @@ class FontPickerCtrl(buttons.GenButton):
             self.__sendPickerEvent()
 
     def __newFontData(self):
-        fontData = wx.FontData()
-        fontData.SetInitialFont(self.__font)
-        fontData.SetColour(self.__colour)
-        return fontData
+        font_data = wx.FontData()
+        font_data.SetInitialFont(self.__font)
+        font_data.SetColour(self.__colour)
+        return font_data
 
-    def __readFontData(self, fontData):
-        self.__font = fontData.GetChosenFont()
-        self.__colour = fontData.GetColour()
+    def __readFontData(self, font_data):
+        self.__font = font_data.GetChosenFont()
+        self.__colour = font_data.GetColour()
 
     def __updateButton(self):
         self.SetLabel(self.__font.GetNativeFontInfoUserDesc())

@@ -133,11 +133,11 @@ class EscapeKeyMixin(object):
     self._spinCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)"""
 
     def OnKeyDown(self, event):
-        keyCode = event.GetKeyCode()
-        if keyCode == wx.WXK_ESCAPE:
+        key_code = event.GetKeyCode()
+        if key_code == wx.WXK_ESCAPE:
             self.CancelEditing()
         elif (
-            keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER)
+            key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER)
             and not event.ShiftDown()
         ):
             # Notify the owner about the changes
@@ -157,10 +157,10 @@ class _SpinCtrl(
     """Base spin control class."""
 
     def __init__(
-        self, parent, wxId, item, column, owner, value, *args, **kwargs
+        self, parent, wx_id, item, column, owner, value, *args, **kwargs
     ):
         super().__init__(
-            parent, wxId, item, column, owner, str(value), *args, **kwargs
+            parent, wx_id, item, column, owner, str(value), *args, **kwargs
         )
         self._textCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 
@@ -183,11 +183,11 @@ class Panel(wx.Panel):
     """Panel class for inline controls that need to be put into a panel."""
 
     def __init__(
-        self, parent, wxId, value, *args, **kwargs
+        self, parent, wx_id, value, *args, **kwargs
     ):  # pylint: disable=W0613
         # Don't pass the value argument to the wx.Panel since it doesn't take
         # a value argument
-        super().__init__(parent, wxId, *args, **kwargs)
+        super().__init__(parent, wx_id, *args, **kwargs)
 
     def makeSizer(self, control):
         sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -201,8 +201,8 @@ class BudgetCtrl(
     """Inline control for editing budgets: the task editor's duration
     field, days, hours, minutes and seconds."""
 
-    def __init__(self, parent, wxId, item, column, owner, value):
-        super().__init__(parent, wxId, item, column, owner)
+    def __init__(self, parent, wx_id, item, column, owner, value):
+        super().__init__(parent, wx_id, item, column, owner)
         self.__durationCtrl = widgets.MaskedDurationCtrl(
             self, show_seconds=True
         )
@@ -220,8 +220,8 @@ class AmountCtrl(
     """Inline control for editing amounts, typed freely: the task
     editor's CurrencyCtrl (docs/MONETARY_CONTROLS.md)."""
 
-    def __init__(self, parent, wxId, item, column, owner, value):
-        super().__init__(parent, wxId, item, column, owner)
+    def __init__(self, parent, wx_id, item, column, owner, value):
+        super().__init__(parent, wx_id, item, column, owner)
         self.__amountCtrl = widgets.CurrencyCtrl(self, value)
         self.__amountCtrl.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.makeSizer(self.__amountCtrl)
@@ -235,14 +235,14 @@ class DateTimeCtrl(
 ):
     """Inline date and time picker control using DateTimeComboCtrl."""
 
-    def __init__(self, parent, wxId, item, column, owner, value, **kwargs):
+    def __init__(self, parent, wx_id, item, column, owner, value, **kwargs):
         # TODO: The "relative" preset offset dropdown (showing durations like
         # "+1 day", "+1 week" relative to planned start) is not yet implemented
         # in DateTimeComboCtrl. This would need to be added as a duration field
         # with duration presets. For now, we ignore the relative parameter.
         kwargs.pop("relative", False)
         kwargs.pop("startDateTime", None)
-        super().__init__(parent, wxId, item, column, owner)
+        super().__init__(parent, wx_id, item, column, owner)
 
         # Convert empty DateTime to None for DateTimeComboCtrl (unchecked state)
         combo_value = None if value == date.DateTime() else value
@@ -277,14 +277,14 @@ class DateTimeCtrl(
 
     def _onKeyDown(self, event):
         """Handle key events, including Tab for internal navigation."""
-        keyCode = event.GetKeyCode()
-        if keyCode == wx.WXK_TAB:
+        key_code = event.GetKeyCode()
+        if key_code == wx.WXK_TAB:
             # Navigate within the editor's controls, don't let it escape
             self._navigateTab(event.ShiftDown())
-        elif keyCode == wx.WXK_ESCAPE:
+        elif key_code == wx.WXK_ESCAPE:
             self.CancelEditing()
         elif (
-            keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER)
+            key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER)
             and not event.ShiftDown()
         ):
             self.AcceptChanges()

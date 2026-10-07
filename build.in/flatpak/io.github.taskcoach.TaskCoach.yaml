@@ -12,21 +12,19 @@ finish-args:
   - --device=dri
   - --env=GDK_BACKEND=x11
 
-  # Broad grant retained for now. Migrating file access to the XDG FileChooser
-  # portal (to drop this) is a future Flathub-cleanup TODO — see docs/FLATPAK.md;
-  # wxPython 4.3.1 (wxWidgets 3.3) already uses the portal for file dialogs;
-  # dropping this grant is pending a sandbox test.
+  # Broad grant kept: dropping it for the file-chooser portal (wxPython 4.3.1
+  # already shows the portal picker) is deferred with Flathub, see
+  # docs/FLATPAK.md.
   - --filesystem=home
 
   - --talk-name=org.kde.StatusNotifierWatcher
 
-  - --talk-name=org.freedesktop.ScreenSaver
   - --talk-name=org.gnome.Mutter.IdleMonitor
 
-  # There seems to be a legacy Thunderbird/IMAP mail integration, but it
-  # probably does not work and/or is dead code. That is the grounds for granting
-  # neither --share=network nor --talk-name=org.freedesktop.secrets. If revived,
-  # it must use the Secret portal (org.freedesktop.portal.Secret), not that flag.
+  # The start-up version check only (docs/PACKAGING.md, Version Check): a
+  # bundle has no update channel. Mail stays local
+  # (docs/EMAIL_ATTACHMENTS.md): no --talk-name=org.freedesktop.secrets.
+  - --share=network
 
 cleanup:
   - '*.a'

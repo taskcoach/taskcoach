@@ -51,11 +51,11 @@ class BaseNoteViewer(
         kwargs.setdefault("settingsSection", "noteviewer")
         self.notesToShow = kwargs.get("notesToShow", None)
         super().__init__(*args, **kwargs)
-        for eventType in (
+        for event_type in (
             note.Note.subjectChangedEventType(),
             *note.Note.effective_style_event_types(),
         ):
-            self.registerObserver(self.on_attribute_changed, eventType)
+            self.registerObserver(self.on_attribute_changed, event_type)
 
     def domainObjectsToView(self):
         return (
@@ -68,31 +68,29 @@ class BaseNoteViewer(
         return (note.Note,)
 
     def create_widget(self):
-        imageList = self.createImageList()  # Has side-effects
-        self._columns = self._createColumns()
-        itemPopupMenu = taskcoachlib.gui.menu.NotePopupMenu(
+        image_list = self.createImageList()  # Has side-effects
+        self._columns = self.ordered_columns(self._createColumns())
+        item_popup_menu = taskcoachlib.gui.menu.NotePopupMenu(
             self.parent,
             self.taskFile.categories(),
             self,
             notes=self.taskFile.notes(),
         )
-        columnPopupMenu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
-        self._popupMenus.extend([itemPopupMenu, columnPopupMenu])
+        column_popup_menu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
+        self._popupMenus.extend([item_popup_menu, column_popup_menu])
         widget = widgets.TreeListCtrl(
             self,
             self.columns(),
             self.onSelect,
             uicommand.Edit(viewer=self),
             uicommand.NoteDragAndDrop(viewer=self, notes=self.presentation()),
-            itemPopupMenu,
-            columnPopupMenu,
-            resizeableColumn=1 if self.hasOrderingColumn() else 0,
-            validateDrag=self.validateDrag,
+            item_popup_menu,
+            column_popup_menu,
+            resizeableColumn=0,  # The subject's place once shown
+            validate_drag=self.validate_drag,
             **self.widgetCreationKeywordArguments()
         )
-        if self.hasOrderingColumn():
-            widget.SetMainColumn(1)
-        widget.SetImageList(imageList)  # pylint: disable=E1101
+        widget.SetImageList(image_list)  # pylint: disable=E1101
         return widget
 
     def createFilter(self, notes):
@@ -153,7 +151,7 @@ class BaseNoteViewer(
         ]
 
     def _createColumns(self):
-        orderingColumn = widgets.Column(
+        ordering_column = widgets.Column(
             "ordering",
             "",
             width=self.getColumnWidth("ordering"),
@@ -168,7 +166,7 @@ class BaseNoteViewer(
             ),
         )
         # XXXCHECK editCallback & co
-        subjectColumn = widgets.Column(
+        subject_column = widgets.Column(
             "subject",
             _("Subject"),
             width=self.getColumnWidth("subject"),
@@ -184,7 +182,7 @@ class BaseNoteViewer(
             editCallback=self.onEditSubject,
             editControl=inplace_editor.SubjectCtrl,
         )
-        descriptionColumn = widgets.Column(
+        description_column = widgets.Column(
             "description",
             _("Description"),
             note.Note.descriptionChangedEventType(),
@@ -200,7 +198,7 @@ class BaseNoteViewer(
             editCallback=self.onEditDescription,
             editControl=inplace_editor.DescriptionCtrl,
         )
-        attachmentsColumn = widgets.Column(
+        attachments_column = widgets.Column(
             "attachments",
             _("Attachments"),
             note.Note.attachmentsChangedEventType(),  # pylint: disable=E1101
@@ -212,7 +210,7 @@ class BaseNoteViewer(
             ),
             renderCallback=lambda note: "",
         )
-        categoriesColumn = widgets.Column(
+        categories_column = widgets.Column(
             "categories",
             _("Categories"),
             note.Note.categoryAddedEventType(),
@@ -229,7 +227,7 @@ class BaseNoteViewer(
                 help_text=_("Sort notes by categories"),
             ),
         )
-        creationDateTimeColumn = widgets.Column(
+        creation_date_time_column = widgets.Column(
             "creationDateTime",
             _("Creation date"),
             width=self.getColumnWidth("creationDateTime"),
@@ -242,7 +240,7 @@ class BaseNoteViewer(
                 help_text=_("Sort notes by creation date"),
             ),
         )
-        modificationDateTimeColumn = widgets.Column(
+        modification_date_time_column = widgets.Column(
             "modificationDateTime",
             _("Modification date"),
             note.Note.modification_datetime_changed_event_type(),
@@ -256,7 +254,7 @@ class BaseNoteViewer(
                 help_text=_("Sort notes by last modification date"),
             ),
         )
-        idColumn = widgets.Column(
+        id_column = widgets.Column(
             "id",
             _("ID"),
             width=self.getColumnWidth("id"),
@@ -270,14 +268,14 @@ class BaseNoteViewer(
             ),
         )
         return [
-            orderingColumn,
-            subjectColumn,
-            descriptionColumn,
-            attachmentsColumn,
-            categoriesColumn,
-            creationDateTimeColumn,
-            modificationDateTimeColumn,
-            idColumn,
+            ordering_column,
+            subject_column,
+            description_column,
+            attachments_column,
+            categories_column,
+            creation_date_time_column,
+            modification_date_time_column,
+            id_column,
         ]
 
     def is_showing_notes(self):

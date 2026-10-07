@@ -32,19 +32,19 @@ class VersionNumberTest(test.TestCase):
         for component in meta.data.version_full.split("."):
             self.assertEqual(component, str(int(component)))
 
-    def testVersionComponentsAreIntegers(self):
+    def test_version_components_are_integers(self):
         for component in meta.data.version.split("."):
             self.assertEqual(component, str(int(component)))
 
-    def testTskVersionIsInteger(self):
+    def test_tsk_version_is_integer(self):
         self.assertEqual(int, type(meta.data.tskversion))
 
-    def testReleaseStatus(self):
+    def test_release_status(self):
         self.assertTrue(
             meta.data.release_status in ["alpha", "beta", "stable"]
         )
 
-    def testReleaseDate(self):
+    def test_release_date(self):
         datetime.date(
             int(meta.data.release_year),
             meta.data.months.index(meta.data.release_month) + 1,

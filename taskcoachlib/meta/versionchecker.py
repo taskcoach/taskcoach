@@ -90,18 +90,18 @@ class VersionChecker(threading.Thread):
         version_text = self.parse_release(self.retrieve_latest_release())
         return version_text.strip()
 
-    def notifyUser(self, dialog, latestVersion="", message=""):
+    def notifyUser(self, dialog, latest_version="", message=""):
         # Shown from the GUI thread; this is not it
         patterns.later.soon(
-            None, self.showDialog, dialog, latestVersion, message
+            None, self.showDialog, dialog, latest_version, message
         )
 
-    def showDialog(self, VersionDialog, latestVersion, message=""):
+    def showDialog(self, version_dialog, latest_version, message=""):
         import wx
 
-        dialog = VersionDialog(
+        dialog = version_dialog(
             wx.GetApp().GetTopWindow(),
-            version=latestVersion,
+            version=latest_version,
             message=message,
         )
         dialog.Show()
@@ -140,5 +140,5 @@ class VersionChecker(threading.Thread):
         return urllib.request.urlopen(request, timeout=15)
 
     @staticmethod
-    def tupleVersion(versionString):
-        return tuple(int(i) for i in versionString.split("."))
+    def tupleVersion(version_string):
+        return tuple(int(i) for i in version_string.split("."))

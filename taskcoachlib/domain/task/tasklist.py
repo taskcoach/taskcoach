@@ -46,7 +46,7 @@ class TaskList(TaskListQueryMixin, base.Collection):
         return len(self.tasks_being_tracked())
 
     def tasks_being_tracked(self):
-        return [eachTask for eachTask in self if eachTask.isBeingTracked()]
+        return [each_task for each_task in self if each_task.isBeingTracked()]
 
     def efforts(self):
         result = []

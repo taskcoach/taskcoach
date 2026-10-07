@@ -74,7 +74,6 @@ _meta = _read_metadata()
 install_requires = [
     "chardet",
     "python-dateutil",
-    "keyring",
     "pyenchant>=3.2.0",  # Spell checking for text fields
     # Windows calls: Outlook, folders, windows, monitors, processes
     "pywin32; sys_platform == 'win32'",

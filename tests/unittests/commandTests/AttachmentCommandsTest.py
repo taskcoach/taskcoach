@@ -26,12 +26,12 @@ class AddAttachmentTestsMixin(object):
         self.attachment = attachment.FileAttachment(
             "attachment"
         )  # pylint: disable=W0201
-        addAttachmentCommand = command.AddAttachmentCommand(
+        add_attachment_command = command.AddAttachmentCommand(
             self.container, selectedItems or [], attachments=[self.attachment]
         )
-        addAttachmentCommand.do()
+        add_attachment_command.do()
 
-    def testAddOneAttachmentToOneItem(self):
+    def test_add_one_attachment_to_one_item(self):
         self.addAttachment([self.item1])
         self.assertDoUndoRedo(
             lambda: self.assertEqual(
@@ -40,7 +40,7 @@ class AddAttachmentTestsMixin(object):
             lambda: self.assertEqual([], self.item1.attachments()),
         )
 
-    def testAddOneAttachmentToTwoItems(self):
+    def test_add_one_attachment_to_two_items(self):
         self.addAttachment([self.item1, self.item2])
         self.assertDoUndoRedo(
             lambda: self.assertTrue(

@@ -50,5 +50,5 @@ def isWayland():
     )
 
 
-def isPlatform(threeLetterPlatformAbbreviation, wxPlatform=wx.Platform):
-    return "__WX%s__" % threeLetterPlatformAbbreviation == wxPlatform
+def isPlatform(three_letter_platform_abbreviation, wx_platform=wx.Platform):
+    return "__WX%s__" % three_letter_platform_abbreviation == wx_platform

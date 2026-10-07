@@ -49,11 +49,11 @@ class CalendarConfigDialog(sized_controls.SizedDialog):
         pane = self.GetContentsPane()
         pane.SetSizerType("form")
         self.createInterior(pane)
-        buttonSizer = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
-        self.SetButtonSizer(buttonSizer)
+        button_sizer = self.CreateStdDialogButtonSizer(wx.OK | wx.CANCEL)
+        self.SetButtonSizer(button_sizer)
         self.Fit()
         self.SetMinSize(self.GetSize())
-        wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
+        wxhelper.get_dialog_button(button_sizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.ok
         )
 

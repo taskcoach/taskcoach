@@ -67,7 +67,7 @@ class EffortEditorTest(test.wxTestCase):
 
     # pylint: disable=W0201,W0212
 
-    def testCreate(self):
+    def test_create(self):
         self.assertEqual(
             self.task, self.editor._interior._task_entry.GetValue()
         )
@@ -79,7 +79,7 @@ class EffortEditorTest(test.wxTestCase):
             self.effort.task(), self.editor._interior._task_entry.GetValue()
         )
 
-    def testInvalidEffort(self):
+    def test_invalid_effort(self):
         self.editor._interior._stop_date_time_combo.SetValue(
             date.DateTime(1900, 1, 1)
         )
@@ -90,13 +90,13 @@ class EffortEditorTest(test.wxTestCase):
             self.editor._interior._invalid_period_message.GetLabel()
         )
 
-    def testChangeTask(self):
+    def test_change_task(self):
         self.editor._interior._task_entry.SetValue(self.task2)
         self.editor._interior._task_sync.onAttributeEdited(dummy.Event())
         self.assertEqual(self.task2, self.effort.task())
         self.assertFalse(self.effort in self.task.efforts())
 
-    def testChangeTaskDoesNotCloseEditor(self):
+    def test_change_task_does_not_close_editor(self):
         self.editor._interior._task_entry.SetValue(self.task2)
         self.editor._interior._task_sync.onAttributeEdited(dummy.Event())
         self.assertFalse(self.editor.editorClosed)

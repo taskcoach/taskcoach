@@ -25,7 +25,7 @@ from unittest import mock
 import wx, test
 from taskcoachlib import gui, persistence, meta, operating_system
 from taskcoachlib import patterns
-from taskcoachlib.domain import task
+from taskcoachlib.domain import date, task
 from taskcoachlib.config import settings
 
 
@@ -84,11 +84,11 @@ class MainWindowTestCase(test.wxTestCase):
 
 
 class MainWindowTest(MainWindowTestCase):
-    def testStatusBar_Show(self):
+    def test_status_bar_show(self):
         settings.set("view", "statusbar", True)
         self.assertTrue(self.mainwindow.GetStatusBar().IsShown())
 
-    def testStatusBar_Hide(self):
+    def test_status_bar_hide(self):
         settings.set("view", "statusbar", False)
         self.assertFalse(self.mainwindow.GetStatusBar().IsShown())
 
@@ -101,17 +101,17 @@ class MainWindowTest(MainWindowTestCase):
         ).send()
         self.assertTrue(refresh.pending)
 
-    def testTitle_Default(self):
+    def test_title_default(self):
         self.assertEqual(meta.name, self.mainwindow.GetTitle())
 
-    def testTitle_AfterFilenameChange(self):
+    def test_title_after_filename_change(self):
         self.taskFile.setFilename("New filename")
         self.assertEqual(
             "%s - %s" % (meta.name, self.taskFile.filename()),
             self.mainwindow.GetTitle(),
         )
 
-    def testTitle_AfterChange(self):
+    def test_title_after_change(self):
         self.taskFile.setFilename("New filename")
         self.taskFile.tasks().extend([task.Task()])
         self.assertEqual(
@@ -119,7 +119,7 @@ class MainWindowTest(MainWindowTestCase):
             self.mainwindow.GetTitle(),
         )
 
-    def testTitle_AfterSave(self):
+    def test_title_after_save(self):
         # Saving writes the file, its change log and its lock file
         directory = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, directory)
@@ -157,7 +157,7 @@ class MainWindowMaximizeTestCase(MainWindowTestCase):
 class MainWindowNotMaximizedTest(MainWindowMaximizeTestCase):
     maximized = False
 
-    def testCreate(self):
+    def test_create(self):
         self.assertFalse(self.mainwindow.IsMaximized())
 
     def test_maximize(self):
@@ -189,3 +189,74 @@ class MainWindowMaximizedTest(MainWindowMaximizeTestCase):
             "ready %s, phase %s, %s attempts"
             % (tracker.ready, tracker._phase, tracker._attempts),
         )
+
+
+class CallOnceDrawnTest(MainWindowTestCase):
+    """The file opens once the window has painted, so the window shows
+    at once however long the file takes; at the first tick if nothing
+    painted by then (docs/WINDOW_GEOMETRY.md, Opening the File)."""
+
+    def setUp(self):
+        super().setUp()
+        self.calls = []
+        self.mainwindow.call_once_drawn(lambda: self.calls.append("open"))
+
+    def paint(self):
+        self.mainwindow.Show()
+        self.mainwindow.Refresh()
+        deadline = time.monotonic() + 5
+        while not self.calls and time.monotonic() < deadline:
+            wx.Yield()
+            time.sleep(0.01)
+
+    def tick(self):
+        patterns.Event("timer.second", self, date.DateTime.now()).send()
+
+    def test_not_before_the_window_paints(self):
+        wx.Yield()
+        self.assertEqual([], self.calls)
+
+    def test_at_the_first_paint(self):
+        self.paint()
+        self.assertEqual(["open"], self.calls)
+
+    def test_at_the_first_tick_if_nothing_painted(self):
+        # Started minimized or on another desktop
+        self.tick()
+        self.assertEqual(["open"], self.calls)
+
+    def test_once(self):
+        self.paint()
+        self.tick()
+        self.mainwindow.Refresh()
+        wx.Yield()
+        self.assertEqual(["open"], self.calls)
+
+
+class FloatingViewTest(MainWindowTestCase):
+    """A floating view opens on the main window's monitor, once the
+    main window has drawn (docs/WINDOW_GEOMETRY.md, Floating Views)."""
+
+    def restore(self, position):
+        manager = self.mainwindow.manager
+        manager.GetPane("taskviewer").Float().FloatingPosition(
+            position
+        ).FloatingSize((300, 200))
+        manager.Update()
+        settings.set("view", "perspective", manager.SavePerspective())
+        self.mainwindow._MainWindow__restore_perspective()
+        return manager.GetPane("taskviewer")
+
+    def test_a_floating_view_saved_off_screen_opens_on_screen(self):
+        pane = self.restore((5000, 5000))
+        rect = wx.Rect(pane.floating_pos, pane.floating_size)
+        area = wx.Display(0).GetClientArea()
+        self.assertEqual((300, 200), tuple(rect.GetSize()))
+        self.assertTrue(area.Contains(rect), (rect, area))
+
+    def test_a_floating_view_shows_once_the_window_has_drawn(self):
+        pane = self.restore((100, 100))
+        self.assertFalse(pane.IsShown())
+        # The first tick stands for the first paint
+        patterns.Event("timer.second", self, date.DateTime.now()).send()
+        self.assertTrue(pane.IsShown())

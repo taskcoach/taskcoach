@@ -46,7 +46,7 @@ class TaskListViewerAndCategoryFilterIntegrationTest(
     TaskViewerAndCategoryFilterIntegrationTestFixture
 ):
 
-    def testFilterOnCategoryChildDoesHideParent(self):
+    def test_filter_on_category_child_does_hide_parent(self):
         self.taskViewer.options.treemode = False
         self.assertEqual(1, self.taskViewer.widget.GetItemCount())
 
@@ -55,7 +55,7 @@ class TaskTreeViewerAndCategoryFilterIntegrationTest(
     TaskViewerAndCategoryFilterIntegrationTestFixture
 ):
 
-    def testFilterOnCategoryChildDoesNotHideParent(self):
+    def test_filter_on_category_child_does_not_hide_parent(self):
         self.taskViewer.options.treemode = True
         self.taskViewer.expand_all()
         self.assertEqual(2, self.taskViewer.widget.GetItemCount())

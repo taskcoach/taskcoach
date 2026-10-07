@@ -30,18 +30,18 @@ class NoteTest(test.TestCase):
     def onEvent(self, event):
         self.events.append(event)
 
-    def testDefaultSubject(self):
+    def test_default_subject(self):
         self.assertEqual("", self.note.subject())
 
-    def testGivenSubject(self):
-        aNote = note.Note(subject="Note")
-        self.assertEqual("Note", aNote.subject())
+    def test_given_subject(self):
+        a_note = note.Note(subject="Note")
+        self.assertEqual("Note", a_note.subject())
 
-    def testSetSubject(self):
+    def test_set_subject(self):
         self.note.setSubject("Note")
         self.assertEqual("Note", self.note.subject())
 
-    def testSubjectChangeNotification(self):
+    def test_subject_change_notification(self):
         patterns.Publisher().registerObserver(
             self.onEvent, self.note.subjectChangedEventType()
         )
@@ -53,18 +53,18 @@ class NoteTest(test.TestCase):
             self.events[0],
         )
 
-    def testDefaultDescription(self):
+    def test_default_description(self):
         self.assertEqual("", self.note.description())
 
-    def testGivenDescription(self):
-        aNote = note.Note(description="Description")
-        self.assertEqual("Description", aNote.description())
+    def test_given_description(self):
+        a_note = note.Note(description="Description")
+        self.assertEqual("Description", a_note.description())
 
-    def testSetDescription(self):
+    def test_set_description(self):
         self.note.setDescription("Description")
         self.assertEqual("Description", self.note.description())
 
-    def testDescriptionChangeNotification(self):
+    def test_description_change_notification(self):
         patterns.Publisher().registerObserver(
             self.onEvent, self.note.descriptionChangedEventType()
         )
@@ -78,16 +78,16 @@ class NoteTest(test.TestCase):
             self.events[0],
         )
 
-    def testAddChild(self):
+    def test_add_child(self):
         self.note.addChild(self.child)
         self.assertEqual([self.child], self.note.children())
 
-    def testRemoveChild(self):
+    def test_remove_child(self):
         self.note.addChild(self.child)
         self.note.removeChild(self.child)
         self.assertEqual([], self.note.children())
 
-    def testAddChildNotification(self):
+    def test_add_child_notification(self):
         patterns.Publisher().registerObserver(
             self.onEvent, note.Note.addChildEventType()
         )
@@ -99,7 +99,7 @@ class NoteTest(test.TestCase):
             self.events[0],
         )
 
-    def testRemoveChildNotification(self):
+    def test_remove_child_notification(self):
         patterns.Publisher().registerObserver(
             self.onEvent, note.Note.removeChildEventType()
         )
@@ -112,7 +112,7 @@ class NoteTest(test.TestCase):
             self.events[0],
         )
 
-    def testNewChild(self):
+    def test_new_child(self):
         child = self.note.newChild(subject="child")
         self.assertEqual("child", child.subject())  # pylint: disable=E1101
 
@@ -137,15 +137,15 @@ class NoteOwnerTest(test.TestCase):
             self.onEvent, NoteOwnerUnderTest.notesChangedEventType()
         )
 
-    def testAddNote(self):
+    def test_add_note(self):
         self.noteOwner.addNote(self.note)
         self.assertEqual([self.note], self.noteOwner.notes())
 
-    def testAddNotes(self):
+    def test_add_notes(self):
         self.noteOwner.addNotes(self.note)
         self.assertEqual([self.note], self.noteOwner.notes())
 
-    def testAddNoteNotification(self):
+    def test_add_note_notification(self):
         self.registerObserver()
         self.noteOwner.addNote(self.note)
         self.assertEqual(
@@ -157,17 +157,17 @@ class NoteOwnerTest(test.TestCase):
             self.events[0],
         )
 
-    def testRemoveNote(self):
+    def test_remove_note(self):
         self.noteOwner.addNote(self.note)
         self.noteOwner.removeNote(self.note)
         self.assertFalse(self.noteOwner.notes())
 
-    def testRemoveNotes(self):
+    def test_remove_notes(self):
         self.noteOwner.addNote(self.note)
         self.noteOwner.removeNotes(self.note)
         self.assertFalse(self.noteOwner.notes())
 
-    def testRemoveNoteNotification(self):
+    def test_remove_note_notification(self):
         self.noteOwner.addNote(self.note)
         self.registerObserver()
         self.noteOwner.removeNote(self.note)
@@ -182,21 +182,21 @@ class NoteOwnerTest(test.TestCase):
             self.events,
         )
 
-    def testInitializeNotesViaConstructor(self):
-        noteOwner = NoteOwnerUnderTest(notes=[self.note])
-        self.assertEqual([self.note], noteOwner.notes())
+    def test_initialize_notes_via_constructor(self):
+        note_owner = NoteOwnerUnderTest(notes=[self.note])
+        self.assertEqual([self.note], note_owner.notes())
 
-    def testCopy(self):
+    def test_copy(self):
         self.noteOwner.addNote(self.note)
         copy = NoteOwnerUnderTest(**self.noteOwner.__getcopystate__())
         self.assertNotEqual(copy.notes()[0].id(), self.note.id())
         self.assertEqual(copy.notes()[0].subject(), self.note.subject())
 
-    def testCopy_NoteOwnerWithNoteWithSubNote(self):
+    def test_copy_note_owner_with_note_with_sub_note(self):
         child = note.Note(subject="child")
         self.note.addChild(child)
         self.noteOwner.addNote(self.note)
         copy = NoteOwnerUnderTest(**self.noteOwner.__getcopystate__())
-        childCopy = copy.notes()[0].children()[0]
-        self.assertNotEqual(childCopy.id(), child.id())
-        self.assertEqual(childCopy.subject(), child.subject())
+        child_copy = copy.notes()[0].children()[0]
+        self.assertNotEqual(child_copy.id(), child.id())
+        self.assertEqual(child_copy.subject(), child.subject())

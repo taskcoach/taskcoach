@@ -37,20 +37,20 @@ class AbstractNotifier(object):
         raise NotImplementedError
 
     @classmethod
-    def register(klass, notifier):
+    def register(cls, notifier):
         """Register the universal notifier."""
         if notifier.isAvailable():
-            klass._notifier = notifier
+            cls._notifier = notifier
 
     @classmethod
-    def getSimple(klass):
+    def getSimple(cls):
         """
         Returns a notifier suitable for simple notifications.
         Uses the universal notifier on all platforms.
         """
 
-        if klass._enabled:
-            return klass._notifier
+        if cls._enabled:
+            return cls._notifier
         else:
 
             class DummyNotifier(AbstractNotifier):
@@ -63,5 +63,5 @@ class AbstractNotifier(object):
             return DummyNotifier()
 
     @classmethod
-    def disableNotifications(klass):
-        klass._enabled = False
+    def disableNotifications(cls):
+        cls._enabled = False

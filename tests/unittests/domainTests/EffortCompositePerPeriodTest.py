@@ -53,16 +53,16 @@ class CompositeEffortPerPeriodTest(test.TestCase):
         )
         self.reducer = EffortCompositeTest.FakeEffortAggregator(self.composite)
 
-    def testInitialLength(self):
+    def test_initial_length(self):
         self.assertEqual(0, len(self.composite))
 
-    def testInitialDuration(self):
+    def test_initial_duration(self):
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testInitialTrackingState(self):
+    def test_initial_tracking_state(self):
         self.assertFalse(self.composite.isBeingTracked())
 
-    def testInitialTrackingStateWhenTaskIsTracked(self):
+    def test_initial_tracking_state_when_task_is_tracked(self):
         self.task.addEffort(self.trackedEffort)
         composite = effort.CompositeEffortPerPeriod(
             self.composite.getStart(),
@@ -72,44 +72,44 @@ class CompositeEffortPerPeriodTest(test.TestCase):
         )
         self.assertTrue(composite.isBeingTracked())
 
-    def testDurationForSingleEffort(self):
+    def test_duration_for_single_effort(self):
         self.task.addEffort(self.effort1)
         self.assertEqual(
             self.effort1.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testAddEffortOutsidePeriodToTask(self):
-        effortOutsidePeriod = effort.Effort(
+    def test_add_effort_outside_period_to_task(self):
+        effort_outside_period = effort.Effort(
             self.task,
             date.DateTime(2004, 1, 11, 13, 0, 0),
             date.DateTime(2004, 1, 11, 14, 0, 0),
         )
-        self.task.addEffort(effortOutsidePeriod)
+        self.task.addEffort(effort_outside_period)
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())
 
-    def testAddEffortWithStartTimeEqualToStartOfPeriodToTask(self):
-        effortSameStartTime = effort.Effort(
+    def test_add_effort_with_start_time_equal_to_start_of_period_to_task(self):
+        effort_same_start_time = effort.Effort(
             self.task,
             date.DateTime(2004, 1, 1, 0, 0, 0),
             date.DateTime(2004, 1, 1, 14, 0, 0),
         )
-        self.task.addEffort(effortSameStartTime)
+        self.task.addEffort(effort_same_start_time)
         self.assertEqual(
-            effortSameStartTime.timeSpent(), self.composite.totalTimeSpent()
+            effort_same_start_time.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testAddEffortWithStartTimeEqualToEndOfPeriodToTask(self):
-        effortSameStopTime = effort.Effort(
+    def test_add_effort_with_start_time_equal_to_end_of_period_to_task(self):
+        effort_same_stop_time = effort.Effort(
             self.task,
             date.DateTime(2004, 1, 1, 23, 59, 59),
             date.DateTime(2004, 1, 2, 1, 0, 0),
         )
-        self.task.addEffort(effortSameStopTime)
+        self.task.addEffort(effort_same_stop_time)
         self.assertEqual(
-            effortSameStopTime.timeSpent(), self.composite.totalTimeSpent()
+            effort_same_stop_time.timeSpent(), self.composite.totalTimeSpent()
         )
 
-    def testRemoveEffortFromTask(self):
+    def test_remove_effort_from_task(self):
         self.task.addEffort(self.effort1)
         self.task.removeEffort(self.effort1)
         self.assertEqual(date.TimeDelta(), self.composite.totalTimeSpent())

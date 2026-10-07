@@ -48,9 +48,9 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
     def _getEfforts(self):
         raise NotImplementedError
 
-    def __doRound(self, duration, rounding, roundUp):
+    def __doRound(self, duration, rounding, round_up):
         if rounding:
-            return duration.round(seconds=rounding, alwaysUp=roundUp)
+            return duration.round(seconds=rounding, always_up=round_up)
         return duration
 
     def timeSpent(self, now=None):
@@ -59,20 +59,20 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
         return self.totalTimeSpent()
 
     def totalTimeSpent(
-        self, recursive=False, rounding=0, roundUp=False, consolidate=False
+        self, recursive=False, rounding=0, round_up=False, consolidate=False
     ):
         if consolidate:
-            totalEffort = sum(
+            total_effort = sum(
                 (
                     self.__doRound(effort.timeSpent(), 0, False)
                     for effort in self._getEfforts(recursive)
                 ),
                 date.TimeDelta(),
             )
-            return totalEffort.round(seconds=rounding, alwaysUp=roundUp)
+            return total_effort.round(seconds=rounding, always_up=round_up)
         return sum(
             (
-                self.__doRound(effort.timeSpent(), rounding, roundUp)
+                self.__doRound(effort.timeSpent(), rounding, round_up)
                 for effort in self._getEfforts(recursive)
             ),
             date.TimeDelta(),
@@ -82,26 +82,26 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
         return any(effort.isBeingTracked() for effort in self._getEfforts())
 
     def totalTimeSpentForDay(
-        self, dayOffset, rounding=0, roundUp=False, consolidate=False
+        self, day_offset, rounding=0, round_up=False, consolidate=False
     ):
         """Return the total time spent of grouped efforts on a specific day."""
-        startOfDay = self.getStart() + date.TimeDelta(days=dayOffset)
-        endOfDay = self.getStart() + date.TimeDelta(days=dayOffset + 1)
+        start_of_day = self.getStart() + date.TimeDelta(days=day_offset)
+        end_of_day = self.getStart() + date.TimeDelta(days=day_offset + 1)
         if consolidate:
-            totalEffort = sum(
+            total_effort = sum(
                 (
                     self.__doRound(effort.timeSpent(), 0, False)
                     for effort in self._getEfforts(recursive=False)
-                    if startOfDay <= effort.getStart() <= endOfDay
+                    if start_of_day <= effort.getStart() <= end_of_day
                 ),
                 date.TimeDelta(),
             )
-            return self.__doRound(totalEffort, rounding, roundUp)
+            return self.__doRound(total_effort, rounding, round_up)
         return sum(
             (
-                self.__doRound(effort.timeSpent(), rounding, roundUp)
+                self.__doRound(effort.timeSpent(), rounding, round_up)
                 for effort in self._getEfforts(recursive=False)
-                if startOfDay <= effort.getStart() <= endOfDay
+                if start_of_day <= effort.getStart() <= end_of_day
             ),
             date.TimeDelta(),
         )
@@ -113,11 +113,11 @@ class BaseCompositeEffort(base.BaseEffort):  # pylint: disable=W0223
             patterns.Event(self.compositeEmptyEventType(), self).send()
 
     @classmethod
-    def compositeEmptyEventType(class_):
+    def compositeEmptyEventType(cls):
         return "effort.composite.empty"
 
     @classmethod
-    def modificationEventTypes(class_):
+    def modificationEventTypes(cls):
         return []  # A composite effort cannot be 'dirty' since its contents
         # are determined by the contained efforts.
 
@@ -168,11 +168,11 @@ class CompositeEffort(BaseCompositeEffort):
             str([e for e in self._getEfforts()]),
         )
 
-    def addEffort(self, anEffort):
-        assert self._inPeriod(anEffort)
-        self.__effort_cache.setdefault(True, set()).add(anEffort)
-        if anEffort.task() == self.task():
-            self.__effort_cache.setdefault(False, set()).add(anEffort)
+    def addEffort(self, an_effort):
+        assert self._inPeriod(an_effort)
+        self.__effort_cache.setdefault(True, set()).add(an_effort)
+        if an_effort.task() == self.task():
+            self.__effort_cache.setdefault(False, set()).add(an_effort)
 
     def revenue(self, recursive=False):
         return sum(effort.revenue() for effort in self._getEfforts(recursive))
@@ -216,14 +216,14 @@ class CompositeEffort(BaseCompositeEffort):
             == 1
         ):
             return self._getEfforts(False)[0].description()
-        effortDescriptions = [
+        effort_descriptions = [
             effort.description()
             for effort in sorted(
                 self._getEfforts(False), key=lambda effort: effort.getStart()
             )
             if effort.description()
         ]
-        return "\n".join(effortDescriptions)
+        return "\n".join(effort_descriptions)
 
 
 class CompositeEffortPerPeriod(BaseCompositeEffort):
@@ -243,19 +243,19 @@ class CompositeEffortPerPeriod(BaseCompositeEffort):
 
     total = Total()
 
-    def __init__(self, start, stop, taskList, initialEffort=None):
+    def __init__(self, start, stop, taskList, initial_effort=None):
         self.taskList = taskList
         super().__init__(None, start, stop)
-        if initialEffort:
-            assert self._inPeriod(initialEffort)
-            self.__effort_cache = [initialEffort]
+        if initial_effort:
+            assert self._inPeriod(initial_effort)
+            self.__effort_cache = [initial_effort]
         else:
             self._invalidateCache()
 
-    def addEffort(self, anEffort):
-        assert self._inPeriod(anEffort)
-        if anEffort not in self.__effort_cache:
-            self.__effort_cache.append(anEffort)
+    def addEffort(self, an_effort):
+        assert self._inPeriod(an_effort)
+        if an_effort not in self.__effort_cache:
+            self.__effort_cache.append(an_effort)
 
     @classmethod
     def task(cls):

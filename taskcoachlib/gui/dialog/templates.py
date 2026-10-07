@@ -70,7 +70,7 @@ class TemplatesDialog(sized_controls.SizedDialog):
         wxhelper.get_dialog_button(self._buttonSizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.ok
         )
-        self.CentreOnParent()
+        wxhelper.centre_on_parent(self)
 
     def createInterior(self, pane):
         self.createTemplateList(pane)
@@ -156,8 +156,8 @@ class TemplatesDialog(sized_controls.SizedDialog):
         for ctrl in self._taskControls:
             ctrl.Enable(enable)
 
-    def appendTemplate(self, parentItem, task):
-        item = self._templateList.AppendItem(parentItem, task.subject())
+    def appendTemplate(self, parent_item, task):
+        item = self._templateList.AppendItem(parent_item, task.subject())
         self._templateList.SetItemData(item, task)
         for child in task.children():
             self.appendTemplate(item, child)
@@ -184,23 +184,23 @@ class TemplatesDialog(sized_controls.SizedDialog):
         self._changing = True
         try:
             selection = self._GetSelection()
-            selectionOK = selection.IsOk() and selection != self._root
-            selectionAtRoot = False
-            if selectionOK:
-                selectionAtRoot = (
+            selection_ok = selection.IsOk() and selection != self._root
+            selection_at_root = False
+            if selection_ok:
+                selection_at_root = (
                     self._templateList.GetItemParent(selection) == self._root
                 )
-            self._btnDelete.Enable(selectionAtRoot)
+            self._btnDelete.Enable(selection_at_root)
             self._btnUp.Enable(
-                selectionAtRoot
+                selection_at_root
                 and self._templateList.GetPrevSibling(selection).IsOk()
             )
             self._btnDown.Enable(
-                selectionAtRoot
+                selection_at_root
                 and self._templateList.GetNextSibling(selection).IsOk()
             )
-            self.enableEditPanel(selectionOK)
-            if selectionOK:
+            self.enableEditPanel(selection_ok)
+            if selection_ok:
                 task = self._templateList.GetItemData(selection)
                 if task is None:
                     for ctrl in self._taskControls:

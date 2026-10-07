@@ -22,6 +22,7 @@ tested with (`dpkg-query`, `du`); pip builds bundle the same code.
 7. [python-dateutil (To Do 89)](#python-dateutil-to-do-89)
 8. [chardet (To Do 90)](#chardet-to-do-90)
 9. [pyparsing (To Do 91)](#pyparsing-to-do-91)
+10. [dbus-python (To Do 92)](#dbus-python-to-do-92)
 
 ---
 
@@ -70,12 +71,14 @@ it works on Wayland and GNOME (with the extension), and its menu keeps
 right-click where wx's XEmbed tray loses it (LXDE, KDE on X11)
 ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)). Added 2026-01 (#235). Also: the GTK
 version in the start-up report, the multi-line text boxes' padding,
-the Flatpak's tray icon check, and the test runner's certified
+the Flatpak's tray icon check, the desktop's idle time through Gio,
+the X11 Thunderbird drop's files, and the test runner's certified
 platform check.
 
-**Code**: 4 files import `gi` (`gui/appindicator.py`, 167 lines;
-`application/application.py`; `widgets/textctrl.py`; `tests/test.py`),
-all guarded; `gui/taskbaricon.py` builds the tray's GTK menu through it
+**Code**: 6 files import `gi` (`gui/appindicator.py`, 167 lines;
+`application/application.py`; `powermgt/idle.py`; `widgets/textctrl.py`;
+`widgets/draganddrop.py`, `x11_drag_files()`; `tests/test.py`), all
+guarded; `gui/taskbaricon.py` builds the tray's GTK menu through it
 (`AppIndicatorTaskBarIcon`, 624 lines, its menu builder 187). About 40
 call sites; about 430 lines call GTK directly, about 870 with the
 AppIndicator tray class.
@@ -105,7 +108,7 @@ available ... running without a tray icon" and has none.
 | Replace: ctypes to the AppIndicator and GTK C libraries | the same | the wrapper (167 lines) and menu builder (187) rewritten against C functions, where a wrong argument crashes; the C libraries stay; not prototyped |
 | Replace: StatusNotifier and its menu over D-Bus ourselves | the same | two D-Bus protocols written and kept by us; not prototyped |
 
-To Do 92 (dbus-python to Gio) would use PyGObject for D-Bus too.
+Since 2026-10-06 it also carries the D-Bus calls dbus-python made (To Do 92).
 
 **Ruling**: keep, **ruled by designer 2026-10-03**. Removing it
 loses the tray on Wayland and GNOME and the menu on LXDE and KDE X11;
@@ -118,8 +121,6 @@ D-Bus.
 
 **Why**: Windows calls:
 - Outlook (classic) mail dropped on a task: COM (`mailer/outlook.py`).
-- Thunderbird Portable's profile folder: a WMI process query
-  (`mailer/thunderbird.py`).
 - The Documents and AppData folders and following `.lnk` shortcuts to
   the templates and data folders (`config/settings.py`).
 - Window styles: the editor's own taskbar button
@@ -127,7 +128,7 @@ D-Bus.
 - Monitor geometry (`workarounds/display.py`, which replaces
   `wx.Display`).
 
-**Code**: 7 modules, plus the DLL set-up in `taskcoach.py` and the
+**Code**: 6 modules, plus the DLL set-up in `taskcoach.py` and the
 version line in the start-up report; about 25 call sites, about 235
 lines that exist for it. Tests only mock Outlook.
 
@@ -145,55 +146,29 @@ read from the code and the packages.
 | Option | What changes for Windows users | Cost |
 |---|---|---|
 | Keep | nothing | 6.8 MB download |
-| Remove | the app does not start until `display.py`'s import is guarded; then the Outlook drop, Thunderbird Portable's profile, the Documents and AppData folders, `.lnk` shortcuts to the data folders, the editors' own taskbar buttons and monitor changes all go | saves 6.8 MB |
-| Replace: comtypes (291 KB, MIT) for the three COM uses (Outlook, WMI, shortcuts) and ctypes for the Windows API calls | the same, if the rewrite is right | about 235 lines rewritten, none testable here, the Outlook drop untested even today ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md)); not prototyped |
+| Remove | the app does not start until `display.py`'s import is guarded; then the Outlook drop, the Documents and AppData folders, `.lnk` shortcuts to the data folders, the editors' own taskbar buttons and monitor changes all go | saves 6.8 MB |
+| Replace: comtypes (291 KB, MIT) for the two COM uses (Outlook, shortcuts) and ctypes for the Windows API calls | the same, if the rewrite is right | about 235 lines rewritten, none testable here, the Outlook drop untested even today ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md)); not prototyped |
 
 **Ruling**: keep, **ruled by designer 2026-10-03**. Removing it
 breaks the Windows build's start and six features; replacing it rewrites every Windows call with
-nothing here to test them on.
+nothing here to test them on. 2026-10-04: Thunderbird Portable's
+profile lookup (WMI) went with the Thunderbird profile reader
+([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#decisions) 8).
 
 ---
 
 ## keyring (To Do 86)
 
-**Why**: one use: the password of an IMAP account when a Thunderbird
-mail from it is dropped on a task or note; Task Coach logs in to fetch
-the mail. The password dialog's "Store in keychain" box saves it under
-"server:port" and the user name; a failed login asks again. It also
-served SyncML, removed 2026-01.
+**Removed 2026-10-04** with the IMAP reader it served: mail stays
+local, **ruled by designer**
+([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#decisions) 8), over the
+keep ruling of 2026-10-03. It stored the password of an IMAP account
+whose Thunderbird mail was dropped on a task. Its removal takes
+SecretStorage, jeepney, jaraco and more-itertools (0.7 MB) off Debian
+installs, and 19 MB, mostly cryptography, off the AppImage and
+Flatpak.
 
-**Code**: 1 module, `widgets/password.py` (3 lazy imports, 5 call
-sites), used by `mailer/thunderbird.py`; about 62 lines exist for it.
-
-**Platforms**: a dependency of every build. keyring picks a backend
-when run: the Secret Service (GNOME Keyring, KWallet, KeePassXC) or
-KWallet on Linux, the Credential Manager on Windows, the Keychain on
-macOS. With no keyring service running (a desktop without one), it
-has no backend and raises (P177).
-
-**Size**: Debian 13: `python3-keyring` 176 KB, plus SecretStorage,
-jeepney, jaraco and more-itertools (737 KB) and cryptography (3.9 MB,
-which requests and urllib3 need too). Pip builds on Linux (AppImage,
-Flatpak): 19 MB, cryptography 16 MB of it; on Windows keyring needs
-pywin32-ctypes instead, on macOS nothing more. Ubuntu 22.04 has 23.5,
-Ubuntu 24.04 24.3, Debian 13 25.6. The Flatpak grants neither the
-network nor the secret service, so its IMAP fetch cannot run at all
-(its manifest says so).
-
-**Keep or replace**: checked in the app with a Thunderbird IMAP mail
-dragged onto a task (a stand-in IMAP server; a throwaway GNOME Keyring
-on a private session bus):
-
-- With keyring, as today: the first drop asks the password, with
-  "Store in keychain"; ticked, the password goes into the keyring, and
-  after a restart the next drop fetches the mail without asking.
-- Without keyring: every session's first drop shows an "Error ...
-  Please file a bug report" box with a traceback, then a plain password
-  prompt; the session's later drops ask nothing; after a restart,
-  both again.
-
-| Option | The IMAP password | Cost |
-|---|---|---|
+---|---|---|
 | Keep | asked once, stored if ticked | the packages above |
 | Remove | asked once per session; about 65 lines and the packaging lines go | saves 0.7 MB on Debian (cryptography stays for other programs), 19 MB in the Linux pip builds |
 | Our own store per system: Secret Service over D-Bus, the Windows Credential Manager and the macOS Keychain through ctypes | stored as today | three code paths instead of one library, two of them not testable here; not prototyped |
@@ -503,3 +478,72 @@ build's packaging and setup script. At the 5 reference times it reads
 the 20,238 expressions as deltaTime did, but P171's 17,880, and
 deltaTime's 35 self-tests and Task Coach's own forms alike. P171, P172
 and P175 fixed; P170 stays its own.
+
+---
+
+## dbus-python (To Do 92)
+
+**Why**: three D-Bus calls: the start-up report's tray check
+(`application/application.py`) and two idle readings of the Idle time
+notice (`powermgt/idle.py`): GNOME's `org.gnome.Mutter.IdleMonitor`
+and `org.freedesktop.ScreenSaver.GetSessionIdleTime`
+([IDLE.md](IDLE.md)). Researched 2026-10-06, **asked by designer**:
+sources read, both libraries run against stand-in services on a
+private bus, the app checked there; no real desktop.
+
+**Platforms**: recommended by the deb and rpm, optional on Arch (not
+installed by default), built from source in the Flatpak, absent from
+the AppImage. PyGObject, which has Gio, is required by the deb, rpm
+and Arch packages and in the Flatpak's runtime: 3.42 (Ubuntu 22.04,
+Debian 12) to 3.56 (Arch, GNOME 50 runtime), the calls used the same
+in all. **Size**: `python3-dbus` 415 KB (Debian 13).
+
+**Which reading each desktop gets** (sources: Mutter, Muffin,
+kscreenlocker, the screensaver daemons, Xwayland):
+
+| Desktop, session | Reading |
+|---|---|
+| GNOME 42 to 48 X11 | Mutter, else the X11 extension |
+| GNOME 42 to 50 Wayland | Mutter only: none without dbus-python (Xwayland disables the X11 extension, so no false reading) |
+| Plasma, XFCE, MATE, Cinnamon, LXQt, LXDE on X11 | the X11 extension |
+| Plasma 5.27 and 6 Wayland, Sway, Hyprland | `ext-idle-notify-v1` (pywayland) |
+| Plasma 5.24 Wayland (Kubuntu 22.04) | ScreenSaver, which answers 0: never idle |
+| Cinnamon Wayland | none: Muffin's monitor is `org.cinnamon.Muffin.IdleMonitor` |
+
+The ScreenSaver reading is reached only when the three before it
+fail, and there it gives no true reading on any desktop found: 0 on
+Plasma 5.24 Wayland, an error on Plasma 5.27 and 6 Wayland, GNOME and
+Cinnamon; its unit differs too (KDE X11 answers milliseconds,
+light-locker seconds).
+
+**Found, the same on master** (checked in the app on the stand-ins):
+the idle readings keep the service's process of the first call
+(dbus-python's proxy, `follow_name_owner_changes` off), so after the
+service restarts (GNOME Shell restarted on X11) each reading fails, a
+warning says idle detection is unavailable, and the notice stays off
+until Task Coach restarts. A hung service would hold the window 25 s
+at each reading (once a second while tracking): both libraries wait
+25 s by default and take a shorter limit.
+
+| Option | Readings | Cost |
+|---|---|---|
+| Keep, fix the two | as now; GNOME Wayland without the package has none | a new proxy after a failure and a 1 s limit, about 10 lines |
+| Gio | as now, with the package's gap gone: GNOME Wayland reads everywhere PyGObject is; a restart followed; 1 s limit | prototyped: 2 files, +68/-36 lines (each reading asked of the name's owner now); dbus-python out of 4 packaging files and 5 docs; the Flatpak builds one C module less |
+| jeepney or dasbus (pure Python) | as Gio | a new dependency where PyGObject already serves |
+
+Other projects that moved to Gio report timeouts raised as
+`GLib.Error` (caught here, as every probe error is) and a
+`Gio.DBusProxy` kept on a dead name (the prototype uses no proxy).
+Not settled without a real desktop: the reading after lock and
+unlock, Cinnamon on Wayland, and the bus closing at logout (Gio's
+shared connection sends SIGTERM, dbus-python's exits at once).
+
+**Ruling**: replace by Gio, and drop the ScreenSaver reading, **ruled
+by designer 2026-10-06** ("that is perfect for both of those"). Done
+the same day: `powermgt/idle.py` reads GNOME's monitor through Gio
+(each reading addressed to the name's owner, at most 1 s; a failed
+one counts as not idle, logged once with its end), the start-up
+report's tray check too; the ScreenSaver probe and the
+Flatpak's `org.freedesktop.ScreenSaver` grant removed; dbus-python
+out of the deb, rpm, Arch and Flatpak builds (with the Flatpak's
+meson-python and patchelf, needed only for it).

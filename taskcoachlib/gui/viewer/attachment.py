@@ -57,11 +57,11 @@ class AttachmentViewer(
         kwargs.setdefault("settingsSection", "attachmentviewer")
         super().__init__(*args, **kwargs)
 
-    def _isFolderUri(self, anAttachment):
+    def _isFolderUri(self, an_attachment):
         """Check if a URI attachment points to a local folder."""
-        if anAttachment.type_ != "uri":
+        if an_attachment.type_ != "uri":
             return False
-        location = anAttachment.location()
+        location = an_attachment.location()
         if location.startswith("file://"):
             import urllib.request
 
@@ -72,11 +72,11 @@ class AttachmentViewer(
                 return False
         return False
 
-    def getTypeName(self, anAttachment):
+    def getTypeName(self, an_attachment):
         """Return human-readable type name for an attachment."""
-        if self._isFolderUri(anAttachment):
+        if self._isFolderUri(an_attachment):
             return self.TYPE_NAMES.get("folder", _("Folder"))
-        return self.TYPE_NAMES.get(anAttachment.type_, anAttachment.type_)
+        return self.TYPE_NAMES.get(an_attachment.type_, an_attachment.type_)
 
     def getItemTooltipData(self, item):
         """Return tooltip data showing type and location."""
@@ -112,25 +112,28 @@ class AttachmentViewer(
         return (attachment.Attachment,)
 
     def create_widget(self):
-        imageList = self.createImageList()
-        itemPopupMenu = taskcoachlib.gui.menu.AttachmentPopupMenu(
+        image_list = self.createImageList()
+        item_popup_menu = taskcoachlib.gui.menu.AttachmentPopupMenu(
             self.parent, self.presentation(), self
         )
-        columnPopupMenu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
-        self._popupMenus.extend([itemPopupMenu, columnPopupMenu])
-        self._columns = self._createColumns()
+        column_popup_menu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
+        self._popupMenus.extend([item_popup_menu, column_popup_menu])
+        self._columns = self.ordered_columns(self._createColumns())
         widget = widgets.VirtualListCtrl(
             self,
             self.columns(),
             self.onSelect,
             uicommand.Edit(viewer=self),
-            itemPopupMenu,
-            columnPopupMenu,
+            item_popup_menu,
+            column_popup_menu,
             resizeableColumn=1,
             **self.widgetCreationKeywordArguments(),
         )
-        widget.SetColumnWidth(0, 150)
-        widget.SetImageList(imageList, wx.IMAGE_LIST_SMALL)
+        # The type column, wherever the user moved it
+        names = [column.name() for column in self.columns()]
+        if "type" in names:
+            widget.SetColumnWidth(names.index("type"), 150)
+        widget.SetImageList(image_list, wx.IMAGE_LIST_SMALL)
         return widget
 
     def _createColumns(self):
@@ -373,11 +376,11 @@ class AttachmentViewer(
         ) + super().createActionToolBarUICommands()
 
     def typeImageIndices(
-        self, anAttachment, exists=os.path.exists
+        self, an_attachment, exists=os.path.exists
     ):  # pylint: disable=W0613
-        if anAttachment.type_ == "file":
+        if an_attachment.type_ == "file":
             attachment_base = settings.file.attachmentbase
-            if exists(anAttachment.normalizedLocation(attachment_base)):
+            if exists(an_attachment.normalized_location(attachment_base)):
                 index = image_list_cache.get_index(
                     "nuvola_mimetypes_application-x-dvi"
                 )
@@ -385,7 +388,7 @@ class AttachmentViewer(
                 index = image_list_cache.get_index(
                     "taskcoach_actions_fileopen_red"
                 )
-        elif self._isFolderUri(anAttachment):
+        elif self._isFolderUri(an_attachment):
             # Folder URI - use folder icon
             index = image_list_cache.get_index(
                 "nuvola_mimetypes_inode-directory"
@@ -396,7 +399,7 @@ class AttachmentViewer(
                     {
                         "uri": "nuvola_categories_applications-internet",
                         "mail": "nuvola_apps_email",
-                    }[anAttachment.type_]
+                    }[an_attachment.type_]
                 )
             except KeyError:
                 index = -1

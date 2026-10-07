@@ -42,14 +42,14 @@ class CtrlWithHideableColumnsUnderTest(
 
 
 class CtrlWithHideableColumnsTestsMixin(object):
-    def testColumnIsVisibleByDefault(self):
+    def test_column_is_visible_by_default(self):
         self.assertTrue(self.control.isColumnVisible(self.column1))
 
-    def testHideColumn(self):
+    def test_hide_column(self):
         self.control.showColumn(self.column1, show=False)
         self.assertFalse(self.control.isColumnVisible(self.column1))
 
-    def testShowColumn(self):
+    def test_show_column(self):
         self.control.showColumn(self.column1, show=False)
         self.control.showColumn(self.column1, show=True)
         self.assertTrue(self.control.isColumnVisible(self.column1))
@@ -74,16 +74,16 @@ class CtrlWithSortableColumnsUnderTest(
 
 
 class CtrlWithSortableColumnsTestsMixin(object):
-    def assertCurrentSortColumn(self, expectedSortColumn):
-        currentSortColumn = (
+    def assertCurrentSortColumn(self, expected_sort_column):
+        current_sort_column = (
             self.control._currentSortColumn()
         )  # pylint: disable=W0212
-        self.assertEqual(expectedSortColumn, currentSortColumn)
+        self.assertEqual(expected_sort_column, current_sort_column)
 
-    def testDefaultSortColumn(self):
+    def test_default_sort_column(self):
         self.assertCurrentSortColumn(self.column1)
 
-    def testShowSortColumn(self):
+    def test_show_sort_column(self):
         self.control.show_sort_column(self.column2)
         self.assertCurrentSortColumn(self.column2)
 

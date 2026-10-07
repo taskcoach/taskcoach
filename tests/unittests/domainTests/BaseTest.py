@@ -109,27 +109,27 @@ class ObjectTest(test.TestCase):
         self.object = base.Object()
         self.subclassObject = ObjectSubclass()
         self.eventsReceived = []
-        for eventType in (
+        for event_type in (
             self.object.subjectChangedEventType(),
             self.object.descriptionChangedEventType(),
             self.object.appearanceChangedEventType(),
         ):
-            patterns.Publisher().registerObserver(self.onEvent, eventType)
+            patterns.Publisher().registerObserver(self.onEvent, event_type)
 
     def onEvent(self, event):
         self.eventsReceived.append(event)
 
     # Basic tests:
 
-    def testCyclicReference(self):
-        domainObject = base.Object()
-        weak = weakref.ref(domainObject)
-        del domainObject  # Assuming CPython
+    def test_cyclic_reference(self):
+        domain_object = base.Object()
+        weak = weakref.ref(domain_object)
+        del domain_object  # Assuming CPython
         self.assertTrue(weak() is None)
 
     # Custom attributes tests:
 
-    def testCustomAttributes(self):
+    def test_custom_attributes(self):
         self.object.setDescription(
             "\n[mailto:cc=foo@bar.com]\n[mailto:cc=baz@spam.com]\n"
         )
@@ -140,32 +140,32 @@ class ObjectTest(test.TestCase):
 
     # Id tests:
 
-    def testSetIdOnCreation(self):
-        domainObject = base.Object(id="123")
-        self.assertEqual("123", domainObject.id())
+    def test_set_id_on_creation(self):
+        domain_object = base.Object(id="123")
+        self.assertEqual("123", domain_object.id())
 
-    def testIdIsAString(self):
+    def test_id_is_a_string(self):
         self.assertEqual(type(""), type(self.object.id()))
 
     def test_a_new_id_is_a_random_uuid(self):
         self.assertEqual(4, uuid.UUID(self.object.id()).version)
 
-    def testDifferentObjectsHaveDifferentIds(self):
+    def test_different_objects_have_different_ids(self):
         self.assertNotEqual(base.Object().id(), self.object.id())
 
-    def testCopyHasDifferentId(self):
-        objectId = self.object.id()  # Force generation of id
+    def test_copy_has_different_id(self):
+        object_id = self.object.id()  # Force generation of id
         copy = self.object.copy()
-        self.assertNotEqual(copy.id(), objectId)
+        self.assertNotEqual(copy.id(), object_id)
 
     # Creation date/time tests:
 
-    def testSetCreationDateTimeOnCreation(self):
+    def test_set_creation_date_time_on_creation(self):
         creation_datetime = date.DateTime(2012, 12, 12, 10, 0, 0)
         domain_object = base.Object(creationDateTime=creation_datetime)
         self.assertEqual(creation_datetime, domain_object.creationDateTime())
 
-    def testCreationDateTimeIsSetWhenNotPassed(self):
+    def test_creation_date_time_is_set_when_not_passed(self):
         now = date.Now()
         creation_datetime = self.object.creationDateTime()
         minute = date.TimeDelta(seconds=60)
@@ -174,7 +174,7 @@ class ObjectTest(test.TestCase):
 
     # Modification date/time tests:
 
-    def testSetModificationDateTimeOnCreation(self):
+    def test_set_modification_date_time_on_creation(self):
         modification_datetime = date.DateTime(2012, 12, 12, 10, 0, 0)
         domain_object = base.Object(modificationDateTime=modification_datetime)
         self.assertEqual(
@@ -215,18 +215,18 @@ class ObjectTest(test.TestCase):
 
     # Subject tests:
 
-    def testSubjectIsEmptyByDefault(self):
+    def test_subject_is_empty_by_default(self):
         self.assertEqual("", self.object.subject())
 
-    def testSetSubjectOnCreation(self):
-        domainObject = base.Object(subject="Hi")
-        self.assertEqual("Hi", domainObject.subject())
+    def test_set_subject_on_creation(self):
+        domain_object = base.Object(subject="Hi")
+        self.assertEqual("Hi", domain_object.subject())
 
-    def testSetSubject(self):
+    def test_set_subject(self):
         self.object.setSubject("New subject")
         self.assertEqual("New subject", self.object.subject())
 
-    def testSetSubjectCausesNotification(self):
+    def test_set_subject_causes_notification(self):
         self.object.setSubject("New subject")
         self.assertEqual(
             patterns.Event(
@@ -237,28 +237,28 @@ class ObjectTest(test.TestCase):
             self.eventsReceived[0],
         )
 
-    def testSetSubjectUnchangedDoesNotCauseNotification(self):
+    def test_set_subject_unchanged_does_not_cause_notification(self):
         self.object.setSubject("")
         self.assertFalse(self.eventsReceived)
 
-    def testSubjectChangedNotificationIsDifferentForSubclass(self):
+    def test_subject_changed_notification_is_different_for_subclass(self):
         self.subclassObject.setSubject("New")
         self.assertFalse(self.eventsReceived)
 
     # Description tests:
 
-    def testDescriptionIsEmptyByDefault(self):
+    def test_description_is_empty_by_default(self):
         self.assertFalse(self.object.description())
 
-    def testSetDescriptionOnCreation(self):
-        domainObject = base.Object(description="Hi")
-        self.assertEqual("Hi", domainObject.description())
+    def test_set_description_on_creation(self):
+        domain_object = base.Object(description="Hi")
+        self.assertEqual("Hi", domain_object.description())
 
-    def testSetDescription(self):
+    def test_set_description(self):
         self.object.setDescription("New description")
         self.assertEqual("New description", self.object.description())
 
-    def testSetDescriptionCausesNotification(self):
+    def test_set_description_causes_notification(self):
         self.object.setDescription("New description")
         self.assertEqual(
             patterns.Event(
@@ -269,145 +269,145 @@ class ObjectTest(test.TestCase):
             self.eventsReceived[0],
         )
 
-    def testSetDescriptionUnchangedDoesNotCauseNotification(self):
+    def test_set_description_unchanged_does_not_cause_notification(self):
         self.object.setDescription("")
         self.assertFalse(self.eventsReceived)
 
-    def testDescriptionChangedNotificationIsDifferentForSubclass(self):
+    def test_description_changed_notification_is_different_for_subclass(self):
         self.subclassObject.setDescription("New")
         self.assertFalse(self.eventsReceived)
 
     # Copy tests:
 
-    def testCopy_IdIsNotCopied(self):
+    def test_copy_id_is_not_copied(self):
         copy = self.object.copy()
         self.assertNotEqual(copy.id(), self.object.id())
 
-    def testCopy_CreationDateTimeIsNotCopied(self):
+    def test_copy_creation_date_time_is_not_copied(self):
         copy = self.object.copy()
         # Use >= to prevent failures on fast computers with low time granularity
         self.assertTrue(
             copy.creationDateTime() >= self.object.creationDateTime()
         )
 
-    def testCopy_ModificationDateTimeIsNotCopied(self):
+    def test_copy_modification_date_time_is_not_copied(self):
         self.object.set_modification_datetime(
             date.DateTime(2013, 1, 1, 1, 0, 0)
         )
         copy = self.object.copy()
         self.assertEqual(copy.creationDateTime(), copy.modificationDateTime())
 
-    def testCopy_SubjectIsCopied(self):
+    def test_copy_subject_is_copied(self):
         self.object.setSubject("New subject")
         copy = self.object.copy()
         self.assertEqual(copy.subject(), self.object.subject())
 
-    def testCopy_DescriptionIsCopied(self):
+    def test_copy_description_is_copied(self):
         self.object.setDescription("New description")
         copy = self.object.copy()
         self.assertEqual(copy.description(), self.object.description())
 
-    def testCopy_ForegroundColorIsCopied(self):
+    def test_copy_foreground_color_is_copied(self):
         self.object.setForegroundColor(wx.RED)
         copy = self.object.copy()
         self.assertEqual(copy.foregroundColor(), self.object.foregroundColor())
 
-    def testCopy_BackgroundColorIsCopied(self):
+    def test_copy_background_color_is_copied(self):
         self.object.setBackgroundColor(wx.RED)
         copy = self.object.copy()
         self.assertEqual(copy.backgroundColor(), self.object.backgroundColor())
 
-    def testCopy_FontIsCopied(self):
+    def test_copy_font_is_copied(self):
         self.object.setFont(wx.SWISS_FONT)
         copy = self.object.copy()
         self.assertEqual(copy.font(), self.object.font())
 
-    def testCopy_IconIsCopied(self):
+    def test_copy_icon_is_copied(self):
         self.object.set_icon_id("icon")
         copy = self.object.copy()
         self.assertEqual(copy.icon_id(), self.object.icon_id())
 
-    def testCopy_ShouldUseSubclassForCopy(self):
+    def test_copy_should_use_subclass_for_copy(self):
         copy = self.subclassObject.copy()
         self.assertEqual(copy.__class__, self.subclassObject.__class__)
 
     # Color tests
 
-    def testDefaultForegroundColor(self):
+    def test_default_foreground_color(self):
         self.assertEqual(None, self.object.foregroundColor())
 
-    def testSetForegroundColor(self):
+    def test_set_foreground_color(self):
         self.object.setForegroundColor(wx.GREEN)
         self.assertEqual(wx.GREEN, self.object.foregroundColor())
 
-    def testSetForegroundColorWithTupleColor(self):
+    def test_set_foreground_color_with_tuple_color(self):
         self.object.setForegroundColor((255, 0, 0, 255))
         self.assertEqual(wx.RED, self.object.foregroundColor())
 
-    def testSetForegroundColorOnCreation(self):
-        domainObject = base.Object(fgColor=wx.GREEN)
-        self.assertEqual(wx.GREEN, domainObject.foregroundColor())
+    def test_set_foreground_color_on_creation(self):
+        domain_object = base.Object(fgColor=wx.GREEN)
+        self.assertEqual(wx.GREEN, domain_object.foregroundColor())
 
-    def testForegroundColorChangedNotification(self):
+    def test_foreground_color_changed_notification(self):
         self.object.setForegroundColor(wx.BLACK)
         self.assertEqual(1, len(self.eventsReceived))
 
-    def testDefaultBackgroundColor(self):
+    def test_default_background_color(self):
         self.assertEqual(None, self.object.backgroundColor())
 
-    def testSetBackgroundColor(self):
+    def test_set_background_color(self):
         self.object.setBackgroundColor(wx.RED)
         self.assertEqual(wx.RED, self.object.backgroundColor())
 
-    def testSetBackgroundColorWithTupleColor(self):
+    def test_set_background_color_with_tuple_color(self):
         self.object.setBackgroundColor((255, 0, 0, 255))
         self.assertEqual(wx.RED, self.object.backgroundColor())
 
-    def testSetBackgroundColorOnCreation(self):
-        domainObject = base.Object(bgColor=wx.GREEN)
-        self.assertEqual(wx.GREEN, domainObject.backgroundColor())
+    def test_set_background_color_on_creation(self):
+        domain_object = base.Object(bgColor=wx.GREEN)
+        self.assertEqual(wx.GREEN, domain_object.backgroundColor())
 
-    def testBackgroundColorChangedNotification(self):
+    def test_background_color_changed_notification(self):
         self.object.setBackgroundColor(wx.BLACK)
         self.assertEqual(1, len(self.eventsReceived))
 
     # Font tests:
 
-    def testDefaultFont(self):
+    def test_default_font(self):
         self.assertEqual(None, self.object.font())
 
-    def testSetFont(self):
+    def test_set_font(self):
         self.object.setFont(wx.SWISS_FONT)
         self.assertEqual(wx.SWISS_FONT, self.object.font())
 
-    def testSetFontOnCreation(self):
-        domainObject = base.Object(font=wx.SWISS_FONT)
-        self.assertEqual(wx.SWISS_FONT, domainObject.font())
+    def test_set_font_on_creation(self):
+        domain_object = base.Object(font=wx.SWISS_FONT)
+        self.assertEqual(wx.SWISS_FONT, domain_object.font())
 
-    def testFontChangedNotification(self):
+    def test_font_changed_notification(self):
         self.object.setFont(wx.SWISS_FONT)
         self.assertEqual(1, len(self.eventsReceived))
 
     # Icon tests:
 
-    def testDefaultIcon(self):
+    def test_default_icon(self):
         self.assertEqual("", self.object.icon_id())
 
-    def testSetIcon(self):
+    def test_set_icon(self):
         self.object.set_icon_id("icon")
         self.assertEqual("icon", self.object.icon_id())
 
-    def testSetIconOnCreation(self):
-        domainObject = base.Object(icon="icon")
-        self.assertEqual("icon", domainObject.icon_id())
+    def test_set_icon_on_creation(self):
+        domain_object = base.Object(icon="icon")
+        self.assertEqual("icon", domain_object.icon_id())
 
-    def testIconChangedNotification(self):
+    def test_icon_changed_notification(self):
         self.object.set_icon_id("icon")
         self.assertEqual(1, len(self.eventsReceived))
 
     # Event types:
 
-    def testModificationEventTypes(self):
+    def test_modification_event_types(self):
         self.assertEqual(
             [
                 self.object.subjectChangedEventType(),
@@ -436,51 +436,55 @@ class CompositeObjectTest(test.TestCase):
     def removeChild(self):
         self.compositeObject.removeChild(self.child)
 
-    def testIsExpanded(self):
+    def test_is_expanded(self):
         self.assertFalse(self.compositeObject.isExpanded())
 
-    def testExpand(self):
+    def test_expand(self):
         self.compositeObject.expand()
         self.assertTrue(self.compositeObject.isExpanded())
 
-    def testCollapse(self):
+    def test_collapse(self):
         self.compositeObject.expand()
         self.compositeObject.expand(False)
         self.assertFalse(self.compositeObject.isExpanded())
 
-    def testSetExpansionStateViaConstructor(self):
-        compositeObject = base.CompositeObject(expandedContexts=["None"])
-        self.assertTrue(compositeObject.isExpanded())
+    def test_set_expansion_state_via_constructor(self):
+        composite_object = base.CompositeObject(expandedContexts=["None"])
+        self.assertTrue(composite_object.isExpanded())
 
-    def testSetExpansionStatesViaConstructor(self):
-        compositeObject = base.CompositeObject(
+    def test_set_expansion_states_via_constructor(self):
+        composite_object = base.CompositeObject(
             expandedContexts=["context1", "context2"]
         )
         self.assertEqual(
             ["context1", "context2"],
-            sorted(compositeObject.expandedContexts()),
+            sorted(composite_object.expandedContexts()),
         )
 
-    def testExpandInContext_DoesNotChangeExpansionStateInDefaultContext(self):
+    def test_expand_in_context_keeps_expansion_in_default_context(
+        self,
+    ):
         self.compositeObject.expand(context="some_viewer")
         self.assertFalse(self.compositeObject.isExpanded())
 
-    def testExpandInContext_DoesChangeExpansionStateInGivenContext(self):
+    def test_expand_in_context_does_change_expansion_state_in_given_context(
+        self,
+    ):
         self.compositeObject.expand(context="some_viewer")
         self.assertTrue(self.compositeObject.isExpanded(context="some_viewer"))
 
-    def testIsExpandedInUnknownContext_ReturnsFalse(self):
+    def test_is_expanded_in_unknown_context_returns_false(self):
         self.assertFalse(self.compositeObject.isExpanded(context="whatever"))
 
-    def testGetContextsWhereExpanded(self):
+    def test_get_contexts_where_expanded(self):
         self.assertEqual([], self.compositeObject.expandedContexts())
 
-    def testRecursiveSubject(self):
+    def test_recursive_subject(self):
         self.compositeObject.setSubject("parent")
         self.addChild(subject="child")
         self.assertEqual("parent -> child", self.child.subject(recursive=True))
 
-    def testSubjectNotification(self):
+    def test_subject_notification(self):
         self.addChild(subject="child")
         patterns.Publisher().registerObserver(
             self.onEvent,
@@ -516,7 +520,7 @@ class CompositeObjectTest(test.TestCase):
             self.compositeObject.shown_icon_id(),
         )
 
-    def testCopy(self):
+    def test_copy(self):
         self.compositeObject.expand(context="some_viewer")
         copy = self.compositeObject.copy()
         # pylint: disable=E1101
@@ -526,7 +530,7 @@ class CompositeObjectTest(test.TestCase):
         self.compositeObject.expand(context="another_viewer")
         self.assertFalse("another_viewer" in copy.expandedContexts())
 
-    def testModificationEventTypes(self):
+    def test_modification_event_types(self):
         self.assertEqual(
             [
                 self.compositeObject.addChildEventType(),
@@ -545,12 +549,12 @@ class BaseCollectionTest(test.TestCase):
     def setUp(self):
         self.collection = base.Collection()
 
-    def testLookupByIdWhenCollectionIsEmptyRaisesIndexError(self):
+    def test_lookup_by_id_when_collection_is_empty_raises_index_error(self):
         self.assertRaises(IndexError, self.collection.getObjectById, "id")
 
-    def testLookupIdWhenObjectIsInCollection(self):
-        domainObject = base.CompositeObject()
-        self.collection.append(domainObject)
+    def test_lookup_id_when_object_is_in_collection(self):
+        domain_object = base.CompositeObject()
+        self.collection.append(domain_object)
         self.assertEqual(
-            domainObject, self.collection.getObjectById(domainObject.id())
+            domain_object, self.collection.getObjectById(domain_object.id())
         )

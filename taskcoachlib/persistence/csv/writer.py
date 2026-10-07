@@ -42,28 +42,28 @@ class CSVWriter(object):
             items = self._getAllItems(viewer, taskFile)
             if not columns:
                 return 0
-            rowBuilder = generator.RowBuilder(
+            row_builder = generator.RowBuilder(
                 columns, False, separateDateAndTimeColumns
             )
-            csvRows = rowBuilder.rows(items)
+            csv_rows = row_builder.rows(items)
         else:
-            csvRows = generator.viewer2csv(
+            csv_rows = generator.viewer2csv(
                 viewer, selectionOnly, separateDateAndTimeColumns, columns
             )
         self.__fd.write("\ufeff")  # UTF-8 BOM for Excel compatibility
-        csv.writer(self.__fd).writerows(csvRows)
-        return len(csvRows) - 1  # Don't count header row
+        csv.writer(self.__fd).writerows(csv_rows)
+        return len(csv_rows) - 1  # Don't count header row
 
-    def _getAllItems(self, viewerType, taskFile):
+    def _getAllItems(self, viewer_type, taskFile):
         """Get all items from taskFile based on type constant."""
         if taskFile is None:
             return []
-        if viewerType == self.ALL_TASKS:
+        if viewer_type == self.ALL_TASKS:
             return list(taskFile.tasks())
-        elif viewerType == self.ALL_EFFORTS:
+        elif viewer_type == self.ALL_EFFORTS:
             return list(taskFile.efforts())
-        elif viewerType == self.ALL_CATEGORIES:
+        elif viewer_type == self.ALL_CATEGORIES:
             return list(taskFile.categories())
-        elif viewerType == self.ALL_NOTES:
+        elif viewer_type == self.ALL_NOTES:
             return list(taskFile.notes())
         return []

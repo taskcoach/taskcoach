@@ -99,22 +99,22 @@ def getTextCtrlContentOffset():
         # Content width = controlWidth - offsetX * 2
     """
     # Border padding (3D edge for DrawTextCtrl)
-    borderPadX = wx.SystemSettings.GetMetric(wx.SYS_EDGE_X)
-    borderPadY = wx.SystemSettings.GetMetric(wx.SYS_EDGE_Y)
-    if borderPadX < 0:
-        borderPadX = 2  # Fallback if not supported
-    if borderPadY < 0:
-        borderPadY = 2
+    border_pad_x = wx.SystemSettings.GetMetric(wx.SYS_EDGE_X)
+    border_pad_y = wx.SystemSettings.GetMetric(wx.SYS_EDGE_Y)
+    if border_pad_x < 0:
+        border_pad_x = 2  # Fallback if not supported
+    if border_pad_y < 0:
+        border_pad_y = 2
 
     # Inner gap between border and content (1px gap in standard controls)
-    innerGapX = wx.SystemSettings.GetMetric(wx.SYS_BORDER_X)
-    innerGapY = wx.SystemSettings.GetMetric(wx.SYS_BORDER_Y)
-    if innerGapX < 0:
-        innerGapX = 1
-    if innerGapY < 0:
-        innerGapY = 1
+    inner_gap_x = wx.SystemSettings.GetMetric(wx.SYS_BORDER_X)
+    inner_gap_y = wx.SystemSettings.GetMetric(wx.SYS_BORDER_Y)
+    if inner_gap_x < 0:
+        inner_gap_x = 1
+    if inner_gap_y < 0:
+        inner_gap_y = 1
 
-    return (borderPadX + innerGapX, borderPadY + innerGapY)
+    return (border_pad_x + inner_gap_x, border_pad_y + inner_gap_y)
 
 
 def getLocaleDateFormat(override=None):
@@ -373,27 +373,27 @@ def monthcalendarex(year, month, weeks=0):
     Includes days from previous/next months to fill complete weeks.
     The weeks parameter adds extra weeks before and after the month.
     """
-    weekDay, monthLength = calendar.monthrange(year, month)
-    startDate = datetime.date(year, month, 1)
-    endDate = datetime.date(year, month, monthLength)
+    week_day, month_length = calendar.monthrange(year, month)
+    start_date = datetime.date(year, month, 1)
+    end_date = datetime.date(year, month, month_length)
     # To start of week
-    startDate -= datetime.timedelta(
-        days=(startDate.weekday() - calendar.firstweekday()) % 7
+    start_date -= datetime.timedelta(
+        days=(start_date.weekday() - calendar.firstweekday()) % 7
     )
-    endDate += datetime.timedelta(
-        days=(7 + calendar.firstweekday() - endDate.weekday()) % 7
+    end_date += datetime.timedelta(
+        days=(7 + calendar.firstweekday() - end_date.weekday()) % 7
     )
-    startDate -= datetime.timedelta(weeks=weeks)
-    endDate += datetime.timedelta(weeks=weeks)
-    monthCal = list()
-    while startDate < endDate:
+    start_date -= datetime.timedelta(weeks=weeks)
+    end_date += datetime.timedelta(weeks=weeks)
+    month_cal = list()
+    while start_date < end_date:
         week = list()
-        for dayNumber in range(7):
-            theDate = startDate + datetime.timedelta(days=dayNumber)
-            week.append((theDate.year, theDate.month, theDate.day))
-        monthCal.append(week)
-        startDate += datetime.timedelta(weeks=1)
-    return monthCal
+        for day_number in range(7):
+            the_date = start_date + datetime.timedelta(days=day_number)
+            week.append((the_date.year, the_date.month, the_date.day))
+        month_cal.append(week)
+        start_date += datetime.timedelta(weeks=1)
+    return month_cal
 
 
 # Field type definitions: (width, min, max, pad_zeros)
@@ -540,12 +540,12 @@ class _PopupWindow(wx.Dialog):
 class _ChoicesPopup(_PopupWindow):
     """Dropdown popup for field choices. Width matches target field."""
 
-    def __init__(self, choices, value, minWidth, font, *args, **kwargs):
+    def __init__(self, choices, value, min_width, font, *args, **kwargs):
         self.__choices = choices
         self.__highlightedValue = (
             value  # Currently highlighted (mouse or keys)
         )
-        self.__minWidth = minWidth  # Minimum width to match field
+        self.__minWidth = min_width  # Minimum width to match field
         self.__font = font  # Font from parent control
         super().__init__(*args, **kwargs)
 
@@ -558,18 +558,19 @@ class _ChoicesPopup(_PopupWindow):
 
     def _getExtent(self, dc):
         dc.SetFont(self.__font)
-        maxW = self.__minWidth  # Start with minimum width from field
+        max_w = self.__minWidth  # Start with minimum width from field
         # Standard item padding: 2px vertical, 4px horizontal
-        vPad = 2
-        hPad = 4
-        contentOffsetX, contentOffsetY = getTextCtrlContentOffset()
-        totH = 0
+        v_pad = 2
+        h_pad = 4
+        content_offset_x, content_offset_y = getTextCtrlContentOffset()
+        tot_h = 0
         for label, value in self.__choices:
             tw, th = dc.GetTextExtent(str(label))
-            maxW = max(tw, maxW)
-            totH += th + vPad * 2  # Add vertical padding per item
+            max_w = max(tw, max_w)
+            tot_h += th + v_pad * 2  # Add vertical padding per item
         return wx.Size(
-            maxW + hPad * 2 + contentOffsetX * 2, totH + contentOffsetY * 2
+            max_w + h_pad * 2 + content_offset_x * 2,
+            tot_h + content_offset_y * 2,
         )
 
     def _onPaint(self, event):
@@ -584,16 +585,16 @@ class _ChoicesPopup(_PopupWindow):
         dc.SetFont(self.__font)
 
         # Standard item padding
-        vPad = 2
-        hPad = 4
-        contentOffsetX, contentOffsetY = getTextCtrlContentOffset()
-        y = contentOffsetY
+        v_pad = 2
+        h_pad = 4
+        content_offset_x, content_offset_y = getTextCtrlContentOffset()
+        y = content_offset_y
 
         for label, value in self.__choices:
             tw, th = dc.GetTextExtent(label)
-            itemH = th + vPad * 2
+            item_h = th + v_pad * 2
             item_rect = wx.Rect(
-                contentOffsetX, y, w - contentOffsetX * 2, itemH
+                content_offset_x, y, w - content_offset_x * 2, item_h
             )
 
             is_highlighted = value == self.__highlightedValue
@@ -608,8 +609,8 @@ class _ChoicesPopup(_PopupWindow):
                 )
 
             # Draw text right-aligned with padding, vertically centered
-            textY = y + vPad
-            textX = w - contentOffsetX - hPad - tw
+            text_y = y + v_pad
+            text_x = w - content_offset_x - h_pad - tw
             if is_highlighted:
                 dc.SetTextForeground(
                     wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
@@ -618,9 +619,9 @@ class _ChoicesPopup(_PopupWindow):
                 dc.SetTextForeground(
                     wx.SystemSettings.GetColour(wx.SYS_COLOUR_LISTBOXTEXT)
                 )
-            dc.DrawText(label, textX, textY)
+            dc.DrawText(label, text_x, text_y)
 
-            y += itemH
+            y += item_h
 
     def __highlightedIndex(self):
         for idx, (label, value) in enumerate(self.__choices):
@@ -629,8 +630,8 @@ class _ChoicesPopup(_PopupWindow):
         return 0
 
     def HandleKey(self, event):
-        keyCode = event.GetKeyCode()
-        if keyCode == wx.WXK_UP:
+        key_code = event.GetKeyCode()
+        if key_code == wx.WXK_UP:
             self.__highlightedValue = self.__choices[
                 (self.__highlightedIndex() + len(self.__choices) - 1)
                 % len(self.__choices)
@@ -638,59 +639,59 @@ class _ChoicesPopup(_PopupWindow):
             self.Refresh()
             return True
 
-        if keyCode == wx.WXK_DOWN:
+        if key_code == wx.WXK_DOWN:
             self.__highlightedValue = self.__choices[
                 (self.__highlightedIndex() + 1) % len(self.__choices)
             ][1]
             self.Refresh()
             return True
 
-        if keyCode == wx.WXK_RETURN:
+        if key_code == wx.WXK_RETURN:
             self.ProcessEvent(
                 ChoiceSelectedEvent(self, self.__highlightedValue)
             )
             return True
 
-        if keyCode == wx.WXK_ESCAPE:
+        if key_code == wx.WXK_ESCAPE:
             self.Dismiss()
             return True
 
         return False
 
     def _onLeftUp(self, event):
-        vPad = 2
-        _, contentOffsetY = getTextCtrlContentOffset()
-        y = contentOffsetY
+        v_pad = 2
+        _, content_offset_y = getTextCtrlContentOffset()
+        y = content_offset_y
         dc = wx.ClientDC(event.GetEventObject())
         dc.SetFont(self.__font)
         for label, value in self.__choices:
             tw, th = dc.GetTextExtent(label)
-            itemH = th + vPad * 2
-            if event.GetY() >= y and event.GetY() < y + itemH:
+            item_h = th + v_pad * 2
+            if event.GetY() >= y and event.GetY() < y + item_h:
                 self.ProcessEvent(ChoiceSelectedEvent(self, value))
                 break
-            y += itemH
+            y += item_h
 
     def _onMotion(self, event):
         """Track mouse movement to highlight item under cursor."""
-        vPad = 2
-        _, contentOffsetY = getTextCtrlContentOffset()
-        y = contentOffsetY
+        v_pad = 2
+        _, content_offset_y = getTextCtrlContentOffset()
+        y = content_offset_y
         dc = wx.ClientDC(event.GetEventObject())
         dc.SetFont(self.__font)
-        newHighlight = None
+        new_highlight = None
         for label, value in self.__choices:
             tw, th = dc.GetTextExtent(label)
-            itemH = th + vPad * 2
-            if event.GetY() >= y and event.GetY() < y + itemH:
-                newHighlight = value
+            item_h = th + v_pad * 2
+            if event.GetY() >= y and event.GetY() < y + item_h:
+                new_highlight = value
                 break
-            y += itemH
+            y += item_h
         if (
-            newHighlight is not None
-            and newHighlight != self.__highlightedValue
+            new_highlight is not None
+            and new_highlight != self.__highlightedValue
         ):
-            self.__highlightedValue = newHighlight
+            self.__highlightedValue = new_highlight
             self.Refresh()
 
     def _onLeaveWindow(self, event):
@@ -746,14 +747,14 @@ class NumericField:
         return self.__value
 
     def SetValue(self, value):
-        oldValue = self.__value
+        old_value = self.__value
         value = max(self.__minVal, min(self.__maxVal, int(value)))
         self.__value = value
         # Always validate (e.g., DateComboCustomCtrl adjusts day when month changes)
         result = self.__observer.ValidateChange(self, value)
         if result is None:
             # Validation rejected - restore old value
-            self.__value = oldValue
+            self.__value = old_value
             return
         if result != value:
             # Validation modified the value
@@ -812,9 +813,9 @@ class NumericField:
         # Special handling for AM/PM period field
         if self.__name == "period":
             # Use the wider of AM/PM for consistent sizing
-            amW, amH = dc.GetTextExtent("AM")
-            pmW, pmH = dc.GetTextExtent("PM")
-            return (max(amW, pmW), max(amH, pmH))
+            am_w, am_h = dc.GetTextExtent("AM")
+            pm_w, pm_h = dc.GetTextExtent("PM")
+            return (max(am_w, pm_w), max(am_h, pm_h))
         w = max(self.__width, 1)
         if self._negativePrefix:
             w += 1  # Extra char for "-" prefix
@@ -860,16 +861,16 @@ class NumericField:
 
     def HandleKey(self, event):
         """Handle keyboard input. Returns True if handled."""
-        keyCode = event.GetKeyCode()
+        key_code = event.GetKeyCode()
 
-        if keyCode == wx.WXK_UP:
+        if key_code == wx.WXK_UP:
             new_val = self.__value + 1
             if new_val > self.__maxVal:
                 new_val = self.__minVal
             self.SetValue(new_val)
             return True
 
-        if keyCode == wx.WXK_DOWN:
+        if key_code == wx.WXK_DOWN:
             new_val = self.__value - 1
             if new_val < self.__minVal:
                 new_val = self.__maxVal
@@ -878,23 +879,23 @@ class NumericField:
 
         # Special handling for AM/PM period field
         if self.__name == "period":
-            if keyCode in (ord("A"), ord("a")):
+            if key_code in (ord("A"), ord("a")):
                 self.SetValue(0)  # AM
                 return True
-            if keyCode in (ord("P"), ord("p")):
+            if key_code in (ord("P"), ord("p")):
                 self.SetValue(1)  # PM
                 return True
             # Space bar toggles AM/PM
-            if keyCode == wx.WXK_SPACE:
+            if key_code == wx.WXK_SPACE:
                 self.SetValue(1 - self.__value)
                 return True
             return False  # Don't allow numeric input for period field
 
         # Handle numeric input
-        if wx.WXK_NUMPAD0 <= keyCode <= wx.WXK_NUMPAD9:
-            number = keyCode - wx.WXK_NUMPAD0
-        elif ord("0") <= keyCode <= ord("9"):
-            number = keyCode - ord("0")
+        if wx.WXK_NUMPAD0 <= key_code <= wx.WXK_NUMPAD9:
+            number = key_code - wx.WXK_NUMPAD0
+        elif ord("0") <= key_code <= ord("9"):
+            number = key_code - ord("0")
         else:
             number = -1
 
@@ -923,12 +924,12 @@ class NumericField:
                 self.__digitCount = 0
                 self.__lastKeyTime = 0
                 # Advance unless this is the last field
-                fieldList = self.__observer._fieldList
-                if fieldList and fieldList.index(self) < len(fieldList) - 1:
+                field_list = self.__observer._fieldList
+                if field_list and field_list.index(self) < len(field_list) - 1:
                     self.__observer._focusNextField()
             return True
 
-        if keyCode in (wx.WXK_BACK, wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
+        if key_code in (wx.WXK_BACK, wx.WXK_DELETE, wx.WXK_NUMPAD_DELETE):
             self.SetValue(int(self.__value / 10))
             return True
 
@@ -984,40 +985,40 @@ class MaskedFieldsCtrl(wx.Panel):
         )
 
         # Build widgets from elements
-        curX = self.MARGIN
-        minW = 0
-        minH = 0
+        cur_x = self.MARGIN
+        min_w = 0
+        min_h = 0
 
         dc = wx.ClientDC(self)
         dc.SetFont(self.GetFont())
 
         for i, elem in enumerate(elements):
-            fieldType = elem[0]
+            field_type = elem[0]
 
-            if fieldType == "literal":
+            if field_type == "literal":
                 # Literal text label
                 label = str(elem[1])
                 tw, th = dc.GetTextExtent(label)
-                self._widgets.append((label, curX, self.MARGIN, tw, th))
-                minW += tw
-                minH = max(minH, th)
-                curX += tw
-            elif fieldType in FIELD_TYPES:
+                self._widgets.append((label, cur_x, self.MARGIN, tw, th))
+                min_w += tw
+                min_h = max(min_h, th)
+                cur_x += tw
+            elif field_type in FIELD_TYPES:
                 # Known field type
                 # Element format: (fieldType, value) or (fieldType, value, choices)
                 # choices can be a list of values [1, 2, 3] or list of tuples [("label", value), ...]
                 # If no choices provided, there is no dropdown
                 value = elem[1] if len(elem) > 1 else 0
-                customChoices = elem[2] if len(elem) > 2 else None
+                custom_choices = elem[2] if len(elem) > 2 else None
 
-                width, min_val, max_val, pad_zeros = FIELD_TYPES[fieldType]
+                width, min_val, max_val, pad_zeros = FIELD_TYPES[field_type]
 
                 # Pass choices to NumericField - it handles conversion and callables
                 # Choices can be: None, list of values, list of tuples, or callable
-                choices = customChoices
+                choices = custom_choices
 
                 field = NumericField(
-                    fieldType,
+                    field_type,
                     width,
                     min_val,
                     max_val,
@@ -1026,17 +1027,19 @@ class MaskedFieldsCtrl(wx.Panel):
                     self,
                     pad_zeros,
                 )
-                self._fields[fieldType] = field
+                self._fields[field_type] = field
                 self._fieldList.append(field)
 
                 w, h = field.GetExtent(dc)
-                self._widgets.append((field, curX, self.MARGIN, w, h))
-                minW += w
-                minH = max(minH, h)
-                curX += w
+                self._widgets.append((field, cur_x, self.MARGIN, w, h))
+                min_w += w
+                min_h = max(min_h, h)
+                cur_x += w
 
         # Set minimum size and remember the natural content size for centering
-        self._naturalSize = wx.Size(curX + self.MARGIN, minH + 2 * self.MARGIN)
+        self._naturalSize = wx.Size(
+            cur_x + self.MARGIN, min_h + 2 * self.MARGIN
+        )
         self.SetMinSize(self._naturalSize)
 
         # Focus first field
@@ -1053,13 +1056,13 @@ class MaskedFieldsCtrl(wx.Panel):
     def _onPaint(self, event):
         dc = wx.PaintDC(self)
         w, h = self.GetClientSize()
-        hasFocus = self._hasFocus
+        has_focus = self._hasFocus
 
         # Draw native text control border using system theme
         # (skip when embedded inside ComboCtrl which provides its own frame)
         if self._drawFrame:
             flags = 0
-            if hasFocus and not self._readOnly:
+            if has_focus and not self._readOnly:
                 flags |= wx.CONTROL_FOCUSED
             if not self.IsEnabled() or self._readOnly:
                 flags |= wx.CONTROL_DISABLED
@@ -1070,27 +1073,27 @@ class MaskedFieldsCtrl(wx.Panel):
         dc.SetFont(self.GetFont())
 
         # Offset to center content when control is larger than minimum
-        xOff, yOff = self._getContentOffset()
+        x_off, y_off = self._getContentOffset()
 
         if self.IsEnabled() and not self._readOnly:
             # Normal editable mode - show values
-            textColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+            text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
             for widget, x, y, ww, hh in self._widgets:
                 if isinstance(widget, str):
-                    dc.SetTextForeground(textColour)
-                    dc.DrawText(widget, int(x + xOff), int(y + yOff))
+                    dc.SetTextForeground(text_colour)
+                    dc.DrawText(widget, int(x + x_off), int(y + y_off))
                 else:
                     # NumericField - draw focus highlight only if focused
-                    if widget == self._focus and hasFocus:
-                        drawFocusRect(self, dc, x + xOff, y + yOff, ww, hh)
+                    if widget == self._focus and has_focus:
+                        drawFocusRect(self, dc, x + x_off, y + y_off, ww, hh)
                         dc.SetTextForeground(
                             wx.SystemSettings.GetColour(
                                 wx.SYS_COLOUR_HIGHLIGHTTEXT
                             )
                         )
                     else:
-                        dc.SetTextForeground(textColour)
-                    widget.PaintValue(dc, x + xOff, y + yOff, ww, hh)
+                        dc.SetTextForeground(text_colour)
+                    widget.PaintValue(dc, x + x_off, y + y_off, ww, hh)
         elif not self.IsEnabled():
             # Disabled mode (unchecked checkbox) - show "N/A" centered
             # Values are preserved internally but hidden behind "N/A"
@@ -1109,12 +1112,12 @@ class MaskedFieldsCtrl(wx.Panel):
             )
             for widget, x, y, ww, hh in self._widgets:
                 if isinstance(widget, str):
-                    dc.DrawText(widget, int(x + xOff), int(y + yOff))
+                    dc.DrawText(widget, int(x + x_off), int(y + y_off))
                 else:
-                    widget.PaintValue(dc, x + xOff, y + yOff, ww, hh)
+                    widget.PaintValue(dc, x + x_off, y + y_off, ww, hh)
 
     def _onChar(self, event):
-        keyCode = event.GetKeyCode()
+        key_code = event.GetKeyCode()
 
         if not self._focus:
             event.Skip()
@@ -1122,18 +1125,18 @@ class MaskedFieldsCtrl(wx.Panel):
 
         # Block all input except Tab in read-only mode
         if self._readOnly:
-            if keyCode == wx.WXK_TAB:
+            if key_code == wx.WXK_TAB:
                 self.Navigate(not event.ShiftDown())
             return
 
         # Tab exits control (matches Entry behavior)
-        if keyCode == wx.WXK_TAB:
+        if key_code == wx.WXK_TAB:
             self.DismissPopup()
             self.Navigate(not event.ShiftDown())
             return
 
         # Escape dismisses popup
-        if keyCode == wx.WXK_ESCAPE:
+        if key_code == wx.WXK_ESCAPE:
             if self._popup:
                 self.DismissPopup()
                 return
@@ -1141,7 +1144,7 @@ class MaskedFieldsCtrl(wx.Panel):
             return
 
         # Enter or F4 toggles popup for current field
-        if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_F4):
+        if key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_F4):
             if self._popup:
                 self.DismissPopup()
             else:
@@ -1149,10 +1152,10 @@ class MaskedFieldsCtrl(wx.Panel):
             return
 
         # Left/Right arrows wrap within subfields (matches Entry behavior)
-        if keyCode == wx.WXK_LEFT:
+        if key_code == wx.WXK_LEFT:
             self._focusPrevField()
             return
-        if keyCode == wx.WXK_RIGHT:
+        if key_code == wx.WXK_RIGHT:
             self._focusNextField()
             return
 
@@ -1171,8 +1174,8 @@ class MaskedFieldsCtrl(wx.Panel):
             # Clamp + validate old field before leaving
             self._focus.SetValue(self._focus.GetValue())
             # Wrap: last -> first
-            nextIdx = (idx + 1) % len(self._fieldList)
-            self._focus = self._fieldList[nextIdx]
+            next_idx = (idx + 1) % len(self._fieldList)
+            self._focus = self._fieldList[next_idx]
             self._focus.ResetState()
             self.DismissPopup()
             self.Refresh()
@@ -1188,8 +1191,8 @@ class MaskedFieldsCtrl(wx.Panel):
             # Clamp + validate old field before leaving
             self._focus.SetValue(self._focus.GetValue())
             # Wrap: first -> last
-            prevIdx = (idx - 1) % len(self._fieldList)
-            self._focus = self._fieldList[prevIdx]
+            prev_idx = (idx - 1) % len(self._fieldList)
+            self._focus = self._fieldList[prev_idx]
             self._focus.ResetState()
             self.DismissPopup()
             self.Refresh()
@@ -1200,14 +1203,14 @@ class MaskedFieldsCtrl(wx.Panel):
         """Open dropdown popup for currently focused field."""
         if not self._focus:
             return
-        xOff, yOff = self._getContentOffset()
+        x_off, y_off = self._getContentOffset()
         # Find the widget entry for the focused field
         for widget, x, y, w, h in self._widgets:
             if widget == self._focus:
                 choices = self._focus.GetChoices()
                 if choices:
                     self._showPopup(
-                        self._focus, choices, x + xOff, y + yOff, w, h
+                        self._focus, choices, x + x_off, y + y_off, w, h
                     )
                 break
 
@@ -1219,9 +1222,9 @@ class MaskedFieldsCtrl(wx.Panel):
         """Offset to center content when control is larger than natural size."""
         cw, ch = self.GetClientSize()
         mw, mh = self._naturalSize
-        xOff = max(0, (cw - mw) // 2) if cw > mw else 0
-        yOff = max(0, (ch - mh) // 2) if ch > mh else 0
-        return xOff, yOff
+        x_off = max(0, (cw - mw) // 2) if cw > mw else 0
+        y_off = max(0, (ch - mh) // 2) if ch > mh else 0
+        return x_off, y_off
 
     def _onLeftUp(self, event):
         pt = event.GetPosition()
@@ -1231,13 +1234,13 @@ class MaskedFieldsCtrl(wx.Panel):
             event.Skip()
             return
 
-        xOff, yOff = self._getContentOffset()
+        x_off, y_off = self._getContentOffset()
         # Find which widget was clicked
         for widget, x, y, w, h in self._widgets:
             if isinstance(widget, NumericField):
-                if (x + xOff) <= pt.x <= (x + xOff) + w and (
-                    y + yOff
-                ) <= pt.y <= (y + yOff) + h:
+                if (x + x_off) <= pt.x <= (x + x_off) + w and (
+                    y + y_off
+                ) <= pt.y <= (y + y_off) + h:
                     # Clamp + validate old field before leaving
                     if self._focus and self._focus != widget:
                         self._focus.SetValue(self._focus.GetValue())
@@ -1265,7 +1268,7 @@ class MaskedFieldsCtrl(wx.Panel):
                             choices = widget.GetChoices()
                             if choices:
                                 self._showPopup(
-                                    widget, choices, x + xOff, y + yOff, w, h
+                                    widget, choices, x + x_off, y + y_off, w, h
                                 )
 
                     self.Refresh()
@@ -1273,25 +1276,27 @@ class MaskedFieldsCtrl(wx.Panel):
 
         event.Skip()
 
-    def _showPopup(self, field, choices, fieldX, fieldY, fieldW, fieldH):
+    def _showPopup(self, field, choices, field_x, field_y, field_w, field_h):
         """Show dropdown popup for field. Width matches the field width, centered."""
         if self._popup:
             return
 
         # Get current value for highlighting
-        currentValue = field.GetValue()
+        current_value = field.GetValue()
 
         # Create popup with field width as minimum width and same font
         popup = _ChoicesPopup(
-            choices, currentValue, fieldW, self.GetFont(), self
+            choices, current_value, field_w, self.GetFont(), self
         )
         self._popup = (popup, field)
 
         # Center popup horizontally on the field
-        popupW = popup.GetSize().GetWidth()
-        centerX = fieldX + (fieldW - popupW) // 2
+        popup_w = popup.GetSize().GetWidth()
+        center_x = field_x + (field_w - popup_w) // 2
 
-        pos = self.ClientToScreen(wx.Point(int(centerX), int(fieldY + fieldH)))
+        pos = self.ClientToScreen(
+            wx.Point(int(center_x), int(field_y + field_h))
+        )
         popup.Popup(pos)
         popup.Bind(EVT_POPUP_DISMISS, self._onPopupDismiss)
         popup.Bind(EVT_CHOICE_SELECTED, self._onChoiceSelected)
@@ -1969,9 +1974,9 @@ class _CalendarComboPopup(wx.ComboPopup):
         """Return selected date as string."""
         return str(self._highlightedDate) if self._highlightedDate else ""
 
-    def GetAdjustedSize(self, minWidth, prefHeight, maxHeight):
+    def GetAdjustedSize(self, min_width, pref_height, max_height):
         if self._panel is None:
-            return wx.Size(minWidth, prefHeight)
+            return wx.Size(min_width, pref_height)
         dc = wx.ClientDC(self._panel)
         size = self._getExtent(dc)
         return size
@@ -2024,37 +2029,37 @@ class _CalendarComboPopup(wx.ComboPopup):
             self._panel.Refresh()
 
     def _onChar(self, event):
-        keyCode = event.GetKeyCode()
-        if keyCode in (wx.WXK_ESCAPE, wx.WXK_F4):
+        key_code = event.GetKeyCode()
+        if key_code in (wx.WXK_ESCAPE, wx.WXK_F4):
             self.Dismiss()
-        elif keyCode == wx.WXK_RETURN:
+        elif key_code == wx.WXK_RETURN:
             dc2 = self._getDateComboCustomCtrl()
             if dc2:
                 dc2._setDateFromCalendar(self._highlightedDate)
             self.Dismiss()
-        elif keyCode == wx.WXK_LEFT:
+        elif key_code == wx.WXK_LEFT:
             self._moveHighlight(datetime.timedelta(days=-1))
-        elif keyCode == wx.WXK_RIGHT:
+        elif key_code == wx.WXK_RIGHT:
             self._moveHighlight(datetime.timedelta(days=1))
-        elif keyCode == wx.WXK_UP:
+        elif key_code == wx.WXK_UP:
             self._moveHighlight(datetime.timedelta(days=-7))
-        elif keyCode == wx.WXK_DOWN:
+        elif key_code == wx.WXK_DOWN:
             self._moveHighlight(datetime.timedelta(days=7))
         else:
             event.Skip()
 
     def _moveHighlight(self, delta):
-        newDate = self._highlightedDate + delta
-        if self._minDate is not None and newDate < self._minDate:
+        new_date = self._highlightedDate + delta
+        if self._minDate is not None and new_date < self._minDate:
             wx.Bell()
             return
-        if self._maxDate is not None and newDate > self._maxDate:
+        if self._maxDate is not None and new_date > self._maxDate:
             wx.Bell()
             return
-        if newDate.year < 1 or newDate.year > 9999:
+        if new_date.year < 1 or new_date.year > 9999:
             wx.Bell()
             return
-        self._highlightedDate = newDate
+        self._highlightedDate = new_date
         if (
             self._highlightedDate.year != self._year
             or self._highlightedDate.month != self._month
@@ -2071,14 +2076,14 @@ class _CalendarComboPopup(wx.ComboPopup):
     def _getExtent(self, dc):
         if self._font:
             dc.SetFont(self._font)
-        W, H = 0, 0
+        w, h = 0, 0
         for month in range(1, 13):
             header = datetime.date(
                 year=self._year, month=month, day=11
             ).strftime("%B %Y")
             tw, th = dc.GetTextExtent(header)
-            W = max(W, tw)
-            H = max(H, th)
+            w = max(w, tw)
+            h = max(h, th)
 
         lines = monthcalendarex(self._year, self._month, weeks=1)
         self._maxDim = 0
@@ -2092,10 +2097,11 @@ class _CalendarComboPopup(wx.ComboPopup):
             self._maxDim = max(self._maxDim, tw, th)
 
         self._maxDim += 4
-        contentOffsetX, contentOffsetY = getTextCtrlContentOffset()
+        content_offset_x, content_offset_y = getTextCtrlContentOffset()
         return wx.Size(
-            max(W + 48 + 4, self._maxDim * len(lines[0])) + contentOffsetX * 2,
-            H + 2 + self._maxDim * (len(lines) + 1) + contentOffsetY * 2,
+            max(w + 48 + 4, self._maxDim * len(lines[0]))
+            + content_offset_x * 2,
+            h + 2 + self._maxDim * (len(lines) + 1) + content_offset_y * 2,
         )
 
     def _onPaint(self, event):
@@ -2106,8 +2112,8 @@ class _CalendarComboPopup(wx.ComboPopup):
 
         renderer.DrawTextCtrl(win, dc, wx.Rect(0, 0, w, h), wx.CONTROL_FOCUSED)
 
-        contentOffsetX, contentOffsetY = getTextCtrlContentOffset()
-        contentW = w - contentOffsetX * 2
+        content_offset_x, content_offset_y = getTextCtrlContentOffset()
+        content_w = w - content_offset_x * 2
 
         if self._font:
             dc.SetFont(self._font)
@@ -2115,36 +2121,38 @@ class _CalendarComboPopup(wx.ComboPopup):
 
         colours = getCalendarColours()
 
-        textColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
-        dc.SetPen(wx.Pen(textColour))
-        dc.SetBrush(wx.Brush(textColour))
-        dc.SetTextForeground(textColour)
+        text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        dc.SetPen(wx.Pen(text_colour))
+        dc.SetBrush(wx.Brush(text_colour))
+        dc.SetTextForeground(text_colour)
 
         header = datetime.date(
             year=self._year, month=self._month, day=1
         ).strftime("%B %Y")
         tw, th = dc.GetTextExtent(header)
         dc.DrawText(
-            header, contentOffsetX + (contentW - 48 - tw) // 2, contentOffsetY
+            header,
+            content_offset_x + (content_w - 48 - tw) // 2,
+            content_offset_y,
         )
 
-        buttonDim = min(th, 10)
+        button_dim = min(th, 10)
 
-        cx = w - contentOffsetX - 24
-        cy = contentOffsetY + th // 2 + 1
+        cx = w - content_offset_x - 24
+        cy = content_offset_y + th // 2 + 1
 
         gc = wx.GraphicsContext.Create(dc)
-        gc.SetPen(gc.CreatePen(wx.Pen(textColour)))
-        gc.SetBrush(gc.CreateBrush(wx.Brush(textColour)))
+        gc.SetPen(gc.CreatePen(wx.Pen(text_colour)))
+        gc.SetBrush(gc.CreateBrush(wx.Brush(text_colour)))
 
         # Prev month button (left arrow)
         if self._month != 1 or self._year != 1:
             gp = gc.CreatePath()
-            xinf = w - contentOffsetX - 48 + 16 - buttonDim
-            xsup = w - contentOffsetX - 48 + 16
-            yinf = contentOffsetY + th / 2 + 1 - buttonDim / 2
+            xinf = w - content_offset_x - 48 + 16 - button_dim
+            xsup = w - content_offset_x - 48 + 16
+            yinf = content_offset_y + th / 2 + 1 - button_dim / 2
 
-            gp.MoveToPoint(xinf, contentOffsetY + th // 2 + 1)
+            gp.MoveToPoint(xinf, content_offset_y + th // 2 + 1)
             gp.AddArc(
                 cx,
                 cy,
@@ -2160,11 +2168,11 @@ class _CalendarComboPopup(wx.ComboPopup):
         # Next month button (right arrow)
         if self._month != 12 or self._year != 9999:
             gp = gc.CreatePath()
-            xinf = w - contentOffsetX - 16
-            xsup = w - contentOffsetX - 16 + buttonDim
-            yinf = contentOffsetY + th / 2 + 1 - buttonDim / 2
+            xinf = w - content_offset_x - 16
+            xsup = w - content_offset_x - 16 + button_dim
+            yinf = content_offset_y + th / 2 + 1 - button_dim / 2
 
-            gp.MoveToPoint(xsup, contentOffsetY + th // 2 + 1)
+            gp.MoveToPoint(xsup, content_offset_y + th // 2 + 1)
             gp.AddArc(
                 cx,
                 cy,
@@ -2179,22 +2187,22 @@ class _CalendarComboPopup(wx.ComboPopup):
 
         # Today button (circle)
         gp = gc.CreatePath()
-        gp.AddArc(cx, cy, buttonDim * 3 / 4, 0, math.pi * 2, True)
+        gp.AddArc(cx, cy, button_dim * 3 / 4, 0, math.pi * 2, True)
         gc.DrawPath(gp)
 
-        y = contentOffsetY + th + 2
+        y = content_offset_y + th + 2
 
         # Weekday headers
         hdr_bg = colours["weekday_header_bg"]
         dc.SetPen(wx.Pen(hdr_bg))
         dc.SetBrush(wx.Brush(hdr_bg))
-        dc.DrawRectangle(contentOffsetX, y, self._maxDim * 7, self._maxDim)
+        dc.DrawRectangle(content_offset_x, y, self._maxDim * 7, self._maxDim)
         dc.SetTextForeground(colours["weekday_header_fg"])
         for idx, hdr in enumerate(calendar.weekheader(2).split()):
             tw, th_hdr = dc.GetTextExtent(hdr)
             dc.DrawText(
                 hdr,
-                contentOffsetX
+                content_offset_x
                 + self._maxDim * idx
                 + int((self._maxDim - tw) // 2),
                 y + int((self._maxDim - th_hdr) // 2),
@@ -2205,19 +2213,19 @@ class _CalendarComboPopup(wx.ComboPopup):
         # Days
         self._days = []
         for line in monthcalendarex(self._year, self._month, weeks=1):
-            x = contentOffsetX
-            for dayIndex, (year, month, day) in enumerate(line):
+            x = content_offset_x
+            for day_index, (year, month, day) in enumerate(line):
                 dt = datetime.date(year=year, month=month, day=day)
                 active = (self._minDate is None or dt >= self._minDate) and (
                     self._maxDate is None or dt <= self._maxDate
                 )
-                thisMonth = year == self._year and month == self._month
+                this_month = year == self._year and month == self._month
 
-                dc.SetPen(wx.Pen(textColour))
+                dc.SetPen(wx.Pen(text_colour))
                 dc.SetTextForeground(
                     colours["weekend_day_fg"]
-                    if (dayIndex + calendar.firstweekday()) % 7 in [5, 6]
-                    else textColour
+                    if (day_index + calendar.firstweekday()) % 7 in [5, 6]
+                    else text_colour
                 )
 
                 if not active:
@@ -2227,7 +2235,7 @@ class _CalendarComboPopup(wx.ComboPopup):
                     dc.SetPen(wx.Pen(inactive_bg))
                     dc.SetBrush(wx.Brush(inactive_bg))
                     dc.DrawRectangle(x, y, self._maxDim, self._maxDim)
-                elif not thisMonth:
+                elif not this_month:
                     other_month_bg = (
                         colours["other_month_bg"]
                         if colours["other_month_bg"] is not None
@@ -2274,7 +2282,7 @@ class _CalendarComboPopup(wx.ComboPopup):
 
     def _onLeftUp(self, event):
         w, h = self._panel.GetClientSize()
-        contentOffsetX, contentOffsetY = getTextCtrlContentOffset()
+        content_offset_x, content_offset_y = getTextCtrlContentOffset()
 
         dc = wx.ClientDC(self._panel)
         if self._font:
@@ -2286,10 +2294,10 @@ class _CalendarComboPopup(wx.ComboPopup):
 
         # Buttons area (top right)
         if (
-            event.GetY() < contentOffsetY + th + 2
-            and event.GetX() > w - contentOffsetX - 48
+            event.GetY() < content_offset_y + th + 2
+            and event.GetX() > w - content_offset_x - 48
         ):
-            if event.GetX() < w - contentOffsetX - 48 + 16 and (
+            if event.GetX() < w - content_offset_x - 48 + 16 and (
                 self._month != 1 or self._year != 1
             ):
                 if self._month == 1:
@@ -2297,7 +2305,7 @@ class _CalendarComboPopup(wx.ComboPopup):
                     self._month = 12
                 else:
                     self._month -= 1
-            elif event.GetX() < w - contentOffsetX - 48 + 32:
+            elif event.GetX() < w - content_offset_x - 48 + 32:
                 today = datetime.datetime.now()
                 self._year = today.year
                 self._month = today.month
@@ -2330,7 +2338,7 @@ class _CalendarComboPopup(wx.ComboPopup):
                 break
 
     def _onMotion(self, event):
-        newHighlight = None
+        new_highlight = None
         for x, y, (year, month, day) in self._days:
             if (
                 event.GetX() >= x
@@ -2338,10 +2346,13 @@ class _CalendarComboPopup(wx.ComboPopup):
                 and event.GetY() >= y
                 and event.GetY() < y + self._maxDim
             ):
-                newHighlight = datetime.date(year=year, month=month, day=day)
+                new_highlight = datetime.date(year=year, month=month, day=day)
                 break
-        if newHighlight is not None and newHighlight != self._highlightedDate:
-            self._highlightedDate = newHighlight
+        if (
+            new_highlight is not None
+            and new_highlight != self._highlightedDate
+        ):
+            self._highlightedDate = new_highlight
             self._panel.Refresh()
 
     def _onLeaveWindow(self, event):
@@ -2424,7 +2435,7 @@ class DateCtrl(MaskedFieldsCtrl):
         dc = wx.PaintDC(self)
         w, h = self.GetClientSize()
         dc.SetFont(self.GetFont())
-        xOff, yOff = self._getContentOffset()
+        x_off, y_off = self._getContentOffset()
 
         if self._readOnly:
             # Read-only: greyed values (standalone or inside disabled ComboCtrl)
@@ -2433,9 +2444,9 @@ class DateCtrl(MaskedFieldsCtrl):
             )
             for widget, x, y, ww, hh in self._widgets:
                 if isinstance(widget, str):
-                    dc.DrawText(widget, int(x + xOff), int(y + yOff))
+                    dc.DrawText(widget, int(x + x_off), int(y + y_off))
                 else:
-                    widget.PaintValue(dc, x + xOff, y + yOff, ww, hh)
+                    widget.PaintValue(dc, x + x_off, y + y_off, ww, hh)
         elif not self.IsThisEnabled():
             # Disabled (checkbox unchecked): show "N/A" centered
             text = "N/A"
@@ -2446,23 +2457,23 @@ class DateCtrl(MaskedFieldsCtrl):
             dc.DrawText(text, (w - tw) // 2, (h - th) // 2)
         else:
             # Normal editable
-            hasFocus = self._hasFocus
-            textColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+            has_focus = self._hasFocus
+            text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
             for widget, x, y, ww, hh in self._widgets:
                 if isinstance(widget, str):
-                    dc.SetTextForeground(textColour)
-                    dc.DrawText(widget, int(x + xOff), int(y + yOff))
+                    dc.SetTextForeground(text_colour)
+                    dc.DrawText(widget, int(x + x_off), int(y + y_off))
                 else:
-                    if widget == self._focus and hasFocus:
-                        drawFocusRect(self, dc, x + xOff, y + yOff, ww, hh)
+                    if widget == self._focus and has_focus:
+                        drawFocusRect(self, dc, x + x_off, y + y_off, ww, hh)
                         dc.SetTextForeground(
                             wx.SystemSettings.GetColour(
                                 wx.SYS_COLOUR_HIGHLIGHTTEXT
                             )
                         )
                     else:
-                        dc.SetTextForeground(textColour)
-                    widget.PaintValue(dc, x + xOff, y + yOff, ww, hh)
+                        dc.SetTextForeground(text_colour)
+                    widget.PaintValue(dc, x + x_off, y + y_off, ww, hh)
 
     def _onChar(self, event):
         """Handle keyboard input — F4/Enter open parent ComboCtrl popup."""
@@ -2470,10 +2481,10 @@ class DateCtrl(MaskedFieldsCtrl):
             event.Skip()
             return
 
-        keyCode = event.GetKeyCode()
+        key_code = event.GetKeyCode()
 
         # Tab exits control (always allowed, even in read-only mode)
-        if keyCode == wx.WXK_TAB:
+        if key_code == wx.WXK_TAB:
             self.Navigate(not event.ShiftDown())
             return
 
@@ -2482,21 +2493,21 @@ class DateCtrl(MaskedFieldsCtrl):
             return
 
         # Escape — nothing to dismiss, let parent handle it
-        if keyCode == wx.WXK_ESCAPE:
+        if key_code == wx.WXK_ESCAPE:
             event.Skip()
             return
 
         # F4/Enter open the parent ComboCtrl popup
-        if keyCode in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_F4):
+        if key_code in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_F4):
             if self._comboCtrl:
                 self._comboCtrl.Popup()
             return
 
         # Left/Right arrows navigate between subfields
-        if keyCode == wx.WXK_LEFT:
+        if key_code == wx.WXK_LEFT:
             self._focusPrevField()
             return
-        if keyCode == wx.WXK_RIGHT:
+        if key_code == wx.WXK_RIGHT:
             self._focusNextField()
             return
 
@@ -2513,13 +2524,13 @@ class DateCtrl(MaskedFieldsCtrl):
             return
 
         pt = event.GetPosition()
-        xOff, yOff = self._getContentOffset()
+        x_off, y_off = self._getContentOffset()
 
         for widget, x, y, w, h in self._widgets:
             if isinstance(widget, NumericField):
-                if (x + xOff) <= pt.x <= (x + xOff) + w and (
-                    y + yOff
-                ) <= pt.y <= (y + yOff) + h:
+                if (x + x_off) <= pt.x <= (x + x_off) + w and (
+                    y + y_off
+                ) <= pt.y <= (y + y_off) + h:
                     # Clamp + validate old field before leaving
                     if self._focus and self._focus != widget:
                         self._focus.SetValue(self._focus.GetValue())
@@ -2613,30 +2624,30 @@ class DateComboCustomCtrl(wx.ComboCtrl):
 
         # Derive horizontal padding from the vertical padding the ComboCtrl
         # naturally adds around the text area (theme-dependent).
-        dateW, dateH = self._dateCtrl._naturalSize
-        stdH = self.GetBestSize().height
-        self._padding = max(0, (stdH - dateH) // 2)
-        comboW = dateW + 2 * self._padding + self.GetButtonSize().width
-        self.SetMinSize(wx.Size(comboW, stdH))
+        date_w, date_h = self._dateCtrl._naturalSize
+        std_h = self.GetBestSize().height
+        self._padding = max(0, (std_h - date_h) // 2)
+        combo_w = date_w + 2 * self._padding + self.GetButtonSize().width
+        self.SetMinSize(wx.Size(combo_w, std_h))
 
         # Redirect focus from ComboCtrl's text control to inner DateCtrl
         # so the caret never appears in the hidden text field.
         self._redirectingFocus = False
         self._tabbingOut = False
         self._popupWasShown = False
-        textCtrl = self.GetTextCtrl()
-        if textCtrl:
-            textCtrl.Bind(wx.EVT_SET_FOCUS, self._onTextCtrlFocus)
+        text_ctrl = self.GetTextCtrl()
+        if text_ctrl:
+            text_ctrl.Bind(wx.EVT_SET_FOCUS, self._onTextCtrlFocus)
 
         # Intercept Shift+Tab from inner DateCtrl: set _tabbingOut flag
         # so _onTextCtrlFocus knows to pass focus through instead of
         # redirecting back to DateCtrl.
-        origNavigate = self._dateCtrl.Navigate
+        orig_navigate = self._dateCtrl.Navigate
 
         def _navigateWithFlag(forward=True):
             if not forward:
                 self._tabbingOut = True
-            return origNavigate(forward)
+            return orig_navigate(forward)
 
         self._dateCtrl.Navigate = _navigateWithFlag
 
@@ -2679,14 +2690,14 @@ class DateComboCustomCtrl(wx.ComboCtrl):
         """Center the DateCtrl over the ComboCtrl's text area."""
         if not self:
             return
-        comboW, comboH = self.GetClientSize()
-        btnW = self.GetButtonSize().width
-        textAreaW = comboW - btnW
-        dateW, dateH = self._dateCtrl._naturalSize
-        x = (textAreaW - dateW) // 2
-        y = (comboH - dateH) // 2
+        combo_w, combo_h = self.GetClientSize()
+        btn_w = self.GetButtonSize().width
+        text_area_w = combo_w - btn_w
+        date_w, date_h = self._dateCtrl._naturalSize
+        x = (text_area_w - date_w) // 2
+        y = (combo_h - date_h) // 2
         self._dateCtrl.SetPosition(wx.Point(max(0, x), max(0, y)))
-        self._dateCtrl.SetSize(wx.Size(dateW, dateH))
+        self._dateCtrl.SetSize(wx.Size(date_w, date_h))
 
     def _onSize(self, event):
         self._positionDateCtrl()
@@ -2958,9 +2969,9 @@ class _NativeDateCtrl(wx.Panel):
         try:
             import ctypes
 
-            DTM_SETFORMATW = 0x1032  # DTM_FIRST (0x1000) + 50
+            dtm_setformatw = 0x1032  # DTM_FIRST (0x1000) + 50
             hwnd = self._picker.GetHandle()
-            ctypes.windll.user32.SendMessageW(hwnd, DTM_SETFORMATW, 0, fmt)
+            ctypes.windll.user32.SendMessageW(hwnd, dtm_setformatw, 0, fmt)
         except Exception:
             pass  # Silently fail on non-Windows or if handle unavailable
 

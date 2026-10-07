@@ -47,8 +47,11 @@ ALLOWED = {
     ("taskcoachlib/widgets/tcsquaremap.py", "R1", "findNodeAtPosition"): (
         "squaremap library method"
     ),
-    ("taskcoachlib/config/options.py", "R2", "add_option"): (
-        "optparse method"
+    ("taskcoachlib/widgets/fontpicker.py", "R1", "hasFocus"): (
+        "wx.lib.buttons.GenButton attribute"
+    ),
+    ("taskcoachlib/widgets/iconpicker.py", "R1", "hasFocus"): (
+        "wx.lib.buttons.GenButton attribute"
     ),
     ("taskcoachlib/config/settings.py", "R4", "frozen"): (
         "sys.frozen, set by bundlers"
@@ -57,9 +60,6 @@ ALLOWED = {
         "os.stat_result field on Windows"
     ),
     ("taskcoachlib/gui/mainwindow.py", "R4", "_action"): (
-        "AuiManager private attribute"
-    ),
-    ("taskcoachlib/widgets/frame.py", "R4", "_action"): (
         "AuiManager private attribute"
     ),
     ("taskcoachlib/gui/dialog/editor.py", "R4", "_foregroundColorEntry"): (
@@ -71,7 +71,6 @@ ALLOWED = {
     ("taskcoachlib/gui/dialog/editor.py", "R4", "effectiveIconDefault"): (
         "optional domain method, not defined yet"
     ),
-    ("tests/test.py", "R2", "add_option"): "optparse method",
     ("taskcoachlib/persistence/xml/defaults.py", "R6", "fromName"): (
         "task file attribute"
     ),

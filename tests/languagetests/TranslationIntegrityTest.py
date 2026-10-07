@@ -46,7 +46,7 @@ class TranslationIntegrityTestsMixin(object):
             matches.add(match)
         return matches
 
-    def testMatchingConversionSpecifications(self):
+    def test_matching_conversion_specifications(self):
         regex = self.conversion_specification_re
         matches_english = self.findMatches(regex, self.englishString)
         matches_translation = self.findMatches(regex, self.translatedString)
@@ -54,7 +54,7 @@ class TranslationIntegrityTestsMixin(object):
             matches_english, matches_translation, self.englishString
         )
 
-    def testMatchingNonLiterals(self):
+    def test_matching_non_literals(self):
         for symbol in "\t", "|", "%s", "%d", "%.2f":
             self.assertEqual(
                 self.englishString.count(symbol),
@@ -63,7 +63,7 @@ class TranslationIntegrityTestsMixin(object):
                 % (symbol, self.englishString, self.translatedString),
             )
 
-    def testMatchingAmpersands(self):
+    def test_matching_ampersands(self):
         # If the original string contains zero or one ampersands, it may be
         # an accelerator. In that case, we don't require the translated string
         # to have an accelerator as well, because many translators don't use
@@ -71,18 +71,18 @@ class TranslationIntegrityTestsMixin(object):
         # string contains more than one ampersand it's probably HTML. In that
         # case we do require the number of ampersands to match exactly in the
         # original and translated string.
-        translatedString = self.removeUmlauts(self.translatedString)
-        nrEnglishAmpersand = self.englishString.count("&")
-        nrTranslatedAmpersand = translatedString.count("&")
-        if nrEnglishAmpersand <= 1 and not "\n" in self.englishString:
+        translated_string = self.removeUmlauts(self.translatedString)
+        nr_english_ampersand = self.englishString.count("&")
+        nr_translated_ampersand = translated_string.count("&")
+        if nr_english_ampersand <= 1 and "\n" not in self.englishString:
             self.assertTrue(
-                nrTranslatedAmpersand in [0, 1],
+                nr_translated_ampersand in [0, 1],
                 "'%s' has more than one '&'" % self.translatedString,
             )
         else:
             self.assertEqual(
-                nrEnglishAmpersand,
-                nrTranslatedAmpersand,
+                nr_english_ampersand,
+                nr_translated_ampersand,
                 "'%s' has more or less '&'s than '%s'"
                 % (self.translatedString, self.englishString),
             )
@@ -91,21 +91,21 @@ class TranslationIntegrityTestsMixin(object):
     # Some keyboard shortcuts are used more than once, list those here:
     maxShortcuts = {"Ctrl-RETURN": 2, "Shift+Ctrl+T": 3}
 
-    def testUniqueShortCut(self):
+    def test_unique_short_cut(self):
         if "\t" in self.translatedString:
             shortcut = self.translatedString.split("\t")[1]
-            shortcutKey = shortcut, self.language
-            timesUsed = self.usedShortcuts.get(shortcutKey, 0)
-            timesAllowed = self.maxShortcuts.get(shortcut, 1)
+            shortcut_key = shortcut, self.language
+            times_used = self.usedShortcuts.get(shortcut_key, 0)
+            times_allowed = self.maxShortcuts.get(shortcut, 1)
             self.assertFalse(
-                timesUsed > timesAllowed,
+                times_used > times_allowed,
                 "Shortcut ('%s') used more "
-                "than once in language %s." % shortcutKey,
+                "than once in language %s." % shortcut_key,
             )
-            self.usedShortcuts[shortcutKey] = timesUsed + 1
+            self.usedShortcuts[shortcut_key] = times_used + 1
 
-    def testMatchingShortCut(self):
-        for shortcutPrefix in (
+    def test_matching_short_cut(self):
+        for shortcut_prefix in (
             "Ctrl+",
             "Ctrl-",
             "Shift+",
@@ -118,14 +118,14 @@ class TranslationIntegrityTestsMixin(object):
             "Shift-Alt-",
         ):
             self.assertEqual(
-                self.englishString.count("\t" + shortcutPrefix),
-                self.translatedString.count("\t" + shortcutPrefix),
+                self.englishString.count("\t" + shortcut_prefix),
+                self.translatedString.count("\t" + shortcut_prefix),
                 "Shortcut prefix ('%s') doesn't match for '%s' "
                 "and '%s'"
-                % (shortcutPrefix, self.englishString, self.translatedString),
+                % (shortcut_prefix, self.englishString, self.translatedString),
             )
 
-    def testShortCutIsAscii(self):
+    def test_short_cut_is_ascii(self):
         """Test that the translated short cut key is using ASCII only."""
         if "\t" in self.translatedString:
             shortcut = set(self.translatedString.split("\t")[1])
@@ -137,7 +137,7 @@ class TranslationIntegrityTestsMixin(object):
     def ellipsisCount(text):
         return text.count("...") + text.count("…")
 
-    def testMatchingEllipses(self):
+    def test_matching_ellipses(self):
         self.assertEqual(
             self.ellipsisCount(self.englishString),
             self.ellipsisCount(self.translatedString),
@@ -158,24 +158,24 @@ class TranslationCoverageTestsMixin(object):
         if not self.strings:
             self.skipTest("no template: generate %s" % TEMPLATE)
 
-    def testNotComplete(self):
+    def test_not_complete(self):
         if self.enabled:
-            percentDone = 100.0 * len(self.translation) / len(self.strings)
+            percent_done = 100.0 * len(self.translation) / len(self.strings)
             self.assertGreaterEqual(
-                percentDone,
+                percent_done,
                 90.0,
                 "Translation for %s is only %.2f%% complete"
-                % (self.language, percentDone),
+                % (self.language, percent_done),
             )
 
-    def testComplete(self):
+    def test_complete(self):
         if not self.enabled:
-            percentDone = 100.0 * len(self.translation) / len(self.strings)
+            percent_done = 100.0 * len(self.translation) / len(self.strings)
             self.assertLess(
-                percentDone,
+                percent_done,
                 90.0,
                 "Translation for %s is %.2f%% complete but disabled"
-                % (self.language, percentDone),
+                % (self.language, percent_done),
             )
 
 
@@ -218,71 +218,75 @@ def install_test_case_classes(language, enabled, all_strings):
     installLanguageTestCaseClass(language, enabled, translation, all_strings)
 
 
-def installTranslationTestCaseClass(language, englishString, translatedString):
-    testCaseClassName = translationTestCaseClassName(language, englishString)
-    testCaseClass = translationTestCaseClass(
-        testCaseClassName, language, englishString, translatedString
+def installTranslationTestCaseClass(
+    language, english_string, translated_string
+):
+    test_case_class_name = translationTestCaseClassName(
+        language, english_string
     )
-    globals()[testCaseClassName] = testCaseClass
+    test_case_class = translationTestCaseClass(
+        test_case_class_name, language, english_string, translated_string
+    )
+    globals()[test_case_class_name] = test_case_class
 
 
-def installLanguageTestCaseClass(language, enabled, translation, allStrings):
-    testCaseClassName = languageTestCaseClassName(language)
-    testCaseClass = languageTestCaseClass(
-        testCaseClassName, language, enabled, translation, allStrings
+def installLanguageTestCaseClass(language, enabled, translation, all_strings):
+    test_case_class_name = languageTestCaseClassName(language)
+    test_case_class = languageTestCaseClass(
+        test_case_class_name, language, enabled, translation, all_strings
     )
-    globals()[testCaseClassName] = testCaseClass
+    globals()[test_case_class_name] = test_case_class
 
 
 def translationTestCaseClassName(
-    language, englishString, prefix="TranslationIntegrityTest"
+    language, english_string, prefix="TranslationIntegrityTest"
 ):
     """Generate a class name for the test case class based on the language
     and the English string."""
     # Make sure we only use characters allowed in Python identifiers:
-    englishString = englishString.replace(" ", "_")
-    allowableCharacters = string.ascii_letters + string.digits + "_"
-    englishString = "".join(
-        [char for char in englishString if char in allowableCharacters]
+    english_string = english_string.replace(" ", "_")
+    allowable_characters = string.ascii_letters + string.digits + "_"
+    english_string = "".join(
+        [char for char in english_string if char in allowable_characters]
     )
-    className = "%s_%s_%s" % (prefix, language, englishString)
+    class_name = "%s_%s_%s" % (prefix, language, english_string)
     count = 0
-    while className in globals():  # Make sure className is unique
+    while class_name in globals():  # Make sure className is unique
         count += 1
-        className = "%s_%s_%s_%d" % (prefix, language, englishString, count)
-    return className
+        class_name = "%s_%s_%s_%d" % (prefix, language, english_string, count)
+    return class_name
 
 
 def languageTestCaseClassName(language, prefix="TranslationCoverageTests"):
-    className = "%s_%s" % (prefix, language)
+    class_name = "%s_%s" % (prefix, language)
     count = 0
-    while className in globals():
+    while class_name in globals():
         count += 1
-        className = "%s_%s_%s" % (prefix, language, count)
-    return className
+        class_name = "%s_%s_%s" % (prefix, language, count)
+    return class_name
 
 
 def translationTestCaseClass(
-    className, language, englishString, translatedString
+    class_name, language, english_string, translated_string
 ):
     class_ = type(
-        className, (TranslationIntegrityTestsMixin, test.TestCase), {}
+        class_name, (TranslationIntegrityTestsMixin, test.TestCase), {}
     )
     class_.language = language
-    class_.englishString = englishString
-    class_.translatedString = translatedString
+    class_.englishString = english_string
+    class_.translatedString = translated_string
     return class_
 
 
 def languageTestCaseClass(
-    className, language, enabled, translation, allStrings
+    class_name, language, enabled, translation, all_strings
 ):
     class_ = type(
-        className, (TranslationCoverageTestsMixin, test.TestCase), dict()
+        class_name, (TranslationCoverageTestsMixin, test.TestCase), dict()
     )
     class_.translation = translation
     class_.enabled = enabled
-    class_.strings = allStrings
+    class_.strings = all_strings
     class_.language = language
     return class_
 

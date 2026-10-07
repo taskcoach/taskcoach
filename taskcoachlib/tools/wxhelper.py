@@ -4,14 +4,109 @@ from typing import Union
 import wx
 
 from taskcoachlib import patterns
+from taskcoachlib.meta.debug import log_step
+
+# A window opens at most this share of its monitor's work area each
+# way, its contents scrolling: room for panels the system does not
+# report (docs/WINDOW_GEOMETRY.md, Decisions 10)
+SIZE_SHARE = 0.8
 
 
-def centerOnAppMonitor(window):
-    """Center a window on the application's monitor.
+def most_of(size, area):
+    """The size, each way at most SIZE_SHARE of the area (x, y, width,
+    height)."""
+    return (
+        min(size[0], int(area[2] * SIZE_SHARE)),
+        min(size[1], int(area[3] * SIZE_SHARE)),
+    )
 
-    This function determines the correct monitor by:
-    1. If main window exists, use its monitor
-    2. Fall back to primary monitor
+
+def work_area_of(window):
+    """The work area (the monitor less its panels) of the monitor the
+    system reports for the window, else of the first, as (x, y, width,
+    height)."""
+    index = wx.Display.GetFromWindow(window) if window else -1
+    return tuple(wx.Display(max(index, 0)).GetClientArea())
+
+
+def fit_to_work_area(window, area):
+    """Cut a window larger than SIZE_SHARE of the work area each way
+    to it."""
+    size = tuple(window.GetSize())
+    fitted = most_of(size, area)
+    if fitted != size:
+        log_step(
+            "%s: %dx%d cut to %d%% of the work area: %dx%d"
+            % ((window.GetTitle(),) + size + (SIZE_SHARE * 100,) + fitted),
+            prefix="GEOMETRY",
+        )
+        window.SetSize(fitted)
+
+
+def centre_on_parent(window):
+    """Centre a new window on its parent, also through its first show,
+    at most SIZE_SHARE of the parent's monitor each way.
+
+    Call it once the window is sized, before Show()."""
+    fit_to_work_area(window, work_area_of(window.GetParent() or window))
+    window.CentreOnParent()
+    keep_placement_at_first_show(window)
+
+
+def keep_placement_at_first_show(window):
+    """Keep the window's position, and the size of its contents if it
+    is fitted to them, through its first show.
+
+    wxGTK may defer a new window's first show until the window manager
+    reports its frame; it then drops the position set before, and keeps
+    the outer size set without the frame, so the frame takes its height
+    from the contents (docs/WINDOW_GEOMETRY.md, First Show on wxGTK).
+    Both are set again at the first show, before the window is mapped.
+    Called again, it keeps the window's placement then."""
+    first = not hasattr(window, "_placement_to_keep")
+    size = window.GetSize()
+    window._placement_to_keep = (
+        window.GetPosition(),
+        size,
+        window.GetClientSize(),
+        size == window.GetBestSize(),
+    )
+    if first:
+        window.Bind(wx.EVT_SHOW, _keep_placement)
+
+
+def _keep_placement(event):
+    event.Skip()
+    window = event.GetEventObject()
+    if not event.IsShown():
+        return
+    window.Unbind(wx.EVT_SHOW, handler=_keep_placement)
+    position, size, client_size, fitted = window._placement_to_keep
+    if (window.GetPosition(), window.GetSize()) == (position, size):
+        return  # Shown as placed
+    log_step(
+        "%s: first show deferred, placed again at %s, %s"
+        % (
+            window.GetTitle(),
+            tuple(position),
+            "fitted" if fitted else "size kept",
+        ),
+        prefix="GEOMETRY",
+    )
+    if fitted:
+        window.SetClientSize(client_size)
+    if window.GetPosition() == position:
+        # wx passes a position on only when it differs from its own
+        window.SetPosition(position + wx.Point(1, 0))
+    window.SetPosition(position)
+
+
+def centre_on_app_monitor(window):
+    """Centre a window on the application's monitor, also through its
+    first show (keep_placement_at_first_show()).
+
+    The monitor: the system's for the main window (also on Wayland,
+    where positions read 0, 0), else the primary one.
 
     Call this after the window is created and sized but before Show().
     """
@@ -23,26 +118,28 @@ def centerOnAppMonitor(window):
         main_window = app.GetTopWindow()
         # Skip if main_window is the window we're trying to position
         if main_window and main_window is not window and main_window.IsShown():
-            main_rect = main_window.GetScreenRect()
-            target_monitor = wx.Display.GetFromPoint(
-                wx.Point(
-                    main_rect.x + main_rect.width // 2,
-                    main_rect.y + main_rect.height // 2,
-                )
-            )
+            target_monitor = wx.Display.GetFromWindow(main_window)
 
-    # Fall back to primary monitor
     if target_monitor is None or target_monitor == wx.NOT_FOUND:
-        target_monitor = 0
+        target_monitor = next(
+            (
+                index
+                for index in range(wx.Display.GetCount())
+                if wx.Display(index).IsPrimary()
+            ),
+            0,
+        )
 
     # Center on target monitor
     if target_monitor < wx.Display.GetCount():
         display = wx.Display(target_monitor)
+        fit_to_work_area(window, tuple(display.GetClientArea()))
         display_rect = display.GetGeometry()
         window_size = window.GetSize()
         x = display_rect.x + (display_rect.width - window_size.width) // 2
         y = display_rect.y + (display_rect.height - window_size.height) // 2
         window.SetPosition(wx.Point(x, y))
+    keep_placement_at_first_show(window)
 
 
 def font_from_native_info(text):

@@ -8,7 +8,9 @@ dialog (`taskcoachlib/gui/dialog/reminder.py`) that:
 1. Brings the window to front (`RequestUserAttention`)
 2. Freezes the dialog briefly to prevent accidental dismiss
 3. Plays the configured reminder sound
-4. Optionally speaks the reminder text via text-to-speech
+
+Spoken reminders were removed 2026-10-07:
+[SPOKEN_REMINDERS.md](SPOKEN_REMINDERS.md).
 
 **Ruling, 2026-09-28:** every due reminder gets its own window, also
 when many are due at once as a file opens. Task Coach is busy while
@@ -131,12 +133,6 @@ _play_wav(path)
 All subprocess calls are non-blocking (`Popen` returns immediately).
 Errors are logged via `log_step` with the `SOUND` prefix.
 
-## Text-to-Speech
-
-Optional spoken reminder using `espeak` (Linux) or `say` (macOS).
-Plays after the sound.  See [TODO.md](TODO.md) for modernization
-proposal.
-
 ## Snooze
 
 Configurable snooze times in Preferences > Reminders.  See
@@ -150,7 +146,8 @@ datetime presets.
   `task.reminder.trigger`, ReminderController shows the dialog)
 - [DATETIME_PRESETS.md](DATETIME_PRESETS.md) - Default reminder
   datetime presets, reminder scheduling on file load
-- [TODO.md](TODO.md) - Text-to-speech modernization proposal
+- [SPOKEN_REMINDERS.md](SPOKEN_REMINDERS.md) - Spoken reminders,
+  removed: findings and how to bring them back
 
 ## Key Files
 
@@ -162,7 +159,6 @@ datetime presets.
 | `taskcoachlib/gui/dialog/reminder.py` | Reminder popup dialog |
 | `taskcoachlib/gui/dialog/preferences.py` | `TaskReminderPage` - preferences UI |
 | `taskcoachlib/config/defaults.py` | Default `reminder_sound` value |
-| `taskcoachlib/speak/speaker.py` | Text-to-speech |
 | `taskcoachlib/gui/remindercontroller.py` | Subscribes to `task.reminder.trigger`, shows the dialog |
 
 ## Known Limitations
@@ -179,6 +175,3 @@ datetime presets.
    `ThemedGenBitmapTextButton` (same as `IconPicker`) which draws its
    own bitmap and is not affected.  See wxWidgets
    [#18874](https://github.com/wxWidgets/wxWidgets/issues/18874).
-
-4. **espeak not installed by default** - Text-to-speech on Linux
-   requires `sudo apt install espeak`.

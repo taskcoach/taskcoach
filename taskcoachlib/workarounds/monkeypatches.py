@@ -111,7 +111,7 @@ from taskcoachlib.meta.debug import log_step
 _wx_CallAfter_original = wx.CallAfter
 
 
-def _guarded_CallAfter(callableObj, *args, **kw):
+def _guarded_CallAfter(callable_obj, *args, **kw):
     """Wrapper around wx.CallAfter that guards against calls to dead objects.
 
     When a wx.CallAfter is scheduled but the target wx object is destroyed
@@ -125,7 +125,7 @@ def _guarded_CallAfter(callableObj, *args, **kw):
     schedule_tb = traceback.format_stack(limit=25)[:-1]
 
     # Check if this is a bound method on a wx object
-    obj = getattr(callableObj, "__self__", None)
+    obj = getattr(callable_obj, "__self__", None)
     is_wx_obj = isinstance(obj, wx.Object)
 
     if is_wx_obj:
@@ -136,7 +136,7 @@ def _guarded_CallAfter(callableObj, *args, **kw):
                 if not obj:
                     caller = "%s.%s" % (
                         type(obj).__name__,
-                        getattr(callableObj, "__name__", "?"),
+                        getattr(callable_obj, "__name__", "?"),
                     )
                     log_step(
                         "Blocked CallAfter to destroyed object:",
@@ -150,12 +150,12 @@ def _guarded_CallAfter(callableObj, *args, **kw):
                         for part in line.rstrip().split("\n"):
                             log_step("  " + part, prefix="CRASH_GUARD")
                     return
-                callableObj(*a, **k)
+                callable_obj(*a, **k)
             except RuntimeError as e:
                 if "C/C++ object" in str(e) or "deleted" in str(e):
                     caller = "%s.%s" % (
                         type(obj).__name__,
-                        getattr(callableObj, "__name__", "?"),
+                        getattr(callable_obj, "__name__", "?"),
                     )
                     log_step(
                         "RuntimeError calling %s:" % caller,
@@ -174,7 +174,7 @@ def _guarded_CallAfter(callableObj, *args, **kw):
 
         _wx_CallAfter_original(_safe_call, *args, **kw)
     else:
-        _wx_CallAfter_original(callableObj, *args, **kw)
+        _wx_CallAfter_original(callable_obj, *args, **kw)
 
 
 wx.CallAfter = _guarded_CallAfter

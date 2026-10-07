@@ -66,6 +66,35 @@ deterministic. The tie-break was the ID alone until 2026-09-28, which
 followed creation order only while IDs were time-based
 ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#ids)).
 
+## Tree Mode
+
+Analysed 2026-10-05 (GitHub #48 and #321; P202 and P206 in
+[REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#pre-existing-issues)),
+the same on master:
+
+- The sorter orders the tasks the view shows by `[status priority,
+  column value]` (the status part only with "Sort by status first",
+  on by default); the tree shows each level in that order
+  (`TreeSorter.rootItems()`, `children_of()`).
+- The status is the task's own: its dates and prerequisites, its
+  ancestors' prerequisites included, never its subtasks'
+  (`Task.compute_status()`). An inactive parent with a subtask due
+  soon sorts with the inactive tasks (#321).
+- The column value is the subtree value in tree mode
+  ([TASK_FIELDS.md](TASK_FIELDS.md#core-fields)): the task's and its
+  subtasks', from the tasks themselves, so whether a filter hides a
+  subtask or not. A collapsed parent shows the same value in
+  parentheses, so the order follows what it shows; a hidden subtask
+  shows there and moves it (#48).
+- Pinned by `TaskSorterTreeModeTest` (a subtask's due date and
+  priority move its parent); nothing pins a filter or the status part
+  in the tree.
+
+**Ruled by designer 2026-10-05: kept as released** ("Option A
+please"). Behaviours other than these, if wanted, come as new opt-in
+sort keys beside the core ones, so saved views keep theirs
+([TASK_FIELDS.md](TASK_FIELDS.md#postponed-base-and-effective-fields)).
+
 ## Legacy Sort Algorithm
 
 The previous implementation used a binary bucket approach with composite sort keys:

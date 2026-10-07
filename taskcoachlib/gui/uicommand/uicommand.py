@@ -37,11 +37,11 @@ from taskcoachlib.domain import (
     effort,
     date,
 )
-from taskcoachlib.gui import dialog, printer
+from taskcoachlib.gui import dialog, iocontroller, printer
 from taskcoachlib.gui.wizard import CSVImportWizard
 from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
-from taskcoachlib.mailer import sendMail
+from taskcoachlib.mailer import send_mail
 from wx.lib.agw import hypertreelist
 from taskcoachlib.thirdparty.wxScheduler import (
     wxSCHEDULER_NEXT,
@@ -49,7 +49,7 @@ from taskcoachlib.thirdparty.wxScheduler import (
     wxSCHEDULER_TODAY,
 )
 from taskcoachlib.gui.icons.icon_library import icon_catalog
-from taskcoachlib.tools import anonymize, openfile
+from taskcoachlib.tools import anonymize, openfile, wxhelper
 from taskcoachlib.workarounds import textundo
 
 import wx
@@ -419,14 +419,14 @@ class PrintPageSetup(base_uicommand.UICommand):
 
     def do_command(self, event):
         printer_settings = printer.PrinterSettings()
-        pageSetupDialog = wx.PageSetupDialog(
+        page_setup_dialog = wx.PageSetupDialog(
             self.main_window(), printer_settings.pageSetupData
         )
-        result = pageSetupDialog.ShowModal()
+        result = page_setup_dialog.ShowModal()
         if result == wx.ID_OK:
-            pageSetupData = pageSetupDialog.GetPageSetupData()
-            printer_settings.updatePageSetupData(pageSetupData)
-        pageSetupDialog.Destroy()
+            page_setup_data = page_setup_dialog.GetPageSetupData()
+            printer_settings.updatePageSetupData(page_setup_data)
+        page_setup_dialog.Destroy()
 
 
 class PrintPreview(ViewerCommand):
@@ -455,11 +455,11 @@ class PrintPreview(ViewerCommand):
                 wx.OK | wx.ICON_ERROR,
             )
             return
-        previewFrame = wx.PreviewFrame(
+        preview_frame = wx.PreviewFrame(
             preview, self.main_window(), _("Print preview"), size=(750, 700)
         )
-        previewFrame.Initialize()
-        previewFrame.Show()
+        preview_frame.Initialize()
+        preview_frame.Show()
 
 
 class Print(ViewerCommand):
@@ -500,18 +500,18 @@ class FileExportCommand(IOCommand):
     """Base class for export actions."""
 
     def do_command(self, event):
-        exportDialog = self.getExportDialogClass()(
+        export_dialog = self.getExportDialogClass()(
             self.main_window()
         )  # pylint: disable=E1101
         try:
-            if wx.ID_OK == exportDialog.ShowModal():
-                exportOptions = exportDialog.options()
-                selectedViewer = exportOptions.pop("selectedViewer")
+            if wx.ID_OK == export_dialog.ShowModal():
+                export_options = export_dialog.options()
+                selected_viewer = export_options.pop("selectedViewer")
                 # pylint: disable=W0142
-                self.exportFunction()(selectedViewer, **exportOptions)
+                self.exportFunction()(selected_viewer, **export_options)
         finally:
-            if exportDialog:
-                exportDialog.Destroy()
+            if export_dialog:
+                export_dialog.Destroy()
 
     @staticmethod
     def getExportDialogClass():
@@ -696,53 +696,6 @@ class FileExportAsICalendar(FileExportCommand):
         return dialog.export.ExportAsICalendarDialog
 
 
-class FileExportAsTodoTxt(FileExportCommand):
-    """Action for exporting the contents of a viewer to Todo.txt format.
-
-    Uses a non-modal dialog to allow users to change selections while
-    the export dialog is open."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            menu_text=_("Export as &Todo.txt..."),
-            help_text=_(
-                "Export items from a viewer in Todo.txt format "
-                "(see todotxt.com)"
-            ),
-            icon_id="oxygen_mimetypes_text-plain",
-            *args,
-            **kwargs
-        )
-        self._exportDialog = None
-
-    def do_command(self, event):
-        """Show non-modal export dialog."""
-        if self._exportDialog:
-            self._exportDialog.Raise()
-            return
-        self._exportDialog = self.getExportDialogClass()(
-            self.main_window(),
-            exportCallback=self.exportFunction(),
-        )
-        self._exportDialog.Show()
-        self._exportDialog.Bind(wx.EVT_WINDOW_DESTROY, self._onDialogDestroyed)
-
-    def _onDialogDestroyed(self, event):
-        """Clear dialog reference when destroyed."""
-        self._exportDialog = None
-        event.Skip()
-
-    def exportFunction(self):
-        return self.iocontroller.export_as_todo_txt
-
-    def enabled(self, event):
-        return True
-
-    @staticmethod
-    def getExportDialogClass():
-        return dialog.export.ExportAsTodoTxtDialog
-
-
 class FileImportCSV(IOCommand):
     """Action for importing data from a CSV file into the current task
     file."""
@@ -760,7 +713,7 @@ class FileImportCSV(IOCommand):
 
     def do_command(self, event):
         while True:
-            filename = wx.FileSelector(_("Import CSV"), wildcard="*.csv")
+            filename = self.iocontroller.ask_import_csv_file()
             if filename:
                 if os.path.getsize(filename) == 0:
                     wx.MessageBox(
@@ -782,25 +735,6 @@ class FileImportCSV(IOCommand):
                     wizard.Destroy()
             else:
                 break
-
-
-class FileImportTodoTxt(IOCommand):
-    """Action for importing data from a Todo.txt file into the current task
-    file."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(
-            menu_text=_("&Import Todo.txt..."),
-            help_text=_("Import tasks from a Todo.txt (see todotxt.com) file"),
-            icon_id="oxygen_mimetypes_text-plain",
-            *args,
-            **kwargs
-        )
-
-    def do_command(self, event):
-        filename = wx.FileSelector(_("Import Todo.txt"), wildcard="*.txt")
-        if filename:
-            self.iocontroller.import_todo_txt(filename)
 
 
 class FileQuit(base_uicommand.UICommand):
@@ -1005,11 +939,11 @@ class EditPaste(ViewerCommand):
             if viewer is None:
                 viewer = self._findViewerFromFocus(window_with_focus)
             if viewer is not None:
-                pasteCommand = viewer.pasteItemCommand()
+                paste_command = viewer.pasteItemCommand()
             else:
-                pasteCommand = command.PasteCommand()
-            if pasteCommand:
-                pasteCommand.do()
+                paste_command = command.PasteCommand()
+            if paste_command:
+                paste_command.do()
 
     def _findViewerFromFocus(self, window):
         """Walk up the window hierarchy to find a viewer with pasteItemCommand.
@@ -1035,11 +969,11 @@ class EditPaste(ViewerCommand):
                 return False
             # Check if clipboard contents are compatible with viewer
             if self.viewer and hasattr(self.viewer, "getSupportedPasteTypes"):
-                supportedTypes = self.viewer.getSupportedPasteTypes()
-                if supportedTypes:
+                supported_types = self.viewer.getSupportedPasteTypes()
+                if supported_types:
                     items = clipboard.peek()
                     for item in items:
-                        if not isinstance(item, supportedTypes):
+                        if not isinstance(item, supported_types):
                             return False
             return True
 
@@ -1147,9 +1081,9 @@ class EditPreferences(base_uicommand.UICommand):
 class EditToolBarPerspective(base_uicommand.UICommand):
     """Action for editing a customizable toolbar"""
 
-    def __init__(self, toolbar, editorClass, *args, **kwargs):
+    def __init__(self, toolbar, editor_class, *args, **kwargs):
         self.__toolbar = toolbar
-        self.__editorClass = editorClass
+        self.__editorClass = editor_class
         super().__init__(
             help_text=_("Customize toolbar"),
             icon_id="nuvola_apps_preferences-system-session-services",
@@ -1355,6 +1289,7 @@ class RenameViewer(ViewerCommand):
             _("Rename viewer"),
             active_viewer.title(),
         )
+        wxhelper.keep_placement_at_first_show(viewer_name_dialog)
         if viewer_name_dialog.ShowModal() == wx.ID_OK:
             active_viewer.set_title(viewer_name_dialog.GetValue())
         viewer_name_dialog.Destroy()
@@ -1407,15 +1342,15 @@ class ViewColumn(ViewerCommand, settings_uicommand.UICheckCommand):
 class ViewColumns(ViewerCommand, settings_uicommand.UICheckCommand):
 
     def is_setting_checked(self):
-        for columnName in self.setting:
-            if not self.viewer.isVisibleColumnByName(columnName):
+        for column_name in self.setting:
+            if not self.viewer.isVisibleColumnByName(column_name):
                 return False
         return True
 
     def do_command(self, event):
         show = event.IsChecked()
-        for columnName in self.setting:
-            self.viewer.showColumnByName(columnName, show)
+        for column_name in self.setting:
+            self.viewer.showColumnByName(column_name, show)
 
 
 class _ViewSettingsSync:
@@ -1565,12 +1500,12 @@ class ViewerSortByTaskStatusFirst(
 
 
 class ViewerHideTasks(ViewerCommand, settings_uicommand.UICheckCommand):
-    def __init__(self, taskStatus, *args, **kwargs):
-        self.__taskStatus = taskStatus
+    def __init__(self, task_status, *args, **kwargs):
+        self.__taskStatus = task_status
         super().__init__(
-            menu_text=taskStatus.hide_menu_text,
-            help_text=taskStatus.hide_help_text,
-            icon_id="synthetic_hide_%s" % taskStatus.status_string,
+            menu_text=task_status.hide_menu_text,
+            help_text=task_status.hide_help_text,
+            icon_id="synthetic_hide_%s" % task_status.status_string,
             *args,
             **kwargs
         )
@@ -1736,15 +1671,15 @@ class EditTrackedTasks(TaskListCommand):
         )
 
     def do_command(self, event, show=True):
-        editTaskDialog = dialog.editor.TaskEditor(
+        edit_task_dialog = dialog.editor.TaskEditor(
             self.main_window(),
             self.taskList.tasks_being_tracked(),
             self.taskList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
         )
-        editTaskDialog.Show(show)
-        return editTaskDialog  # for testing purposes
+        edit_task_dialog.Show(show)
+        return edit_task_dialog  # for testing purposes
 
     def enabled(self, event):
         return any(self.taskList.tasks_being_tracked())
@@ -1872,7 +1807,7 @@ class Delete(ViewerCommand):
 
         dlg.SetSizer(sizer)
         dlg.Fit()
-        dlg.CentreOnParent()
+        wxhelper.centre_on_parent(dlg)
         # Not the list: a cursor there looks like it can be typed in
         ok_btn.SetFocus()
         dlg.ShowModal()
@@ -1888,10 +1823,10 @@ class Delete(ViewerCommand):
 class TaskNew(TaskListCommand):
     def __init__(self, *args, **kwargs):
         self.taskKeywords = kwargs.pop("taskKeywords", dict())
-        taskList = kwargs["taskList"]
+        task_list = kwargs["taskList"]
         if "menu_text" not in kwargs:  # Provide for subclassing
-            kwargs["menu_text"] = taskList.newItemMenuText
-            kwargs["help_text"] = taskList.newItemHelpText
+            kwargs["menu_text"] = task_list.newItemMenuText
+            kwargs["help_text"] = task_list.newItemHelpText
         super().__init__(
             icon_id="nuvola_actions_document-new", *args, **kwargs
         )
@@ -1917,24 +1852,24 @@ class TaskNew(TaskListCommand):
             )
         if self.__should_preset_reminder_date_time():
             kwargs["reminder"] = task.Task.suggestedReminderDateTime()
-        newTaskCommand = command.NewTaskCommand(
+        new_task_command = command.NewTaskCommand(
             self.taskList,
             categories=self.categoriesForTheNewTask(),
             prerequisites=self.prerequisitesForTheNewTask(),
             dependencies=self.dependenciesForTheNewTask(),
             **kwargs
         )
-        newTaskCommand.do()
-        newTaskDialog = dialog.editor.TaskEditor(
+        new_task_command.do()
+        new_task_dialog = dialog.editor.TaskEditor(
             self.main_window(),
-            newTaskCommand.items,
+            new_task_command.items,
             self.taskList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
             items_are_new=True,
         )
-        newTaskDialog.Show(show)
-        return newTaskDialog  # for testing purposes
+        new_task_dialog.Show(show)
+        return new_task_dialog  # for testing purposes
 
     def categoriesForTheNewTask(self):
         return self.main_window().taskFile.categories().filteredCategories()
@@ -1994,19 +1929,19 @@ class TaskNewFromTemplate(TaskNew):
         template_task = self.__read_template()
         kwargs = template_task.__getcopystate__()  # pylint: disable=E1103
         kwargs["categories"] = self.categoriesForTheNewTask()
-        newTaskCommand = command.NewTaskCommand(self.taskList, **kwargs)
-        newTaskCommand.do()
+        new_task_command = command.NewTaskCommand(self.taskList, **kwargs)
+        new_task_command.do()
         # pylint: disable=W0142
-        newTaskDialog = dialog.editor.TaskEditor(
+        new_task_dialog = dialog.editor.TaskEditor(
             self.main_window(),
-            newTaskCommand.items,
+            new_task_command.items,
             self.taskList,
             self.main_window().taskFile,
             icon_id=self.icon_id,
             items_are_new=True,
         )
-        newTaskDialog.Show(show)
-        return newTaskDialog  # for testing purposes
+        new_task_dialog.Show(show)
+        return new_task_dialog  # for testing purposes
 
 
 class TaskNewFromTemplateButton(
@@ -2297,69 +2232,71 @@ class TaskDecPriority(TaskListCommand, ViewerCommand):
 
 class DragAndDropCommand(ViewerCommand):
     def on_command_activate(
-        self, dropItem, dragItems, part, column
+        self, dropItem, drag_items, part, column
     ):  # pylint: disable=W0221
         """Override on_command_activate to be able to accept two items instead
         of one event."""
         self.do_command(
             dropItem,
-            dragItems,
+            drag_items,
             part,
             None if column == -1 else self.viewer.visibleColumns()[column],
             column,  # Pass raw column index as dropColumn
         )
 
     def do_command(
-        self, dropItem, dragItems, part, column, dropColumn=-1
+        self, dropItem, drag_items, part, column, dropColumn=-1
     ):  # pylint: disable=W0221
-        dragAndDropCommand = self.createCommand(
+        drag_and_drop_command = self.createCommand(
             dropItem=dropItem,
-            dragItems=dragItems,
+            drag_items=drag_items,
             part=part,
             column=column,
             isTree=self.viewer.is_tree_viewer(),
             dropColumn=dropColumn,
         )
-        if dragAndDropCommand.can_do():
-            dragAndDropCommand.do()
-            return dragAndDropCommand
+        if drag_and_drop_command.can_do():
+            drag_and_drop_command.do()
+            return drag_and_drop_command
 
     def createCommand(
-        self, dropItem, dragItems, part, column, isTree, dropColumn=-1
+        self, dropItem, drag_items, part, column, isTree, dropColumn=-1
     ):
         raise NotImplementedError  # pragma: no cover
 
 
 class OrderingDragAndDropCommand(DragAndDropCommand):
-    def do_command(self, dropItem, dragItems, part, column, dropColumn=-1):
-        cmd = super().do_command(dropItem, dragItems, part, column, dropColumn)
+    def do_command(self, dropItem, drag_items, part, column, dropColumn=-1):
+        cmd = super().do_command(
+            dropItem, drag_items, part, column, dropColumn
+        )
         if cmd is not None and cmd.isOrdering():
-            sortCommand = ViewerSortByCommand(
+            sort_command = ViewerSortByCommand(
                 viewer=self.viewer, value="ordering"
             )
-            sortCommand.do_command(None)
+            sort_command.do_command(None)
 
 
 class TaskDragAndDrop(OrderingDragAndDropCommand, TaskListCommand):
     def createCommand(
-        self, dropItem, dragItems, part, column, isTree, dropColumn=-1
+        self, dropItem, drag_items, part, column, isTree, dropColumn=-1
     ):
         # Get column name if dropColumn is valid
-        dropColumnName = None
+        drop_column_name = None
         if dropColumn >= 0:
-            visibleCols = self.viewer.visibleColumns()
-            if dropColumn < len(visibleCols):
-                dropColumnName = visibleCols[dropColumn].name()
+            visible_cols = self.viewer.visibleColumns()
+            if dropColumn < len(visible_cols):
+                drop_column_name = visible_cols[dropColumn].name()
 
         return command.DragAndDropTaskCommand(
             self.taskList,
-            dragItems,
+            drag_items,
             drop=[dropItem],
             part=part,
             column=column,
             isTree=isTree,
             dropColumn=dropColumn,
-            dropColumnName=dropColumnName,
+            dropColumnName=drop_column_name,
         )
 
 
@@ -2416,6 +2353,13 @@ class ToggleCategory(ViewerCommand):
         return True
 
 
+# For a mail program refusing a new message without recipient: an
+# address reserved for examples (RFC 2606) that accepts no mail (null
+# MX, RFC 7505), so a message sent to it unchanged bounces at once
+# instead of reaching anyone (docs/EMAIL_ATTACHMENTS.md, Decisions 8)
+_PLACEHOLDER_RECIPIENT = "recipient@example.com"
+
+
 class Mail(ViewerCommand):
     def __init__(self, *args, **kwargs):
         menu_text = (
@@ -2439,7 +2383,7 @@ class Mail(ViewerCommand):
         return self.viewer.has_selection
 
     def do_command(
-        self, event, mail=sendMail, showerror=wx.MessageBox
+        self, event, mail=send_mail, showerror=wx.MessageBox
     ):  # pylint: disable=W0221
         items = self.viewer.curselection()
         subject = self.subject(items)
@@ -2493,22 +2437,30 @@ class Mail(ViewerCommand):
         lines.append(subject)
         if item.description():
             lines.extend(item.description().splitlines())
-            lines.extend("\r\n")
+            lines.append("")  # A blank line before the next item
         return lines
 
     def mail(self, to, cc, subject, body, mail, showerror):
+        """Open the mail program with the message; nothing is sent. A
+        message without recipient that the mail program refuses opens
+        again addressed to the placeholder; any other failure is
+        shown."""
         try:
             mail(to, subject, body, cc=cc)
-        except Exception:
-            # Try again with a dummy recipient:
+            return
+        except Exception as reason:  # pylint: disable=W0703
+            error = reason
+        if not to:
             try:
-                mail("recipient@domain.com", subject, body)
-            except Exception as reason:  # pylint: disable=W0703
-                showerror(
-                    _("Cannot send email:\n%s") % str(reason),
-                    caption=_("%s mail error") % meta.name,
-                    style=wx.ICON_ERROR,
-                )
+                mail(_PLACEHOLDER_RECIPIENT, subject, body, cc=cc)
+                return
+            except Exception:  # pylint: disable=W0703
+                pass  # The first failure tells more
+        showerror(
+            _("Cannot send email:\n%s") % str(error),
+            caption=_("%s mail error") % meta.name,
+            style=wx.ICON_ERROR,
+        )
 
 
 class AddNote(ViewerCommand):
@@ -2528,19 +2480,19 @@ class AddNote(ViewerCommand):
         )
 
     def do_command(self, event, show=True):  # pylint: disable=W0221
-        addNoteCommand = command.AddNoteCommand(
+        add_note_command = command.AddNoteCommand(
             self.viewer.presentation(), self.viewer.curselection()
         )
-        addNoteCommand.do()
-        editDialog = dialog.editor.NoteEditor(
+        add_note_command.do()
+        edit_dialog = dialog.editor.NoteEditor(
             self.main_window(),
-            addNoteCommand.items,
+            add_note_command.items,
             self.viewer.presentation(),
             self.main_window().taskFile,
             icon_id=self.icon_id,
         )
-        editDialog.Show(show)
-        return editDialog  # for testing purposes
+        edit_dialog.Show(show)
+        return edit_dialog  # for testing purposes
 
 
 class OpenAllNotes(ViewerCommand):
@@ -2593,9 +2545,10 @@ class EffortNew(ViewerCommand, EffortListCommand, TaskListCommand):
     def enabled(self, event):
         if not self.taskList:
             return False
-        # When viewer is showing tasks, require a task to be selected
+        # A task view: one task selected; its new effort is tracked,
+        # one task at a time (docs/EFFORTS.md, Tracking)
         if self.viewer and self.viewer.is_showing_tasks():
-            return bool(self.viewer.curselection())
+            return len(self.viewer.curselection()) == 1
         return True
 
     def do_command(self, event, show=True):
@@ -2661,13 +2614,13 @@ class EffortStart(ViewerCommand, TaskListCommand):
         start.do()
 
     def enabled(self, event):
+        # One task tracked at a time (docs/EFFORTS.md, Tracking)
         selection = self.viewer.curselection()
         return (
-            bool(selection)
+            len(selection) == 1
             and self.viewer.is_task
-            and any(
-                not t.completed() and not t.isBeingTracked() for t in selection
-            )
+            and not selection[0].completed()
+            and not selection[0].isBeingTracked()
         )
 
 
@@ -2696,10 +2649,12 @@ class EffortStartForEffort(ViewerCommand, TaskListCommand):
         start.do()
 
     def enabled(self, event):
+        # The selected efforts' one task (docs/EFFORTS.md, Tracking)
         selection = self.viewer.curselection()
         return (
             bool(selection)
             and self.viewer.is_effort
+            and len({each.task() for each in selection}) == 1
             and bool(self.trackable_tasks())
         )
 
@@ -2789,16 +2744,16 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
         self.updateUI()
 
     def efforts(self):
-        selectedEfforts = set()
+        selected_efforts = set()
         for item in self.viewer.curselection():
             if isinstance(item, task.Task):
-                selectedEfforts |= set(item.efforts())
+                selected_efforts |= set(item.efforts())
             elif isinstance(item, effort.Effort):
-                selectedEfforts.add(item)
-        selectedEfforts &= set(self.__tracker.trackedEfforts())
+                selected_efforts.add(item)
+        selected_efforts &= set(self.__tracker.trackedEfforts())
         return (
-            selectedEfforts
-            if selectedEfforts
+            selected_efforts
+            if selected_efforts
             else self.__tracker.trackedEfforts()
         )
 
@@ -2806,13 +2761,15 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
         efforts = self.efforts()
         if efforts:
             # Stop the tracked effort(s)
-            effortCommand = command.StopEffortCommand(self.effortList, efforts)
+            effort_command = command.StopEffortCommand(
+                self.effortList, efforts
+            )
         else:
             # Resume tracking the last task
-            effortCommand = command.StartEffortCommand(
+            effort_command = command.StartEffortCommand(
                 self.taskList, [self.mostRecentTrackedTask()]
             )
-        effortCommand.do()
+        effort_command.do()
 
     def enabled(self, event=None):
         # If there are tracked efforts this command will stop them. If there are
@@ -2867,18 +2824,18 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
     def updateMenuItems(self, paused):
         menu_text = self.get_menu_text(paused)
         help_text = self.get_help_text(paused)
-        for menuItem in self.menu_items:
-            menuItem.Check(paused)
-            menuItem.SetItemLabel(menu_text)
-            menuItem.SetHelp(help_text)
+        for menu_item in self.menu_items:
+            menu_item.Check(paused)
+            menu_item.SetItemLabel(menu_text)
+            menu_item.SetHelp(help_text)
 
     def get_menu_text(self, paused=None):  # pylint: disable=W0221
         if self.anyTrackedEfforts():
-            trackedEfforts = list(self.efforts())
+            tracked_efforts = list(self.efforts())
             subject = (
                 _("multiple tasks")
-                if len(trackedEfforts) > 1
-                else trackedEfforts[0].task().subject()
+                if len(tracked_efforts) > 1
+                else tracked_efforts[0].task().subject()
             )
             return self.stopMenuText % self.trimmedSubject(subject)
         if paused is None:
@@ -2904,18 +2861,20 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
         return bool(self.efforts())
 
     def mostRecentTrackedTask(self):
-        stopTimes = [
+        stop_times = [
             (effort.getStop(), effort)
             for effort in self.effortList
             if effort.getStop() is not None
         ]
-        return max(stopTimes)[1].task()
+        return max(stop_times)[1].task()
 
     @staticmethod
-    def trimmedSubject(subject, maxLength=35, postFix="..."):
-        trim = len(subject) > maxLength
+    def trimmedSubject(subject, max_length=35, post_fix="..."):
+        trim = len(subject) > max_length
         return (
-            subject[: maxLength - len(postFix)] + postFix if trim else subject
+            subject[: max_length - len(post_fix)] + post_fix
+            if trim
+            else subject
         )
 
 
@@ -2930,26 +2889,26 @@ class CategoryNew(CategoriesCommand):
         )
 
     def do_command(self, event, show=True):  # pylint: disable=W0221
-        newCategoryCommand = command.NewCategoryCommand(self.categories)
-        newCategoryCommand.do()
-        taskFile = self.main_window().taskFile
-        newCategoryDialog = dialog.editor.CategoryEditor(
+        new_category_command = command.NewCategoryCommand(self.categories)
+        new_category_command.do()
+        task_file = self.main_window().taskFile
+        new_category_dialog = dialog.editor.CategoryEditor(
             self.main_window(),
-            newCategoryCommand.items,
-            taskFile.categories(),
-            taskFile,
+            new_category_command.items,
+            task_file.categories(),
+            task_file,
             icon_id=self.icon_id,
         )
-        newCategoryDialog.Show(show)
+        new_category_dialog.Show(show)
 
 
 class CategoryDragAndDrop(OrderingDragAndDropCommand, CategoriesCommand):
     def createCommand(
-        self, dropItem, dragItems, part, column, isTree, dropColumn=-1
+        self, dropItem, drag_items, part, column, isTree, dropColumn=-1
     ):
         return command.DragAndDropCategoryCommand(
             self.categories,
-            dragItems,
+            drag_items,
             drop=[dropItem],
             part=part,
             column=column,
@@ -3012,21 +2971,21 @@ class NoteNew(NotesCommand, ViewerCommand):
 
     def do_command(self, event, show=True):  # pylint: disable=W0221
         if self.viewer and self.viewer.is_showing_notes():
-            noteDialog = self.viewer.newItemDialog(icon_id=self.icon_id)
+            note_dialog = self.viewer.newItemDialog(icon_id=self.icon_id)
         else:
-            newNoteCommand = command.NewNoteCommand(
+            new_note_command = command.NewNoteCommand(
                 self.notes, categories=self.categoriesForTheNewNote()
             )
-            newNoteCommand.do()
-            noteDialog = dialog.editor.NoteEditor(
+            new_note_command.do()
+            note_dialog = dialog.editor.NoteEditor(
                 self.main_window(),
-                newNoteCommand.items,
+                new_note_command.items,
                 self.notes,
                 self.main_window().taskFile,
                 icon_id=self.icon_id,
             )
-        noteDialog.Show(show)
-        return noteDialog  # for testing purposes
+        note_dialog.Show(show)
+        return note_dialog  # for testing purposes
 
     def categoriesForTheNewNote(self):
         return self.main_window().taskFile.categories().filteredCategories()
@@ -3045,11 +3004,11 @@ class NewNoteWithSelectedCategories(NoteNew, ViewerCommand):
 
 class NoteDragAndDrop(OrderingDragAndDropCommand, NotesCommand):
     def createCommand(
-        self, dropItem, dragItems, part, column, isTree, dropColumn=-1
+        self, dropItem, drag_items, part, column, isTree, dropColumn=-1
     ):
         return command.DragAndDropNoteCommand(
             self.notes,
-            dragItems,
+            drag_items,
             drop=[dropItem],
             part=part,
             column=column,
@@ -3069,9 +3028,9 @@ class AttachmentNew(AttachmentsCommand, ViewerCommand):
         )
 
     def do_command(self, event, show=True):  # pylint: disable=W0221
-        attachmentDialog = self.viewer.newItemDialog(icon_id=self.icon_id)
-        attachmentDialog.Show(show)
-        return attachmentDialog  # for testing purposes
+        attachment_dialog = self.viewer.newItemDialog(icon_id=self.icon_id)
+        attachment_dialog.Show(show)
+        return attachment_dialog  # for testing purposes
 
 
 class AddAttachment(ViewerCommand):
@@ -3089,25 +3048,28 @@ class AddAttachment(ViewerCommand):
         return v.has_selection and (v.is_task or v.is_category or v.is_note)
 
     def do_command(self, event):
-        filename = widgets.AttachmentSelector()
+        filename = widgets.AttachmentSelector(
+            default_path=iocontroller.attachment_folder(self.viewer.taskFile)
+        )
         if not filename:
             return
+        iocontroller.remember_attachment_folder(filename)
         attachment_base = settings.file.attachmentbase
         if attachment_base:
             filename = attachment.getRelativePath(filename, attachment_base)
-        addAttachmentCommand = command.AddAttachmentCommand(
+        add_attachment_command = command.AddAttachmentCommand(
             self.viewer.presentation(),
             self.viewer.curselection(),
             attachments=[attachment.FileAttachment(filename)],
         )
-        addAttachmentCommand.do()
+        add_attachment_command.do()
 
 
 def open_attachments(attachments, showerror):
     attachment_base = settings.file.attachmentbase
-    for eachAttachment in attachments:
+    for each_attachment in attachments:
         try:
-            eachAttachment.open(attachment_base)
+            each_attachment.open(attachment_base)
         except Exception as instance:  # pylint: disable=W0703
             showerror(
                 render.exception(Exception, instance),
@@ -3160,10 +3122,10 @@ class OpenAllAttachments(ViewerCommand):
     def do_command(
         self, event, showerror=wx.MessageBox
     ):  # pylint: disable=W0221
-        allAttachments = []
+        all_attachments = []
         for item in self.viewer.curselection():
-            allAttachments.extend(item.attachments())
-        open_attachments(allAttachments, showerror)
+            all_attachments.extend(item.attachments())
+        open_attachments(all_attachments, showerror)
 
 
 class DialogCommand(base_uicommand.UICommand):
@@ -3290,7 +3252,7 @@ class URLCommand(base_uicommand.UICommand):
 
     def do_command(self, event):
         try:
-            openfile.openFile(self.url)
+            openfile.open_file(self.url)
         except Exception as reason:
             wx.MessageBox(
                 _("Cannot open URL:\n%s") % str(reason),
@@ -3447,21 +3409,21 @@ class Search(ViewerCommand):
     def append_to_toolbar(self, toolbar):
         self.__bound = True
         (
-            searchString,
-            matchCase,
-            includeSubItems,
-            searchDescription,
-            regularExpression,
+            search_string,
+            match_case,
+            include_sub_items,
+            search_description,
+            regular_expression,
         ) = self.viewer.getSearchFilter()
         # pylint: disable=W0201
         self.searchControl = widgets.SearchCtrl(
             toolbar,
-            value=searchString,
+            value=search_string,
             style=wx.TE_PROCESS_ENTER,
-            matchCase=matchCase,
-            includeSubItems=includeSubItems,
-            searchDescription=searchDescription,
-            regularExpression=regularExpression,
+            matchCase=match_case,
+            includeSubItems=include_sub_items,
+            searchDescription=search_description,
+            regularExpression=regular_expression,
             callback=self.onFind,
         )
         # Set minimum size to ensure the text input is visible in AUI toolbars
@@ -3538,11 +3500,11 @@ class ToolbarChoiceCommandMixin(object):
 
     def onChoice(self, event):
         """The user selected a choice from the choice control."""
-        choiceIndex = event.GetInt()
-        if choiceIndex == self.currentChoice:
+        choice_index = event.GetInt()
+        if choice_index == self.currentChoice:
             return
-        self.currentChoice = choiceIndex
-        self.doChoice(self.choiceData[choiceIndex])
+        self.currentChoice = choice_index
+        self.doChoice(self.choiceData[choice_index])
 
     def doChoice(self, choice):
         raise NotImplementedError  # pragma: no cover

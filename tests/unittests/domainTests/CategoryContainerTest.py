@@ -29,55 +29,55 @@ class CategoryContainerTest(test.TestCase):
             "Filtered category", filtered=True
         )
 
-    def testAddExistingCategory_WithoutTasks(self):
+    def test_add_existing_category_without_tasks(self):
         self.categories.append(self.category)
         self.categories.append(category.Category(self.category.subject()))
         self.assertEqual(2, len(self.categories))
 
-    def testAddCategoryWithCategorizable(self):
-        aTask = task.Task()
-        aTask.addCategory(self.category)
+    def test_add_category_with_categorizable(self):
+        a_task = task.Task()
+        a_task.addCategory(self.category)
         self.categories.append(self.category)
-        self.assertEqual(set([self.category]), aTask.categories())
+        self.assertEqual(set([self.category]), a_task.categories())
 
-    def testRemoveCategoryWithTask(self):
-        aTask = task.Task()
+    def test_remove_category_with_task(self):
+        a_task = task.Task()
         self.categories.append(self.category)
-        aTask.addCategory(self.category)
+        a_task.addCategory(self.category)
         self.categories.removeItems([self.category])
-        self.assertFalse(aTask.categories())
+        self.assertFalse(a_task.categories())
 
-    def testFilteredCategoriesWhenCategoriesIsEmpty(self):
+    def test_filtered_categories_when_categories_is_empty(self):
         self.assertFalse(self.categories.filteredCategories())
 
-    def testFilteredCategoriesAfterAddingOneUnfilteredCategory(self):
+    def test_filtered_categories_after_adding_one_unfiltered_category(self):
         self.categories.append(self.category)
         self.assertFalse(self.categories.filteredCategories())
 
-    def testFilteredCategoriesAfterAddingOneFilteredCategory(self):
+    def test_filtered_categories_after_adding_one_filtered_category(self):
         self.categories.append(self.filteredCategory)
         self.assertEqual(
             [self.filteredCategory], self.categories.filteredCategories()
         )
 
-    def testFilteredCategoriesAfterAddingOneUnfilteredCategoryAndMakingItFilter(
+    def test_filtered_categories_after_adding_unfiltered_one_and_filtering_it(
         self,
     ):
         self.categories.append(self.category)
         self.category.setFiltered(True)
         self.assertEqual([self.category], self.categories.filteredCategories())
 
-    def testFilteredCategoriesAfterRemovingOneUnfilteredCategory(self):
+    def test_filtered_categories_after_removing_one_unfiltered_category(self):
         self.categories.append(self.category)
         self.categories.remove(self.category)
         self.assertFalse(self.categories.filteredCategories())
 
-    def testFilteredCategoriesAfterRemovingOneFilteredCategory(self):
+    def test_filtered_categories_after_removing_one_filtered_category(self):
         self.categories.append(self.filteredCategory)
         self.categories.remove(self.filteredCategory)
         self.assertFalse(self.categories.filteredCategories())
 
-    def testFilteredCategoriesAfterAddingOneFilteredAndOneUnfilteredCategory(
+    def test_filtered_categories_after_adding_filtered_and_unfiltered_one(
         self,
     ):
         self.categories.extend([self.category, self.filteredCategory])
@@ -85,21 +85,21 @@ class CategoryContainerTest(test.TestCase):
             [self.filteredCategory], self.categories.filteredCategories()
         )
 
-    def testFilteredCategoriesAfterAddingOneFilteredAndOneUnfilteredCategoryAndMakingBothFiltered(
+    def test_filtered_categories_after_adding_two_and_filtering_both(
         self,
     ):
         self.categories.extend([self.category, self.filteredCategory])
         self.category.setFiltered(True)
         self.assertEqual(2, len(self.categories.filteredCategories()))
 
-    def testFilteredCategoriesAfterAddingOneFilteredAndOneUnfilteredCategoryAndMakingNoneFiltered(
+    def test_filtered_categories_after_adding_two_and_filtering_none(
         self,
     ):
         self.categories.extend([self.category, self.filteredCategory])
         self.filteredCategory.setFiltered(False)
         self.assertFalse(self.categories.filteredCategories())
 
-    def testResetAllFilteredCategories(self):
+    def test_reset_all_filtered_categories(self):
         self.categories.extend([self.category, self.filteredCategory])
         self.categories.resetAllFilteredCategories()
         self.assertFalse(self.filteredCategory.isFiltered())

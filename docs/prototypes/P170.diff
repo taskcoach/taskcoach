@@ -1,0 +1,38 @@
+diff -ru -x __pycache__ -x '*.pyc' -x '*.log' -x '*.ini' -x '*.tsk' a/taskcoachlib/domain/date/timeexpression.py b/taskcoachlib/domain/date/timeexpression.py
+--- a/taskcoachlib/domain/date/timeexpression.py
++++ b/taskcoachlib/domain/date/timeexpression.py
+@@ -253,9 +253,10 @@
+         return pos, result
+ 
+ 
+-def parse(text, now=None):
++def parse(text, now=None, whole=False):
+     """The date and time of the expression text starts with, relative
+-    to now; ValueError when it starts with none or gives no date."""
++    to now; ValueError when it starts with none, gives no date or, if
++    whole, is followed by more than spaces."""
+     reader = _Reader(text, now or datetime.datetime.now())
+     try:
+         found = reader.expression(0)
+@@ -263,4 +264,7 @@
+         raise ValueError("Out of range: %r" % text) from reason
+     if not found:
+         raise ValueError("Not a date expression: %r" % text)
+-    return found[1]
++    end, result = found
++    if whole and text[end:].strip():
++        raise ValueError("Not all a date expression: %r" % text)
++    return result
+diff -ru -x __pycache__ -x '*.pyc' -x '*.log' -x '*.ini' -x '*.tsk' a/taskcoachlib/gui/dialog/templates.py b/taskcoachlib/gui/dialog/templates.py
+--- a/taskcoachlib/gui/dialog/templates.py
++++ b/taskcoachlib/gui/dialog/templates.py
+@@ -40,7 +40,8 @@
+     def isValid(value):
+         if value:
+             try:
+-                timeexpression.parse(value)
++                # All of it: what follows the expression would be lost
++                timeexpression.parse(value, whole=True)
+             except ValueError:
+                 return False
+         return True  # Empty is valid.

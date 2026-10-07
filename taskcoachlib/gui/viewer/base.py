@@ -107,8 +107,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.registerObserver(
             self.on_end_bulk_operation, eventType="command.justBulkModified"
         )
-        # Also refreshed once after a scheduler pass: its first, after a
-        # file opens, changes every row
+        # Also refreshed once after a scheduler pass, which can change
+        # every row (a file merged, the theme changed)
         self.registerObserver(
             self.on_begin_pass, eventType="scheduler.aboutToPass"
         )
@@ -144,6 +144,9 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         self.__freezeCount -= 1
         self.__presentation.thaw()
         if self.__freezeCount == 0:
+            # Every row redrawn, those changed meanwhile too (the first
+            # pass runs as the file is read)
+            self.__pendingRefreshItems = set()
             self.refresh()
 
     def on_begin_bulk_operation(self, event=None):  # pylint: disable=W0613
@@ -333,8 +336,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         return self.options.title or self.defaultTitle
 
     def set_title(self, title):
-        titleToSaveInSettings = "" if title == self.defaultTitle else title
-        self.options.title = titleToSaveInSettings
+        title_to_save_in_settings = "" if title == self.defaultTitle else title
+        self.options.title = title_to_save_in_settings
         self.parent.set_pane_title(self, title)
         self.parent.manager.Update()
 
@@ -449,17 +452,37 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             self.widget.ensureSelectionVisible()
 
     def _capture_selection_info(self):
-        """Capture selection info before refresh. Override in subclasses."""
+        """Capture the rows around the selection before refresh.
+
+        The removed items are already gone from the presentation by the
+        time this runs, so the neighbouring rows can only be read from
+        the widget, which still shows the old contents.
+        """
+        if not hasattr(self.widget, "selection_neighbours"):
+            return None
+        above, below = self.widget.selection_neighbours()
+        if above or below:
+            return {"above": above, "below": below}
         return None
 
     def select_next_items_after_removal(self, selection_info):
-        """Select the next item after items were removed.
+        """Select the row that moved into the removed rows' place, so
+        the selection stays on the same line; the row above when they
+        were the last (docs/LIST_MANAGEMENT.md, Which Row Gets
+        Selected: ruled, the same in every view)."""
+        new_selection = self.__first_survivor(
+            selection_info["below"]
+        ) or self.__first_survivor(selection_info["above"])
+        if new_selection:
+            self.select([new_selection])
 
-        Args:
-            selection_info: Selection state captured before the
-                refresh, while the widget still showed the old rows.
-        """
-        raise NotImplementedError
+    def __first_survivor(self, items):
+        """The first of items still in the presentation."""
+        presentation = self.presentation()
+        for item in items:
+            if item in presentation:
+                return item
+        return None
 
     def onSelect(self, event=None):  # pylint: disable=W0613
         """The selection of items in the widget has been changed. Notify
@@ -506,6 +529,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def refresh(self):
         if self and not self.__freezeCount:
             self.widget.RefreshAllItems(len(self.presentation()))
+
+    def refresh_order(self):
+        """The rows' order changed, not what they show: a widget that
+        can moves its rows (a tree), else the whole refresh."""
+        reorder = getattr(self.widget, "reorder_items", None)
+        if self and not self.__freezeCount and reorder and reorder():
+            return
+        self.refresh()
 
     def refreshItems(self, *items):
         if not self.__freezeCount:
@@ -617,14 +648,14 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def previousSettingsSection(self):
         """Return the settings section of the previous viewer of this
         class."""
-        previousSectionNumber = self.__instanceNumber - 1
-        while previousSectionNumber > 0:
-            previousSection = self.__settingsSection + str(
-                previousSectionNumber
+        previous_section_number = self.__instanceNumber - 1
+        while previous_section_number > 0:
+            previous_section = self.__settingsSection + str(
+                previous_section_number
             )
-            if settings.has_section(previousSection):
-                return previousSection
-            previousSectionNumber -= 1
+            if settings.has_section(previous_section):
+                return previous_section
+            previous_section_number -= 1
         return self.__settingsSection
 
     def hasModes(self):
@@ -648,7 +679,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
     def getColumnUICommands(self):
         return []
 
-    def isFilterable(self):
+    def is_filterable(self):
         return False
 
     def getFilterUICommands(self):
@@ -677,51 +708,53 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         )
         self.widget.SetAcceleratorTable(table)
 
-        clipboardToolBarUICommands = self.createClipboardToolBarUICommands()
-        creationToolBarUICommands = self.createCreationToolBarUICommands()
-        editToolBarUICommands = self.createEditToolBarUICommands()
-        actionToolBarUICommands = self.createActionToolBarUICommands()
-        modeToolBarUICommands = self.createModeToolBarUICommands()
+        clipboard_tool_bar_ui_commands = (
+            self.createClipboardToolBarUICommands()
+        )
+        creation_tool_bar_ui_commands = self.createCreationToolBarUICommands()
+        edit_tool_bar_ui_commands = self.createEditToolBarUICommands()
+        action_tool_bar_ui_commands = self.createActionToolBarUICommands()
+        mode_tool_bar_ui_commands = self.createModeToolBarUICommands()
 
-        def separator(uiCommands, *otherUICommands):
+        def separator(ui_commands, *other_ui_commands):
             return (
                 (uicommand.Separator(),)
-                if (uiCommands and any(otherUICommands))
+                if (ui_commands and any(other_ui_commands))
                 else ()
             )
 
-        clipboardSeparator = separator(
-            clipboardToolBarUICommands,
-            creationToolBarUICommands,
-            editToolBarUICommands,
-            actionToolBarUICommands,
-            modeToolBarUICommands,
+        clipboard_separator = separator(
+            clipboard_tool_bar_ui_commands,
+            creation_tool_bar_ui_commands,
+            edit_tool_bar_ui_commands,
+            action_tool_bar_ui_commands,
+            mode_tool_bar_ui_commands,
         )
-        creationSeparator = separator(
-            creationToolBarUICommands,
-            editToolBarUICommands,
-            actionToolBarUICommands,
-            modeToolBarUICommands,
+        creation_separator = separator(
+            creation_tool_bar_ui_commands,
+            edit_tool_bar_ui_commands,
+            action_tool_bar_ui_commands,
+            mode_tool_bar_ui_commands,
         )
-        editSeparator = separator(
-            editToolBarUICommands,
-            actionToolBarUICommands,
-            modeToolBarUICommands,
+        edit_separator = separator(
+            edit_tool_bar_ui_commands,
+            action_tool_bar_ui_commands,
+            mode_tool_bar_ui_commands,
         )
-        actionSeparator = separator(
-            actionToolBarUICommands, modeToolBarUICommands
+        action_separator = separator(
+            action_tool_bar_ui_commands, mode_tool_bar_ui_commands
         )
 
         return (
-            clipboardToolBarUICommands
-            + clipboardSeparator
-            + creationToolBarUICommands
-            + creationSeparator
-            + editToolBarUICommands
-            + editSeparator
-            + actionToolBarUICommands
-            + actionSeparator
-            + modeToolBarUICommands
+            clipboard_tool_bar_ui_commands
+            + clipboard_separator
+            + creation_tool_bar_ui_commands
+            + creation_separator
+            + edit_tool_bar_ui_commands
+            + edit_separator
+            + action_tool_bar_ui_commands
+            + action_separator
+            + mode_tool_bar_ui_commands
         )
 
     def getToolBarPerspective(self):
@@ -732,13 +765,13 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def createClipboardToolBarUICommands(self):
         """UI commands for manipulating the clipboard (cut, copy, paste)."""
-        cutCommand = uicommand.EditCut(viewer=self)
-        copyCommand = uicommand.EditCopy(viewer=self)
-        pasteCommand = uicommand.EditPaste(viewer=self)
-        cutCommand.bind(self, wx.ID_CUT)
-        copyCommand.bind(self, wx.ID_COPY)
-        pasteCommand.bind(self, wx.ID_PASTE)
-        return cutCommand, copyCommand, pasteCommand
+        cut_command = uicommand.EditCut(viewer=self)
+        copy_command = uicommand.EditCopy(viewer=self)
+        paste_command = uicommand.EditPaste(viewer=self)
+        cut_command.bind(self, wx.ID_CUT)
+        copy_command.bind(self, wx.ID_COPY)
+        paste_command.bind(self, wx.ID_PASTE)
+        return cut_command, copy_command, paste_command
 
     def createCreationToolBarUICommands(self):
         """UI commands for creating new items."""
@@ -746,13 +779,13 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def createEditToolBarUICommands(self):
         """UI commands for editing items."""
-        editCommand = uicommand.Edit(viewer=self)
+        edit_command = uicommand.Edit(viewer=self)
         self.deleteUICommand = uicommand.Delete(
             viewer=self
         )  # For unittests pylint: disable=W0201
-        editCommand.bind(self, wx.ID_EDIT)
+        edit_command.bind(self, wx.ID_EDIT)
         self.deleteUICommand.bind(self, wx.ID_DELETE)
-        return editCommand, self.deleteUICommand
+        return edit_command, self.deleteUICommand
 
     def createActionToolBarUICommands(self):
         """UI commands for actions."""
@@ -764,21 +797,21 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def newItemDialog(self, *args, **kwargs):
         icon_id = kwargs.pop("icon_id")
-        newItemCommand = self.newItemCommand(*args, **kwargs)
-        newItemCommand.do()
+        new_item_command = self.newItemCommand(*args, **kwargs)
+        new_item_command.do()
         return self.editItemDialog(
-            newItemCommand.items, icon_id, items_are_new=True
+            new_item_command.items, icon_id, items_are_new=True
         )
 
     def newSubItemDialog(self, icon_id):
         parents = self.curselection()
-        newSubItemCommand = self.newSubItemCommand()
-        newSubItemCommand.do()
+        new_sub_item_command = self.newSubItemCommand()
+        new_sub_item_command.do()
         # Expand parent notes so the newly created subnotes are visible
         for parent in parents:
             parent.expand(True, context=self.settingsSection())
         return self.editItemDialog(
-            newSubItemCommand.items, icon_id, items_are_new=True
+            new_sub_item_command.items, icon_id, items_are_new=True
         )
 
     def editItemDialog(
@@ -792,8 +825,8 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         # dangling observers/subscriptions and causing C++ segfaults.
         if isinstance(parent, wx.Dialog):
             parent = wx.GetApp().TopWindow
-        EditorClass = self.itemEditorClass()
-        return EditorClass(
+        editor_class = self.itemEditorClass()
+        return editor_class(
             parent,
             items,
             self.presentation(),
@@ -912,12 +945,6 @@ class ListViewer(Viewer):  # pylint: disable=W0223
         except IndexError:
             return None
 
-    def get_index_of_item(self, item):
-        return self.presentation().index(item)
-
-    def select_next_items_after_removal(self, selection_info):
-        pass  # Done automatically by list controls
-
 
 class TreeViewer(Viewer):  # pylint: disable=W0223
     def __init__(self, *args, **kwargs):
@@ -954,11 +981,11 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
 
     def __handleExpandedOrCollapsedItem(self, event, expanded):
         event.Skip()
-        treeItem = event.GetItem()
+        tree_item = event.GetItem()
         # If we get an expanded or collapsed event for the root item, ignore it
-        if treeItem == self.widget.GetRootItem():
+        if tree_item == self.widget.GetRootItem():
             return
-        item = self.widget.GetItemPyData(treeItem)
+        item = self.widget.GetItemPyData(tree_item)
         item.expand(expanded, context=self.settingsSection())
 
     def expand_all(self):
@@ -1001,19 +1028,12 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
             self.__expand_item_recursively(parent)
 
     def _capture_selection_info(self):
-        """Capture the rows around the selection before refresh.
-
-        The removed items are already gone from the presentation by the
-        time this runs, so the neighbouring rows can only be read from
-        the widget, which still shows the old contents.
-        """
+        """Widgets without a row order (timeline, calendar, square map)
+        give the selected item's parent and place among its siblings."""
         if not hasattr(self.widget, "curselection"):
             return None
         if hasattr(self.widget, "selection_neighbours"):
-            above, below = self.widget.selection_neighbours()
-            if above or below:
-                return {"above": above, "below": below}
-            return None
+            return super()._capture_selection_info()
         curselection = self.widget.curselection()
         if curselection and curselection[0] is not None:
             selected_item = curselection[0]
@@ -1028,21 +1048,8 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
         return None
 
     def select_next_items_after_removal(self, selection_info):
-        """Select the row that took the place of the removed rows.
-
-        The row above the removed ones is preferred, so that deleting
-        several items in a row keeps walking up the list. Only when the
-        removed row was the topmost one does the selection move down
-        instead.
-        """
-        if not selection_info:
-            return
         if "above" in selection_info:
-            new_selection = self.__first_survivor(
-                selection_info["above"]
-            ) or self.__first_survivor(selection_info["below"])
-            if new_selection:
-                self.select([new_selection])
+            super().select_next_items_after_removal(selection_info)
             return
         parent = selection_info["parent"]
         index = selection_info["index"]
@@ -1055,14 +1062,6 @@ class TreeViewer(Viewer):  # pylint: disable=W0223
         )
         if new_selection:
             self.select([new_selection])
-
-    def __first_survivor(self, items):
-        """Return the first of items that is still in the presentation."""
-        presentation = self.presentation()
-        for item in items:
-            if item in presentation:
-                return item
-        return None
 
     def visible_items(self):
         """Iterate over the items in the presentation."""
@@ -1155,9 +1154,54 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
     def init_columns(self):
         for column in self.columns():
             self.initColumn(column)
-        if self.hasOrderingColumn():
-            self.widget.SetResizeColumn(1)
-            self.widget.SetMainColumn(1)
+        self.__place_anchor_columns()
+
+    def ordered_columns(self, columns):
+        """The columns in the order the user gave them (the option
+        columnorder, by name). A column it does not name, new in a later
+        release, follows the one before it in the view's own order
+        (docs/LIST_MANAGEMENT.md, Moving Columns)."""
+        by_name = {column.name(): column for column in columns}
+        ordered = [
+            by_name[name]
+            for name in dict.fromkeys(self.options.columnorder)
+            if name in by_name
+        ]
+        for index, column in enumerate(columns):
+            if column not in ordered:
+                previous = columns[index - 1] if index else None
+                place = 0 if previous is None else ordered.index(previous) + 1
+                ordered.insert(place, column)
+        return ordered
+
+    def move_column(self, column, slot):
+        """Move a shown column to slot, a place between the shown
+        columns: 0 before the first, their count after the last; the
+        order is saved."""
+        if not self.widget.move_column(column, slot):
+            return
+        self._columns[:] = self.widget.all_columns()
+        self.__visibleColumns = [
+            each for each in self.columns() if each in self.__visibleColumns
+        ]
+        self.__place_anchor_columns()
+        self.options.columnorder = [each.name() for each in self.columns()]
+        self.options.columns = [each.name() for each in self.__visibleColumns]
+        self.widget.RefreshAllItems(len(self.presentation()))
+
+    def fill_column_name(self):
+        """The column that takes the width left when the columns fit the
+        window."""
+        return "subject"
+
+    def __place_anchor_columns(self):
+        """The tree's hierarchy is drawn in the subject column and the
+        width left goes to the fill column, wherever they are."""
+        names = [column.name() for column in self.__visibleColumns]
+        if self.fill_column_name() in names:
+            self.widget.SetResizeColumn(names.index(self.fill_column_name()))
+        if "subject" in names and hasattr(self.widget, "SetMainColumn"):
+            self.widget.SetMainColumn(names.index("subject"))
 
     def initColumn(self, column):
         if column.name() in self.options.columnsalwaysvisible:
@@ -1172,9 +1216,9 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
     def showColumnByName(self, columnName, show=True):
         for column in self.hideable_columns():
             if columnName == column.name():
-                isVisibleColumn = self.isVisibleColumn(column)
-                if (show and not isVisibleColumn) or (
-                    not show and isVisibleColumn
+                is_visible_column = self.isVisibleColumn(column)
+                if (show and not is_visible_column) or (
+                    not show and is_visible_column
                 ):
                     self.showColumn(column, show)
                 break
@@ -1191,18 +1235,15 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             self.__visibleColumns.remove(column)
             self.__stop_observing(column.eventTypes())
         self.widget.showColumn(column, show)
-        # Set main column AFTER inserting/removing the ordering column
-        if column.name() == "ordering":
-            self.widget.SetResizeColumn(1 if show else 0)
-            self.widget.SetMainColumn(1 if show else 0)
+        self.__place_anchor_columns()
         self.options.columns = [
             column.name() for column in self.__visibleColumns
         ]
         if refresh:
             self.widget.RefreshAllItems(len(self.presentation()))
 
-    def hide_column(self, visibleColumnIndex):
-        column = self.visibleColumns()[visibleColumnIndex]
+    def hide_column(self, visible_column_index):
+        column = self.visibleColumns()[visible_column_index]
         self.showColumn(column, show=False)
 
     def columns(self):
@@ -1229,8 +1270,8 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             if column.name() not in self.options.columnsalwaysvisible
         ]
 
-    def is_hideable_column(self, visibleColumnIndex):
-        column = self.visibleColumns()[visibleColumnIndex]
+    def is_hideable_column(self, visible_column_index):
+        column = self.visibleColumns()[visible_column_index]
         unhideable_columns = self.options.columnsalwaysvisible
         return column.name() not in unhideable_columns
 
@@ -1248,10 +1289,10 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         column_widths[column.name()] = int(width)
         self.options.columnwidths = column_widths
 
-    def validateDrag(self, dropItem, dragItems, columnIndex):
+    def validate_drag(self, drop_item, drag_items, column_index):
         if (
-            columnIndex == -1
-            or self.visibleColumns()[columnIndex].name() != "ordering"
+            column_index == -1
+            or self.visibleColumns()[column_index].name() != "ordering"
         ):
             return None  # Normal behavior
 
@@ -1261,7 +1302,7 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             return True
 
         # Tree mode. Only allow drag if all selected items are siblings.
-        if len(set([item.parent() for item in dragItems])) >= 2:
+        if len(set([item.parent() for item in drag_items])) >= 2:
             wx.GetTopLevelParent(self).AddBalloonTip(
                 "treemanualordering",
                 self,
@@ -1274,8 +1315,8 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
             return False
 
         # If they are, only allow drag at the same level
-        if dragItems[0].parent() != (
-            None if dropItem is None else dropItem.parent()
+        if drag_items[0].parent() != (
+            None if drop_item is None else drop_item.parent()
         ):
             wx.GetTopLevelParent(self).AddBalloonTip(
                 "treechildrenmanualordering",
@@ -1291,8 +1332,9 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
         return True
 
     def getItemText(self, item, column=None):
-        if column is None:
-            column = 1 if self.hasOrderingColumn() else 0
+        if column is None:  # The subject, wherever it is
+            names = [each.name() for each in self.visibleColumns()]
+            column = names.index("subject") if "subject" in names else 0
         column = self.visibleColumns()[column]
         return column.render(item)
 
@@ -1344,20 +1386,22 @@ class ViewerWithColumns(Viewer):  # pylint: disable=W0223
     def renderCategories(self, item):
         return self.renderSubjectsOfRelatedItems(item, item.categories)
 
-    def renderSubjectsOfRelatedItems(self, item, getItems):
+    def renderSubjectsOfRelatedItems(self, item, get_items):
         subjects = []
-        ownItems = getItems(recursive=False)
-        if ownItems:
-            subjects.append(self.renderSubjects(ownItems))
+        own_items = get_items(recursive=False)
+        if own_items:
+            subjects.append(self.renderSubjects(own_items))
         is_list_viewer = not self.is_tree_viewer()  # pylint: disable=E1101
         if is_list_viewer or self.isItemCollapsed(item):
-            childItems = [
-                theItem
-                for theItem in getItems(recursive=True, upwards=is_list_viewer)
-                if theItem not in ownItems
+            child_items = [
+                the_item
+                for the_item in get_items(
+                    recursive=True, upwards=is_list_viewer
+                )
+                if the_item not in own_items
             ]
-            if childItems:
-                subjects.append("(%s)" % self.renderSubjects(childItems))
+            if child_items:
+                subjects.append("(%s)" % self.renderSubjects(child_items))
         return " ".join(subjects)
 
     @staticmethod

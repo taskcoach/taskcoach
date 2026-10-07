@@ -60,10 +60,10 @@ class CategoryViewerTest(test.wxTestCase):
             ),
         )
 
-    def testInitialSize(self):
+    def test_initial_size(self):
         self.assertEqual(0, self.viewer.size())
 
-    def testCopyCategoryWithChildren(self):
+    def test_copy_category_with_children(self):
         parent, child = self.addTwoCategories()
         parent.addChild(child)
         copy = parent.copy()
@@ -71,24 +71,24 @@ class CategoryViewerTest(test.wxTestCase):
         self.viewer.expand_all()
         self.assertEqual(4, self.viewer.size())
 
-    def testSortInWidget(self):
+    def test_sort_in_widget(self):
         self.addTwoCategories()
         widget = self.viewer.widget
         for item, cat in zip(
-            widget.GetItemChildren(), self.viewer.presentation()
+            widget.get_item_children(), self.viewer.presentation()
         ):
             self.assertEqual(cat.subject(), widget.GetItemText(item))
 
-    def testSelectAll(self):
+    def test_select_all(self):
         self.addTwoCategories()
         self.viewer.widget.select_all()
         self.viewer.updateSelection()
         self.assertEqual(2, len(self.viewer.curselection()))
 
-    def testFilterOnAllCheckedCategoriesSetsSetting(self):
+    def test_filter_on_all_checked_categories_sets_setting(self):
         self.viewer.filterUICommand.doChoice(True)
         self.assertTrue(settings.get("view", "categoryfiltermatchall"))
 
-    def testFilterOnAnyCheckedCategoriesSetsSetting(self):
+    def test_filter_on_any_checked_categories_sets_setting(self):
         self.viewer.filterUICommand.doChoice(False)
         self.assertFalse(settings.get("view", "categoryfiltermatchall"))

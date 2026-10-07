@@ -20,7 +20,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 
-
 # The native SpinCtrl on Windows has no TextCtrl API which means we cannot make
 # the Delete key work (see uicommand.py::Delete). Our own SpinCtrl below
 # doesn't have this disadvantage.
@@ -32,7 +31,7 @@ class SpinCtrl(wx.Panel):
     def __init__(
         self,
         parent,
-        wxId=wx.ID_ANY,
+        wx_id=wx.ID_ANY,
         value=0,
         pos=wx.DefaultPosition,
         size=wx.DefaultSize,
@@ -40,7 +39,7 @@ class SpinCtrl(wx.Panel):
         name="wx.SpinCtrl",
         **kwargs
     ):  # pylint: disable=W0613
-        super().__init__(parent, wxId, pos=pos, size=size, name=name)
+        super().__init__(parent, wx_id, pos=pos, size=size, name=name)
         self._minValue = kwargs["min"] if "min" in kwargs else -self.maxRange
         self._maxValue = kwargs["max"] if "max" in kwargs else self.maxRange
         value = min(self._maxValue, max(int(value), self._minValue))
@@ -69,18 +68,18 @@ class SpinCtrl(wx.Panel):
             # Allow empty field during editing - will be fixed on focus loss
             return
         try:
-            newValue = int(text)
+            new_value = int(text)
             # Clamp to valid range
-            newValue = min(self._maxValue, max(newValue, self._minValue))
-            if newValue != self._spinButton.GetValue():
-                self._spinButton.SetValue(newValue)
+            new_value = min(self._maxValue, max(new_value, self._minValue))
+            if new_value != self._spinButton.GetValue():
+                self._spinButton.SetValue(new_value)
                 # Don't post event on every keystroke - only on focus loss
         except (ValueError, OverflowError):
             # Allow partial/invalid input during editing - will be fixed on focus loss
             pass
 
     def onKey(self, event):
-        deltaByKeyCode = {
+        delta_by_key_code = {
             wx.WXK_UP: 1,
             wx.WXK_NUMPAD_UP: 1,
             wx.WXK_DOWN: -1,
@@ -93,7 +92,7 @@ class SpinCtrl(wx.Panel):
         delta = (
             0
             if event.HasModifiers()
-            else deltaByKeyCode.get(event.GetKeyCode(), 0)
+            else delta_by_key_code.get(event.GetKeyCode(), 0)
         )
         if delta:
             self.SetValue(self.GetValue() + delta)
@@ -120,24 +119,24 @@ class SpinCtrl(wx.Panel):
         if not text:
             # Empty field - use closest valid value to 0
             if self._minValue <= 0 <= self._maxValue:
-                newValue = 0
+                new_value = 0
             elif self._minValue > 0:
-                newValue = self._minValue
+                new_value = self._minValue
             else:  # self._maxValue < 0
-                newValue = self._maxValue
+                new_value = self._maxValue
         else:
             try:
-                newValue = int(text)
+                new_value = int(text)
                 # Clamp to valid range
-                newValue = min(self._maxValue, max(newValue, self._minValue))
+                new_value = min(self._maxValue, max(new_value, self._minValue))
             except (ValueError, OverflowError):
                 # Invalid input - revert to current valid value
-                newValue = self._spinButton.GetValue()
+                new_value = self._spinButton.GetValue()
 
         # Update both controls to show the validated value
-        if newValue != self._spinButton.GetValue():
-            self._spinButton.SetValue(newValue)
-        self._textCtrl.SetValue(str(newValue))
+        if new_value != self._spinButton.GetValue():
+            self._spinButton.SetValue(new_value)
+        self._textCtrl.SetValue(str(new_value))
         # Post event to notify listeners of the final value
         self.__postEvent()
 

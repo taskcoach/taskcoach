@@ -31,6 +31,7 @@ from taskcoachlib.domain.base import by_style_priority
 from taskcoachlib.gui import uicommand, dialog
 import taskcoachlib.gui.menu
 from taskcoachlib.i18n import _
+from taskcoachlib.tools import wxhelper
 from taskcoachlib.thirdparty.wxScheduler import (
     wxSCHEDULER_TODAY,
     wxBaseDrawer,
@@ -62,11 +63,11 @@ class DueDateTimeCtrl(inplace_editor.DateTimeCtrl):
     absolute datetime values only.
     """
 
-    def __init__(self, parent, wxId, item, column, owner, value, **kwargs):
+    def __init__(self, parent, wx_id, item, column, owner, value, **kwargs):
         # Pass relative info for future implementation
         kwargs["relative"] = True
         kwargs["startDateTime"] = item.GetData().plannedStartDateTime()
-        super().__init__(parent, wxId, item, column, owner, value, **kwargs)
+        super().__init__(parent, wx_id, item, column, owner, value, **kwargs)
 
 
 class TaskViewerStatusMessages(object):
@@ -349,7 +350,7 @@ class BaseTaskTreeViewer(BaseTaskViewer):  # pylint: disable=W0223
     def createModeToolBarUICommands(self):
         hide_ui_commands = tuple(
             [
-                uicommand.ViewerHideTasks(taskStatus=status, viewer=self)
+                uicommand.ViewerHideTasks(task_status=status, viewer=self)
                 for status in task.Task.possibleStatuses()
             ]
         )
@@ -453,26 +454,26 @@ class TimelineRootNode(RootNode):
         return []
 
     def plannedStartDateTime(self, recursive=False):  # pylint: disable=W0613
-        plannedStartDateTimes = [
+        planned_start_date_times = [
             item.plannedStartDateTime(recursive=True)
             for item in self.parallel_children()
         ]
-        plannedStartDateTimes = [
-            dt for dt in plannedStartDateTimes if dt != date.DateTime()
+        planned_start_date_times = [
+            dt for dt in planned_start_date_times if dt != date.DateTime()
         ]
-        if not plannedStartDateTimes:
-            plannedStartDateTimes.append(date.Now())
-        return min(plannedStartDateTimes)
+        if not planned_start_date_times:
+            planned_start_date_times.append(date.Now())
+        return min(planned_start_date_times)
 
     def dueDateTime(self, recursive=False):  # pylint: disable=W0613
-        dueDateTimes = [
+        due_date_times = [
             item.dueDateTime(recursive=True)
             for item in self.parallel_children()
         ]
-        dueDateTimes = [dt for dt in dueDateTimes if dt != date.DateTime()]
-        if not dueDateTimes:
-            dueDateTimes.append(date.Tomorrow())
-        return max(dueDateTimes)
+        due_date_times = [dt for dt in due_date_times if dt != date.DateTime()]
+        if not due_date_times:
+            due_date_times.append(date.Tomorrow())
+        return max(due_date_times)
 
 
 class TimelineViewer(BaseTaskTreeViewer):
@@ -482,29 +483,29 @@ class TimelineViewer(BaseTaskTreeViewer):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "timelineviewer")
         super().__init__(*args, **kwargs)
-        for eventType in (
+        for event_type in (
             task.Task.subjectChangedEventType(),
             task.Task.plannedStartDateTimeChangedEventType(),
             task.Task.dueDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
         ):
-            self.registerObserver(self.on_attribute_changed, eventType)
+            self.registerObserver(self.on_attribute_changed, event_type)
 
     def create_widget(self):
         self.rootNode = TimelineRootNode(
             self.presentation()
         )  # pylint: disable=W0201
-        itemPopupMenu = self.createTaskPopupMenu()
-        self._popupMenus.append(itemPopupMenu)
+        item_popup_menu = self.createTaskPopupMenu()
+        self._popupMenus.append(item_popup_menu)
         return widgets.Timeline(
-            self, self.rootNode, self.onSelect, self.onEdit, itemPopupMenu
+            self, self.rootNode, self.onSelect, self.onEdit, item_popup_menu
         )
 
     def onEdit(self, item):
         edit = uicommand.Edit(viewer=self)
         edit(item)
 
-    def curselection(self, forceUpdate=False):  # pylint: disable=W0613
+    def curselection(self, force_update=False):  # pylint: disable=W0613
         # Override curselection, because there is no need to translate indices
         # back to domain objects. Our widget already returns the selected domain
         # object itself. forceUpdate is ignored since widget always returns fresh data.
@@ -634,23 +635,23 @@ class SquareTaskViewer(BaseTaskTreeViewer):
         initial_key = sort_keys[0] if sort_keys else "budget"
         self._apply_order_by(initial_key.lstrip("-"))
         self.orderUICommand.set_choice(self.__order_by)
-        for eventType in (
+        for event_type in (
             task.Task.subjectChangedEventType(),
             task.Task.dueDateTimeChangedEventType(),
             task.Task.plannedStartDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
         ):
-            self.registerObserver(self.on_attribute_changed, eventType)
+            self.registerObserver(self.on_attribute_changed, event_type)
 
     def create_widget(self):
-        itemPopupMenu = self.createTaskPopupMenu()
-        self._popupMenus.append(itemPopupMenu)
+        item_popup_menu = self.createTaskPopupMenu()
+        self._popupMenus.append(item_popup_menu)
         return widgets.TcSquareMap(
             self,
             SquareMapRootNode(self.presentation()),
             self.onSelect,
             uicommand.Edit(viewer=self),
-            itemPopupMenu,
+            item_popup_menu,
         )
 
     def createModeToolBarUICommands(self):
@@ -717,7 +718,7 @@ class SquareTaskViewer(BaseTaskTreeViewer):
             self.__zero = 0
         self.refresh()
 
-    def curselection(self, forceUpdate=False):  # pylint: disable=W0613
+    def curselection(self, force_update=False):  # pylint: disable=W0613
         # Override curselection, because there is no need to translate indices
         # back to domain objects. Our widget already returns the selected domain
         # object itself. forceUpdate is ignored since widget always returns fresh data.
@@ -726,9 +727,9 @@ class SquareTaskViewer(BaseTaskTreeViewer):
     def nrOfVisibleTasks(self):
         return len(
             [
-                eachTask
-                for eachTask in self.presentation()
-                if getattr(eachTask, self.__order_by)(recursive=True)
+                each_task
+                for each_task in self.presentation()
+                if getattr(each_task, self.__order_by)(recursive=True)
                 > self.__zero
             ]
         )
@@ -808,24 +809,24 @@ class HierarchicalCalendarViewer(
         super().__init__(*args, **kwargs)
 
         # pylint: disable=E1101
-        for eventType in (
+        for event_type in (
             task.Task.subjectChangedEventType(),
             task.Task.attachmentsChangedEventType(),
             task.Task.notesChangedEventType(),
             task.Task.trackingChangedEventType(),
             task.Task.percentageCompleteChangedEventType(),
         ):
-            self.registerObserver(self.on_attribute_changed, eventType)
+            self.registerObserver(self.on_attribute_changed, event_type)
 
         # Dates are treated separately: the layout may change
         # (_invalidate)
         # pylint: disable=E1101
-        for eventType in (
+        for event_type in (
             task.Task.plannedStartDateTimeChangedEventType(),
             task.Task.dueDateTimeChangedEventType(),
             task.Task.completionDateTimeChangedEventType(),
         ):
-            self.registerObserver(self.on_layout_attribute_changed, eventType)
+            self.registerObserver(self.on_layout_attribute_changed, event_type)
 
         self.reconfig()
 
@@ -866,7 +867,7 @@ class HierarchicalCalendarViewer(
             self,
             title=_("Hierarchical calendar viewer configuration"),
         )
-        dialog.CentreOnParent()
+        wxhelper.centre_on_parent(dialog)
         if dialog.ShowModal() == wx.ID_OK:
             self.reconfig()
 
@@ -891,15 +892,15 @@ class HierarchicalCalendarViewer(
         return True
 
     def create_widget(self):
-        itemPopupMenu = self.createTaskPopupMenu()
-        self._popupMenus.append(itemPopupMenu)
+        item_popup_menu = self.createTaskPopupMenu()
+        self._popupMenus.append(item_popup_menu)
         widget = widgets.HierarchicalCalendar(
             self,
             self.presentation(),
             self.onSelect,
             self.onEdit,
             self.onCreate,
-            itemPopupMenu,
+            item_popup_menu,
             **self.widgetCreationKeywordArguments()
         )
         return widget
@@ -909,8 +910,8 @@ class HierarchicalCalendarViewer(
         edit(item)
 
     def onCreate(self, dateTime, show=True):
-        plannedStartDateTime = dateTime
-        dueDateTime = (
+        planned_start_date_time = dateTime
+        due_date_time = (
             dateTime.endOfDay()
             if dateTime == dateTime.startOfDay()
             else dateTime
@@ -918,8 +919,8 @@ class HierarchicalCalendarViewer(
         create = uicommand.TaskNew(
             taskList=self.presentation(),
             taskKeywords=dict(
-                plannedStartDateTime=plannedStartDateTime,
-                dueDateTime=dueDateTime,
+                plannedStartDateTime=planned_start_date_time,
+                dueDateTime=due_date_time,
             ),
         )
         return create(event=None, show=show)
@@ -1143,7 +1144,7 @@ class CalendarViewer(
             self,
             title=_("Calendar viewer configuration"),
         )
-        dialog.CentreOnParent()
+        wxhelper.centre_on_parent(dialog)
         if dialog.ShowModal() == wx.ID_OK:
             self.reconfig()
 
@@ -1197,11 +1198,11 @@ class TaskViewer(
         super().showColumn(column, show, *args, **kwargs)
 
     def create_widget(self):
-        imageList = self.createImageList()  # Has side-effects
-        self._columns = self._createColumns()
-        itemPopupMenu = self.createTaskPopupMenu()
-        columnPopupMenu = self.createColumnPopupMenu()
-        self._popupMenus.extend([itemPopupMenu, columnPopupMenu])
+        image_list = self.createImageList()  # Has side-effects
+        self._columns = self.ordered_columns(self._createColumns())
+        item_popup_menu = self.createTaskPopupMenu()
+        column_popup_menu = self.createColumnPopupMenu()
+        self._popupMenus.extend([item_popup_menu, column_popup_menu])
         widget = widgets.TreeListCtrl(
             self,
             self.columns(),
@@ -1210,15 +1211,14 @@ class TaskViewer(
             uicommand.TaskDragAndDrop(
                 taskList=self.presentation(), viewer=self
             ),
-            itemPopupMenu,
-            columnPopupMenu,
-            resizeableColumn=1 if self.hasOrderingColumn() else 0,
-            validateDrag=self.validateDrag,
+            item_popup_menu,
+            column_popup_menu,
+            resizeableColumn=0,  # The subject's place once shown
+            validate_drag=self.validate_drag,
             **self.widgetCreationKeywordArguments()
         )
-        if self.hasOrderingColumn():
-            widget.SetMainColumn(1)
-        widget.SetImageList(imageList)  # pylint: disable=E1101
+        widget.SetImageList(image_list)  # pylint: disable=E1101
+        widget.show_expand_buttons(self.is_tree_viewer())
         widget.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.on_begin_edit)
         widget.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.on_end_edit)
         return widget
@@ -1386,7 +1386,7 @@ class TaskViewer(
             ]
         )
 
-        for name, columnHeader, editCtrl, editCallback, eventTypes in [
+        for name, column_header, edit_ctrl, edit_callback, event_types in [
             (
                 "plannedStartDateTime",
                 _("Planned start date"),
@@ -1416,22 +1416,22 @@ class TaskViewer(
                 [task.Task.expansionChangedEventType()],
             ),
         ]:
-            renderCallback = getattr(
+            render_callback = getattr(
                 self, "render%s" % (name[0].capitalize() + name[1:])
             )
             columns.append(
                 widgets.Column(
                     name,
-                    columnHeader,
+                    column_header,
                     sortCallback=uicommand.ViewerSortByCommand(
                         viewer=self, value=name
                     ),
-                    renderCallback=renderCallback,
+                    renderCallback=render_callback,
                     width=self.getColumnWidth(name),
                     alignment=wx.LIST_FORMAT_RIGHT,
-                    editControl=editCtrl,
-                    editCallback=editCallback,
-                    *eventTypes,
+                    editControl=edit_ctrl,
+                    editCallback=edit_callback,
+                    *event_types,
                     **kwargs
                 )
             )
@@ -1477,7 +1477,7 @@ class TaskViewer(
             )
         )
 
-        dependsOnEffortFeature = [
+        depends_on_effort_feature = [
             "budget",
             "timeSpent",
             "budgetLeft",
@@ -1486,7 +1486,7 @@ class TaskViewer(
             "revenue",
         ]
 
-        for name, columnHeader, editCtrl, editCallback, eventTypes in [
+        for name, column_header, edit_ctrl, edit_callback, event_types in [
             (
                 "percentageComplete",
                 _("% complete"),
@@ -1586,24 +1586,24 @@ class TaskViewer(
             ),
         ]:
             if (
-                name in dependsOnEffortFeature
-            ) or name not in dependsOnEffortFeature:
-                renderCallback = getattr(
+                name in depends_on_effort_feature
+            ) or name not in depends_on_effort_feature:
+                render_callback = getattr(
                     self, "render%s" % (name[0].capitalize() + name[1:])
                 )
                 columns.append(
                     widgets.Column(
                         name,
-                        columnHeader,
+                        column_header,
                         sortCallback=uicommand.ViewerSortByCommand(
                             viewer=self, value=name
                         ),
-                        renderCallback=renderCallback,
+                        renderCallback=render_callback,
                         width=self.getColumnWidth(name),
                         alignment=wx.LIST_FORMAT_RIGHT,
-                        editControl=editCtrl,
-                        editCallback=editCallback,
-                        *eventTypes,
+                        editControl=edit_ctrl,
+                        editCallback=edit_callback,
+                        *event_types,
                         **kwargs
                     )
                 )
@@ -1908,10 +1908,12 @@ class TaskViewer(
         return commands
 
     def createModeToolBarUICommands(self):
-        treeOrListUICommand = uicommand.TaskViewerTreeOrListChoice(
+        tree_or_list_ui_command = uicommand.TaskViewerTreeOrListChoice(
             viewer=self
         )  # pylint: disable=W0201
-        return super().createModeToolBarUICommands() + (treeOrListUICommand,)
+        return super().createModeToolBarUICommands() + (
+            tree_or_list_ui_command,
+        )
 
     def hasModes(self):
         return True
@@ -1961,6 +1963,7 @@ class TaskViewer(
     def set_tree_mode(self, value):
         self.options.treemode = value
         self.presentation().set_tree_mode(value)
+        self.widget.show_expand_buttons(value)
         # Mode switch goes through Sorter.reset() which fires a sort event
         # (not add/remove), so onPresentationChanged doesn't fire. The rebuild
         # recomputes scrollbars only through scroll_to_selection, which is
@@ -2058,15 +2061,15 @@ class TaskViewer(
             lambda x: render.dateTime(x, human_readable=human_readable),
         )
 
-    def renderedValue(self, item, getValue, renderValue, *extraRenderArgs):
-        value = getValue(recursive=False)
+    def renderedValue(self, item, get_value, render_value, *extra_render_args):
+        value = get_value(recursive=False)
         template = "%s"
         if self.isItemCollapsed(item):
-            recursiveValue = getValue(recursive=True)
-            if value != recursiveValue:
-                value = recursiveValue
+            recursive_value = get_value(recursive=True)
+            if value != recursive_value:
+                value = recursive_value
                 template = "(%s)"
-        return template % renderValue(value, *extraRenderArgs)
+        return template % render_value(value, *extra_render_args)
 
     def statusImageIndices(self, task):
         """Return image index for the task's current status icon."""
@@ -2166,11 +2169,11 @@ class TaskViewer(
 
 class CheckableTaskViewer(TaskViewer):  # pylint: disable=W0223
     def create_widget(self):
-        imageList = self.createImageList()  # Has side-effects
-        self._columns = self._createColumns()
-        itemPopupMenu = self.createTaskPopupMenu()
-        columnPopupMenu = self.createColumnPopupMenu()
-        self._popupMenus.extend([itemPopupMenu, columnPopupMenu])
+        image_list = self.createImageList()  # Has side-effects
+        self._columns = self.ordered_columns(self._createColumns())
+        item_popup_menu = self.createTaskPopupMenu()
+        column_popup_menu = self.createColumnPopupMenu()
+        self._popupMenus.extend([item_popup_menu, column_popup_menu])
         widget = widgets.CheckTreeCtrl(
             self,
             self.columns(),
@@ -2180,11 +2183,13 @@ class CheckableTaskViewer(TaskViewer):  # pylint: disable=W0223
             uicommand.TaskDragAndDrop(
                 taskList=self.presentation(), viewer=self
             ),
-            itemPopupMenu,
-            columnPopupMenu,
+            item_popup_menu,
+            column_popup_menu,
             **self.widgetCreationKeywordArguments()
         )
-        widget.SetImageList(imageList)  # pylint: disable=E1101
+        widget.SetImageList(image_list)  # pylint: disable=E1101
+        # As the task view: list mode has no expanders' room
+        widget.show_expand_buttons(self.is_tree_viewer())
         return widget
 
     def onCheck(self, event, final):
@@ -2246,7 +2251,7 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
     def createActionToolBarUICommands(self):
         return tuple(
             [
-                uicommand.ViewerHideTasks(taskStatus=status, viewer=self)
+                uicommand.ViewerHideTasks(task_status=status, viewer=self)
                 for status in task.Task.possibleStatuses()
             ]
         ) + (uicommand.ViewerPieChartAngle(viewer=self),)
@@ -2269,10 +2274,10 @@ class TaskStatsViewer(BaseTaskViewer):  # pylint: disable=W0223
         total = len(tasks)
         counts = tasks.nr_of_tasks_per_status()
         for part, status in zip(series, task.Task.possibleStatuses()):
-            nrTasks = counts[status]
-            percentage = round(100.0 * nrTasks / total) if total else 0
-            part.SetLabel(status.count_label % (nrTasks, percentage))
-            part.SetValue(nrTasks)
+            nr_tasks = counts[status]
+            percentage = round(100.0 * nr_tasks / total) if total else 0
+            part.SetLabel(status.count_label % (nr_tasks, percentage))
+            part.SetValue(nr_tasks)
             part.SetColour(self.getFgColor(status))
         # PietCtrl can't handle empty pie charts:
         if total == 0:

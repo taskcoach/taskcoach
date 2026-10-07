@@ -52,13 +52,13 @@ class BaseCategoryViewer(
     def __init__(self, *args, **kwargs):
         kwargs.setdefault("settingsSection", "categoryviewer")
         super().__init__(*args, **kwargs)
-        for eventType in [
+        for event_type in [
             category.Category.subjectChangedEventType(),
             category.Category.exclusiveSubcategoriesChangedEventType(),
             category.Category.filterChangedEventType(),
             *category.Category.effective_style_event_types(),
         ]:
-            self.registerObserver(self.on_attribute_changed, eventType)
+            self.registerObserver(self.on_attribute_changed, event_type)
 
     def domainObjectsToView(self):
         return self.taskFile.categories()
@@ -67,11 +67,11 @@ class BaseCategoryViewer(
         return (category.Category,)
 
     def create_widget(self):
-        imageList = self.createImageList()  # Has side-effects
-        self._columns = self._createColumns()
-        itemPopupMenu = self.createCategoryPopupMenu()
-        columnPopupMenu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
-        self._popupMenus.extend([itemPopupMenu, columnPopupMenu])
+        image_list = self.createImageList()  # Has side-effects
+        self._columns = self.ordered_columns(self._createColumns())
+        item_popup_menu = self.createCategoryPopupMenu()
+        column_popup_menu = taskcoachlib.gui.menu.ColumnPopupMenu(self)
+        self._popupMenus.extend([item_popup_menu, column_popup_menu])
         widget = widgets.CheckTreeCtrl(
             self,
             self._columns,
@@ -81,20 +81,18 @@ class BaseCategoryViewer(
             uicommand.CategoryDragAndDrop(
                 viewer=self, categories=self.presentation()
             ),
-            itemPopupMenu,
-            columnPopupMenu,
-            resizeableColumn=1 if self.hasOrderingColumn() else 0,
-            validateDrag=self.validateDrag,
+            item_popup_menu,
+            column_popup_menu,
+            resizeableColumn=0,  # The subject's place once shown
+            validate_drag=self.validate_drag,
             **self.widgetCreationKeywordArguments()
         )
-        if self.hasOrderingColumn():
-            widget.SetMainColumn(1)
-        widget.SetImageList(imageList)  # pylint: disable=E1101
+        widget.SetImageList(image_list)  # pylint: disable=E1101
         return widget
 
-    def createCategoryPopupMenu(self, localOnly=False):
+    def createCategoryPopupMenu(self, local_only=False):
         return taskcoachlib.gui.menu.CategoryPopupMenu(
-            self.parent, self.taskFile, self, localOnly
+            self.parent, self.taskFile, self, local_only
         )
 
     def _createColumns(self):
@@ -297,8 +295,8 @@ class BaseCategoryViewer(
             super().on_attribute_changed(event)
 
     def onCheck(self, event, final):
-        categoryToFilter = self.widget.GetItemPyData(event.GetItem())
-        categoryToFilter.setFiltered(event.GetItem().IsChecked())
+        category_to_filter = self.widget.GetItemPyData(event.GetItem())
+        category_to_filter.setFiltered(event.GetItem().IsChecked())
         self.send_viewer_status_event()  # Notify status observers like the status bar
 
     def get_is_item_checked(self, item):
@@ -318,8 +316,8 @@ class BaseCategoryViewer(
             len(self.curselection()),
             len(self.presentation()),
         )
-        filteredCategories = self.presentation().filteredCategories()
-        status2 = _("Status: %d filtered") % len(filteredCategories)
+        filtered_categories = self.presentation().filteredCategories()
+        status2 = _("Status: %d filtered") % len(filtered_categories)
         return status1, status2
 
     def itemEditorClass(self):

@@ -82,9 +82,9 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
         data.SetColour(self.GetColour())
         dlg = wx.ColourDialog(self.GetTopLevelParent(), data)
         if dlg.ShowModal() == wx.ID_OK:
-            newColour = dlg.GetColourData().GetColour()
-            self.SetColour(newColour)
-            evt = wx.ColourPickerEvent(self, self.GetId(), newColour)
+            new_colour = dlg.GetColourData().GetColour()
+            self.SetColour(new_colour)
+            evt = wx.ColourPickerEvent(self, self.GetId(), new_colour)
             wx.PostEvent(self, evt)
         dlg.Destroy()
 

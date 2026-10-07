@@ -45,10 +45,11 @@ class VersionDialog(sized_controls.SizedDialog):  # pylint: disable=R0904,R0901
         self.createInterior(pane)
         self.check = wx.CheckBox(pane, label=_("Notify me of new versions."))
         self.check.SetValue(settings.version.notify)
-        buttonSizer = self.CreateStdDialogButtonSizer(wx.OK)
-        self.SetButtonSizer(buttonSizer)
+        button_sizer = self.CreateStdDialogButtonSizer(wx.OK)
+        self.SetButtonSizer(button_sizer)
         self.Fit()
-        wxhelper.get_dialog_button(buttonSizer, wx.ID_OK).Bind(
+        wxhelper.centre_on_parent(self)
+        wxhelper.get_dialog_button(button_sizer, wx.ID_OK).Bind(
             wx.EVT_BUTTON, self.onClose
         )
         self.Bind(wx.EVT_CLOSE, self.onClose)
@@ -60,9 +61,10 @@ class VersionDialog(sized_controls.SizedDialog):  # pylint: disable=R0904,R0901
 
     def onClose(self, event):
         """When the user closes the dialog, remember whether (s)he wants to be
-        notified of new versions."""
-        event.Skip()
+        notified of new versions. Destroyed: a hidden one stayed until
+        the program ended."""
         settings.version.notify = self.check.GetValue()
+        self.Destroy()
 
 
 class NewVersionDialog(VersionDialog):
@@ -74,15 +76,15 @@ class NewVersionDialog(VersionDialog):
             label=_("You are using %(name)s version %(currentVersion)s.")
             % self.messageInfo,
         )
-        urlPanel = sized_controls.SizedPanel(panel)
-        urlPanel.SetSizerType("horizontal")
+        url_panel = sized_controls.SizedPanel(panel)
+        url_panel.SetSizerType("horizontal")
         wx.StaticText(
-            urlPanel,
+            url_panel,
             label=_("Version %(version)s of %(name)s is available from")
             % self.messageInfo,
         )
         hyperlink.HyperLinkCtrl(
-            urlPanel,
+            url_panel,
             label=meta.data.latest_release_url,
             URL=meta.data.latest_release_url,
         )

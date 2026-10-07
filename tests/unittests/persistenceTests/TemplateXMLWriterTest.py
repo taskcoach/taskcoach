@@ -42,7 +42,7 @@ class TemplateXMLWriterTestCase(test.TestCase):
 
     # tests
 
-    def testDefaultTask(self):
+    def test_default_task(self):
         # Not modified since created: the modification date, the
         # creation date, is left out (its default)
         self.expect_in_xml(
@@ -50,22 +50,22 @@ class TemplateXMLWriterTestCase(test.TestCase):
             % (self.task.creationDateTime(), self.task.id())
         )
 
-    def testTaskWithPlannedStartDateTime(self):
+    def test_task_with_planned_start_date_time(self):
         self.task.set_planned_start_date_time(
             date.Now() + date.TimeDelta(minutes=31)
         )
         self.expect_in_xml('plannedstartdatetmpl="31 minutes from now')
 
-    def testTaskWithDueDateTime(self):
+    def test_task_with_due_date_time(self):
         self.task.set_due_date_time(date.Now() + date.TimeDelta(minutes=13))
         self.expect_in_xml('duedatetmpl="13 minutes from now')
 
-    def testTaskWithCompletionDateTime(self):
+    def test_task_with_completion_date_time(self):
         self.task.set_completion_date_time(
             date.Now() + date.TimeDelta(minutes=4)
         )
         self.expect_in_xml('completiondatetmpl="4 minutes from now')
 
-    def testTaskWithReminder(self):
+    def test_task_with_reminder(self):
         self.task.set_reminder(date.Now() + date.TimeDelta(seconds=10))
         self.expect_in_xml('remindertmpl="0 minutes from now')

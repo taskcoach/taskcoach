@@ -62,63 +62,70 @@ class ReminderController(object):
             event: its source is the task whose reminder is due
         """
         for task in event.sources():
-            # Check if dialog already open for this task (SSOT check)
-            if not reminder.ReminderDialog.isOpenFor(task):
-                self.showReminderMessage(task)
-                self.requestUserAttention()
+            # After the scheduler pass that fired it: the dialog asks
+            # for attention, which runs wx's event loop and would draw
+            # the views mid-pass (docs/WINDOW_GEOMETRY.md, Opening the
+            # File)
+            patterns.later.soon(self.__mainWindow, self.__show, task)
+
+    def __show(self, task):
+        # Check if dialog already open for this task (SSOT check)
+        if not reminder.ReminderDialog.isOpenFor(task):
+            self.showReminderMessage(task)
+            self.requestUserAttention()
 
     def showReminderMessage(
-        self, taskWithReminder, ReminderDialog=reminder.ReminderDialog
+        self, task_with_reminder, ReminderDialog=reminder.ReminderDialog
     ):
         """Show Task Coach's reminder dialog for a task."""
         # If the dialog has self.__mainWindow as parent, it steals the focus when
         # returning to Task Coach through Alt+Tab; we don't want that for
         # reminders.
-        reminderDialog = ReminderDialog(
-            taskWithReminder,
+        reminder_dialog = ReminderDialog(
+            task_with_reminder,
             self.taskList,
             self.effortList,
             None,
         )
         # Position on app's monitor even though it has no parent
-        wxhelper.centerOnAppMonitor(reminderDialog)
-        reminderDialog.Bind(wx.EVT_CLOSE, self.on_close_reminder_dialog)
-        reminderDialog.Show()
+        wxhelper.centre_on_app_monitor(reminder_dialog)
+        reminder_dialog.Bind(wx.EVT_CLOSE, self.on_close_reminder_dialog)
+        reminder_dialog.Show()
 
     def on_close_reminder_dialog(self, event, show=True):
         """Handle reminder dialog close."""
         event.Skip()
         dialog = event.EventObject
-        taskWithReminder = dialog.task
+        task_with_reminder = dialog.task
 
         if not dialog.ignoreSnoozeOption:
-            snoozeOptions = dialog.snoozeOptions
-            snoozeTimeDelta = snoozeOptions.GetClientData(
-                snoozeOptions.Selection
+            snooze_options = dialog.snoozeOptions
+            snooze_time_delta = snooze_options.GetClientData(
+                snooze_options.Selection
             )
             # An undo step, as every change to the file
             # (docs/UNDO_REDO.md, Design Intent)
             with patterns.CommandHistory().action(_("Snooze")):
-                taskWithReminder.snooze_reminder(snoozeTimeDelta)
+                task_with_reminder.snooze_reminder(snooze_time_delta)
 
         if dialog.openTaskAfterClose:
-            editTask = editor.TaskEditor(
+            edit_task = editor.TaskEditor(
                 self.__mainWindow,
-                [taskWithReminder],
+                [task_with_reminder],
                 self.taskList,
                 self.__mainWindow.taskFile,
                 icon_id="nuvola_actions_edit",
             )
-            editTask.Show(show)
+            edit_task.Show(show)
         else:
-            editTask = None
+            edit_task = None
 
         dialog.Destroy()
 
         if self.__mainWindowWasHidden:
             self.__mainWindow.Hide()
 
-        return editTask  # For unit testing purposes
+        return edit_task  # For unit testing purposes
 
     def requestUserAttention(self):
         """Request user attention when showing reminders."""

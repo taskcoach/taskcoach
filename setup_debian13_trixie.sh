@@ -79,7 +79,6 @@ if command -v sudo &> /dev/null; then
         python3-wxgtk4.0 \
         python3-dateutil \
         python3-chardet \
-        python3-keyring \
         python3-enchant \
         python3-squaremap
     echo -e "${GREEN}✓ System packages installed${NC}"

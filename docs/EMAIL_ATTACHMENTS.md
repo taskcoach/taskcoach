@@ -29,6 +29,28 @@ and opened. Attachments in general: [ATTACHMENTS.md](ATTACHMENTS.md).
 6. Open hands the `mid:` link to the system, like any link.
 7. No new package: Python's standard `email` package reads the mails.
    `chardet` stays, for the CSV import.
+8. **Ruled by designer 2026-10-04**: mail works with the local mail
+   programs only, never over the network: "all of the email
+   functionalities should only coordinate with local software apps,
+   nothing over the network. If the app cannot provide all those
+   fields with the DnD, then we should only get the ones that are
+   communicated via DnD or published apis/open-methods." Done
+   2026-10-04 (To Do 16 in
+   [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#to-do)): the IMAP
+   reader, its password dialog and `keyring` are gone, and so is the
+   reading of Thunderbird's profile, whose message numbers are keys
+   into Thunderbird's own index (its `.msf` files), not the mails'
+   places in the folder files ([The Drop](#the-drop)). Mail (Ctrl+M)
+   sends nothing either: it opens the mail program with a new message
+   through a `mailto:` link, the user sends it. A mail program that
+   refuses a message without recipient gets it again addressed to
+   `recipient@example.com`, **ruled by designer 2026-10-05** ("use
+   the most common one ... something like recipient at example.com"):
+   reserved for examples (RFC 2606) and accepting no mail (null MX,
+   RFC 7505), so a message sent unchanged bounces. Any other failure
+   is shown. It used to be `recipient@domain.com`, a company's domain
+   whose mail is delivered (P233 in
+   [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#pre-existing-issues)).
 
 ## Fields
 
@@ -75,11 +97,21 @@ is `DropTarget` (`widgets/draganddrop.py`).
   as the mails it holds (`mailer.dropped_mails()`). A mail saved
   elsewhere stays a file attachment: the file is kept.
 - **Thunderbird's message URIs as text** (`mailbox-message://`,
-  `imap-message://`), one or several, even run together: each message
-  is read from the profile's mailbox file, or from the IMAP server,
-  which asks for the password (`thunderbird.message_uris()`,
-  `get_mail()`). The same for a macOS link (`public.url`) to a
-  Thunderbird message (`mailbox:`, `imap:`).
+  `imap-message://`), one or several, even run together, or a macOS
+  link (`public.url`) to a message (`mailbox:`, `imap:`): on X11 the
+  `.eml` files the same drag offers later in its list are asked of
+  Thunderbird while the drop is handled (`x11_drag_files()`: GTK's
+  clipboard on the `XdndSelection`, for `text/uri-list`; PyGObject,
+  GTK's X11 backend) and read as above. Otherwise not read: a message,
+  once the drop has ended, says to save the mail as a file and drag
+  the file (`thunderbird.message_uris()`, `unreadable()`). For URIs
+  as text the log has a `[MAIL]` line with the mails read from the
+  drag's files. A URI's number is a
+  key into Thunderbird's index (Thunderbird 102 to 140,
+  `nsParseMailbox.cpp` and `nsMsgDatabase::CreateNewHdr()`: the next
+  free row), so the 2.0.3.0 reader, which took it for the mail's place
+  in the folder file, attached an empty or another mail; an IMAP
+  mail's is a number on the server.
 - **Outlook (classic)**, recognized by its own `RenPrivateMessages`
   format (not `Object Descriptor`, which any OLE program's drag offers):
   the mails are asked from the running Outlook (`mailer/outlook.py`).
@@ -101,10 +133,10 @@ in `MailDropTest`.
 | Evolution 3.44 and later | Linux | a `text/uri-list` of one mbox file with every mail, `/tmp/drag-n-drop-XXXXXX/<YYYYMMDDHHMMSS>_<subject>` (`.mbox` since 3.56; several: `Messages from <folder>`) | mails |
 | Evolution before 3.44 | Linux | the same, in `~/.cache/evolution/tmp/drag-n-drop-XXXXXX/` | mails |
 | Evolution Flatpak | Linux | the same file straight in `~/.var/app/org.gnome.Evolution/cache/evolution/tmp/` | mails |
-| Thunderbird 115 and later | Linux X11, one message | text first: the message's URI | mails, read from the profile |
+| Thunderbird 115 and later | Linux X11, one message | text first: the message's URI; the `.eml` file later in the list | mails, the file asked of the drag (without PyGObject, as in the AppImage: a message says why) |
 | Thunderbird | Linux Wayland, or several messages | a `text/uri-list` of `.eml` files, `/tmp/dnd_file*/<subject>.eml`, deleted after 5 minutes | mails |
-| Thunderbird | Windows | text first: the URI, several run together | mails, read from the profile |
-| Thunderbird | macOS | `public.url`: the message's URL; one message only | a mail, read from the profile |
+| Thunderbird | Windows | text first: the URI, several run together | not read: a message says why |
+| Thunderbird | macOS | `public.url`: the message's URL; one message only | not read: a message says why |
 | Claws Mail | Linux | a `text/uri-list`, one file per mail, `~/.claws-mail/tmp/<subject>.<number>.txt` | mails |
 | Claws Mail, mail without a subject | Linux | the mail's own file in the mail folder | a file attachment |
 | Outlook (classic) | Windows | `RenPrivateMessages`, `FileGroupDescriptorW`, `FileContents` (IStorage, which wx cannot read) | mails, from the running Outlook; not tested |
@@ -122,8 +154,11 @@ Sources: Evolution 3.56.2 `src/mail/message-list.c` (drag types),
 `src/mail/em-utils.c` (`em_utils_selection_set_urilist`), commit
 409c789f (temporary files moved to `/tmp`, 3.44) and 8f17ed9e
 (Flatpak); Thunderbird 140 `mail/base/content/about3Pane.js` (drag
-start), Gecko `dom/events/DataTransfer.cpp` (custom clipdata, bug
-1226977) and `widget/gtk/nsDragService.cpp`,
+start), `mailnews/local/src/nsParseMailbox.cpp` and
+`mailnews/db/msgdb/src/nsMsgDatabase.cpp` (message keys, comm-esr102
+to comm-esr140), Gecko `dom/events/DataTransfer.cpp` (custom
+clipdata, bug 1226977), `widget/gtk/nsDragSessionSource.cpp`
+(`GetSourceList()`, the targets' order),
 `widget/windows/nsDataObj.cpp`, `widget/cocoa/nsDragService.mm`; Claws
 Mail 4.4.0 `src/summaryview.c`; KMail `messagelib`
 `messagelist/src/widget.cpp`; wxWidgets 3.2.7 `src/gtk/dnd.cpp`,
@@ -136,12 +171,10 @@ github.com/yasoonOfficial/outlook-dndprotocol.
 - `tests/unittests/widgetTests/MailDropTest.py`: each program and
   system of the table, the data wx hands over.
 - `tests/unittests/MailerTest.py`: reading mails (encoded headers,
-  UTF-8 or Latin-1 in headers, mbox files) and Thunderbird's readers on
-  a scratch profile.
+  UTF-8 or Latin-1 in headers, mbox files).
 - `tools/fake_mail_drag.py`: a window that drags as each program does,
   with the files where the program writes them, into the running
-  application; `--profile` makes a Thunderbird profile for the drags
-  that give a URI. What a wx drag source cannot make (KMail's links,
+  application. What a wx drag source cannot make (KMail's links,
   Outlook's formats, macOS promises) is left to the tests.
 
 ## Editor

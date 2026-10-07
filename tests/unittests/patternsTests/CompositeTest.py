@@ -25,127 +25,131 @@ class CompositeTest(test.TestCase):
         self.composite = patterns.Composite()
         self.child = patterns.Composite()
 
-    def testNoParentByDefault(self):
+    def test_no_parent_by_default(self):
         self.assertFalse(self.composite.parent())
 
-    def testNoChildrenByDefault(self):
+    def test_no_children_by_default(self):
         self.assertFalse(self.composite.children())
 
-    def testNoRecursiveChildrenByDefault(self):
+    def test_no_recursive_children_by_default(self):
         self.assertFalse(self.composite.children(recursive=True))
 
-    def testNoAncestorsByDefault(self):
+    def test_no_ancestors_by_default(self):
         self.assertEqual([], self.composite.ancestors())
 
-    def testAddChild(self):
+    def test_add_child(self):
         self.composite.addChild(self.child)
         self.assertEqual([self.child], self.composite.children())
 
-    def testAddChild_SetsParentOfChild(self):
+    def test_add_child_sets_parent_of_child(self):
         self.composite.addChild(self.child)
         self.assertEqual(self.composite, self.child.parent())
 
-    def testRemoveChild(self):
+    def test_remove_child(self):
         self.composite.addChild(self.child)
         self.composite.removeChild(self.child)
         self.assertEqual([], self.composite.children())
 
-    def testRemoveChild_DoesNotResetParentOfChild(self):
+    def test_remove_child_does_not_reset_parent_of_child(self):
         self.composite.addChild(self.child)
         self.composite.removeChild(self.child)
         self.assertEqual(self.composite, self.child.parent())
 
-    def testCreateWithChildren(self):
-        objectWithChildren = patterns.Composite(children=[self.child])
-        self.assertEqual([self.child], objectWithChildren.children())
+    def test_create_with_children(self):
+        object_with_children = patterns.Composite(children=[self.child])
+        self.assertEqual([self.child], object_with_children.children())
 
-    def testCreateWithParent(self):
-        objectWithParent = patterns.Composite(parent=self.composite)
-        self.assertEqual(self.composite, objectWithParent.parent())
+    def test_create_with_parent(self):
+        object_with_parent = patterns.Composite(parent=self.composite)
+        self.assertEqual(self.composite, object_with_parent.parent())
 
-    def testCreateWithParentDoesNotAddObjectToParent(self):
+    def test_create_with_parent_does_not_add_object_to_parent(self):
         patterns.Composite(parent=self.composite)
         self.assertFalse(self.composite.children())
 
-    def testChildrenRecursive_WithoutGrandChildren(self):
+    def test_children_recursive_without_grand_children(self):
         self.composite.addChild(self.child)
         self.assertEqual([self.child], self.composite.children(recursive=True))
 
-    def testChildrenRecursive(self):
+    def test_children_recursive(self):
         self.composite.addChild(self.child)
-        grandChild = patterns.Composite()
-        self.child.addChild(grandChild)
+        grand_child = patterns.Composite()
+        self.child.addChild(grand_child)
         self.assertEqual(
-            [self.child, grandChild], self.composite.children(recursive=True)
+            [self.child, grand_child], self.composite.children(recursive=True)
         )
 
-    def testAncestorsWithTwoGenerations(self):
+    def test_ancestors_with_two_generations(self):
         self.composite.addChild(self.child)
         self.assertEqual([self.composite], self.child.ancestors())
 
-    def testAncestorsWithThreeGenerations(self):
-        grandChild = patterns.Composite()
+    def test_ancestors_with_three_generations(self):
+        grand_child = patterns.Composite()
         self.composite.addChild(self.child)
-        self.child.addChild(grandChild)
-        self.assertEqual([self.composite, self.child], grandChild.ancestors())
+        self.child.addChild(grand_child)
+        self.assertEqual([self.composite, self.child], grand_child.ancestors())
 
-    def testCompositeIsItsOnlyFamilyByDefault(self):
+    def test_composite_is_its_only_family_by_default(self):
         self.assertEqual([self.composite], self.composite.family())
 
-    def testParentIsPartOfFamily(self):
+    def test_parent_is_part_of_family(self):
         self.composite.addChild(self.child)
         self.assertEqual([self.composite, self.child], self.child.family())
 
-    def testChildIsPartOfFamily(self):
+    def test_child_is_part_of_family(self):
         self.composite.addChild(self.child)
         self.assertEqual([self.composite, self.child], self.composite.family())
 
-    def testSiblingsWithoutParentIsEmpty(self):
+    def test_siblings_without_parent_is_empty(self):
         self.assertFalse(self.composite.siblings())
 
-    def testSiblingsWithoutSiblings(self):
+    def test_siblings_without_siblings(self):
         self.composite.addChild(self.child)
         self.assertFalse(self.child.siblings())
 
-    def testSiblingsWithOneSibling(self):
+    def test_siblings_with_one_sibling(self):
         self.composite.addChild(self.child)
         child2 = patterns.Composite()
         self.composite.addChild(child2)
         self.assertEqual([child2], self.child.siblings())
 
-    def testNewChild_HasCorrectParent(self):
+    def test_new_child_has_correct_parent(self):
         child = self.composite.newChild()
         self.assertEqual(self.composite, child.parent())
 
-    def testNewChild_NotInParentsChildren(self):
+    def test_new_child_not_in_parents_children(self):
         child = self.composite.newChild()
         self.assertFalse(child in self.composite.children())
 
-    def testCopy(self):
+    def test_copy(self):
         copy = self.composite.copy()
         self.assertEqual(copy.children(), self.composite.children())
 
-    def testCopy_AddChildrenAfterCopy(self):
+    def test_copy_add_children_after_copy(self):
         copy = self.composite.copy()
         self.composite.addChild(self.child)
         self.assertFalse(self.child in copy.children())
 
-    def testCopy_WithChildren(self):
+    def test_copy_with_children(self):
         self.composite.addChild(self.child)
         copy = self.composite.copy()
         self.assertEqual(1, len(copy.children()))
 
-    def testCopy_WithChildren_ParentOfCopiedChildrenIsNewComposite(self):
+    def test_copy_with_children_parent_of_copied_children_is_new_composite(
+        self,
+    ):
         self.composite.addChild(self.child)
         copy = self.composite.copy()
         self.assertEqual(copy, copy.children()[0].parent())
 
-    def testCopy_WithParent(self):
+    def test_copy_with_parent(self):
         self.composite.addChild(self.child)
         copy = self.child.copy()
         self.assertEqual(self.child.parent(), copy.parent())
 
-    def testCopy_WithChildren_DoesNotCreateExtraChildrenForOriginal(self):
+    def test_copy_with_children_does_not_create_extra_children_for_original(
+        self,
+    ):
         self.composite.addChild(self.child)
         self.composite.copy()
         self.assertEqual(1, len(self.composite.children()))
@@ -156,26 +160,26 @@ class ObservableCompositeTest(test.TestCase):
         self.composite = patterns.ObservableComposite()
         self.child = patterns.ObservableComposite()
 
-    def testAddChild(self):
-        eventType = self.composite.addChildEventType()
-        self.registerObserver(eventType)
+    def test_add_child(self):
+        event_type = self.composite.addChildEventType()
+        self.registerObserver(event_type)
         self.composite.addChild(self.child)
         self.assertEqual(
-            [patterns.Event(eventType, self.composite, self.child)],
+            [patterns.Event(event_type, self.composite, self.child)],
             self.events,
         )
 
-    def testRemoveChild(self):
-        eventType = self.composite.removeChildEventType()
-        self.registerObserver(eventType)
+    def test_remove_child(self):
+        event_type = self.composite.removeChildEventType()
+        self.registerObserver(event_type)
         self.composite.addChild(self.child)
         self.composite.removeChild(self.child)
         self.assertEqual(
-            [patterns.Event(eventType, self.composite, self.child)],
+            [patterns.Event(event_type, self.composite, self.child)],
             self.events,
         )
 
-    def testModificationEventTypes(self):
+    def test_modification_event_types(self):
         self.assertEqual(
             [
                 self.composite.addChildEventType(),
@@ -191,131 +195,137 @@ class CompositeCollectionTest(test.TestCase):
         self.composite2 = patterns.ObservableComposite()
         self.collection = patterns.CompositeList()
 
-    def testInitialSize(self):
+    def test_initial_size(self):
         self.assertEqual(0, len(self.collection))
 
-    def testCreateWithInitialContent(self):
+    def test_create_with_initial_content(self):
         collection = patterns.CompositeList([self.composite])
         self.assertEqual([self.composite], collection)
 
-    def testRootItems_NoItems(self):
+    def test_root_items_no_items(self):
         self.assertEqual([], self.collection.rootItems())
 
-    def testRootItems_OneRootItem(self):
+    def test_root_items_one_root_item(self):
         self.collection.append(self.composite)
         self.assertEqual([self.composite], self.collection.rootItems())
 
-    def testRootItems_MultipleRootItems(self):
+    def test_root_items_multiple_root_items(self):
         self.collection.extend([self.composite, self.composite2])
         self.assertEqualLists(
             [self.composite, self.composite2], self.collection.rootItems()
         )
 
-    def testRootItems_RootAndChildItems(self):
+    def test_root_items_root_and_child_items(self):
         self.composite.addChild(self.composite2)
         self.collection.extend([self.composite, self.composite2])
         self.assertEqual([self.composite], self.collection.rootItems())
 
-    def testAddChild(self):
+    def test_add_child(self):
         self.collection.extend([self.composite, self.composite2])
         self.composite.addChild(self.composite2)
         self.assertEqual([self.composite], self.collection.rootItems())
 
-    def testAddRootWithChildItems(self):
+    def test_add_root_with_child_items(self):
         self.composite.addChild(self.composite2)
         self.collection.append(self.composite)
         self.assertEqualLists(
             [self.composite, self.composite2], self.collection
         )
 
-    def testAddRootWithChildItems_AddAllAtOnce(self):
+    def test_add_root_with_child_items_add_all_at_once(self):
         self.composite.addChild(self.composite2)
         self.collection.extend([self.composite, self.composite2])
         self.assertEqualLists(
             [self.composite, self.composite2], self.collection
         )
 
-    def testAddRootWithChildItems_DoesNotAddChildToParent(self):
+    def test_add_root_with_child_items_does_not_add_child_to_parent(self):
         self.composite.addChild(self.composite2)
         self.collection.extend([self.composite, self.composite2])
         self.assertEqual([self.composite2], self.composite.children())
 
-    def testAddCompositeWithParentAddsItToParent(self):
+    def test_add_composite_with_parent_adds_it_to_parent(self):
         self.collection.append(self.composite)
         self.composite2.set_parent(self.composite)
         self.collection.append(self.composite2)
         self.assertEqual([self.composite2], self.composite.children())
 
-    def testAddCompositeWithParentTriggersNotificationByParent(self):
+    def test_add_composite_with_parent_triggers_notification_by_parent(self):
         self.registerObserver(self.composite.addChildEventType())
         self.collection.append(self.composite)
         self.composite2.set_parent(self.composite)
         self.collection.append(self.composite2)
-        expectedEvent = patterns.Event(
+        expected_event = patterns.Event(
             self.composite.addChildEventType(), self.composite, self.composite2
         )
-        self.assertEqual([expectedEvent], self.events)
+        self.assertEqual([expected_event], self.events)
 
-    def testRemoveChildFromCollectionRemovesChildFromParent(self):
+    def test_remove_child_from_collection_removes_child_from_parent(self):
         self.collection.extend([self.composite, self.composite2])
         self.composite.addChild(self.composite2)
         self.collection.remove(self.composite2)
         self.assertFalse(self.composite.children())
 
-    def testRemoveChildFromCollectionTriggersNotificationByParent(self):
+    def test_remove_child_from_collection_triggers_notification_by_parent(
+        self,
+    ):
         self.registerObserver(self.composite.removeChildEventType())
         self.collection.extend([self.composite, self.composite2])
         self.composite.addChild(self.composite2)
         self.collection.remove(self.composite2)
-        expectedEvent = patterns.Event(
+        expected_event = patterns.Event(
             self.composite.removeChildEventType(),
             self.composite,
             self.composite2,
         )
-        self.assertEqual([expectedEvent], self.events)
+        self.assertEqual([expected_event], self.events)
 
-    def testRemoveCompositeWithChildRemovesChildToo(self):
+    def test_remove_composite_with_child_removes_child_too(self):
         self.composite.addChild(self.composite2)
-        grandChild = patterns.ObservableComposite()
-        self.composite2.addChild(grandChild)
+        grand_child = patterns.ObservableComposite()
+        self.composite2.addChild(grand_child)
         self.collection.append(self.composite)
         self.collection.remove(self.composite2)
         self.assertEqual([self.composite], self.collection)
 
-    def testRemoveCompositeAndChildRemovesBoth(self):
+    def test_remove_composite_and_child_removes_both(self):
         self.composite.addChild(self.composite2)
-        grandChild = patterns.ObservableComposite()
-        self.composite2.addChild(grandChild)
+        grand_child = patterns.ObservableComposite()
+        self.composite2.addChild(grand_child)
         self.collection.append(self.composite)
-        self.collection.removeItems([self.composite2, grandChild])
+        self.collection.removeItems([self.composite2, grand_child])
         self.assertEqual([self.composite], self.collection)
 
-    def testRemoveChildWithChildren_CollectionNotificationContainsParentAndChild(
+    def test_remove_child_with_children_notifies_parent_and_child(
         self,
     ):
         self.registerObserver(self.collection.removeItemEventType())
         self.composite.addChild(self.composite2)
-        grandChild = patterns.ObservableComposite()
-        self.composite2.addChild(grandChild)
+        grand_child = patterns.ObservableComposite()
+        self.composite2.addChild(grand_child)
         self.collection.append(self.composite)
         self.collection.remove(self.composite2)
         self.assertEqualLists(
-            [self.composite2, grandChild],
+            [self.composite2, grand_child],
             self.events[0].values(type=self.collection.removeItemEventType()),
         )
 
-    def testRemoveCompositeWithChildrenDoesNotBreakParentChildRelation(self):
+    def test_remove_composite_with_children_keeps_parent_child_relation(
+        self,
+    ):
         self.composite.addChild(self.composite2)
         self.collection.append(self.composite)
         self.collection.remove(self.composite)
         self.assertEqual([self.composite2], self.composite.children())
 
-    def testRemoveChildAndThenAddingItAddsItToPreviousParentToo(self):
+    def test_remove_child_and_then_adding_it_adds_it_to_previous_parent_too(
+        self,
+    ):
         self.composite.addChild(self.composite2)
         self.collection.append(self.composite)
         self.collection.remove(self.composite2)
         self.collection.append(self.composite2)
         self.assertEqual([self.composite2], self.composite.children())
 
-    def testRemoveCompositeNotInCollection(self):
+    def test_remove_composite_not_in_collection(self):
         self.collection.remove(self.composite)

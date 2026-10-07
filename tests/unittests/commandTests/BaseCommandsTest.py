@@ -32,20 +32,20 @@ class DeleteCommandTest(CommandTestCase):
         delete = command.DeleteCommand(self.items, items or [])
         delete.do()
 
-    def testDeleteItem_WithoutSelection(self):
+    def test_delete_item_without_selection(self):
         self.deleteItem()
         self.assertDoUndoRedo(
             lambda: self.assertEqual([self.item], self.items)
         )
 
-    def testDeleteItem_WithSelection(self):
+    def test_delete_item_with_selection(self):
         self.deleteItem([self.item])
         self.assertDoUndoRedo(
             lambda: self.assertEqual([], self.items),
             lambda: self.assertEqual([self.item], self.items),
         )
 
-    def testItemsAreNotNew(self):
+    def test_items_are_not_new(self):
         self.assertFalse(command.DeleteCommand(self.items, []).items_are_new())
 
 
@@ -59,20 +59,20 @@ class EditSubjectTestCase(CommandTestCase):
         self.item2 = self.ItemClass(subject="item2")
         self.container = self.ContainerClass([self.item1, self.item2])
 
-    def editSubject(self, newSubject, *items):
-        editSubjectCommand = command.EditSubjectCommand(
-            self.container, items, newValue=newSubject
+    def editSubject(self, new_subject, *items):
+        edit_subject_command = command.EditSubjectCommand(
+            self.container, items, newValue=new_subject
         )
-        editSubjectCommand.do()
+        edit_subject_command.do()
 
-    def testEditSubject(self):
+    def test_edit_subject(self):
         self.editSubject("new", self.item1)
         self.assertDoUndoRedo(
             lambda: self.assertEqual("new", self.item1.subject()),
             lambda: self.assertEqual("item1", self.item1.subject()),
         )
 
-    def testEditMultipleSubjects(self):
+    def test_edit_multiple_subjects(self):
         self.editSubject("new", self.item1, self.item2)
         self.assertDoUndoRedo(
             lambda: self.assertEqual(
@@ -83,7 +83,7 @@ class EditSubjectTestCase(CommandTestCase):
             ),
         )
 
-    def testItemsAreNotNew(self):
+    def test_items_are_not_new(self):
         self.assertFalse(
             command.EditSubjectCommand(
                 self.container, [], newValue="New subject"
@@ -121,14 +121,14 @@ class EditDescriptionTestCase(CommandTestCase):
         )
         edit_subject.do()
 
-    def testEditSubject(self):
+    def test_edit_subject(self):
         self.edit_description("new", self.item1)
         self.assertDoUndoRedo(
             lambda: self.assertEqual("new", self.item1.description()),
             lambda: self.assertEqual("item1", self.item1.description()),
         )
 
-    def testEditMultipleDescriptions(self):
+    def test_edit_multiple_descriptions(self):
         self.edit_description("new", self.item1, self.item2)
         self.assertDoUndoRedo(
             lambda: self.assertEqual(
@@ -140,7 +140,7 @@ class EditDescriptionTestCase(CommandTestCase):
             ),
         )
 
-    def testItemsAreNotNew(self):
+    def test_items_are_not_new(self):
         self.assertFalse(
             command.EditDescriptionCommand(
                 self.container, [], newValue="New description"

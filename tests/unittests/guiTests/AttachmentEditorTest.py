@@ -46,39 +46,39 @@ class AttachmentEditorTest(test.wxTestCase):
         self.taskFile.close()
         self.taskFile.stop()
 
-    def setSubject(self, newSubject):
+    def setSubject(self, new_subject):
         page = self.editor._interior[0]
         page._subjectEntry.SetFocus()
-        page._subjectEntry.SetValue(newSubject)
+        page._subjectEntry.SetValue(new_subject)
         if operating_system.isGTK():  # pragma: no cover
             page._subjectSync.onAttributeEdited(DummyEvent())
         else:  # pragma: no cover
             page._descriptionEntry.SetFocus()
 
-    def setDescription(self, newDescription):
+    def setDescription(self, new_description):
         page = self.editor._interior[0]
         page._descriptionEntry.SetFocus()
-        page._descriptionEntry.SetValue(newDescription)
+        page._descriptionEntry.SetValue(new_description)
         if operating_system.isGTK():  # pragma: no cover
             page._descriptionSync.onAttributeEdited(DummyEvent())
         else:  # pragma: no cover
             page._subjectEntry.SetFocus()
 
-    def testCreate(self):
+    def test_create(self):
         # pylint: disable=W0212
         self.assertEqual(
             "Attachment", self.editor._interior[0]._subjectEntry.GetValue()
         )
 
-    def testEditSubject(self):
+    def test_edit_subject(self):
         self.setSubject("Done")
         self.assertEqual("Done", self.attachment.subject())
 
-    def testEditDescription(self):
+    def test_edit_description(self):
         self.setDescription("Description")
         self.assertEqual("Description", self.attachment.description())
 
-    def testAddNote(self):
+    def test_add_note(self):
         viewer = self.editor._interior[1].viewer
         viewer.newItemCommand(viewer.presentation()).do()
         self.assertEqual(

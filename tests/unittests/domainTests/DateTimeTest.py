@@ -21,49 +21,51 @@ from taskcoachlib.domain import date
 
 
 class PyDateTimeTest(test.TestCase):
-    def testReplaceCannotBeEasilyUsedToFindTheLastDayofTheMonth(self):
-        testDate = datetime.date(2004, 4, 1)  # April 1st, 2004
+    def test_replace_cannot_be_easily_used_to_find_the_last_dayof_the_month(
+        self,
+    ):
+        test_date = datetime.date(2004, 4, 1)  # April 1st, 2004
         try:
-            lastDayOfApril = testDate.replace(day=31)
+            last_day_of_april = test_date.replace(day=31)
             self.fail(
                 "Surprise! datetime.date.replace works as we want!"
             )  # pragma: no cover
             self.assertEqual(
-                datetime.date(2004, 4, 30), lastDayOfApril
+                datetime.date(2004, 4, 30), last_day_of_april
             )  # pragma: no cover
         except ValueError:
             pass
 
 
 class DateTimeTest(test.TestCase):
-    def testWeekNumber(self):
+    def test_week_number(self):
         self.assertEqual(53, date.DateTime(2005, 1, 1).weeknumber())
         self.assertEqual(1, date.DateTime(2005, 1, 3).weeknumber())
 
-    def testStartOfDay(self):
-        startOfDay = date.DateTime(2005, 1, 1, 0, 0, 0, 0)
+    def test_start_of_day(self):
+        start_of_day = date.DateTime(2005, 1, 1, 0, 0, 0, 0)
         noonish = date.DateTime(2005, 1, 1, 12, 30, 15, 400)
-        self.assertEqual(startOfDay, noonish.startOfDay())
+        self.assertEqual(start_of_day, noonish.startOfDay())
 
-    def testEndOfDay(self):
+    def test_end_of_day(self):
         end_of_day = date.DateTime(2005, 1, 1, 23, 59, 59)
         noonish = date.DateTime(2005, 1, 1, 12, 30, 15, 400)
         self.assertEqual(end_of_day, noonish.endOfDay())
 
-    def testStartOfWorkWeekOnWednesday(self):
-        startOfWorkWeek = date.DateTime(2011, 7, 25, 0, 0, 0, 0)
+    def test_start_of_work_week_on_wednesday(self):
+        start_of_work_week = date.DateTime(2011, 7, 25, 0, 0, 0, 0)
         wednesday = date.DateTime(2011, 7, 27, 8, 39, 10)
-        self.assertEqual(startOfWorkWeek, wednesday.startOfWorkWeek())
+        self.assertEqual(start_of_work_week, wednesday.startOfWorkWeek())
 
-    def testStartOfWorkWeekOnMonday(self):
-        startOfWorkWeek = date.DateTime(2011, 7, 25, 0, 0, 0, 0)
+    def test_start_of_work_week_on_monday(self):
+        start_of_work_week = date.DateTime(2011, 7, 25, 0, 0, 0, 0)
         monday = date.DateTime(2011, 7, 25, 8, 39, 10)
-        self.assertEqual(startOfWorkWeek, monday.startOfWorkWeek())
+        self.assertEqual(start_of_work_week, monday.startOfWorkWeek())
 
-    def testStartOfWorkWeekOnSunday(self):
-        startOfWorkWeek = date.DateTime(2011, 7, 18, 0, 0, 0, 0)
+    def test_start_of_work_week_on_sunday(self):
+        start_of_work_week = date.DateTime(2011, 7, 18, 0, 0, 0, 0)
         sunday = date.DateTime(2011, 7, 24, 8, 39, 10)
-        self.assertEqual(startOfWorkWeek, sunday.startOfWorkWeek())
+        self.assertEqual(start_of_work_week, sunday.startOfWorkWeek())
 
     def test_end_of_work_week(self):
         end_of_work_week = date.DateTime(2010, 5, 7, 23, 59, 59)
@@ -75,17 +77,17 @@ class DateTimeTest(test.TestCase):
         midweek = date.DateTime(2010, 5, 1, 12, 30, 15)
         self.assertEqual(end_of_work_week, midweek.endOfWorkWeek())
 
-    def testLastDayOfCurrentMonth_InFebruary2004(self):
+    def test_last_day_of_current_month_in_february_2004(self):
         expected = date.DateTime(2004, 2, 29)
         actual = date.LastDayOfCurrentMonth(localtime=lambda: (2004, 2, 1))
         self.assertEqual(expected, actual)
 
-    def testLastDayOfCurrentMonth_InDecember(self):
+    def test_last_day_of_current_month_in_december(self):
         expected = date.DateTime(2003, 12, 31)
         actual = date.LastDayOfCurrentMonth(localtime=lambda: (2003, 12, 1))
         self.assertEqual(expected, actual)
 
-    def testFormat1900(self):
+    def test_format_1900(self):
         self.assertEqual(
             date.DateTime(2, 5, 19, 0, 0, 0).strftime("%Y%m%d"), "20519"
         )

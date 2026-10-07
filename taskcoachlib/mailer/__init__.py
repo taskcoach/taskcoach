@@ -164,10 +164,15 @@ def mail_fields(subject, from_name, from_address, sent, message_id):
     )
 
 
-def sendMail(to, subject, body, cc=None, openURL=openfile.openFile):
+# What would cut a mailto: link sent unescaped, as on macOS
+_LINK_CUTTERS = str.maketrans({"&": "_", "#": "_"})
+
+
+def send_mail(to, subject, body, cc=None, open_url=openfile.open_file):
     def unicode_quote(s):
-        # This is like urllib.quote but leaves out Unicode characters,
-        # which urllib.quote does not support.
+        # Escapes what a mailto: link cannot hold (RFC 6068) but not
+        # letters beyond ASCII: Outlook reads their UTF-8 escapes in
+        # its own code page
         chars = [c if ord(c) >= 128 else urllib.parse.quote(c) for c in s]
         return "".join(chars)
 
@@ -180,7 +185,12 @@ def sendMail(to, subject, body, cc=None, openURL=openfile.openFile):
     # one, it fails.  Maybe we should use Mail.app  directly ? What if
     # the user uses something else ?
 
-    if not operating_system.isMac():
+    if operating_system.isMac():
+        # Escapes showed in the mail there (bug 3489341, 2012)
+        subject = subject.translate(_LINK_CUTTERS)
+        body = body.translate(_LINK_CUTTERS)
+    else:
+        subject = unicode_quote(subject)  # Else & and # cut it short
         body = unicode_quote(body)  # Otherwise newlines disappear
         cc = list(map(unicode_quote, cc))
         to = list(map(unicode_quote, to))
@@ -189,4 +199,4 @@ def sendMail(to, subject, body, cc=None, openURL=openfile.openFile):
     if cc:
         components.append("cc=%s" % ",".join(cc))
 
-    openURL("mailto:%s?%s" % (",".join(to), "&".join(components)))
+    open_url("mailto:%s?%s" % (",".join(to), "&".join(components)))

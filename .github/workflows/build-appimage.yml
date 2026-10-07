@@ -69,16 +69,16 @@ jobs:
 
       - name: Download Python AppImage base
         run: |
-          # Download the pre-built Python 3.11 AppImage from the
+          # Download the pre-built Python 3.13 AppImage from the
           # python-appimage project. Upstream replaces the assets of the
-          # python3.11 release tag on every micro release, so the exact
-          # filename cannot be pinned; resolve the current cp311
+          # python3.13 release tag on every micro release, so the exact
+          # filename cannot be pinned; resolve the current cp313
           # manylinux_2_28 x86_64 asset from the release instead.
           PYTHON_APPIMAGE_URL=$(curl -sf \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/niess/python-appimage/releases/tags/python3.11 \
+            https://api.github.com/repos/niess/python-appimage/releases/tags/python3.13 \
             | jq -r '.assets[].browser_download_url' \
-            | grep 'cp311-manylinux_2_28_x86_64\.AppImage$')
+            | grep 'cp313-manylinux_2_28_x86_64\.AppImage$')
           if [ -z "$PYTHON_APPIMAGE_URL" ]; then
             echo "Could not resolve Python AppImage download URL" >&2
             exit 1
@@ -115,7 +115,7 @@ jobs:
           $PYTHON -m pip install --upgrade pip setuptools wheel
 
           # Install wxPython from the pre-built wheel in the wxPython
-          # extras repository. Pin to the newest cp311 wheel available
+          # extras repository. Pin to the newest cp313 wheel available
           # there and refuse sdists: PyPI has no Linux wheels, so an
           # unpinned install resolves to the newest PyPI sdist (4.3+)
           # and tries to compile wxWidgets from source, which fails on
@@ -130,7 +130,6 @@ jobs:
           $PYTHON -m pip install \
             "chardet>=5.2.0" \
             "python-dateutil>=2.9.0" \
-            keyring \
             "squaremap>=1.0.5" \
             "pyenchant>=3.2.0"
 
@@ -175,7 +174,7 @@ jobs:
 
           # Also find libraries that wx .so files depend on
           echo "Checking wxPython library dependencies..."
-          WX_LIBS=$(find opt/python3.11/lib/python3.11/site-packages/wx -name "*.so" 2>/dev/null)
+          WX_LIBS=$(find opt/python3.13/lib/python3.13/site-packages/wx -name "*.so" 2>/dev/null)
           for wxlib in $WX_LIBS; do
             ldd "$wxlib" 2>/dev/null | grep "not found" | awk '{print $1}' | while read missing; do
               echo "Looking for missing: $missing"
@@ -224,7 +223,7 @@ jobs:
         run: |
           # First, find where Python actually is in the extracted AppImage
           echo "Finding Python binary location..."
-          PYTHON_BIN=$(find TaskCoach.AppDir/opt -name "python3.11" -type f -path "*/bin/*" | head -1)
+          PYTHON_BIN=$(find TaskCoach.AppDir/opt -name "python3.13" -type f -path "*/bin/*" | head -1)
           echo "Found Python at: $PYTHON_BIN"
 
           # Get the relative path from TaskCoach.AppDir
@@ -244,7 +243,7 @@ jobs:
             echo 'APPDIR="$(dirname "$(readlink -f "$0")")"'
             echo "PYTHON=\"\$APPDIR/$PYTHON_REL\""
             echo "export PYTHONHOME=\"\$APPDIR/$PYTHON_DIR\""
-            echo 'export PYTHONPATH="$APPDIR/usr/share/taskcoach:$PYTHONHOME/lib/python3.11/site-packages"'
+            echo 'export PYTHONPATH="$APPDIR/usr/share/taskcoach:$PYTHONHOME/lib/python3.13/site-packages"'
             echo 'export LD_LIBRARY_PATH="$PYTHONHOME/lib:$APPDIR/usr/lib:$LD_LIBRARY_PATH"'
             echo 'export PATH="$PYTHONHOME/bin:$APPDIR/usr/bin:$PATH"'
             echo 'export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"'
@@ -368,7 +367,7 @@ jobs:
             echo "Debugging..."
             ls -la opt/ 2>/dev/null || echo "No opt/ directory"
             ls -la usr/bin/ 2>/dev/null | head -10
-            find . -name "python3.11" -type f 2>/dev/null
+            find . -name "python3.13" -type f 2>/dev/null
             exit 1
           }
 
@@ -376,6 +375,14 @@ jobs:
           echo "Testing taskcoachlib import..."
           ./AppRun -c "import taskcoachlib; print('taskcoachlib imported successfully')" || {
             echo "ERROR: Failed to import taskcoachlib"
+            exit 1
+          }
+
+          # Expat reads task files: 2.7.0 and 2.7.2 fix a crash and a
+          # memory blow-up from a hostile file
+          echo "Testing the XML parser's version..."
+          ./AppRun -c "import pyexpat, sys; print(pyexpat.EXPAT_VERSION); sys.exit(pyexpat.version_info < (2, 7, 2))" || {
+            echo "ERROR: Expat older than 2.7.2"
             exit 1
           }
 

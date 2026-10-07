@@ -10,10 +10,12 @@ This document describes the system tray (notification area) icon implementation 
 - [Implementation Architecture](#implementation-architecture)
 - [Platform Behavior Matrix](#platform-behavior-matrix)
 - [Windows Quit-from-Tray Safety](#windows-quit-from-tray-safety)
+- [Black Icon Backgrounds on LXDE](#black-icon-backgrounds-on-lxde)
 - [Tested Configurations](#tested-configurations)
 - [References](#references)
 - [Why AppIndicator on Linux?](#why-appindicator-on-linux)
 - [Menu Contents](#menu-contents)
+  - [Menu Icons](#menu-icons)
 - [Dependencies](#dependencies)
 - [Icon Animation](#icon-animation)
 - [Debugging](#debugging)
@@ -31,6 +33,33 @@ This document describes the system tray (notification area) icon implementation 
    [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-and-will-not-do)):
    the two classes differ by design and share little
    ([Code Duplication](#code-duplication)).
+2. Black icon backgrounds on LXDE: find what triggers them on the
+   designer's desktop, then reproduce and fix them in lxpanel's tray
+   (outside Task Coach) ([Black Icon Backgrounds on
+   LXDE](#black-icon-backgrounds-on-lxde)).
+3. Parked, **ruled by designer 2026-10-05** ("Postpone the ... in-house
+   tray ... quite a complex update. We'll look later"; stub: To Do 24
+   in [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#to-do)).
+   Analysis to do, **asked by designer 2026-10-05**: a tray icon of
+   our own on Linux instead of libayatana-appindicator, managed for
+   every case, as before 2026-01 (#235, #238: wx's XEmbed icon, menu
+   built on click). AppIndicator cut the left and right clicks apart
+   ([Why No Left-Click/Right-Click
+   Differentiation?](#why-no-left-clickright-click-differentiation)),
+   the activation token ([Modern best
+   practice](#modern-best-practice-2025-2026)), per-show labels, and
+   needs the menu built ahead: with 2,000 tasks a whole rebuild
+   froze the window 1.6 to 2.6 s, most of it turning every item's icon
+   into image data (P235 in
+   [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#pre-existing-issues)).
+   To weigh: the StatusNotifierItem and `com.canonical.dbusmenu`
+   interfaces served ourselves over Gio (the layout built when the
+   host asks, `GetLayout`/`AboutToShow`; each distinct icon encoded
+   once; `Activate` for a left click where hosts send it), with wx's
+   XEmbed icon where no host is registered (lxpanel); the hosts to
+   test (KDE, GNOME's extension, XFCE, LXQt, lxpanel); the code it
+   replaces; Chromium, Electron and Qt implement the protocols
+   themselves.
 
 ---
 
@@ -181,6 +210,43 @@ Task Coach uses manual `PopupMenu()` + `patterns.later.soon()` for the
 quit action, which is safe and avoids the need to restructure the menu
 system.
 
+## Black Icon Backgrounds on LXDE
+
+Found 2026-10-04 by the designer after the upgrade from Debian 12 to
+13: now and then tray icons show a black background instead of the
+panel's, Task Coach's (2.0.2.26 too) and other programs' alike; a
+program's icon is right again once the program restarts. Not Task
+Coach's to fix: on LXDE its icon is GTK's own tray icon, the
+AppIndicator's fallback (lxpanel has no StatusNotifierItem host), and
+wx's tray icon is the same GTK code.
+
+**Cause** (read, not reproduced): Debian 13 replaced lxpanel 0.10.1, a
+GTK 2 build, with 0.11.1, a GTK 3 build. Its tray offers no
+transparent visual (`_NET_SYSTEM_TRAY_VISUAL`), so GTK 3 icons are
+24-bit windows that clear to the panel behind them (parent-relative
+background, `gtk/deprecated/gtktrayicon-x11.c`); a repaint drawn
+through GTK's buffer instead clears to "transparent", which a 24-bit
+window shows black. GTK has broken this before ([GTK
+#1319](https://gitlab.gnome.org/GNOME/gtk/-/work_items/1319)), and an
+openSUSE Leap 16 user reported lxpanel's tray backgrounds not redrawn
+in May 2026 ([forum](https://forums.opensuse.org/t/lxpanel-tray-icons-background/193597));
+xfce4-panel, which offers the transparent visual, has no such report.
+
+**Not reproduced** on the virtual display with the same lxpanel 0.11.1
+(the designer's panel settings, tray only), GTK 3.24.49 and no
+compositor: Task Coach's icon stayed right through 46 captures while
+it alternated each second (effort tracking), after a window covered
+and uncovered the tray, and while another program's icon came and
+went three times. The trigger on the designer's desktop is not known.
+
+**Workarounds**: restart the program, or `lxpanelctl restart` for
+every icon at once (not tried). A compositor alone likely does not
+help, since lxpanel never offers the transparent visual (not tried).
+A lasting fix is lxpanel's: offer the transparent visual and draw the
+icons itself, as xfce4-panel does.
+
+---
+
 ## Tested Configurations
 
 | OS | Distro | Desktop | Session | wx.adv.TaskBarIcon | AppIndicator |
@@ -241,7 +307,7 @@ So while Wayland forces us to use AppIndicator (since XEmbed isn't available), t
 | Right-click action | Shows menu | Shows menu (or conflict on KDE X11) |
 | Wayland support | No | Yes |
 | X11 support | Partial* | Yes |
-| Menu updates | Dynamic | Rebuild on change |
+| Menu updates | Dynamic | Updated in place on change |
 
 *Right-click broken on many desktops
 
@@ -480,7 +546,7 @@ fallback. KDE Wayland runtime behaviour requires on-box verification
 
 ## Menu Contents
 
-Both `TaskBarMenu` (Windows/macOS) and `AppIndicatorTaskBarIcon._build_gtk_menu`
+Both `TaskBarMenu` (Windows/macOS) and `AppIndicatorTaskBarIcon._menu_lines`
 (Linux) provide the same items:
 
 1. **Hide / Restore** - Toggle main window visibility (dynamic label)
@@ -496,13 +562,76 @@ Both `TaskBarMenu` (Windows/macOS) and `AppIndicatorTaskBarIcon._build_gtk_menu`
    - When no recent effort: Hidden
 9. **Quit** - Exit the application
 
-The AppIndicator menu rebuilds automatically when:
+The AppIndicator menu is updated in place ([Menu
+Updates](#menu-updates)), once for a burst of changes, when:
 - Task list changes (tasks added/removed)
+- A task is completed or reopened
 - Tracking starts or stops
 - Task subjects change
+- A task's icon changes, as its status does with the clock (once
+  after the scheduler's pass)
+- A tray host comes or goes (made anew: [Menu Icons](#menu-icons))
 
 The wx `TaskBarMenu` updates dynamic submenus and state-dependent labels
 in `popup_taskbar_menu()` each time the menu is shown.
+
+### Menu Icons
+
+Each icon of the AppIndicator menu is read from its file once
+(`appindicator._MenuImages`), as the lists share one image list
+([ICON_DISPLAY.md](ICON_DISPLAY.md#image-list-cache)). How an item
+gives it depends on who draws the menu:
+
+- **GTK, in Task Coach** (no tray host registered, the fallback icon:
+  LXDE's lxpanel): the item names the icon, registered once with
+  GTK's icon theme (`Gtk.IconTheme.add_builtin_icon()`, deprecated
+  since GTK 3.14 for resource bundles; the tray library is GTK 3's).
+- **A tray host** (StatusNotifierItem: KDE, GNOME's extension): the
+  items share the one picture. The host draws the menu in its own
+  process, so it gets the picture as image data; a name of ours it
+  could not find (not tried: no host here).
+
+libdbusmenu-gtk, which hands the menu to the tray, turns an item's
+picture into image data whenever it takes the item, even where GTK
+draws the menu itself; a name it passes as is. With 2,000 tasks
+(Xvfb, 2026-10-05) a whole rebuild took 1.7 to 2.4 s, 1.8 s of it that
+conversion; with named icons 0.30 to 0.46 s. Checked with lxpanel's
+tray on the virtual display: the menu shows each task's icon and the
+arrows, by name.
+
+### Menu Updates
+
+The menu is handed to the indicator once, then changed in place
+(`_MenuLevel` in `gui/taskbaricon.py`): `_menu_lines()` describes it
+as the old full build did, a line per item with a key (`"quit"`,
+`("track", id(task))`, `("template", path)`), and each update brings
+the live GTK menu to those lines. Only what differs is touched: an
+item added, removed, relabelled, given another icon or submenu; a
+renamed task that sorts elsewhere is moved, by a remove and an insert,
+which libdbusmenu-gtk follows. So the tray library takes only the
+changed items, the same menu as a full build gives
+(`AppIndicatorMenuUpdateTest`). A task's key is its object, not its
+ID: after a reload, a task with the same ID is another object, and its
+line starts that one.
+
+The tray is created once the file's list is built, its menu made
+once, complete (**ruled by designer 2026-10-05**: "only built once
+the list is built, and then after that, modified one at a time";
+[WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#opening-the-file)). Made anew
+only when a tray host comes or goes (its icons are given another way);
+the indicator also reports a change at the start when nothing changed,
+which is ignored. The tasks have their icons before the
+menu is first made: the full loop runs within the read
+([WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md#opening-the-file)). A task's
+icon follows it, also when the clock changes its status (due soon,
+overdue): the menu is updated once after the pass, only those items
+touched. It used to keep the old icon until the next task added,
+removed, renamed, completed or tracked, and the first menu after a
+file opened had none.
+
+With 2,000 tasks (Xvfb, five completions): 11 to 17 ms an update; the
+first fill after the read 0.27 s, the update that then gives every
+item its icon 91 ms.
 
 ### Hide / Restore Toggle
 
@@ -604,7 +733,7 @@ the AppIndicator's 560) is platform specific. They stay separate
 - **Different icons.** Catalog icons, sized by wx, against icon names
   in the `tray/hicolor` theme.
 - **Different menus.** A wx menu built when clicked, with left and
-  right click apart, against a GTK menu rebuilt on every change,
+  right click apart, against a GTK menu updated on every change,
   shown on any click (the SNI protocol is menu-centric).
 - **Platforms apart.** A shared base would couple Windows/macOS code
   with Linux code, so a change for one risks the other, which cannot

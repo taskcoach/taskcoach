@@ -55,7 +55,6 @@ from .colourpicker import ColourPickerCtrl
 from .iconpicker import IconPicker
 from .calendarwidget import Calendar
 from .calendarconfig import CalendarConfigDialog
-from .password import GetPassword
 from .hcalendar import HierarchicalCalendar
 from .hcalendarconfig import HierarchicalCalendarConfigDialog
 from .numericctrl import NumericCtrl

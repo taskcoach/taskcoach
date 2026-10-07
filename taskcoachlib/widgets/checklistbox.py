@@ -27,13 +27,13 @@ class CheckListBox(wx.CheckListBox):
         super().__init__(*args, **kwargs)
         self.__clientData = dict()
 
-    def Append(self, item, clientData=None):
+    def Append(self, item, client_data=None):
         index = super().Append(item)
-        if clientData:
-            self.__clientData[index] = clientData
+        if client_data:
+            self.__clientData[index] = client_data
         return index
 
-    def Insert(self, item, position, clientData=None):
+    def Insert(self, item, position, client_data=None):
         """We don't need this at the moment."""
 
     def GetClientData(self, index):

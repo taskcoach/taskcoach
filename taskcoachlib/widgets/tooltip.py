@@ -57,26 +57,26 @@ class ToolTipMixin(object):
         # taking the taskbar into account...
 
         if self.__frozen:
-            theDisplay = wx.Display(wx.Display.GetFromPoint(wx.Point(x, y)))
-            displayX, displayY, displayWidth, displayHeight = (
-                theDisplay.GetClientArea()
+            the_display = wx.Display(wx.Display.GetFromPoint(wx.Point(x, y)))
+            display_x, display_y, display_width, display_height = (
+                the_display.GetClientArea()
             )
-            tipWidth, tipHeight = self.__tip.GetSize()
+            tip_width, tip_height = self.__tip.GetSize()
 
-            if tipHeight > displayHeight:
+            if tip_height > display_height:
                 # Too big. Take as much space as possible.
                 y = 5
-                tipHeight = displayHeight - 10
-            elif y + tipHeight > displayY + displayHeight:
+                tip_height = display_height - 10
+            elif y + tip_height > display_y + display_height:
                 # Adjust y so that the whole tip is visible.
-                y = displayY + displayHeight - tipHeight - 5
+                y = display_y + display_height - tip_height - 5
 
-            if tipWidth > displayWidth:
+            if tip_width > display_width:
                 x = 5
-            elif x + tipWidth > displayX + displayWidth:
-                x = displayX + displayWidth - tipWidth - 5
+            elif x + tip_width > display_x + display_width:
+                x = display_x + display_width - tip_width - 5
 
-            self.__tip.Show(x, y, tipWidth, tipHeight)
+            self.__tip.Show(x, y, tip_width, tip_height)
 
     def DoShowTip(self, x, y, tip):
         self.__tip = tip
@@ -187,39 +187,39 @@ class SimpleToolTip(ToolTipBase):
         self.Refresh()  # Needed on Mac OS X
 
     def _wrapLongLines(self, data):
-        wrappedData = []
+        wrapped_data = []
         wrapper = textwrap.TextWrapper(width=78)
         for icon_id, lines in data:
-            wrappedLines = []
+            wrapped_lines = []
             for line in lines:
-                wrappedLines.extend(wrapper.fill(line).split("\n"))
-            wrappedData.append((icon_id, wrappedLines))
-        return wrappedData
+                wrapped_lines.extend(wrapper.fill(line).split("\n"))
+            wrapped_data.append((icon_id, wrapped_lines))
+        return wrapped_data
 
     def _calculateSize(self):
         dc = wx.ClientDC(self)
         self._setFontBrushAndPen(dc)
         width, height = 0, 0
-        for sectionIndex in range(len(self.data)):
-            sectionWidth, sectionHeight = self._calculateSectionSize(
-                dc, sectionIndex
+        for section_index in range(len(self.data)):
+            section_width, section_height = self._calculateSectionSize(
+                dc, section_index
             )
-            width = max(width, sectionWidth)
-            height += sectionHeight
+            width = max(width, section_width)
+            height += section_height
         return wx.Size(width + 6, height + 6)
 
-    def _calculateSectionSize(self, dc, sectionIndex):
-        icon_id, lines = self.data[sectionIndex]
-        sectionWidth, sectionHeight = 0, 0
+    def _calculateSectionSize(self, dc, section_index):
+        icon_id, lines = self.data[section_index]
+        section_width, section_height = 0, 0
         for line in lines:
-            lineWidth, lineHeight = self._calculateLineSize(dc, line)
-            sectionHeight += lineHeight + 1
-            sectionWidth = max(sectionWidth, lineWidth)
-        if 0 < sectionIndex < len(self.data) - 1:
-            sectionHeight += 3  # Horizontal space between sections
+            line_width, line_height = self._calculateLineSize(dc, line)
+            section_height += line_height + 1
+            section_width = max(section_width, line_width)
+        if 0 < section_index < len(self.data) - 1:
+            section_height += 3  # Horizontal space between sections
         if icon_id:
-            sectionWidth += 24  # Reserve width for icon(s)
-        return sectionWidth, sectionHeight
+            section_width += 24  # Reserve width for icon(s)
+        return section_width, section_height
 
     def _calculateLineSize(self, dc, line):
         return dc.GetTextExtent(line)
@@ -232,12 +232,12 @@ class SimpleToolTip(ToolTipBase):
 
     def _setFontBrushAndPen(self, dc):
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-        textColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOTEXT)
-        backgroundColour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK)
+        text_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOTEXT)
+        background_colour = wx.SystemSettings.GetColour(wx.SYS_COLOUR_INFOBK)
         dc.SetFont(font)
-        dc.SetTextForeground(textColour)
-        dc.SetBrush(wx.Brush(backgroundColour))
-        dc.SetPen(wx.Pen(textColour))
+        dc.SetTextForeground(text_colour)
+        dc.SetBrush(wx.Brush(background_colour))
+        dc.SetPen(wx.Pen(text_colour))
 
     def _drawBorder(self, dc):
         width, height = self.GetClientSize()
@@ -245,23 +245,25 @@ class SimpleToolTip(ToolTipBase):
 
     def _drawSections(self, dc):
         y = 3
-        for sectionIndex in range(len(self.data)):
-            y = self._drawSection(dc, y, sectionIndex)
+        for section_index in range(len(self.data)):
+            y = self._drawSection(dc, y, section_index)
 
-    def _drawSection(self, dc, y, sectionIndex):
-        icon_id, lines = self.data[sectionIndex]
+    def _drawSection(self, dc, y, section_index):
+        icon_id, lines = self.data[section_index]
         if not lines:
             return y
         x = 3
-        if sectionIndex != 0:
+        if section_index != 0:
             y = self._drawSectionSeparator(dc, x, y)
         if icon_id:
             x = self._drawIcon(dc, icon_id, x, y)
-        topOfSection = y
-        bottomOfSection = self._drawTextLines(dc, lines, x, y)
+        top_of_section = y
+        bottom_of_section = self._drawTextLines(dc, lines, x, y)
         if icon_id:
-            self._drawIconSeparator(dc, x - 2, topOfSection, bottomOfSection)
-        return bottomOfSection
+            self._drawIconSeparator(
+                dc, x - 2, top_of_section, bottom_of_section
+            )
+        return bottom_of_section
 
     def _drawSectionSeparator(self, dc, x, y):
         y += 1
@@ -274,18 +276,18 @@ class SimpleToolTip(ToolTipBase):
         dc.DrawBitmap(bitmap, x, y, True)
         return 23  # New x
 
-    def _drawTextLines(self, dc, textLines, x, y):
-        for textLine in textLines:
-            y = self._drawTextLine(dc, textLine, x, y)
+    def _drawTextLines(self, dc, text_lines, x, y):
+        for text_line in text_lines:
+            y = self._drawTextLine(dc, text_line, x, y)
         return y
 
-    def _drawTextLine(self, dc, textLine, x, y):
+    def _drawTextLine(self, dc, text_line, x, y):
         try:
-            dc.DrawText(textLine, x, y)
+            dc.DrawText(text_line, x, y)
         except Exception:
-            raise RuntimeError("Could not draw text %s" % repr(textLine))
-        textHeight = dc.GetTextExtent(textLine)[1]
-        return y + textHeight + 1
+            raise RuntimeError("Could not draw text %s" % repr(text_line))
+        text_height = dc.GetTextExtent(text_line)[1]
+        return y + text_height + 1
 
     def _drawIconSeparator(self, dc, x, top, bottom):
         """Draw a vertical line between the icon and the text."""

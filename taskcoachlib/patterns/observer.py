@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from . import singleton
+import contextlib
 import functools
 import weakref
 
@@ -50,8 +51,8 @@ class Set(set):
     """The builtin set type does not like keyword arguments, so to keep
     it happy we don't pass these on."""
 
-    def __new__(class_, iterable=None, *args, **kwargs):
-        return set.__new__(class_, iterable)
+    def __new__(cls, iterable=None, *args, **kwargs):
+        return set.__new__(cls, iterable)
 
 
 class Event(object):
@@ -142,11 +143,11 @@ class Event(object):
         source = source or list(self.__sourcesAndValuesByType[type].keys())[0]
         return self.__sourcesAndValuesByType.get(type, {}).get(source, [])
 
-    def subEvent(self, *typesAndSources):
+    def subEvent(self, *types_and_sources):
         """Create a new event that contains a subset of the data of this
         event."""
         sub_event = self.__class__()
-        for type, source in typesAndSources:
+        for type, source in types_and_sources:
             sources_to_add = self.sources(type)
             if source is not None:
                 # Make sure source is actually in self.sources(type):
@@ -179,6 +180,54 @@ def eventSource(f):
         if notify:
             event.send()
         return result
+
+    return decorator
+
+
+class _Unsent:
+    """The event of a computed value set quietly: takes its sources and
+    builds and sends nothing."""
+
+    def addSource(self, *args, **kwargs):  # noqa: N802 (Event's)
+        pass
+
+    def send(self):
+        pass
+
+
+_UNSENT = _Unsent()
+_quiet = 0
+
+
+@contextlib.contextmanager
+def computed_values_quietly():
+    """Computed values (statuses, styles) set within send no event:
+    while a file is read, every view and listener is frozen and takes
+    every value anew once it is read (docs/WINDOW_GEOMETRY.md, Opening
+    the File). Stored values still send theirs."""
+    global _quiet
+    _quiet += 1
+    try:
+        yield
+    finally:
+        _quiet -= 1
+
+
+def computed_values_quiet():
+    return _quiet > 0
+
+
+def computed_event_source(f):
+    """eventSource for a computed value's setter: within
+    computed_values_quietly() it builds and sends no event."""
+    loud = eventSource(f)
+
+    @functools.wraps(f)
+    def decorator(*args, **kwargs):
+        if _quiet and kwargs.get("event") is None:
+            kwargs["event"] = _UNSENT
+            return f(*args, **kwargs)
+        return loud(*args, **kwargs)
 
     return decorator
 
@@ -665,28 +714,28 @@ class ObservableCollection(object):
         """Break cycles"""
 
     @classmethod
-    def addItemEventType(class_):
+    def addItemEventType(cls):
         """The event type used to notify observers that one or more items
         have been added to the collection."""
-        return "%s.add" % class_
+        return "%s.add" % cls
 
     @classmethod
-    def removeItemEventType(class_):
+    def removeItemEventType(cls):
         """The event type used to notify observers that one or more items
         have been removed from the collection."""
-        return "%s.remove" % class_
+        return "%s.remove" % cls
 
     @classmethod
-    def modificationEventTypes(class_):
+    def modificationEventTypes(cls):
         try:
-            eventTypes = super(
-                ObservableCollection, class_
+            event_types = super(
+                ObservableCollection, cls
             ).modificationEventTypes()
         except AttributeError:
-            eventTypes = []
-        return eventTypes + [
-            class_.addItemEventType(),
-            class_.removeItemEventType(),
+            event_types = []
+        return event_types + [
+            cls.addItemEventType(),
+            cls.removeItemEventType(),
         ]
 
 
@@ -779,8 +828,8 @@ class CollectionDecorator(Decorator, ObservableCollection):
     Users of this class shouldn't see a difference between using the
     original collection or a decorated version."""
 
-    def __init__(self, observedCollection, *args, **kwargs):
-        super().__init__(observedCollection, *args, **kwargs)
+    def __init__(self, observed_collection, *args, **kwargs):
+        super().__init__(observed_collection, *args, **kwargs)
         self.__freezeCount = 0
         observable = self.observable()
         self.registerObserver(

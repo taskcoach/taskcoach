@@ -42,18 +42,18 @@ class SearchableViewerMixin(object):
 
     def searchOptions(self):
         (
-            searchString,
-            matchCase,
-            includeSubItems,
-            searchDescription,
-            regularExpression,
+            search_string,
+            match_case,
+            include_sub_items,
+            search_description,
+            regular_expression,
         ) = self.getSearchFilter()
         return dict(
-            searchString=searchString,
-            matchCase=matchCase,
-            includeSubItems=includeSubItems,
-            searchDescription=searchDescription,
-            regularExpression=regularExpression,
+            searchString=search_string,
+            matchCase=match_case,
+            includeSubItems=include_sub_items,
+            searchDescription=search_description,
+            regularExpression=regular_expression,
             tree_mode=self.is_tree_viewer(),
         )
 
@@ -105,7 +105,7 @@ class FilterableViewerMixin(object):
         self.__filterUICommands = None
         super().__init__(*args, **kwargs)
 
-    def isFilterable(self):
+    def is_filterable(self):
         return True
 
     def getFilterUICommands(self):
@@ -127,8 +127,10 @@ class FilterableViewerMixin(object):
         ]
 
     def createToolBarUICommands(self):
-        clearUICommand = uicommand.ResetFilter(viewer=self)
-        return super().createToolBarUICommands() + (clearUICommand,)
+        if not self.is_filterable():
+            return super().createToolBarUICommands()
+        clear_ui_command = uicommand.ResetFilter(viewer=self)
+        return super().createToolBarUICommands() + (clear_ui_command,)
 
     def reset_filter(self):
         self.taskFile.categories().resetAllFilteredCategories()
@@ -153,26 +155,26 @@ class FilterableViewerMixin(object):
         categories = list(categories)
         categories.sort(key=lambda category: category.subject())
         commands = [
-            uicommand.ToggleCategoryFilter(category=eachCategory)
-            for eachCategory in categories
+            uicommand.ToggleCategoryFilter(category=each_category)
+            for each_category in categories
         ]
-        categoriesWithChildren = [
-            eachCategory
-            for eachCategory in categories
-            if eachCategory.children()
+        categories_with_children = [
+            each_category
+            for each_category in categories
+            if each_category.children()
         ]
-        if categoriesWithChildren:
+        if categories_with_children:
             commands.append(None)
-            for eachCategory in categoriesWithChildren:
-                subCommands = [
-                    _("%s (subcategories)") % eachCategory.subject()
+            for each_category in categories_with_children:
+                sub_commands = [
+                    _("%s (subcategories)") % each_category.subject()
                 ]
-                subCommands.extend(
+                sub_commands.extend(
                     self.createToggleCategoryFilterCommands(
-                        eachCategory.children()
+                        each_category.children()
                     )
                 )
-                commands.append(tuple(subCommands))
+                commands.append(tuple(sub_commands))
         return commands
 
 
@@ -181,6 +183,8 @@ class FilterableViewerForCategorizablesMixin(FilterableViewerMixin):
         items = super(
             FilterableViewerForCategorizablesMixin, self
         ).createFilter(items)
+        if not self.is_filterable():
+            return items
         return category.filter.CategoryFilter(
             items,
             categories=self.taskFile.categories(),
@@ -208,8 +212,8 @@ class FilterableViewerForTasksMixin(FilterableViewerForCategorizablesMixin):
         self.presentation().hide_task_status(status, hide)
 
     def show_only_task_status(self, status):
-        for taskStatus in task.Task.possibleStatuses():
-            self.hide_task_status(taskStatus, hide=status != taskStatus)
+        for task_status in task.Task.possibleStatuses():
+            self.hide_task_status(task_status, hide=status != task_status)
 
     def is_hiding_task_status(self, status):
         return self.__getBooleanSetting("hide%stasks" % status)
@@ -244,8 +248,8 @@ class FilterableViewerForTasksMixin(FilterableViewerForCategorizablesMixin):
         return (
             super().createFilterUICommands()
             + [
-                uicommand.ViewerHideTasks(taskStatus, viewer=self)
-                for taskStatus in task.Task.possibleStatuses()
+                uicommand.ViewerHideTasks(task_status, viewer=self)
+                for task_status in task.Task.possibleStatuses()
             ]
             + [uicommand.ViewerHideCompositeTasks(viewer=self)]
         )
@@ -253,8 +257,8 @@ class FilterableViewerForTasksMixin(FilterableViewerForCategorizablesMixin):
     def __getBooleanSetting(self, setting):
         return getattr(self.options, setting)
 
-    def __setBooleanSetting(self, setting, booleanValue):
-        setattr(self.options, setting, booleanValue)
+    def __setBooleanSetting(self, setting, boolean_value):
+        setattr(self.options, setting, boolean_value)
 
 
 class SortableViewerMixin(object):
@@ -282,7 +286,7 @@ class SortableViewerMixin(object):
 
     def on_sort_order_changed(self, event):
         if self.presentation() in event.sources():
-            self.refresh()
+            self.refresh_order()
             self.send_viewer_status_event()
 
     def create_sorter(self, presentation):
@@ -331,10 +335,10 @@ class SortableViewerMixin(object):
         in the View->Sort menu and are used when the user clicks a column
         header."""
         self._sortUICommands = self.createSortOrderUICommands()
-        sortByCommands = self.createSortByUICommands()
-        if sortByCommands:
+        sort_by_commands = self.createSortByUICommands()
+        if sort_by_commands:
             self._sortUICommands.append(None)  # Separator
-            self._sortUICommands.extend(sortByCommands)
+            self._sortUICommands.extend(sort_by_commands)
 
     def createSortOrderUICommands(self):
         """Create the UICommands for changing sort order, like ascending/
@@ -480,17 +484,17 @@ class SortableViewerForTasksMixin(
         self.__sortKeyUnchangedCount = 0
         super().__init__(*args, **kwargs)
 
-    def sortBy(self, sortKey):
+    def sortBy(self, sort_key):
         # If the user clicks the same column for the third time, toggle
         # the SortyByTaskStatusFirst setting:
-        if self.isSortedBy(sortKey):
+        if self.isSortedBy(sort_key):
             self.__sortKeyUnchangedCount += 1
         else:
             self.__sortKeyUnchangedCount = 0
         if self.__sortKeyUnchangedCount > 1:
             self.setSortByTaskStatusFirst(not self.isSortByTaskStatusFirst())
             self.__sortKeyUnchangedCount = 0
-        super().sortBy(sortKey)
+        super().sortBy(sort_key)
 
     def isSortByTaskStatusFirst(self):
         return self.options.sortbystatusfirst
@@ -518,7 +522,7 @@ class SortableViewerForTasksMixin(
         commands = super(
             SortableViewerForTasksMixin, self
         ).createSortByUICommands()
-        dependsOnEffortFeature = [
+        depends_on_effort_feature = [
             "budget",
             "timeSpent",
             "budgetLeft",
@@ -568,8 +572,8 @@ class SortableViewerForTasksMixin(
                 "reminder",
             ),
         ]:
-            if value not in dependsOnEffortFeature or (
-                value in dependsOnEffortFeature
+            if value not in depends_on_effort_feature or (
+                value in depends_on_effort_feature
             ):
                 commands.append(
                     uicommand.ViewerSortByCommand(
@@ -617,20 +621,20 @@ class AttachmentDropTargetMixin(object):
                 item_dialog_kwargs["reminder"] = (
                     task.Task.suggestedReminderDateTime()
                 )
-            newItemDialog = self.newItemDialog(
+            new_item_dialog = self.newItemDialog(
                 icon_id="nuvola_actions_document-new",
                 attachments=attachments,
                 **item_dialog_kwargs,
             )
-            newItemDialog.Show()
+            new_item_dialog.Show()
             # Later, so the dialog has the focus once the drop completes
-            patterns.later.soon(newItemDialog, newItemDialog.Raise)
-            patterns.later.soon(newItemDialog, newItemDialog.SetFocus)
+            patterns.later.soon(new_item_dialog, new_item_dialog.Raise)
+            patterns.later.soon(new_item_dialog, new_item_dialog.SetFocus)
         else:
-            addAttachment = command.AddAttachmentCommand(
+            add_attachment = command.AddAttachmentCommand(
                 self.presentation(), [item], attachments=attachments
             )
-            addAttachment.do()
+            add_attachment.do()
             # Open the item's editor on attachments tab, then open attachment editor
             self._open_item_editor_on_attachments_tab(item, attachments)
 
@@ -647,36 +651,36 @@ class AttachmentDropTargetMixin(object):
 
         # Determine editor class based on item type
         if isinstance(item, task.Task):
-            EditorClass = editor.TaskEditor
+            editor_class = editor.TaskEditor
             container = self.taskFile.tasks()
         elif isinstance(item, category.Category):
-            EditorClass = editor.CategoryEditor
+            editor_class = editor.CategoryEditor
             container = self.taskFile.categories()
         elif isinstance(item, note.Note):
-            EditorClass = editor.NoteEditor
+            editor_class = editor.NoteEditor
             container = self.taskFile.notes()
         else:
             return
 
         # Search for an existing open editor for this item
-        existingEditor = None
+        existing_editor = None
         for window in wx.GetTopLevelWindows():
-            if isinstance(window, EditorClass):
+            if isinstance(window, editor_class):
                 # Check if this editor is editing our item
                 if hasattr(window, "_items") and item in window._items:
-                    existingEditor = window
+                    existing_editor = window
                     break
 
-        if existingEditor:
+        if existing_editor:
             # Bring to front and switch to attachments tab
-            existingEditor.Raise()
-            existingEditor.SetFocus()
-            if hasattr(existingEditor, "_interior"):
-                existingEditor._interior.setFocus("attachments")
-            itemEditor = existingEditor
+            existing_editor.Raise()
+            existing_editor.SetFocus()
+            if hasattr(existing_editor, "_interior"):
+                existing_editor._interior.setFocus("attachments")
+            item_editor = existing_editor
         else:
             # Create a new editor with columnName="attachments"
-            itemEditor = EditorClass(
+            item_editor = editor_class(
                 wx.GetTopLevelParent(self),
                 [item],
                 container,
@@ -684,9 +688,9 @@ class AttachmentDropTargetMixin(object):
                 icon_id="nuvola_actions_edit",
                 columnName="attachments",
             )
-            itemEditor.Show()
-            patterns.later.soon(itemEditor, itemEditor.Raise)
-            patterns.later.soon(itemEditor, itemEditor.SetFocus)
+            item_editor.Show()
+            patterns.later.soon(item_editor, item_editor.Raise)
+            patterns.later.soon(item_editor, item_editor.SetFocus)
 
         # Also open the AttachmentEditor for the new attachments
         if new_attachments:
@@ -697,19 +701,19 @@ class AttachmentDropTargetMixin(object):
                 attachment_container = attachment.AttachmentList(
                     item.attachments()
                 )
-                attachmentEditor = editor.AttachmentEditor(
-                    itemEditor,  # Parent to the item editor
+                attachment_editor = editor.AttachmentEditor(
+                    item_editor,  # Parent to the item editor
                     new_attachments,
                     attachment_container,
                     self.taskFile,
                     icon_id="nuvola_actions_edit",
                     columnName="subject",  # Open on Description tab, not Notes
                 )
-                attachmentEditor.Show()
-                attachmentEditor.Raise()
-                attachmentEditor.SetFocus()
+                attachment_editor.Show()
+                attachment_editor.Raise()
+                attachment_editor.SetFocus()
 
-            patterns.later.soon(itemEditor, openAttachmentEditor)
+            patterns.later.soon(item_editor, openAttachmentEditor)
 
     def on_drop_url(self, item, url, **kwargs):
         """This method is called by the widget when a URL is dropped on an

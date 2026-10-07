@@ -319,7 +319,7 @@ the same way for all icons.
 - **Status filter overlays** (`synthetic_hide_*`): `taskcoachlib/gui/uicommand/uicommand.py:1423` —
   toolbar buttons for hiding tasks by status, icon constructed as `"synthetic_hide_%s" % status_string`
 - **DnD cursors** (`synthetic_dnd_cursor_*`): `taskcoachlib/widgets/draganddrop.py:29,35` —
-  `_getLinkCursor()` and `_getHomeCursor()` call `get_cursor()` from `synthetic_icon_generator.py`
+  `_link_cursor()` and `_home_cursor()` call `get_cursor()` from `synthetic_icon_generator.py`
 - **Not-allowed cursor** (`synthetic_cursor_not_allowed`): `not_allowed_cursor()` in
   `taskcoachlib/widgets/draganddrop.py`, for a refused drop and for a column border that cannot
   be dragged (`widgets/autowidth.py`, the bundled `hypertreelist.py` header). wx's no-entry

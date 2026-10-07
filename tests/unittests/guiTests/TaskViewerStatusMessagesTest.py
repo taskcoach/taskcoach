@@ -109,121 +109,121 @@ class TaskViewerStatusMessagesTest(test.TestCase):
 
     # Tests
 
-    def testDefaultMessages(self):
+    def test_default_messages(self):
         self.assertMessages()
 
-    def testAddActiveTask(self):
+    def test_add_active_task(self):
         self.addActiveTask()
         self.assertMessages(visible=1, total=1)
 
-    def testAddInactiveTask(self):
+    def test_add_inactive_task(self):
         self.addInactiveTask()
         self.assertMessages(visible=1, total=1, inactive=1)
 
-    def testAddOverdueTask(self):
+    def test_add_overdue_task(self):
         self.addOverdueTask()
         self.assertMessages(visible=1, total=1, inactive=0, overdue=1)
 
-    def testAddCompletedTask(self):
+    def test_add_completed_task(self):
         self.addCompletedTask()
         self.assertMessages(visible=1, total=1, completed=1)
 
-    def testAddLateTask(self):
+    def test_add_late_task(self):
         self.addLateTask()
         self.assertMessages(visible=1, late=1, total=1)
 
-    def testRemoveActiveTask(self):
+    def test_remove_active_task(self):
         self.addActiveTask()
         self.removeTask()
         self.assertMessages()
 
-    def testRemoveInactiveTask(self):
+    def test_remove_inactive_task(self):
         self.addInactiveTask()
         self.removeTask()
         self.assertMessages()
 
-    def testRemoveOverdueTask(self):
+    def test_remove_overdue_task(self):
         self.addOverdueTask()
         self.removeTask()
         self.assertMessages()
 
-    def testRemoveCompletedTask(self):
+    def test_remove_completed_task(self):
         self.addCompletedTask()
         self.removeTask()
         self.assertMessages()
 
-    def testMarkInactiveTaskCompleted(self):
+    def test_mark_inactive_task_completed(self):
         self.addInactiveTask()
         self.markTaskCompleted()
         self.assertMessages(visible=1, total=1, completed=1)
 
-    def testMarkActiveTaskCompleted(self):
+    def test_mark_active_task_completed(self):
         self.addCompletedTask()
         self.markTaskCompleted()
         self.assertMessages(visible=1, total=1, completed=1)
 
-    def testMarkCompletedTaskUncompleted(self):
+    def test_mark_completed_task_uncompleted(self):
         self.addCompletedTask()
         self.markTaskUncompleted()
         self.assertMessages(visible=1, total=1, inactive=1)
 
-    def testMakeInactiveTaskActive(self):
+    def test_make_inactive_task_active(self):
         self.addInactiveTask()
         self.makeTaskActive()
         self.assertMessages(visible=1, total=1)
 
-    def testMakeActiveTaskInactive(self):
+    def test_make_active_task_inactive(self):
         self.addActiveTask()
         self.makeTaskInactive()
         self.assertMessages(visible=1, total=1, inactive=1)
 
-    def testMakeCompletedTaskInactive(self):
+    def test_make_completed_task_inactive(self):
         self.addActiveTask()
         self.markTaskCompleted()
         self.makeTaskInactive()
         # Completed tasks are never considered to be inactive:
         self.assertMessages(visible=1, total=1, completed=1)
 
-    def testMakeCompletedTaskActive(self):
+    def test_make_completed_task_active(self):
         self.addInactiveTask()
         self.markTaskCompleted()
         self.makeTaskActive()
         # Completed tasks are never considered to be inactive:
         self.assertMessages(visible=1, total=1, completed=1)
 
-    def testTotalWhenHidingCompletedTasks(self):
+    def test_total_when_hiding_completed_tasks(self):
         self.addCompletedTask()
         self.hideCompletedTasks()
         self.assertMessages(total=1, completed=1)
 
-    def testTotalWhenShowingCompletedTasks(self):
+    def test_total_when_showing_completed_tasks(self):
         self.hideCompletedTasks()
         self.addCompletedTask()
         self.showCompletedTasks()
         self.assertMessages(visible=1, total=1, completed=1)
 
-    def testTotalWhenHidingCompletedTasksWithActiveTask(self):
+    def test_total_when_hiding_completed_tasks_with_active_task(self):
         self.taskList.append(task.Task(actualStartDateTime=date.Now()))
         self.addCompletedTask()
         self.hideCompletedTasks()
         self.assertMessages(visible=1, total=2, completed=1)
 
-    def testSelectedActiveTask(self):
+    def test_selected_active_task(self):
         self.addActiveTask()
         self.selectTask()
         self.assertMessages(selected=1, visible=1, total=1)
 
-    def testSelectedInactiveTask(self):
+    def test_selected_inactive_task(self):
         self.addInactiveTask()
         self.selectTask()
         self.assertMessages(selected=1, visible=1, total=1, inactive=1)
 
-    def testSelectedCompletedTask(self):
+    def test_selected_completed_task(self):
         self.addCompletedTask()
         self.selectTask()
         self.assertMessages(selected=1, visible=1, total=1, completed=1)
 
-    def testSelectedOverdueTask(self):
+    def test_selected_overdue_task(self):
         self.addOverdueTask()
         self.selectTask()
         self.assertMessages(

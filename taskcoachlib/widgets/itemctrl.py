@@ -51,19 +51,19 @@ class _CtrlWithItemsMixin(object):
         except AttributeError:
             # ListCtrl:
             select = kwargs.get("select", True)
-            newState = wx.LIST_STATE_SELECTED
+            new_state = wx.LIST_STATE_SELECTED
             if not select:
-                newState = ~newState
-            self.SetItemState(item, newState, wx.LIST_STATE_SELECTED)
+                new_state = ~new_state
+            self.SetItemState(item, new_state, wx.LIST_STATE_SELECTED)
 
 
 class _CtrlWithPopupMenuMixin(_CtrlWithItemsMixin):
     """Base class for controls with popupmenu's."""
 
     @staticmethod
-    def _attachPopupMenu(eventSource, eventTypes, eventHandler):
-        for eventType in eventTypes:
-            eventSource.Bind(eventType, eventHandler)
+    def _attachPopupMenu(eventSource, event_types, eventHandler):
+        for event_type in event_types:
+            eventSource.Bind(event_type, eventHandler)
 
 
 class _CtrlWithItemPopupMenuMixin(_CtrlWithPopupMenuMixin):
@@ -247,8 +247,14 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
                 self.on_drop_files,
                 self.on_drop_mail,
                 self.on_drag_over,
+                self.on_drop_end,
             )
             self.GetMainWindow().SetDropTarget(drop_target)
+
+    def on_drop_end(self):
+        """Also after a drop that adds nothing (a mail not readable)."""
+        self._clearDropHighlight()
+        draganddrop.hover_expander(self).stop()
 
     def on_drop_url(self, x, y, url):
         self._clearDropHighlight()  # Clear highlight on drop
@@ -273,7 +279,7 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         if self.__on_drop_mail_callback:
             self.__on_drop_mail_callback(self._objectBelongingTo(item), mails)
 
-    def on_drag_over(self, x, y, defaultResult):
+    def on_drag_over(self, x, y, default_result):
         item, flags = self.HitTest((x, y))[:2]
         if self._itemIsOk(item):
             # Auto-expand collapsed items on hover (modern UX behavior)
@@ -283,7 +289,7 @@ class _CtrlWithDropTargetMixin(_CtrlWithItemsMixin):
         else:
             self._clearDropHighlight()
             draganddrop.hover_expander(self).stop()
-        return defaultResult
+        return default_result
 
     def _setDropHighlight(self, item):
         """Set visual highlight on item during drag-over."""
@@ -319,12 +325,12 @@ class CtrlWithToolTipMixin(_CtrlWithItemsMixin, tooltip.ToolTipMixin):
 
     def OnBeforeShowToolTip(self, x, y):
         item, _, column = self.HitTest(wx.Point(x, y))
-        domainObject = self._objectBelongingTo(item)
-        if domainObject:
-            tooltipData = self.getItemTooltipData(domainObject)
-            doShow = any([data[1] for data in tooltipData])
-            if doShow:
-                self.__tip.SetData(tooltipData)
+        domain_object = self._objectBelongingTo(item)
+        if domain_object:
+            tooltip_data = self.getItemTooltipData(domain_object)
+            do_show = any([data[1] for data in tooltip_data])
+            if do_show:
+                self.__tip.SetData(tooltip_data)
                 return self.__tip
         return None
 
@@ -336,15 +342,15 @@ class CtrlWithItemsMixin(
 
 
 class Column(object):
-    def __init__(self, name, columnHeader, *eventTypes, **kwargs):
+    def __init__(self, name, column_header, *event_types, **kwargs):
         self.__name = name
-        self.__columnHeader = columnHeader
+        self.__columnHeader = column_header
         self.width = kwargs.pop(
             "width", hypertreelist._DEFAULT_COL_WIDTH
         )  # pylint: disable=W0212
         # The event types to use for registering an observer that is
         # interested in changes that affect this column:
-        self.__eventTypes = eventTypes
+        self.__eventTypes = event_types
         self.__sortCallback = kwargs.pop("sortCallback", None)
         self.__renderCallback = kwargs.pop(
             "renderCallback", self.defaultRenderer
@@ -428,17 +434,17 @@ class Column(object):
     def onEndEdit(self, item, newValue):
         self.__editCallback(item, newValue)
 
-    def editControl(self, parent, item, columnIndex, domainObject):
-        value = self.value(domainObject)
+    def editControl(self, parent, item, column_index, domain_object):
+        value = self.value(domain_object)
         return self.__editControlClass(
-            parent, wx.ID_ANY, item, columnIndex, parent, value
+            parent, wx.ID_ANY, item, column_index, parent, value
         )
 
     def parse(self, value):
         return self.__parse(value)
 
-    def value(self, domainObject):
-        return getattr(domainObject, self.name())()
+    def value(self, domain_object):
+        return getattr(domain_object, self.name())()
 
     def __eq__(self, other):
         return self.name() == other.name()
@@ -460,50 +466,55 @@ class _BaseCtrlWithColumnsMixin(object):
         self._setColumns()
 
     def _setColumns(self):
-        for columnIndex, column in enumerate(self.__allColumns):
-            self._insertColumn(columnIndex, column)
+        for column_index, column in enumerate(self.__allColumns):
+            self._insertColumn(column_index, column)
 
-    def _insertColumn(self, columnIndex, column):
-        newMap = []
-        for colIndex, col in self.__indexMap:
-            if colIndex >= columnIndex:
-                newMap.append((colIndex + 1, col))
+    def _insertColumn(self, column_index, column):
+        new_map = []
+        for col_index, col in self.__indexMap:
+            if col_index >= column_index:
+                new_map.append((col_index + 1, col))
             else:
-                newMap.append((colIndex, col))
-        newMap.append((columnIndex, column))
-        self.__indexMap = newMap
+                new_map.append((col_index, col))
+        new_map.append((column_index, column))
+        self.__indexMap = new_map
 
         self.InsertColumn(
-            columnIndex,
+            column_index,
             column.header() if column.headerImageIndex() == -1 else "",
             format=column.alignment(),
             width=column.width,
         )
 
-        columnInfo = self.GetColumn(columnIndex)
-        columnInfo.SetImage(column.headerImageIndex())
-        self.SetColumn(columnIndex, columnInfo)
+        column_info = self.GetColumn(column_index)
+        column_info.SetImage(column.headerImageIndex())
+        self.SetColumn(column_index, column_info)
 
-    def _deleteColumn(self, columnIndex):
-        newMap = []
-        for colIndex, col in self.__indexMap:
-            if colIndex > columnIndex:
-                newMap.append((colIndex - 1, col))
-            elif colIndex < columnIndex:
-                newMap.append((colIndex, col))
-        self.__indexMap = newMap
-        self.DeleteColumn(columnIndex)
+    def _deleteColumn(self, column_index):
+        new_map = []
+        for col_index, col in self.__indexMap:
+            if col_index > column_index:
+                new_map.append((col_index - 1, col))
+            elif col_index < column_index:
+                new_map.append((col_index, col))
+        self.__indexMap = new_map
+        self.DeleteColumn(column_index)
 
-    def _getColumn(self, columnIndex):
-        for colIndex, col in self.__indexMap:
-            if colIndex == columnIndex:
+    def _getColumn(self, column_index):
+        for col_index, col in self.__indexMap:
+            if col_index == column_index:
                 return col
         raise IndexError
 
-    def _getColumnHeader(self, columnIndex):
+    def all_columns(self):
+        """Every column, shown or hidden, in their display order: the
+        view's own list."""
+        return self.__allColumns
+
+    def _getColumnHeader(self, column_index):
         """The currently displayed column header in the column with index
         columnIndex."""
-        return self.GetColumn(columnIndex).GetText()
+        return self.GetColumn(column_index).GetText()
 
     def _getColumnIndex(self, column):
         """The current column index of the column 'column'."""
@@ -521,33 +532,52 @@ class _CtrlWithHideableColumnsMixin(_BaseCtrlWithColumnsMixin):
         The column is actually removed or inserted into the control because
         although TreeListCtrl supports hiding columns, ListCtrl does not.
         """
-        columnIndex = self._getColumnIndex(column)
+        column_index = self._getColumnIndex(column)
         if show and not self.isColumnVisible(column):
-            self._insertColumn(columnIndex, column)
+            self._insertColumn(column_index, column)
         elif not show and self.isColumnVisible(column):
-            self._deleteColumn(columnIndex)
+            self._deleteColumn(column_index)
 
     def isColumnVisible(self, column):
         return column in self._visibleColumns()
 
+    def move_column(self, column, slot):
+        """Move a shown column to slot, a place between the shown
+        columns (0 before the first, their count after the last), and in
+        the order of all columns with it; return whether it moved."""
+        shown = self._visibleColumns()
+        index = shown.index(column)
+        if slot in (index, index + 1):
+            return False
+        column.setWidth(self.GetColumnWidth(index))
+        columns = self.all_columns()
+        columns.remove(column)
+        if slot < len(shown):
+            columns.insert(columns.index(shown[slot]), column)
+        else:
+            columns.insert(columns.index(shown[-1]) + 1, column)
+        self._deleteColumn(index)
+        self._insertColumn(self._getColumnIndex(column), column)
+        return True
+
     def _getColumnIndex(self, column):
         """_getColumnIndex returns the actual columnIndex of the column if it
         is visible, or the position it would have if it were visible."""
-        columnIndexWhenAllColumnsVisible = super(
+        column_index_when_all_columns_visible = super(
             _CtrlWithHideableColumnsMixin, self
         )._getColumnIndex(column)
-        for columnIndex, visibleColumn in enumerate(self._visibleColumns()):
+        for column_index, visible_column in enumerate(self._visibleColumns()):
             if (
-                super()._getColumnIndex(visibleColumn)
-                >= columnIndexWhenAllColumnsVisible
+                super()._getColumnIndex(visible_column)
+                >= column_index_when_all_columns_visible
             ):
-                return columnIndex
+                return column_index
         return self.GetColumnCount()  # Column header not found
 
     def _visibleColumns(self):
         return [
-            self._getColumn(columnIndex)
-            for columnIndex in range(self.GetColumnCount())
+            self._getColumn(column_index)
+            for column_index in range(self.GetColumnCount())
         ]
 
 
@@ -569,9 +599,9 @@ class _CtrlWithSortableColumnsMixin(_BaseCtrlWithColumnsMixin):
         except AttributeError:
             window = event.GetEventObject()
         window.SetFocus()
-        columnIndex = event.GetColumn()
-        if 0 <= columnIndex < self.GetColumnCount():
-            column = self._getColumn(columnIndex)
+        column_index = event.GetColumn()
+        if 0 <= column_index < self.GetColumnCount():
+            column = self._getColumn(column_index)
             # Later, to make sure the window this control is in is
             # activated before we process the column click:
             patterns.later.soon(self, self.__safeColumnSort, column, event)
@@ -604,14 +634,14 @@ class _CtrlWithSortableColumnsMixin(_BaseCtrlWithColumnsMixin):
     def _currentSortColumn(self):
         return self.__currentSortColumn
 
-    def __setSortColumnImage(self, imageIndex):
-        columnIndex = self._getColumnIndex(self.__currentSortColumn)
-        columnInfo = self.GetColumn(columnIndex)
-        if columnInfo.GetImage() == imageIndex:
+    def __setSortColumnImage(self, image_index):
+        column_index = self._getColumnIndex(self.__currentSortColumn)
+        column_info = self.GetColumn(column_index)
+        if column_info.GetImage() == image_index:
             pass  # The column is already showing the right image, so we're done
         else:
-            columnInfo.SetImage(imageIndex)
-            self.SetColumn(columnIndex, columnInfo)
+            column_info.SetImage(image_index)
+            self.SetColumn(column_index, column_info)
 
 
 class _CtrlWithAutoResizedColumnsMixin(autowidth.AutoColumnWidthMixin):
@@ -633,21 +663,178 @@ class _CtrlWithAutoResizedColumnsMixin(autowidth.AutoColumnWidthMixin):
         event.Skip()
 
 
+# Around a column border a press resizes the column, as in wx's headers
+_BORDER = 3
+# The generic list control scrolls sideways by this many pixels a step
+_LIST_SCROLL_UNIT = 15
+
+
+class _CtrlWithMovableColumnsMixin(object):
+    """A column moves when its header is dragged: a line shows where it
+    lands, before the first column, between two or after the last
+    (docs/LIST_MANAGEMENT.md, Moving Columns). The headers sort at the
+    press, so a press on a label is held: dragged, it moves the column;
+    released where it was, it is the click that sorts. A press on a
+    border resizes, as before."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__pressed = None  # (column index, x) of the press held
+        self.__dragging = False
+        self.__line = None  # The drop line, while dragging
+        header = self.column_header()
+        if header:
+            header.Bind(wx.EVT_LEFT_DOWN, self.__on_press)
+            header.Bind(wx.EVT_MOTION, self.__on_motion)
+            header.Bind(wx.EVT_LEFT_UP, self.__on_release)
+            header.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self.__on_capture_lost)
+
+    def column_header(self):
+        """The header window; looked up each time, never kept: wx
+        creates the list's (docs/DEVELOPMENT.md, Design)."""
+        if isinstance(self, hypertreelist.HyperTreeList):
+            return self.GetHeaderWindow()
+        for child in self.GetChildren():
+            if child.GetName() == "wxlistctrlcolumntitles":
+                return child
+        return None
+
+    def __scrolled_x(self):
+        """How far the columns are scrolled to the left, in pixels."""
+        if isinstance(self, hypertreelist.HyperTreeList):
+            return self.GetMainWindow().CalcUnscrolledPosition(0, 0)[0]
+        return self.GetScrollPos(wx.HORIZONTAL) * _LIST_SCROLL_UNIT
+
+    def __edges(self):
+        """Where each column starts, and the last one ends, in the
+        header's coordinates."""
+        edges = [-self.__scrolled_x()]
+        for index in range(self.GetColumnCount()):
+            edges.append(edges[-1] + self.GetColumnWidth(index))
+        return edges
+
+    def __on_press(self, event):
+        edges = self.__edges()
+        x = event.GetX()
+        on_border = any(abs(x - edge) < _BORDER for edge in edges[1:])
+        if on_border or not edges[0] <= x < edges[-1]:
+            event.Skip()  # The header resizes, or there is no column
+            return
+        index = sum(1 for edge in edges[1:] if edge <= x)
+        self.__pressed = (index, x)
+        header = event.GetEventObject()
+        # The release may come outside; a hidden window cannot take it
+        if header.IsShownOnScreen() and not header.HasCapture():
+            header.CaptureMouse()
+
+    def __on_motion(self, event):
+        if self.__pressed is None:
+            event.Skip()
+            return
+        if not self.__dragging:
+            threshold = max(4, wx.SystemSettings.GetMetric(wx.SYS_DRAG_X))
+            if abs(event.GetX() - self.__pressed[1]) < threshold:
+                return
+            self.__dragging = True
+            top = wx.GetTopLevelParent(self)
+            top.Bind(wx.EVT_CHAR_HOOK, self.__on_key)
+        self.__show_line(self.__slot_at(event.GetX()))
+
+    def __slot_at(self, x):
+        """The place between columns nearest to x: how many columns'
+        middles lie left of it."""
+        edges = self.__edges()
+        return sum(
+            1 for start, end in zip(edges, edges[1:]) if (start + end) / 2 < x
+        )
+
+    def __show_line(self, slot):
+        if self.__line is None:
+            self.__line = wx.Window(self, size=(2, 1))
+            self.__line.SetBackgroundColour(
+                wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHT)
+            )
+        x = min(self.__edges()[slot], self.GetClientSize().width - 2)
+        self.__line.SetSize(max(0, x - 1), 0, 2, self.GetClientSize().height)
+        self.__line.Show()
+        self.__line.Raise()
+
+    def __on_release(self, event):
+        if self.__pressed is None:
+            event.Skip()
+            return
+        index = self.__pressed[0]
+        dragging = self.__dragging
+        slot = self.__slot_at(event.GetX())
+        self.__end(event.GetEventObject())
+        if dragging:
+            self.__column_dropped(self._getColumn(index), slot)
+        else:
+            self.__click(index)
+
+    def __on_capture_lost(self, event):  # pylint: disable=W0613
+        self.__end(event.GetEventObject())
+
+    def __on_key(self, event):
+        if event.GetKeyCode() == wx.WXK_ESCAPE:
+            self.__end(self.column_header())
+        else:
+            event.Skip()
+
+    def __end(self, header):
+        """Forget the press; take the line and the capture away."""
+        if self.__dragging:
+            wx.GetTopLevelParent(self).Unbind(
+                wx.EVT_CHAR_HOOK, handler=self.__on_key
+            )
+        self.__pressed = None
+        self.__dragging = False
+        if self.__line is not None:
+            self.__line.Destroy()
+            self.__line = None
+        if header and header.HasCapture():
+            header.ReleaseMouse()
+
+    def __click(self, index):
+        """The header's own click at the press, held until the release:
+        it sorts."""
+        event = wx.ListEvent(wx.wxEVT_LIST_COL_CLICK, self.GetId())
+        event.SetColumn(index)
+        event.SetEventObject(self)
+        self.GetEventHandler().ProcessEvent(event)
+
+    def __column_dropped(self, column, slot):
+        """The view moves the column and saves the order; without one,
+        the control only."""
+        move = getattr(self.GetParent(), "move_column", None) or getattr(
+            self, "move_column"
+        )
+        move(column, slot)
+
+
 class CtrlWithColumnsMixin(
+    _CtrlWithMovableColumnsMixin,
     _CtrlWithAutoResizedColumnsMixin,
     _CtrlWithHideableColumnsMixin,
     _CtrlWithSortableColumnsMixin,
     _CtrlWithColumnPopupMenuMixin,
 ):
-    """CtrlWithColumnsMixin combines the functionality of its four parent
-    classes: automatic resizing of columns, hideable columns, columns with
-    sort indicators, and column popup menu's."""
+    """CtrlWithColumnsMixin combines the functionality of its parent
+    classes: columns moved by dragging their headers, automatic resizing
+    of columns, hideable columns, columns with sort indicators, and
+    column popup menu's."""
 
     def showColumn(self, column, show=True):
         super().showColumn(column, show)
         # Show sort indicator if the column that was just made visible is being sorted on
         if show and column == self._currentSortColumn():
             self._showSortImage()
+
+    def move_column(self, column, slot):
+        moved = super().move_column(column, slot)
+        if moved and column == self._currentSortColumn():
+            self._showSortImage()  # Inserted again without it
+        return moved
 
     def _clearSortImage(self):
         # Only clear the sort image if the column in question is visible

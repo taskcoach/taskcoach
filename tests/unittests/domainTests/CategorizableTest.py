@@ -38,11 +38,11 @@ class CategorizableCompositeObjectTest(test.TestCase):
         categorizable.CategorizableCompositeObject.categorySubjectChangedEventType()
     )
 
-    def assertEvent(self, *expectedEventArgs):
-        expectedEvent = patterns.Event(*expectedEventArgs)
-        self.assertEqual([expectedEvent], self.events)
+    def assertEvent(self, *expected_event_args):
+        expected_event = patterns.Event(*expected_event_args)
+        self.assertEqual([expected_event], self.events)
 
-    def testCategorizableDoesNotBelongToAnyCategoryByDefault(self):
+    def test_categorizable_does_not_belong_to_any_category_by_default(self):
         for recursive in False, True:
             for upwards in False, True:
                 self.assertFalse(
@@ -51,16 +51,16 @@ class CategorizableCompositeObjectTest(test.TestCase):
                     )
                 )
 
-    def testCategorizableHasNoForegroundColorByDefault(self):
+    def test_categorizable_has_no_foreground_color_by_default(self):
         self.assertEqual(None, self.categorizable.foregroundColor())
 
-    def testCategorizableHasNoBackgroundColorByDefault(self):
+    def test_categorizable_has_no_background_color_by_default(self):
         self.assertEqual(None, self.categorizable.backgroundColor())
 
-    def testCategorizableHasNoFontByDefault(self):
+    def test_categorizable_has_no_font_by_default(self):
         self.assertEqual(None, self.categorizable.font())
 
-    def testAddCategory(self):
+    def test_add_category(self):
         self.categorizable.addCategory(self.category)
         self.assertEqual(set([self.category]), self.categorizable.categories())
 
@@ -72,14 +72,14 @@ class CategorizableCompositeObjectTest(test.TestCase):
         self.categorizable.removeCategory(self.category)
         self.assertTrue(before <= self.categorizable.modificationDateTime())
 
-    def testAddCategoryNotification(self):
+    def test_add_category_notification(self):
         self.registerObserver(self.categoryAddedEventType)
         self.categorizable.addCategory(self.category)
         self.assertEvent(
             self.categoryAddedEventType, self.categorizable, self.category
         )
 
-    def testAddSecondCategory(self):
+    def test_add_second_category(self):
         self.categorizable.addCategory(self.category)
         cat2 = category.Category("category 2")
         self.categorizable.addCategory(cat2)
@@ -87,39 +87,39 @@ class CategorizableCompositeObjectTest(test.TestCase):
             set([self.category, cat2]), self.categorizable.categories()
         )
 
-    def testAddSameCategoryTwice(self):
+    def test_add_same_category_twice(self):
         self.categorizable.addCategory(self.category)
         self.categorizable.addCategory(self.category)
         self.assertEqual(set([self.category]), self.categorizable.categories())
 
-    def testAddSameCategoryTwiceCausesNoNotification(self):
+    def test_add_same_category_twice_causes_no_notification(self):
         self.categorizable.addCategory(self.category)
         self.registerObserver(self.categoryAddedEventType)
         self.categorizable.addCategory(self.category)
         self.assertFalse(self.events)
 
-    def testAddCategoryViaConstructor(self):
-        categorizableObject = categorizable.CategorizableCompositeObject(
+    def test_add_category_via_constructor(self):
+        categorizable_object = categorizable.CategorizableCompositeObject(
             categories=[self.category]
         )
         self.assertEqual(
-            set([self.category]), categorizableObject.categories()
+            set([self.category]), categorizable_object.categories()
         )
 
-    def testAddCategoriesViaConstructor(self):
-        anotherCategory = category.Category("Another category")
-        categories = [self.category, anotherCategory]
-        categorizableObject = categorizable.CategorizableCompositeObject(
+    def test_add_categories_via_constructor(self):
+        another_category = category.Category("Another category")
+        categories = [self.category, another_category]
+        categorizable_object = categorizable.CategorizableCompositeObject(
             categories=categories
         )
-        self.assertEqual(set(categories), categorizableObject.categories())
+        self.assertEqual(set(categories), categorizable_object.categories())
 
     def test_adding_a_category_makes_the_item_a_member(self):
         # The category's members are the index of its items' categories
         self.categorizable.addCategory(self.category)
         self.assertEqual({self.categorizable}, self.category.members())
 
-    def testAddParentToCategory(self):
+    def test_add_parent_to_category(self):
         child = categorizable.CategorizableCompositeObject(subject="child")
         self.registerObserver(self.categoryAddedEventType, eventSource=child)
         self.categorizable.addChild(child)
@@ -128,12 +128,12 @@ class CategorizableCompositeObjectTest(test.TestCase):
         self.categorizable.addCategory(cat)
         self.assertEvent(self.categoryAddedEventType, child, cat)
 
-    def testRemoveCategory(self):
+    def test_remove_category(self):
         self.categorizable.addCategory(self.category)
         self.categorizable.removeCategory(self.category)
         self.assertEqual(set(), self.categorizable.categories())
 
-    def testRemoveCategoryNotification(self):
+    def test_remove_category_notification(self):
         self.categorizable.addCategory(self.category)
         self.registerObserver(self.categoryRemovedEventType)
         self.categorizable.removeCategory(self.category)
@@ -141,20 +141,20 @@ class CategorizableCompositeObjectTest(test.TestCase):
             self.categoryRemovedEventType, self.categorizable, self.category
         )
 
-    def testRemoveCategoryTwice(self):
+    def test_remove_category_twice(self):
         self.categorizable.addCategory(self.category)
         self.categorizable.removeCategory(self.category)
         self.categorizable.removeCategory(self.category)
         self.assertEqual(set(), self.categorizable.categories())
 
-    def testRemoveCategoryTwiceNotification(self):
+    def test_remove_category_twice_notification(self):
         self.categorizable.addCategory(self.category)
         self.registerObserver(self.categoryRemovedEventType)
         self.categorizable.removeCategory(self.category)
         self.categorizable.removeCategory(self.category)
         self.assertEqual(1, len(self.events))
 
-    def testCategorySubjectChanged(self):
+    def test_category_subject_changed(self):
         self.registerObserver(self.categorySubjectChangedEventType)
         self.categorizable.addCategory(self.category)
         self.category.setSubject("New subject")
@@ -164,20 +164,20 @@ class CategorizableCompositeObjectTest(test.TestCase):
             "New subject",
         )
 
-    def testCategorySubjectChanged_NotifySubItemsToo(self):
-        childCategorizable = categorizable.CategorizableCompositeObject(
+    def test_category_subject_changed_notify_sub_items_too(self):
+        child_categorizable = categorizable.CategorizableCompositeObject(
             subject="Child categorizable"
         )
         self.registerObserver(
             self.categorySubjectChangedEventType,
-            eventSource=childCategorizable,
+            eventSource=child_categorizable,
         )
-        self.categorizable.addChild(childCategorizable)
+        self.categorizable.addChild(child_categorizable)
         self.categorizable.addCategory(self.category)
         self.category.setSubject("New subject")
         self.assertEvent(
             self.categorySubjectChangedEventType,
-            childCategorizable,
+            child_categorizable,
             "New subject",
         )
 

@@ -79,89 +79,93 @@ class Fixture(CategoryFilterHelpersMixin):
 
     # Common tests that should pass for all fixtures
 
-    def testThatFilterContainsAllItemsWhenNotFiltering(self):
+    def test_filter_contains_all_items_when_not_filtering(self):
         self.assertEqual(self.filter.original_length(), len(self.filter))
 
-    def testThatFilterOriginalLengthAlwaysEqualsNumberOfTasksWhenNotFiltering(
+    def test_filter_original_length_equals_task_count_when_not_filtering(
         self,
     ):
         self.assertEqual(self.filter.original_length(), len(self.tasks))
 
-    def testThatFilterContainsNoItemsWhenRemovingOriginalItems(self):
+    def test_filter_contains_no_items_when_removing_original_items(self):
         self.tasks.clear()
         self.assertEqual(0, self.filter.original_length())
 
-    def testThatFilterLengthIsSmallerOrEqualThanOriginalLength(self):
+    def test_filter_length_is_smaller_or_equal_than_original_length(self):
         self.assertTrue(len(self.filter) <= self.filter.original_length())
 
-    def testThatFilterIsEmptyWhenFilteringOnACategoryWithoutCategorizables(
+    def test_filter_is_empty_when_filtering_on_category_without_categorizables(
         self,
     ):
-        emptyCategory = category.Category("empty")
-        self.categories.append(emptyCategory)
-        emptyCategory.setFiltered()
+        empty_category = category.Category("empty")
+        self.categories.append(empty_category)
+        empty_category.setFiltered()
         self.assertFalse(self.filter)
 
-    def testThatFilterContainsAllItemsAfterRemovingFilteredEmptyCategory(self):
-        emptyCategory = category.Category("empty")
-        self.categories.append(emptyCategory)
-        emptyCategory.setFiltered()
-        self.categories.remove(emptyCategory)
-        self.assertFilterHidesNothing()
-
-    def testThatFilterContainsAllItemsAfterFilteringAndUnfiltering(self):
-        aCategory = list(self.categories)[0]
-        aCategory.setFiltered()
-        aCategory.setFiltered(False)
-        self.assertFilterHidesNothing()
-
-    def testThatFilterContainsAllItemsAfterUnfilteringACategoryThatWasNotFiltered(
+    def test_filter_contains_all_items_after_removing_filtered_empty_category(
         self,
     ):
-        aCategory = list(self.categories)[0]
-        aCategory.setFiltered(False)
+        empty_category = category.Category("empty")
+        self.categories.append(empty_category)
+        empty_category.setFiltered()
+        self.categories.remove(empty_category)
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsAllItemsWhenFilteringOnAnyCategoryWithoutAnyCategoryFiltered(
+    def test_filter_contains_all_items_after_filtering_and_unfiltering(
+        self,
+    ):
+        a_category = list(self.categories)[0]
+        a_category.setFiltered()
+        a_category.setFiltered(False)
+        self.assertFilterHidesNothing()
+
+    def test_filter_contains_all_after_unfiltering_an_unfiltered_category(
+        self,
+    ):
+        a_category = list(self.categories)[0]
+        a_category.setFiltered(False)
+        self.assertFilterHidesNothing()
+
+    def test_filter_contains_all_matching_any_with_no_category_filtered(
         self,
     ):
         self.setFilterOnAnyCategory()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsAllItemsWhenFilteringOnAllCategoriesWithoutAnyCategoryFiltered(
+    def test_filter_contains_all_matching_all_with_no_category_filtered(
         self,
     ):
         self.setFilterOnAllCategories()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsNewlyAddedTaskThatBelongsToTheFilteredCategory(
+    def test_filter_contains_new_task_of_filtered_category(
         self,
     ):
-        aCategory = list(self.categories)[0]
-        aCategory.setFiltered()
-        newTask = task.Task()
-        newTask.addCategory(aCategory)
-        self.tasks.append(newTask)
-        self.assertTrue(newTask in self.filter)
+        a_category = list(self.categories)[0]
+        a_category.setFiltered()
+        new_task = task.Task()
+        new_task.addCategory(a_category)
+        self.tasks.append(new_task)
+        self.assertTrue(new_task in self.filter)
 
-    def testThatFilterDoesContainNewlyAddedTaskThatBelongsToTheFilteredCategoryAfterRemoval(
+    def test_filter_contains_new_task_of_filtered_category_after_removal(
         self,
     ):
-        aCategory = list(self.categories)[0]
-        aCategory.setFiltered()
-        newTask = task.Task()
-        newTask.addCategory(aCategory)
-        self.tasks.append(newTask)
-        self.tasks.remove(newTask)
-        self.assertFalse(newTask in self.filter)
+        a_category = list(self.categories)[0]
+        a_category.setFiltered()
+        new_task = task.Task()
+        new_task.addCategory(a_category)
+        self.tasks.append(new_task)
+        self.tasks.remove(new_task)
+        self.assertFalse(new_task in self.filter)
 
-    def testThatFilterContainsNoTasksWhenFilteringAllCategoriesIncludingAnEmptyCategory(
+    def test_filter_has_no_tasks_with_all_categories_and_an_empty_one(
         self,
     ):
-        emptyCategory = category.Category("empty")
-        self.categories.append(emptyCategory)
-        for eachCategory in self.categories:
-            eachCategory.setFiltered()
+        empty_category = category.Category("empty")
+        self.categories.append(empty_category)
+        for each_category in self.categories:
+            each_category.setFiltered()
         self.setFilterOnAllCategories()
         self.assertFilterHidesEverything()
 
@@ -171,10 +175,10 @@ class OneCategoryFixture(Fixture):
         self.category = category.Category("category")
         return [self.category]
 
-    def testThatFilterIsEmptyWhenNoCategoriesAreFiltered(self):
+    def test_filter_is_empty_when_no_categories_are_filtered(self):
         self.assertEqual(0, len(self.filter))
 
-    def testThatFilterIsEmptyWhenCategoryIsFiltered(self):
+    def test_filter_is_empty_when_category_is_filtered(self):
         self.category.setFiltered()
         self.assertEqual(0, len(self.filter))
 
@@ -196,18 +200,20 @@ class OneCategoryAndOneTaskFixture(Fixture):
         self.task = task.Task("task")
         return [self.task]
 
-    def testThatFilterContainsUncategorizedTaskWhenNoCategoriesAreFiltered(
+    def test_filter_contains_uncategorized_task_when_none_filtered(
         self,
     ):
         self.assertFilterHidesNothing()
 
-    def testThatFilterDoesNotContainUncategorizedTaskWhenCategoryIsFiltered(
+    def test_filter_hides_uncategorized_task_when_category_filtered(
         self,
     ):
         self.category.setFiltered()
         self.assertFilterHidesEverything()
 
-    def testThatFilterContainsCategorizedTaskWhenCategoryIsFiltered(self):
+    def test_filter_contains_categorized_task_when_category_is_filtered(
+        self,
+    ):
         self.link(self.category, self.task)
         self.category.setFiltered()
         self.assertFilterHidesNothing()
@@ -235,21 +241,27 @@ class OneCategoryAndTwoTasksFixture(Fixture):
         self.task2 = task.Task("task2")
         return [self.task1, self.task2]
 
-    def testThatFilterContainsAllUncategorizedTaskWhenCategoryIsNotFiltered(
+    def test_filter_contains_uncategorized_tasks_when_not_filtered(
         self,
     ):
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsNoUncategorizedTasksWhenCategoryIsFiltered(self):
+    def test_filter_contains_no_uncategorized_tasks_when_category_is_filtered(
+        self,
+    ):
         self.category.setFiltered()
         self.assertFilterHidesEverything()
 
-    def testThatFilterContainsCategorizedTaskWhenCategoryIsFiltered(self):
+    def test_filter_contains_categorized_task_when_category_is_filtered(
+        self,
+    ):
         self.category.setFiltered()
         self.link(self.category, self.task1)
         self.assertEqual([self.task1], list(self.filter))
 
-    def testThatFilterContainsCategorizedTasksWhenCategoryIsFiltered(self):
+    def test_filter_contains_categorized_tasks_when_category_is_filtered(
+        self,
+    ):
         self.category.setFiltered()
         self.link(self.category, self.task1)
         self.link(self.category, self.task2)
@@ -305,7 +317,7 @@ class TwoCategoriesAndOneTaskFixture(Fixture):
     def categorize(self):
         self.link(self.category1, self.task)
 
-    def testThatFilterContainsTaskWhenFilteringOnAnyCategoryAndBothAreFiltered(
+    def test_filter_contains_task_matching_any_with_both_filtered(
         self,
     ):
         self.setFilterOnAnyCategory()
@@ -313,7 +325,7 @@ class TwoCategoriesAndOneTaskFixture(Fixture):
         self.category2.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterDoesNotContainTaskWhenFilteringOnAllCategoriesAndBothAreFiltered(
+    def test_filter_hides_task_matching_all_with_both_filtered(
         self,
     ):
         self.setFilterOnAllCategories()
@@ -345,16 +357,18 @@ class TwoCategoriesAndTwoTasksFixture(Fixture):
         self.task2 = task.Task("task2")
         return [self.task1, self.task2]
 
-    def testThatFilterContainsAllUncategorizedTaskWhenCategoryIsNotFiltered(
+    def test_filter_contains_uncategorized_tasks_when_not_filtered(
         self,
     ):
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsNoUncategorizedTasksWhenCategoryIsFiltered(self):
+    def test_filter_contains_no_uncategorized_tasks_when_category_is_filtered(
+        self,
+    ):
         self.category1.setFiltered()
         self.assertFilterHidesEverything()
 
-    def testThatFilterContainsNoUncategorizedTasksWhenAnyCategoryIsFiltered(
+    def test_filter_contains_no_uncategorized_tasks_when_any_filtered(
         self,
     ):
         self.setFilterOnAnyCategory()
@@ -362,7 +376,7 @@ class TwoCategoriesAndTwoTasksFixture(Fixture):
         self.category2.setFiltered()
         self.assertFilterHidesEverything()
 
-    def testThatFilterContainsNoUncategorizedTasksWhenAllCategoriesAreFiltered(
+    def test_filter_contains_no_uncategorized_tasks_when_all_filtered(
         self,
     ):
         self.setFilterOnAllCategories()
@@ -370,14 +384,16 @@ class TwoCategoriesAndTwoTasksFixture(Fixture):
         self.category2.setFiltered()
         self.assertFilterHidesEverything()
 
-    def testThatFilterContainsCategorizedTaskWhenAnyCategoryIsFiltered(self):
+    def test_filter_contains_categorized_task_when_any_category_is_filtered(
+        self,
+    ):
         self.link(self.category1, self.task1)
         self.setFilterOnAnyCategory()
         self.category1.setFiltered()
         self.category2.setFiltered()
         self.assertEqual([self.task1], list(self.filter))
 
-    def testThatFilterDoesNotContainCategorizedTaskWhenAllCategoriesAreFiltered(
+    def test_filter_hides_categorized_task_when_all_categories_filtered(
         self,
     ):
         self.link(self.category1, self.task1)
@@ -386,19 +402,21 @@ class TwoCategoriesAndTwoTasksFixture(Fixture):
         self.category2.setFiltered()
         self.assertFilterHidesEverything()
 
-    def testThatFilterContainsCategorizedTaskWhenFilteringByThatCategory(self):
+    def test_filter_contains_categorized_task_when_filtering_by_that_category(
+        self,
+    ):
         self.link(self.category1, self.task1)
         self.category1.setFiltered()
         self.assertEqual([self.task1], list(self.filter))
 
-    def testThatFilterDoesNotContainCategorizedTaskWhenFilteringByAnotherCategory(
+    def test_filter_hides_categorized_task_filtering_by_another_category(
         self,
     ):
         self.link(self.category1, self.task1)
         self.category2.setFiltered()
         self.assertFilterHidesEverything()
 
-    def testThatFilterContainsCategorizedTasksWhenFilteringByThatCategory(
+    def test_filter_contains_categorized_tasks_when_filtering_by_that_category(
         self,
     ):
         self.category1.setFiltered()
@@ -406,7 +424,9 @@ class TwoCategoriesAndTwoTasksFixture(Fixture):
         self.link(self.category1, self.task2)
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsCategorizedTasksWhenFilteringByAnyCategory(self):
+    def test_filter_contains_categorized_tasks_when_filtering_by_any_category(
+        self,
+    ):
         self.setFilterOnAnyCategory()
         self.category1.setFiltered()
         self.category2.setFiltered()
@@ -414,7 +434,7 @@ class TwoCategoriesAndTwoTasksFixture(Fixture):
         self.link(self.category1, self.task2)
         self.assertFilterHidesNothing()
 
-    def testThatFilterDoesNotContainCategorizedTasksWhenFilteringByAllCategories(
+    def test_filter_hides_categorized_tasks_filtering_by_all_categories(
         self,
     ):
         self.setFilterOnAllCategories()
@@ -449,12 +469,14 @@ class OneCategoryAndParentAndChildTaskFixture(Fixture):
         self.childTask.set_parent(self.parentTask)
         return [self.parentTask, self.childTask]
 
-    def testThatFilterContainsChildWhenParentIsCategorizedAndFiltered(self):
+    def test_filter_contains_child_when_parent_is_categorized_and_filtered(
+        self,
+    ):
         self.link(self.category, self.parentTask)
         self.category.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsParentWhenChildIsCategorizedAndFilteredButOnlyInTreeMode(
+    def test_filter_contains_parent_of_filtered_child_only_in_tree_mode(
         self,
     ):
         self.link(self.category, self.childTask)
@@ -491,7 +513,7 @@ class TwoCategoriesAndParentAndChildTaskFixture(Fixture):
         self.link(self.category1, self.parentTask)
         self.link(self.category2, self.childTask)
 
-    def testThatFilterContainsBothParentAndChildTaskWhenFilteringOnAnyCategoryAndBothCategories(
+    def test_filter_contains_parent_and_child_matching_any_of_both(
         self,
     ):
         self.setFilterOnAnyCategory()
@@ -499,7 +521,7 @@ class TwoCategoriesAndParentAndChildTaskFixture(Fixture):
         self.category2.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsBothParentAndChildTaskWhenFilteringOnAllCategoriesAndBothCategories(
+    def test_filter_contains_parent_and_child_matching_all_of_both(
         self,
     ):
         self.setFilterOnAllCategories()
@@ -535,63 +557,63 @@ class ParentAndChildCategoryAndParentAndChildTaskFixture(Fixture):
         self.childTask.set_parent(self.parentTask)
         return [self.parentTask, self.childTask]
 
-    def testThatFilterContainsBothTasksWhenParentTaskIsInParentCategoryAndFilteringParentCategory(
+    def test_filter_parent_task_in_parent_category_parent_filtered_shows_both(
         self,
     ):
         self.link(self.parentCategory, self.parentTask)
         self.parentCategory.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsNoTasksWhenParentTaskIsInParentCategoryAndFilteringChildCategory(
+    def test_filter_parent_task_in_parent_category_child_filtered_shows_none(
         self,
     ):
         self.link(self.parentCategory, self.parentTask)
         self.childCategory.setFiltered()
         self.assertFilterHidesEverything()
 
-    def testThatFilterContainsBothTasksWhenParentTaskIsInChildCategoryAndFilteringParentCategory(
+    def test_filter_parent_task_in_child_category_parent_filtered_shows_both(
         self,
     ):
         self.link(self.childCategory, self.parentTask)
         self.parentCategory.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsBothTasksWhenParentTaskIsInChildCategoryAndFilteringChildCategory(
+    def test_filter_parent_task_in_child_category_child_filtered_shows_both(
         self,
     ):
         self.link(self.childCategory, self.parentTask)
         self.childCategory.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsChildTaskWhenChildTaskIsInParentCategoryAndFilteringParentCategory(
+    def test_filter_child_task_in_parent_category_parent_filtered_shows_child(
         self,
     ):
         self.link(self.parentCategory, self.childTask)
         self.parentCategory.setFiltered()
         self.assertChildTaskIsFiltered()
 
-    def testThatFilterContainsNoTasksWhenChildTaskIsInParentCategoryAndFilteringChildCategory(
+    def test_filter_child_task_in_parent_category_child_filtered_shows_none(
         self,
     ):
         self.link(self.parentCategory, self.childTask)
         self.childCategory.setFiltered()
         self.assertFilterHidesEverything()
 
-    def testThatFilterContainsChildTaskWhenChildTaskIsInChildCategoryAndFilteringParentCategory(
+    def test_filter_child_task_in_child_category_parent_filtered_shows_child(
         self,
     ):
         self.link(self.childCategory, self.childTask)
         self.parentCategory.setFiltered()
         self.assertChildTaskIsFiltered()
 
-    def testThatFilterContainsChildTaskWhenChildTaskIsInChildCategoryAndFilteringChildCategory(
+    def test_filter_child_task_in_child_category_child_filtered_shows_child(
         self,
     ):
         self.link(self.childCategory, self.childTask)
         self.childCategory.setFiltered()
         self.assertChildTaskIsFiltered()
 
-    def testThatFilterContainsBothTasksWhenParentTaskIsInChildCategoryAndFilteringBothCategories(
+    def test_filter_parent_task_in_child_category_both_filtered_shows_both(
         self,
     ):
         self.setFilterOnAllCategories()
@@ -600,7 +622,7 @@ class ParentAndChildCategoryAndParentAndChildTaskFixture(Fixture):
         self.childCategory.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsChildTaskWhenChildTaskIsInChildCategoryAndFilteringBothCategories(
+    def test_filter_child_task_in_child_category_both_filtered_shows_child(
         self,
     ):
         self.setFilterOnAllCategories()
@@ -640,14 +662,14 @@ class ParentAndChildCategoryAndParentAndGrandChildTaskFixture(Fixture):
         self.grandChildTask.set_parent(self.childTask)
         return [self.parentTask, self.childTask, self.grandChildTask]
 
-    def testThatFilterContainsAllTasksWhenParentTaskIsInChildCategoryAndFiltered(
+    def test_filter_parent_task_in_filtered_child_category_shows_all(
         self,
     ):
         self.link(self.childCategory, self.parentTask)
         self.parentCategory.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsAllTasksWhenParentTaskIsInChildCategoryAndAllCategoriesAreFiltered(
+    def test_filter_parent_task_in_child_category_all_filtered_shows_all(
         self,
     ):
         self.setFilterOnAllCategories()
@@ -656,14 +678,14 @@ class ParentAndChildCategoryAndParentAndGrandChildTaskFixture(Fixture):
         self.childCategory.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsGrandChildTaskWhenChildTaskIsInChildCategoryAndParentCategoryIsFiltered(
+    def test_filter_child_in_child_category_parent_filtered_shows_grandchild(
         self,
     ):
         self.link(self.childCategory, self.childTask)
         self.parentCategory.setFiltered()
         self.assertTrue(self.grandChildTask in self.filter)
 
-    def testThatFilterContainsGrandChildTaskWhenChildTaskIsInChildCategoryAndAllCategoriesAreFiltered(
+    def test_filter_child_in_child_category_all_filtered_shows_grandchild(
         self,
     ):
         self.setFilterOnAllCategories()
@@ -672,7 +694,7 @@ class ParentAndChildCategoryAndParentAndGrandChildTaskFixture(Fixture):
         self.childCategory.setFiltered()
         self.assertTrue(self.grandChildTask in self.filter)
 
-    def testThatFilterContainsGrandParentWhenGrandChildIsInChildCategoryAndParentCategoryIsFiltered(
+    def test_parent_filter_shows_grandparent_of_grandchild_in_child_category(
         self,
     ):
         self.link(self.childCategory, self.grandChildTask)
@@ -715,7 +737,9 @@ class TwoCategoriesAndParentAndGrandChildTaskFixture(Fixture):
         self.link(self.category1, self.parentTask)
         self.link(self.category2, self.grandChildTask)
 
-    def testThatFilterContainsGrandChildWhenFilteringOnAllCategories(self):
+    def test_filter_contains_grand_child_when_filtering_on_all_categories(
+        self,
+    ):
         self.setFilterOnAllCategories()
         self.category1.setFiltered()
         self.category2.setFiltered()
@@ -724,7 +748,9 @@ class TwoCategoriesAndParentAndGrandChildTaskFixture(Fixture):
             set(self.filter),
         )
 
-    def testThatFilterContainsGrandChildWhenFilteringOnAnyCategory(self):
+    def test_filter_contains_grand_child_when_filtering_on_any_category(
+        self,
+    ):
         self.setFilterOnAnyCategory()
         self.category1.setFiltered()
         self.category2.setFiltered()
@@ -763,7 +789,7 @@ class TwoCategoriesAndParentWithTwoChildTasksFixture(Fixture):
         self.link(self.category1, self.child1Task)
         self.link(self.category2, self.child2Task)
 
-    def testThatFilterIsEmptyWhenFilteringOnAllCategoriesAndChildTasksHaveTwoDifferentCategories(
+    def test_filter_all_shows_none_with_children_in_different_categories(
         self,
     ):
         self.setFilterOnAllCategories()
@@ -771,7 +797,7 @@ class TwoCategoriesAndParentWithTwoChildTasksFixture(Fixture):
         self.category2.setFiltered()
         self.assertFilterHidesEverything()
 
-    def testThatFilterContainsAllTasksWhenFilteringOnAnyCategoryAndChildTasksHaveTwoDifferentCategories(
+    def test_filter_any_shows_all_with_children_in_different_categories(
         self,
     ):
         self.setFilterOnAnyCategory()
@@ -779,7 +805,7 @@ class TwoCategoriesAndParentWithTwoChildTasksFixture(Fixture):
         self.category2.setFiltered()
         self.assertEqual(3 if self.tree_mode else 2, len(self.filter))
 
-    def testThatFilterHidesUnfilteredChild(self):
+    def test_filter_hides_unfiltered_child(self):
         self.category1.setFiltered()
         self.assertFalse(self.child2Task in self.filter)
 
@@ -808,21 +834,21 @@ class ParentAndChildCategoryAndOneTaskFixture(Fixture):
         self.task = task.Task("task")
         return [self.task]
 
-    def testThatFilterDoesNotContainTaskIfTaskHasChildCategoryAndParentIsFiltered(
+    def test_filter_hides_task_with_child_category_when_parent_filtered(
         self,
     ):
         self.link(self.parentCategory, self.task)
         self.childCategory.setFiltered()
         self.assertFalse(self.filter)
 
-    def testThatFilterContainsTaskIfTaskIfTaskHasParentCategoryAndChildIsFiltered(
+    def test_filter_shows_task_with_parent_category_when_child_filtered(
         self,
     ):
         self.link(self.childCategory, self.task)
         self.parentCategory.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsTaskIfTaskHasParentAndChildCategoryAndAnyCategoryIsFiltered(
+    def test_filter_shows_task_with_both_categories_when_any_filtered(
         self,
     ):
         self.setFilterOnAnyCategory()
@@ -832,7 +858,7 @@ class ParentAndChildCategoryAndOneTaskFixture(Fixture):
         self.childCategory.setFiltered()
         self.assertFilterHidesNothing()
 
-    def testThatFilterContainsTaskIfTaskHasParentAndChildCategoryAndAllCategoriesAreFiltered(
+    def test_filter_shows_task_with_both_categories_when_all_filtered(
         self,
     ):
         self.setFilterOnAllCategories()
@@ -879,26 +905,34 @@ class CategoryFilterAndViewFilterFixtureAndCommonTestsMixin(
             tree_mode=self.tree_mode,
         )
 
-    def testThatParentIsHiddenWhenHiddenCompletedChildIsFiltered(self):
+    def test_that_parent_is_hidden_when_hidden_completed_child_is_filtered(
+        self,
+    ):
         self.viewFilter.hide_task_status(task.status.completed)
         self.assertEqual(1, len(self.viewFilter))
         self.childCategory.setFiltered(True)
         self.assertEqual(0, len(self.categoryFilter))
 
-    def testThatParentIsShownWhenHiddenCompletedChildIsUnfiltered(self):
+    def test_that_parent_is_shown_when_hidden_completed_child_is_unfiltered(
+        self,
+    ):
         self.viewFilter.hide_task_status(task.status.completed)
         self.childCategory.setFiltered(True)
         self.assertEqual(0, len(self.categoryFilter))
         self.childCategory.setFiltered(False)
         self.assertEqual(1, len(self.categoryFilter))
 
-    def testThatParentIsHiddenWhenFilteredCompletedChildIsHidden(self):
+    def test_that_parent_is_hidden_when_filtered_completed_child_is_hidden(
+        self,
+    ):
         self.childCategory.setFiltered(True)
         self.assertEqual(2, len(self.viewFilter))
         self.viewFilter.hide_task_status(task.status.completed)
         self.assertEqual(0, len(self.categoryFilter))
 
-    def testThatParentIsShownWhenFilteredCompletedChildIsUnhidden(self):
+    def test_that_parent_is_shown_when_filtered_completed_child_is_unhidden(
+        self,
+    ):
         self.childCategory.setFiltered(True)
         self.viewFilter.hide_task_status(task.status.completed)
         self.assertEqual(0, len(self.categoryFilter))
@@ -962,7 +996,7 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
             self.categoryFilter, tree_mode=self.tree_mode
         )
 
-    def testParentHiddenWhenCategoryFilteredAndChildCompleted(self):
+    def test_parent_hidden_when_category_filtered_and_child_completed(self):
         """The main bug scenario: parent should be hidden when its only
         categorized child is hidden due to completion status."""
         # First, filter by category
@@ -976,7 +1010,7 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
         # viewFilter should now be empty - parent has no visible categorized children
         self.assertEqual(0, len(self.viewFilter))
 
-    def testParentShownWhenChildUnhidden(self):
+    def test_parent_shown_when_child_unhidden(self):
         """When we unhide completed tasks, parent should reappear."""
         self.childCategory.setFiltered(True)
         self.viewFilter.hide_task_status(task.status.completed)
@@ -986,7 +1020,7 @@ class ViewFilterWrappingCategoryFilterFixture(CategoryFilterHelpersMixin):
         # Both should be visible again
         self.assertEqual(2, len(self.viewFilter))
 
-    def testParentShownWhenCategoryUnfiltered(self):
+    def test_parent_shown_when_category_unfiltered(self):
         """When we remove category filter, parent should reappear."""
         self.childCategory.setFiltered(True)
         self.viewFilter.hide_task_status(task.status.completed)
@@ -1012,7 +1046,7 @@ class ViewFilterWrappingCategoryFilterInListModeTest(
 ):
     tree_mode = False
 
-    def testParentHiddenWhenCategoryFilteredAndChildCompleted(self):
+    def test_parent_hidden_when_category_filtered_and_child_completed(self):
         """In list mode, parent is not shown as ancestor, so behavior differs."""
         self.childCategory.setFiltered(True)
         # In list mode, only child is shown (no ancestors)
@@ -1023,7 +1057,7 @@ class ViewFilterWrappingCategoryFilterInListModeTest(
         # Should be empty
         self.assertEqual(0, len(self.viewFilter))
 
-    def testParentShownWhenChildUnhidden(self):
+    def test_parent_shown_when_child_unhidden(self):
         """In list mode, only child is shown when unhidden."""
         self.childCategory.setFiltered(True)
         self.viewFilter.hide_task_status(task.status.completed)

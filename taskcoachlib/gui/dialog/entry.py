@@ -169,8 +169,8 @@ class PercentageEntry(widgets.PanelWithBoxSizer):
             max=100,
             size=(60 if operating_system.isMac() else 50, -1),
         )
-        for eventType in wx.EVT_SPINCTRL, wx.EVT_KILL_FOCUS:
-            entry.Bind(eventType, self.onSpin)
+        for event_type in wx.EVT_SPINCTRL, wx.EVT_KILL_FOCUS:
+            entry.Bind(event_type, self.onSpin)
         return entry
 
     def GetValue(self):
@@ -186,12 +186,12 @@ class PercentageEntry(widgets.PanelWithBoxSizer):
     def onSpin(self, event):  # pylint: disable=W0613
         self.syncControl(self._slider, self._entry)
 
-    def syncControl(self, controlToWrite, controlToRead):
-        value = controlToRead.GetValue()
+    def syncControl(self, control_to_write, control_to_read):
+        value = control_to_read.GetValue()
         # Prevent potential endless loop by checking that we really need to set
         # the value:
-        if controlToWrite.GetValue() != value:
-            controlToWrite.SetValue(value)
+        if control_to_write.GetValue() != value:
+            control_to_write.SetValue(value)
         wx.PostEvent(self, PercentageEntryEvent())
 
 
@@ -229,18 +229,18 @@ class FontEntry(widgets.PanelWithBoxSizer):
         self.fitNoMinSize()
 
     def _create_check_box(self, current_font):
-        checkBox = wx.CheckBox(self, label="")
-        checkBox.SetValue(current_font is not None)
-        checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
-        return checkBox
+        check_box = wx.CheckBox(self, label="")
+        check_box.SetValue(current_font is not None)
+        check_box.Bind(wx.EVT_CHECKBOX, self.onChecked)
+        return check_box
 
     def _create_font_picker(
         self, current_font, current_color, current_bg_color
     ):
-        defaultFont = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        default_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         picker = widgets.FontPickerCtrl(
             self,
-            font=current_font or defaultFont,
+            font=current_font or default_font,
             colour=current_color,
             bgColour=current_bg_color,
         )
@@ -278,20 +278,20 @@ class FontEntry(widgets.PanelWithBoxSizer):
             else None
         )
 
-    def SetValue(self, newFont):
-        checked = newFont is not None
+    def SetValue(self, new_font):
+        checked = new_font is not None
         self._fontCheckBox.SetValue(checked)
         if checked:
-            self._fontPicker.SetSelectedFont(newFont)
+            self._fontPicker.SetSelectedFont(new_font)
 
     def GetColor(self):
         return self._fontPicker.GetSelectedColour()
 
-    def SetColor(self, newColor):
-        self._fontPicker.SetSelectedColour(newColor)
+    def SetColor(self, new_color):
+        self._fontPicker.SetSelectedColour(new_color)
 
-    def SetBgColor(self, newColor):
-        self._fontPicker.SetSelectedBgColour(newColor)
+    def SetBgColor(self, new_color):
+        self._fontPicker.SetSelectedBgColour(new_color)
 
 
 ColorEntryEvent, EVT_COLORENTRY = newevent.NewEvent()
@@ -330,10 +330,10 @@ class ColorEntry(widgets.PanelWithBoxSizer):
         self.fit()
 
     def _create_check_box(self, current_color):
-        checkBox = wx.CheckBox(self, label="")
-        checkBox.SetValue(current_color is not None)
-        checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
-        return checkBox
+        check_box = wx.CheckBox(self, label="")
+        check_box.SetValue(current_color is not None)
+        check_box.Bind(wx.EVT_CHECKBOX, self.onChecked)
+        return check_box
 
     def _create_color_picker(self, current_color, default_color):
         # ColourPickerCtrl on Mac OS X expects a wx.Colour and fails on tuples
@@ -390,11 +390,11 @@ class ColorEntry(widgets.PanelWithBoxSizer):
             else None
         )
 
-    def SetValue(self, newColor):
-        checked = newColor is not None
+    def SetValue(self, new_color):
+        checked = new_color is not None
         self._colorCheckBox.SetValue(checked)
         if checked:
-            self._colorPicker.SetColour(newColor)
+            self._colorPicker.SetColour(new_color)
 
 
 IconEntryEvent, EVT_ICONENTRY = newevent.NewEvent()
@@ -425,10 +425,10 @@ class IconEntry(widgets.PanelWithBoxSizer):
         self.fitNoMinSize()
 
     def _create_check_box(self, current_icon_id):
-        checkBox = wx.CheckBox(self, label="")
-        checkBox.SetValue(current_icon_id != "")
-        checkBox.Bind(wx.EVT_CHECKBOX, self.onChecked)
-        return checkBox
+        check_box = wx.CheckBox(self, label="")
+        check_box.SetValue(current_icon_id != "")
+        check_box.Bind(wx.EVT_CHECKBOX, self.onChecked)
+        return check_box
 
     def _create_icon_picker(self, parent, current_icon_id, exclude):
         picker = widgets.IconPicker(
@@ -465,11 +465,11 @@ ChoiceEntryEvent, EVT_CHOICEENTRY = newevent.NewEvent()
 
 
 class ChoiceEntry(wx.Choice):
-    def __init__(self, parent, choices, currentChoiceValue, *args, **kwargs):
+    def __init__(self, parent, choices, current_choice_value, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        for choiceValue, choiceText in choices:
-            self.Append(choiceText, choiceValue)
-            if choiceValue == currentChoiceValue:
+        for choice_value, choice_text in choices:
+            self.Append(choice_text, choice_value)
+            if choice_value == current_choice_value:
                 self.SetSelection(self.GetCount() - 1)
         if self.GetSelection() == wx.NOT_FOUND:
             # Force a selection if necessary:
@@ -498,13 +498,13 @@ class TaskEntry(wx.Panel):
     ComboTreeBox widget, because that widget is created using a
     factory function."""
 
-    def __init__(self, parent, rootTasks, selectedTask):
+    def __init__(self, parent, root_tasks, selected_task):
         """Initialize the ComboTreeBox, add the root tasks recursively and
         set the selection."""
         super().__init__(parent)
         self._createInterior()
-        self._add_tasks_recursively(rootTasks)
-        self.SetValue(selectedTask)
+        self._add_tasks_recursively(root_tasks)
+        self.SetValue(selected_task)
         # Bind to window close to properly clean up the popup
         self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
 
@@ -521,9 +521,9 @@ class TaskEntry(wx.Panel):
             self, style=wx.CB_READONLY | wx.CB_SORT | wx.TAB_TRAVERSAL
         )
         self._comboTreeBox.Bind(wx.EVT_COMBOBOX, self.onTaskSelected)
-        boxSizer = wx.BoxSizer()
-        boxSizer.Add(self._comboTreeBox, flag=wx.EXPAND, proportion=1)
-        self.SetSizerAndFit(boxSizer)
+        box_sizer = wx.BoxSizer()
+        box_sizer.Add(self._comboTreeBox, flag=wx.EXPAND, proportion=1)
+        self.SetSizerAndFit(box_sizer)
 
     def _add_tasks_recursively(self, tasks, parent_item=None):
         """Add tasks to the ComboTreeBox and then recursively add their
@@ -562,16 +562,16 @@ class TaskEntry(wx.Panel):
             return
         try:
             # Try to unbind the kill focus handler before destruction
-            popupFrame = self._comboTreeBox._popupFrame
-            if popupFrame:
+            popup_frame = self._comboTreeBox._popupFrame
+            if popup_frame:
                 try:
-                    popupFrame._unbindKillFocus()
+                    popup_frame._unbindKillFocus()
                 except (RuntimeError, AttributeError):
                     pass  # Already destroyed or doesn't have the method
                 # Hide the popup if it's showing
-                if popupFrame.IsShown():
+                if popup_frame.IsShown():
                     try:
-                        popupFrame.Hide()
+                        popup_frame.Hide()
                     except RuntimeError:
                         pass  # Already destroyed
         except (RuntimeError, AttributeError):
@@ -586,9 +586,9 @@ class RecurrenceEntry(wx.Panel):
 
     def __init__(self, parent, recurrence, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
-        recurrenceFrequencyPanel = wx.Panel(self)
+        recurrence_frequency_panel = wx.Panel(self)
         self._recurrencePeriodEntry = wx.Choice(
-            recurrenceFrequencyPanel,
+            recurrence_frequency_panel,
             choices=[
                 _("None"),
                 _("Daily"),
@@ -601,57 +601,57 @@ class RecurrenceEntry(wx.Panel):
             wx.EVT_CHOICE, self.onRecurrencePeriodEdited
         )
         self._recurrenceFrequencyEntry = widgets.SpinCtrl(
-            recurrenceFrequencyPanel, size=(120, -1), value=1, min=1
+            recurrence_frequency_panel, size=(120, -1), value=1, min=1
         )
         self._recurrenceFrequencyEntry.Bind(
             wx.EVT_SPINCTRL, self.onRecurrenceEdited
         )
         self._recurrenceStaticText = wx.StaticText(
-            recurrenceFrequencyPanel, label="reserve some space"
+            recurrence_frequency_panel, label="reserve some space"
         )
         self._recurrenceSameWeekdayCheckBox = wx.CheckBox(
-            recurrenceFrequencyPanel,
+            recurrence_frequency_panel,
             label=_("keeping dates on the same weekday"),
         )
         self._recurrenceSameWeekdayCheckBox.Bind(
             wx.EVT_CHECKBOX, self.onRecurrenceEdited
         )
-        panelSizer = wx.BoxSizer(wx.HORIZONTAL)
-        panelSizer.Add(
+        panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        panel_sizer.Add(
             self._recurrencePeriodEntry, flag=wx.ALIGN_CENTER_VERTICAL
         )
-        panelSizer.Add(self.horizontalSpace)
-        panelSizer.Add(
-            wx.StaticText(recurrenceFrequencyPanel, label=_(", every")),
+        panel_sizer.Add(self.horizontalSpace)
+        panel_sizer.Add(
+            wx.StaticText(recurrence_frequency_panel, label=_(", every")),
             flag=wx.ALIGN_CENTER_VERTICAL,
         )
-        panelSizer.Add(self.horizontalSpace)
-        panelSizer.Add(
+        panel_sizer.Add(self.horizontalSpace)
+        panel_sizer.Add(
             self._recurrenceFrequencyEntry, flag=wx.ALIGN_CENTER_VERTICAL
         )
-        panelSizer.Add(self.horizontalSpace)
-        panelSizer.Add(
+        panel_sizer.Add(self.horizontalSpace)
+        panel_sizer.Add(
             self._recurrenceStaticText, flag=wx.ALIGN_CENTER_VERTICAL
         )
-        panelSizer.Add(self.horizontalSpace)
-        panelSizer.Add(
+        panel_sizer.Add(self.horizontalSpace)
+        panel_sizer.Add(
             self._recurrenceSameWeekdayCheckBox,
             proportion=1,
             flag=wx.EXPAND,
         )
-        recurrenceFrequencyPanel.SetSizerAndFit(panelSizer)
-        self._recurrenceSizer = panelSizer
+        recurrence_frequency_panel.SetSizerAndFit(panel_sizer)
+        self._recurrenceSizer = panel_sizer
 
         # Weekday selector panel for weekly recurrence
-        weekdayPanel = wx.Panel(self)
-        weekdayPanelSizer = wx.BoxSizer(wx.HORIZONTAL)
-        weekdayPanelSizer.Add(
-            wx.StaticText(weekdayPanel, label=_("On days:")),
+        weekday_panel = wx.Panel(self)
+        weekday_panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        weekday_panel_sizer.Add(
+            wx.StaticText(weekday_panel, label=_("On days:")),
             flag=wx.ALIGN_CENTER_VERTICAL,
         )
-        weekdayPanelSizer.Add((6, -1))
+        weekday_panel_sizer.Add((6, -1))
         # Weekday names starting from Monday (0) to Sunday (6)
-        weekdayNames = [
+        weekday_names = [
             _("Mon"),
             _("Tue"),
             _("Wed"),
@@ -661,26 +661,26 @@ class RecurrenceEntry(wx.Panel):
             _("Sun"),
         ]
         self._weekdayCheckBoxes = []
-        for i, dayName in enumerate(weekdayNames):
-            cb = wx.CheckBox(weekdayPanel, label=dayName)
+        for i, day_name in enumerate(weekday_names):
+            cb = wx.CheckBox(weekday_panel, label=day_name)
             cb.Bind(wx.EVT_CHECKBOX, self.onRecurrenceEdited)
             self._weekdayCheckBoxes.append(cb)
-            weekdayPanelSizer.Add(cb, flag=wx.ALIGN_CENTER_VERTICAL)
-            if i < len(weekdayNames) - 1:
-                weekdayPanelSizer.Add((6, -1))
-        weekdayPanel.SetSizerAndFit(weekdayPanelSizer)
-        self._weekdayPanel = weekdayPanel
+            weekday_panel_sizer.Add(cb, flag=wx.ALIGN_CENTER_VERTICAL)
+            if i < len(weekday_names) - 1:
+                weekday_panel_sizer.Add((6, -1))
+        weekday_panel.SetSizerAndFit(weekday_panel_sizer)
+        self._weekdayPanel = weekday_panel
 
         # schedulePanel created before maxPanel for correct tab order (top-to-bottom)
-        schedulePanel = wx.Panel(self)
-        panelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        schedule_panel = wx.Panel(self)
+        panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
         label = wx.StaticText(
-            schedulePanel, label=_("Schedule each next recurrence based on")
+            schedule_panel, label=_("Schedule each next recurrence based on")
         )
-        panelSizer.Add(label, flag=wx.ALIGN_CENTER_VERTICAL)
-        panelSizer.Add((3, -1))
+        panel_sizer.Add(label, flag=wx.ALIGN_CENTER_VERTICAL)
+        panel_sizer.Add((3, -1))
         self._scheduleChoice = wx.Choice(
-            schedulePanel,
+            schedule_panel,
             choices=[
                 _("previous planned start and/or due date"),
                 _("last completion date"),
@@ -692,48 +692,48 @@ class RecurrenceEntry(wx.Panel):
             # default
             size = self._scheduleChoice.GetSize()
             self._scheduleChoice.SetMinSize((size[0], size[1] + 1))
-        panelSizer.Add(self._scheduleChoice, flag=wx.ALIGN_CENTER_VERTICAL)
-        schedulePanel.SetSizerAndFit(panelSizer)
+        panel_sizer.Add(self._scheduleChoice, flag=wx.ALIGN_CENTER_VERTICAL)
+        schedule_panel.SetSizerAndFit(panel_sizer)
 
-        maxPanel = wx.Panel(self)
-        panelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        max_panel = wx.Panel(self)
+        panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        self._maxRecurrenceCheckBox = wx.CheckBox(maxPanel)
+        self._maxRecurrenceCheckBox = wx.CheckBox(max_panel)
         self._maxRecurrenceCheckBox.Bind(
             wx.EVT_CHECKBOX, self.onMaxRecurrenceChecked
         )
         self._maxRecurrenceCountEntry = widgets.SpinCtrl(
-            maxPanel, size=(120, -1), value=1, min=1
+            max_panel, size=(120, -1), value=1, min=1
         )
         self._maxRecurrenceCountEntry.Bind(
             wx.EVT_SPINCTRL, self.onRecurrenceEdited
         )
-        panelSizer.Add(
+        panel_sizer.Add(
             self._maxRecurrenceCheckBox, flag=wx.ALIGN_CENTER_VERTICAL
         )
-        panelSizer.Add(self.horizontalSpace)
-        panelSizer.Add(
-            wx.StaticText(maxPanel, label=_("Stop after")),
+        panel_sizer.Add(self.horizontalSpace)
+        panel_sizer.Add(
+            wx.StaticText(max_panel, label=_("Stop after")),
             flag=wx.ALIGN_CENTER_VERTICAL,
         )
-        panelSizer.Add(self.horizontalSpace)
-        panelSizer.Add(
+        panel_sizer.Add(self.horizontalSpace)
+        panel_sizer.Add(
             self._maxRecurrenceCountEntry, flag=wx.ALIGN_CENTER_VERTICAL
         )
-        panelSizer.Add(self.horizontalSpace)
-        panelSizer.Add(
-            wx.StaticText(maxPanel, label=_("recurrences")),
+        panel_sizer.Add(self.horizontalSpace)
+        panel_sizer.Add(
+            wx.StaticText(max_panel, label=_("recurrences")),
             flag=wx.ALIGN_CENTER_VERTICAL,
         )
-        maxPanel.SetSizerAndFit(panelSizer)
+        max_panel.SetSizerAndFit(panel_sizer)
 
         # Stop after date using DateTimeComboCtrl
-        stopPanel = wx.Panel(self)
-        panelSizer = wx.BoxSizer(wx.HORIZONTAL)
+        stop_panel = wx.Panel(self)
+        panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         # value=None means unchecked (no stop date); when user checks it, defaults to "now"
         self._recurrenceStopDateTimeCombo = widgets.DateTimeComboCtrl(
-            stopPanel,
+            stop_panel,
             value=None,  # unchecked by default
             hour_choices=get_suggested_hour_choices,
             minute_choices=get_suggested_minute_choices,
@@ -742,35 +742,35 @@ class RecurrenceEntry(wx.Panel):
         self._recurrenceStopDateTimeCombo.Bind(
             widgets.EVT_VALUE_CHANGED, self.onRecurrenceEdited
         )
-        panelSizer.Add(
+        panel_sizer.Add(
             self._recurrenceStopDateTimeCombo.GetCheckBox(),
             flag=wx.ALIGN_CENTER_VERTICAL,
         )
-        panelSizer.Add(self.horizontalSpace)
-        panelSizer.Add(
-            wx.StaticText(stopPanel, label=_("Stop after")),
+        panel_sizer.Add(self.horizontalSpace)
+        panel_sizer.Add(
+            wx.StaticText(stop_panel, label=_("Stop after")),
             flag=wx.ALIGN_CENTER_VERTICAL,
         )
-        panelSizer.Add(self.horizontalSpace)
-        panelSizer.Add(
+        panel_sizer.Add(self.horizontalSpace)
+        panel_sizer.Add(
             self._recurrenceStopDateTimeCombo.GetDateCtrl(),
             flag=wx.ALIGN_CENTER_VERTICAL,
         )
-        panelSizer.Add(self.horizontalSpace)
-        panelSizer.Add(
+        panel_sizer.Add(self.horizontalSpace)
+        panel_sizer.Add(
             self._recurrenceStopDateTimeCombo.GetTimeCtrl(),
             flag=wx.ALIGN_CENTER_VERTICAL,
         )
-        stopPanel.SetSizerAndFit(panelSizer)
+        stop_panel.SetSizerAndFit(panel_sizer)
 
         # Store sub-panels for external layout (DatesPage places them as
         # separate grid rows so they get the same spacing as other entries).
         self._subPanels = [
-            recurrenceFrequencyPanel,
+            recurrence_frequency_panel,
             self._weekdayPanel,
-            schedulePanel,
-            maxPanel,
-            stopPanel,
+            schedule_panel,
+            max_panel,
+            stop_panel,
         ]
         self.Hide()  # RecurrenceEntry itself is invisible; sub-panels are reparented
         self.SetValue(recurrence)
@@ -780,43 +780,45 @@ class RecurrenceEntry(wx.Panel):
         return list(self._subPanels)
 
     def updateRecurrenceLabel(self):
-        recurrenceDict = {
+        recurrence_dict = {
             0: _("period,"),
             1: _("day(s),"),
             2: _("week(s),"),
             3: _("month(s),"),
             4: _("year(s),"),
         }
-        recurrenceLabel = recurrenceDict[self._recurrencePeriodEntry.Selection]
-        self._recurrenceStaticText.SetLabel(recurrenceLabel)
+        recurrence_label = recurrence_dict[
+            self._recurrencePeriodEntry.Selection
+        ]
+        self._recurrenceStaticText.SetLabel(recurrence_label)
         self._recurrenceSameWeekdayCheckBox.Enable(
             self._recurrencePeriodEntry.Selection in (3, 4)
         )
         # Enable weekday checkboxes only when weekly is selected (index 2)
-        weeklySelected = self._recurrencePeriodEntry.Selection == 2
+        weekly_selected = self._recurrencePeriodEntry.Selection == 2
         for cb in self._weekdayCheckBoxes:
-            cb.Enable(weeklySelected)
+            cb.Enable(weekly_selected)
         self._recurrenceSizer.Layout()
 
     def onRecurrencePeriodEdited(self, event):
-        recurrenceOn = event.String != _("None")
-        self._maxRecurrenceCheckBox.Enable(recurrenceOn)
-        if recurrenceOn:
+        recurrence_on = event.String != _("None")
+        self._maxRecurrenceCheckBox.Enable(recurrence_on)
+        if recurrence_on:
             self._recurrenceStopDateTimeCombo.SetEditable()
         else:
             self._recurrenceStopDateTimeCombo.DeactivateValue()
             self._recurrenceStopDateTimeCombo.SetReadOnly()
-        self._recurrenceFrequencyEntry.Enable(recurrenceOn)
-        self._scheduleChoice.Enable(recurrenceOn)
+        self._recurrenceFrequencyEntry.Enable(recurrence_on)
+        self._scheduleChoice.Enable(recurrence_on)
         self._maxRecurrenceCountEntry.Enable(
-            recurrenceOn and self._maxRecurrenceCheckBox.IsChecked()
+            recurrence_on and self._maxRecurrenceCheckBox.IsChecked()
         )
         self.updateRecurrenceLabel()
         self.onRecurrenceEdited()
 
     def onMaxRecurrenceChecked(self, event):
-        maxRecurrenceOn = event.IsChecked()
-        self._maxRecurrenceCountEntry.Enable(maxRecurrenceOn)
+        max_recurrence_on = event.IsChecked()
+        self._maxRecurrenceCountEntry.Enable(max_recurrence_on)
         self.onRecurrenceEdited()
 
     def onRecurrenceEdited(self, event=None):  # pylint: disable=W0613
@@ -864,7 +866,7 @@ class RecurrenceEntry(wx.Panel):
         self.updateRecurrenceLabel()
 
     def GetValue(self):
-        recurrenceDict = {
+        recurrence_dict = {
             0: "",
             1: "daily",
             2: "weekly",
@@ -872,7 +874,7 @@ class RecurrenceEntry(wx.Panel):
             4: "yearly",
         }
         kwargs = dict(
-            unit=recurrenceDict[self._recurrencePeriodEntry.Selection],
+            unit=recurrence_dict[self._recurrencePeriodEntry.Selection],
             count=self._count,
         )
         if self._maxRecurrenceCheckBox.IsChecked():

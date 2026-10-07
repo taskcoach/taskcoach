@@ -24,6 +24,7 @@ import shutil
 import stat
 import tempfile
 import test, sys, os, configparser, io
+import wx
 import weakref
 from unittest import mock
 from taskcoachlib import config, meta
@@ -39,29 +40,29 @@ class SettingsTestCase(test.TestCase):
 
 
 class SettingsTest(SettingsTestCase):
-    def testDefaults(self):
+    def test_defaults(self):
         self.assertTrue(self.settings.has_section("view"))
         self.assertEqual(True, self.settings.get_typed("view", "statusbar"))
 
-    def testSet(self):
+    def test_set(self):
         self.settings.set_typed("view", "toolbar", (16, 16))
         self.assertEqual((16, 16), self.settings.get_typed("view", "toolbar"))
 
-    def testGetList_EmptyByDefault(self):
+    def test_get_list_empty_by_default(self):
         self.assertEqual([], self.settings.get_typed("file", "recentfiles"))
 
-    def testSetList_Empty(self):
+    def test_set_list_empty(self):
         self.settings.set_typed("file", "recentfiles", [])
         self.assertEqual([], self.settings.get_typed("file", "recentfiles"))
 
-    def testSetList_SimpleStrings(self):
+    def test_set_list_simple_strings(self):
         recentfiles = ["abc", r"C:\Documents And Settings\Whatever"]
         self.settings.set_typed("file", "recentfiles", recentfiles)
         self.assertEqual(
             recentfiles, self.settings.get_typed("file", "recentfiles")
         )
 
-    def testSetList_UnicodeStrings(self):
+    def test_set_list_unicode_strings(self):
         recentfiles = [
             "\u00fcmlaut",
             "\u03a3\u03bf\u03bc\u03b7 \u03c7\u03c1\u03b5\u03b5\u03ba",
@@ -71,7 +72,7 @@ class SettingsTest(SettingsTestCase):
             recentfiles, self.settings.get_typed("file", "recentfiles")
         )
 
-    def testGetNonExistingSettingFromSection1ReturnsDefault(self):
+    def test_get_non_existing_setting_from_section_1_returns_default(self):
         self.settings.add_section("effortviewer1")
         self.settings.set_typed(
             "effortviewer", "columnwidths", {"subject": 10}
@@ -83,7 +84,7 @@ class SettingsTest(SettingsTestCase):
             self.settings.get_typed("effortviewer1", "columnwidths"),
         )
 
-    def testGetNonExistingSettingFromSection2ReturnsDefault(self):
+    def test_get_non_existing_setting_from_section_2_returns_default(self):
         self.settings.add_section("effortviewer1")
         self.settings.add_section("effortviewer2")
         self.settings.set_typed(
@@ -96,17 +97,17 @@ class SettingsTest(SettingsTestCase):
             self.settings.get_typed("effortviewer2", "columnwidths"),
         )
 
-    def testGetNonExistingSettingFromSection2RaisesException(self):
+    def test_get_non_existing_setting_from_section_2_raises_exception(self):
         self.settings.add_section("effortviewer1")
         self.settings.add_section("effortviewer2")
         self.assertRaises(
             KeyError, self.settings.get_typed, "effortviewer2", "nonexisting"
         )
 
-    def testGetNonExistingSectionRaisesException(self):
+    def test_get_non_existing_section_raises_exception(self):
         self.assertRaises(KeyError, self.settings.get_typed, "bla", "bla")
 
-    def testAddSectionAndSkipOne(self):
+    def test_add_section_and_skip_one(self):
         self.settings.set_typed(
             "effortviewer", "columnwidths", {"subject": 10}
         )
@@ -154,14 +155,14 @@ class SettingsIOTest(SettingsTestCase):
         super().setUp()
         self.fakeFile = io.StringIO()
 
-    def testSave(self):
+    def test_save(self):
         self.settings.write(self.fakeFile)
         self.fakeFile.seek(0)
         self.assertEqual(
             "[%s]\n" % self.settings.sections()[0], self.fakeFile.readline()
         )
 
-    def testRead(self):
+    def test_read(self):
         self.fakeFile.write("[testing]\n")
         self.fakeFile.seek(0)
         self.settings.read_file(self.fakeFile)
@@ -173,7 +174,7 @@ class SettingsIOTest(SettingsTestCase):
         self.settings.write(self.fakeFile)
         self.assertIn("[syncml]\nverbose = 1\n", self.fakeFile.getvalue())
 
-    def testIOErrorWhileSaving(self):
+    def test_io_error_while_saving(self):
         def file_that_raises_ioerror(*args):  # pylint: disable=W0613,W0622
             raise IOError
 
@@ -184,7 +185,7 @@ class SettingsIOTest(SettingsTestCase):
         settings.save(showerror=showerror, file=file_that_raises_ioerror)
         self.assertTrue(self.showerror_args)
 
-    def testIOErrorWhileReading(self):
+    def test_io_error_while_reading(self):
         folder = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, folder)
         ini_file = os.path.join(folder, "TaskCoach.ini")
@@ -223,7 +224,7 @@ class SettingsIOTest(SettingsTestCase):
         self.assertTrue(os.path.exists(copy))
         self.assertEqual(copy, settings.get_typed("file", "lastfile"))
 
-    def testFixOldColumnValues(self):
+    def test_fix_old_column_values(self):
         section = "prerequisiteviewerintaskeditor1"
         self.fakeFile.write(
             "[%s]\ncolumns = ['dueDate']\ncolumnwidths = {'dueDate': 40}\n"
@@ -267,6 +268,17 @@ class SettingsIOTest(SettingsTestCase):
                 self.settings.has_option(editor, "size"),
             ),
         )
+
+    def test_the_removed_spoken_reminder_option_is_dropped(self):
+        self.settings.read_file(io.StringIO("[feature]\nsayreminder = True\n"))
+        self.assertFalse(self.settings.has_option("feature", "sayreminder"))
+
+    def test_the_removed_todo_txt_options_are_dropped(self):
+        self.settings.read_file(
+            io.StringIO("[file]\nautoimport = True\nautoexport = True\n")
+        )
+        self.assertFalse(self.settings.has_option("file", "autoimport"))
+        self.assertFalse(self.settings.has_option("file", "autoexport"))
 
     def test_the_titles_of_views_in_editors_are_dropped(self):
         # Never captioned or renamed: nothing reads them
@@ -343,12 +355,12 @@ class SettingsObservableTest(SettingsTestCase):
 
 
 class SpecificSettingsTest(SettingsTestCase):
-    def testDefaultWindowPosition(self):
+    def test_default_window_position(self):
         self.assertEqual(
             (-1, -1), self.settings.get_typed("window", "position")
         )
 
-    def testSetCurrentVersionAtSave(self):
+    def test_set_current_version_at_save(self):
         self.settings.set_typed("version", "current", "0.0")
         self.settings.save()
         self.assertEqual(
@@ -357,22 +369,24 @@ class SpecificSettingsTest(SettingsTestCase):
 
 
 class SettingsFileLocationTest(SettingsTestCase):
-    def testDefaultSetting(self):
+    def test_default_setting(self):
         self.assertEqual(
             False,
             self.settings.get_typed("file", "saveinifileinprogramdir"),
         )
 
-    def testPathWhenNotSavingIniFileInProgramDir(self):
+    def test_path_when_not_saving_ini_file_in_program_dir(self):
         self.assertNotEqual(sys.argv[0], self.settings.path())
 
-    def testPathWhenSavingIniFileInProgramDir(self):
+    def test_path_when_saving_ini_file_in_program_dir(self):
         self.settings.set_typed("file", "saveinifileinprogramdir", True)
         self.assertEqual(
             os.path.abspath(os.path.dirname(sys.argv[0])), self.settings.path()
         )
 
-    def testPathWhenSavingIniFileInProgramDirAndRunFromZipFile(self):
+    def test_path_when_saving_ini_file_in_program_dir_and_run_from_zip_file(
+        self,
+    ):
         self.settings.set_typed("file", "saveinifileinprogramdir", True)
         sys.argv.insert(0, os.path.join("d:", "TaskCoach", "library.zip"))
         self.assertEqual(
@@ -482,14 +496,14 @@ class RunFoldersTest(test.TestCase):
 
 
 class MinimumSettingsTest(SettingsTestCase):
-    def testAtLeastOneTaskTreeListViewer(self):
+    def test_at_least_one_task_tree_list_viewer(self):
         self.assertEqual(1, self.settings.get_typed("view", "taskviewercount"))
 
-    def testTwoTaskTreeListViewers(self):
+    def test_two_task_tree_list_viewers(self):
         self.settings.set_typed("view", "taskviewercount", 2)
         self.assertEqual(2, self.settings.get_typed("view", "taskviewercount"))
 
-    def testAtLeastOneTaskTreeListViewer_EvenWhenSetToZero(self):
+    def test_at_least_one_task_tree_list_viewer_even_when_set_to_zero(self):
         self.settings.set_typed("view", "taskviewercount", 0)
         self.assertEqual(1, self.settings.get_typed("view", "taskviewercount"))
 
@@ -502,25 +516,93 @@ class ApplicationOptionsTest(test.TestCase):
     def parse(self, *args):
         return self.parser.parse_args(list(args))[0]
 
-    def testUsage(self):
+    def test_usage(self):
         self.assertEqual("%prog [options] [.tsk file]", self.parser.usage)
 
-    def testLanguage(self):
+    def test_language(self):
         options = self.parse("-l", "nl")
         self.assertEqual("nl", options.language)
 
-    def testLanguageWhenNotChanged(self):
+    def test_language_when_not_changed(self):
         options = self.parse()
         self.assertEqual(None, options.language)
 
-    def testPoFile(self):
+    def test_po_file(self):
         options = self.parse("-p", "test.po")
         self.assertEqual("test.po", options.pofile)
 
-    def testIniFile(self):
+    def test_ini_file(self):
         options = self.parse("-i", "test.ini")
         self.assertEqual("test.ini", options.inifile)
 
-    def testProfile(self):
+    def test_profile(self):
         options = self.parse("--profile")
         self.assertTrue(options.profile)
+
+
+class SettingsWrittenWhileRunningTest(test.TestCase):
+    """While Task Coach runs, the settings file follows the changes, so
+    an end of the session that gives no notice loses none
+    (docs/SESSION_END.md)."""
+
+    def setUp(self):
+        super().setUp()
+        folder = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, folder)
+        self.ini = os.path.join(folder, "my.ini")
+        with open(self.ini, "w", encoding="utf-8") as ini:
+            ini.write("[file]\n")
+        self.settings = config.Settings(ini_file=self.ini)
+
+    def written(self):
+        with open(self.ini, encoding="utf-8") as ini:
+            return ini.read()
+
+    def test_a_change_is_announced(self):
+        changes = []
+        self.settings.notify_changes(lambda: changes.append(1))
+        self.settings.set_typed("view", "statusbar", False)
+        self.settings.set_typed("view", "statusbar", False)
+        self.assertEqual([1], changes)
+
+    def test_a_change_is_written(self):
+        self.settings.set_typed("view", "statusbar", False)
+        self.settings.save_if_changed()
+        self.assertIn("statusbar = False", self.written())
+
+    def test_a_file_named_without_folder_is_written(self):
+        # --ini=my.ini: in the folder Task Coach was started from
+        folder = os.path.dirname(self.ini)
+        self.addCleanup(os.chdir, os.getcwd())
+        os.chdir(folder)
+        settings = config.Settings(ini_file="my.ini")
+        settings.set_typed("view", "statusbar", False)
+        settings.save_if_changed()
+        self.assertIn("statusbar = False", self.written())
+
+    def test_only_a_change_is_written(self):
+        with mock.patch.object(os, "replace", wraps=os.replace) as replace:
+            self.settings.save_if_changed()
+            self.settings.save_if_changed()
+        self.assertEqual(1, replace.call_count)
+
+    def test_the_file_is_replaced_in_one_step_once_on_disk(self):
+        with mock.patch.object(
+            os, "fsync", wraps=os.fsync
+        ) as fsync, mock.patch.object(os, "remove", wraps=os.remove) as remove:
+            self.settings.save()
+        self.assertTrue(fsync.called)
+        self.assertNotIn(mock.call(self.ini), remove.call_args_list)
+
+    def test_a_failed_write_while_running_is_logged_not_shown(self):
+        with mock.patch.object(
+            os, "replace", side_effect=OSError("Disk full")
+        ), mock.patch.object(
+            config.settings, "log_step"
+        ) as log, mock.patch.object(
+            wx, "MessageBox"
+        ) as message_box:
+            self.settings.save_if_changed()
+        log.assert_called_once()
+        self.assertEqual("SETTINGS", log.call_args.kwargs["prefix"])
+        message_box.assert_not_called()

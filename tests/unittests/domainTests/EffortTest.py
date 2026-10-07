@@ -37,14 +37,14 @@ class EffortTest(test.TestCase, asserts.Mixin):
     def onEvent(self, event):
         self.events.append(event)
 
-    def testId(self):
+    def test_id(self):
         self.assertTrue(self.effort.id() is not None)
 
-    def testCreate(self):
+    def test_create(self):
         self.assertEqual(self.task, self.effort.task())
         self.assertEqual("", self.effort.description())
 
-    def testStr(self):
+    def test_str(self):
         self.assertEqual(
             "Effort(%s, %s, %s)"
             % (
@@ -55,7 +55,7 @@ class EffortTest(test.TestCase, asserts.Mixin):
             str(self.effort),
         )
 
-    def testDuration(self):
+    def test_duration(self):
         self.assertEqual(date.TimeDelta(days=1), self.effort.timeSpent())
 
     def test_foreground_color_is_the_task_color(self):
@@ -128,7 +128,7 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.effort.setStop(date.DateTime(2004, 1, 3))
         self.assertEqual([(date.TimeDelta(hours=48), self.task)], events)
 
-    def testNotificationForSetDescription(self):
+    def test_notification_for_set_description(self):
         patterns.Publisher().registerObserver(
             self.onEvent, eventType=effort.Effort.descriptionChangedEventType()
         )
@@ -169,32 +169,35 @@ class EffortTest(test.TestCase, asserts.Mixin):
         self.effort.setDuration(date.TimeDelta(hours=2))
         self.assertEqual([(2400.0, self.effort)], events)
 
-    def testDefaultStartAndStop(self):
-        effortPeriod = effort.Effort(self.task)
-        currentTime = date.DateTime.now()
-        now = lambda: currentTime
+    def test_default_start_and_stop(self):
+        effort_period = effort.Effort(self.task)
+        current_time = date.DateTime.now()
+
+        def now():
+            return current_time
+
         self.assertEqual(
-            now() - effortPeriod.getStart(), effortPeriod.timeSpent(now=now)
+            now() - effort_period.getStart(), effort_period.timeSpent(now=now)
         )
 
-    def testCopy(self):
-        copyEffort = self.effort.copy()
-        self.assertEqualEfforts(copyEffort, self.effort)
-        self.assertEqual(copyEffort.description(), self.effort.description())
+    def test_copy(self):
+        copy_effort = self.effort.copy()
+        self.assertEqualEfforts(copy_effort, self.effort)
+        self.assertEqual(copy_effort.description(), self.effort.description())
 
-    def testCopyHasDifferentId(self):
-        copyEffort = self.effort.copy()
-        self.assertNotEqual(copyEffort.id(), self.effort.id())
+    def test_copy_has_different_id(self):
+        copy_effort = self.effort.copy()
+        self.assertNotEqual(copy_effort.id(), self.effort.id())
 
-    def testDescription(self):
+    def test_description(self):
         self.effort.setDescription("description")
         self.assertEqual("description", self.effort.description())
 
-    def testDescription_Constructor(self):
-        newEffort = effort.Effort(self.task, description="description")
-        self.assertEqual("description", newEffort.description())
+    def test_description_constructor(self):
+        new_effort = effort.Effort(self.task, description="description")
+        self.assertEqual("description", new_effort.description())
 
-    def testSetStop_None(self):
+    def test_set_stop_none(self):
         self.effort.setStop()
         now = date.Now()
         self.assertTrue(
@@ -203,60 +206,60 @@ class EffortTest(test.TestCase, asserts.Mixin):
             < now + date.ONE_SECOND
         )
 
-    def testSetStop_Infinite(self):
+    def test_set_stop_infinite(self):
         self.effort.setStop(date.DateTime.max)
         self.assertEqual(None, self.effort.getStop())
 
-    def testSetStop_SpecificDateTime(self):
+    def test_set_stop_specific_date_time(self):
         self.effort.setStop(date.DateTime(2005, 1, 1))
         self.assertEqual(date.DateTime(2005, 1, 1), self.effort.getStop())
 
-    def testIsNotBeingTracked_(self):
+    def test_is_not_being_tracked_(self):
         self.assertFalse(self.effort.isBeingTracked())
 
-    def testIsBeingTracked(self):
+    def test_is_being_tracked(self):
         self.effort.setStop(date.DateTime.max)
         self.assertTrue(self.effort.isBeingTracked())
 
-    def testSetTaskToNewTaskWillAddItToNewTask(self):
+    def test_set_task_to_new_task_will_add_it_to_new_task(self):
         task2 = task.Task()
         self.effort.set_task(task2)
         self.assertEqual([self.effort], task2.efforts())
 
-    def testSetTaskToNewTaskWillRemoveItFromOldTask(self):
+    def test_set_task_to_new_task_will_remove_it_from_old_task(self):
         self.task.addEffort(self.effort)
         task2 = task.Task()
         self.effort.set_task(task2)
         self.assertEqual([self.effort], task2.efforts())
         self.assertFalse(self.effort in self.task.efforts())
 
-    def testSetTaskToOldTaskTwice(self):
+    def test_set_task_to_old_task_twice(self):
         self.task.addEffort(self.effort)
         self.effort.set_task(self.task)
         self.assertEqual([self.effort], self.task.efforts())
 
-    def testRevenueWithoutFee(self):
+    def test_revenue_without_fee(self):
         self.task.addEffort(self.effort)
         self.assertEqual(0, self.effort.revenue())
 
-    def testRevenue_HourlyFee(self):
+    def test_revenue_hourly_fee(self):
         self.task.set_hourly_fee(100)
         self.task.addEffort(self.effort)
         self.assertEqual(
             self.effort.timeSpent().hours() * 100, self.effort.revenue()
         )
 
-    def testRevenue_FixedFee_OneEffort(self):
+    def test_revenue_fixed_fee_one_effort(self):
         self.task.set_fixed_fee(1000)
         self.task.addEffort(self.effort)
         self.assertEqual(0, self.effort.revenue())
 
-    def testRevenue_FixedFee_OneSmallEffort(self):
+    def test_revenue_fixed_fee_one_small_effort(self):
         self.task.set_fixed_fee(1000)
         self.effort.setStop(self.effort.getStart())
         self.assertEqual(0, self.effort.revenue())
 
-    def testRevenue_FixedFee_TwoEfforts(self):
+    def test_revenue_fixed_fee_two_efforts(self):
         self.task.set_fixed_fee(1000)
         self.task.addEffort(self.effort)
         self.task.addEffort(
@@ -268,17 +271,17 @@ class EffortTest(test.TestCase, asserts.Mixin):
         )
         self.assertEqual(0, self.effort.revenue())
 
-    def testSubject(self):
+    def test_subject(self):
         self.assertEqual(self.task.subject(), self.effort.subject())
 
-    def testNoCategories(self):
+    def test_no_categories(self):
         self.assertEqual(self.task.categories(), self.effort.categories())
 
-    def testCategories(self):
+    def test_categories(self):
         self.task.addCategory(category.Category("C"))
         self.assertEqual(self.task.categories(), self.effort.categories())
 
-    def testModificationEventTypes(self):  # pylint: disable=E1003
+    def test_modification_event_types(self):  # pylint: disable=E1003
         self.assertEqual(
             super(effort.Effort, self.effort).modificationEventTypes()
             + [
@@ -300,16 +303,24 @@ class EffortWithoutTaskTest(test.TestCase):
     def onEvent(self, event):
         self.events.append(event)  # pragma: no cover
 
-    def testCreatingAnEffortWithoutTask(self):
+    def test_creating_an_effort_without_task(self):
         self.assertEqual(None, self.effort.task())
 
-    def testSettingTask(self):
+    def test_setting_task(self):
         self.effort.set_task(self.task)
         self.assertEqual(self.task, self.effort.task())
 
-    def testSettingTask_CausesNoNotification(self):
+    def test_setting_task_causes_no_notification(self):
         patterns.Publisher().registerObserver(
             self.onEvent, self.effort.taskChangedEventType()
         )
         self.effort.set_task(self.task)
         self.assertFalse(self.events)
+
+
+class TrackedEffortCopyTest(test.TestCase):
+    def test_a_copy_of_a_tracked_effort_is_stopped(self):
+        # It holds the time spent so far; one task tracked at a time
+        # (docs/EFFORTS.md, Tracking)
+        tracked = effort.Effort(task.Task(), date.DateTime(2026, 1, 1))
+        self.assertFalse(tracked.copy().isBeingTracked())

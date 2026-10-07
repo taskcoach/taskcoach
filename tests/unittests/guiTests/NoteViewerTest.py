@@ -50,13 +50,13 @@ class NoteViewerTest(test.wxTestCase):
     def firstItemIcon(self, column=0):
         return self.viewer.widget.GetItemImage(self.firstItem(), column=column)
 
-    def testLocalNoteViewerForItemWithoutNotes(self):
-        localViewer = gui.viewer.NoteViewer(
+    def test_local_note_viewer_for_item_without_notes(self):
+        local_viewer = gui.viewer.NoteViewer(
             self.frame,
             self.taskFile,
             notesToShow=note.NoteContainer(),
         )
-        self.assertFalse(localViewer.presentation())
+        self.assertFalse(local_viewer.presentation())
 
     def test_the_editor_pastes_every_note(self):
         owner = category.Category("owner")
@@ -71,26 +71,26 @@ class NoteViewerTest(test.wxTestCase):
             ["a", "b"], [each.subject() for each in owner.notes()]
         )
 
-    def testShowDescriptionColumn(self):
+    def test_show_description_column(self):
         self.note.setDescription("Description")
         self.viewer.showColumnByName("description")
         self.assertEqual("Description", self.firstItemText(column=1))
 
-    def testShowCategoriesColumn(self):
-        newCategory = category.Category("Category")
-        self.taskFile.categories().append(newCategory)
-        self.note.addCategory(newCategory)
+    def test_show_categories_column(self):
+        new_category = category.Category("Category")
+        self.taskFile.categories().append(new_category)
+        self.note.addCategory(new_category)
         self.viewer.showColumnByName("categories")
         self.assertEqual("Category", self.firstItemText(column=3))
 
-    def testShowAttachmentColumn(self):
+    def test_show_attachment_column(self):
         self.note.addAttachments(attachment.FileAttachment("whatever"))
         self.assertEqual(
             image_list_cache.get_index("nuvola_status_mail-attachment"),
             self.firstItemIcon(column=2),
         )
 
-    def testFilterOnAllCategories(self):
+    def test_filter_on_all_categories(self):
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
         self.note.addCategory(cat1)
@@ -101,7 +101,7 @@ class NoteViewerTest(test.wxTestCase):
         settings.set("view", "categoryfiltermatchall", True)
         self.assertEqual(0, self.viewer.size())
 
-    def testFilterOnAnyCategory(self):
+    def test_filter_on_any_category(self):
         cat1 = category.Category("category 1")
         cat2 = category.Category("category 2")
         self.note.addCategory(cat1)

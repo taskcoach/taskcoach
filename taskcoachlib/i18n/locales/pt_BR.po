@@ -8053,3 +8053,20 @@ msgstr "Esforço: %d selecionados, %d visíveis, %d no total. Tempo gasto: %s se
 #: taskcoachlib/gui/viewer/task.py
 msgid "Shift-click on a filter tool to see only tasks belonging to the corresponding status"
 msgstr "Clique com Shift em uma ferramenta de filtro para ver apenas as tarefas do status correspondente"
+
+#: taskcoachlib/mailer/thunderbird.py
+msgid ""
+"Thunderbird gave only this mail's address, not the mail, so Task Coach "
+"cannot read it.\n"
+"Save the mail as a file in Thunderbird, then drag the file onto the task."
+msgstr ""
+"O Thunderbird entregou apenas o endereço desta mensagem, não a mensagem, então o Task Coach não consegue lê-la.\n"
+"Salve a mensagem como arquivo no Thunderbird e depois arraste o arquivo para a tarefa."
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Opening %s..."
+msgstr "Abrindo %s..."
+
+#: taskcoachlib/gui/iocontroller.py
+msgid "Merging %s..."
+msgstr "Mesclando %s..."

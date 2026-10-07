@@ -25,7 +25,7 @@ echo ""
 check_dependencies() {
     local missing=""
 
-    for cmd in wget file patchelf; do
+    for cmd in wget file; do
         if ! command -v $cmd &> /dev/null; then
             missing="$missing $cmd"
         fi
@@ -35,7 +35,7 @@ check_dependencies() {
         echo "Missing dependencies:$missing"
         echo ""
         echo "Install them with:"
-        echo "  sudo apt-get install wget file patchelf"
+        echo "  sudo apt-get install wget file"
         exit 1
     fi
 
@@ -54,16 +54,16 @@ clean_build() {
 
 # Download Python AppImage base
 download_python_appimage() {
-    echo "Downloading Python 3.11 AppImage base..."
+    echo "Downloading Python 3.13 AppImage base..."
 
-    # Python 3.11 with manylinux_2_28 (glibc 2.28+, compatible with Debian
-    # Bookworm). Upstream replaces the assets of the python3.11 release tag
+    # Python 3.13 with manylinux_2_28 (glibc 2.28+, compatible with Debian
+    # Bookworm). Upstream replaces the assets of the python3.13 release tag
     # on every micro release, so the exact filename cannot be pinned;
-    # resolve the current cp311 manylinux_2_28 x86_64 asset instead.
+    # resolve the current cp313 manylinux_2_28 x86_64 asset instead.
     local url
     url=$(curl -sf \
-        https://api.github.com/repos/niess/python-appimage/releases/tags/python3.11 \
-        | grep -o 'https://[^"]*cp311-manylinux_2_28_x86_64\.AppImage' \
+        https://api.github.com/repos/niess/python-appimage/releases/tags/python3.13 \
+        | grep -o 'https://[^"]*cp313-manylinux_2_28_x86_64\.AppImage' \
         | head -1)
     if [ -z "$url" ]; then
         echo "ERROR: could not resolve Python AppImage download URL" >&2
@@ -102,7 +102,7 @@ install_dependencies() {
     $PYTHON -m pip install --upgrade pip setuptools wheel
 
     # Install wxPython from the pre-built wheel in the wxPython extras
-    # repository. Pin to the newest cp311 wheel available there and
+    # repository. Pin to the newest cp313 wheel available there and
     # refuse sdists: PyPI has no Linux wheels, so an unpinned install
     # resolves to the newest PyPI sdist (4.3+) and tries to compile
     # wxWidgets from source, which fails on the bundled AppImage Python
@@ -117,7 +117,6 @@ install_dependencies() {
     $PYTHON -m pip install \
         "chardet>=5.2.0" \
         "python-dateutil>=2.9.0" \
-        keyring \
         "squaremap>=1.0.5"
 
     cd "$PROJECT_ROOT"
@@ -178,6 +177,9 @@ copy_application() {
 create_apprun() {
     echo "Creating AppRun script..."
 
+    # python-appimage's AppRun is a link to its Python launcher: writing
+    # through it would replace the launcher
+    rm -f "$APPDIR/AppRun"
     cat > "$APPDIR/AppRun" << 'APPRUN_EOF'
 #!/bin/bash
 
@@ -189,17 +191,17 @@ APPDIR="$(dirname "$(readlink -f "$0")")"
 
 # In python-appimage (manylinux), the actual Python binary is in opt/
 # usr/bin/python3 is a wrapper script that breaks when PYTHONHOME is set
-PYTHON="$APPDIR/opt/python3.11/bin/python3.11"
+PYTHON="$APPDIR/opt/python3.13/bin/python3.13"
 
 # Set up Python environment
-export PYTHONHOME="$APPDIR/opt/python3.11"
-export PYTHONPATH="$APPDIR/usr/share/taskcoach:$APPDIR/opt/python3.11/lib/python3.11/site-packages:$PYTHONPATH"
+export PYTHONHOME="$APPDIR/opt/python3.13"
+export PYTHONPATH="$APPDIR/usr/share/taskcoach:$APPDIR/opt/python3.13/lib/python3.13/site-packages:$PYTHONPATH"
 
 # Set up library paths
-export LD_LIBRARY_PATH="$APPDIR/opt/python3.11/lib:$APPDIR/usr/lib:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$APPDIR/opt/python3.13/lib:$APPDIR/usr/lib:$LD_LIBRARY_PATH"
 
 # Set up PATH
-export PATH="$APPDIR/opt/python3.11/bin:$APPDIR/usr/bin:$PATH"
+export PATH="$APPDIR/opt/python3.13/bin:$APPDIR/usr/bin:$PATH"
 
 # Set up XDG paths for proper desktop integration
 export XDG_DATA_DIRS="$APPDIR/usr/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
@@ -301,12 +303,14 @@ build_appimage() {
     cd "$BUILD_DIR"
 
     # Get version from data.py (single source of truth)
-    VERSION=$(python3 -c "from taskcoachlib.meta.data import version_full; print(version_full)")
+    # From the project root: elsewhere an installed taskcoachlib answers
+    VERSION=$(cd "$PROJECT_ROOT" && python3 -c "from taskcoachlib.meta.data import version_full; print(version_full)")
 
     echo "Version: $VERSION"
 
     # Build AppImage
-    ARCH=x86_64 ./appimagetool "$APPDIR" "TaskCoach-${VERSION}-x86_64.AppImage"
+    # appimagetool is an AppImage: extracted, it runs without FUSE
+    ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool "$APPDIR" "TaskCoach-${VERSION}-x86_64.AppImage"
 
     # Move to project root
     mv "TaskCoach-${VERSION}-x86_64.AppImage" "$PROJECT_ROOT/"

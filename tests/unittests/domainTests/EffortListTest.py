@@ -42,17 +42,17 @@ class EffortListTest(test.TestCase):
             self.task, date.DateTime(2004, 1, 1), date.DateTime(2004, 1, 2)
         )
 
-    def testCreate(self):
+    def test_create(self):
         self.assertEqual(0, len(self.effortList))
 
     def onEvent(self, event):
         self.events.append(event)
 
-    def testNotificationAfterAppend(self):
+    def test_notification_after_append(self):
         self.task.addEffort(self.effort)
         self.assertEqual(self.effort, self.events[0].value())
 
-    def testAppend(self):
+    def test_append(self):
         self.task.addEffort(self.effort)
         self.assertEqual(1, len(self.effortList))
         self.assertTrue(self.effort in self.effortList)
@@ -63,63 +63,63 @@ class EffortListTest(test.TestCase):
         copy.addEffort(effort.Effort(copy, date.DateTime(2004, 1, 1)))
         self.assertEqual(0, len(self.effortList))
 
-    def testNotificationAfterRemove(self):
+    def test_notification_after_remove(self):
         self.task.addEffort(self.effort)
         self.task.removeEffort(self.effort)
         self.assertEqual(self.effort, self.events[0].value())
 
-    def testRemove(self):
+    def test_remove(self):
         self.task.addEffort(self.effort)
         self.task.removeEffort(self.effort)
         self.assertEqual(0, len(self.effortList))
 
-    def testAppendTaskWithEffort(self):
-        newTask = task.Task()
-        newTask.addEffort(effort.Effort(newTask))
-        self.taskList.append(newTask)
+    def test_append_task_with_effort(self):
+        new_task = task.Task()
+        new_task.addEffort(effort.Effort(new_task))
+        self.taskList.append(new_task)
         self.assertEqual(1, len(self.effortList))
 
-    def testCreateWhenTaskListIsFilled(self):
+    def test_create_when_task_list_is_filled(self):
         self.task.addEffort(self.effort)
-        effortList = effort.EffortList(task.TaskList([self.task]))
-        self.assertEqual(1, len(effortList))
+        effort_list = effort.EffortList(task.TaskList([self.task]))
+        self.assertEqual(1, len(effort_list))
 
-    def testAddEffortToChild(self):
+    def test_add_effort_to_child(self):
         child = task.Task(parent=self.task)
         self.taskList.append(child)
         child.addEffort(effort.Effort(child))
         self.assertEqual(1, len(self.effortList))
 
-    def testMaxDateTime(self):
+    def test_max_date_time(self):
         self.assertEqual(None, self.effortList.maxDateTime())
 
-    def testMaxDateTime_OneEffort(self):
+    def test_max_date_time_one_effort(self):
         self.task.addEffort(self.effort)
         self.assertEqual(self.effort.getStop(), self.effortList.maxDateTime())
 
-    def testMaxDateTime_OneTrackingEffort(self):
+    def test_max_date_time_one_tracking_effort(self):
         self.task.addEffort(effort.Effort(self.task))
         self.assertEqual(None, self.effortList.maxDateTime())
 
-    def testMaxDateTime_TwoEfforts(self):
+    def test_max_date_time_two_efforts(self):
         self.task.addEffort(self.effort)
         now = date.DateTime.now()
         self.task.addEffort(effort.Effort(self.task, None, now))
         self.assertEqual(now, self.effortList.maxDateTime())
 
-    def testNrTracking(self):
+    def test_nr_tracking(self):
         self.assertEqual(0, self.effortList.nr_being_tracked())
 
-    def testOriginalLength(self):
+    def test_original_length(self):
         self.assertEqual(0, self.effortList.original_length())
 
-    def testRemoveItems(self):
+    def test_remove_items(self):
         self.task.addEffort(self.effort)
         self.effortList.removeItems([self.effort])
         self.assertEqual(0, len(self.effortList))
         self.assertEqual(0, len(self.task.efforts()))
 
-    def testRemoveAllItems(self):
+    def test_remove_all_items(self):
         self.task.addEffort(self.effort)
         effort2 = effort.Effort(
             self.task, date.DateTime(2005, 1, 1), date.DateTime(2005, 1, 2)
@@ -129,33 +129,33 @@ class EffortListTest(test.TestCase):
         self.assertEqual(0, len(self.effortList))
         self.assertEqual(0, len(self.task.efforts()))
 
-    def testExtend(self):
+    def test_extend(self):
         self.effortList.extend([self.effort])
         self.assertEqual(1, len(self.effortList))
         self.assertTrue(self.effort in self.effortList)
         self.assertEqual(1, len(self.task.efforts()))
         self.assertEqual(self.effort, self.task.efforts()[0])
 
-    def testRemoveTaskWithEffort(self):
+    def test_remove_task_with_effort(self):
         self.task.addEffort(self.effort)
-        anotherTask = task.Task("Another task without effort")
-        self.taskList.append(anotherTask)
+        another_task = task.Task("Another task without effort")
+        self.taskList.append(another_task)
         self.assertEqual(1, len(self.effortList))
         self.taskList.remove(self.task)
         self.assertEqual(0, len(self.effortList))
 
-    def testRemoveTaskWithoutEffort(self):
+    def test_remove_task_without_effort(self):
         self.task.addEffort(self.effort)
-        anotherTask = task.Task("Another task without effort")
-        self.taskList.append(anotherTask)
+        another_task = task.Task("Another task without effort")
+        self.taskList.append(another_task)
         self.assertEqual(1, len(self.effortList))
-        self.taskList.remove(anotherTask)
+        self.taskList.remove(another_task)
         self.assertEqual(1, len(self.effortList))
 
-    def testChangeTask(self):
+    def test_change_task(self):
         self.task.addEffort(self.effort)
-        anotherTask = task.Task("Another task without effort")
-        self.taskList.append(anotherTask)
+        another_task = task.Task("Another task without effort")
+        self.taskList.append(another_task)
         self.assertEqual(1, len(self.effortList))
-        self.effort.set_task(anotherTask)
+        self.effort.set_task(another_task)
         self.assertEqual(1, len(self.effortList))

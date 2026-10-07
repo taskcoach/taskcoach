@@ -23,6 +23,7 @@ from taskcoachlib.gui.icons.icon_library import (
     NOTIFICATION_ICON_SIZE,
 )
 from taskcoachlib.i18n import _
+from taskcoachlib.tools import wxhelper
 from wx.lib import sized_controls
 import wx
 
@@ -116,7 +117,7 @@ class TipDialog(sized_controls.SizedDialog):
 
         self.SetButtonSizer(button_sizer)
         self.Fit()
-        self.CentreOnParent()
+        wxhelper.centre_on_parent(self)
 
         self.Bind(wx.EVT_CLOSE, self.on_close)
 
@@ -140,10 +141,11 @@ class TipDialog(sized_controls.SizedDialog):
 
     def on_close(self, event):
         """When users close the dialog, remember whether they want to
-        see tips and what the last displayed tip was."""
-        event.Skip()
+        see tips and what the last displayed tip was. Destroyed: a
+        hidden one stayed until the program ended."""
         settings.window.tips = self.__check.GetValue()
         settings.window.tipsindex = self.__tip_provider.GetCurrentTip()
+        self.Destroy()
 
 
 def show_tips(parent):

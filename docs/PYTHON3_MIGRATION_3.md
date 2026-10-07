@@ -393,7 +393,8 @@ agwStyle = (
 )
 ```
 
-**Fix 5: Throttle sash resize updates** (frame.py)
+**Fix 5: Throttle sash resize updates** (frame.py). It never ran,
+and removed 2026-10-06: [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md#divider-drags).
 
 AUI's `LIVE_RESIZE` mode calls `Update()` on every mouse move, which triggers expensive repaints (50-190ms). Added throttling to limit updates to ~30fps:
 

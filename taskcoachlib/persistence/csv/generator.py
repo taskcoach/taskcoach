@@ -23,12 +23,12 @@ import io
 
 
 def extendedWithAncestors(selection):
-    extendedSelection = selection[:]
+    extended_selection = selection[:]
     for item in selection:
         for ancestor in item.ancestors():
-            if ancestor not in extendedSelection:
-                extendedSelection.append(ancestor)
-    return extendedSelection
+            if ancestor not in extended_selection:
+                extended_selection.append(ancestor)
+    return extended_selection
 
 
 class RowBuilder(object):
@@ -140,12 +140,12 @@ def viewer2csv(
     indent the first value (typically the subject of the item) to
     indicate the depth of the item in the tree."""
 
-    isTree = viewer.is_tree_viewer()
+    is_tree = viewer.is_tree_viewer()
     columns = columns or viewer.visibleColumns()
-    rowBuilder = RowBuilder(columns, isTree, separateDateAndTimeColumns)
+    row_builder = RowBuilder(columns, is_tree, separateDateAndTimeColumns)
     items = viewer.visible_items()
     if selectionOnly:
         items = [item for item in items if viewer.isselected(item)]
-        if isTree:
+        if is_tree:
             items = extendedWithAncestors(items)
-    return rowBuilder.rows(items)
+    return row_builder.rows(items)

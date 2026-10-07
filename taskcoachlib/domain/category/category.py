@@ -72,7 +72,7 @@ class Category(
         # Note: Effective appearance is computed by the master loop
 
     @classmethod
-    def filterChangedEventType(class_):
+    def filterChangedEventType(cls):
         """Event type to notify observers that the items belonging to
         this category are filtered or not."""
         return "category.filter"
@@ -88,25 +88,25 @@ class Category(
         return "category.member.removed"
 
     @classmethod
-    def exclusiveSubcategoriesChangedEventType(class_):
+    def exclusiveSubcategoriesChangedEventType(cls):
         """Event type to notify observers that subcategories have become
         exclusive (or vice versa)."""
         return "category.exclusiveSubcategories"
 
     @classmethod
-    def stylePriorityChangedEventType(class_):
+    def stylePriorityChangedEventType(cls):
         """Event type to notify observers that style priority has changed."""
         return "category.stylePriority"
 
     @classmethod
-    def modificationEventTypes(class_):
-        eventTypes = super(Category, class_).modificationEventTypes()
-        return eventTypes + [
-            class_.filterChangedEventType(),
-            class_.member_added_event_type(),
-            class_.member_removed_event_type(),
-            class_.exclusiveSubcategoriesChangedEventType(),
-            class_.stylePriorityChangedEventType(),
+    def modificationEventTypes(cls):
+        event_types = super(Category, cls).modificationEventTypes()
+        return event_types + [
+            cls.filterChangedEventType(),
+            cls.member_added_event_type(),
+            cls.member_removed_event_type(),
+            cls.exclusiveSubcategoriesChangedEventType(),
+            cls.stylePriorityChangedEventType(),
         ]
 
     def __getcopystate__(self):

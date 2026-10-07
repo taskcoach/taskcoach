@@ -65,9 +65,9 @@ class BalloonTip(wx.Frame):
                 3,
             )
         if title is not None:
-            titleCtrl = wx.StaticText(self._interior, wx.ID_ANY, title)
-            hsizer.Add(titleCtrl, 1, wx.ALL | wx.ALIGN_CENTRE, 3)
-            titleCtrl.Bind(wx.EVT_LEFT_DOWN, self.DoClose)
+            title_ctrl = wx.StaticText(self._interior, wx.ID_ANY, title)
+            hsizer.Add(title_ctrl, 1, wx.ALL | wx.ALIGN_CENTRE, 3)
+            title_ctrl.Bind(wx.EVT_LEFT_DOWN, self.DoClose)
         vsizer.Add(hsizer, 0, wx.EXPAND)
         if message is not None:
             msg = wx.StaticText(self._interior, wx.ID_ANY, message)
@@ -137,8 +137,8 @@ class BalloonTip(wx.Frame):
         else:
             tx, ty, tw, th = self._get_rect()
         tx, ty = self._target.ClientToScreen(wx.Point(tx, ty))
-        dpyIndex = max(0, wx.Display.GetFromPoint(wx.Point(tx, ty)) or 0)
-        rect = wx.Display(dpyIndex).GetClientArea()
+        dpy_index = max(0, wx.Display.GetFromPoint(wx.Point(tx, ty)) or 0)
+        rect = wx.Display(dpy_index).GetClientArea()
 
         x = max(
             rect.GetLeft(), min(rect.GetRight() - w, int(tx + tw / 2 - w / 2))
@@ -150,17 +150,17 @@ class BalloonTip(wx.Frame):
             direction = "top"
 
         mask = wx.Bitmap(w, h)
-        memDC = wx.MemoryDC()
-        memDC.SelectObject(mask)
+        mem_dc = wx.MemoryDC()
+        mem_dc.SelectObject(mask)
         try:
-            memDC.SetBrush(wx.BLACK_BRUSH)
-            memDC.SetPen(wx.BLACK_PEN)
-            memDC.DrawRectangle(0, 0, w, h)
+            mem_dc.SetBrush(wx.BLACK_BRUSH)
+            mem_dc.SetPen(wx.BLACK_PEN)
+            mem_dc.DrawRectangle(0, 0, w, h)
 
-            memDC.SetBrush(wx.WHITE_BRUSH)
-            memDC.SetPen(wx.WHITE_PEN)
+            mem_dc.SetBrush(wx.WHITE_BRUSH)
+            mem_dc.SetPen(wx.WHITE_PEN)
             if direction == "bottom":
-                memDC.DrawPolygon(
+                mem_dc.DrawPolygon(
                     [
                         (0, 0),
                         (w, 0),
@@ -178,7 +178,7 @@ class BalloonTip(wx.Frame):
                     ]
                 )
             else:
-                memDC.DrawPolygon(
+                mem_dc.DrawPolygon(
                     [
                         (0, self.ARROWSIZE),
                         (
@@ -197,7 +197,7 @@ class BalloonTip(wx.Frame):
                 )
             self._sizer.SetDirection(direction)
         finally:
-            memDC.SelectObject(wx.NullBitmap)
+            mem_dc.SelectObject(wx.NullBitmap)
         self.SetSize(x, y, w, h)
         self.SetShape(wx.Region(mask, wx.Colour(0, 0, 0)))
         self.Layout()
@@ -229,8 +229,15 @@ class BalloonTipManager(object):
     ):
         """Schedules a tip. Extra keyword arguments will be passed to
         L{on_balloon_tip_show} and L{on_balloon_tip_closed}."""
-        for eTarget, eMessage, eTitle, eBitmap, eGetRect, eArgs in self.__tips:
-            if (eTitle, eMessage) == (title, message):
+        for (
+            e_target,
+            e_message,
+            e_title,
+            e_bitmap,
+            e_get_rect,
+            e_args,
+        ) in self.__tips:
+            if (e_title, e_message) == (title, message):
                 return
         self.__tips.append((target, message, title, bitmap, get_rect, kwargs))
         self.__Try()

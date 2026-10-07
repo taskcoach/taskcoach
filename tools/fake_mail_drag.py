@@ -8,11 +8,7 @@ attachment list. docs/EMAIL_ATTACHMENTS.md, The Drop, has the sources;
 tests/unittests/widgetTests/MailDropTest.py checks what Task Coach does
 with each.
 
-    python3 tools/fake_mail_drag.py [--profile]
-
---profile makes a Thunderbird profile holding the dragged messages, for
-the drags that give a message's URI (Thunderbird on Linux X11, Windows,
-macOS), and prints how to start Task Coach so it reads that profile.
+    python3 tools/fake_mail_drag.py
 
 What a wx drag source cannot make is left out: KMail's text/uri-list
 of akonadi: links, Outlook's FileContents (IStorage), file promises on
@@ -83,19 +79,20 @@ class Scenarios:
     """What each program drags: (label, system, a function giving the
     data objects in the program's order)."""
 
-    def __init__(self, folder, profile):
+    def __init__(self, folder):
         self.folder = folder  # Removed at exit
         self.temp = tempfile.gettempdir()
-        self.profile = profile
 
     def __temp(self, *parts):
         return os.path.join(
             self.temp, "fake-mail-drag-" + str(os.getpid()), *parts
         )
 
-    def uri(self, index):
+    @staticmethod
+    def uri(index):
+        # The number is a key into Thunderbird's own index
         return "mailbox-message://nobody@Local%%20Folders/Inbox#%d" % (
-            self.profile.offsets[index] if self.profile else index
+            index + 1
         )
 
     def all(self):
@@ -104,6 +101,11 @@ class Scenarios:
             ("Evolution, 2 mails (Linux)", "linux", self.evolution_two),
             ("Evolution Flatpak (Linux)", "linux", self.evolution_flatpak),
             ("Thunderbird, X11 (Linux)", "linux", self.thunderbird_x11),
+            (
+                "Thunderbird, IMAP, X11 (Linux)",
+                "linux",
+                self.thunderbird_imap_x11,
+            ),
             (
                 "Thunderbird, Wayland or 2 mails (Linux)",
                 "linux",
@@ -197,6 +199,13 @@ class Scenarios:
             self.files(eml),
         ]
 
+    def thunderbird_imap_x11(self):
+        uri = "imap-message://alice%40example.com@imap.example.com/INBOX#77"
+        eml = write(
+            self.__temp("dnd_file", "Quote.eml"), mail(*MAILS[0], crlf=True)
+        )
+        return [self.text(uri), self.files(eml)]
+
     def thunderbird_files(self):
         return [
             self.custom("application/x-moz-internal-item-list", b""),
@@ -239,10 +248,8 @@ class Scenarios:
         return [self.text(self.uri(0) + self.uri(1))]
 
     def thunderbird_macos(self):
-        url = "mailbox://%s?number=%d" % (
-            self.profile.inbox if self.profile else "/Inbox",
-            self.profile.offsets[0] if self.profile else 0,
-        )
+        url = "mailbox:///Users/alice/Library/Thunderbird/Profiles/p/Mail/"
+        url += "Local%20Folders/Inbox?number=1"
         return [
             self.text(self.uri(0)),
             self.custom("public.url", url.encode()),
@@ -260,33 +267,6 @@ class Scenarios:
                 )
             )
         ]
-
-
-class Profile:
-    """A Thunderbird profile whose Local Folders Inbox holds the
-    mails."""
-
-    def __init__(self, home):
-        profile = os.path.join(home, ".thunderbird", "fake.default")
-        folder = os.path.join(profile, "Mail", "Local Folders")
-        write(
-            os.path.join(home, ".thunderbird", "profiles.ini"),
-            b"[Profile0]\nName=default\nIsRelative=1\n"
-            b"Path=fake.default\nDefault=1\n",
-        )
-        write(
-            os.path.join(profile, "prefs.js"),
-            b'user_pref("mail.server.server1.userName", "nobody");\n'
-            b'user_pref("mail.server.server1.hostname", "Local Folders");\n'
-            b'user_pref("mail.server.server1.directory-rel", '
-            b'"[ProfD]Mail/Local Folders");\n',
-        )
-        self.inbox = os.path.join(folder, "Inbox")
-        data, self.offsets = b"", []
-        for each in MAILS:
-            self.offsets.append(len(data))
-            data += b"From - Tue Sep 29 18:05:00 2026\n" + mail(*each) + b"\n"
-        write(self.inbox, data)
 
 
 class Window(wx.Frame):
@@ -332,24 +312,15 @@ class Wake(wx.Timer):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument(
-        "--profile", action="store_true", help="make a Thunderbird profile"
-    )
-    arguments = parser.parse_args()
+    argparse.ArgumentParser(description=__doc__.split("\n\n")[0]).parse_args()
     # Outside the system temporary folder, as Flatpak and Claws Mail
     # keep their own
     folder = tempfile.mkdtemp(
         prefix="fake-mail-drag-", dir=os.path.expanduser("~/.cache")
     )
     try:
-        profile = None
-        if arguments.profile:
-            home = os.path.join(folder, "home")
-            profile = Profile(home)
-            print("Start Task Coach with HOME=%s to read this profile" % home)
         app = wx.App(False)
-        Window(Scenarios(folder, profile)).Show()
+        Window(Scenarios(folder)).Show()
         # Ctrl+C or a kill ends the loop, so the files are removed too;
         # the timer lets Python see the signal while wx waits
         for number in (signal.SIGINT, signal.SIGTERM):

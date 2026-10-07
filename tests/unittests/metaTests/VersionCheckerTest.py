@@ -66,20 +66,20 @@ class VersionCheckerTest(test.TestCase):
         self.checkVersion(version, retrievalException, parseException)
         self.assertEqual(version, settings.get("version", "notified"))
 
-    def testLatestVersionIsNewerThanLastVersionNotified(self):
+    def test_latest_version_is_newer_than_last_version_notified(self):
         self.assertLastVersionNotified("99.99.99")
 
-    def testLatestVersionEqualsLastVersionNotified(self):
+    def test_latest_version_equals_last_version_notified(self):
         self.assertLastVersionNotified(meta.data.version_full)
 
     def test_error_while_asking_github(self):
         import urllib.error
 
-        retrievalException = urllib.error.HTTPError(
+        retrieval_exception = urllib.error.HTTPError(
             None, None, None, None, None
         )
         self.assertLastVersionNotified(
-            meta.data.version_full, retrievalException
+            meta.data.version_full, retrieval_exception
         )
 
     def test_unreadable_answer(self):
@@ -87,12 +87,14 @@ class VersionCheckerTest(test.TestCase):
             meta.data.version_full, parseException=ValueError
         )
 
-    def testDontNotifyWhenCurrentVersionIsNewerThanLastVersionNotified(self):
+    def test_dont_notify_when_running_newer_than_last_notified(
+        self,
+    ):
         settings.set("version", "notified", "0.0")
         checker = self.checkVersion(meta.data.version_full)
         self.assertFalse(checker.userNotified)
 
-    def test9IsNotNewerThan10(self):
+    def test_9_is_not_newer_than_10(self):
         current_version = meta.data.version_full
         meta.data.version_full = "0.72.10"
         settings.set("version", "notified", "0.72.8")
@@ -108,7 +110,7 @@ class VersionCheckerTest(test.TestCase):
         answer = io.BytesIO(b'{"tag_name": "v2.0.2.26", "name": "x"}')
         self.assertEqual("2.0.2.26", meta.VersionChecker.parse_release(answer))
 
-    def testShowDialog(self):
+    def test_show_dialog(self):
         class DummyDialog(object):
             def __init__(self, *args, **kwargs):  # pylint: disable=W0613
                 self.shown = False

@@ -211,13 +211,14 @@ class EffortViewer(
     def _refresh(self, clear=False):
         if clear:
             self.__domain_objects_to_view = None
+        # Before the rows change: deselecting asks wx for the row's
+        # text, which the new presentation may not have (P232)
+        self.clear_selection()
         self.set_presentation(
             self.create_sorter(self.createFilter(self.domainObjectsToView()))
         )
         self.second_refresher.update_presentation()
         self.register_presentation_observers()
-        # Clear the selection to remove the cached selection
-        self.clear_selection()
         # If the widget is auto-resizing columns, turn it off temporarily to
         # make removing/adding columns faster
         auto_resizing = self.widget.IsAutoResizing()
@@ -243,10 +244,10 @@ class EffortViewer(
         per week, or per month."""
         aggregation = self.options.aggregation
         category_filter = super().createFilter(taskList)
-        searchFilter = filter.SearchFilter(
+        search_filter = filter.SearchFilter(
             self.createAggregator(category_filter, aggregation)
         )
-        return searchFilter
+        return search_filter
 
     def createAggregator(self, taskList, aggregation):
         """Return an instance of a class that aggregates the effort records
@@ -264,32 +265,36 @@ class EffortViewer(
         return aggregator
 
     def create_widget(self):
-        imageList = self.createImageList()  # Has side-effects
-        self._columns = self._createColumns()  # pylint: disable=W0201
-        itemPopupMenu = taskcoachlib.gui.menu.EffortPopupMenu(
+        image_list = self.createImageList()  # Has side-effects
+        # pylint: disable=W0201
+        self._columns = self.ordered_columns(self._createColumns())
+        item_popup_menu = taskcoachlib.gui.menu.EffortPopupMenu(
             self.parent,
             self.taskFile.tasks(),
             self.taskFile.efforts(),
             self,
         )
-        columnPopupMenu = taskcoachlib.gui.menu.EffortViewerColumnPopupMenu(
+        column_popup_menu = taskcoachlib.gui.menu.EffortViewerColumnPopupMenu(
             self
         )
-        self._popupMenus.extend([itemPopupMenu, columnPopupMenu])
+        self._popupMenus.extend([item_popup_menu, column_popup_menu])
         widget = widgets.VirtualListCtrl(
             self,
             self.columns(),
             self.onSelect,
             uicommand.Edit(viewer=self),
-            itemPopupMenu,
-            columnPopupMenu,
+            item_popup_menu,
+            column_popup_menu,
             resizeableColumn=1,
             **self.widgetCreationKeywordArguments()
         )
         widget.SetImageList(
-            imageList, wx.IMAGE_LIST_SMALL
+            image_list, wx.IMAGE_LIST_SMALL
         )  # pylint: disable=E1101
         return widget
+
+    def fill_column_name(self):
+        return "task"
 
     def _createColumns(self):
         # pylint: disable=W0142
@@ -299,14 +304,20 @@ class EffortViewer(
             [
                 widgets.Column(
                     name,
-                    columnHeader,
-                    eventType,
-                    renderCallback=renderCallback,
-                    sortCallback=sortCallback,
+                    column_header,
+                    event_type,
+                    renderCallback=render_callback,
+                    sortCallback=sort_callback,
                     width=self.getColumnWidth(name),
                     **kwargs
                 )
-                for name, columnHeader, eventType, renderCallback, sortCallback in [
+                for (
+                    name,
+                    column_header,
+                    event_type,
+                    render_callback,
+                    sort_callback,
+                ) in [
                     (
                         "period",
                         _("Period"),
@@ -344,14 +355,14 @@ class EffortViewer(
             + [
                 widgets.Column(
                     name,
-                    columnHeader,
-                    eventType,
+                    column_header,
+                    event_type,
                     width=self.getColumnWidth(name),
-                    renderCallback=renderCallback,
+                    renderCallback=render_callback,
                     alignment=wx.LIST_FORMAT_RIGHT,
                     **kwargs
                 )
-                for name, columnHeader, eventType, renderCallback in [
+                for name, column_header, event_type, render_callback in [
                     (
                         "timeSpent",
                         _("Time spent"),
@@ -381,14 +392,14 @@ class EffortViewer(
             + [
                 widgets.Column(
                     name,
-                    columnHeader,
-                    eventType,
-                    renderCallback=renderCallback,
+                    column_header,
+                    event_type,
+                    renderCallback=render_callback,
                     alignment=wx.LIST_FORMAT_RIGHT,
                     width=self.getColumnWidth(name),
                     **kwargs
                 )
-                for name, columnHeader, eventType, renderCallback in [
+                for name, column_header, event_type, render_callback in [
                     (
                         "monday",
                         _("Monday"),
@@ -499,7 +510,7 @@ class EffortViewer(
     def getColumnUICommands(self):
         # Create new UI commands every time since the UI commands depend on the
         # aggregation mode
-        columnUICommands = [
+        column_ui_commands = [
             uicommand.ToggleAutoColumnResizing(viewer=self),
             uicommand.Separator(),
             uicommand.ViewColumn(
@@ -528,7 +539,7 @@ class EffortViewer(
             ),
         ]
         if self.aggregation != "details":
-            columnUICommands.insert(
+            column_ui_commands.insert(
                 5,
                 uicommand.ViewColumn(
                     menu_text=_("&Total time spent"),
@@ -537,7 +548,7 @@ class EffortViewer(
                     viewer=self,
                 ),
             )
-            columnUICommands.insert(
+            column_ui_commands.insert(
                 7,
                 uicommand.ViewColumn(
                     menu_text=_("&Total revenue"),
@@ -547,7 +558,7 @@ class EffortViewer(
                 ),
             )
         if self.aggregation == "week":
-            columnUICommands.append(
+            column_ui_commands.append(
                 uicommand.ViewColumns(
                     menu_text=_("Effort per weekday"),
                     help_text=_("Show/hide time spent per weekday columns"),
@@ -563,7 +574,7 @@ class EffortViewer(
                     viewer=self,
                 )
             )
-        columnUICommands.append(
+        column_ui_commands.append(
             uicommand.ViewColumn(
                 menu_text=_("&ID"),
                 help_text=_("Show/hide ID column"),
@@ -571,7 +582,7 @@ class EffortViewer(
                 viewer=self,
             )
         )
-        return columnUICommands
+        return column_ui_commands
 
     def createCreationToolBarUICommands(self):
         return (
@@ -662,9 +673,9 @@ class EffortViewer(
         selection = super().curselection()
         if self.aggregation != "details":
             selection = [
-                anEffort
-                for compositeEffort in selection
-                for anEffort in compositeEffort
+                an_effort
+                for composite_effort in selection
+                for an_effort in composite_effort
             ]
         return selection
 
@@ -715,16 +726,16 @@ class EffortViewer(
         return status1, status2
 
     def newItemDialog(self, *args, **kwargs):
-        selectedTasks = kwargs.get("selectedTasks", [])
+        selected_tasks = kwargs.get("selectedTasks", [])
         icon_id = kwargs.get("icon_id", "nuvola_actions_document-new")
-        if not selectedTasks:
-            subjectDecoratedTaskList = [
+        if not selected_tasks:
+            subject_decorated_task_list = [
                 (task.subject(recursive=True), task)
                 for task in self.tasksToShowEffortFor()
             ]
-            subjectDecoratedTaskList.sort()  # Sort by subject
-            selectedTasks = [subjectDecoratedTaskList[0][1]]
-        return super().newItemDialog(selectedTasks, icon_id=icon_id)
+            subject_decorated_task_list.sort()  # Sort by subject
+            selected_tasks = [subject_decorated_task_list[0][1]]
+        return super().newItemDialog(selected_tasks, icon_id=icon_id)
 
     def itemEditorClass(self):
         return dialog.editor.EffortEditor
@@ -794,7 +805,7 @@ class EffortViewer(
         if isinstance(an_effort, effort.BaseCompositeEffort):
             time_spent = an_effort.totalTimeSpent(
                 rounding=self.__round_precision(),
-                roundUp=self.__always_round_up(),
+                round_up=self.__always_round_up(),
             )
         else:
             time_spent = an_effort.timeSpent()
@@ -816,7 +827,7 @@ class EffortViewer(
         total_time_spent = an_effort.totalTimeSpent(
             recursive=True,
             rounding=self.__round_precision(),
-            roundUp=self.__always_round_up(),
+            round_up=self.__always_round_up(),
             consolidate=self.__consolidate_efforts_per_task(),
         )
         return render.time_spent(
@@ -833,7 +844,7 @@ class EffortViewer(
             time_spent = an_effort.totalTimeSpentForDay(
                 day_offset,
                 rounding=self.__round_precision(),
-                roundUp=self.__always_round_up(),
+                round_up=self.__always_round_up(),
                 consolidate=self.__consolidate_efforts_per_task(),
             )
         else:
@@ -848,35 +859,36 @@ class EffortViewer(
         result = super().getItemTooltipData(item)
         if isinstance(item, effort.CompositeEffort) and len(item):
             details = [_("Details:")]
-            for theEffort in item:
+            for the_effort in item:
                 details.append(
                     "%s (%s)"
                     % (
                         render.dateTimePeriod(
-                            theEffort.getStart(),
-                            theEffort.getStop(),
+                            the_effort.getStart(),
+                            the_effort.getStop(),
                             human_readable=True,
                         ),
-                        self.__render_time_spent(theEffort),
+                        self.__render_time_spent(the_effort),
                     )
                 )
             result.append((None, details))
         return result
 
     @staticmethod
-    def __renderRevenue(anEffort):
+    def __renderRevenue(an_effort):
         """Return the revenue of the effort as a monetary value."""
-        return render.monetaryAmount(anEffort.revenue())
+        return render.monetaryAmount(an_effort.revenue())
 
     @staticmethod
-    def __renderTotalRevenue(anEffort):
+    def __renderTotalRevenue(an_effort):
         """Return the total revenue of the effort as a monetary value."""
-        return render.monetaryAmount(anEffort.revenue(recursive=True))
+        return render.monetaryAmount(an_effort.revenue(recursive=True))
 
     def __roundTimeSpent(self, timeSpent):
         """Round time spent with the current precision and direction."""
         return timeSpent.round(
-            seconds=self.__round_precision(), alwaysUp=self.__always_round_up()
+            seconds=self.__round_precision(),
+            always_up=self.__always_round_up(),
         )
 
     def __show_seconds(self):

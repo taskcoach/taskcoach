@@ -58,13 +58,13 @@ class Translator(metaclass=patterns.Singleton):
 
         _log_i18n(f"No translation found for '{language}'. Using English.")
 
-    def _loadPoFile(self, poFilename):
+    def _loadPoFile(self, po_filename):
         """Load translation directly from a .po file."""
         try:
-            translations, _encoding = po2dict.parse(poFilename)
+            translations, _encoding = po2dict.parse(po_filename)
             self.__language = translations
         except Exception as e:
-            _log_i18n(f"Failed to load {poFilename}: {e}")
+            _log_i18n(f"Failed to load {po_filename}: {e}")
 
     def _setLocale(self, language):
         """Try to set the locale, trying possibly multiple localeStrings.
@@ -84,13 +84,13 @@ class Translator(metaclass=patterns.Singleton):
 
         # Set the wxPython locale:
         locale_set = False
-        for localeString in self._localeStrings(language):
-            _log_i18n(f"Trying wx.Locale for: {localeString!r}")
-            languageInfo = wx.Locale.FindLanguageInfo(localeString)
-            if languageInfo:
+        for locale_string in self._localeStrings(language):
+            _log_i18n(f"Trying wx.Locale for: {locale_string!r}")
+            language_info = wx.Locale.FindLanguageInfo(locale_string)
+            if language_info:
                 _log_i18n(
-                    f"Found wx language info: {languageInfo.CanonicalName} "
-                    f"(Language={languageInfo.Language})"
+                    f"Found wx language info: {language_info.CanonicalName} "
+                    f"(Language={language_info.Language})"
                 )
 
                 # CRITICAL: Delete old locale before creating new one to prevent
@@ -103,7 +103,7 @@ class Translator(metaclass=patterns.Singleton):
                 try:
                     # Suppress wx warning dialog if locale can't be fully set
                     log_null = wx.LogNull()
-                    self.__locale = wx.Locale(languageInfo.Language)
+                    self.__locale = wx.Locale(language_info.Language)
                     del log_null
                     # Check if locale was properly initialized
                     if not self.__locale.IsOk():
@@ -116,20 +116,20 @@ class Translator(metaclass=patterns.Singleton):
                     # Add the wxWidgets message catalog. This is really only for
                     # py2exe'ified versions, but it doesn't seem to hurt on other
                     # platforms...
-                    localeDir = os.path.join(
+                    locale_dir = os.path.join(
                         wx.StandardPaths.Get().GetResourcesDir(), "locale"
                     )
-                    self.__locale.AddCatalogLookupPathPrefix(localeDir)
+                    self.__locale.AddCatalogLookupPathPrefix(locale_dir)
                     self.__locale.AddCatalog("wxstd")
                     locale_set = True
                     break
                 except Exception as e:
                     _log_i18n(
-                        f"Failed to create wx.Locale for {localeString}: {e}"
+                        f"Failed to create wx.Locale for {locale_string}: {e}"
                     )
                     self.__locale = None
             else:
-                _log_i18n(f"No wx language info found for: {localeString!r}")
+                _log_i18n(f"No wx language info found for: {locale_string!r}")
 
         if not locale_set:
             _log_i18n(
@@ -183,12 +183,12 @@ class Translator(metaclass=patterns.Singleton):
 
     def _localeStrings(self, language):
         """Extract language and language_country from language if possible."""
-        localeStrings = []
+        locale_strings = []
         if language:
-            localeStrings.append(language)
+            locale_strings.append(language)
             if "_" in language:
-                localeStrings.append(language.split("_")[0])
-        return localeStrings
+                locale_strings.append(language.split("_")[0])
+        return locale_strings
 
     def translate(self, string):
         """Look up string in the current language dictionary. Return the

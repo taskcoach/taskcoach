@@ -134,7 +134,7 @@ class SyntheticIconGenerator:
         """
         import wx
 
-        OVERLAY_ICON_ID = "nuvola_status_dialog-error"
+        overlay_icon_id = "nuvola_status_dialog-error"
         option = route["option_id"]
         base_icon_id = settings.get("icon", option)
         if not base_icon_id:
@@ -148,7 +148,7 @@ class SyntheticIconGenerator:
             self._last_base_icon_id = base_icon_id
         if size not in self._bitmaps:
             self._bitmaps[size] = self._compose(
-                base_icon_id, OVERLAY_ICON_ID, size
+                base_icon_id, overlay_icon_id, size
             )
         return self._bitmaps[size]
 
