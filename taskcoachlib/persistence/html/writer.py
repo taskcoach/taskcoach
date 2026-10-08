@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 from . import generator
 from taskcoachlib import meta
+from taskcoachlib.persistence.allitems import all_items
 
 css = (
     """/*
@@ -107,7 +108,7 @@ class HTMLWriter(object):
         taskFile=None,
     ):
         if isinstance(viewer, str) and viewer.startswith("ALL_"):
-            viewer = self._createProxy(viewer, columns, taskFile)
+            viewer = self._create_proxy(viewer, columns, taskFile)
             selectionOnly = False
 
         css_filename = (
@@ -121,24 +122,21 @@ class HTMLWriter(object):
             self._write_css()
         return count
 
-    def _createProxy(self, viewer_type, columns, taskFile):
+    def _create_proxy(self, viewer_type, columns, task_file):
         """Create a viewer proxy for 'All' exports."""
         items = []
         title = "Export"
         is_showing_tasks = False
-        if taskFile:
+        if task_file:
+            items = all_items(task_file, viewer_type)
             if viewer_type == self.ALL_TASKS:
-                items = list(taskFile.tasks())
                 title = "Tasks"
                 is_showing_tasks = True
             elif viewer_type == self.ALL_EFFORTS:
-                items = list(taskFile.efforts())
                 title = "Efforts"
             elif viewer_type == self.ALL_CATEGORIES:
-                items = list(taskFile.categories())
                 title = "Categories"
             elif viewer_type == self.ALL_NOTES:
-                items = list(taskFile.notes())
                 title = "Notes"
         return _ViewerProxy(items, columns or [], title, is_showing_tasks)
 

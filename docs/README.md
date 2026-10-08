@@ -107,6 +107,7 @@ Key packages in `taskcoachlib/`:
 | [SESSION_END.md](SESSION_END.md) | What is saved, and when, at quit, logout and shutdown |
 | [FILE_LOCKING.md](FILE_LOCKING.md) | Locking task files and the settings file |
 | [FILE_DIALOGS.md](FILE_DIALOGS.md) | Where each file dialog opens |
+| [EXPORTS.md](EXPORTS.md) | What the exports write, and in which order |
 | [LOCALE.md](LOCALE.md) | Locale and regional settings |
 | [TRANSLATIONS.md](TRANSLATIONS.md) | How translations work, and contributing them |
 | [SPELLCHECKING.md](SPELLCHECKING.md) | Spell checking |

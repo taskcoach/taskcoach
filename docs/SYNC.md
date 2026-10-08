@@ -23,8 +23,8 @@ in January 2026).
 - Todo.txt, a shared text file: removed 2026-10-06
   ([TODO_TXT.md](TODO_TXT.md)). Its lessons are below.
 
-Kept for exchange, one way: the iCalendar export (tasks as `VTODO`,
-efforts as `VEVENT`), CSV export and import, HTML export.
+Kept for exchange, one way: the exports
+([EXPORTS.md](EXPORTS.md)) and Import CSV.
 
 ## CalDAV
 

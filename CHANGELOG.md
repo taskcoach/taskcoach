@@ -4,6 +4,20 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.2
+
+### Export
+
+- An "(All)" choice of Export as HTML, CSV or iCalendar writes the
+  items in the order a new view sorts them: efforts by period, newest
+  first; tasks by status, then due date; categories and notes by
+  subject. They came in a different order at each export.
+
+### About
+
+- A normal release: the About page shows "Version 2.0.3.2", no longer
+  followed by "alpha".
+
 ## 2.0.3.1
 
 ### Tasks

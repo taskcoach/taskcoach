@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib.persistence.icalendar import ical
+from taskcoachlib.persistence.allitems import all_items
 from taskcoachlib.domain import task
 from taskcoachlib import meta
 
@@ -54,14 +55,10 @@ class iCalendarWriter(object):
             taskFile: The task file (required for ALL_* export)
         """
         # Handle "All" export options
-        if viewer == self.ALL_TASKS:
+        if viewer in (self.ALL_TASKS, self.ALL_EFFORTS):
             if taskFile is None:
                 return 0
-            items = list(taskFile.tasks())
-        elif viewer == self.ALL_EFFORTS:
-            if taskFile is None:
-                return 0
-            items = list(taskFile.efforts())
+            items = all_items(taskFile, viewer)
         else:
             # Normal viewer-based export
             items = viewer.visible_items()

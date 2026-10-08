@@ -101,8 +101,8 @@ empty), `FileAttachment`, `URIAttachment`, `MailAttachment`.
 very old files named the kind by a `FILE:`, `URI:` or `MAIL:` prefix.
 Commands: `AddAttachmentCommand`, `RemoveAttachmentCommand`,
 `CutAttachmentCommand`, `EditAttachmentLocationCommand`
-(`command/attachmentCommands.py`). Exports (HTML, CSV) list the
-subjects only.
+(`command/attachmentCommands.py`). What the exports write:
+[EXPORTS.md](EXPORTS.md).
 
 ## In the File
 

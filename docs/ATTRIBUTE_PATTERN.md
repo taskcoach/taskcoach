@@ -166,8 +166,8 @@ It plays two roles at once:
   unchecked, [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md)); not written
   to the file, and a missing attribute reads back as it
   ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#defaults));
-  skipped by exports. A task whose completion date is not set is not
-  completed.
+  skipped by exports ([EXPORTS.md](EXPORTS.md)). A task whose
+  completion date is not set is not completed.
 - **Never, infinitely far.** Being the latest date, it makes plain time
   comparisons right without an "is it set?" case: an unset due date is
   never passed (never overdue), an unset planned start never reached
