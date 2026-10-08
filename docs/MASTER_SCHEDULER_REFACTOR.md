@@ -873,7 +873,7 @@ each with the recommended action, none ruled yet:
   selects the text of text boxes only; the others select their value
   on focus or hold no text. Nothing changed on screen.
 - P57. Norwegian locales get en_GB dates and times
-  (`i18n._fixBrokenLocales()`, a wx 2.8 date picker crash of 2012;
+  (`i18n._fix_broken_locales()`, a wx 2.8 date picker crash of 2012;
   Linux has no such picker). Removing it changes released behaviour.
   2026-10-02: it first sets the time locale to the user's default,
   likely Norwegian again, so whether it changes anything on Linux

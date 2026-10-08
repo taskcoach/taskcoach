@@ -18,18 +18,18 @@ Download the package for your system from the [latest release](https://github.co
 
 | Platform | Package |
 |----------|---------|
-| [Windows](#windows) | `TaskCoach-2.0.3.3-windows-x64-setup.exe` |
-| [Windows (portable)](#windows) | `TaskCoach-2.0.3.3-windows-x64-portable.zip` |
-| [macOS (Apple Silicon)](#macos) | `TaskCoach-2.0.3.3-macos-arm64.dmg` |
-| [macOS (Intel)](#macos) | `TaskCoach-2.0.3.3-macos-intel.dmg` |
-| [Debian 12 (Bookworm)](#linux) | `taskcoach_2.0.3.3_debian-12-bookworm.deb` |
-| [Debian 13 (Trixie)](#linux) | `taskcoach_2.0.3.3_debian-13-trixie.deb` |
-| [Ubuntu 22.04 (Jammy), Linux Mint 21](#linux) | `taskcoach_2.0.3.3_ubuntu-22.04-jammy.deb` |
-| [Ubuntu 24.04 (Noble), Linux Mint 22](#linux) | `taskcoach_2.0.3.3_ubuntu-24.04-noble.deb` |
-| [Fedora 43](#linux) | `taskcoach-2.0.3.3-fedora43.rpm` |
-| [Arch Linux / Manjaro](#linux) | `taskcoach-2.0.3.3-arch.pkg.tar.zst` |
-| [Any Linux (x86_64)](#linux) | `TaskCoach-2.0.3.3-x86_64.AppImage` |
-| [Flatpak (any Linux)](README_INSTALL_LINUX.md#flatpak-any-linux) | `TaskCoach-2.0.3.3-x86_64.flatpak` |
+| [Windows](#windows) | `TaskCoach-2.0.3.4-windows-x64-setup.exe` |
+| [Windows (portable)](#windows) | `TaskCoach-2.0.3.4-windows-x64-portable.zip` |
+| [macOS (Apple Silicon)](#macos) | `TaskCoach-2.0.3.4-macos-arm64.dmg` |
+| [macOS (Intel)](#macos) | `TaskCoach-2.0.3.4-macos-intel.dmg` |
+| [Debian 12 (Bookworm)](#linux) | `taskcoach_2.0.3.4_debian-12-bookworm.deb` |
+| [Debian 13 (Trixie)](#linux) | `taskcoach_2.0.3.4_debian-13-trixie.deb` |
+| [Ubuntu 22.04 (Jammy), Linux Mint 21](#linux) | `taskcoach_2.0.3.4_ubuntu-22.04-jammy.deb` |
+| [Ubuntu 24.04 (Noble), Linux Mint 22](#linux) | `taskcoach_2.0.3.4_ubuntu-24.04-noble.deb` |
+| [Fedora 43](#linux) | `taskcoach-2.0.3.4-fedora43.rpm` |
+| [Arch Linux / Manjaro](#linux) | `taskcoach-2.0.3.4-arch.pkg.tar.zst` |
+| [Any Linux (x86_64)](#linux) | `TaskCoach-2.0.3.4-x86_64.AppImage` |
+| [Flatpak (any Linux)](README_INSTALL_LINUX.md#flatpak-any-linux) | `TaskCoach-2.0.3.4-x86_64.flatpak` |
 
 ### Windows
 
@@ -50,12 +50,12 @@ Step by step, with screenshots: [README_INSTALL_MACOS.md](README_INSTALL_MACOS.m
 Install the downloaded package:
 
 ```bash
-sudo apt install ./taskcoach_2.0.3.3_debian-13-trixie.deb   # Debian, Ubuntu, Linux Mint
-sudo dnf install ./taskcoach-2.0.3.3-fedora43.rpm           # Fedora
-sudo pacman -U taskcoach-2.0.3.3-arch.pkg.tar.zst           # Arch Linux, Manjaro
+sudo apt install ./taskcoach_2.0.3.4_debian-13-trixie.deb   # Debian, Ubuntu, Linux Mint
+sudo dnf install ./taskcoach-2.0.3.4-fedora43.rpm           # Fedora
+sudo pacman -U taskcoach-2.0.3.4-arch.pkg.tar.zst           # Arch Linux, Manjaro
 ```
 
-Or make the AppImage executable (`chmod +x TaskCoach-2.0.3.3-x86_64.AppImage`) and open it: it runs without installing.
+Or make the AppImage executable (`chmod +x TaskCoach-2.0.3.4-x86_64.AppImage`) and open it: it runs without installing.
 
 Uninstalling, the Flatpak, and the tray icon on GNOME: [README_INSTALL_LINUX.md](README_INSTALL_LINUX.md).
 

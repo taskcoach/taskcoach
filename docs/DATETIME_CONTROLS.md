@@ -1091,6 +1091,12 @@ are converted to Win32 date format tokens:
 | `"DMY."` | `dd.MM.yyyy` | 18.01.2026 |
 | `""` (auto) | Detected from locale | varies |
 
+**Which format:** the one given (the Preferences preview), else the
+date format of Preferences as at start, as the lists show dates.
+Until 2.0.3.4 an editor's date field was given none and showed
+Windows' own format, whatever Preferences said
+([#484](https://github.com/taskcoach/taskcoach/issues/484)).
+
 **Live update:** `set_date_format(date_format)` re-sends `DTM_SETFORMATW` — the
 native control updates instantly without needing to destroy/recreate.
 

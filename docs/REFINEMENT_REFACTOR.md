@@ -1061,6 +1061,12 @@ Recorded nowhere else; each is reproduced on 2.0.3.0 first.
   App: a stand-in refusing links without recipient got
   `mailto:recipient%40example.com?...`, no error; a stand-in failing
   every link got both, then the error.
+- P251. Tab into a Subject or Description box keeps its caret where it
+  was; native text fields select all their text (Windows' dialog
+  manager, GTK's `gtk-entry-select-on-focus`, macOS): found
+  2026-10-08 researching the focus rule, the same on master. Not the
+  concern then (designer); recorded in
+  [FOCUS_MANAGEMENT.md](FOCUS_MANAGEMENT.md#not-changed).
 - P250. A session end while "Save changes?" is open loses the
   changes: found in the release review of 2026-10-07, read from the
   code, the same on master. With autosave off, close the window (or

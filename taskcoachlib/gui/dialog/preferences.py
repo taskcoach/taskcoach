@@ -2227,7 +2227,7 @@ class LanguagePage(SettingsPage):
 
         # Check if the selected language's locale is available on the system
         selected_lang = self._get_selected_language_code()
-        show_warning = not i18n.isLocaleAvailable(selected_lang)
+        show_warning = not i18n.is_locale_available(selected_lang)
         self._locale_warning.Show(show_warning)
         self.Layout()
 

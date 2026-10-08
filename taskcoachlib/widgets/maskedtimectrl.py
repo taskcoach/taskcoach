@@ -2829,9 +2829,11 @@ class _NativeDateCtrl(wx.Panel):
             )
             self._picker.SetRange(wx_min, wx_max)
 
-        # Apply custom date format via Win32 DTM_SETFORMATW
-        if date_format is not None:
-            self.set_date_format(date_format)
+        # The format given (the Preferences preview), else the one the
+        # lists show; Windows' own would ignore Preferences
+        self.set_date_format(
+            getDateFormatFromSettings() if date_format is None else date_format
+        )
 
         # Bridge native EVT_DATE_CHANGED → app's EVT_VALUE_CHANGED
         self._picker.Bind(wx.adv.EVT_DATE_CHANGED, self._onDateChanged)
@@ -2957,7 +2959,8 @@ class _NativeDateCtrl(wx.Panel):
 
         Args:
             date_format: 4-char format string (e.g. "YMD-", "MDY/",
-                "DMY.") as used by getLocaleDateFormat().
+                "DMY.") as used by getLocaleDateFormat(), or "" for
+                the detected one.
         """
         if wx.Platform != "__WXMSW__":
             return  # DTM_SETFORMATW is Windows-only
