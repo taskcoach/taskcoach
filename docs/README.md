@@ -123,6 +123,7 @@ Key packages in `taskcoachlib/`:
 | [WINDOW_GEOMETRY.md](WINDOW_GEOMETRY.md) | Window size, position and placement on the monitors |
 | [AUI.md](AUI.md) | The docked and floating views (AGW AUI) |
 | [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) | The views' lists: selection, rebuilds, button states |
+| [FOCUS_MANAGEMENT.md](FOCUS_MANAGEMENT.md) | The controls and the focus: only the focused one shows a text selection |
 | [MENUS.md](MENUS.md) | Enabling and disabling menu items |
 | [TOOLBAR.md](TOOLBAR.md) | The toolbars: drawing, sizing, saving |
 | [SYSTEM_TRAY.md](SYSTEM_TRAY.md) | The tray icon on each platform |

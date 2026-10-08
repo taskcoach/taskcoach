@@ -93,7 +93,8 @@ Canon decision by designer, 2026-09-28.
   conventions, is the same in every view, and changes only with a
   ruling, after researching those conventions; never as a side effect
   of another fix. Tests tell each rule from its alternatives. The
-  rules: [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md).
+  rules: [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) (the lists),
+  [FOCUS_MANAGEMENT.md](FOCUS_MANAGEMENT.md) (the controls).
 - **Deferred calls through `patterns.later`:** a debounce, delay,
   repeat or "when idle" call names its owner and never uses
   `wx.CallLater`, `wx.CallAfter` or `wx.Timer` directly, so none can
@@ -110,6 +111,20 @@ Canon decision by designer, 2026-09-28.
 
 ## Code style
 
+- **The tools live in the repository's `.venv`**
+  ([DEBIAN_BOOKWORM_SETUP.md](DEBIAN_BOOKWORM_SETUP.md#step-2-create-virtual-environment)),
+  flake8 at the version CI runs, black at the one that formatted the
+  code:
+
+  ```
+  .venv/bin/pip install flake8==7.3.0 pep8-naming==0.15.1 black==26.3.1
+  ```
+
+  Not `pip install --user`: Debian refuses it
+  ([PEP 668](https://peps.python.org/pep-0668/)), and a copy forced
+  in belongs to one Python version, so it stopped working when Debian
+  12 became 13 (3.11 to 3.13). A new system Python needs the
+  `.venv` made again (same command) and the line above.
 - **Format the files you touch with black**, line-length 79 (configured
   in `pyproject.toml`, `[tool.black]`). black output is PEP 8 compliant;
   running it is the standard way to fix whitespace and wrapping. Wrap
@@ -121,8 +136,8 @@ Canon decision by designer, 2026-09-28.
   when its line runs: undefined names, and names a rename missed.
 
   ```
-  python3 -m flake8 --select=E9,F63,F7,F821,F822,F823 taskcoachlib tests tools taskcoach.py setup.py
-  python3 tools/check_renames.py
+  .venv/bin/python -m flake8 --select=E9,F63,F7,F821,F822,F823 taskcoachlib tests tools taskcoach.py setup.py
+  .venv/bin/python tools/check_renames.py
   ```
 
   A library name `check_renames.py` mistakes for a missed rename goes

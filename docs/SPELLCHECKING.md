@@ -23,10 +23,9 @@ sudo dnf install python3-enchant hunspell-en-US
 Dictionaries must be bundled with the application. See [WINDOWS.md](WINDOWS.md#spell-check-dictionaries) for details on dictionary installation and bundling.
 
 ### macOS
-```bash
-brew install enchant
-pip install pyenchant
-```
+The app is built by `.github/workflows/build-macos.yml`, which
+installs pyenchant; running from source is set up on Linux only
+([README.md](README.md#running-from-source)).
 
 ## Text Fields Overview
 

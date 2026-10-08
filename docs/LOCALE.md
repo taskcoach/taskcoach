@@ -50,7 +50,7 @@ _get_configured_decimal_char()    # Layer 3: setting → locale → "."
 
 | Setting key | Section | Values | Detection method | Default | File |
 |---|---|---|---|---|---|
-| `language_set_by_user` | `view` | locale code / `""` | env vars + `locale.getlocale` | `"en_US"` | `application.py` |
+| `language_set_by_user` | `view` | locale code / `""` | Windows: its regional format; elsewhere env vars + `locale.getlocale` | `"en_US"` | `application.py` |
 | `dateformat` | `view` | `"YMD-"`, `"MDY/"`, `"DMY/"`, `"DMY."`, `"YMD/"`, `""` | `strftime("%x")` probe | ISO `YYYY-MM-DD` | `maskedtimectrl.py` |
 | `timeformat` | `view` | `"24"`, `"12"`, `""` | `strftime("%X")` AM/PM check | `"24"` | `maskedtimectrl.py` |
 | `decimal_separator` | `view` | `"."`, `","`, `""` | `locale.localeconv()["decimal_point"]` | `"."` | `numericctrl.py` |
@@ -86,22 +86,43 @@ Returns a dict with numeric formatting conventions. Key fields:
 
 - **Files:** `numericctrl.py`, `currencyctrl.py`
 
-### Environment variables + locale.getlocale() (language)
+### System language
 
 Cascading checks for language selection:
 
 1. Command-line options (`--language`, `--pofile`)
 2. User preference (`view/language_set_by_user`)
 3. External setting (`view/language`)
-4. The environment, in POSIX order: the first set of `LC_ALL`,
-   `LC_MESSAGES` and `LANG` (encoding suffix such as `.UTF-8`
-   stripped; `C` or `POSIX` goes on to the next step)
-5. `locale.getlocale(locale.LC_MESSAGES)`
-6. Final fallback: `"en_US"`
+4. The system's language, below
+5. Final fallback: `"en_US"`
 
-Steps 4 and 5 are `i18n.system_language()`, the one reading of the
-environment's language: the spell check's default language and the
-strings translated before the translator exists use it too.
+Step 4 is `i18n.system_language()`, the one reading of the system's
+language: the spell check's default language and the strings
+translated before the translator exists use it too.
+
+- **Windows:** its "Regional format", as `locale.getdefaultlocale()`
+  reads it from Windows, e.g. `pt_BR`. Windows sets no `LANG` and
+  Python has no `LC_MESSAGES` there
+  ([locale docs](https://docs.python.org/3/library/locale.html#locale.LC_MESSAGES)).
+  From 2.0.0.101 to 2.0.3.3 only the environment was read, so Windows
+  started in English
+  ([#484](https://github.com/taskcoach/taskcoach/issues/484)).
+  - Python's own call, not a workaround: nothing to revert. Python
+    deprecated it in 3.11, then took it back as the only way to name
+    the Windows locale this way
+    ([gh-130796](https://github.com/python/cpython/issues/130796)):
+    no longer deprecated from 3.13.15, 3.14.7 and 3.15 (the Windows
+    build uses 3.13.16). 3.11 to 3.13.14 work, with a
+    `DeprecationWarning` Python hides by default.
+  - It asks Windows (`GetLocaleInfoA`, `LOCALE_USER_DEFAULT`): the
+    regional format, not the display language. Nothing found starts
+    in English; a region without a translation, in its language's,
+    else English.
+- **Elsewhere:** the environment, in POSIX order: the first set of
+  `LC_ALL`, `LC_MESSAGES` and `LANG` (encoding suffix such as
+  `.UTF-8` stripped; `C` or `POSIX` goes on), else
+  `locale.getlocale(locale.LC_MESSAGES)`. `getdefaultlocale()` reads
+  `LC_CTYPE` instead of `LC_MESSAGES`.
 
 - **Files:** `application.py`, `i18n/__init__.py`
 
@@ -154,6 +175,10 @@ which:
 
 After this, `locale.localeconv()` returns the correct values for the active
 locale, and `strftime` uses the locale's date/time formatting.
+
+On Windows the `wx.Locale` comes last, so the detected formats are
+those of the language; with the language detected, of the region.
+On GTK `setlocale(LC_ALL, "")` comes last: those of the system.
 
 ---
 

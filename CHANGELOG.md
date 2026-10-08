@@ -4,6 +4,24 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.4
+
+### Editors
+
+- Clicking into another field of a window removes the text selection
+  of the field left, on every platform: a Subject or Description box
+  kept showing its selected text, which looked as if it still had the
+  focus.
+
+### Windows
+
+- With "Let the system determine the language", Task Coach starts in
+  the language of the Windows regional format again, with its date
+  format and spell checking language; since 2.0.0.101 it started in
+  English.
+- The date fields of the editors show the date format of
+  Preferences > Regional, as the lists do; they showed Windows' own.
+
 ## 2.0.3.3
 
 ### Appearance
