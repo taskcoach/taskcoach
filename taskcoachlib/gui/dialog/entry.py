@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from taskcoachlib import widgets, operating_system
 from taskcoachlib.config import settings
 from taskcoachlib.domain import date
+from taskcoachlib.domain.base import NO_ICON
 from taskcoachlib.i18n import _
 from wx.lib import combotreebox, newevent
 import wx
@@ -210,18 +211,18 @@ class FontEntry(widgets.PanelWithBoxSizer):
     ):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._fontCheckBox = self._create_check_box(current_font)
-        self._fontPicker = self._create_font_picker(
+        self._font_check_box = self._create_check_box(current_font)
+        self._font_picker = self._create_font_picker(
             current_font, current_color, current_bg_color
         )
         self.add(
-            self._fontCheckBox,
+            self._font_check_box,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
             border=15,
             proportion=0,
         )
         self.add(
-            self._fontPicker,
+            self._font_picker,
             flag=wx.ALIGN_CENTER_VERTICAL,
             border=0,
             proportion=1,
@@ -231,7 +232,7 @@ class FontEntry(widgets.PanelWithBoxSizer):
     def _create_check_box(self, current_font):
         check_box = wx.CheckBox(self, label="")
         check_box.SetValue(current_font is not None)
-        check_box.Bind(wx.EVT_CHECKBOX, self.onChecked)
+        check_box.Bind(wx.EVT_CHECKBOX, self.on_checked)
         return check_box
 
     def _create_font_picker(
@@ -244,54 +245,54 @@ class FontEntry(widgets.PanelWithBoxSizer):
             colour=current_color,
             bgColour=current_bg_color,
         )
-        picker.Bind(wx.EVT_FONTPICKER_CHANGED, self.onFontPicked)
+        picker.Bind(wx.EVT_FONTPICKER_CHANGED, self.on_font_picked)
         return picker
 
-    def setEffectiveFont(self, font):
+    def set_effective_font(self, font):
         """Set the effective font to display when unchecked."""
         if font is None:
             return
-        self._effectiveFont = font
-        if not self._fontCheckBox.IsChecked():
-            self._fontPicker.SetSelectedFont(self._effectiveFont)
+        self._effective_font = font
+        if not self._font_check_box.IsChecked():
+            self._font_picker.SetSelectedFont(self._effective_font)
 
-    def onChecked(self, event):
+    def on_checked(self, event):
         event.Skip()
-        checked = self._fontCheckBox.IsChecked()
+        checked = self._font_check_box.IsChecked()
         if (
             not checked
-            and hasattr(self, "_effectiveFont")
-            and self._effectiveFont
+            and hasattr(self, "_effective_font")
+            and self._effective_font
         ):
-            self._fontPicker.SetSelectedFont(self._effectiveFont)
+            self._font_picker.SetSelectedFont(self._effective_font)
         wx.PostEvent(self, FontEntryEvent())
 
-    def onFontPicked(self, event):
+    def on_font_picked(self, event):
         event.Skip()
-        self._fontCheckBox.SetValue(True)
+        self._font_check_box.SetValue(True)
         wx.PostEvent(self, FontEntryEvent())
 
     def GetValue(self):
         return (
-            self._fontPicker.GetSelectedFont()
-            if self._fontCheckBox.IsChecked()
+            self._font_picker.GetSelectedFont()
+            if self._font_check_box.IsChecked()
             else None
         )
 
     def SetValue(self, new_font):
         checked = new_font is not None
-        self._fontCheckBox.SetValue(checked)
+        self._font_check_box.SetValue(checked)
         if checked:
-            self._fontPicker.SetSelectedFont(new_font)
+            self._font_picker.SetSelectedFont(new_font)
 
     def GetColor(self):
-        return self._fontPicker.GetSelectedColour()
+        return self._font_picker.GetSelectedColour()
 
     def SetColor(self, new_color):
-        self._fontPicker.SetSelectedColour(new_color)
+        self._font_picker.SetSelectedColour(new_color)
 
     def SetBgColor(self, new_color):
-        self._fontPicker.SetSelectedBgColour(new_color)
+        self._font_picker.SetSelectedBgColour(new_color)
 
 
 ColorEntryEvent, EVT_COLORENTRY = newevent.NewEvent()
@@ -300,7 +301,7 @@ ColorEntryEvent, EVT_COLORENTRY = newevent.NewEvent()
 class ColorEntry(widgets.PanelWithBoxSizer):
     """Color entry with checkbox for override colors.
 
-    When unchecked: shows effective color (set via setEffectiveColor).
+    When unchecked: shows effective color (set via set_effective_color).
     When checked: user can pick a custom color.
     Editor provides derived color (inherited value or system theme fallback).
     """
@@ -308,21 +309,21 @@ class ColorEntry(widgets.PanelWithBoxSizer):
     def __init__(self, parent, current_color, default_color, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._effectiveColor = (
-            None  # Set via setEffectiveColor() after construction
+        self._effective_color = (
+            None  # Set via set_effective_color() after construction
         )
-        self._colorCheckBox = self._create_check_box(current_color)
-        self._colorPicker = self._create_color_picker(
+        self._color_check_box = self._create_check_box(current_color)
+        self._color_picker = self._create_color_picker(
             current_color, default_color
         )
         self.add(
-            self._colorCheckBox,
+            self._color_check_box,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
             border=15,
             proportion=0,
         )
         self.add(
-            self._colorPicker,
+            self._color_picker,
             flag=wx.ALIGN_CENTER_VERTICAL,
             border=0,
             proportion=1,
@@ -332,7 +333,7 @@ class ColorEntry(widgets.PanelWithBoxSizer):
     def _create_check_box(self, current_color):
         check_box = wx.CheckBox(self, label="")
         check_box.SetValue(current_color is not None)
-        check_box.Bind(wx.EVT_CHECKBOX, self.onChecked)
+        check_box.Bind(wx.EVT_CHECKBOX, self.on_checked)
         return check_box
 
     def _create_color_picker(self, current_color, default_color):
@@ -353,10 +354,10 @@ class ColorEntry(widgets.PanelWithBoxSizer):
             else:
                 display_color = default_color
         picker = widgets.ColourPickerCtrl(self, colour=display_color)
-        picker.Bind(wx.EVT_COLOURPICKER_CHANGED, self.onColorPicked)
+        picker.Bind(wx.EVT_COLOURPICKER_CHANGED, self.on_color_picked)
         return picker
 
-    def setEffectiveColor(self, color):
+    def set_effective_color(self, color):
         """Set the effective color to display when unchecked.
 
         Editor provides the effective color from the SSOT model.
@@ -367,57 +368,59 @@ class ColorEntry(widgets.PanelWithBoxSizer):
             return
         if not isinstance(color, wx.Colour):
             color = wx.Colour(*color)
-        self._effectiveColor = color
-        if not self._colorCheckBox.IsChecked():
-            self._colorPicker.SetColour(self._effectiveColor)
+        self._effective_color = color
+        if not self._color_check_box.IsChecked():
+            self._color_picker.SetColour(self._effective_color)
 
-    def onChecked(self, event):
+    def on_checked(self, event):
         event.Skip()
-        checked = self._colorCheckBox.IsChecked()
-        if not checked and self._effectiveColor:
-            self._colorPicker.SetColour(self._effectiveColor)
+        checked = self._color_check_box.IsChecked()
+        if not checked and self._effective_color:
+            self._color_picker.SetColour(self._effective_color)
         wx.PostEvent(self, ColorEntryEvent())
 
-    def onColorPicked(self, event):
+    def on_color_picked(self, event):
         event.Skip()
-        self._colorCheckBox.SetValue(True)
+        self._color_check_box.SetValue(True)
         wx.PostEvent(self, ColorEntryEvent())
 
     def GetValue(self):
         return (
-            self._colorPicker.GetColour()
-            if self._colorCheckBox.IsChecked()
+            self._color_picker.GetColour()
+            if self._color_check_box.IsChecked()
             else None
         )
 
     def SetValue(self, new_color):
         checked = new_color is not None
-        self._colorCheckBox.SetValue(checked)
+        self._color_check_box.SetValue(checked)
         if checked:
-            self._colorPicker.SetColour(new_color)
+            self._color_picker.SetColour(new_color)
 
 
 IconEntryEvent, EVT_ICONENTRY = newevent.NewEvent()
 
 
 class IconEntry(widgets.PanelWithBoxSizer):
-    """Icon entry with checkbox. When unchecked, returns empty string (no icon)."""
+    """Icon override with a checkbox. Unticked: none, the icon from
+    above shows (""). Ticked: the icon picked, or with "No icon" none at
+    all, which stops the icons from above (NO_ICON)."""
 
     def __init__(self, parent, current_icon_id, exclude=None, *args, **kwargs):
         kwargs["orientation"] = wx.HORIZONTAL
         super().__init__(parent, *args, **kwargs)
-        self._iconCheckBox = self._create_check_box(current_icon_id)
-        self._iconPicker = self._create_icon_picker(
+        self._icon_check_box = self._create_check_box(current_icon_id)
+        self._icon_picker = self._create_icon_picker(
             parent, current_icon_id, exclude
         )
         self.add(
-            self._iconCheckBox,
+            self._icon_check_box,
             flag=wx.ALIGN_CENTER_VERTICAL | wx.RIGHT,
             border=15,
             proportion=0,
         )
         self.add(
-            self._iconPicker,
+            self._icon_picker,
             flag=wx.ALIGN_CENTER_VERTICAL,
             border=0,
             proportion=1,
@@ -427,38 +430,41 @@ class IconEntry(widgets.PanelWithBoxSizer):
     def _create_check_box(self, current_icon_id):
         check_box = wx.CheckBox(self, label="")
         check_box.SetValue(current_icon_id != "")
-        check_box.Bind(wx.EVT_CHECKBOX, self.onChecked)
+        check_box.Bind(wx.EVT_CHECKBOX, self.on_checked)
         return check_box
 
     def _create_icon_picker(self, parent, current_icon_id, exclude):
         picker = widgets.IconPicker(
-            self, current_icon_id or "", exclude=exclude
+            self, _picked(current_icon_id), exclude=exclude
         )
-        picker.Bind(wx.EVT_COMBOBOX, self.onIconPicked)
+        picker.Bind(wx.EVT_COMBOBOX, self.on_icon_picked)
         return picker
 
-    def onChecked(self, event):
+    def on_checked(self, event):
         event.Skip()
-        if not self._iconCheckBox.IsChecked():
-            self._iconPicker.SetValue("")
+        if not self._icon_check_box.IsChecked():
+            self._icon_picker.SetValue("")
         wx.PostEvent(self, IconEntryEvent())
 
-    def onIconPicked(self, event):
+    def on_icon_picked(self, event):
         event.Skip()
-        selected = self._iconPicker.GetValue()
-        # Auto-uncheck if "No icon" selected, auto-check otherwise
-        self._iconCheckBox.SetValue(selected != "")
+        self._icon_check_box.SetValue(True)  # "No icon" too: a choice
         wx.PostEvent(self, IconEntryEvent())
 
     def GetValue(self):
-        if self._iconCheckBox.IsChecked():
-            return self._iconPicker.GetValue()
+        if self._icon_check_box.IsChecked():
+            return self._icon_picker.GetValue() or NO_ICON
         return ""
 
-    def SetValue(self, newValue):
-        checked = newValue != ""
-        self._iconCheckBox.SetValue(checked)
-        self._iconPicker.SetValue(newValue)
+    def SetValue(self, new_value):
+        checked = new_value != ""
+        self._icon_check_box.SetValue(checked)
+        self._icon_picker.SetValue(_picked(new_value))
+
+
+def _picked(icon_id):
+    """The picker's entry for an icon override: "No icon" for none."""
+    return "" if icon_id in ("", NO_ICON, None) else icon_id
 
 
 ChoiceEntryEvent, EVT_CHOICEENTRY = newevent.NewEvent()
@@ -483,9 +489,9 @@ class ChoiceEntry(wx.Choice):
     def GetValue(self):
         return self.GetClientData(self.GetSelection())
 
-    def SetValue(self, newValue):
+    def SetValue(self, new_value):
         for index in range(self.GetCount()):
-            if newValue == self.GetClientData(index):
+            if new_value == self.GetClientData(index):
                 self.SetSelection(index)
                 break
 

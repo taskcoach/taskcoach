@@ -523,6 +523,12 @@ defaults = {
         "inifileloaded": "True",
         "inifileloaderror": "",
     },
+    "appearance": {
+        # Where an item's style comes from when it has none of its own
+        # (docs/APPEARANCE_STYLES.md, Appearance Flow): "all"
+        # (categories and tasks), "categories", "tasks" or "none"
+        "flow": "all",
+    },
     "fgcolor": {
         "activetasks": "(0, 0, 0, 255)",
         "latetasks": "(160, 32, 240, 255)",

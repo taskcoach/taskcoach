@@ -77,6 +77,9 @@ ALLOWED = {
     ("taskcoachlib/persistence/xml/defaults.py", "R6", "fromAddress"): (
         "task file attribute"
     ),
+    ("taskcoachlib/persistence/xml/defaults.py", "R6", "noIcon"): (
+        "task file attribute"
+    ),
     ("taskcoachlib/persistence/xml/writer.py", "R6", "selectedIcon"): (
         "task file attribute"
     ),

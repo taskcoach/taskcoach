@@ -273,7 +273,7 @@ class XMLWriterTest(test.TestCase):
     def test_both_format_versions(self):
         # tskversion: what a reader needs, which older releases check;
         # tskformat: the format written
-        self.expect_in_xml('tskversion="37" tskformat="38"')
+        self.expect_in_xml('tskversion="37" tskformat="39"')
 
     def test_subtask_with_category(self):
         child = task.Task()
@@ -882,6 +882,11 @@ class XMLWriterTest(test.TestCase):
 
     def test_no_task_icon(self):
         self.expect_not_in_xml("icon")
+
+    def test_no_icon_override_is_a_field_older_releases_ignore(self):
+        self.task.set_icon_id(base.NO_ICON)
+        self.expect_in_xml('noIcon="True"')
+        self.expect_not_in_xml("icon=")
 
     def test_note_icon(self):
         self.note.set_icon_id("icon")

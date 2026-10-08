@@ -52,7 +52,7 @@ from taskcoachlib.config import settings
 from taskcoachlib.config.settings import Settings
 from taskcoachlib.domain import attachment, base, category, effort, note
 from taskcoachlib.domain import date as datemodule
-from taskcoachlib.domain.base.appearance import computeStyles
+from taskcoachlib.domain.base.appearance import compute_styles
 from taskcoachlib.domain.task import Task
 from taskcoachlib.meta.debug import log_step
 import wx
@@ -68,7 +68,7 @@ _APPEARANCE_SETTINGS = tuple(
     Settings.section_changed_event_type(section + theme)
     for section in ("fgcolor", "bgcolor", "font", "icon")
     for theme in ("", "_dark")
-) + ("window.theme",)
+) + ("window.theme", "appearance.flow")
 
 # What every object reads: its change runs the full loop
 _GLOBAL_EVENT_TYPES = _APPEARANCE_SETTINGS + ("system.theme_colour_changed",)
@@ -261,7 +261,7 @@ class MasterScheduler:
     processes the marked objects and what reads them (a category's:
     its subcategories and members; a parent's: its children), each
     once, categories, tasks, notes and attachments, parents first:
-    - Categories, notes, attachments: computeStyles
+    - Categories, notes, attachments: compute_styles
     - Tasks: status, reminder, styles
     The full loop, over every object, when what every object reads
     changed. Then the date and minute events, when they change.
@@ -654,7 +654,7 @@ class MasterScheduler:
         if isinstance(item, Task):
             self._run_isolated("task", self._compute_task, item, timestamp)
         else:
-            self._run_isolated("style", computeStyles, item)
+            self._run_isolated("style", compute_styles, item)
 
     def _queue(self, item):
         if isinstance(item, _KINDS) and id(item) not in self._queued:
@@ -711,7 +711,7 @@ class MasterScheduler:
         # The status at the tick's second, as the timer seconds assume
         task.compute_stored_status(timestamp)
         task.processReminder(timestamp)
-        computeStyles(task)
+        compute_styles(task)
 
     @classmethod
     def _process_task(cls, task, timestamp):
@@ -719,7 +719,7 @@ class MasterScheduler:
         compute one task's statuses and styles."""
         cls._compute_task(task, timestamp)
         for each in _owned(task):
-            computeStyles(each)
+            compute_styles(each)
 
     def _run_isolated(self, step, func, *args):
         """Run one step of the tick, logging a failure instead of

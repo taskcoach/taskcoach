@@ -119,7 +119,7 @@ class TemplateSavedForOlderReleasesTest(test.TestCase):
         subjects, written = self.read_template_written_with('tskversion="38"')
         self.assertEqual(
             (["Template"], True),
-            (subjects, 'tskversion="37" tskformat="38"' in written),
+            (subjects, 'tskversion="37" tskformat="39"' in written),
         )
 
     def test_a_template_older_releases_read_is_left_alone(self):

@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from xml.etree import ElementTree as ET
 from taskcoachlib import meta
 from taskcoachlib.domain import categorizable, category, date, note, task
+from taskcoachlib.domain.base import NO_ICON
 from . import legacy
 from .defaults import NOT_SET, UNKNOWN, is_default
 
@@ -281,7 +282,11 @@ class XMLWriter(object):
             item.font() or None,
             lambda font: font.GetNativeFontInfoDesc(),
         )
-        self.__attribute(node, "icon", item.icon_id())
+        # "No icon" in a field of its own: releases before format 39
+        # ignore it and show the icon from above, as they did
+        no_icon = item.icon_id() == NO_ICON
+        self.__attribute(node, "icon", "" if no_icon else item.icon_id())
+        self.__attribute(node, "noIcon", no_icon)
         selected_icon = legacy.selected_icon(item)
         if selected_icon:
             node.attrib["selectedIcon"] = selected_icon

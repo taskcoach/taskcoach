@@ -14,14 +14,16 @@
   - [Attachment](#attachment)
   - [Effort](#effort)
 - [Category Style Priority](#category-style-priority)
+- [Appearance Flow](#appearance-flow)
+- [No Icon](#no-icon)
 - [Default Icons](#default-icons)
 - [The Master Loop](#the-master-loop)
   - [Processing Order](#processing-order)
   - [Owned Object Traversal](#owned-object-traversal)
 - [Stored Procedures](#stored-procedures)
-  - [computeDerived](#computederived)
-  - [computeEffective](#computeeffective)
-  - [_getFromCategories](#_getfromcategories)
+  - [compute_derived](#compute_derived)
+  - [compute_effective](#compute_effective)
+  - [_get_from_categories](#_get_from_categories)
   - [_get_from_parent](#_get_from_parent)
 - [SSOT Accessors (base Object)](#ssot-accessors-base-object)
 - [Appearance Tab (Editor)](#appearance-tab-editor)
@@ -35,12 +37,12 @@
 1. **Attachment styling**: deferred, not in this release (D3 in
    [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-and-will-not-do)).
    Attachments draw only their own style, as on master: no categories,
-   and `computeDerived` gives them no sources. Open for later: remove
+   and `compute_derived` gives them no sources. Open for later: remove
    their Appearance tab and branch, or inherit the owner's style.
 
 2. ~~**Note styling incomplete**~~: **Done.** Tested and confirmed that
-   `computeDerived` correctly flows category fg/bg/font/icon values through
-   to Notes via `_getFromCategories` for all field types.
+   `compute_derived` correctly flows category fg/bg/font/icon values through
+   to Notes via `_get_from_categories` for all field types.
 
 3. ~~**Category assignment triggers filter refresh**~~: **Done
    2026-09-29.** Membership events (`member_added/removed_event_type()`) have
@@ -71,7 +73,7 @@ Each style field has three layers per object:
 |-------|-------------|------------|
 | **Override** | Explicitly set by user via Appearance tab | Yes |
 | **Derived** | Computed from sources (categories, parent, status) | No (volatile) |
-| **Effective** | Override if set, otherwise derived | No (volatile) |
+| **Effective** | Override if set (["No icon"](#no-icon): none), otherwise derived | No (volatile) |
 
 Volatile fields are recomputed by the master loop within 1 second of any
 change. A file read or merged is computed at once, before the views
@@ -108,18 +110,21 @@ Four style fields, defined in `FIELD_TYPES`:
 | `font` | `SYS_DEFAULT_GUI_FONT` | `"System Theme"` |
 | `icon` | `""` (empty) | `"N/A"` |
 
-Icons have type-specific defaults applied in `computeDerived` (see
+Icons have type-specific defaults applied in `compute_derived` (see
 [Default Icons](#default-icons)).
 
 ---
 
 ## Derivation Sources by Object Type
 
+The categories and parents below count only where the Appearance flow
+preference lets the style start ([Appearance Flow](#appearance-flow)).
+
 ### Task
 
 Sources checked in order (first non-system-theme value wins):
 
-1. **Categories** - sorted by `stylePriority` descending (via `_getFromCategories`)
+1. **Categories** - sorted by `stylePriority` descending (via `_get_from_categories`)
 2. **Parent task** - `parent.effectiveXxx()` (via `_get_from_parent`), unless
    it comes from the parent's own status or tracking: each task shows its own
 3. **Status** - `status_icon_id()`, `statusFgColor()`, etc. from `compute_stored_status()`
@@ -130,7 +135,7 @@ Source labels: `[Category] name`, `[Task] name`, `[Status] active/completed/...`
 
 Sources checked in order:
 
-1. **Categories** - sorted by `stylePriority` descending (via `_getFromCategories`)
+1. **Categories** - sorted by `stylePriority` descending (via `_get_from_categories`)
 2. **Parent note** - `parent.effectiveXxx()` (via `_get_from_parent`)
 
 Source labels: `[Category] name`, `[Note] name`
@@ -181,10 +186,58 @@ category's appearance wins. Higher priority = checked first.
 
 ---
 
+## Appearance Flow
+
+**Asked by designer, 2026-10-08.** Preferences > Statuses > Appearance
+flow, under the status table and above Legacy, a dropdown (so a later
+variation is one more choice), sets where the style of an item without
+its own may start, for all four fields:
+
+| Choice | Setting `[appearance] flow` | Starts at |
+|---|---|---|
+| From categories and tasks (default, as before) | `all` | categories, tasks, notes |
+| From categories only | `categories` | categories |
+| From tasks only | `tasks` | tasks and notes |
+| None | `none` | nowhere |
+
+- A category passes its style to its items and to its subcategories
+  (and through them to their items): `_get_from_categories`, and
+  `_get_from_parent` for a category.
+- A task passes its style to its subtasks, a note to its subnotes:
+  `_get_from_parent` for a task or note. A task's own status and
+  tracking never pass, whatever the choice.
+- Not flows, so the same in every choice: an item's own overrides, a
+  task's status style and tracking clock, the default note and
+  attachment icons, efforts drawn in their task's style.
+
+With None, each item shows its own Appearance settings, a task its
+status style, a category only its own. The choice is global (the INI
+file), like the status styles. A change runs the full loop
+(`appearance.flow` in the scheduler's `_APPEARANCE_SETTINGS`).
+
+---
+
+## No Icon
+
+The Appearance tab's Icon override ticked on "No icon" (`NO_ICON`):
+the item shows no icon, effective source `[Override]`, and what flows
+from its categories or parents stops at it. Its subitems take none from
+it and show their own: their override, their categories, a task's
+status icon. Unticked, the override is unset and the icon from above
+shows, as before. Until 2026-10-08, picking "No icon" unticked the box,
+so no item could hide an inherited icon.
+
+Saved as `noIcon="True"` (format 39), a field older releases ignore
+([PERSISTENCE_XML.md](PERSISTENCE_XML.md#format-39-2033)). Colours and
+fonts have no such override: their override is a colour or font of its
+own, and Appearance flow None stops theirs.
+
+---
+
 ## Default Icons
 
 Types without a status-based icon fallback get a default icon via
-`TYPE_DEFAULT_ICONS` in `appearance.py`, applied at the end of `computeDerived`
+`TYPE_DEFAULT_ICONS` in `appearance.py`, applied at the end of `compute_derived`
 when no other source provides an icon:
 
 | Type | Default Icon | Source Label |
@@ -199,7 +252,7 @@ Categories have none (removed in #389): an icon of their own or their parent's.
 
 ## The Master Loop
 
-The scheduler's pass runs `computeStyles()` for the objects a change or
+The scheduler's pass runs `compute_styles()` for the objects a change or
 a time condition concerns and what reads them, each once; the full
 loop, for every object, when what every object reads changed
 ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#incremental-pass)).
@@ -229,17 +282,17 @@ ownership exists because users create new objects under owners.
 
 ## Stored Procedures
 
-### computeDerived
+### compute_derived
 
 Computes the derived value for one field of one object. Checks sources in
 type-specific order and writes via `obj.setDerivedXxx(value, source)`.
 
-### computeEffective
+### compute_effective
 
 Computes the effective value: override if set, otherwise derived. Writes via
 `obj.setEffectiveXxx(value, default, source)`.
 
-### _getFromCategories
+### _get_from_categories
 
 Shared helper for Task and Note derivation. Gets the object's categories,
 sorts by `stylePriority` descending, returns `(value, source)` from the first
@@ -289,7 +342,7 @@ an `"appearance"` page).
 
 | File | Purpose |
 |------|---------|
-| `taskcoachlib/domain/base/appearance.py` | SSOT stored procedures, `computeStyles()`, constants |
+| `taskcoachlib/domain/base/appearance.py` | SSOT stored procedures, `compute_styles()`, constants |
 | `taskcoachlib/domain/base/object.py` | SSOT accessor/setter methods and `shown_*()` on base Object |
 | `taskcoachlib/domain/task/task.py` | Task status icon/color/font, `compute_stored_status()` |
 | `taskcoachlib/domain/category/category.py` | `stylePriority` attribute |

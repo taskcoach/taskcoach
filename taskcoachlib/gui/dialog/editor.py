@@ -636,20 +636,20 @@ class TaskAppearancePage(ScrolledPage):
     _borderWidth = 2
 
     def addEntries(self):
-        self.addCalculatedSection()
+        self.add_calculated_section()
         # Show "Override values" header for all single-item edits
         if len(self.items) == 1:
             self.addLine()
-            self.addSectionHeader(_("Override values"))
+            self.add_section_header(_("Override values"))
         self.add_icon_entry()
         self.add_color_entries()
         self.add_font_entry()
-        self.addEffectiveSection()
+        self.add_effective_section()
         # Update derived values now that all widgets exist
         if len(self.items) == 1:
-            self._updateDerivedValues()
+            self._update_derived_values()
 
-    def addSectionHeader(self, title, source_label=None):
+    def add_section_header(self, title, source_label=None):
         """Add a bold section header spanning columns 0-1, optional label in column 2."""
         header = wx.StaticText(self, label=title)
         header.SetFont(header.GetFont().Bold())
@@ -674,7 +674,7 @@ class TaskAppearancePage(ScrolledPage):
         else:
             self._sizer.Add((0, 0), self._position.next(1), span=(1, 1))
 
-    def addCalculatedSection(self):
+    def add_calculated_section(self):
         """Add read-only display of derived appearance values.
 
         Layout: 3 columns - Label, Control, Source
@@ -687,7 +687,7 @@ class TaskAppearancePage(ScrolledPage):
             return
         item = self.items[0]
 
-        self.addSectionHeader(_("Derived values"), _("Source"))
+        self.add_section_header(_("Derived values"), _("Source"))
         entry_flags = [
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Label
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Control
@@ -695,97 +695,100 @@ class TaskAppearancePage(ScrolledPage):
         ]
 
         # Icon - panel with both bitmap and "N/A" text (show one or the other)
-        def rejectNav(evt):
+        def reject_nav(evt):
             evt.GetEventObject().Navigate(evt.GetDirection())
 
-        def rejectFocus(evt):
+        def reject_focus(evt):
             forward = not wx.GetKeyState(wx.WXK_SHIFT)
             patterns.later.soon(
                 evt.GetEventObject(), evt.GetEventObject().Navigate, forward
             )
 
-        self._derivedIconPanel = wx.Panel(self, style=0)
-        self._derivedIconPanel.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
-        self._derivedIconPanel.Bind(wx.EVT_SET_FOCUS, rejectFocus)
+        self._derived_icon_panel = wx.Panel(self, style=0)
+        self._derived_icon_panel.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
+        self._derived_icon_panel.Bind(wx.EVT_SET_FOCUS, reject_focus)
         icon_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._derivedIconDisplay = wx.StaticBitmap(self._derivedIconPanel)
-        self._derivedIconDisplay.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
-        self._derivedIconDisplay.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        self._derivedIconName = wx.StaticText(self._derivedIconPanel, label="")
-        self._derivedIconName.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
-        self._derivedIconName.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        self._derivedIconNA = wx.StaticText(
-            self._derivedIconPanel, label=_("N/A")
+        self._derived_icon_display = wx.StaticBitmap(self._derived_icon_panel)
+        self._derived_icon_display.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
+        self._derived_icon_display.Bind(wx.EVT_SET_FOCUS, reject_focus)
+        self._derived_icon_name = wx.StaticText(
+            self._derived_icon_panel, label=""
         )
-        self._derivedIconNA.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
-        self._derivedIconNA.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        self._derivedIconNA.SetForegroundColour(
+        self._derived_icon_name.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
+        self._derived_icon_name.Bind(wx.EVT_SET_FOCUS, reject_focus)
+        self._derived_icon_na = wx.StaticText(
+            self._derived_icon_panel, label=_("N/A")
+        )
+        self._derived_icon_na.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
+        self._derived_icon_na.Bind(wx.EVT_SET_FOCUS, reject_focus)
+        self._derived_icon_na.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        icon_sizer.Add(self._derivedIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
+        icon_sizer.Add(self._derived_icon_display, 0, wx.ALIGN_CENTER_VERTICAL)
         icon_sizer.Add(
-            self._derivedIconName, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5
+            self._derived_icon_name, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5
         )
-        icon_sizer.Add(self._derivedIconNA, 0, wx.ALIGN_CENTER_VERTICAL)
-        self._derivedIconPanel.SetSizer(icon_sizer)
-        self._derivedIconSource = wx.StaticText(self, label="")
-        self._derivedIconSource.SetForegroundColour(
+        icon_sizer.Add(self._derived_icon_na, 0, wx.ALIGN_CENTER_VERTICAL)
+        self._derived_icon_panel.SetSizer(icon_sizer)
+        self._derived_icon_source = wx.StaticText(self, label="")
+        self._derived_icon_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
         self.addEntry(
             _("Icon"),
-            self._derivedIconPanel,
-            self._derivedIconSource,
+            self._derived_icon_panel,
+            self._derived_icon_source,
             flags=entry_flags,
         )
 
         # Foreground
-        self._derivedFgPicker = widgets.ColourPickerCtrl(
+        self._derived_fg_picker = widgets.ColourPickerCtrl(
             self, colour=wx.BLACK, readOnly=True
         )
-        self._derivedFgSource = wx.StaticText(self, label="")
-        self._derivedFgSource.SetForegroundColour(
+        self._derived_fg_source = wx.StaticText(self, label="")
+        self._derived_fg_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
         self.addEntry(
             _("Foreground"),
-            self._derivedFgPicker,
-            self._derivedFgSource,
+            self._derived_fg_picker,
+            self._derived_fg_source,
             flags=entry_flags,
         )
 
         # Background
-        self._derivedBgPicker = widgets.ColourPickerCtrl(
+        self._derived_bg_picker = widgets.ColourPickerCtrl(
             self, colour=wx.WHITE, readOnly=True
         )
-        self._derivedBgSource = wx.StaticText(self, label="")
-        self._derivedBgSource.SetForegroundColour(
+        self._derived_bg_source = wx.StaticText(self, label="")
+        self._derived_bg_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
         self.addEntry(
             _("Background"),
-            self._derivedBgPicker,
-            self._derivedBgSource,
+            self._derived_bg_picker,
+            self._derived_bg_source,
             flags=entry_flags,
         )
 
         # Font
         default_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-        self._derivedFontPicker = widgets.FontPickerCtrl(
+        self._derived_font_picker = widgets.FontPickerCtrl(
             self, font=default_font, colour=(0, 0, 0, 255), readOnly=True
         )
-        self._derivedFontSource = wx.StaticText(self, label="")
-        self._derivedFontSource.SetForegroundColour(
+        self._derived_font_source = wx.StaticText(self, label="")
+        self._derived_font_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
         self.addEntry(
             _("Font"),
-            self._derivedFontPicker,
-            self._derivedFontSource,
+            self._derived_font_picker,
+            self._derived_font_source,
             flags=entry_flags,
         )
 
-        # Note: _updateDerivedValues() is called at end of addEntries() after all widgets exist
+        # addEntries() calls _update_derived_values() at its end, once
+        # every widget exists
 
         # Subscribe to SSOT derived change events for automatic updates
         for event_type in (
@@ -795,16 +798,16 @@ class TaskAppearancePage(ScrolledPage):
             item.derivedFontChangedEventType(),
         ):
             self.registerObserver(
-                self._onDerivedAppearanceChanged,
+                self._on_derived_appearance_changed,
                 eventType=event_type,
                 eventSource=item,
             )
 
-    def _onDerivedAppearanceChanged(self, event):
+    def _on_derived_appearance_changed(self, event):
         """Update derived display when SSOT appearance changes."""
-        self._updateDerivedValues()
+        self._update_derived_values()
 
-    def _updateDerivedValues(self):
+    def _update_derived_values(self):
         """Refresh the derived icon and color displays (pre-override values).
 
         Unified display logic for all item types. Always shows pickers with
@@ -813,7 +816,7 @@ class TaskAppearancePage(ScrolledPage):
         if len(self.items) != 1:
             return
         # Guard: only update if derived display widgets exist
-        if not hasattr(self, "_derivedIconDisplay"):
+        if not hasattr(self, "_derived_icon_display"):
             return
 
         # Get derived values based on item type
@@ -826,7 +829,7 @@ class TaskAppearancePage(ScrolledPage):
             bg_source,
             font_value,
             font_source,
-        ) = self._getDerivedValuesForItem(self.items[0])
+        ) = self._get_derived_values_for_item(self.items[0])
 
         # Display derived values (unified for all item types)
         self._display_derived_values(
@@ -840,7 +843,7 @@ class TaskAppearancePage(ScrolledPage):
             font_source,
         )
 
-    def _getDerivedValuesForItem(self, item):
+    def _get_derived_values_for_item(self, item):
         """Get derived appearance values from SSOT accessors.
 
         Returns: (icon_value, icon_source, fg_value, fg_source,
@@ -926,54 +929,54 @@ class TaskAppearancePage(ScrolledPage):
             from taskcoachlib.gui.icons.icon_library import icon_catalog
 
             icon_id = icon_value
-            self._derivedIconDisplay.SetBitmap(
+            self._derived_icon_display.SetBitmap(
                 icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
             )
-            self._derivedIconDisplay.Show()
+            self._derived_icon_display.Show()
             icon = icon_catalog.get_icon(icon_id)
-            self._derivedIconName.SetLabel(icon.label if icon else icon_id)
-            self._derivedIconName.Show()
-            self._derivedIconNA.Hide()
-            self._derivedIconSource.SetLabel(
+            self._derived_icon_name.SetLabel(icon.label if icon else icon_id)
+            self._derived_icon_name.Show()
+            self._derived_icon_na.Hide()
+            self._derived_icon_source.SetLabel(
                 icon_source or _("Initializing...")
             )
         else:
-            self._derivedIconDisplay.Hide()
-            self._derivedIconName.Hide()
-            self._derivedIconNA.Show()
-            self._derivedIconSource.SetLabel(_("N/A"))
-        self._derivedIconPanel.Layout()
+            self._derived_icon_display.Hide()
+            self._derived_icon_name.Hide()
+            self._derived_icon_na.Show()
+            self._derived_icon_source.SetLabel(_("N/A"))
+        self._derived_icon_panel.Layout()
 
         # --- Foreground Color ---
         # fg_value is either a color tuple or base.SYSTEM_FG_COLOR
         # fgSource is either "[Category] Name" or "System Theme"
         derived_fg_colour = resolve_color(fg_value)
-        self._derivedFgPicker.SetColour(derived_fg_colour)
-        self._derivedFgPicker.Show()
-        self._derivedFgSource.SetLabel(fg_source or _("Initializing..."))
+        self._derived_fg_picker.SetColour(derived_fg_colour)
+        self._derived_fg_picker.Show()
+        self._derived_fg_source.SetLabel(fg_source or _("Initializing..."))
 
         # --- Background Color ---
         # bg_value is either a color tuple or base.SYSTEM_BG_COLOR
         # bgSource is either "[Category] Name" or "System Theme"
         derived_bg_colour = resolve_color(bg_value)
-        self._derivedBgPicker.SetColour(derived_bg_colour)
-        self._derivedBgPicker.Show()
-        self._derivedBgSource.SetLabel(bg_source or _("Initializing..."))
+        self._derived_bg_picker.SetColour(derived_bg_colour)
+        self._derived_bg_picker.Show()
+        self._derived_bg_source.SetLabel(bg_source or _("Initializing..."))
 
         # --- Font ---
         # font_value is either a wx.Font or base.SYSTEM_FONT
         # fontSource is either "[Category] Name" or "System Theme"
         derived_font = resolve_font(font_value)
-        self._derivedFontPicker.SetSelectedFont(derived_font)
-        self._derivedFontPicker.Show()
-        self._derivedFontSource.SetLabel(font_source or _("Initializing..."))
+        self._derived_font_picker.SetSelectedFont(derived_font)
+        self._derived_font_picker.Show()
+        self._derived_font_source.SetLabel(font_source or _("Initializing..."))
 
         # Update font picker demo colors to match derived colors
-        self._derivedFontPicker.SetSelectedColour(derived_fg_colour)
-        self._derivedFontPicker.SetSelectedBgColour(derived_bg_colour)
+        self._derived_font_picker.SetSelectedColour(derived_fg_colour)
+        self._derived_font_picker.SetSelectedBgColour(derived_bg_colour)
 
         # Note: override entries now track effective values, not derived
-        # (updated in _updateEffectiveValues)
+        # (updated in _update_effective_values)
 
     def add_color_entries(self):
         self.add_color_entry(_("Foreground"), "foreground", wx.BLACK)
@@ -1051,7 +1054,7 @@ class TaskAppearancePage(ScrolledPage):
             flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT],
         )
 
-    def addEffectiveSection(self):
+    def add_effective_section(self):
         """Add read-only display of effective/final appearance values.
 
         Layout: 3 columns - Label, Control, Source
@@ -1064,7 +1067,7 @@ class TaskAppearancePage(ScrolledPage):
         item = self.items[0]
 
         self.addLine()
-        self.addSectionHeader(_("Effective values"), _("Source"))
+        self.add_section_header(_("Effective values"), _("Source"))
         entry_flags = [
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Label
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Control
@@ -1072,104 +1075,108 @@ class TaskAppearancePage(ScrolledPage):
         ]
 
         # Icon - panel with bitmap and "N/A" text (show one or the other)
-        def rejectNav(evt):
+        def reject_nav(evt):
             evt.GetEventObject().Navigate(evt.GetDirection())
 
-        def rejectFocus(evt):
+        def reject_focus(evt):
             forward = not wx.GetKeyState(wx.WXK_SHIFT)
             patterns.later.soon(
                 evt.GetEventObject(), evt.GetEventObject().Navigate, forward
             )
 
-        self._effectiveIconPanel = wx.Panel(self, style=0)
-        self._effectiveIconPanel.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
-        self._effectiveIconPanel.Bind(wx.EVT_SET_FOCUS, rejectFocus)
+        self._effective_icon_panel = wx.Panel(self, style=0)
+        self._effective_icon_panel.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
+        self._effective_icon_panel.Bind(wx.EVT_SET_FOCUS, reject_focus)
         icon_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self._effectiveIconDisplay = wx.StaticBitmap(self._effectiveIconPanel)
-        self._effectiveIconDisplay.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
-        self._effectiveIconDisplay.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        self._effectiveIconName = wx.StaticText(
-            self._effectiveIconPanel, label=""
+        self._effective_icon_display = wx.StaticBitmap(
+            self._effective_icon_panel
         )
-        self._effectiveIconName.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
-        self._effectiveIconName.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        self._effectiveIconNA = wx.StaticText(
-            self._effectiveIconPanel, label=_("N/A")
+        self._effective_icon_display.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
+        self._effective_icon_display.Bind(wx.EVT_SET_FOCUS, reject_focus)
+        self._effective_icon_name = wx.StaticText(
+            self._effective_icon_panel, label=""
         )
-        self._effectiveIconNA.Bind(wx.EVT_NAVIGATION_KEY, rejectNav)
-        self._effectiveIconNA.Bind(wx.EVT_SET_FOCUS, rejectFocus)
-        self._effectiveIconNA.SetForegroundColour(
+        self._effective_icon_name.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
+        self._effective_icon_name.Bind(wx.EVT_SET_FOCUS, reject_focus)
+        self._effective_icon_na = wx.StaticText(
+            self._effective_icon_panel, label=_("N/A")
+        )
+        self._effective_icon_na.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
+        self._effective_icon_na.Bind(wx.EVT_SET_FOCUS, reject_focus)
+        self._effective_icon_na.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        icon_sizer.Add(self._effectiveIconDisplay, 0, wx.ALIGN_CENTER_VERTICAL)
         icon_sizer.Add(
-            self._effectiveIconName, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5
+            self._effective_icon_display, 0, wx.ALIGN_CENTER_VERTICAL
         )
-        icon_sizer.Add(self._effectiveIconNA, 0, wx.ALIGN_CENTER_VERTICAL)
-        self._effectiveIconPanel.SetSizer(icon_sizer)
-        self._effectiveIconSource = wx.StaticText(self, label="")
-        self._effectiveIconSource.SetForegroundColour(
+        icon_sizer.Add(
+            self._effective_icon_name, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 5
+        )
+        icon_sizer.Add(self._effective_icon_na, 0, wx.ALIGN_CENTER_VERTICAL)
+        self._effective_icon_panel.SetSizer(icon_sizer)
+        self._effective_icon_source = wx.StaticText(self, label="")
+        self._effective_icon_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
         self.addEntry(
             _("Icon"),
-            self._effectiveIconPanel,
-            self._effectiveIconSource,
+            self._effective_icon_panel,
+            self._effective_icon_source,
             flags=entry_flags,
         )
 
         # Foreground - read-only color picker with source
-        self._effectiveFgPicker = widgets.ColourPickerCtrl(
+        self._effective_fg_picker = widgets.ColourPickerCtrl(
             self, colour=wx.BLACK, readOnly=True
         )
-        self._effectiveFgSource = wx.StaticText(self, label="")
-        self._effectiveFgSource.SetForegroundColour(
+        self._effective_fg_source = wx.StaticText(self, label="")
+        self._effective_fg_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
         self.addEntry(
             _("Foreground"),
-            self._effectiveFgPicker,
-            self._effectiveFgSource,
+            self._effective_fg_picker,
+            self._effective_fg_source,
             flags=entry_flags,
         )
 
         # Background - read-only color picker with source
-        self._effectiveBgPicker = widgets.ColourPickerCtrl(
+        self._effective_bg_picker = widgets.ColourPickerCtrl(
             self, colour=wx.WHITE, readOnly=True
         )
-        self._effectiveBgSource = wx.StaticText(self, label="")
-        self._effectiveBgSource.SetForegroundColour(
+        self._effective_bg_source = wx.StaticText(self, label="")
+        self._effective_bg_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
         self.addEntry(
             _("Background"),
-            self._effectiveBgPicker,
-            self._effectiveBgSource,
+            self._effective_bg_picker,
+            self._effective_bg_source,
             flags=entry_flags,
         )
 
         # Font - read-only font picker with source
         default_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
-        self._effectiveFontPicker = widgets.FontPickerCtrl(
+        self._effective_font_picker = widgets.FontPickerCtrl(
             self,
             font=default_font,
             colour=wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT),
             bgColour=wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW),
             readOnly=True,
         )
-        self._effectiveFontSource = wx.StaticText(self, label="")
-        self._effectiveFontSource.SetForegroundColour(
+        self._effective_font_source = wx.StaticText(self, label="")
+        self._effective_font_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
         self.addEntry(
             _("Font"),
-            self._effectiveFontPicker,
-            self._effectiveFontSource,
+            self._effective_font_picker,
+            self._effective_font_source,
             flags=entry_flags,
         )
 
         # Initial update
-        self._updateEffectiveValues()
+        self._update_effective_values()
 
         # Subscribe to SSOT effective change events for automatic updates
         for event_type in (
@@ -1179,16 +1186,16 @@ class TaskAppearancePage(ScrolledPage):
             item.effectiveFontChangedEventType(),
         ):
             self.registerObserver(
-                self._onEffectiveAppearanceChanged,
+                self._on_effective_appearance_changed,
                 eventType=event_type,
                 eventSource=item,
             )
 
-    def _onEffectiveAppearanceChanged(self, event):
-        self._updateEffectiveValues()
-        self._updateFontDemoColors()
+    def _on_effective_appearance_changed(self, event):
+        self._update_effective_values()
+        self._update_font_demo_colors()
 
-    def _updateEffectiveValues(self):
+    def _update_effective_values(self):
         """Refresh the effective appearance display from item's effective fields.
 
         All domain objects (Task, Category, Note, Attachment) use the same SSOT
@@ -1197,7 +1204,7 @@ class TaskAppearancePage(ScrolledPage):
         """
         if len(self.items) != 1:
             return
-        if not hasattr(self, "_effectiveIconDisplay"):
+        if not hasattr(self, "_effective_icon_display"):
             return
         item = self.items[0]
 
@@ -1212,23 +1219,28 @@ class TaskAppearancePage(ScrolledPage):
             icon_id = (
                 icon_value  # iconValue follows the *Value/*Source pattern
             )
-            self._effectiveIconDisplay.SetBitmap(
+            self._effective_icon_display.SetBitmap(
                 icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE)
             )
-            self._effectiveIconDisplay.Show()
+            self._effective_icon_display.Show()
             icon = icon_catalog.get_icon(icon_id)
-            self._effectiveIconName.SetLabel(icon.label if icon else icon_id)
-            self._effectiveIconName.Show()
-            self._effectiveIconNA.Hide()
-            self._effectiveIconSource.SetLabel(
+            self._effective_icon_name.SetLabel(icon.label if icon else icon_id)
+            self._effective_icon_name.Show()
+            self._effective_icon_na.Hide()
+            self._effective_icon_source.SetLabel(
                 icon_source or _("Initializing...")
             )
         else:
-            self._effectiveIconDisplay.Hide()
-            self._effectiveIconName.Hide()
-            self._effectiveIconNA.Show()
-            self._effectiveIconSource.SetLabel(_("N/A"))
-        self._effectiveIconPanel.Layout()
+            self._effective_icon_display.Hide()
+            self._effective_icon_name.Hide()
+            # None by the "No icon" override, else none from anywhere
+            overridden = icon_source == "[Override]"
+            self._effective_icon_na.SetLabel(
+                _("No icon") if overridden else _("N/A")
+            )
+            self._effective_icon_na.Show()
+            self._effective_icon_source.SetLabel(icon_source or _("N/A"))
+        self._effective_icon_panel.Layout()
 
         # --- Foreground Color ---
         fg_actual = item.effectiveFgColor()
@@ -1237,8 +1249,8 @@ class TaskAppearancePage(ScrolledPage):
         effective_fg_colour = resolve_color(
             fg_actual if fg_actual else fg_default
         )
-        self._effectiveFgPicker.SetColour(effective_fg_colour)
-        self._effectiveFgSource.SetLabel(fg_source or _("Initializing..."))
+        self._effective_fg_picker.SetColour(effective_fg_colour)
+        self._effective_fg_source.SetLabel(fg_source or _("Initializing..."))
 
         # --- Background Color ---
         bg_actual = item.effectiveBgColor()
@@ -1247,21 +1259,23 @@ class TaskAppearancePage(ScrolledPage):
         effective_bg_colour = resolve_color(
             bg_actual if bg_actual else bg_default
         )
-        self._effectiveBgPicker.SetColour(effective_bg_colour)
-        self._effectiveBgSource.SetLabel(bg_source or _("Initializing..."))
+        self._effective_bg_picker.SetColour(effective_bg_colour)
+        self._effective_bg_source.SetLabel(bg_source or _("Initializing..."))
 
         # --- Font ---
         font_actual = item.effectiveFont()
         font_default = item.effectiveFontDefault()
         font_source = item.effectiveFontSource()
-        self._effectiveFontPicker.SetSelectedFont(
+        self._effective_font_picker.SetSelectedFont(
             resolve_font(font_actual if font_actual else font_default)
         )
-        self._effectiveFontSource.SetLabel(font_source or _("Initializing..."))
+        self._effective_font_source.SetLabel(
+            font_source or _("Initializing...")
+        )
 
         # Update font picker demo colors
-        self._effectiveFontPicker.SetSelectedColour(effective_fg_colour)
-        self._effectiveFontPicker.SetSelectedBgColour(effective_bg_colour)
+        self._effective_font_picker.SetSelectedColour(effective_fg_colour)
+        self._effective_font_picker.SetSelectedBgColour(effective_bg_colour)
 
         # Update override entries to track effective values
         # (shown when override checkbox is unchecked; always for colors on font picker)
@@ -1269,13 +1283,13 @@ class TaskAppearancePage(ScrolledPage):
             font_actual if font_actual else font_default
         )
         if hasattr(self, "_foregroundColorEntry"):
-            self._foregroundColorEntry.setEffectiveColor(effective_fg_colour)
+            self._foregroundColorEntry.set_effective_color(effective_fg_colour)
         if hasattr(self, "_backgroundColorEntry"):
-            self._backgroundColorEntry.setEffectiveColor(effective_bg_colour)
+            self._backgroundColorEntry.set_effective_color(effective_bg_colour)
         if hasattr(self, "_fontEntry"):
-            self._fontEntry.setEffectiveFont(effective_font)
+            self._fontEntry.set_effective_font(effective_font)
 
-    def _updateFontDemoColors(self):
+    def _update_font_demo_colors(self):
         if len(self.items) != 1:
             return
         item = self.items[0]

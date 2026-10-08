@@ -4,6 +4,20 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.3
+
+### Appearance
+
+- Preferences > Statuses > Appearance flow: where the icon, colours
+  and font of an item without its own come from. From categories and
+  tasks (as before), from categories only, from tasks only, or none:
+  each item then shows only its own style and a task its status.
+- The "No icon" icon override works: the item shows no icon, and the
+  icon of its categories or parent task no longer shows through. Its
+  subtasks show their own icons. Picking "No icon" used to untick the
+  override, so the inherited icon stayed. Releases before this one
+  show the inherited icon for such an item.
+
 ## 2.0.3.2
 
 ### Export

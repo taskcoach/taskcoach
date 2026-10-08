@@ -261,7 +261,7 @@ def styled(item):
     then its parents and itself, parents first (a child reads its
     parent's style), with the loop's own steps."""
     from taskcoachlib.domain import date
-    from taskcoachlib.domain.base.appearance import computeStyles
+    from taskcoachlib.domain.base.appearance import compute_styles
     from taskcoachlib.gui.scheduler import MasterScheduler
 
     def parents_first(each):
@@ -276,7 +276,7 @@ def styled(item):
         if hasattr(each, "compute_stored_status"):
             MasterScheduler._process_task(each, date.Now())
         else:
-            computeStyles(each)
+            compute_styles(each)
     return item
 
 
