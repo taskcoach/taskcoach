@@ -111,6 +111,7 @@ Key packages in `taskcoachlib/`:
 | [LOCALE.md](LOCALE.md) | Locale and regional settings |
 | [TRANSLATIONS.md](TRANSLATIONS.md) | How translations work, and contributing them |
 | [SPELLCHECKING.md](SPELLCHECKING.md) | Spell checking |
+| [MARKDOWN.md](MARKDOWN.md) | A Markdown preview of descriptions, requested and parked: the open question |
 | [SYNC.md](SYNC.md) | Synchronization, a possible future feature |
 | [TODO_TXT.md](TODO_TXT.md) | Todo.txt, removed: why, and how to bring it back |
 | [SPOKEN_REMINDERS.md](SPOKEN_REMINDERS.md) | Spoken reminders, removed: why, a better way, and how to bring them back |

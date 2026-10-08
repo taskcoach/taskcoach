@@ -197,9 +197,9 @@ Every second (_on_second):
     A task in the file:
       task.compute_stored_status(tick)      # The status at the tick
       task.processReminder(tick)            # Fire trigger if due
-      computeStyles(task)
+      compute_styles(task)
     A category, note or attachment:
-      computeStyles(item)
+      compute_styles(item)
   send 'scheduler.pass' if a pass ran, also after a failed one
 
   if dateChanged:

@@ -709,6 +709,8 @@ class XMLReader(object):
             ordering=value(node, "ordering", int),
             **self.__parse_dates(node),
         )
+        if value(node, "noIcon", self.__parse_boolean):
+            attributes["icon"] = base.NO_ICON
         # Written back for older releases (legacy.py): the selected
         # icon, and a stated modification date equal to the creation
         # date, which this release leaves out

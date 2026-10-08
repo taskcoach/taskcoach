@@ -100,9 +100,9 @@ seconds that matter ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md
 **Processing order:** Categories → Tasks → Notes → Attachments
 
 **Key classes:**
-- `MasterScheduler` in `scheduler.py` - At each due second or after a change, processes the objects concerned and what reads them, each once (`computeStyles()`; for tasks the status and reminder too)
-- `computeDerived(obj, field_type)` - Computes derived value from sources
-- `computeEffective(obj, field_type)` - Computes effective from override + derived
+- `MasterScheduler` in `scheduler.py` - At each due second or after a change, processes the objects concerned and what reads them, each once (`compute_styles()`; for tasks the status and reminder too)
+- `compute_derived(obj, field_type)` - Computes derived value from sources
+- `compute_effective(obj, field_type)` - Computes effective from override + derived
 
 **Category stylePriority:**
 Tasks with multiple categories use `stylePriority` to determine which category's style wins.
@@ -182,8 +182,8 @@ def derivedFgColorSource(self):
 ```
 
 - **All accessors** are simple Attribute getters in `object.py`
-- **computeDerived()** in `appearance.py` computes and writes to SSOT
-- **computeEffective()** in `appearance.py` computes effective from derived + override
+- **compute_derived()** in `appearance.py` computes and writes to SSOT
+- **compute_effective()** in `appearance.py` computes effective from derived + override
 - UI resolves: `color = resolve_color(actual if actual else default)`
 
 **Plural icons:** removed 2026-09-29, **ruled by designer**
@@ -303,7 +303,7 @@ Called from:
 - `_update_status()`: at once after a change of what it reads (dates,
   completion, prerequisites, subtasks added or removed)
 - `MasterScheduler._compute_task()`: when the loop processes the task, at
-  that second, before `computeStyles()`
+  that second, before `compute_styles()`
 
 ### Event: statusChangedEventType
 
@@ -325,7 +325,7 @@ Status is recomputed in three scenarios:
    pass.
 3. **When the loop processes the task** (a timer second of it lands, a
    change marks it, or a full loop runs): `MasterScheduler._compute_task()`
-   calls `compute_stored_status()` at that second, then `computeStyles()`.
+   calls `compute_stored_status()` at that second, then `compute_styles()`.
 
 ### Timer-Driven Updates (ComputeStyles)
 
@@ -346,9 +346,9 @@ GlobalTimer._on_tick() (every 1 second)
                 │   ├── Calls Task.compute_status() with task's dates
                 │   ├── Updates __computed_status, __status_text, __status_icon_id
                 │   └── Fires statusChangedEventType if changed
-                2. computeStyles(task)
-                    ├── computeDerived(task, field_type) for each field
-                    └── computeEffective(task, field_type) for each field
+                2. compute_styles(task)
+                    ├── compute_derived(task, field_type) for each field
+                    └── compute_effective(task, field_type) for each field
 ```
 
 See docs/SCHEDULERS.md for the complete MasterScheduler processing flow.
@@ -385,14 +385,14 @@ All subscribe to `statusChangedEventType` for refresh.
 | Location | File | Source of Truth | What It Does |
 |----------|------|-----------------|--------------|
 | Core calculation | `domain/task/task.py` | Dates + now + dueSoonHours | Computes and caches status |
-| Master loop | `gui/scheduler.py` | `_compute_task()` | Stores the status at the tick's second, then `computeStyles()` computes the derived and effective appearance |
+| Master loop | `gui/scheduler.py` | `_compute_task()` | Stores the status at the tick's second, then `compute_styles()` computes the derived and effective appearance |
 
 ### Consumers (read computedStatus())
 
 | Consumer | File | Purpose |
 |----------|------|---------|
 | Status helper methods | `domain/task/task.py` | `overdue()`, `active()`, etc.; `completed()` reads the completion date ([Rule](#rule)) |
-| Status styles | `domain/task/task.py` | `statusFgColor()`, `statusBgColor()`, `statusFont()`, `status_icon_id()`, read by `computeDerived()` |
+| Status styles | `domain/task/task.py` | `statusFgColor()`, `statusBgColor()`, `statusFont()`, `status_icon_id()`, read by `compute_derived()` |
 | ViewFilter | `domain/task/filter.py` | Hide tasks by status |
 | Status bar | `gui/viewer/task.py` | Task count per status |
 | Task list counts | `domain/task/tasklist.py` | `nr_of_tasks_per_status()` |
@@ -454,7 +454,7 @@ a proxy, listen to it since the views moved to the effective styles
 ### 3. StatusChecker Duplicates Logic — RESOLVED
 
 StatusChecker has been merged into the scheduler. `MasterScheduler._compute_task()`
-calls each task's `compute_stored_status()` immediately before `computeStyles()`. This
+calls each task's `compute_stored_status()` immediately before `compute_styles()`. This
 eliminates the duplicated date logic and guarantees correct ordering: status is always
 fresh when appearance values are computed.
 
@@ -599,7 +599,7 @@ Each viewer that shows tasks has `hideXtasks` boolean settings (all default to `
 ## Task Icon Decision Sequence
 
 The task icon every view shows, `shown_icon_id()`, is the effective
-icon the master loop computes (`computeDerived()`, `computeEffective()`)
+icon the master loop computes (`compute_derived()`, `compute_effective()`)
 from the following priority sequence. The first match wins; a task
 with subtasks shows the same icon (no plural icons since To Do 58).
 
@@ -713,7 +713,7 @@ also skips user overrides in the effective computation.
 
 Categories inherit appearance from their **parent category**.
 
-Derived values are computed by `computeDerived()` and stored as SSOT Attribute fields.
+Derived values are computed by `compute_derived()` and stored as SSOT Attribute fields.
 Value and source are separate accessors:
 
 ```
@@ -731,7 +731,7 @@ Icons have no default - UI displays "N/A" when source is empty.
 **File:** `taskcoachlib/domain/base/object.py`
 
 All domain objects have SSOT appearance fields as `Attribute` objects defined in base `Object`.
-These are written by `computeDerived()` and `computeEffective()` stored procedures, called
+These are written by `compute_derived()` and `compute_effective()` stored procedures, called
 by the master loop (`ComputeStyles`).
 
 **Derived accessors** (value and source are separate methods):
@@ -774,10 +774,10 @@ Two stored procedures handle appearance calculations:
 
 ---
 
-#### Stored Procedure: computeDerived
+#### Stored Procedure: compute_derived
 
 ```
-computeDerived(object_ref, field_type)
+compute_derived(object_ref, field_type)
 
 INPUTS:  object_ref (domain object), field_type ('fgColor', 'bgColor', 'font', 'icon')
 OUTPUTS: calls object's setDerivedXxx(value, source) Attribute setter
@@ -793,10 +793,10 @@ OUTPUTS: calls object's setDerivedXxx(value, source) Attribute setter
 
 ---
 
-#### Stored Procedure: computeEffective
+#### Stored Procedure: compute_effective
 
 ```
-computeEffective(object_ref, field_type)
+compute_effective(object_ref, field_type)
 
 INPUTS:  _derived_{field}_value, _derived_{field}_source, override value
 OUTPUTS: _effective_{field}_value, _effective_{field}_default, _effective_{field}_source
@@ -817,7 +817,7 @@ OUTPUTS: _effective_{field}_value, _effective_{field}_default, _effective_{field
 ComputeStyles polling pattern (eventual consistency):
 1. User changes override value (or category assignment, status, etc.)
 2. The change pushes the current second; the master loop (`ComputeStyles`) runs at the next tick
-3. For each object: `computeDerived()` then `computeEffective()` for each field type
+3. For each object: `compute_derived()` then `compute_effective()` for each field type
 4. Attribute.set() fires change events only when value actually changes
 5. UI subscribers (editor Appearance tab) update on per-field change events
 
@@ -844,8 +844,8 @@ ComputeStyles polling pattern (eventual consistency):
 ComputeStyles (each pass of the master loop)
   └── For each object in taskFile (tasks, categories, notes, attachments):
       └── For each field_type in ('fgColor', 'bgColor', 'font', 'icon'):
-          1. computeDerived(object, field_type)
-          2. computeEffective(object, field_type)
+          1. compute_derived(object, field_type)
+          2. compute_effective(object, field_type)
 ```
 
 Its pass catches, at the next tick:
@@ -944,13 +944,13 @@ Each Attribute fires a change event when its value is set via `Attribute.set()`
 (see ATTRIBUTE_PATTERN.md for the Attribute API).
 
 ```
-Derived (Attribute fields, written by computeDerived):
+Derived (Attribute fields, written by compute_derived):
   _derived_fgColor       (value)    _derived_fgColor_source
   _derived_bgColor       (value)    _derived_bgColor_source
   _derived_font          (value)    _derived_font_source
   _derived_icon          (value)    _derived_icon_source
 
-Effective (Attribute fields, written by computeEffective):
+Effective (Attribute fields, written by compute_effective):
   _effective_fgColor     (value)    _effective_fgColor_default    _effective_fgColor_source
   _effective_bgColor     (value)    _effective_bgColor_default    _effective_bgColor_source
   _effective_font        (value)    _effective_font_default       _effective_font_source
@@ -964,7 +964,7 @@ Accessor methods are generated by Attribute fields and return stored values dire
 **Change Detection:**
 
 1. The master loop (`ComputeStyles`) runs at each due second
-2. Calls `computeDerived()` and `computeEffective()` for all objects
+2. Calls `compute_derived()` and `compute_effective()` for all objects
 3. `Attribute.set()` compares new vs prior value (see ATTRIBUTE_PATTERN.md)
 4. If changed: fires per-field change event (e.g., `derivedFgColorChangedEventType()`)
 5. UI subscribers update display
@@ -990,7 +990,7 @@ system theme values into None for the widgets
 
 Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effectiveXxxSource()` accessor methods.
 
-**Task Appearance Cascade (priority order) — computed by `computeDerived()`:**
+**Task Appearance Cascade (priority order) — computed by `compute_derived()`:**
 
 ```
 1. Task's direct categories
@@ -1013,7 +1013,7 @@ Tasks have `derivedXxx()` / `derivedXxxSource()` and `effectiveXxx()` / `effecti
 - If own override set → Source: "[Override]"
 - Else → delegates to `derivedXxx()`
 
-**SSOT accessors** (defined as Attribute fields in base `Object`, written by `computeDerived()` and `computeEffective()`):
+**SSOT accessors** (defined as Attribute fields in base `Object`, written by `compute_derived()` and `compute_effective()`):
 
 **Derived** (value and source are separate methods):
 

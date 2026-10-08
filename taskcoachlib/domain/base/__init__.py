@@ -29,9 +29,10 @@ from .sorter import Sorter, TreeSorter
 from .owner import DomainObjectOwnerMetaclass
 from .appearance import (
     by_style_priority,
-    computeDerived,
-    computeEffective,
+    compute_derived,
+    compute_effective,
     FIELD_TYPES,
+    NO_ICON,
     SYSTEM_FG_COLOR,
     SYSTEM_BG_COLOR,
     SYSTEM_FONT,

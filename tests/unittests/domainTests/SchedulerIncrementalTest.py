@@ -23,6 +23,7 @@ from unittest import mock
 import test
 import wx
 from taskcoachlib import patterns, persistence
+from taskcoachlib.config import settings
 from taskcoachlib.domain import attachment, base, category, date, effort
 from taskcoachlib.domain.base import object as base_object
 from taskcoachlib.domain import note, task
@@ -216,7 +217,9 @@ class IncrementalPassTest(test.wxTestCase):
 
     def override(self):
         item = self.random.choice(self.live())
-        what = self.random.choice(["fg", "bg", "icon", "no fg", "no icon"])
+        what = self.random.choice(
+            ["fg", "bg", "icon", "no fg", "no icon", "hide icon"]
+        )
         if what == "fg":
             item.setForegroundColor(self.random.choice(COLOURS))
         elif what == "bg":
@@ -225,9 +228,16 @@ class IncrementalPassTest(test.wxTestCase):
             item.set_icon_id(self.random.choice(ICONS))
         elif what == "no fg":
             item.setForegroundColor(None)
+        elif what == "hide icon":
+            item.set_icon_id(base.NO_ICON)  # The "No icon" override
         else:
             item.set_icon_id("")
         return "%s of %s" % (what, item.subject())
+
+    def flow(self):
+        chosen = self.random.choice(["all", "categories", "tasks", "none"])
+        settings.set("appearance", "flow", chosen)
+        return "appearance flow %s" % chosen
 
     def link(self):
         item = self.random.choice(self.live(task.Task, note.Note))
@@ -405,6 +415,7 @@ class IncrementalPassTest(test.wxTestCase):
         undo,
         clock,
         paste,
+        flow,
     )
 
     def test_the_pass_leaves_nothing_for_the_full_loop(self):

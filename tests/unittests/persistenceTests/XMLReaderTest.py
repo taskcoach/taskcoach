@@ -26,7 +26,7 @@ import base64
 import sys
 import test
 from taskcoachlib import persistence, config, operating_system
-from taskcoachlib.domain import attachment, category, date, note, task
+from taskcoachlib.domain import attachment, base, category, date, note, task
 from taskcoachlib.patterns.field import fields
 
 
@@ -1404,6 +1404,10 @@ class XMLReaderVersion29Test(XMLReaderTestCase):
         tasks = self.writeAndReadTasks('<tasks><task icon="icon"/></tasks>')
         self.assertEqual("icon", tasks[0].icon_id())
 
+    def test_no_icon_override(self):
+        tasks = self.writeAndReadTasks('<tasks><task noIcon="True"/></tasks>')
+        self.assertEqual(base.NO_ICON, tasks[0].icon_id())
+
     def test_selected_icon_of_old_files_is_dropped(self):
         tasks = self.writeAndReadTasks(
             '<tasks><task icon="icon" selectedIcon="open_icon"/></tasks>'
@@ -2367,13 +2371,13 @@ class XMLReaderVersionsTest(XMLReaderTestCase):
         self.assertRaises(
             persistence.xml.reader.XMLReaderTooNewException,
             self.read,
-            'tskversion="39"',
+            'tskversion="40"',
             "<tasks/>",
         )
 
     def test_a_newer_format_needing_no_newer_reader_is_read(self):
         tasks, _, _ = self.read(
-            'tskversion="37" tskformat="39"',
+            'tskversion="37" tskformat="40"',
             '<tasks><task id="t1" subject="Task"/></tasks>',
         )
         self.assertEqual("Task", tasks[0].subject())

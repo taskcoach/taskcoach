@@ -16,12 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from taskcoachlib.config import settings
+
 """
 Appearance SSOT (Single Source of Truth) Architecture
 
-WRITE (stored procedures):
-  computeDerived(obj, field_type)   → computes and writes derived value/source via object setters
-  computeEffective(obj, field_type) → computes and writes effective value/default/source via object setters
+WRITE (stored procedures, through the objects' setters):
+  compute_derived(obj, field_type)   → the derived value and source
+  compute_effective(obj, field_type) → the effective value, default
+                                       and source
 
 READ (object accessor methods - each returns single value):
   obj.derivedFgColor()              → reads derived foreground color value
@@ -40,7 +43,6 @@ Volatile Fields (not persisted):
 
 Field types: 'fgColor', 'bgColor', 'font', 'icon'
 """
-
 
 # =============================================================================
 # Constants
@@ -74,39 +76,59 @@ OVERRIDE_METHOD = {
     "icon": "icon_id",
 }
 
+# The icon override that shows no icon: what flows from above stops at
+# the item, which passes none on (docs/APPEARANCE_STYLES.md, No Icon)
+NO_ICON = "no_icon"
+
+# Where a style may start, by the "Appearance flow" preference
+# (docs/APPEARANCE_STYLES.md, Appearance Flow): a category passes its
+# style to its items and subcategories, a task or note to its subtasks
+# or subnotes
+_FLOW_FROM = {
+    "all": ("Category", "Task", "Note"),
+    "categories": ("Category",),
+    "tasks": ("Task", "Note"),
+    "none": (),
+}
+
+
+def _flows_from(kind):
+    flow = settings.get("appearance", "flow")
+    return kind in _FLOW_FROM.get(flow, _FLOW_FROM["all"])
+
 
 # =============================================================================
 # Per-field Effective Setters
 # =============================================================================
 
 
-def setEffectiveFgColor(obj, value, default, source):
+def set_effective_fg_color(obj, value, default, source):
     obj.setEffectiveFgColor(value, default, source)
 
 
-def setEffectiveBgColor(obj, value, default, source):
+def set_effective_bg_color(obj, value, default, source):
     obj.setEffectiveBgColor(value, default, source)
 
 
-def setEffectiveIcon(obj, value, default, source):
+def set_effective_icon(obj, value, default, source):
     # Icon setter doesn't take default
     obj.setEffectiveIcon(value, source)
 
 
-def setEffectiveFont(obj, value, default, source):
+def set_effective_font(obj, value, default, source):
     obj.setEffectiveFont(value, default, source)
 
 
 EFFECTIVE_SETTERS = {
-    "fgColor": setEffectiveFgColor,
-    "bgColor": setEffectiveBgColor,
-    "icon": setEffectiveIcon,
-    "font": setEffectiveFont,
+    "fgColor": set_effective_fg_color,
+    "bgColor": set_effective_bg_color,
+    "icon": set_effective_icon,
+    "font": set_effective_font,
 }
 
 
 # =============================================================================
-# Stored Procedure: computeDerived
+# Stored Procedure: compute_derived
 # =============================================================================
 
 # Mapping of field types to effective getter method names
@@ -141,11 +163,11 @@ TYPE_DEFAULT_ICONS = {
 }
 
 
-def _isBeingTracked(obj):
+def _is_being_tracked(obj):
     return hasattr(obj, "isBeingTracked") and obj.isBeingTracked()
 
 
-def _getObjectType(obj):
+def _get_object_type(obj):
     class_name = obj.__class__.__name__
     if class_name == "Task":
         return "Task"
@@ -156,7 +178,7 @@ def _getObjectType(obj):
     return "Attachment"
 
 
-def _isSystemThemeValue(value):
+def _is_system_theme_value(value):
     if value is None:
         return True
     if isinstance(value, str):
@@ -167,7 +189,7 @@ def _isSystemThemeValue(value):
 def shown(value):
     """A style value as the views draw it: None for the system theme,
     which the widgets use when given none."""
-    return None if _isSystemThemeValue(value) else value
+    return None if _is_system_theme_value(value) else value
 
 
 def by_style_priority(categories):
@@ -183,19 +205,19 @@ def by_style_priority(categories):
     )
 
 
-def _getFromCategories(object_ref, effective_getter):
+def _get_from_categories(object_ref, effective_getter):
     """Get a style value from the object's categories, sorted by stylePriority.
 
     Returns (value, source) from the highest-priority category that has
     a non-system-theme value, or (None, None) if no category provides one.
     """
-    if not hasattr(object_ref, "categories"):
+    if not hasattr(object_ref, "categories") or not _flows_from("Category"):
         return None, None
     for cat in by_style_priority(object_ref.categories()):
         getter = getattr(cat, effective_getter, None)
         if getter:
             cat_value = getter()
-            if cat_value and not _isSystemThemeValue(cat_value):
+            if cat_value and not _is_system_theme_value(cat_value):
                 return cat_value, f"[Category] {cat.subject()}"
     return None, None
 
@@ -210,13 +232,13 @@ def _get_from_parent(object_ref, obj_type, effective_getter):
 
     Returns (value, source) or (None, None).
     """
-    if not object_ref.parent():
+    if not object_ref.parent() or not _flows_from(obj_type):
         return None, None
     parent = object_ref.parent()
     getter = getattr(parent, effective_getter, None)
     if getter:
         parent_value = getter()
-        if parent_value and not _isSystemThemeValue(parent_value):
+        if parent_value and not _is_system_theme_value(parent_value):
             parent_source = getattr(parent, effective_getter + "Source")()
             if obj_type == "Task" and parent_source.startswith(
                 _OWN_STATE_SOURCES
@@ -226,7 +248,7 @@ def _get_from_parent(object_ref, obj_type, effective_getter):
     return None, None
 
 
-def computeDerived(object_ref, field_type):
+def compute_derived(object_ref, field_type):
     """Compute derived value from sources and write to SSOT.
 
     Sources by object type:
@@ -237,7 +259,7 @@ def computeDerived(object_ref, field_type):
 
     OUTPUTS: Calls object_ref.setDerivedXxx(value, source)
     """
-    obj_type = _getObjectType(object_ref)
+    obj_type = _get_object_type(object_ref)
     effective_getter = EFFECTIVE_GETTERS[field_type]
 
     value = None
@@ -245,13 +267,13 @@ def computeDerived(object_ref, field_type):
 
     if obj_type == "Task":
         # Tracking icon: highest priority for icon field
-        if field_type == "icon" and _isBeingTracked(object_ref):
+        if field_type == "icon" and _is_being_tracked(object_ref):
             value = "nuvola_apps_clock"
             source = "[Tracking]"
 
         # Task sources: categories → parent → status
         if value is None:
-            value, src = _getFromCategories(object_ref, effective_getter)
+            value, src = _get_from_categories(object_ref, effective_getter)
             if src:
                 source = src
 
@@ -275,7 +297,7 @@ def computeDerived(object_ref, field_type):
 
     elif obj_type == "Note":
         # Note sources: categories → parent
-        value, src = _getFromCategories(object_ref, effective_getter)
+        value, src = _get_from_categories(object_ref, effective_getter)
         if src:
             source = src
 
@@ -309,7 +331,7 @@ def computeDerived(object_ref, field_type):
 
 
 # =============================================================================
-# Stored Procedure: computeEffective
+# Stored Procedure: compute_effective
 # =============================================================================
 
 # Mapping of field types to derived getter method names
@@ -328,7 +350,7 @@ DERIVED_SOURCE_GETTERS = {
 }
 
 
-def computeEffective(object_ref, field_type):
+def compute_effective(object_ref, field_type):
     """Compute effective from derived + override. Calls per-field setter.
 
     INPUTS:  derived value/source from object getters, override value
@@ -350,11 +372,11 @@ def computeEffective(object_ref, field_type):
     override_value = getattr(object_ref, OVERRIDE_METHOD[field_type])()
 
     # Compute effective
-    if field_type == "icon" and _isBeingTracked(object_ref):
+    if field_type == "icon" and _is_being_tracked(object_ref):
         effective_value = derived_value
         effective_source = derived_source
     elif override_value:
-        effective_value = override_value
+        effective_value = "" if override_value == NO_ICON else override_value
         effective_source = "[Override]"
     else:
         effective_value = derived_value
@@ -368,11 +390,11 @@ def computeEffective(object_ref, field_type):
 
 
 # =============================================================================
-# computeStyles - Per-Object Style Computation
+# compute_styles - Per-Object Style Computation
 # =============================================================================
 
 
-def computeStyles(obj):
+def compute_styles(obj):
     """Compute derived and effective styles for a single object.
 
     Called by MasterScheduler for each object. Computes all field types.
@@ -383,5 +405,5 @@ def computeStyles(obj):
         obj: Domain object (Task, Category, Note, Attachment)
     """
     for field_type in FIELD_TYPES:
-        computeDerived(obj, field_type)
-        computeEffective(obj, field_type)
+        compute_derived(obj, field_type)
+        compute_effective(obj, field_type)

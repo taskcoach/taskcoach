@@ -287,7 +287,7 @@ class SettingsPage(widgets.ScrolledBookPage):
             ),
         ]
 
-    def addAppearanceHeader(self):
+    def add_appearance_header(self):
         # Row 0: Group headers - only Light and Dark bold headers (cols 2-5, 6-9)
         light_label = wx.StaticText(self, label=_("Light Theme"))
         dark_label = wx.StaticText(self, label=_("Dark Theme"))
@@ -421,7 +421,7 @@ class SettingsPage(widgets.ScrolledBookPage):
 
         return fg_color_button, bg_color_button, font_button, icon_entry
 
-    def addAppearanceSetting(
+    def add_appearance_setting(
         self,
         fg_color_section,
         fg_color_setting,
@@ -441,7 +441,7 @@ class SettingsPage(widgets.ScrolledBookPage):
         priority_choice.SetSelection(current_priority - 1)
         self._priorityChoices.append((fg_color_setting, priority_choice))
         self._previousPriorities[priority_choice] = current_priority
-        priority_choice.Bind(wx.EVT_CHOICE, self._onPriorityChanged)
+        priority_choice.Bind(wx.EVT_CHOICE, self._on_priority_changed)
 
         # Light controls
         light_fg, light_bg, light_font, light_icon = (
@@ -2264,11 +2264,11 @@ class StatusesPage(SettingsPage):
         super().__init__(columns=11, growable_column=-1, *args, **kwargs)
         self._priorityChoices = []  # [(setting, choiceCtrl), ...]
         self._previousPriorities = {}  # choiceCtrl -> int
-        self.addAppearanceHeader()
+        self.add_appearance_header()
         for status in task.Task.possibleStatuses():
             setting = "%stasks" % status
             label = status.plural_label.replace(" tasks", "")
-            self.addAppearanceSetting(
+            self.add_appearance_setting(
                 "fgcolor",
                 setting,
                 "bgcolor",
@@ -2283,7 +2283,9 @@ class StatusesPage(SettingsPage):
         for section, setting, icon_entry in self._iconSettings:
             icon_entry.Bind(
                 wx.EVT_COMBOBOX,
-                lambda evt, ie=icon_entry: self._onStatusIconChanged(evt, ie),
+                lambda evt, ie=icon_entry: self._on_status_icon_changed(
+                    evt, ie
+                ),
             )
         # Separator lines under the table, matching header lines
         line_row = self._position.next(11)  # consume full row, get row number
@@ -2317,7 +2319,7 @@ class StatusesPage(SettingsPage):
         )
         # Reset priorities button placed directly in col 1 (priority column)
         reset_priorities_btn = wx.Button(self, label=_("Reset"), size=(60, -1))
-        reset_priorities_btn.Bind(wx.EVT_BUTTON, self._onResetPriorities)
+        reset_priorities_btn.Bind(wx.EVT_BUTTON, self._on_reset_priorities)
         reset_row = self._position.next(11)  # consume full row, get row number
         self._sizer.Add(
             reset_priorities_btn,
@@ -2345,37 +2347,60 @@ class StatusesPage(SettingsPage):
             flag=wx.ALL | wx.ALIGN_LEFT,
             border=self._borderWidth,
         )
-        # Divider before legacy option
-        legacy_line_row = self._position.next(11)
-        self._sizer.Add(
-            wx.StaticLine(self),
-            (legacy_line_row[0], 0),
-            span=(1, 11),
-            flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
-            border=self._borderWidth,
+        # Where an item's style starts (docs/APPEARANCE_STYLES.md,
+        # Appearance Flow); a dropdown, so a later variation is a choice
+        self._add_divider()
+        self.addChoiceSetting(
+            "appearance",
+            "flow",
+            _("Appearance flow"),
+            _(
+                "Where the icon, colours and font of an item without its "
+                "own come from: categories pass theirs to their items and "
+                "subcategories, tasks and notes to their subtasks and "
+                "subnotes. A task's status always shows."
+            ),
+            [
+                ("all", _("From categories and tasks")),
+                ("categories", _("From categories only")),
+                ("tasks", _("From tasks only")),
+                ("none", _("None")),
+            ],
         )
-        # Legacy status icon support
+        # Legacy status icon support, at the bottom
+        self._add_divider()
         self.addBooleanSetting(
             "icon",
             "legacystatusicons",
             _("Legacy"),
             _(
-                "All statuses must be reset to their defaults and this option "
-                "must be enabled to make the INI settings file compatible with "
-                "Task Coach < 2.0.1.72. "
-                "The task data file may reference newer icons that older versions "
-                "cannot display, but it will not crash, the icons simply won't "
-                "appear in older versions of Task Coach."
+                "All statuses must be reset to their defaults and this "
+                "option must be enabled to make the INI settings file "
+                "compatible with Task Coach < 2.0.1.72. "
+                "The task data file may reference newer icons that older "
+                "versions cannot display, but it will not crash, the icons "
+                "simply won't appear in older versions of Task Coach."
             ),
         )
         self.fit()
 
-    def _onStatusIconChanged(self, event, icon_entry):
+    def _add_divider(self):
+        """A line across the page's eleven columns."""
+        row = self._position.next(11)
+        self._sizer.Add(
+            wx.StaticLine(self),
+            (row[0], 0),
+            span=(1, 11),
+            flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
+            border=self._borderWidth,
+        )
+
+    def _on_status_icon_changed(self, event, icon_entry):
         """Handle icon selection change. Excluded icons are handled by IconPicker."""
         # The new IconPicker prevents selection of excluded icons internally
         event.Skip()
 
-    def _onPriorityChanged(self, event):
+    def _on_priority_changed(self, event):
         """Handle priority dropdown change with insert-before semantics."""
         changed = event.GetEventObject()
         new_priority = changed.GetSelection() + 1  # 0-indexed -> 1-indexed
@@ -2398,7 +2423,7 @@ class StatusesPage(SettingsPage):
         for setting, ctrl in self._priorityChoices:
             self._previousPriorities[ctrl] = ctrl.GetSelection() + 1
 
-    def _onResetPriorities(self, event):
+    def _on_reset_priorities(self, event):
         """Reset all priority dropdowns to their defaults."""
         from taskcoachlib.config import defaults as defaults_mod
 

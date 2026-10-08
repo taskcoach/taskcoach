@@ -178,7 +178,7 @@ as the default.
 | None | `fgColor`, `bgColor`, `font`; `shouldMarkCompletedWhenAllChildrenCompleted` (the preference decides); an effort's `stop` (still running) | none |
 | Zero | `ordering`, `percentageComplete`, `priority`, `hourlyFee`, `fixedFee`, `stylePriority`, a recurrence's `count` and `max` (no maximum) | 0; `budget` and `plannedDuration` 0:00:00 |
 | Empty | `subject`, `description`, `icon`, a recurrence's `unit`, a mail attachment's `fromName` and `fromAddress` ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#fields)); `expandedContexts`, `prerequisites`, `categories`, `weekdays` | empty |
-| False | `filtered`, `exclusiveSubcategories`, `sameWeekday`, `recurBasedOnCompletion` | False |
+| False | `filtered`, `exclusiveSubcategories`, `sameWeekday`, `recurBasedOnCompletion`, `noIcon` (the "No icon" override, format 39: [Format 39](#format-39-2033)) | False |
 | Named | `plannedDurationMode`, an effort's `entryMode`, a recurrence's `amount` | `implicit`, `standard` (`""` reads as either), 1 |
 | Another field | `reminderBeforeSnooze` (written while snoozed), `modificationDateTime` (written when it differs from the creation date, or the file stated it: [Versions and Compatibility](#versions-and-compatibility)) | the reminder, the creation date |
 | Unknown | `creationDateTime` | a date from before they were kept (`DateTime.min`) |
@@ -536,6 +536,15 @@ Development builds saved files as `tskversion` 38 only from 2026-09-29
 to 10-01. Opening one marks it unsaved and logs it (`[FILE]`); autosave,
 on by default, saves it in both forms at once. A template saved so is
 saved again when the template list reads it (`[TEMPLATE]`).
+
+### Format 39 (2.0.3.3)
+
+`noIcon="True"`: the item's "No icon" override, which shows no icon
+and stops the icons from its categories and parents
+([APPEARANCE_STYLES.md](APPEARANCE_STYLES.md#no-icon)); `icon` is then
+left out. A field older releases ignore, so the file stays
+`tskversion` 37: they show the icon from above, as before the
+override, and drop the field when they save.
 
 ### To Do: Retire the Old Forms
 

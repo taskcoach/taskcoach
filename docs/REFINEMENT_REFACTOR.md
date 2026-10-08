@@ -1343,7 +1343,7 @@ columns (#358), shift dates in bulk (#400).
 (Wayland: [WAYLAND_ISSUES.md](WAYLAND_ISSUES.md), D8); #172 (P216);
 #242 ([TASK_FIELDS.md](TASK_FIELDS.md)); #310 (D11); #329 (D24, done); #340
 (P98); #384 (P138); #390 ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)); #435
-(P77); #442 (P231).
+(P77); #436 ([MARKDOWN.md](MARKDOWN.md), parked); #442 (P231).
 
 **Others**: a Tkinter port (#17) and a Qt port discussion (#19);
 CalDAV sync to mobile (#27); a sample file and better defaults at
@@ -1356,8 +1356,7 @@ description (#104); PyPI (#105); a relative task file path in the INI
 configuration tool (#191); a hint when search hides filtered items
 (#234); icon-only columns (#248); ~~columns reordered by dragging
 (#311)~~ (done, To Do 19); macOS: where Preferences is (#403; `wx.ID_PREFERENCES` puts it
-in the application menu); Markdown for effort text (#436); macOS: two
-horizontal scrollbars (#461).
+in the application menu); macOS: two horizontal scrollbars (#461).
 
 ---
 

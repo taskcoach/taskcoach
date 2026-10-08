@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import test
 from taskcoachlib.domain import attachment, category, date, effort, note
 from taskcoachlib.domain import task
+from taskcoachlib.domain.base import NO_ICON
 from taskcoachlib.persistence.xml.defaults import DEFAULTS
 
 # Defaults that are another field's value, not a new item's
@@ -31,6 +32,7 @@ def appearance(item):
         bgColor=item.backgroundColor(),
         font=item.font(),
         icon=item.icon_id(),
+        noIcon=item.icon_id() == NO_ICON,
         ordering=item.ordering(),
     )
 

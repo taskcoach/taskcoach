@@ -35,6 +35,7 @@ DEFAULTS = {
     "bgColor": (None,),
     "font": (None,),
     "icon": ("",),
+    "noIcon": (False,),  # The "No icon" override (format 39)
     "ordering": (0,),
     "creationDateTime": (UNKNOWN,),
     "modificationDateTime": (None,),  # None: the creation date

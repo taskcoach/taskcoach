@@ -302,7 +302,7 @@ class DirtyTaskFileTest(TaskFileTestCase):
             (True, True, True),
             (
                 need_save,
-                'tskversion="37" tskformat="38"' in written,
+                'tskversion="37" tskformat="39"' in written,
                 'categorizables="t1"' in written,
             ),
         )

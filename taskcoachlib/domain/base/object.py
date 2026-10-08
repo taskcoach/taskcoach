@@ -394,7 +394,7 @@ class Object:
         from . import appearance
 
         for field_type in appearance.FIELD_TYPES:
-            appearance.computeEffective(self, field_type)
+            appearance.compute_effective(self, field_type)
 
     # --- Derived SSOT Getters ---
 
@@ -428,7 +428,7 @@ class Object:
     def derivedFontSource(self):
         return self.__derivedFontSource.get() or FIELD_NO_VALUE_SOURCE["font"]
 
-    # --- Derived SSOT Setters (for use by computeDerived) ---
+    # --- Derived SSOT Setters (for use by compute_derived) ---
     # Each sends one event for its value and source together
 
     @patterns.computed_event_source
@@ -547,7 +547,7 @@ class Object:
     def shown_icon_id(self):
         return self.effectiveIcon()
 
-    # --- Effective SSOT Setters (for use by computeEffective) ---
+    # --- Effective SSOT Setters (for use by compute_effective) ---
     # Each sends one event for its value, default and source together
 
     @patterns.computed_event_source

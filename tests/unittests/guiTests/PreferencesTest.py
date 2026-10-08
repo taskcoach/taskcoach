@@ -153,6 +153,24 @@ class PreferencesCancelTest(PreferencesEditTestCase):
             "60,120,180,1440", settings.feature.task_duration_presets
         )
 
+    def flow_choice(self):
+        for section, setting, choices in self.page("statuses")._choiceSettings:
+            if (section, setting) == ("appearance", "flow"):
+                return choices[0]
+
+    def test_appearance_flow_from_categories_and_tasks_by_default(self):
+        self.assertEqual(
+            "all",
+            self.flow_choice().GetClientData(
+                self.flow_choice().GetSelection()
+            ),
+        )
+
+    def test_ok_saves_the_appearance_flow(self):
+        self.choose(self.flow_choice(), 3)
+        self.preferences.ok()
+        self.assertEqual("none", settings.get("appearance", "flow"))
+
     def test_cancel_drops_a_picked_calendar_colour(self):
         original = settings.calendar_light.weekday_header_bg
         self.pick(
