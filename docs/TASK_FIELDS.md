@@ -45,7 +45,8 @@ prerequisites or dependents.
   it, and a priority change runs no pass
   ([SCHEDULERS.md](SCHEDULERS.md#todo)).
 - Exports: iCalendar (`PRIORITY`, capped at 3), the task's own
-  priority; CSV and HTML as the column shows it.
+  priority; CSV and HTML as the column shows it
+  ([EXPORTS.md](EXPORTS.md)).
 - The square map ordered by priority sizes by the subtree priority.
 
 ## Subtree Values in Other Columns

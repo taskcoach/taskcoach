@@ -18,15 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import csv
 from . import generator
+from taskcoachlib.persistence.allitems import all_items
 
 
 class CSVWriter(object):
-    # Constants for "All" export options
-    ALL_TASKS = "ALL_TASKS"
-    ALL_EFFORTS = "ALL_EFFORTS"
-    ALL_CATEGORIES = "ALL_CATEGORIES"
-    ALL_NOTES = "ALL_NOTES"
-
     def __init__(self, fd, filename=None):
         self.__fd = fd
 
@@ -39,7 +34,7 @@ class CSVWriter(object):
         taskFile=None,
     ):  # pylint: disable=W0613
         if isinstance(viewer, str) and viewer.startswith("ALL_"):
-            items = self._getAllItems(viewer, taskFile)
+            items = all_items(taskFile, viewer) if taskFile else []
             if not columns:
                 return 0
             row_builder = generator.RowBuilder(
@@ -53,17 +48,3 @@ class CSVWriter(object):
         self.__fd.write("\ufeff")  # UTF-8 BOM for Excel compatibility
         csv.writer(self.__fd).writerows(csv_rows)
         return len(csv_rows) - 1  # Don't count header row
-
-    def _getAllItems(self, viewer_type, taskFile):
-        """Get all items from taskFile based on type constant."""
-        if taskFile is None:
-            return []
-        if viewer_type == self.ALL_TASKS:
-            return list(taskFile.tasks())
-        elif viewer_type == self.ALL_EFFORTS:
-            return list(taskFile.efforts())
-        elif viewer_type == self.ALL_CATEGORIES:
-            return list(taskFile.categories())
-        elif viewer_type == self.ALL_NOTES:
-            return list(taskFile.notes())
-        return []

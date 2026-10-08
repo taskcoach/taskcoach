@@ -43,10 +43,10 @@ import re
 # =============================================================================
 
 version = "2.0.3"  # Major.Minor.Milestone
-patch = "1"  # Patch number - INCREMENT THIS for each release
-version_full = f"{version}.{patch}"  # Full version: 2.0.3.1
+patch = "2"  # Patch number - INCREMENT THIS for each release
+version_full = f"{version}.{patch}"  # Full version: 2.0.3.2
 
-release_day = "7"  # Day of the release (1-31)
+release_day = "8"  # Day of the release (1-31)
 release_month = "October"  # Month of the release
 release_year = "2026"  # Year of the release
 
@@ -63,7 +63,7 @@ tskformat = 38
 # before 2.0.3.0 check: 37 while the files also hold the forms 2.0.2.0
 # and later read (persistence/xml/legacy.py).
 tskversion = 37
-release_status = "alpha"  # One of 'alpha', 'beta', 'stable'
+release_status = "stable"  # One of 'alpha', 'beta', 'stable'
 
 # No editing needed below this line for doing a release.
 

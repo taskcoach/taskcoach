@@ -15,7 +15,7 @@ application):
 | Kind | Dialogs |
 |---|---|
 | Task files | Open, Merge, Save selection, Save As |
-| Each export | Export as HTML, as CSV, as iCalendar |
+| Each export | Export as HTML, as CSV, as iCalendar ([EXPORTS.md](EXPORTS.md)) |
 | Each import | Import CSV, Import template |
 | Attachments | Add attachment, an attachment editor's Browse |
 

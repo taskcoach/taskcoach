@@ -671,14 +671,27 @@ _splash_html = (
     else ""
 )
 
+
+def shown_version(version_full, release_status):
+    """The version as the About page shows it: a normal release's
+    number only, an alpha's or a beta's with its status."""
+    if release_status == "stable":
+        return version_full
+    return "%s %s" % (version_full, release_status)
+
+
 aboutHTML = (
     _("""<h4>%(name)s - %(description)s</h4>
 """) % meta.metaDict
     + _splash_html
-    + _("""<h5>Version %(version_full)s %(release_status)s, %(date)s</h5>
+    + _("""<h5>Version %(shown_version)s, %(date)s</h5>
 <p>By %(author)s</p>
 <p><a href="%(url)s" target="_blank">%(url)s</a></p>
 <p>%(copyright)s</p>
 <p>%(license_notice_html)s</p>
-""") % meta.metaDict
+""")
+    % dict(
+        meta.metaDict,
+        shown_version=shown_version(meta.version_full, meta.release_status),
+    )
 )

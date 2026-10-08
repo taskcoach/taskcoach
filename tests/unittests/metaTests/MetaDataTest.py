@@ -44,6 +44,29 @@ class VersionNumberTest(test.TestCase):
             meta.data.release_status in ["alpha", "beta", "stable"]
         )
 
+    def test_a_normal_release_shows_its_number_only(self):
+        from taskcoachlib import help  # pylint: disable=W0622
+
+        self.assertEqual("2.0.3.2", help.shown_version("2.0.3.2", "stable"))
+
+    def test_an_alpha_shows_its_status(self):
+        from taskcoachlib import help  # pylint: disable=W0622
+
+        self.assertEqual(
+            "2.0.3.2 alpha", help.shown_version("2.0.3.2", "alpha")
+        )
+
+    def test_the_about_page_shows_the_version(self):
+        from taskcoachlib import help  # pylint: disable=W0622
+
+        version = help.shown_version(
+            meta.data.version_full, meta.data.release_status
+        )
+        self.assertIn(
+            "<h5>Version %s, %s</h5>" % (version, meta.data.date),
+            help.aboutHTML,
+        )
+
     def test_release_date(self):
         datetime.date(
             int(meta.data.release_year),

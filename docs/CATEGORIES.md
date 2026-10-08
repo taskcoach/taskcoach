@@ -24,7 +24,8 @@ its parent's categories, recursively (0.66.0, 2007):
   follow their tasks ([EFFORTS.md](EFFORTS.md#filters)).
 - **Categories column, list mode:** its own, then the inherited ones
   in parentheses (1.2.30, 2011); sorting by categories the same.
-- **iCalendar export:** own and inherited.
+- **iCalendar export:** own and inherited
+  ([EXPORTS.md](EXPORTS.md#icalendar)).
 - Own only: the editor's Categories tab, the Toggle category menu's
   ticks, and appearance (own categories, then the
   parent task: [TASK_STATUS.md](TASK_STATUS.md#appearance-inheritance)).

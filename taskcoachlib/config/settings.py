@@ -872,9 +872,10 @@ def option_type(section, option):
     return "text"
 
 
-def _default(section_name, option):
+def default(section_name, option):
     """The option's default as its type: what a module reads while it
-    loads, before the application has its settings."""
+    loads, before the application has its settings, and what a new
+    view starts from."""
     kind = option_type(section_name, option)
     return _READ[kind](template(section_name)[option])
 
@@ -910,7 +911,7 @@ class _Section:
             return computed()
         try:
             if _current is None:
-                return _default(self._name, option)
+                return default(self._name, option)
             return _current.get_typed(self._name, option)
         except KeyError:
             raise AttributeError("%s.%s" % (self._name, option)) from None
