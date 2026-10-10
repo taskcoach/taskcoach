@@ -36,6 +36,7 @@ DEFAULTS = {
     "font": (None,),
     "icon": ("",),
     "noIcon": (False,),  # The "No icon" override (format 39)
+    "previewShown": (False,),  # The Markdown preview (format 40)
     "ordering": (0,),
     "creationDateTime": (UNKNOWN,),
     "modificationDateTime": (None,),  # None: the creation date

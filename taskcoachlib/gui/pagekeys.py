@@ -60,9 +60,7 @@ def _book(window):
         if isinstance(each, BookMixin):
             return each
         windows.extend(
-            child
-            for child in wx.Window.GetChildren(each)
-            if not child.IsTopLevel()
+            child for child in each.GetChildren() if not child.IsTopLevel()
         )
     return None
 

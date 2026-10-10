@@ -165,6 +165,12 @@ Canon decision by designer, 2026-09-28.
   change by hand.
 - **Use the built-in debug logging** to see what the app is doing while
   you test: see [LOGGING_GUIDE.md](LOGGING_GUIDE.md).
+- **Search the terminal output of an app check for `Traceback`.** An
+  error inside an event handler stops nothing and shows nothing: wx
+  prints it and goes on, and nothing writes a log file. Go through the
+  empty states too (a new file, a view with no row) and every kind of
+  view: P252 and P254 were released unseen that way
+  ([REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#found-2026-10-09)).
 - **Unit tests are a regression net**, not the verification,
   certified for one platform: [TESTING.md](TESTING.md).
 

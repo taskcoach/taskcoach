@@ -190,6 +190,7 @@ class XMLWriter(object):
         self.__attribute(node, "entryMode", effort.entryMode())
         self.__dates(node, effort)
         self.__description(node, effort)
+        self.__attribute(node, "previewShown", effort.is_preview_shown())
         return node
 
     def category_node(self, parent_node, category):  # pylint: disable=W0621
@@ -270,6 +271,8 @@ class XMLWriter(object):
         self.__dates(node, item)
         self.__attribute(node, "subject", item.subject())
         self.__description(node, item)
+        # The Markdown preview (format 40): older releases ignore it
+        self.__attribute(node, "previewShown", item.is_preview_shown())
         return node
 
     def __appearance(self, node, item):

@@ -8071,6 +8071,13 @@ class CustomTreeCtrl(wx.ScrolledWindow):
 
             self._current = self._key_current = self.GetFirstVisibleItem()
 
+        # Task Coach's fix (P252): with no row to act on (an empty
+        # tree, none visible) a key does nothing. The branches below
+        # read the current row and most raised on None.
+        if self._current is None:
+            event.Skip()
+            return
+
         # how should the selection work for this event?
         is_multiple, extended_select, unselect_others = EventFlagsToSelType(
             self.GetAGWWindowStyleFlag(), event.ShiftDown(), event.CmdDown())

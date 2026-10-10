@@ -8135,3 +8135,11 @@ msgstr "Ouverture de %s..."
 #: taskcoachlib/gui/iocontroller.py
 msgid "Merging %s..."
 msgstr "Fusion de %s..."
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Go back to editing the text"
+msgstr "Revenir à l'édition du texte"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Show the text formatted as Markdown"
+msgstr "Afficher le texte mis en forme en Markdown"

@@ -61,3 +61,68 @@ class MultiLineTextCtrlTest(test.wxTestCase):
         settings.spellcheck.enabled = False
         textctrl = widgets.MultiLineTextCtrl(self.frame)
         self.assertFalse(textctrl._textCtrl._spellCheckEnabled)
+
+    def test_preview_toggle_swaps_controls(self):
+        textctrl = widgets.MultiLineTextCtrl(self.frame, text="# Title")
+        self.assertFalse(textctrl.is_preview())
+        textctrl.set_preview(True)
+        self.assertTrue(textctrl.is_preview())
+        textctrl.set_preview(False)
+        self.assertFalse(textctrl.is_preview())
+
+    def test_preview_keeps_text_as_typed(self):
+        textctrl = widgets.MultiLineTextCtrl(self.frame, text="# Title")
+        textctrl.set_preview(True)
+        self.assertEqual("# Title", textctrl.GetValue())
+        textctrl.SetValue("## Other")
+        self.assertEqual("## Other", textctrl.GetValue())
+        textctrl.set_preview(False)
+        self.assertEqual("## Other", textctrl.GetValue())
+
+    def test_preview_renders_markdown(self):
+        textctrl = widgets.MultiLineTextCtrl(self.frame, text="### Title")
+        with mock.patch.object(
+            widgets.textctrl.PreviewHtmlWindow, "SetPage"
+        ) as set_page:
+            textctrl.set_preview(True)
+        set_page.assert_called_once()
+        self.assertIn("<h3>Title</h3>", set_page.call_args[0][0])
+
+    def test_preview_code_shade_follows_the_window_not_the_mode(self):
+        # With the dark Mode chosen on a light desktop the window and
+        # its text stay as they are: a dark shade made code unreadable
+        settings.window.theme = "dark"
+        self.assertTrue(settings.window.theme_is_dark)
+        textctrl = widgets.MultiLineTextCtrl(self.frame, text="```\nx\n```")
+        with mock.patch.object(
+            widgets.textctrl.PreviewHtmlWindow, "SetPage"
+        ) as set_page:
+            textctrl.set_preview(True)
+        self.assertIn('bgcolor="#f0f0f0"', set_page.call_args[0][0])
+
+    def test_preview_code_is_copied_with_its_spaces(self):
+        textctrl = widgets.MultiLineTextCtrl(
+            self.frame, text="```\nls  -la\n    wc\n```"
+        )
+        textctrl.set_preview(True)
+        self.assertEqual(
+            "ls  -la\n    wc", textctrl._preview_ctrl.ToText().strip("\n")
+        )
+
+    def test_preview_opens_web_links_outside(self):
+        window = widgets.textctrl.PreviewHtmlWindow(self.frame)
+        link = mock.Mock(GetHref=lambda: "www.example.com/a")
+        with mock.patch.object(widgets.textctrl.webbrowser, "open") as opened:
+            window.OnLinkClicked(link)
+        opened.assert_called_once_with("http://www.example.com/a")
+
+    def test_preview_ignores_links_that_would_replace_the_text(self):
+        window = widgets.textctrl.PreviewHtmlWindow(self.frame)
+        for href in ("file:///etc/hosts", "notes.txt", "ftp://host/file"):
+            link = mock.Mock(GetHref=lambda href=href: href)
+            with mock.patch.object(
+                widgets.textctrl.webbrowser, "open"
+            ) as opened, mock.patch.object(window, "LoadPage") as load:
+                window.OnLinkClicked(link)
+            opened.assert_not_called()
+            load.assert_not_called()

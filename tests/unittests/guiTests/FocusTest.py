@@ -22,6 +22,7 @@ import test
 import wx
 from taskcoachlib import widgets
 from taskcoachlib.gui import focus
+from taskcoachlib.widgets import wxevents
 
 
 class FocusTest(test.wxTestCase):
@@ -73,6 +74,16 @@ class FocusTest(test.wxTestCase):
         field.SetSelection(0, 3)
         focus.drop_selections(self.frame, keep=self.number)
         self.assertEqual((0, 3), field.GetSelection())
+
+    def test_a_calendar_in_the_window_does_not_stop_the_walk(self):
+        # P254: the calendar had a GetChildren(task) of its own, which
+        # raised when the walk asked for its child windows
+        wxevents.CalendarCanvas(self.frame)
+        field = wx.TextCtrl(self.frame, value="after")
+        field.SetSelection(0, 5)
+        focus.drop_selections(self.frame, keep=self.number)
+        start, end = field.GetSelection()
+        self.assertEqual(start, end)
 
     def test_installed_it_follows_each_focus_change(self):
         self.select_everything()

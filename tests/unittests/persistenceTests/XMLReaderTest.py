@@ -1408,6 +1408,16 @@ class XMLReaderVersion29Test(XMLReaderTestCase):
         tasks = self.writeAndReadTasks('<tasks><task noIcon="True"/></tasks>')
         self.assertEqual(base.NO_ICON, tasks[0].icon_id())
 
+    def test_preview_shown(self):
+        tasks = self.writeAndReadTasks(
+            '<tasks><task previewShown="True"/></tasks>'
+        )
+        self.assertTrue(tasks[0].is_preview_shown())
+
+    def test_preview_hidden_by_default(self):
+        tasks = self.writeAndReadTasks("<tasks><task/></tasks>")
+        self.assertFalse(tasks[0].is_preview_shown())
+
     def test_selected_icon_of_old_files_is_dropped(self):
         tasks = self.writeAndReadTasks(
             '<tasks><task icon="icon" selectedIcon="open_icon"/></tasks>'
@@ -2371,7 +2381,7 @@ class XMLReaderVersionsTest(XMLReaderTestCase):
         self.assertRaises(
             persistence.xml.reader.XMLReaderTooNewException,
             self.read,
-            'tskversion="40"',
+            'tskversion="41"',
             "<tasks/>",
         )
 

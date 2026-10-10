@@ -20,6 +20,7 @@ import test
 import wx
 from taskcoachlib import command, gui, patterns, persistence
 from taskcoachlib.domain import task, effort, date
+from taskcoachlib.tools import wxhelper
 from unittests import dummy
 
 
@@ -100,6 +101,47 @@ class EffortEditorTest(test.wxTestCase):
         self.editor._interior._task_entry.SetValue(self.task2)
         self.editor._interior._task_sync.onAttributeEdited(dummy.Event())
         self.assertFalse(self.editor.editorClosed)
+
+    def test_preview_button_is_first_in_the_close_buttons_row(self):
+        buttons = self.editor._buttons
+        self.assertIs(
+            self.editor._preview_button, buttons.GetItem(0).GetWindow()
+        )
+
+    def test_preview_button_starts_where_the_page_contents_start(self):
+        left = 0
+        window = self.editor._interior.entries()["description"]
+        while window is not self.editor:
+            left += window.GetPosition().x
+            window = window.GetParent()
+        self.assertEqual(left, self.editor._preview_button.GetPosition().x)
+
+    def test_preview_button_toggles_the_description_preview(self):
+        entry = self.editor._interior.entries()["description"]
+        self.editor._preview_button.SetValue(True)
+        self.editor.on_preview_toggle(dummy.Event())
+        self.assertTrue(entry.is_preview())
+        self.editor._preview_button.SetValue(False)
+        self.editor.on_preview_toggle(dummy.Event())
+        self.assertFalse(entry.is_preview())
+
+    def test_preview_button_names_what_a_click_does(self):
+        self.assertEqual("Preview", self.editor._preview_button.GetLabel())
+        self.editor._preview_button.SetValue(True)
+        self.editor.on_preview_toggle(dummy.Event())
+        self.assertEqual("Edit", self.editor._preview_button.GetLabel())
+
+    def test_preview_toggle_is_remembered_on_the_effort(self):
+        self.editor._preview_button.SetValue(True)
+        self.editor.on_preview_toggle(dummy.Event())
+        self.assertTrue(self.effort.is_preview_shown())
+
+    def test_editor_opens_in_preview_when_the_effort_shows_it(self):
+        self.effort.show_preview()
+        editor = self.createEditor()
+        entry = editor._interior.entries()["description"]
+        self.assertTrue(entry.is_preview())
+        self.assertTrue(editor._preview_button.GetValue())
 
     def test_undo_writes_nothing_back(self):
         # A change from elsewhere is shown, not edited

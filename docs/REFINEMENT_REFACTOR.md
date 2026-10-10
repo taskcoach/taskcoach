@@ -1313,6 +1313,77 @@ Recorded nowhere else; each is reproduced on 2.0.3.0 first.
   read was a `wx.CallAfter` queued before the first show, which wxGTK
   defers until the window manager reports the frame extents.
 
+### Found 2026-10-09
+
+- P252. ~~A key pressed in a list with no row logs an error~~: fixed
+  2026-10-09 for letters, 2026-10-10 for every key. Steps: a new file
+  (no task), click in the empty Tasks list, press a letter or digit,
+  `+`, `-`, `*`, Left or Right: each prints a traceback on the
+  terminal, `AttributeError: 'NoneType' object has no attribute ...`
+  (`patches/customtreectrl.py`, `OnKeyDown`); a list not filled yet
+  does it for Home and the menu key too. Nothing shows in the window
+  and the key does nothing, which is right for an empty list. The same
+  on master (2.0.3.4) by those steps; wxPython 4.2.3's own file has
+  the same code. Cause: `OnKeyDown` falls back to
+  `GetFirstVisibleItem()` when nothing is current, `None` with no row,
+  and its branches read the current row unchecked. First seen as one
+  traceback in a headless start; the first fix guarded the letter
+  search alone (`FindItem`) and its test pressed a letter only. Fix:
+  with no row to act on, `OnKeyDown` passes the key on and returns
+  (marked P252 at the line), in place of the `FindItem` guard; the
+  copy's only change from upstream
+  ([BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md#what-is-bundled)).
+  Test: `test_keys_on_a_tree_with_no_row_do_nothing` in
+  `BundledTreeWidgetTest` presses every key the tree handles on an
+  empty view, a view with no root and the plain tree (fails on master
+  and on the letters-only fix).
+
+### Found 2026-10-10
+
+- P253. The custom icons' generated catalog is out of step with its
+  source, since #386: `taskcoach/icons_parsed.py` (what the app shows)
+  differs from `taskcoach/icons.json` (the same as icon-distillery's)
+  in the label or hints of five icons: `checkmark_green_icon_multiple`,
+  `fileopen_red`, `magnifier_glass_dropdown_icon`, `paste_subitem`,
+  `sort`. Steps: run `python tools/generate_icons_parsed_py.py
+  taskcoach`; `git diff` shows those five entries change (the picker's
+  "Paste As Subitem" becomes "Paste Subitem", "Check Marks Multiple"
+  becomes "Checkmark Green Icon Multiple"). The Markdown icon's entry
+  was therefore added to `icons_parsed.py` by hand
+  ([ICON_LIBRARY.md](ICON_LIBRARY.md#taskcoach-custom-icons)).
+  Recommended: regenerate, the json being the documented source; five
+  icons' translatable strings change.
+- P254. ~~With a hierarchical calendar view, a focus change logs an
+  error~~: fixed 2026-10-10. Steps: View > New viewer > Hierarchical
+  calendar, click in it (or reach it with Ctrl+Page Down): the
+  terminal shows `TypeError: HierarchicalCalendar.GetChildren()
+  missing 1 required positional argument: 'task'` (`gui/focus.py`,
+  `drop_selections`), on master (2.0.3.4) too. Nothing shows in the
+  window; read from the code, the fields that come after the calendar
+  in its window keep their text selection, the walk stopping there.
+  Cause: the calendar canvas named its own method (an event's child
+  events) `GetChildren`, which is `wx.Window`'s for a window's child
+  windows, so code walking child windows called it with no argument.
+  Two earlier walks went around it one by one
+  (`wx.Window.GetChildren(window)` in `viewer/base.py` and
+  `pagekeys.py`); the focus walk of 2.0.3.4, written later, did not.
+  Fix: the canvas's method is `child_events`, so `GetChildren()` is
+  wx's on every window; the two workarounds removed. Tests:
+  `test_a_calendar_in_the_window_does_not_stop_the_walk` (`FocusTest`)
+  and `test_get_children_is_the_window_s_own` (`CalendarCanvasTest`),
+  both failing on master.
+
+  How P254 and the rest of P252 were found: every kind of view opened
+  on a new file and on the Welcome file, each visited with Ctrl+Page
+  Down, the keys a list handles pressed in each, and the terminal
+  output searched for `Traceback`. After both fixes: none. Such an
+  error stops nothing and shows nothing (wx prints it and goes on,
+  and nothing writes a log file), so neither a user nor a passing
+  test reports it: the check is now a rule
+  ([DEVELOPMENT.md](DEVELOPMENT.md#verifying-changes)), and the test
+  harness fails a test when one happens inside it
+  ([TESTING.md](TESTING.md#running)).
+
 ---
 
 ## Open GitHub Issues
@@ -1349,7 +1420,8 @@ columns (#358), shift dates in bulk (#400).
 (Wayland: [WAYLAND_ISSUES.md](WAYLAND_ISSUES.md), D8); #172 (P216);
 #242 ([TASK_FIELDS.md](TASK_FIELDS.md)); #310 (D11); #329 (D24, done); #340
 (P98); #384 (P138); #390 ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)); #435
-(P77); #436 ([MARKDOWN.md](MARKDOWN.md), parked); #442 (P231).
+(P77); #436 ([MARKDOWN.md](MARKDOWN.md), a preview for 2.0.3.5 on
+`markdown-preview`); #442 (P231).
 
 **Others**: a Tkinter port (#17) and a Qt port discussion (#19);
 CalDAV sync to mobile (#27); a sample file and better defaults at

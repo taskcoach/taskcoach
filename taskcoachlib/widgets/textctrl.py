@@ -20,8 +20,10 @@ from taskcoachlib import i18n, operating_system, patterns
 from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
 from taskcoachlib.tools import text as tools_text
+from taskcoachlib.tools.markdown import markdown_to_html
 import functools
 import wx
+import wx.html
 import wx.stc as stc
 import webbrowser
 import re
@@ -594,12 +596,67 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             self._performHighlighting()
 
 
+class PreviewHtmlWindow(wx.html.HtmlWindow):
+    """Read-only Markdown preview, links in the web browser.
+
+    Same pattern as dialog.HtmlWindowThatUsesWebBrowserForExternalLinks,
+    but every http/www/mailto link opens outside: the converter marks
+    its links target _blank, bare addresses have no target at all.
+
+    Drawn as the window's text, never in an input box: a box that
+    ignores typing misleads (docs/DEVELOPMENT.md, Design,
+    "Read-only looks read-only").
+    """
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        normal = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
+        fixed = wx.Font(
+            normal.GetPointSize(),
+            wx.FONTFAMILY_TELETYPE,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL,
+        )
+        # The system's own size for the text (wx.html's default is the
+        # third), the headings scaled from it as on GitHub: 2, 1.5 and
+        # 1.25 times for the first three levels
+        base = normal.GetPointSize()
+        self.SetFonts(
+            normal.GetFaceName(),
+            fixed.GetFaceName() or "Monospace",
+            [
+                round(base * scale)
+                for scale in (0.75, 0.85, 1, 1, 1.25, 1.5, 2)
+            ],
+        )
+        self.SetBorders(4)
+        # Long pages scroll like the edit box does: a vertical bar
+        # always shows, since overlay scrollbars hide the only way
+        # down; horizontal as needed for long code lines
+        self.ShowScrollbars(wx.SHOW_SB_DEFAULT, wx.SHOW_SB_ALWAYS)
+
+    def OnLinkClicked(self, link):  # pylint: disable=W0221
+        href = link.GetHref()
+        if href.lower().startswith("www."):
+            href = "http://" + href
+        # Anything else (a file, another scheme) would load into the
+        # preview itself, replacing the text with no way back
+        if href.lower().startswith(("http://", "https://", "mailto:")):
+            try:
+                webbrowser.open(href)
+            except webbrowser.Error as message:
+                wx.MessageBox(str(message), i18n._("Error opening URL"))
+
+
 class MultiLineTextCtrl(wx.Panel):
     """Text control with native border, focus indication, and spell check.
 
     Wraps _StyledTextCtrl in a panel that draws the native text control border
     using RendererNative, providing proper focus indication on GTK3.
     StyledTextCtrl (Scintilla) cannot display native focus borders on its own.
+
+    A Markdown preview (docs/MARKDOWN.md) swaps a read-only wx.html window
+    in for the box; the text stays as typed, only the display is converted.
     """
 
     _nativePadding = None  # Cached native padding value
@@ -673,6 +730,8 @@ class MultiLineTextCtrl(wx.Panel):
             style=style,
             **kwargs
         )
+        self._preview_ctrl = None  # Made when preview first shows
+        self._is_preview = False
 
         # Don't set explicit bg — inherit from parent so corners
         # auto-update on theme change (explicit bg prevents inheritance)
@@ -681,6 +740,7 @@ class MultiLineTextCtrl(wx.Panel):
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self._textCtrl, 1, wx.EXPAND | wx.ALL, self._padding)
         self.SetSizer(sizer)
+        self._sizer = sizer
 
         # For single-line mode, constrain height to one line
         if single_line:
@@ -714,11 +774,13 @@ class MultiLineTextCtrl(wx.Panel):
 
     def _onPaint(self, event):
         """Draw native TextCtrl border using RendererNative."""
-        dc = wx.PaintDC(self)
-        renderer = wx.RendererNative.Get()
-        rect = self.GetClientRect()
-        flags = wx.CONTROL_FOCUSED if self._hasFocus else 0
-        renderer.DrawTextCtrl(self, dc, rect, flags)
+        if not self._is_preview:
+            # A preview is read-only window text, never an input box
+            dc = wx.PaintDC(self)
+            renderer = wx.RendererNative.Get()
+            rect = self.GetClientRect()
+            flags = wx.CONTROL_FOCUSED if self._hasFocus else 0
+            renderer.DrawTextCtrl(self, dc, rect, flags)
         # Detect theme change here: EVT_SYS_COLOUR_CHANGED does not get
         # past the AuiManager of an AGW AuiNotebook (editor pages)
         window_bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
@@ -727,13 +789,87 @@ class MultiLineTextCtrl(wx.Panel):
             patterns.later.soon(
                 self._textCtrl, self._textCtrl._applyThemeColours
             )
+            if self._is_preview and self._preview_ctrl is not None:
+                patterns.later.soon(self, self._render_preview)
+
+    def is_preview(self):
+        """Whether the read-only Markdown preview shows instead of the box."""
+        return self._is_preview
+
+    def set_preview(self, show=True):
+        """Show the Markdown preview (True) or go back to editing (False)."""
+        if self._single_line or show == self._is_preview:
+            return
+        if show:
+            if self._preview_ctrl is None:
+                self._preview_ctrl = PreviewHtmlWindow(self)
+                self._sizer.Add(
+                    self._preview_ctrl, 1, wx.EXPAND | wx.ALL, self._padding
+                )
+            self._render_preview()
+            self._textCtrl.Hide()
+            self._preview_ctrl.Show()
+        else:
+            self._preview_ctrl.Hide()
+            self._textCtrl.Show()
+        self._is_preview = show
+        self._sizer.Layout()
+        self.Refresh()
+
+    def toggle_preview(self):
+        """Swap the preview and the edit box."""
+        self.set_preview(not self._is_preview)
+
+    def _preview_window(self):
+        """The window the preview takes its colours from: its own, not
+        the panel's stock grey on GTK."""
+        return wx.GetTopLevelParent(self) or self
+
+    def _update_preview_background(self):
+        if self._preview_ctrl is not None:
+            self._preview_ctrl.SetBackgroundColour(
+                self._preview_window().GetBackgroundColour()
+            )
+            if self._is_preview:
+                self._preview_ctrl.Refresh()
+
+    @staticmethod
+    def _html_colour(colour):
+        return "#%02x%02x%02x" % (colour.Red(), colour.Green(), colour.Blue())
+
+    def _render_preview(self):
+        """Render the text again, in the theme's colours."""
+        window = self._preview_window()
+        # The code's shade goes with the colours the window really
+        # has, as the text does: with the dark Mode chosen on a light
+        # desktop the text stays dark
+        dark = window.GetBackgroundColour().GetLuminance() < 0.5
+        grey = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
+        text = window.GetForegroundColour()
+        self._preview_ctrl.SetPage(
+            markdown_to_html(
+                self.GetValue(),
+                code_background="#3d3d3d" if dark else "#f0f0f0",
+                quote_colour=self._html_colour(grey),
+                text_colour=self._html_colour(text),
+            )
+        )
+        # Reasserted after every page: the window manages its own bars
+        # on layout and long pages must keep a visible way down
+        self._preview_ctrl.ShowScrollbars(
+            wx.SHOW_SB_DEFAULT, wx.SHOW_SB_ALWAYS
+        )
+        self._update_preview_background()
 
     # Proxy common TextCtrl methods to the inner control
     def GetValue(self, *args, **kwargs):
         return self._textCtrl.GetValue(*args, **kwargs)
 
     def SetValue(self, *args, **kwargs):
-        return self._textCtrl.SetValue(*args, **kwargs)
+        result = self._textCtrl.SetValue(*args, **kwargs)
+        if self._is_preview and self._preview_ctrl is not None:
+            self._render_preview()
+        return result
 
     def AppendText(self, *args, **kwargs):
         return self._textCtrl.AppendText(*args, **kwargs)
@@ -780,6 +916,8 @@ class MultiLineTextCtrl(wx.Panel):
         return self._textCtrl.GetRange(*args, **kwargs)
 
     def SetFocus(self):
+        if self._is_preview and self._preview_ctrl is not None:
+            return self._preview_ctrl.SetFocus()
         return self._textCtrl.SetFocus()
 
     def Bind(self, event, handler, *args, **kwargs):

@@ -707,6 +707,7 @@ class XMLReader(object):
             font=value(node, "font", self.__parse_font_description),
             icon=value(node, "icon", self.__parse_icon),
             ordering=value(node, "ordering", int),
+            previewShown=value(node, "previewShown", self.__parse_boolean),
             **self.__parse_dates(node),
         )
         if value(node, "noIcon", self.__parse_boolean):
@@ -799,6 +800,9 @@ class XMLReader(object):
                 stop=self.__value(node, "stop", date.parseDateTime),
                 description=description,
                 entryMode=self.__value(node, "entryMode"),
+                previewShown=self.__value(
+                    node, "previewShown", self.__parse_boolean
+                ),
                 **self.__parse_dates(node),
                 **kwargs,
             )

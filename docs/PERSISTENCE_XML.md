@@ -178,7 +178,7 @@ as the default.
 | None | `fgColor`, `bgColor`, `font`; `shouldMarkCompletedWhenAllChildrenCompleted` (the preference decides); an effort's `stop` (still running) | none |
 | Zero | `ordering`, `percentageComplete`, `priority`, `hourlyFee`, `fixedFee`, `stylePriority`, a recurrence's `count` and `max` (no maximum) | 0; `budget` and `plannedDuration` 0:00:00 |
 | Empty | `subject`, `description`, `icon`, a recurrence's `unit`, a mail attachment's `fromName` and `fromAddress` ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#fields)); `expandedContexts`, `prerequisites`, `categories`, `weekdays` | empty |
-| False | `filtered`, `exclusiveSubcategories`, `sameWeekday`, `recurBasedOnCompletion`, `noIcon` (the "No icon" override, format 39: [Format 39](#format-39-2033)) | False |
+| False | `filtered`, `exclusiveSubcategories`, `sameWeekday`, `recurBasedOnCompletion`, `noIcon` (the "No icon" override, format 39: [Format 39](#format-39-2033)), `previewShown` (the Markdown preview, format 40: [Format 40](#format-40-2035)) | False |
 | Named | `plannedDurationMode`, an effort's `entryMode`, a recurrence's `amount` | `implicit`, `standard` (`""` reads as either), 1 |
 | Another field | `reminderBeforeSnooze` (written while snoozed), `modificationDateTime` (written when it differs from the creation date, or the file stated it: [Versions and Compatibility](#versions-and-compatibility)) | the reminder, the creation date |
 | Unknown | `creationDateTime` | a date from before they were kept (`DateTime.min`) |
@@ -545,6 +545,14 @@ and stops the icons from its categories and parents
 left out. A field older releases ignore, so the file stays
 `tskversion` 37: they show the icon from above, as before the
 override, and drop the field when they save.
+
+### Format 40 (2.0.3.5)
+
+`previewShown="True"`: the Markdown preview of descriptions
+([MARKDOWN.md](MARKDOWN.md)), remembered per item as saved view state
+like the expansion state. A field older releases ignore, so the file
+stays `tskversion` 37: they show the raw text, and drop the field
+when they save.
 
 ### To Do: Retire the Old Forms
 

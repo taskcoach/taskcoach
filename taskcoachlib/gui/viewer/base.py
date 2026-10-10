@@ -179,9 +179,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
 
     def _bind_activation_events(self, window):
         """A click anywhere in the viewer, with either button, makes its
-        pane the active one. Text controls handle their own focus. The
-        children are wx's: the hierarchical calendar's GetChildren()
-        takes a task."""
+        pane the active one. Text controls handle their own focus."""
         if isinstance(window, (wx.TextCtrl, wx.SearchCtrl, wx.ComboBox)):
             return
         if window is self.widget:
@@ -189,7 +187,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
             return
         for event_type in (wx.EVT_LEFT_DOWN, wx.EVT_RIGHT_DOWN):
             window.Bind(event_type, self._onViewerClick)
-        for child in wx.Window.GetChildren(window):
+        for child in window.GetChildren():
             self._bind_activation_events(child)
 
     def __bind_widget_clicks(self, window):
@@ -197,7 +195,7 @@ class Viewer(wx.Panel, patterns.Observer, metaclass=ViewerMeta):
         # the calendars, timeline and square map take none
         for event_type in (wx.EVT_LEFT_DOWN, wx.EVT_RIGHT_DOWN):
             window.Bind(event_type, self.__on_widget_click)
-        for child in wx.Window.GetChildren(window):
+        for child in window.GetChildren():
             if not child.IsTopLevel():
                 self.__bind_widget_clicks(child)
 

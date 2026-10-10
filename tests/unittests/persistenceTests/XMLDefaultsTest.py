@@ -43,6 +43,7 @@ def composite(item):
         subject=item.subject(),
         description=item.description(),
         expandedContexts=item.expandedContexts(),
+        previewShown=item.is_preview_shown(),
     )
 
 
@@ -99,8 +100,10 @@ class DefaultsTest(test.TestCase):
             stylePriority=new_category.stylePriority(),
         )
         # An attachment's subject is its file name unless given
-        self.fields["attachment"] = appearance(
-            attachment.FileAttachment("plan.txt")
+        new_attachment = attachment.FileAttachment("plan.txt")
+        self.fields["attachment"] = dict(
+            appearance(new_attachment),
+            previewShown=new_attachment.is_preview_shown(),
         )
         new_mail = attachment.MailAttachment("mid:1@example.com")
         self.fields["mail"] = dict(
@@ -113,6 +116,7 @@ class DefaultsTest(test.TestCase):
             stop=new_effort.getStop(),
             entryMode=new_effort.entryMode(),
             description=new_effort.description(),
+            previewShown=new_effort.is_preview_shown(),
         )
 
     def test_new_items_hold_the_defaults(self):
