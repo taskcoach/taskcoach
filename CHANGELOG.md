@@ -4,6 +4,19 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.5
+
+### Editors
+
+- Markdown preview: a Preview button under the Description label of
+  tasks, notes, categories and attachments, and beside Close in the
+  effort editor, shows the description formatted: headings, bold,
+  italic, lists and task lists, code, quotes, tables and links, as
+  written by hand or pasted from GitHub or an AI chat. A second click
+  goes back to editing. The text is saved as typed, and each item
+  remembers whether its preview was showing; releases before this one
+  show the text as typed.
+
 ## 2.0.3.4
 
 ### Editors

@@ -68,6 +68,12 @@ Without `--alltests` it runs the unit tests; `--help` lists the parts.
 the report covers them together (`--help` lists its sort and limit
 options). A failing test exits 1 with no report, as a run without it.
 
+An error raised inside an event handler fails the test it happens in
+(`TestCase.run()`, `HarnessTest`). wx prints such an error and goes
+on, so without this the test passes, as the app shows nothing: P252
+and P254 in
+[REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#found-2026-10-09).
+
 A test that no longer matches the app and needs a rewrite is marked
 `@test.stale("reason")`; `grep -rn "test.stale" tests` lists them.
 

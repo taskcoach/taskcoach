@@ -258,6 +258,10 @@ class DirtyTaskFileTest(TaskFileTestCase):
         self.taskFile.notes().remove(self.note)
         self.assertTrue(self.taskFile.need_save())
 
+    def test_need_save_after_preview_shown(self):
+        self.task.show_preview()
+        self.assertTrue(self.taskFile.need_save())
+
     def test_does_not_need_save_after_save(self):
         self.emptyTaskFile.tasks().append(task.Task())
         self.emptyTaskFile.setFilename(self.filename)
@@ -302,7 +306,7 @@ class DirtyTaskFileTest(TaskFileTestCase):
             (True, True, True),
             (
                 need_save,
-                'tskversion="37" tskformat="39"' in written,
+                'tskversion="37" tskformat="40"' in written,
                 'categorizables="t1"' in written,
             ),
         )

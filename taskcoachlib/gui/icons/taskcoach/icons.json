@@ -203,6 +203,13 @@
       "label": "File Open Red",
       "context": "actions"
     },
+    "taskcoach_actions_markdown_icon": {
+      "file": "markdown_icon.png",
+      "sizes": [16, 22, 32],
+      "hints": ["markdown", "md", "arrow", "down", "blue", "tile", "preview", "format"],
+      "label": "Markdown Icon",
+      "context": "actions"
+    },
     "taskcoach_actions_sort": {
       "file": "sort.png",
       "sizes": [16],

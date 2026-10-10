@@ -301,6 +301,27 @@ class TestCase(unittest.TestCase, object):
     def setUp(self):
         AbstractNotifier.disableNotifications()
 
+    def run(self, result=None):
+        """An error inside an event handler fails the test it happens
+        in: wx prints it (sys.excepthook) and goes on, so the test
+        would pass, as the app shows nothing (P252, P254 in
+        docs/REFINEMENT_REFACTOR.md)."""
+        swallowed = []
+        hook = sys.excepthook
+        sys.excepthook = lambda *error: swallowed.append(error)
+        # Added first, so run last: after the test's own clean-up
+        self.addCleanup(self.__raise_swallowed, swallowed)
+        try:
+            return super().run(result)
+        finally:
+            sys.excepthook = hook
+
+    @staticmethod
+    def __raise_swallowed(swallowed):
+        if swallowed:
+            _kind, error, trace = swallowed[0]
+            raise error.with_traceback(trace)
+
     def set_main_window_task_file(self, window=None):
         """Give the test main window (default: the top window) a task
         file, as the app's main window has, for code that reads its

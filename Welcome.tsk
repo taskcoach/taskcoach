@@ -466,6 +466,91 @@ Printable quick-reference card for keyboard shortcuts
 </description>
 </attachment>
 </task>
+<task id="b8f0c011-76bd-4206-8e27-98c626550e72" status="1" creationDateTime="2026-10-09 09:00:00" subject="Markdown preview" expandedContexts="('prerequisiteviewerintaskeditor', 'taskviewer')" priority="2">
+<description>
+# Markdown preview
+Press Preview under the Description label to see this text formatted.
+The text itself stays as typed.
+
+## Lists
+- Shopping
+- [ ] Write the report
+- [x] Read the preview
+  - Nested items work too
+
+1. First do this
+2. Then that
+
+## Code
+Use `git status` to see what changed:
+
+```sql
+SELECT subject, duedate FROM tasks
+WHERE completed = 0
+ORDER BY duedate;
+```
+
+```bash
+./taskcoach-run.sh
+```
+
+> Tip: plain lines keep their line breaks,
+> just like comments on GitHub.
+
+## Styles
+Some **bold**, *italic*, ***both*** and ~~struck~~ text.
+
+| Item | Qty |
+|:--|--:|
+| apple | 3 |
+| pear | 4 |
+
+## Links
+- [Task Coach](https://github.com/taskcoach/taskcoach)
+- Bare links work too: https://taskcoach.github.io
+
+---
+</description>
+<note id="faf3c61e-4f52-4ada-bae1-311eabcf6f04" status="1" creationDateTime="2026-10-09 10:00:00" subject="Sprint review notes">
+<description>
+# Sprint review - Friday
+Attendees: Ana, Ben, Chen
+
+## Done
+- [x] Login page
+- [x] Password reset mail
+
+## Next
+1. Ship the beta
+2. Fix the slow query:
+
+```sql
+SELECT * FROM efforts WHERE stop IS NULL;
+```
+
+> Ana: the beta can wait until Monday.
+</description>
+</note>
+<effort id="452db599-5f5f-4b37-a3b2-f3a03c9f9b64" status="1" start="2026-10-09 08:00:00" stop="2026-10-09 08:45:00">
+<description>
+# Nightly backup check
+1. List the backups
+2. Verify the newest one
+3. Mail the report
+
+```bash
+ls -lt /srv/backups | head
+tar -tzf /srv/backups/latest.tar.gz | head -3
+```
+
+```sql
+SELECT count(*) FROM backups WHERE created &gt; '2026-10-01';
+```
+
+> All green. Next check on Monday.
+</description>
+</effort>
+</task>
 <category id="2f476514-5487-11e2-a6ae-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:50:36.506176" subject="@Contexts (GTD-Style)" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')">
 <category id="3e1eac3a-5487-11e2-8b71-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:01.405129" modificationDateTime="2025-12-22 22:24:44.970852" subject="@Home" bgColor="(143, 240, 164, 255)" icon="nuvola_actions_go-home" selectedIcon="nuvola_actions_go-home" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc7a24c-f40f-11f0-b2c5-24418c661769 5cc7a256-f40f-11f0-b2c5-24418c661769 aea5a88f-5467-11e2-97b4-0016cbad0bd0" />
 <category id="42afb411-5487-11e2-8fc4-0016cbad0bd0" status="1" creationDateTime="2013-01-01 21:51:09.066488" modificationDateTime="2025-12-22 22:25:38.517403" subject="@Work" bgColor="(249, 240, 107, 255)" icon="nuvola_devices_computer" selectedIcon="nuvola_devices_computer" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="1c6acfee-5464-11e2-bd7c-0016cbad0bd0 5cc79b72-f40f-11f0-b2c5-24418c661769 5cc7a253-f40f-11f0-b2c5-24418c661769 098b2f1e-5567-4a73-9055-839d4f361c04 0b0d69a0-1731-4dba-9ef2-424add510daf 219d4064-2b6d-457d-a535-97957a6a918c 40785ee2-048c-44b5-bdc5-5ce7a9775e2d 459811a9-d35a-4838-b8a8-da1a8da66032 4d8a4161-4880-4e41-a08c-749915b82530 55b8a81d-af9e-48d8-89b2-656f9242d275 7f0ff34a-0dd2-4db9-8166-88296e1db0f8 9b37b774-4f45-4c81-b9ac-5f1048bad92a 9dec0141-e228-4097-b8cd-0b4f48a96637 e130de32-125c-455e-806d-8f90a72db17a fe4b9c77-24ae-4f71-854a-4815ff1e2d60">
@@ -488,6 +573,21 @@ Printable quick-reference card for keyboard shortcuts
 <category id="f010980f-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Waiting For" bgColor="(255, 255, 153, 255)" icon="clock_icon" selectedIcon="clock_icon" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b7a-f40f-11f0-b2c5-24418c661769" />
 <category id="f0109810-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Someday/Maybe" bgColor="(221, 160, 221, 255)" icon="nuvola_apps_ktip" selectedIcon="nuvola_apps_ktip" expandedContexts="('categoryviewerintaskeditor',)" categorizables="e5b07193-435a-47f0-987e-dea0cf4c32f2" />
 <category id="f0109811-f40f-11f0-b2c5-24418c661769" status="1" creationDateTime="2026-01-17 15:00:00" subject="Next Action" bgColor="(152, 251, 152, 255)" icon="nuvola_actions_go-next" selectedIcon="nuvola_actions_go-next" expandedContexts="('categoryviewerintaskeditor',)" categorizables="5cc79b75-f40f-11f0-b2c5-24418c661769 5cc7a259-f40f-11f0-b2c5-24418c661769" />
+</category>
+<category id="3add77b7-6e63-45d8-8a05-28fd12ddd0e7" status="1" creationDateTime="2026-10-09 09:00:00" subject="Markdown" bgColor="(255, 255, 153, 255)" icon="nuvola_apps_ktip" selectedIcon="nuvola_apps_ktip" expandedContexts="('categoryviewer', 'categoryviewerintaskeditor')" categorizables="b8f0c011-76bd-4206-8e27-98c626550e72">
+<description>
+# Markdown
+Items in this category show what the Preview button does:
+
+- Titles with `#`
+- Lists with `-` and `1.`
+- Code with `` ` `` and fenced blocks
+- Quotes with `&gt;`
+- **Bold**, *italic* and ~~strikethrough~~
+- Tables with `|`
+- Task lists with `- [ ]`
+- Links, bare or `[text](url)`
+</description>
 </category>
 <note id="098b2f1e-5567-4a73-9055-839d4f361c04" status="1" creationDateTime="2026-01-16 13:00:00" modificationDateTime="2026-01-18 09:45:12" subject="Code Review Guidelines">
 <description>

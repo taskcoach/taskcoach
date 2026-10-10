@@ -259,7 +259,7 @@ class HierarchicalCalendar(tooltip.ToolTipMixin, CalendarCanvas):
     def GetRootEvents(self):
         return self.__adapter.get_root_items()
 
-    def GetChildren(self, task):
+    def child_events(self, task):
         return self.__adapter.children(task)
 
     def GetStart(self, task):

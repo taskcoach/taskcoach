@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest import mock
 
 import test
+import wx
 from taskcoachlib.widgets import wxevents
 
 
@@ -42,3 +43,13 @@ class CalendarCanvasPaintTest(test.wxTestCase):
 
     def test_room_to_draw_in(self):
         self.assertEqual([], self.paint_errors((400, 300)))
+
+
+class CalendarCanvasChildrenTest(test.wxTestCase):
+    def test_get_children_is_the_window_s_own(self):
+        # Its events' children have another name (child_events): code
+        # walking a window's children calls GetChildren() on every one
+        canvas = wxevents.CalendarCanvas(self.frame)
+        for child in canvas.GetChildren():
+            self.assertIsInstance(child, wx.Window)
+        self.assertRaises(NotImplementedError, canvas.child_events, None)

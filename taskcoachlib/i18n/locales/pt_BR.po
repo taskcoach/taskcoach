@@ -8070,3 +8070,11 @@ msgstr "Abrindo %s..."
 #: taskcoachlib/gui/iocontroller.py
 msgid "Merging %s..."
 msgstr "Mesclando %s..."
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Go back to editing the text"
+msgstr "Voltar a editar o texto"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "Show the text formatted as Markdown"
+msgstr "Mostrar o texto formatado como Markdown"

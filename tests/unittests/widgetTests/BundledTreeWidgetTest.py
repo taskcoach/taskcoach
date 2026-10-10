@@ -22,6 +22,29 @@ import wx
 import taskcoachlib
 from wx.lib.agw import customtreectrl, hypertreelist
 
+# Every key the tree handles itself (CustomTreeCtrl.OnKeyDown)
+_TREE_KEYS = (
+    ord("A"),
+    ord("1"),
+    ord("+"),
+    ord("-"),
+    ord("*"),
+    wx.WXK_NUMPAD_ADD,
+    wx.WXK_NUMPAD_SUBTRACT,
+    wx.WXK_NUMPAD_MULTIPLY,
+    wx.WXK_UP,
+    wx.WXK_DOWN,
+    wx.WXK_LEFT,
+    wx.WXK_RIGHT,
+    wx.WXK_HOME,
+    wx.WXK_END,
+    wx.WXK_PAGEUP,
+    wx.WXK_PAGEDOWN,
+    wx.WXK_RETURN,
+    wx.WXK_SPACE,
+    wx.WXK_MENU,
+)
+
 
 class BundledTreeWidgetTest(test.wxTestCase):
     """The tree views run on the bundled pair, never one bundled file
@@ -48,6 +71,31 @@ class BundledTreeWidgetTest(test.wxTestCase):
         tree.AddColumn("Subject")
         root = tree.AddRoot("root")
         return tree, tree.AppendItem(root, "item")
+
+    def trees_with_no_row(self):
+        """An empty view (its hidden root only), a view not filled yet
+        (no root) and the plain tree both are built on."""
+        style = wx.TR_MULTIPLE | wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS
+        empty_view = hypertreelist.HyperTreeList(self.frame, agwStyle=style)
+        empty_view.AddColumn("Subject")
+        empty_view.AddRoot("root")
+        not_filled = hypertreelist.HyperTreeList(self.frame, agwStyle=style)
+        not_filled.AddColumn("Subject")
+        return (
+            empty_view.GetMainWindow(),
+            not_filled.GetMainWindow(),
+            customtreectrl.CustomTreeCtrl(self.frame),
+        )
+
+    def test_keys_on_a_tree_with_no_row_do_nothing(self):
+        # P252: a letter or digit, +, -, *, Left, Right, Home and the
+        # menu key raised AttributeError on the missing current row
+        for tree in self.trees_with_no_row():
+            for code in _TREE_KEYS:
+                event = wx.KeyEvent(wx.wxEVT_KEY_DOWN)
+                event.SetKeyCode(code)
+                tree.OnKeyDown(event)
+                self.assertTrue(event.GetSkipped())
 
     def test_unselect_all_clears_rows_highlighted_through_the_tree(self):
         # What restoring the selection after a rebuild relies on

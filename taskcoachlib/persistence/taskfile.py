@@ -208,10 +208,11 @@ _ATTACHMENT_CLASSES = (
 def _saved_event_types():
     """The events of saved data changing: an item's modification date,
     an item added to or removed from another, saved view state (the
-    expanded state, a category's filter)."""
+    expanded state, a category's filter, the Markdown preview)."""
     composites = (task.Task, category.Category, note.Note)
     for cls in composites + (effort.Effort,) + _ATTACHMENT_CLASSES:
         yield cls.modification_datetime_changed_event_type()
+        yield cls.preview_shown_changed_event_type()
     for cls in composites:
         yield cls.addChildEventType()
         yield cls.removeChildEventType()

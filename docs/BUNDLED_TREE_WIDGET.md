@@ -15,7 +15,7 @@ Listed with the other bundled and patched code in
 | File | Upstream base | Changes |
 |------|---------------|---------|
 | `hypertreelist.py` | wxPython 4.3.1's `wx/lib/agw/hypertreelist.py` (4.2.4 to 4.3.1 differ by one line) | Task Coach's, [below](#task-coachs-changes); the `Self` annotations dropped for Python 3.10 |
-| `customtreectrl.py` | wxPython 4.3.1's `wx/lib/agw/customtreectrl.py` (the same since 4.2.4) | none |
+| `customtreectrl.py` | wxPython 4.3.1's `wx/lib/agw/customtreectrl.py` (the same since 4.2.4) | one guard: `OnKeyDown` with no row to act on passes the key on (P252 in [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#found-2026-10-09)) |
 
 The header dates inside the files are upstream's and say nothing of the
 copy's age: `hypertreelist.py` reads "Latest Revision: 30 Jul 2014" in

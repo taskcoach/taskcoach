@@ -140,3 +140,60 @@ class EditorTestCase(test.wxTestCase):
         self.assertEqual(
             "nuvola_apps_clanbomber", self.appearance._iconEntry.GetValue()
         )
+
+    def test_preview_button_shares_the_description_labels_cell(self):
+        page = self.editor._interior[0]
+        cell = page._preview_button.GetParent().GetChildren()
+        labels = [child for child in cell if isinstance(child, wx.StaticText)]
+        self.assertEqual(
+            ["Description"], [label.GetLabel() for label in labels]
+        )
+        sizer = page._sizer
+        self.assertEqual(
+            sizer.GetItemPosition(page._descriptionEntry).GetRow(),
+            sizer.GetItemPosition(page._preview_button.GetParent()).GetRow(),
+        )
+
+    def test_preview_button_toggles_the_description_preview(self):
+        page = self.editor._interior[0]
+        page._preview_button.SetValue(True)
+        page.on_preview_toggle(dummy.Event())
+        self.assertTrue(page._descriptionEntry.is_preview())
+        page._preview_button.SetValue(False)
+        page.on_preview_toggle(dummy.Event())
+        self.assertFalse(page._descriptionEntry.is_preview())
+
+    def test_markdown_icon_comes_in_the_toolbar_sizes(self):
+        from taskcoachlib.gui.icons.icon_library import icon_catalog
+
+        for size in (16, 22, 32):
+            bitmap = icon_catalog.get_bitmap(
+                "taskcoach_actions_markdown_icon", size
+            )
+            self.assertTrue(bitmap.IsOk())
+            self.assertEqual((size, size), tuple(bitmap.GetSize()))
+
+    def test_preview_button_names_what_a_click_does(self):
+        page = self.editor._interior[0]
+        self.assertEqual("Preview", page._preview_button.GetLabel())
+        page._preview_button.SetValue(True)
+        page.on_preview_toggle(dummy.Event())
+        self.assertEqual("Edit", page._preview_button.GetLabel())
+        page._preview_button.SetValue(False)
+        page.on_preview_toggle(dummy.Event())
+        self.assertEqual("Preview", page._preview_button.GetLabel())
+
+    def test_preview_toggle_is_remembered_on_the_item(self):
+        page = self.editor._interior[0]
+        page._preview_button.SetValue(True)
+        page.on_preview_toggle(dummy.Event())
+        self.assertTrue(self.item.is_preview_shown())
+
+    def test_editor_opens_in_preview_when_the_item_shows_it(self):
+        self.item.show_preview()
+        editor = EditorUnderTest(
+            self.frame, [self.item], self.items, self.taskFile
+        )
+        page = editor._interior[0]
+        self.assertTrue(page._descriptionEntry.is_preview())
+        self.assertTrue(page._preview_button.GetValue())

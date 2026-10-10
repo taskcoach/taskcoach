@@ -150,7 +150,9 @@ class CalendarCanvas(wx.Panel):
     def GetText(self, event):
         raise NotImplementedError
 
-    def GetChildren(self, event):
+    def child_events(self, event):
+        # Not GetChildren: that is wx's, the window's own children,
+        # and code walking a window's children calls it with no event
         raise NotImplementedError
 
     def GetBackgroundColor(self, event):
@@ -280,7 +282,7 @@ class CalendarCanvas(wx.Panel):
 
     def _flatten(self, event, result):
         result.append(event)
-        for child in self.GetChildren(event):
+        for child in self.child_events(event):
             self._flatten(child, result)
 
     def _draw_event(self, gc, event):
@@ -293,7 +295,7 @@ class CalendarCanvas(wx.Panel):
                 y_min,
                 y_max,
             ) = self._coords[event]
-            if self.GetChildren(event):
+            if self.child_events(event):
                 self._draw_parent(
                     gc,
                     start_index,
@@ -315,7 +317,7 @@ class CalendarCanvas(wx.Panel):
                     event,
                     self._eventWidth,
                 )
-        for child in self.GetChildren(event):
+        for child in self.child_events(event):
             self._draw_event(gc, child)
 
     def _on_paint(self, event):
@@ -998,7 +1000,7 @@ class CalendarCanvas(wx.Panel):
     def _get_start_recursive(self, event):
         dt = self.GetStart(event)
         ls = [] if dt is None else [dt]
-        for child in self.GetChildren(event):
+        for child in self.child_events(event):
             dt = self._get_start_recursive(child)
             if dt is not None:
                 ls.append(dt)
@@ -1007,7 +1009,7 @@ class CalendarCanvas(wx.Panel):
     def _get_end_recursive(self, event):
         dt = self.GetEnd(event)
         ls = [] if dt is None else [dt]
-        for child in self.GetChildren(event):
+        for child in self.child_events(event):
             dt = self._get_end_recursive(child)
             if dt is not None:
                 ls.append(dt)
@@ -1073,7 +1075,7 @@ class CalendarCanvas(wx.Panel):
                     y = watermark.height(rstart, rend)
                     watermark.add(rstart, rend, y + 1)
                     y_max = y + 1
-                    for child in self.GetChildren(event):
+                    for child in self.child_events(event):
                         child_max = computeEvent(child)
                         if child_max is not None:
                             y_max = max(y_max, child_max)

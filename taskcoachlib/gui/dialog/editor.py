@@ -39,6 +39,7 @@ from taskcoachlib.gui.dialog.entry import (
     get_suggested_minute_choices,
     get_suggested_second_choices,
 )
+from taskcoachlib.tools import wxhelper
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.i18n import _
 from taskcoachlib.help.balloontips import BalloonTipManager
@@ -126,6 +127,41 @@ def _focus_and_select(the_entry):
         if operating_system.isWindows():
             the_entry.SetInsertionPoint(0)  # Scroll to the left first
         the_entry.SelectAll()
+
+
+def _show_preview_toggle(button, shown):
+    """Set the Markdown preview toggle's state and say what a click
+    does: the Markdown mark and "Preview" while editing, pressed with
+    the pencil and "Edit" while the preview shows."""
+    if shown:
+        label, icon_id = _("Edit"), "nuvola_actions_draw-freehand"
+        tip = _("Go back to editing the text")
+    else:
+        label, icon_id = _("Preview"), "taskcoach_actions_markdown_icon"
+        tip = _("Show the text formatted as Markdown")
+    button.SetValue(shown)
+    button.SetLabel(label)
+    button.SetBitmap(icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE))
+    button.SetToolTip(tip)
+    button.InvalidateBestSize()
+    button.GetParent().Layout()
+
+
+def _description_label(page):
+    """The Description label with its Preview toggle underneath, in the
+    label's own cell (docs/MARKDOWN.md): the toggle reuses the dead
+    space beside the tall box instead of adding a row. The toggle
+    calls back to the page's on_preview_toggle."""
+    panel = wx.Panel(page)
+    label = wx.StaticText(panel, label=_("Description"))
+    button = wx.ToggleButton(panel)
+    button.Bind(wx.EVT_TOGGLEBUTTON, page.on_preview_toggle)
+    _show_preview_toggle(button, False)
+    sizer = wx.BoxSizer(wx.VERTICAL)
+    sizer.Add(label, 0, wx.ALIGN_LEFT)
+    sizer.Add(button, 0, wx.TOP | wx.ALIGN_LEFT, 5)
+    panel.SetSizerAndFit(sizer)
+    return panel, button
 
 
 class Page(patterns.Observer, widgets.BookPage):
@@ -275,12 +311,23 @@ class SubjectPage(Page):
             wx.EVT_KILL_FOCUS,
             self.items[0].descriptionChangedEventType(),
         )
+        label, self._preview_button = _description_label(self)
         self.addEntry(
-            _("Description"),
+            label,
             self._descriptionEntry,
             growable=True,
             flags=[None, wx.ALL | wx.EXPAND],
         )
+        if len(self.items) == 1 and self.items[0].is_preview_shown():
+            self._descriptionEntry.set_preview(True)
+            _show_preview_toggle(self._preview_button, True)
+
+    def on_preview_toggle(self, event):  # pylint: disable=W0613
+        show = self._preview_button.GetValue()
+        _show_preview_toggle(self._preview_button, show)
+        self._descriptionEntry.set_preview(show)
+        if len(self.items) == 1:
+            self.items[0].show_preview(show)
 
     def add_creation_date_time_entry(self):
         creation_datetimes = [item.creationDateTime() for item in self.items]
@@ -4716,6 +4763,8 @@ class EffortEditBook(Page):
         self.addEntry(
             self._descriptionEntry, flags=[wx.ALL | wx.EXPAND], growable=True
         )
+        if len(self.items) == 1 and self.items[0].is_preview_shown():
+            self._descriptionEntry.set_preview(True)
 
     def setFocus(self, column_name):
         self.setFocusOnEntry(column_name)
@@ -4995,3 +5044,54 @@ class EffortEditor(Editor):
     singular_title = _("%s (Effort)")
     item_type_plural = _("Efforts")
     EditBookClass = EffortEditBook
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._align_preview_button()
+
+    def createButtons(self):
+        """The Preview toggle bottom left in the Close button's row
+        (docs/MARKDOWN.md): the effort editor has no Description label
+        to hang it under."""
+        buttons = super().createButtons()
+        close = wxhelper.get_dialog_button(buttons, wx.ID_OK)
+        self._preview_button = wx.ToggleButton(close.GetParent())
+        self._preview_button.Bind(wx.EVT_TOGGLEBUTTON, self.on_preview_toggle)
+        self._preview_button.MoveBeforeInTabOrder(close)
+        shown = len(self._items) == 1 and self._items[0].is_preview_shown()
+        _show_preview_toggle(self._preview_button, shown)
+        buttons.Insert(0, self._preview_button, 0, wx.ALIGN_CENTER_VERTICAL)
+        return buttons
+
+    def _align_preview_button(self):
+        """Line the button row up with the page: the toggle starts where
+        the description box starts and Close ends where it ends. The
+        row sits outside the page and its margins, so both edges are
+        measured, not guessed."""
+        box = self._interior.entries()["description"]
+        left = 0
+        window = box
+        while window is not self:
+            left += window.GetPosition().x
+            window = window.GetParent()
+        item = self._buttons.GetItem(0)
+        item.SetFlag(wx.ALIGN_CENTER_VERTICAL | wx.LEFT)
+        item.SetBorder(max(left - self._buttons.GetPosition().x, 0))
+        self.Layout()
+        close = wxhelper.get_dialog_button(self._buttons, wx.ID_OK)
+        overshoot = (
+            close.GetPosition().x
+            + close.GetSize().width
+            - (left + box.GetSize().width)
+        )
+        row = self.GetSizer().GetItem(self._buttons)
+        if overshoot > 0 and row is not None:
+            row.SetBorder(row.GetBorder() + overshoot)
+            self.Layout()
+
+    def on_preview_toggle(self, event):  # pylint: disable=W0613
+        show = self._preview_button.GetValue()
+        _show_preview_toggle(self._preview_button, show)
+        self._interior.entries()["description"].set_preview(show)
+        if len(self._items) == 1:
+            self._items[0].show_preview(show)

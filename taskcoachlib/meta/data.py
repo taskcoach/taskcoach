@@ -43,10 +43,10 @@ import re
 # =============================================================================
 
 version = "2.0.3"  # Major.Minor.Milestone
-patch = "4"  # Patch number - INCREMENT THIS for each release
-version_full = f"{version}.{patch}"  # Full version: 2.0.3.4
+patch = "5"  # Patch number - INCREMENT THIS for each release
+version_full = f"{version}.{patch}"  # Full version: 2.0.3.5
 
-release_day = "8"  # Day of the release (1-31)
+release_day = "10"  # Day of the release (1-31)
 release_month = "October"  # Month of the release
 release_year = "2026"  # Year of the release
 
@@ -58,8 +58,8 @@ release_year = "2026"  # Year of the release
 # Task file format versions (docs/PERSISTENCE_XML.md, Versions and
 # Compatibility). The format this release writes and the newest it
 # reads (38 since 2.0.3.0: categories stored on the items; 39: the
-# "No icon" override):
-tskformat = 39
+# "No icon" override; 40: the Markdown preview):
+tskformat = 40
 # The format a reader needs for this release's files, which releases
 # before 2.0.3.0 check: 37 while the files also hold the forms 2.0.2.0
 # and later read (persistence/xml/legacy.py).

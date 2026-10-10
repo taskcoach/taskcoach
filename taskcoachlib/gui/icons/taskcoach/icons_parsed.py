@@ -195,6 +195,18 @@ icons = {
             16: "16x16/magnifier_glass_dropdown_icon.png",
         },
     },
+    "taskcoach_actions_markdown_icon": {
+        "label": _("Markdown Icon"),
+        "hints": [_("markdown"), _("md"), _("arrow"), _("down"), _("blue"), _("tile"), _("preview"), _("format")],
+        "context": "actions",
+        "context_label": _("Actions"),
+        "file": "markdown_icon.png",
+        "paths": {
+            16: "16x16/markdown_icon.png",
+            22: "22x22/markdown_icon.png",
+            32: "32x32/markdown_icon.png",
+        },
+    },
     "taskcoach_actions_newsub": {
         "label": _("New Sub"),
         "hints": [_("new"), _("subtask"), _("child"), _("create"), _("add"), _("sub"), _("task")],

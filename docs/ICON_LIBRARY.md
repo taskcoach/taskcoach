@@ -1052,6 +1052,42 @@ Tier 1 (user-assignable) and Tier 2 icons not on the main toolbar only need
 | `cat_icon` | `nuvola_categories_applications-toys` | Cat icon, user-assignable (16) |
 | `incpriority` | `nuvola_actions_arrow-up` | Increase priority (menu submenu icon) |
 
+**Custom icons with no legacy name:**
+
+| Icon | Used by | Sizes |
+|------|---------|-------|
+| `taskcoach_actions_markdown_icon` | Preview toggle of the Markdown description ([MARKDOWN.md](MARKDOWN.md)); user-assignable | 16/22/32 shipped; 48/64/128 in icon-distillery |
+
+The Markdown icon is Task Coach's own drawing, made to be square and
+to read at 16 pixels: the Markdown mark's M with its down arrow under
+it instead of beside it, white on a blue tile (`#1f7fd1`, the
+designer's choice, 2026-10-10), on the pixel grid. The arrow's tail
+is as wide as the M's legs and rises between them without touching:
+that is what stacking is for, a long arrow and a tall M in one square.
+Not the official arrangement
+([dcurtis/markdown-mark](https://github.com/dcurtis/markdown-mark)):
+side by side the pair is twice as wide as tall, which leaves letters 6
+pixels high in a 16 pixel icon. Tried and dropped (2026-10-10): the M
+and arrow with no frame (too small at the mark's spacing, stretched
+when taller), the pair on a square tile (letters half the tile's
+height), and the official solid mark, 16 by 10 (not square). The
+official colours are a grey, white or black; blue, here as in many
+renditions, is not. Two alternates are kept in icon-distillery
+only, the M and arrow side by side and touching on a tile:
+`markdown_side_navy_icon` and `markdown_side_blue_icon`.
+
+The SVG sources are in icon-distillery only
+(`taskcoach/scalable/actions/`; the app ships PNG:
+[Icon Format](#icon-format)). `markdown_icon.svg` is on a 32 unit
+grid, exact at 32, 64 and 128. 16 and 22 have their own drawings
+(`markdown_icon-16.svg`, `markdown_icon-22.svg`): neither scales from
+that grid on whole pixels. At 16, legs and tail are 3 pixels wide with
+2 pixel gaps, so the M is 13 wide, an odd number that centres only on
+a tile 15 wide: the icon's last column is left empty. The distillery's
+renderer writes `{size}x{size}/{context}/`, which the flat `taskcoach`
+theme does not have: render each size with Inkscape into
+`{size}x{size}/` (`--export-type=png --export-width=N`).
+
 ### Migration Procedure
 
 Follow these steps for each legacy icon being retired.

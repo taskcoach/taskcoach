@@ -89,6 +89,7 @@ class Object:
             self,
             self.orderingChangedEvent,
         )
+        self.__preview_shown = kwargs.pop("previewShown", False)
         self.__id = kwargs.pop("id", None) or new_id()
 
         # Derived SSOT fields (value + source for each appearance type)
@@ -346,6 +347,29 @@ class Object:
     def descriptionSortEventTypes(cls):
         """The event types that influence the description sort order."""
         return (cls.descriptionChangedEventType(),)
+
+    # Preview state:
+
+    def is_preview_shown(self):
+        """Whether a description editor opens in Markdown preview
+        (docs/MARKDOWN.md)."""
+        return self.__preview_shown
+
+    def show_preview(self, show=True, notify=True):
+        """Show the Markdown preview for this item's descriptions.
+        Saved view state like the expansion state: it marks the file
+        unsaved, sets no modification date and has no undo."""
+        if show == self.__preview_shown:
+            return
+        self.__preview_shown = show
+        if notify:
+            patterns.Event(
+                self.preview_shown_changed_event_type(), self, show
+            ).send()
+
+    @classmethod
+    def preview_shown_changed_event_type(cls):
+        return "%s.previewShown" % cls.__name__.lower()
 
     # Color:
 

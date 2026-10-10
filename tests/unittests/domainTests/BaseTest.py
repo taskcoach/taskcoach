@@ -105,6 +105,34 @@ class ObjectTest(test.TestCase):
         item.setDescription("e\x0cf\ufffe")
         self.assertEqual("ef", item.description())
 
+    def test_preview_hidden_by_default(self):
+        self.assertFalse(self.object.is_preview_shown())
+
+    def test_show_preview(self):
+        self.object.show_preview()
+        self.assertTrue(self.object.is_preview_shown())
+
+    def test_hide_preview(self):
+        self.object.show_preview()
+        self.object.show_preview(False)
+        self.assertFalse(self.object.is_preview_shown())
+
+    def test_set_preview_state_via_constructor(self):
+        self.assertTrue(base.Object(previewShown=True).is_preview_shown())
+
+    def test_show_preview_sets_no_modification_date(self):
+        before = self.object.modificationDateTime()
+        self.object.show_preview()
+        self.assertEqual(before, self.object.modificationDateTime())
+
+    def test_show_preview_sends_event(self):
+        patterns.Publisher().registerObserver(
+            self.onEvent,
+            eventType=base.Object.preview_shown_changed_event_type(),
+        )
+        self.object.show_preview()
+        self.assertEqual(1, len(self.eventsReceived))
+
     def setUp(self):
         self.object = base.Object()
         self.subclassObject = ObjectSubclass()
