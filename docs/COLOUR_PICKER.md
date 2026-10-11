@@ -46,7 +46,7 @@ NOTE: The original documentation for this refactoring was written but never comm
 ### Read-Only Mode and Tab Traversal
 
 - **Editable** (`readOnly=False`): picker accepts tab focus and opens colour dialog on click/Enter/Space.
-- **Read-only** (`readOnly=True`): both the outer composite control and the inner picker button bind `EVT_NAVIGATION_KEY` (to skip the control preserving tab direction) and `EVT_SET_FOCUS` (to reject click-focus). This is a composite control — the inner button is a separate wx window in the tab order, so both must be handled. `SetCanFocus(False)` alone is unreliable on native GTK widgets. Click, double-click, Enter/Space, and button events are also swallowed.
+- **Read-only** (`readOnly=True`): both the outer composite control and the inner picker button bind `EVT_NAVIGATION_KEY` (to skip the control preserving tab direction) and `EVT_SET_FOCUS` (to reject click-focus). This is a composite control — the inner button is a separate wx window in the tab order, so both must be handled. `SetCanFocus(False)` alone is unreliable on native GTK widgets. Click, double-click, Enter/Space, and button events are also swallowed. Both handlers navigate from the window holding the event: navigating from the outer control restarts the traversal inside the composite, which crashed Windows when the Appearance tab was shown (#487).
 
 In the editor Appearance tab, the Derived and Effective sections use `readOnly=True`, which disables both clicking and tab focus. Only the Override section's colour pickers are tabbable/editable.
 

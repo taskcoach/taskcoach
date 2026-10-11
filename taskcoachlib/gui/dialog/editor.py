@@ -671,6 +671,18 @@ class AttachmentSubjectPage(SubjectPage):
             self._locationSync.onAttributeEdited(event)
 
 
+class _DisplayPanel(wx.Panel):
+    """A read-only display panel: never a tab stop.
+
+    The static bitmaps and texts it shows take no part in tab
+    traversal; neither does the panel itself. Focus reaching it
+    by any other path is handed on by its reject handlers.
+    """
+
+    def AcceptsFocusFromKeyboard(self):
+        return False
+
+
 class TaskAppearancePage(ScrolledPage):
     """Appearance tab with scrollbar support for all domain object types."""
 
@@ -742,16 +754,18 @@ class TaskAppearancePage(ScrolledPage):
         ]
 
         # Icon - panel with both bitmap and "N/A" text (show one or the other)
+        # The static children take no part in tab traversal: both
+        # handlers navigate from the panel, so the traversal never
+        # restarts inside this same display (issue #487).
         def reject_nav(evt):
-            evt.GetEventObject().Navigate(evt.GetDirection())
+            self._derived_icon_panel.Navigate(evt.GetDirection())
 
         def reject_focus(evt):
             forward = not wx.GetKeyState(wx.WXK_SHIFT)
-            patterns.later.soon(
-                evt.GetEventObject(), evt.GetEventObject().Navigate, forward
-            )
+            panel = self._derived_icon_panel
+            patterns.later.soon(panel, panel.Navigate, forward)
 
-        self._derived_icon_panel = wx.Panel(self, style=0)
+        self._derived_icon_panel = _DisplayPanel(self, style=0)
         self._derived_icon_panel.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
         self._derived_icon_panel.Bind(wx.EVT_SET_FOCUS, reject_focus)
         icon_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1122,16 +1136,18 @@ class TaskAppearancePage(ScrolledPage):
         ]
 
         # Icon - panel with bitmap and "N/A" text (show one or the other)
+        # The static children take no part in tab traversal: both
+        # handlers navigate from the panel, so the traversal never
+        # restarts inside this same display (issue #487).
         def reject_nav(evt):
-            evt.GetEventObject().Navigate(evt.GetDirection())
+            self._effective_icon_panel.Navigate(evt.GetDirection())
 
         def reject_focus(evt):
             forward = not wx.GetKeyState(wx.WXK_SHIFT)
-            patterns.later.soon(
-                evt.GetEventObject(), evt.GetEventObject().Navigate, forward
-            )
+            panel = self._effective_icon_panel
+            patterns.later.soon(panel, panel.Navigate, forward)
 
-        self._effective_icon_panel = wx.Panel(self, style=0)
+        self._effective_icon_panel = _DisplayPanel(self, style=0)
         self._effective_icon_panel.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
         self._effective_icon_panel.Bind(wx.EVT_SET_FOCUS, reject_focus)
         icon_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -1454,12 +1470,8 @@ class DatesPage(ScrolledPage):
         if len(self.items) != 1:
             return  # Only show for single task editing
 
-        # Create panel that doesn't accept keyboard focus (skipped in tab order)
-        class NoFocusPanel(wx.Panel):
-            def AcceptsFocusFromKeyboard(self):
-                return False
-
-        self._statusPanel = NoFocusPanel(self)
+        # Read-only display, skipped in tab order
+        self._statusPanel = _DisplayPanel(self)
         sizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self._statusIcon = wx.StaticBitmap(self._statusPanel)
