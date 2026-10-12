@@ -41,12 +41,19 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
 
     def _onNavKey(self, event):
         """Skip this control during tab traversal, preserving direction."""
-        self.Navigate(event.GetDirection())
+        # The handler serves the outer control and its inner picker
+        # button: navigate from the window holding the event, not
+        # from the outer control, so the traversal never restarts
+        # inside this same control.
+        event.GetEventObject().Navigate(event.GetDirection())
 
     def _onRejectFocus(self, event):
         """Reject focus by navigating away, preserving Shift+Tab direction."""
+        # Owned by the window that got the focus, so a deferred call
+        # never reaches a picker its window is already gone from.
+        window = event.GetEventObject()
         forward = not wx.GetKeyState(wx.WXK_SHIFT)
-        patterns.later.soon(self, self.Navigate, forward)
+        patterns.later.soon(window, window.Navigate, forward)
 
     def _onIntercept(self, event):
         if self._readOnly:
@@ -95,3 +102,9 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
     def IsReadOnly(self):
         """Return whether this picker is read-only."""
         return self._readOnly
+
+    def AcceptsFocusFromKeyboard(self):
+        """Read-only pickers are display, never tab stops."""
+        if self._readOnly:
+            return False
+        return super().AcceptsFocusFromKeyboard()

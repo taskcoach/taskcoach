@@ -32,7 +32,7 @@ A custom-drawn button that displays the selected font name (in that font) and op
 ### Focus and Tab Traversal
 
 - **Editable** (`readOnly=False`): button accepts tab focus. When focused, draws a native dotted focus rectangle via `wx.RendererNative.DrawFocusRect`.
-- **Read-only** (`readOnly=True`): binds `EVT_NAVIGATION_KEY` to skip the control (preserving tab direction) and `EVT_SET_FOCUS` to reject click-focus. Click is also swallowed in `onClick`.
+- **Read-only** (`readOnly=True`): binds `EVT_NAVIGATION_KEY` to skip the control (preserving tab direction) and `EVT_SET_FOCUS` to reject click-focus. Click is also swallowed in `onClick`. Both handlers navigate from the window holding the event, and the control takes no tab focus at all (`AcceptsFocusFromKeyboard`), as the colour picker does (#487).
 
 In the editor Appearance tab, only the Override section's controls (checkbox + picker) are tabbable. The Derived and Effective sections use `readOnly=True`, which disables both clicking and tab focus. The `ColourPickerCtrl` follows the same pattern.
 

@@ -48,12 +48,19 @@ class FontPickerCtrl(buttons.GenButton):
 
     def __onNavKey(self, event):
         """Skip this control during tab traversal, preserving direction."""
-        self.Navigate(event.GetDirection())
+        event.GetEventObject().Navigate(event.GetDirection())
 
     def __onRejectFocus(self, event):
         """Reject focus by navigating away, preserving Shift+Tab direction."""
+        window = event.GetEventObject()
         forward = not wx.GetKeyState(wx.WXK_SHIFT)
-        patterns.later.soon(self, self.Navigate, forward)
+        patterns.later.soon(window, window.Navigate, forward)
+
+    def AcceptsFocusFromKeyboard(self):
+        """Read-only pickers are display, never tab stops."""
+        if self.__readOnly:
+            return False
+        return super().AcceptsFocusFromKeyboard()
 
     def DoGetBestSize(self):
         dc = wx.ClientDC(self)
