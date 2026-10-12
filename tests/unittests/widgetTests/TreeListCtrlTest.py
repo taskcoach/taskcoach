@@ -390,3 +390,20 @@ class TreeListCtrlInPlaceEditTest(TreeListCtrlTestCase):
         self.main.GetEventHandler().ProcessEvent(event)
         self.treeCtrl.edit_clicked_cell()
         self.assertEqual([(self.item1, 0)], self.edits)
+
+
+class TreeListCtrlScrollbarsTest(TreeListCtrlTestCase):
+    """The tree shows one horizontal scroll bar (issue #461).
+
+    The inner main window owns horizontal scrolling; the outer
+    control must not carry wx.HSCROLL, which draws a second
+    native bar under the tree's own on macOS.
+    """
+
+    def test_outer_control_has_no_horizontal_scrollbar(self):
+        self.assertFalse(self.treeCtrl.HasFlag(wx.HSCROLL))
+
+    def test_inner_main_window_keeps_horizontal_scrollbar(self):
+        main = self.treeCtrl.GetMainWindow()
+        self.assertTrue(main.HasFlag(wx.HSCROLL))
+        self.assertTrue(main.HasFlag(wx.VSCROLL))

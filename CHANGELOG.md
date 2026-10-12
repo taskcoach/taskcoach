@@ -4,6 +4,14 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.7
+
+### Tasks
+
+- The task tree no longer shows two horizontal scroll bars on
+  macOS: the outer control carried its own scrollbar beside the
+  tree's.
+
 ## 2.0.3.6
 
 ### Editors
