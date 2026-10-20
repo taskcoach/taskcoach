@@ -16,83 +16,25 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import runpy
+from unittest import mock
+
 import wx
 
 import test
-from taskcoachlib import patterns, widgets
-
-
-class StubWindow(object):
-    """Stands in for the window holding a focus event."""
-
-    def __init__(self):
-        self.navigations = []
-
-    def Navigate(self, forward):
-        self.navigations.append(forward)
-        return True
-
-
-class StubNavigationEvent(object):
-    def __init__(self, event_object, direction):
-        self.__event_object = event_object
-        self.__direction = direction
-
-    def GetEventObject(self):
-        return self.__event_object
-
-    def GetDirection(self):
-        return self.__direction
-
-
-class StubFocusEvent(object):
-    def __init__(self, event_object):
-        self.__event_object = event_object
-
-    def GetEventObject(self):
-        return self.__event_object
+from taskcoachlib import widgets
+from taskcoachlib.widgets import colourpicker
 
 
 class ColourPickerReadOnlyTest(test.wxTestCase):
-    """A read-only picker skips itself from the focus order.
-
-    The handlers serve the outer control and its inner picker
-    button, so they act on the window holding the event; acting
-    on the outer control restarts the traversal inside it
-    (issue #487).
-    """
+    """A read-only picker is no tab stop; how the focus passes it by
+    is tested in SkipFocusTest (issue #487)."""
 
     def setUp(self):
         super().setUp()
         self.picker = widgets.ColourPickerCtrl(
-            self.frame, colour=wx.BLACK, readOnly=True
+            self.frame, colour=wx.BLACK, read_only=True
         )
-        self.navigations = []
-        self.picker.Navigate = self.navigations.append
-
-    def test_nav_key_navigates_from_event_object(self):
-        window = StubWindow()
-        self.picker._onNavKey(StubNavigationEvent(window, True))
-        self.assertEqual([True], window.navigations)
-        self.assertEqual([], self.navigations)
-
-    def test_nav_key_preserves_backward_direction(self):
-        window = StubWindow()
-        self.picker._onNavKey(StubNavigationEvent(window, False))
-        self.assertEqual([False], window.navigations)
-        self.assertEqual([], self.navigations)
-
-    def test_reject_focus_defers_navigate_from_event_object(self):
-        window = StubWindow()
-        calls = []
-        original_soon = patterns.later.soon
-        patterns.later.soon = lambda *args: calls.append(args)
-        try:
-            self.picker._onRejectFocus(StubFocusEvent(window))
-        finally:
-            patterns.later.soon = original_soon
-        forward = not wx.GetKeyState(wx.WXK_SHIFT)
-        self.assertEqual([(window, window.Navigate, forward)], calls)
 
     def test_read_only_picker_is_no_tab_stop(self):
         self.assertFalse(self.picker.AcceptsFocusFromKeyboard())
@@ -100,3 +42,36 @@ class ColourPickerReadOnlyTest(test.wxTestCase):
     def test_editable_picker_keeps_tab_stop(self):
         picker = widgets.ColourPickerCtrl(self.frame, colour=wx.BLACK)
         self.assertTrue(picker.AcceptsFocusFromKeyboard())
+
+
+class ColourPickerInvalidColourTest(test.wxTestCase):
+    """An invalid colour never reaches the picker: macOS asserts
+    drawing one (src/osx/core/colour.cpp, GetCGColor), which stopped
+    the editor holding the picker from opening."""
+
+    def test_an_invalid_colour_keeps_the_colour_shown(self):
+        picker = widgets.ColourPickerCtrl(self.frame, colour=wx.BLACK)
+        picker.SetColour(wx.NullColour)
+        self.assertEqual(wx.BLACK, picker.GetColour())
+
+
+class _MacPicker(wx.PickerBase):
+    """wxPython 4.3.0's and 4.3.1's wx.ColourPickerCtrl on macOS, as
+    far as it gets: it calls PickerBase.SetPickerCtrl(), which
+    wxWidgets 3.3 dropped (wxPython #2937)."""
+
+    def __init__(self, *args, **kwargs):
+        raise AttributeError(
+            "'ColourPickerCtrl' object has no attribute 'SetPickerCtrl'"
+        )
+
+
+class ColourPickerMacWxPythonTest(test.wxTestCase):
+    """No editor with an Appearance tab opened on macOS: none of its
+    pickers could be made with wxPython 4.3.1 (#487)."""
+
+    def test_a_picker_is_made_with_wxpython_4_3_1_on_macos(self):
+        with mock.patch.object(wx, "ColourPickerCtrl", _MacPicker):
+            module = runpy.run_path(colourpicker.__file__)
+        picker = module["ColourPickerCtrl"](self.frame, colour=wx.RED)
+        self.assertEqual(wx.RED, picker.GetColour())

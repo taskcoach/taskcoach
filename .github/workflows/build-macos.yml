@@ -296,6 +296,18 @@ jobs:
           fi
           echo "macOS Cocoa assertion tests passed"
 
+      - name: Open every editor
+        run: |
+          # Each editor opens on a display and its pages and fields are
+          # gone through without an error or a focus loop
+          # (docs/TESTING.md, Editor check). A copy outside the checkout
+          # checks the app's own files with the app's own Python.
+          RESOURCES="dist/Task Coach.app/Contents/Resources"
+          export PYTHONHOME="$RESOURCES"
+          export PYTHONPATH="$RESOURCES/lib/python3.13:$RESOURCES/lib/python3.13/site-packages"
+          cp tools/check_editors.py "$RUNNER_TEMP/"
+          "dist/Task Coach.app/Contents/MacOS/python" "$RUNNER_TEMP/check_editors.py"
+
       - name: Create DMG
         run: |
           VERSION="${{ steps.version.outputs.version }}"

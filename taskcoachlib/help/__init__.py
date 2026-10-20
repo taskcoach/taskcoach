@@ -627,6 +627,12 @@ shortcuts are not configurable at the moment.""") % meta.metaDict),
             tr(
                 _("F2"), _("Edit the subject of the selected item in a viewer")
             ),
+            tr(
+                _("F2"),
+                _(
+                    "Swap the Markdown preview and the editor in a Description box"
+                ),
+            ),
         )
     ),
 )

@@ -1384,6 +1384,114 @@ Recorded nowhere else; each is reproduced on 2.0.3.0 first.
   harness fails a test when one happens inside it
   ([TESTING.md](TESTING.md#running)).
 
+### Found 2026-10-19
+
+- P255. On Windows a list's search box loses keys to the main menu.
+  wxMSW tries the menu bar's shortcuts before the focused field
+  (`src/msw/evtloop.cpp`, `PreProcessMessage()`); a single-line field
+  keeps only Delete, Home, End and some Ctrl and Shift keys
+  (`src/msw/textentry.cpp`), Return only when multi-line
+  (`src/msw/textctrl.cpp`). So in the search box Enter runs Edit...
+  (the selected items' editor) instead of searching, Insert New
+  task, F2 Edit in place. Also Windows' search box is wx's generic
+  one (`src/generic/srchctlg.cpp`): Enter sends `wxEVT_SEARCH`, which
+  `_onSearchButton()` answers with the options menu; a magnifier
+  click shows it twice; and the options' handlers sit on the inner
+  control, which the menu's commands do not reach, so a picked option
+  is checked but not applied. On Linux the options apply.
+  On macOS Return in the search box opens the options menu too: the
+  native field sends `wxEVT_SEARCH`, not `wxEVT_TEXT_ENTER`
+  (`src/osx/cocoa/srchctrl.mm`, `controlAction`).
+  Recommended (needs Windows and macOS): the macOS rule on
+  Windows too, no menu shortcut without a modifier
+  ([MENUS.md](MENUS.md#keyboard-shortcuts); the list then takes Insert
+  itself), and on the search box `wxEVT_SEARCH` searching where the
+  platform shows the menu itself, the options' handlers on the menu.
+  Size M.
+
+The rest, macOS:
+
+- P256. A `.tsk` opened from the Finder is not opened: macOS hands it
+  to `wx.App.MacOpenFiles()` (`argv_emulation` is off), whose default
+  serves wx's document framework only, so Task Coach opens the last
+  file, or nothing if it runs. Recommended: `WxApp.MacOpenFiles()`
+  opens it, in place of the last file when it comes before the
+  start-up open (its early file lock included), else as File > Open.
+  Needs a Mac for the order of Cocoa's events. Size M.
+- P257. The Timeline and Square map views draw through
+  `wx.BufferedDC(wx.ClientDC(self))` (`thirdparty/timeline/timeline.py`,
+  `widgets/tcsquaremap.py`); wxOSX does not draw on a ClientDC, so a
+  change shows only after a resize. Recommended: draw into the buffer,
+  then `Refresh()`. Size S.
+- P258. In Dark Mode the Categories and Notes trees draw items without
+  their own colour in black: the tree passes `wx.NullColour`
+  (`widgets/treectrl.py`) and macOS's PaintDC starts black where GTK's
+  takes the window's colour. Dark-theme colours are the designer's
+  (D11). Size S.
+- P259. Windows that show by themselves take the keyboard focus: the
+  tooltip frame, balloon tips and notifications are frames macOS makes
+  key windows (`src/osx/cocoa/nonownedwnd.mm`), so after View > New
+  viewer, Reset layout or a notification the main window no longer
+  gets the keys until clicked. A focus rule: for a ruling. Size M.
+- P260. Cmd+W in an editor or Preferences closes the task file: the
+  main menu stays installed while a dialog is in front and takes its
+  shortcuts. A Mac user expects the window in front to close. For a
+  ruling. Size S.
+- P261. Minor: icon-only column headers blank; drag and hover lines
+  invisible (ClientDC: the list's hover outline, the column resize
+  line, the calendar's drag box); off-screen buffers blurred on
+  Retina; "Save settings in the program folder" writes into the app
+  bundle.
+
+Windows:
+
+- P262. The in-place date editor may close when its calendar drops
+  down: `_NativeDateCtrl.HasOpenPopup()` always says no
+  (`widgets/maskedtimectrl.py`), and if the calendar takes the focus
+  `FindFocus()` gives None, which ends the edit. Recommended: ask the
+  picker for its month calendar (`DTM_GETMONTHCAL`). Size S.
+- P263. An Outlook mail dropped while Outlook's object model refuses
+  (`com_error`) or has no explorer (`None`) adds nothing, silently
+  (`mailer/outlook.py`, read inside the drop). Recommended: read it
+  once the drop returned, as the Thunderbird path does
+  ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md)). Size S.
+- P264. Descriptions typed on Windows store `\r\n`: Scintilla's
+  default line end there, mixed with `\n` from read text. A released
+  field's behaviour: for a ruling. Size S.
+- P265. wx's own errors (a clipboard that does not open, an image
+  warning) show as dialogs on Windows: its log goes to standard error
+  on GTK only (`Application.start()`). Size S.
+- P266. A date before 1753 in the native date picker: Windows' control
+  starts there; wx's `SetValue` fails or asserts later
+  (`src/msw/datectrl.cpp`). Size S.
+- P267. Saving fails while an antivirus, the indexer or a sync client
+  holds the file (`os.replace`, sharing violation), autosave included.
+  Recommended: a short retry on Windows. Size S.
+- P268. A taskbar pin made from the running window may start bare
+  `pythonw.exe`: the app sets AppUserModelID `org.taskcoach.TaskCoach`,
+  the installer's shortcuts do not. Size S.
+- P271. On Windows the Description and Subject boxes show no focus
+  highlight, unlike Windows' own text boxes: the box draws its border
+  through wx (`MultiLineTextCtrl._paint_border()`), whose Windows
+  renderer draws the theme's EDIT colours for normal and disabled
+  only, never focused (`wxRendererXP::DrawTextCtrl`, wx 3.2 and 3.3).
+  The focused Markdown preview copies the edit box's look, so it
+  shows none either. GTK draws the theme's focused entry, macOS its
+  focus ring. Recommended: on Windows, draw the theme's EDIT part in
+  its focused state (`DrawThemeBackground`, `ETS_FOCUSED`). Needs
+  Windows. Size S.
+
+Both:
+
+- P269. Nothing starts the real main window on macOS or Windows before
+  a release: the builds' editor check builds editors only
+  ([TESTING.md](TESTING.md#editor-check)). Recommended: a start-up
+  check in the builds (the app with a sample file, each view, the
+  menus, then quit). Size M.
+- P270. A Mac user started from the Finder has no terminal, and
+  nothing writes a log file ([LOGGING_GUIDE.md](LOGGING_GUIDE.md)):
+  a report from a Mac comes without the log. Size S.
+
 ---
 
 ## Open GitHub Issues
@@ -1433,8 +1541,10 @@ description (#104); PyPI (#105); a relative task file path in the INI
 (#151); printing: dark preview, PDF fails (#167); a column
 configuration tool (#191); a hint when search hides filtered items
 (#234); icon-only columns (#248); ~~columns reordered by dragging
-(#311)~~ (done, To Do 19); macOS: where Preferences is (#403; `wx.ID_PREFERENCES` puts it
-in the application menu); macOS: two horizontal scrollbars (#461).
+(#311)~~ (done, To Do 19); ~~macOS: where Preferences is (#403)~~ (fixed for 2.0.3.7: the
+application menu's stock ids are kept, [MENUS.md](MENUS.md#architecture)); ~~macOS: two horizontal scrollbars
+(#461)~~ (fixed for 2.0.3.7: the outer tree control no longer
+carries `wx.HSCROLL`).
 
 ---
 

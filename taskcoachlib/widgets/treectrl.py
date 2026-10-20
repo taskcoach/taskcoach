@@ -1152,10 +1152,13 @@ class TreeListCtrl(
 
     @staticmethod
     def __get_style():
-        # Enable horizontal scrollbar for natural column resizing. No
-        # border of its own: wxGTK 3 draws a theme border in a text
-        # entry's style, rounded, inside the pane's square one
-        return wx.WANTS_CHARS | wx.HSCROLL | wx.BORDER_NONE
+        # No wx.HSCROLL here: the inner main window owns horizontal
+        # scrolling (it forces wx.HSCROLL itself). An outer scrollbar
+        # draws a second native bar under the tree's own on macOS
+        # (issue #461). No border of its own: wxGTK 3 draws a theme
+        # border in a text entry's style, rounded, inside the pane's
+        # square one
+        return wx.WANTS_CHARS | wx.BORDER_NONE
 
     @staticmethod
     def __get_agw_style():

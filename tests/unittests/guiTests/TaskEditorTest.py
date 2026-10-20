@@ -23,6 +23,7 @@ from taskcoachlib import patterns, persistence
 from taskcoachlib.config import settings
 from taskcoachlib.domain import task, effort, date, note, attachment
 from taskcoachlib.gui import uicommand
+from unittest import mock
 from unittests import dummy
 import test
 import wx
@@ -100,10 +101,10 @@ class TaskEditorTestCase(test.wxTestCase):
         self.twodaysago = self.yesterday - date.ONE_DAY
         self.taskFile = persistence.TaskFile()
         self.taskList = self.taskFile.tasks()
-        self.taskList.extend(self.createTasks())
+        self.taskList.extend(self.create_tasks())
         self.editor = self.editorClass(
             self.frame,
-            self.getItems(),
+            self.get_items(),
             self.taskList,
             self.taskFile,
         )
@@ -117,20 +118,20 @@ class TaskEditorTestCase(test.wxTestCase):
         self.taskFile.close()
         self.taskFile.stop()
 
-    def createTasks(self):
+    def create_tasks(self):
         raise NotImplementedError  # pragma: no cover
 
-    def getItems(self):
+    def get_items(self):
         raise NotImplementedError  # pragma: no cover
 
 
 class EditorDisplayTest(TaskEditorTestCase):
     """Does the editor display the task data correctly when opened?"""
 
-    def getItems(self):
+    def get_items(self):
         return [self.task]
 
-    def createTasks(self):
+    def create_tasks(self):
         # pylint: disable=W0201
         self.task = task.Task("Task to edit")
         self.stop_datetime = date.DateTime(2012, 12, 12, 12, 12)
@@ -181,10 +182,10 @@ class EditorFirstSizeTest(TaskEditorTestCase):
     """The editor fits its largest page, so that each page shows whole
     when first opened, and may then shrink (P91)."""
 
-    def getItems(self):
+    def get_items(self):
         return [self.task]
 
-    def createTasks(self):
+    def create_tasks(self):
         self.task = task.Task("Task to edit")  # pylint: disable=W0201
         return [self.task]
 
@@ -206,10 +207,10 @@ class EditorLayoutTest(TaskEditorTestCase):
     """The tabs as the user arranged them come back in the next editor
     of the same kind (P93)."""
 
-    def getItems(self):
+    def get_items(self):
         return [self.task]
 
-    def createTasks(self):
+    def create_tasks(self):
         self.task = task.Task("Task to edit")  # pylint: disable=W0201
         return [self.task]
 
@@ -221,7 +222,7 @@ class EditorLayoutTest(TaskEditorTestCase):
         book = self.editor._interior
         section = book.settings_section()
         self.addCleanup(settings.set, section, "perspective", "")
-        book.Split(book.getPageIndex("notes"), wx.RIGHT)
+        book.Split(book.get_page_index("notes"), wx.RIGHT)
         self.assertEqual(2, len(self.tab_groups(self.editor)))
         self.editor.Close()
         test.settle()
@@ -230,12 +231,117 @@ class EditorLayoutTest(TaskEditorTestCase):
         )
         self.assertEqual(2, len(self.tab_groups(self.editor)))
 
+    def saved_tabs(self):
+        """The tabs the editor saves when closed, as they are."""
+        self.section = self.editor._interior.settings_section()
+        self.addCleanup(settings.set, self.section, "perspective", "")
+        self.editor.Close()
+        test.settle()
+        return settings.get(self.section, "perspective")
+
+    def reopen(self, saved_tabs):
+        """The pages a new editor shows no tab for, the given tabs
+        saved. Focus elsewhere first, as on a double click in the
+        task list: AGW focuses the tab bar of a page it selects, and
+        a page with none stopped the editor half built."""
+        if self.editor:
+            self.editor.Close()
+            test.settle()
+        settings.set(self.section, "perspective", saved_tabs)
+        other = wx.TextCtrl(self.frame)
+        self.frame.Show()
+        self.addCleanup(self.frame.Hide)
+        other.SetFocus()
+        test.settle()
+        self.editor = self.editorClass(
+            self.frame, [self.task], self.taskList, self.taskFile
+        )
+        book = self.editor._interior
+        return [
+            book[index].pageName
+            for index in range(book.GetPageCount())
+            if book.FindTab(book.GetPage(index))[0] is None
+        ]
+
+    def unreadable(self, saved):
+        """Saved tabs AGW cannot read whole: it takes every tab off
+        before it reads them, so these left pages with no tab (#487)."""
+        tabs, frames = saved.split("@", 1)
+        name, numbers = tabs.split("=", 1)
+        rest = ",".join(number.lstrip("+") for number in numbers.split(","))
+        rest = rest.split(",", 1)[1]
+        return {
+            "not tabs": "x",
+            "no frames": tabs,
+            "an empty tab number": "%s=+0,,%s@%s" % (name, rest, frames),
+            "a page missing": "%s=+0,%s@%s"
+            % (name, rest.rsplit(",", 1)[0], frames),
+            "a page past the last": "%s=+0,%s,99@%s" % (name, rest, frames),
+            # A settings file cut short: AGW read the last part for ever
+            "cut short": saved[:-1],
+        }
+
+    def test_saved_tabs_come_back_whole(self):
+        self.assertEqual([], self.reopen(self.saved_tabs()))
+
+    def test_unreadable_saved_tabs_open_the_default_ones(self):
+        for case, saved_tabs in self.unreadable(self.saved_tabs()).items():
+            with self.subTest(case=case), test.TimeLimit(20):
+                self.assertEqual([], self.reopen(saved_tabs))
+
+    def test_unreadable_saved_tabs_are_forgotten(self):
+        self.saved_tabs()
+        self.reopen("x")
+        self.assertNotEqual("x", settings.get(self.section, "perspective"))
+
+
+class EditorBuildFailureTest(test.wxTestCase):
+    """An editor that fails while it is built closes at once and says
+    so. Hidden, it stayed subscribed to its items with half-made
+    pages, and the user saw nothing (#487)."""
+
+    def setUp(self):
+        super().setUp()
+        self.task_file = persistence.TaskFile()
+        self.task = task.Task("task")
+        self.task_file.tasks().append(self.task)
+        broken = mock.patch.object(
+            gui.dialog.editor.TaskAppearancePage,
+            "__init__",
+            side_effect=RuntimeError("a page broke"),
+        )
+        self.message = mock.patch("wx.MessageBox").start()
+        self.addCleanup(mock.patch.stopall)
+        broken.start()
+        self.before = set(wx.GetTopLevelWindows())
+        with self.assertRaises(RuntimeError):
+            gui.dialog.editor.TaskEditor(
+                self.frame, [self.task], self.task_file.tasks(), self.task_file
+            )
+        test.settle()
+
+    def tearDown(self):
+        self.task_file.close()
+        self.task_file.stop()
+        super().tearDown()
+
+    def test_the_user_is_told(self):
+        self.message.assert_called_once()
+        self.assertIn("a page broke", self.message.call_args[0][0])
+
+    def test_no_editor_is_left(self):
+        self.assertEqual(set(), set(wx.GetTopLevelWindows()) - self.before)
+
+    def test_its_pages_hear_no_more_of_the_item(self):
+        self.task.setSubject("changed")  # An error here fails the test
+        test.settle()
+
 
 class EditTaskTestMixin(object):
-    def getItems(self):
+    def get_items(self):
         return [self.task]
 
-    def createTasks(self):
+    def create_tasks(self):
         # pylint: disable=W0201
         self.task = task.Task("Task to edit")
         self.attachment = attachment.FileAttachment("some attachment")
@@ -422,10 +528,10 @@ class EditTaskTestBySettingFocus(
 
 
 class EditTaskWithChildrenMixin(object):
-    def getItems(self):
+    def get_items(self):
         return [self.parent]
 
-    def createTasks(self):
+    def create_tasks(self):
         # pylint: disable=W0201
         self.parent = task.Task("Parent", plannedStartDateTime=date.Now())
         self.child = task.Task("Child", plannedStartDateTime=date.Now())
@@ -446,10 +552,10 @@ class EditTaskWithChildrenTestBySettingFocus(
 
 
 class EditTaskWithEffortTest(TaskEditorTestCase):
-    def getItems(self):
+    def get_items(self):
         return [self.task]
 
-    def createTasks(self):
+    def create_tasks(self):
         self.task = task.Task("task")  # pylint: disable=W0201
         self.task.addEffort(effort.Effort(self.task))
         return [self.task]
@@ -461,11 +567,11 @@ class EditTaskWithEffortTest(TaskEditorTestCase):
 
 
 class FocusTest(TaskEditorTestCase):
-    def createTasks(self):
+    def create_tasks(self):
         self.task = task.Task("Task to edit", description="Some words")
         return [self.task]
 
-    def getItems(self):
+    def get_items(self):
         return [self.task]
 
     def test_focus(self):
@@ -484,13 +590,13 @@ class FocusTest(TaskEditorTestCase):
 
     def test_a_field_without_text_opens_on_its_page(self):
         book = self.editor._interior
-        book.setFocus("percentageComplete")
+        book.set_focus("percentageComplete")
         self.assertIn(
             "percentageComplete", book[book.GetSelection()].entries()
         )
 
     def test_a_text_field_opens_with_its_text_selected(self):
-        self.editor._interior.setFocus("description")
+        self.editor._interior.set_focus("description")
         description = self.editor._interior[0]._descriptionEntry
         self.assertEqual("Some words", description._textCtrl.GetSelectedText())
 
@@ -499,10 +605,10 @@ class OpeningChangesNothingTest(TaskEditorTestCase):
     """Dates changed outside the editor (a list cell) keep the stored
     duration right, so opening the editor writes nothing (P133)."""
 
-    def getItems(self):
+    def get_items(self):
         return [self.task]
 
-    def createTasks(self):
+    def create_tasks(self):
         # pylint: disable=W0201
         self.task = task.Task("Task")
         start = date.DateTime(2026, 9, 30, 9, 0, 0)
@@ -522,8 +628,8 @@ class OpeningRecurredTaskChangesNothingTest(OpeningChangesNothingTest):
     """A task that has recurred keeps how many times when its editor
     opens: "Stop after N recurrences" counts them (P168)."""
 
-    def createTasks(self):
-        tasks = super().createTasks()
+    def create_tasks(self):
+        tasks = super().create_tasks()
         self.task.set_recurrence(
             date.Recurrence("weekly", maximum=10, count=3)
         )
@@ -543,10 +649,10 @@ class OpeningRecurredTaskChangesNothingTest(OpeningChangesNothingTest):
 
 
 class EditRecurrenceOfTwoTasksTest(TaskEditorSetterMixin, TaskEditorTestCase):
-    def getItems(self):
+    def get_items(self):
         return self.tasks
 
-    def createTasks(self):
+    def create_tasks(self):
         # pylint: disable=W0201
         self.tasks = [task.Task("Task A"), task.Task("Task B")]
         for each, count in zip(self.tasks, (3, 5)):
@@ -565,10 +671,10 @@ class AdjustDueModeTest(TaskEditorSetterMixin, TaskEditorTestCase):
     """The duration moves the due date when the start changes: the task
     keeps the duration only in Implicit mode."""
 
-    def getItems(self):
+    def get_items(self):
         return [self.task]
 
-    def createTasks(self):
+    def create_tasks(self):
         # pylint: disable=W0201
         self.start = date.DateTime(2026, 9, 30, 9, 0, 0)
         self.task = task.Task(
@@ -594,10 +700,10 @@ class ChangeFromElsewhereTest(TaskEditorTestCase):
     edited: the fields write nothing back
     (docs/DURATION_CALCULATIONS.md, 0.5)."""
 
-    def getItems(self):
+    def get_items(self):
         return [self.task]
 
-    def createTasks(self):
+    def create_tasks(self):
         # pylint: disable=W0201
         self.task = task.Task("Task")
         self.start = date.DateTime(2026, 9, 30, 9, 0, 0)

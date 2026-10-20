@@ -72,7 +72,7 @@ has three user-selectable sizes.
 - **Viewer toolbar:** `gui/viewer/base.py` — always passes
   `(TOOLBAR_ICON_SIZE,) * 2` (fixed at 16px).
 - **Settings flow:** menu selection → `settings.setvalue()` → event →
-  `mainwindow.showToolBar(value)` → `MainToolBar(size=value)`.
+  `mainwindow.show_toolbar(value)` → `MainToolBar(size=value)`.
 
 ---
 
@@ -87,6 +87,11 @@ command — no special-case logic needed.
 `_filter_commands()` deserializes: builds an index of `(unique_name, command)`
 pairs from the full command list, then maps each name in the perspective
 string to its command object. `perspective()` serializes back.
+
+The full list is made also for an empty toolbar (all buttons removed
+in the dialog): a view makes some of its state with its commands. The
+effort view's period choice is one: without it the task editor, whose
+Effort tab holds an effort view, cannot be built.
 
 ---
 

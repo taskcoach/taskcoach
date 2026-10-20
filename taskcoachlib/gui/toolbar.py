@@ -160,17 +160,18 @@ class ToolBar(_Toolbar, uicommand.UICommandContainerMixin):
     getToolIdByCommand = get_tool_id_by_command
 
     def _filter_commands(self, perspective, cache=True):
-        commands = list()
-        if perspective:
-            index = dict(
-                (command.unique_name(), command)
-                for command in self.uiCommands(cache=cache)
-            )
-            for class_name in perspective.split(","):
-                if class_name in index:
-                    commands.append(index[class_name])
-        # If perspective is empty, return empty list (allow empty toolbars)
-        return commands
+        # Made whatever the perspective shows, none for an empty
+        # toolbar: a view makes some of its own state with them (the
+        # effort view's period choice)
+        index = dict(
+            (command.unique_name(), command)
+            for command in self.uiCommands(cache=cache)
+        )
+        return [
+            index[class_name]
+            for class_name in perspective.split(",")
+            if class_name in index
+        ]
 
     def load_perspective(self, perspective, customizable=True, cache=True):
         self.Clear()

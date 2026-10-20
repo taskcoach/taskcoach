@@ -649,7 +649,7 @@ class Application(object, metaclass=patterns.Singleton):
         template directory."""
         from taskcoachlib.persistence import getDefaultTemplates
 
-        template_dir = self.settings.pathToTemplatesDir()
+        template_dir = self.settings.path_to_templates_dir()
         if (
             len(
                 [
@@ -938,7 +938,7 @@ class Application(object, metaclass=patterns.Singleton):
         if wx.GetApp().quitting:
             return
         try:
-            self.mainwindow.displayMessage(message)
+            self.mainwindow.display_message(message)
         except RuntimeError:
             pass  # MainWindow C++ object already deleted
 
@@ -956,7 +956,7 @@ class Application(object, metaclass=patterns.Singleton):
             patterns.later.soon(None, self.quit_application)
 
     def on_end_session(self):
-        self.mainwindow.setShutdownInProgress()
+        self.mainwindow.set_shutdown_in_progress()
         self.quit_application(force=True)
 
     def on_reopen_app(self):
@@ -1096,9 +1096,9 @@ class Application(object, metaclass=patterns.Singleton):
                 window.EndModal(wx.ID_CANCEL)
 
         # Explicitly close the main window to trigger exit.
-        # Set shutdown flag so onClose() won't veto or recurse into
+        # Set shutdown flag so on_close() won't veto or recurse into
         # quit_application.
-        self.mainwindow.setShutdownInProgress()
+        self.mainwindow.set_shutdown_in_progress()
         self.mainwindow.Close()
 
         if has_modal_dialogs:

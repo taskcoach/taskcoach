@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import re
 import time
 
 import wx
@@ -25,8 +26,9 @@ from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.gui.newid import IdProvider
 from taskcoachlib.meta.debug import log_step
 
-""" User interface commands (subclasses of UICommand) are actions that can
-    be invoked by the user via the user interface (menu's, toolbar, etc.).
+""" User interface commands (subclasses of UICommand) are actions that
+    can be invoked by the user via the user interface (menu's, toolbar,
+    etc.).
     See the Taskmaster pattern described here:
     http://www.objectmentor.com/resources/articles/taskmast.pdf
 """  # pylint: disable=W0105
@@ -34,6 +36,28 @@ from taskcoachlib.meta.debug import log_step
 
 # A window a command opened opens again at most once a second
 _SAME_WINDOW_INTERVAL = 1.0
+
+# Kept on macOS, which finds these commands by their stock ids for its
+# application menu (src/osx/menu_osx.cpp). With a handed-out id its own
+# Quit took Cmd+Q and ended the app without the quit sequence: no "Save
+# changes?", no settings saved. Other stock ids stay handed out: Cut,
+# Copy and Paste sit in several menus, one command each.
+_APPLICATION_MENU_IDS = (wx.ID_EXIT, wx.ID_ABOUT, wx.ID_PREFERENCES)
+
+# A modifier in a menu shortcut as wx reads it: "Ctrl+N", "Shift-Alt-T"
+_MODIFIER = re.compile(r"\b(ctrl|alt|shift|cmd|rawctrl|rawctl)\s*[-+]", re.I)
+
+
+def platform_menu_text(menu_text):
+    """The menu text, less a shortcut without a modifier on macOS:
+    there the menu takes every key typed in a field wx draws, an
+    editor's Subject and Description, before the field
+    (src/osx/cocoa/window.mm), so Return ran Edit... The lists take
+    Return and F2 themselves (docs/MENUS.md)."""
+    label, tab, shortcut = menu_text.partition("\t")
+    if tab and operating_system.isMac() and not _MODIFIER.search(shortcut):
+        return label
+    return menu_text
 
 
 class _SameWindowThrottle:
@@ -87,11 +111,11 @@ class MenuItem(wx.MenuItem):
 
 
 class UICommand(patterns.Observer):
-    """Base user interface command. An UICommand is some action that can be
-    associated with menus and/or toolbars. It contains the menutext and
-    helptext to be displayed and methods to attach the command to a menu
-    or toolbar. Subclasses should implement do_command() and optionally
-    override enabled()."""
+    """Base user interface command. An UICommand is some action that
+    can be associated with menus and/or toolbars. It contains the
+    menutext and helptext to be displayed and methods to attach the
+    command to a menu or toolbar. Subclasses should implement
+    do_command() and optionally override enabled()."""
 
     def __init__(
         self,
@@ -105,13 +129,16 @@ class UICommand(patterns.Observer):
         **kwargs
     ):  # pylint: disable=W0622
         super().__init__()
-        menu_text = menu_text or "<%s>" % _("None")
+        menu_text = platform_menu_text(menu_text or "<%s>" % _("None"))
         self.menu_text = menu_text if "&" in menu_text else "&" + menu_text
         self.help_text = help_text
         self.icon_id = icon_id
         self.icon_id2 = icon_id2
         self.kind = kind
-        self.id = IdProvider.get()
+        if id in _APPLICATION_MENU_IDS and operating_system.isMac():
+            self.id = id
+        else:
+            self.id = IdProvider.get()
         self.toolbar = None
         self.menu_items = []  # uiCommands can be used in multiple menu's
 
@@ -134,7 +161,8 @@ class UICommand(patterns.Observer):
         return True
 
     def accelerators(self):
-        # The ENTER and NUMPAD_ENTER keys are treated differently between platforms...
+        # The ENTER and NUMPAD_ENTER keys are treated differently
+        # between platforms...
         if "\t" in self.menu_text and (
             "ENTER" in self.menu_text or "RETURN" in self.menu_text
         ):
@@ -254,10 +282,11 @@ class UICommand(patterns.Observer):
         window.Unbind(wx.EVT_MENU, id=item_id)
 
     def on_command_activate(self, event, *args, **kwargs):
-        """For controls such as the ListCtrl and the TreeCtrl, activating
-        the command is possible even when not enabled, so we need an
-        explicit check here. Otherwise hitting return on an empty
-        selection in the ListCtrl would bring up the TaskEditor."""
+        """For controls such as the ListCtrl and the TreeCtrl,
+        activating the command is possible even when not enabled, so
+        we need an explicit check here. Otherwise hitting return on
+        an empty selection in the ListCtrl would bring up the
+        TaskEditor."""
         if not self.enabled(event):
             return None
         key = self.same_window_key()
@@ -303,6 +332,7 @@ class UICommand(patterns.Observer):
             self.toolbar.SetToolLongHelp(self.id, long_help)
 
     def update_menu_text(self, menu_text):
+        menu_text = platform_menu_text(menu_text)
         self.menu_text = menu_text
         # SetItemLabel works on all platforms in modern wxPython 4.x
         # The old Windows-specific code that deleted/inserted menu items

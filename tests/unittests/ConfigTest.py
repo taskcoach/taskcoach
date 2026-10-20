@@ -23,11 +23,12 @@ import gc
 import shutil
 import stat
 import tempfile
+import types
 import test, sys, os, configparser, io
 import wx
 import weakref
 from unittest import mock
-from taskcoachlib import config, meta
+from taskcoachlib import config, meta, operating_system
 
 
 class SettingsTestCase(test.TestCase):
@@ -199,6 +200,23 @@ class SettingsIOTest(SettingsTestCase):
             settings = config.Settings(ini_file=ini_file)
         self.assertFalse(settings.get_typed("file", "inifileloaded"))
 
+    def test_a_file_that_does_not_parse_leaves_the_defaults(self):
+        # Errors other than ParsingError stopped the start, every time
+        for text in (
+            b"[view]\nstatusbar = False\nstatusbar = False\n",
+            b"[view]\nstatusbar = False\n[view]\n",
+            b"[view]\nstatusbar = False\n# \xe2\x82",  # Cut in a character
+        ):
+            with self.subTest(text=text):
+                folder = tempfile.mkdtemp()
+                self.addCleanup(shutil.rmtree, folder)
+                ini_file = os.path.join(folder, "TaskCoach.ini")
+                with open(ini_file, "wb") as file:
+                    file.write(text)
+                settings = config.Settings(ini_file=ini_file)
+                self.assertFalse(settings.get_typed("file", "inifileloaded"))
+                self.assertTrue(settings.get_typed("view", "statusbar"))
+
     def test_first_start_opens_a_copy_of_the_welcome_file(self):
         folder = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, folder)
@@ -214,7 +232,7 @@ class SettingsIOTest(SettingsTestCase):
         with mock.patch.dict(os.environ, **folders):
             with mock.patch.object(
                 config.Settings,
-                "pathToSystemWelcomeFile",
+                "path_to_system_welcome_file",
                 return_value=welcome,
             ):
                 settings = config.Settings(
@@ -424,7 +442,7 @@ class XdgFoldersTest(SettingsTestCase):
     def test_settings_folder_in_xdg_config_home(self):
         home = self.environment(XDG_CONFIG_HOME="")
         os.environ["XDG_CONFIG_HOME"] = os.path.join(home, "settings")
-        path = self.settings.pathToConfigDir(os.environ)
+        path = self.settings.path_to_config_dir(os.environ)
         self.assertEqual(os.path.join(home, "settings", meta.name), path)
         # Readable by the user only
         self.assertEqual(0o700, stat.S_IMODE(os.stat(path).st_mode))
@@ -433,7 +451,7 @@ class XdgFoldersTest(SettingsTestCase):
         home = self.environment(XDG_CONFIG_HOME="")
         self.assertEqual(
             os.path.join(home, ".config", meta.name),
-            self.settings.pathToConfigDir(os.environ),
+            self.settings.path_to_config_dir(os.environ),
         )
 
     def test_data_folder_in_xdg_data_home(self):
@@ -441,12 +459,12 @@ class XdgFoldersTest(SettingsTestCase):
         os.environ["XDG_DATA_HOME"] = os.path.join(home, "data")
         self.assertEqual(
             os.path.join(home, "data", meta.name, "templates"),
-            self.settings.pathToTemplatesDir(),
+            self.settings.path_to_templates_dir(),
         )
 
     def test_data_folder_without_xdg_data_home(self):
         home = self.environment(XDG_DATA_HOME="")
-        path = self.settings.pathToTemplatesDir()
+        path = self.settings.path_to_templates_dir()
         self.assertEqual(
             os.path.join(home, ".local", "share", meta.name, "templates"),
             path,
@@ -462,6 +480,92 @@ class XdgFoldersTest(SettingsTestCase):
         open(os.path.join(templates, "mine.tsktmpl"), "w").close()
         config.Settings(load=False, ini_file=os.path.join(home, "my.ini"))
         self.assertEqual(["mine.tsktmpl"], os.listdir(templates))
+
+
+class WindowsDataFolderTest(SettingsTestCase):
+    """The data folder on Windows, in AppData, a shortcut there
+    followed. Windows Script Host, which reads the shortcut, was made
+    at every lookup, and AppData asked for unguarded: where either
+    failed, Task Coach did not start."""
+
+    class ComError(Exception):
+        pass
+
+    def windows(self, appdata=True, script_host=None):
+        """Windows faked: AppData, or a failure; the script host, giving
+        the shortcut's target folder (by name), or a failure."""
+        self.home = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.home)
+
+        def special_folder(*args):
+            if not appdata:
+                raise self.ComError("Unspecified error")
+            return os.path.join(self.home, "AppData")
+
+        def dispatch(name):
+            if script_host is None:
+                raise self.ComError("Invalid class string")
+            shell = mock.Mock()
+            target = os.path.join(self.home, script_host)
+            shell.CreateShortcut.return_value.TargetPath = target
+            return shell
+
+        shell = types.SimpleNamespace(SHGetSpecialFolderPath=special_folder)
+        modules = {
+            "pywintypes": types.SimpleNamespace(com_error=self.ComError),
+            "win32com": types.SimpleNamespace(),
+            "win32com.shell": types.SimpleNamespace(
+                shell=shell, shellcon=types.SimpleNamespace(CSIDL_APPDATA=26)
+            ),
+            "win32com.client": types.SimpleNamespace(Dispatch=dispatch),
+        }
+        for patcher in (
+            mock.patch.dict(sys.modules, modules),
+            mock.patch.object(
+                operating_system, "isWindows", return_value=True
+            ),
+            mock.patch.object(operating_system, "isGTK", return_value=False),
+            mock.patch.dict(
+                os.environ, APPDATA=os.path.join(self.home, "1.x")
+            ),
+        ):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def templates(self, *folders):
+        return os.path.join(self.home, *folders, "templates")
+
+    def test_no_shortcut_asks_no_script_host(self):
+        self.windows()
+        self.assertEqual(
+            self.templates("AppData", meta.name),
+            self.settings.path_to_templates_dir(),
+        )
+
+    def test_a_shortcut_is_followed(self):
+        self.windows(script_host="elsewhere")
+        os.makedirs(os.path.join(self.home, "AppData", meta.name))
+        open(self.templates("AppData", meta.name) + ".lnk", "w").close()
+        self.assertEqual(
+            os.path.join(self.home, "elsewhere"),
+            self.settings.path_to_templates_dir(),
+        )
+
+    def test_a_shortcut_not_read_leaves_the_folder(self):
+        self.windows()
+        os.makedirs(os.path.join(self.home, "AppData", meta.name))
+        open(self.templates("AppData", meta.name) + ".lnk", "w").close()
+        self.assertEqual(
+            self.templates("AppData", meta.name),
+            self.settings.path_to_templates_dir(),
+        )
+
+    def test_no_appdata_gives_the_settings_fallback(self):
+        self.windows(appdata=False)
+        self.assertEqual(
+            self.templates("1.x", meta.filename),
+            self.settings.path_to_templates_dir(),
+        )
 
 
 class SettingsLifetimeTest(test.TestCase):
@@ -481,10 +585,10 @@ class RunFoldersTest(test.TestCase):
         settings = config.Settings(load=False)
         home = os.path.join(os.path.expanduser("~"), "")
         for path in (
-            settings.pathToConfigDir(os.environ),
-            settings.pathToBackupsDir(),
-            settings.pathToTemplatesDir(),
-            settings.pathToDocumentsDir(),
+            settings.path_to_config_dir(os.environ),
+            settings.path_to_backups_dir(),
+            settings.path_to_templates_dir(),
+            settings.path_to_documents_dir(),
         ):
             self.assertFalse(path.startswith(home), path)
 

@@ -121,8 +121,8 @@ class AmountEntry(widgets.PanelWithBoxSizer):
     def createEntry(self, amount):
         return widgets.CurrencyCtrl(self, amount)
 
-    def NavigateBook(self, event):
-        self.GetParent().NavigateBook(not event.ShiftDown())
+    def navigate_book(self, event):
+        self.GetParent().navigate_book(not event.ShiftDown())
         return True
 
     def GetValue(self):
@@ -243,7 +243,7 @@ class FontEntry(widgets.PanelWithBoxSizer):
             self,
             font=current_font or default_font,
             colour=current_color,
-            bgColour=current_bg_color,
+            bg_colour=current_bg_color,
         )
         picker.Bind(wx.EVT_FONTPICKER_CHANGED, self.on_font_picked)
         return picker

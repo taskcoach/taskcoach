@@ -942,7 +942,7 @@ continuous polling overhead.
 |---------|-------------------------|
 | `EditPaste` | `TextCtrl.CanPaste()` or clipboard |
 | `RenameViewer` | `active_viewer()` |
-| `ActivateViewer` | `viewerCount() > 1` |
+| `ActivateViewer` | `viewer_count() > 1` |
 | `HideCurrentColumn` | `is_hideable_column()` of the column the menu was opened on |
 | `EffortStartForTask` | task not completed/tracked |
 | `EffortStartButton` | any task not completed |

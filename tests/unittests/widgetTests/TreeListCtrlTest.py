@@ -32,7 +32,7 @@ class TreeListCtrlTestCase(TreeCtrlTest.TreeCtrlTestCase):
 
     def setUp(self):
         super().setUp()
-        self._columns = self.createColumns()
+        self._columns = self.create_columns()
         self.treeCtrl = widgets.TreeListCtrl(
             self.frame,
             self.columns(),
@@ -51,7 +51,7 @@ class TreeListCtrlTestCase(TreeCtrlTest.TreeCtrlTestCase):
             image_list.Add(icon_catalog.get_bitmap(icon_id, 16))
         self.treeCtrl.AssignImageList(image_list)  # pylint: disable=E1101
 
-    def createColumns(self):
+    def create_columns(self):
         names = ["treeColumn"] + ["column%d" % index for index in range(1, 5)]
         return [
             widgets.Column(name, name, ("view", "whatever"), None)
@@ -132,7 +132,7 @@ class TreeListCtrlColumnsTest(TreeListCtrlTestCase):
         self.treeCtrl.RefreshAllItems(1)
         self.visibleColumns = self.columns()[1:]
 
-    def assertColumns(self):
+    def assert_columns(self):
         # pylint: disable=E1101
         self.assertEqual(
             len(self.visibleColumns) + 1, self.treeCtrl.GetColumnCount()
@@ -153,7 +153,7 @@ class TreeListCtrlColumnsTest(TreeListCtrlTestCase):
             self.visibleColumns.remove(column)
 
     def test_all_columns_visible(self):
-        self.assertColumns()
+        self.assert_columns()
 
     def first_row(self):
         return self.treeCtrl.GetFirstChild(self.treeCtrl.GetRootItem())[0]
@@ -195,12 +195,12 @@ class TreeListCtrlColumnsTest(TreeListCtrlTestCase):
 
     def test_hide_column(self):
         self.showColumn("column1", False)
-        self.assertColumns()
+        self.assert_columns()
 
     def test_hide_last_column(self):
         last_column_header = "column%d" % len(self.visibleColumns)
         self.showColumn(last_column_header, False)
-        self.assertColumns()
+        self.assert_columns()
 
     def test_show_column(self):
         self.showColumn("column2", False)
@@ -209,7 +209,7 @@ class TreeListCtrlColumnsTest(TreeListCtrlTestCase):
         self.assertEqual(hidden + 1, self.treeCtrl.GetColumnCount())
         # Filled by the refresh the viewer then makes
         self.treeCtrl.RefreshAllItems(1)
-        self.assertColumns()
+        self.assert_columns()
 
 
 class TreeListCtrlInPlaceEditTest(TreeListCtrlTestCase):
@@ -390,3 +390,20 @@ class TreeListCtrlInPlaceEditTest(TreeListCtrlTestCase):
         self.main.GetEventHandler().ProcessEvent(event)
         self.treeCtrl.edit_clicked_cell()
         self.assertEqual([(self.item1, 0)], self.edits)
+
+
+class TreeListCtrlScrollbarsTest(TreeListCtrlTestCase):
+    """The tree shows one horizontal scroll bar (issue #461).
+
+    The inner main window owns horizontal scrolling; the outer
+    control must not carry wx.HSCROLL, which draws a second
+    native bar under the tree's own on macOS.
+    """
+
+    def test_outer_control_has_no_horizontal_scrollbar(self):
+        self.assertFalse(self.treeCtrl.HasFlag(wx.HSCROLL))
+
+    def test_inner_main_window_keeps_horizontal_scrollbar(self):
+        main = self.treeCtrl.GetMainWindow()
+        self.assertTrue(main.HasFlag(wx.HSCROLL))
+        self.assertTrue(main.HasFlag(wx.VSCROLL))

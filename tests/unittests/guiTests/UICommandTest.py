@@ -1000,3 +1000,75 @@ class TrackingOneTaskTest(test.TestCase):
                     taskList=self.task_list,
                 )
                 self.assertEqual(enabled, new.enabled(None))
+
+
+class ApplicationMenuIdTest(test.wxTestCase):
+    """On macOS Quit, About and Preferences keep their stock ids, by
+    which macOS puts them in its application menu. A fresh id left
+    the menu's own Quit (Cmd+Q) to end the app without the quit
+    sequence: no "Save changes?", no settings saved (#487)."""
+
+    def commands(self):
+        return {
+            wx.ID_EXIT: gui.uicommand.FileQuit(),
+            wx.ID_PREFERENCES: gui.uicommand.EditPreferences(),
+            wx.ID_ABOUT: gui.uicommand.HelpAbout(),
+        }
+
+    def test_on_macos_they_keep_their_stock_ids(self):
+        with mock.patch(
+            "taskcoachlib.operating_system.isMac", return_value=True
+        ):
+            for stock_id, command in self.commands().items():
+                self.assertEqual(stock_id, command.id, type(command).__name__)
+
+    def test_elsewhere_ids_are_handed_out(self):
+        with mock.patch(
+            "taskcoachlib.operating_system.isMac", return_value=False
+        ):
+            for stock_id, command in self.commands().items():
+                self.assertNotEqual(stock_id, command.id)
+
+    def test_other_stock_ids_are_handed_out_on_macos_too(self):
+        # Several menus hold Cut, Copy and Paste: one id each
+        with mock.patch(
+            "taskcoachlib.operating_system.isMac", return_value=True
+        ):
+            command = gui.uicommand.EditCopy(viewer=None, id=wx.ID_COPY)
+        self.assertNotEqual(wx.ID_COPY, command.id)
+
+
+class MacMenuShortcutTest(test.wxTestCase):
+    """On macOS the menu takes every key typed in a field wx draws (an
+    editor's Subject and Description) before the field: Return ran
+    Edit... instead of starting a line. There a shortcut without a
+    modifier stays off the menu; the lists take Return and F2
+    themselves."""
+
+    def menu_text(self, mac, text, later=None):
+        with mock.patch(
+            "taskcoachlib.operating_system.isMac", return_value=mac
+        ):
+            command = base_uicommand.UICommand(menu_text=text)
+            if later:
+                command.update_menu_text(later)
+        return command.menu_text
+
+    def test_on_macos_a_plain_key_is_no_shortcut(self):
+        for text in ("&Edit...\tRETURN", "Edit in &place\tF2"):
+            self.assertEqual(text.split("\t")[0], self.menu_text(True, text))
+
+    def test_on_macos_a_shortcut_with_a_modifier_stays(self):
+        for text in ("&New task...\tCtrl+N", "Edit &tracked...\tShift-Alt-T"):
+            self.assertEqual(text, self.menu_text(True, text))
+
+    def test_elsewhere_a_plain_key_stays(self):
+        self.assertEqual(
+            "&Edit...\tRETURN", self.menu_text(False, "&Edit...\tRETURN")
+        )
+
+    def test_a_text_changed_later_follows_the_rule(self):
+        self.assertEqual(
+            "&Edit...",
+            self.menu_text(True, "&Undo\tCtrl+Z", later="&Edit...\tRETURN"),
+        )

@@ -27,11 +27,11 @@ OUT="$SCRIPT_DIR/python3-sources.json"
 
 # Mirror the manifest's python3-deps set exactly so the offline build installs
 # the same packages, all pure-Python. wxPython/wxWidgets are separate pinned
-# source modules.
+# source modules, and so is squaremap: it requires wxPython, so here it would
+# bring PyPI's latest wxPython and build it over the pinned one.
 REQUIREMENTS=(
     "chardet>=5.2.0"
     "python-dateutil>=2.9.0"
-    "squaremap>=1.0.5"
     "pyenchant>=3.2.0"
 )
 
@@ -60,7 +60,8 @@ python3 -m pip install --quiet --user requirements-parser packaging || true
 # build's org.gnome.Sdk already ships them: without it pip sees
 # them "already satisfied", skips them, and they are MISSING at runtime against
 # org.gnome.Platform, crashing the app with ModuleNotFoundError. We pass every
-# runtime dep by name; names the Sdk does not ship are harmless no-ops. Requires
+# runtime dep by name; names the Sdk does not ship are harmless no-ops. pip
+# also reinstalls their dependencies, so none may require wxPython. Requires
 # flatpak + the Sdk: flatpak install -y flathub org.gnome.Sdk//$RUNTIME_VERSION
 RUNTIME_VERSION="50"
 # Package names only (strip version specifiers), comma-separated.

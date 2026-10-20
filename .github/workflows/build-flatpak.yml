@@ -7,11 +7,10 @@ name: Build Flatpak
 # run itself fetches only declared, hashed sources and compiles with no network.
 #
 # wxPython is compiled from its sdist (no usable prebuilt wheel exists for the
-# runtime) and is the slow module. We cache the flatpak-builder state-dir with
-# actions/cache (not the builder action's own caching, which only saves on
-# success) so partial progress persists across runs INCLUDING failures: a run
-# that dies partway still uploads every module it built, and the next run
-# resumes instead of recompiling wxWidgets from scratch. See docs/FLATPAK.md.
+# runtime) and is the slow module. The flatpak-builder state-dir is restored
+# and saved in separate steps, the save running after a failed build too: a
+# run that dies partway keeps every module it built, and the next run resumes
+# instead of recompiling wxWidgets from scratch. See docs/FLATPAK.md.
 
 on:
   push:
@@ -77,17 +76,19 @@ jobs:
           set -eux
           build.in/flatpak/generate-pip-sources.sh
 
-      # Persist the flatpak-builder state-dir across runs, INCLUDING failed ones.
-      # actions/cache saves in a post-job step that runs on failure too, so a
-      # build that dies partway keeps the modules it already compiled (glu, the
-      # tray chain, wxPython, the deps built so far) and the next run rebuilds
-      # only what changed. Unique key per commit so a fresh cache is always
-      # saved; the prefix restore-key restores the most recent prior cache.
-      - name: Cache flatpak-builder state
-        uses: actions/cache@v4
+      # The flatpak-builder state-dir, saved below even when the build fails
+      # (plain actions/cache saves only on success), so the next run rebuilds
+      # only what changed or did not finish. A unique key per run attempt
+      # saves a fresh cache each time; the prefix restore-key restores the
+      # latest. Build directories are left out: flatpak-builder never reuses
+      # them.
+      - name: Restore flatpak-builder state
+        uses: actions/cache/restore@v6
         with:
-          path: .flatpak-builder
-          key: flatpak-builder-x86_64-${{ github.sha }}
+          path: |
+            .flatpak-builder
+            !.flatpak-builder/build
+          key: flatpak-builder-x86_64-${{ github.sha }}-${{ github.run_attempt }}
           restore-keys: |
             flatpak-builder-x86_64-
 
@@ -99,10 +100,19 @@ jobs:
           manifest-path: build.in/flatpak/io.github.taskcoach.TaskCoach.yaml
           arch: x86_64
           upload-artifact: false
-          # We own the cache via actions/cache above (so it persists on failure);
-          # disable the action's own success-only caching to avoid conflicts.
+          # The steps around this one own the cache (saved on failure too);
+          # the action's own success-only caching is off to avoid conflicts.
           cache: false
           restore-cache: false
+
+      - name: Save flatpak-builder state
+        if: ${{ !cancelled() }}
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            .flatpak-builder
+            !.flatpak-builder/build
+          key: flatpak-builder-x86_64-${{ github.sha }}-${{ github.run_attempt }}
 
       - name: flatpak-builder-lint (manifest + appstream + repo)
         if: always()

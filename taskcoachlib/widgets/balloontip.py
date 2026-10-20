@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 from taskcoachlib import patterns
+from taskcoachlib.tools import wxhelper
 
 
 class BalloonTip(wx.Frame):
@@ -137,8 +138,9 @@ class BalloonTip(wx.Frame):
         else:
             tx, ty, tw, th = self._get_rect()
         tx, ty = self._target.ClientToScreen(wx.Point(tx, ty))
-        dpy_index = max(0, wx.Display.GetFromPoint(wx.Point(tx, ty)) or 0)
-        rect = wx.Display(dpy_index).GetClientArea()
+        rect = wx.Rect(
+            *wxhelper.work_area(wxhelper.display_index(point=(tx, ty)))
+        )
 
         x = max(
             rect.GetLeft(), min(rect.GetRight() - w, int(tx + tw / 2 - w / 2))

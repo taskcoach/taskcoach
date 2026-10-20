@@ -84,6 +84,15 @@ def __restore_perspective(self):
         self.manager.LoadPerspective("")  # Fall back to default
 ```
 
+**One check of the string's form, not its content.** AGW reads a
+layout up to each `|`, and `SavePerspective()` ends every part with
+one. Without the last (a settings file cut short), `LoadPerspective()`
+reads the same part again for ever: Task Coach hung at start, or when
+an editor opened. The main window's `_AuiManager.LoadPerspective()`
+and the editors' `Notebook.LoadPerspective()` load only a layout that
+starts with `layout2|` and ends with `|` (`frame.is_whole_layout()`);
+another leaves the default layout, and the log says so.
+
 ### Pane Names Carry Instance Numbers
 
 A pane's name is `viewer.settingsSection()`, which appends the viewer's
@@ -130,19 +139,21 @@ own named `__notebook_0`, `__notebook_1`, and so on, with the tabbed
 viewers becoming notebook pages referring to it by `notebook_id`. These
 names appear in the saved perspective but match no window we create.
 
-**They are recreated by `LoadPerspective` itself and need no handling.**
-Verified against wxPython 4.2.0 / AGW: a 13-pane layout containing an
-auto-notebook restored with every pane's dock direction, layer, row,
-position, proportion and size identical to what was saved. The manager
-gained the `__notebook_0` pane during the load.
+**AGW 4.2.x loses them; the app's manager puts them back.** After the
+load, AGW 4.2.x's `LoadPerspective` deletes `self._panes[index]` for
+`paneIndex` while removing panes with no window, which every group's
+pane is then, so the group's pane goes and its views are left in a
+notebook nothing shows. 4.3 has no such step.
+`_AuiManager.LoadPerspective` (`widgets/frame.py`) loads without
+updating, adds back each `__notebook_*` pane the layout names and the
+manager lacks, then updates: the group comes back as saved on every
+version.
 
-This is worth stating because upstream reports say otherwise. A
-[wxPython-users thread](https://groups.google.com/g/wxpython-users/c/HmNe0lvnwMY)
+A [wxPython-users thread](https://groups.google.com/g/wxpython-users/c/HmNe0lvnwMY)
 describes panes dragged into a spontaneously generated notebook
 disappearing on restore, and the AGW maintainer confirmed it as a bug.
-That does not reproduce on the version in use here, so do not spend time
-working around it, and do not treat `__notebook_*` entries with no
-matching window as evidence of a problem.
+Do not treat `__notebook_*` entries with no matching window as
+evidence of a problem: they match no window by design.
 
 ### Perspective String Format
 
@@ -282,7 +293,7 @@ notebooks) still consumes it.
 
 `AuiManager.OnDestroy()` handles `EVT_WINDOW_DESTROY` of its managed
 window without `Skip()`. The main window removes its manager in
-`onClose()` before it is destroyed, so its own destroy handlers run;
+`on_close()` before it is destroyed, so its own destroy handlers run;
 an `AuiNotebook`'s manager (the task editor's pages) stays, so
 handlers bound on the notebook never run. Neither the crash guard's
 timer watch ([CRASH_GUARD.md](CRASH_GUARD.md)) nor the Publisher's

@@ -209,6 +209,36 @@ class TaskBarIconTooltipWithTrackedTaskTest(TaskBarIconTooltipTestCase):
         self.assertTooltip("")
 
 
+class TaskBarIconMacMenuTest(TaskBarIconTestCase):
+    """macOS sends no click events for the menu bar icon: a click shows
+    the menu wx asks for (GetPopupMenu), which the icon never gave, so
+    it did nothing."""
+
+    def set_menu(self):
+        submenu = mock.Mock()
+        item = mock.Mock(**{"GetSubMenu.return_value": submenu})
+        menu = mock.Mock(**{"GetMenuItems.return_value": [item]})
+        self.icon.set_popup_menu(menu)
+        return menu, submenu
+
+    def popup_menu(self, mac):
+        with mock.patch.object(operating_system, "isMac", return_value=mac):
+            return self.icon.GetPopupMenu()
+
+    def test_a_click_on_macos_shows_the_menu_refilled(self):
+        menu, submenu = self.set_menu()
+        self.assertIs(menu, self.popup_menu(mac=True))
+        submenu.updateMenu.assert_called_once_with()
+
+    def test_elsewhere_only_the_right_click_handler_shows_it(self):
+        # wx's own right click handler asks for it too: shown twice
+        self.set_menu()
+        self.assertIsNone(self.popup_menu(mac=False))
+
+    def test_before_the_menu_is_set_none_shows(self):
+        self.assertIsNone(self.popup_menu(mac=True))
+
+
 class AppIndicatorMenuCommandTest(test.TestCase):
     """The New commands of the Linux tray menu (AppIndicator), with a
     stand-in indicator: no tray icon registers on the session bus."""

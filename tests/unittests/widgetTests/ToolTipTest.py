@@ -92,3 +92,19 @@ class SimpleToolTipTestCase(test.wxTestCase):
     def test_calculate_size(self):
         self.tip.SetData([(None, ["First line"])])
         self.assertEqual(wx.Size(16, 27), self.tip._calculateSize())
+
+
+class ToolTipAtTheScreenEdgeTest(test.TestCase):
+    """A tip shows beside the pointer; near the right or bottom edge of
+    the last display that point is on no display, and making
+    wx.Display(-1) for it crashed the app (#487)."""
+
+    def test_a_tip_past_the_last_display_shows_on_a_display(self):
+        tool_tip = ToolTipUnderTest(None)
+        self.addCleanup(tool_tip.Destroy)
+        tip_window = DummyToolTipWindow()
+        tool_tip.DoShowTip(10**6, 10**6, tip_window)
+        x, y, width, height = tip_window.rect
+        self.assertNotEqual(
+            wx.NOT_FOUND, wx.Display.GetFromPoint(wx.Point(x, y))
+        )

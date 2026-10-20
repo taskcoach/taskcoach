@@ -77,17 +77,31 @@ On `markdown-preview`, 2026-10-09 and 10:
 - **The preview** in `widgets.MultiLineTextCtrl`: a read-only
   `wx.html` window in place of the box, drawn as window text
   ([Prototype Findings](#prototype-findings)); web and mail links open
-  in the browser, any other link is ignored.
+  in the browser, any other link is ignored. The box's paint handler
+  draws no box then, but still makes its `wx.PaintDC`, as wx documents
+  for every paint handler. While the preview has the focus it shows
+  the edit box's focus highlight, as the system theme draws it
+  ([FOCUS_MANAGEMENT.md](FOCUS_MANAGEMENT.md#the-markdown-preview)).
+  It sits where the edit box puts its text: the same padding, after
+  Scintilla's own left margin (read from it), and no margin of its own
+  (`SetBorders(0)`), so text the preview leaves as it is, plain lines
+  and paragraphs, stays in place across the switch (wx.html's own
+  border of 4 pixels would move it).
 - **Remembered per item** in the task file, as saved view state like
   a task's expanded state
   ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#saving)): it marks the file
   unsaved so autosave keeps it, sets no modification date and has no
   undo. A field older releases ignore (`previewShown`, format 40).
-- **The button says what a click does**: a square Markdown icon
-  (the M over its down arrow, `taskcoach_actions_markdown_icon`:
+- **The button says what a click does**: a square Markdown icon (the M
+  over its down arrow, `taskcoach_actions_markdown_icon`:
   [ICON_LIBRARY.md](ICON_LIBRARY.md#taskcoach-custom-icons)) with
-  "Preview" while editing; pressed, with the pencil and "Edit", while
-  the preview shows. A tooltip says the same in words.
+  "Preview" while editing; the pencil and "Edit" while the preview
+  shows. A plain button, never shown pressed (**ruled by designer
+  2026-10-19**): pressed, it reads as locked in editing while the
+  preview shows. No switch: wx has no native one, so it would not
+  follow the system theme. A tooltip says the same in words. F2 swaps
+  the two in either mode, when the focus is on the description box or
+  on the button.
 - **Placement, in space already empty**: in editors with labels (task,
   note, category, attachment), right under the "Description" label; in
   the effort editor, which has none, bottom left in the Close button's
@@ -131,7 +145,6 @@ The window:
 
 - Switching to the preview starts at the top: the scroll position of
   the box is not kept.
-- No keyboard shortcut for the toggle.
 - In a dark theme links are hard to read: they stay `wx.html`'s
   default blue (`#0000ff`) on the dark background, while the text,
   the code's shade and the quotes follow the theme (checked 2026-10-10
@@ -148,7 +161,7 @@ The window:
 
 ## To Do
 
-1. Keep the scroll position across the toggle; a shortcut for it.
+1. Keep the scroll position across the toggle.
 2. The pull request, and a look at the preview in its Windows and
    macOS builds.
 

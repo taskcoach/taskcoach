@@ -72,6 +72,16 @@ item's shortcut, so without these answers an item disabled when its
 menu last opened blocked its shortcut until the menu opened again
 (P130 in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md)).
 
+Commands get their ids from `IdProvider`, reused as menus are rebuilt;
+the stock id a command is given is dropped, except on macOS for Quit,
+About and Preferences (`wx.ID_EXIT`, `wx.ID_ABOUT`,
+`wx.ID_PREFERENCES`): macOS finds them by these ids for its
+application menu (`src/osx/menu_osx.cpp`). With a handed-out id its
+own Quit takes Cmd+Q and ends the app without the quit sequence (no
+"Save changes?", no settings saved), and About and Preferences are not
+in that menu (#403). Cut, Copy and Paste keep handed-out ids: several
+menus hold them, one command each.
+
 ---
 
 ## MenuItem Subclass
@@ -329,6 +339,17 @@ are therefore on its list widget, not the viewer, whose toolbar holds
 the search box (`Viewer.createToolBarUICommands()`). The main
 window's table only adds numpad Enter to the menu's Enter shortcuts
 that have a modifier (`UICommand.accelerators()`).
+
+macOS gives the menu every key typed in a field wx draws itself (the
+editors' Subject and Description, Scintilla) before the field (wxOSX
+`src/osx/cocoa/window.mm`, `keyEvent()`): Return there would run
+Edit... while a list has a selection, instead of starting a line. So
+on macOS a menu item carries no shortcut without a modifier
+(`platform_menu_text()`): Edit... shows no Return, Edit in place no
+F2; the lists take both themselves (Return above, F2 in the tree's key
+handler), and New task is Cmd+N there. Windows tries the menu bar's
+shortcuts before a single-line field too: P255 in
+[REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#found-2026-10-19).
 
 In a text field (`wx.TextCtrl`, `wx.SearchCtrl` or the editors'
 Scintilla fields, `_TEXT_FIELDS` in `uicommand.py`) Undo, Redo, Cut,

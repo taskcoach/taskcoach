@@ -23,6 +23,7 @@ import wx
 from taskcoachlib import operating_system, patterns
 from taskcoachlib.config import settings
 from taskcoachlib.meta.debug import log_step
+from taskcoachlib.tools import wxhelper
 from taskcoachlib.tools.wxhelper import SIZE_SHARE, most_of
 
 # Windows and macOS apply position, size and maximize during the call,
@@ -86,19 +87,10 @@ def fit_to_main_window(rect, main_rect):
     """Fit a floating view's saved rect to the main window's monitor
     (fit_to_window()); main_rect is where the main window was placed,
     None when the system places it (then the primary monitor)."""
-    index = -1
+    index = wx.NOT_FOUND
     if main_rect is not None:
-        index = wx.Display.GetFromPoint(wx.Point(*_centre(main_rect)))
-    if index < 0:
-        index = next(
-            (
-                i
-                for i in range(wx.Display.GetCount())
-                if wx.Display(i).IsPrimary()
-            ),
-            0,
-        )
-    area = tuple(wx.Display(index).GetClientArea())
+        index = wxhelper.display_index(point=_centre(main_rect))
+    area = wxhelper.work_area(index)
     return fit_to_window(rect, main_rect or area, area)
 
 
@@ -331,7 +323,7 @@ class WindowGeometryTracker:
             self._clear_dialog_cache()
             return
 
-        work_area = wx.Display(parent_display_idx).GetClientArea()
+        work_area = wx.Rect(*wxhelper.work_area(parent_display_idx))
         self._trace(
             "parent on monitor %d, work area (%d, %d) %dx%d"
             % (
@@ -370,7 +362,7 @@ class WindowGeometryTracker:
         so that the system keeps it where it decides (the main window's
         monitor unknown)."""
         index = self._get_parent_display_index()
-        area = tuple(wx.Display(max(index, 0)).GetClientArea())
+        area = wxhelper.work_area(index)
         fitted = most_of((width, height), area)
         if fitted == (width, height):
             return width, height
@@ -392,7 +384,7 @@ class WindowGeometryTracker:
         """Index of the main window's monitor as the system reports it
         (the one it overlaps most; on Wayland, where positions read
         (0, 0), the one the compositor shows it on), or -1."""
-        return wx.Display.GetFromWindow(self._parent)
+        return wxhelper.display_index(window=self._parent)
 
     def save(self, trace=True):
         """Write the state to the settings; traced unless quiet (the

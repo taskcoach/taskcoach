@@ -42,7 +42,7 @@ class AppearanceReadOnlyFocusTest(test.wxTestCase):
         self.editor = gui.dialog.editor.TaskEditor(
             self.frame, [self.task], self.taskList, self.taskFile
         )
-        self.appearance = self.editor._interior.getPage("appearance")
+        self.appearance = self.editor._interior.get_page("appearance")
         interior = self.editor._interior
         index = next(
             i

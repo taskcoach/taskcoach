@@ -21,12 +21,61 @@ def most_of(size, area):
     )
 
 
+def display_index(point=None, window=None):
+    """The display holding the window, or else the point (x, y), as wx
+    reports it; wx.NOT_FOUND when none does or wx cannot tell: on
+    macOS it asserts for a mirrored display (src/common/display.cpp),
+    which raises here. Every display lookup goes through here and
+    work_area(): wx.Display(wx.NOT_FOUND) crashes natively."""
+    try:
+        if window is not None:
+            return wx.Display.GetFromWindow(window)
+        return wx.Display.GetFromPoint(wx.Point(*point))
+    except wx.wxAssertionError:
+        return wx.NOT_FOUND
+
+
+def primary_display_index():
+    return next(
+        (
+            index
+            for index in range(wx.Display.GetCount())
+            if wx.Display(index).IsPrimary()
+        ),
+        0,
+    )
+
+
+def work_area(index):
+    """The work area (the monitor less its panels) of the display, as
+    (x, y, width, height); the primary display's for wx.NOT_FOUND. A
+    display that reports an empty one (asleep) gives its whole area:
+    an empty one sized windows 0x0."""
+    if not 0 <= index < wx.Display.GetCount():
+        index = primary_display_index()
+    display = wx.Display(index)
+    area = display.GetClientArea()
+    if area.width <= 0 or area.height <= 0:
+        area = display.GetGeometry()
+    return tuple(area)
+
+
+def centre(window):
+    """Centre the window on its parent. wx looks up the parent's
+    display, which can assert on macOS (mirrored displays): the window
+    then stays where wx put it."""
+    try:
+        window.CentreOnParent()
+    except wx.wxAssertionError as reason:
+        log_step("centring: %s" % reason, prefix="GEOMETRY")
+
+
 def work_area_of(window):
     """The work area (the monitor less its panels) of the monitor the
-    system reports for the window, else of the first, as (x, y, width,
-    height)."""
-    index = wx.Display.GetFromWindow(window) if window else -1
-    return tuple(wx.Display(max(index, 0)).GetClientArea())
+    system reports for the window, else of the primary one, as (x, y,
+    width, height)."""
+    index = display_index(window=window) if window else wx.NOT_FOUND
+    return work_area(index)
 
 
 def fit_to_work_area(window, area):
@@ -49,7 +98,7 @@ def centre_on_parent(window):
 
     Call it once the window is sized, before Show()."""
     fit_to_work_area(window, work_area_of(window.GetParent() or window))
-    window.CentreOnParent()
+    centre(window)
     keep_placement_at_first_show(window)
 
 
@@ -111,34 +160,22 @@ def centre_on_app_monitor(window):
     Call this after the window is created and sized but before Show().
     """
     app = wx.GetApp()
-    target_monitor = None
+    target_monitor = wx.NOT_FOUND
 
-    # Try to get monitor from main window (but not if we ARE the main window)
+    # The main window's monitor, unless it is the window placed
     if app:
         main_window = app.GetTopWindow()
-        # Skip if main_window is the window we're trying to position
         if main_window and main_window is not window and main_window.IsShown():
-            target_monitor = wx.Display.GetFromWindow(main_window)
+            target_monitor = display_index(window=main_window)
+    if not 0 <= target_monitor < wx.Display.GetCount():
+        target_monitor = primary_display_index()
 
-    if target_monitor is None or target_monitor == wx.NOT_FOUND:
-        target_monitor = next(
-            (
-                index
-                for index in range(wx.Display.GetCount())
-                if wx.Display(index).IsPrimary()
-            ),
-            0,
-        )
-
-    # Center on target monitor
-    if target_monitor < wx.Display.GetCount():
-        display = wx.Display(target_monitor)
-        fit_to_work_area(window, tuple(display.GetClientArea()))
-        display_rect = display.GetGeometry()
-        window_size = window.GetSize()
-        x = display_rect.x + (display_rect.width - window_size.width) // 2
-        y = display_rect.y + (display_rect.height - window_size.height) // 2
-        window.SetPosition(wx.Point(x, y))
+    fit_to_work_area(window, work_area(target_monitor))
+    display_rect = wx.Display(target_monitor).GetGeometry()
+    window_size = window.GetSize()
+    x = display_rect.x + (display_rect.width - window_size.width) // 2
+    y = display_rect.y + (display_rect.height - window_size.height) // 2
+    window.SetPosition(wx.Point(x, y))
     keep_placement_at_first_show(window)
 
 
@@ -196,3 +233,10 @@ def _delete(handler, release):
     if release is not None:
         release(handler)
     handler.Destroy()
+
+
+def descendants(window):
+    """Every window inside window, each before its own children."""
+    for child in window.GetChildren():
+        yield child
+        yield from descendants(child)

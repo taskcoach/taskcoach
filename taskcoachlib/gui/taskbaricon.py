@@ -176,10 +176,9 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
                 "Windows: binding LEFT_DOWN and LEFT_DCLICK", prefix="TRAY"
             )
         else:
-            events = [wx.adv.EVT_TASKBAR_LEFT_DCLICK]
-            log_step(
-                "Other OS: binding EVT_TASKBAR_LEFT_DCLICK", prefix="TRAY"
-            )
+            # macOS sends no click events: a click shows the menu
+            # (GetPopupMenu)
+            events = []
         for event in events:
             self.Bind(event, self.on_taskbar_click)
             log_step(
@@ -261,9 +260,23 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
         log_step("set_popup_menu completed, menu:", menu, prefix="TRAY")
 
     def popup_taskbar_menu(self, event):  # pylint: disable=W0613
-        # Update dynamic submenus (e.g. StartEffortForTaskMenu) before showing.
-        # TaskBarMenu itself is a static Menu, but its DynamicMenu children
-        # need refreshing since register_for_menu_update is a no-op.
+        self.__refresh_menu()
+        self.PopupMenu(self.popupmenu)
+
+    def GetPopupMenu(self):  # noqa: N802 (wx's)
+        """The menu macOS shows at a click on the menu bar icon: wx
+        sends no click events there (src/osx/cocoa/taskbar.mm), so the
+        icon did nothing. Elsewhere wx asks for it at a right click
+        too; popup_taskbar_menu shows it there."""
+        menu = getattr(self, "popupmenu", None)
+        if menu is None or not operating_system.isMac():
+            return None
+        self.__refresh_menu()
+        return menu
+
+    def __refresh_menu(self):
+        # The submenus (e.g. StartEffortForTaskMenu) are refilled here:
+        # they follow no changes (register_for_menu_update does nothing)
         for item in self.popupmenu.GetMenuItems():
             submenu = item.GetSubMenu()
             if submenu and hasattr(submenu, "updateMenu"):
@@ -273,7 +286,6 @@ class TaskBarIcon(patterns.Observer, wx.adv.TaskBarIcon):
             cmd = getattr(item, "_command", None)
             if cmd and hasattr(cmd, "get_menu_text"):
                 item.SetItemLabel(cmd.get_menu_text())
-        self.PopupMenu(self.popupmenu)
 
     # Getters:
 

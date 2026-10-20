@@ -32,7 +32,7 @@ class TemplatesDialogTestCase(test.wxTestCase):
         os.mkdir(self.path)
 
         patcher = mock.patch.object(
-            self.settings, "pathToTemplatesDir", lambda: self.path
+            self.settings, "path_to_templates_dir", lambda: self.path
         )
         patcher.start()
         self.addCleanup(patcher.stop)

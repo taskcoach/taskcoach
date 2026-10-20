@@ -43,10 +43,12 @@ be shared between computers.
 - **Drop on a task, note or category** (list, tree, calendar), or on
   an editor's attachment tab (`AttachmentDropTargetMixin`,
   `gui/viewer/mixin.py`): a file becomes a file attachment, a folder a
-  `file://` link, a dragged address a link, a mail an e-mail
+  `file://` link (`Path.as_uri()`: `file:///C:/...` on Windows, where
+  `"file://" + pathname2url()` gives `file://///C:/...`, the form of a
+  network path), a dragged address a link, a mail an e-mail
   attachment. Dropped on an empty part of a task list, a new task
-  holds them, named after the first. The drop target
-  (`DropTarget`, `widgets/draganddrop.py`) tells the kinds apart
+  holds them, named after the first. The drop target (`DropTarget`,
+  `widgets/draganddrop.py`) tells the kinds apart
   ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#the-drop) for mails).
 - **Add attachment...** picks a file
   (`uicommand.AddAttachment`); an editor's attachment tab has New.

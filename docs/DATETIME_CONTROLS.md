@@ -283,6 +283,12 @@ elements = [
 | **0-9** | Type digits directly into field |
 | **Backspace/Delete** | Remove last digit from field |
 
+The date field inside its combo box (`DateCtrl` in
+`DateComboCustomCtrl`, Linux and macOS) leaves from the combo box
+(`_tab_out`), as wxComboCtrl moves on with Tab: on macOS `Navigate()`
+from the field goes to the combo box, which is no tab container there,
+and Tab could not leave it. GTK moves the focus itself.
+
 ### Dropdown Behavior
 
 The dropdown popup is self-contained (`_ChoicesPopup` class).

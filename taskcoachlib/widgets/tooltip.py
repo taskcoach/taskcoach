@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from taskcoachlib import operating_system, patterns
 from taskcoachlib.config import settings
+from taskcoachlib.tools import wxhelper
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 import wx
 import textwrap
@@ -57,9 +58,10 @@ class ToolTipMixin(object):
         # taking the taskbar into account...
 
         if self.__frozen:
-            the_display = wx.Display(wx.Display.GetFromPoint(wx.Point(x, y)))
+            # Beside the pointer, which near the right or bottom
+            # edge of the last display is on no display
             display_x, display_y, display_width, display_height = (
-                the_display.GetClientArea()
+                wxhelper.work_area(wxhelper.display_index(point=(x, y)))
             )
             tip_width, tip_height = self.__tip.GetSize()
 

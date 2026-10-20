@@ -113,7 +113,41 @@ def _release(manager):
     manager._preview_timer.Stop()
 
 
+def is_whole_layout(layout):
+    """Whether a saved layout is as AGW's SavePerspective() writes it:
+    "layout2|", then parts each ended by "|". AGW's LoadPerspective()
+    reads a part up to the next "|"; with none after the last, it reads
+    that part again for ever (a settings file cut short), and the app
+    hangs."""
+    return layout.startswith("layout2|") and layout.endswith("|")
+
+
 class _AuiManager(aui.AuiManager):
+    def LoadPerspective(  # noqa: N802 (AGW's)
+        self, layout, update=True, *args, **kwargs
+    ):
+        """Load a saved layout with its tab groups; False, the panes
+        unchanged, for one not whole (is_whole_layout). AUI saves a
+        group as a pane of its own (__notebook_0); AGW 4.2.x's
+        LoadPerspective deletes it while it tidies up
+        (`del self._panes[index]` for `paneIndex`), so a tabbed view
+        was lost on the next start. Put back as saved, as 4.3 keeps it
+        (docs/AUI.md)."""
+        loaded = is_whole_layout(layout) and super().LoadPerspective(
+            layout, False, *args, **kwargs
+        )
+        if loaded:
+            for part in layout.replace("\\|", "\a").split("|"):
+                part = part.replace("\a", "|").strip()
+                if not part.startswith("name=__notebook_"):
+                    continue
+                pane = self.LoadPaneInfo(part, aui.AuiPaneInfo())
+                if not self.GetPane(pane.name).IsOk():
+                    self._panes.append(pane)
+        if update:
+            self.Update()
+        return loaded
+
     def CreateFloatingFrame(self, parent, pane_info):
         frame = super().CreateFloatingFrame(parent, pane_info)
         # The frame's own manager, which AUI reaches the same way
@@ -160,15 +194,18 @@ class AuiManagedFrameWithDynamicCenterPane(wx.Frame):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Build AUI style flags with live resize for visual feedback when dragging sashes
+        # Build AUI style flags with live resize for visual feedback
+        # when dragging sashes
         agw_style = (
             aui.AUI_MGR_DEFAULT
             | aui.AUI_MGR_ALLOW_ACTIVE_PANE
-            | aui.AUI_MGR_LIVE_RESIZE  # Live visual feedback when dragging sashes
+            # Live visual feedback when dragging sashes
+            | aui.AUI_MGR_LIVE_RESIZE
         )
 
         if not operating_system.isWindows():
-            # With this style on Windows, you can't dock back floating frames
+            # With this style on Windows, you can't dock back floating
+            # frames
             agw_style |= aui.AUI_MGR_USE_NATIVE_MINIFRAMES
 
         self.manager = _AuiManager(self, agw_style)

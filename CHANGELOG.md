@@ -4,6 +4,51 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.7
+
+### Editors
+
+- F2 in a Description box, or on its Edit/Preview button, swaps the
+  Markdown preview and the edit box.
+- The task, category, note and attachment editors open again when
+  their saved layout cannot be read; they kept failing until the
+  settings were reset.
+- The task editor opens again after every button was removed from its
+  Effort tab's toolbar.
+- When an editor cannot open, a message says why.
+
+### Lists and calendars
+
+- Pointing at an item near the right or bottom edge of the screen no
+  longer crashes Task Coach.
+- On Linux, views tabbed together in the main window come back
+  together after a restart.
+- A calendar drag stops when another window takes the mouse.
+
+### Starting
+
+- Task Coach starts with a damaged settings file, with the default
+  settings or layout and a message; it did not start, or hung.
+
+### macOS
+
+- The task, category and note editors and Preferences open again;
+  since 2.0.2.20 they did not open.
+- The lists no longer show two horizontal scroll bars.
+- Task Coach starts in the language chosen in System Settings; it
+  always started in English.
+- Cmd+Q asks to save changes, as File > Quit does, and About and
+  Preferences are in the Task Coach menu again.
+- Cancel at "Save changes?" keeps Task Coach open when quitting from
+  the Dock or at logout.
+- A click on the menu bar icon shows its menu.
+
+### Windows
+
+- With the main window maximized, an editor opens at its last place
+  and size.
+- Task Coach starts where Windows Script Host is turned off.
+
 ## 2.0.3.6
 
 ### Editors

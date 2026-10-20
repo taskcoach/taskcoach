@@ -18,7 +18,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys, unittest, os, time, wx, logging
+import logging
+import os
+import sys
+import time
+import unittest
 import atexit
 import ctypes
 import platform
@@ -134,6 +138,12 @@ def xvfb_log():
 
 start_display()
 
+# After the display: exit handlers run last first, so wx's own clean-up
+# (it clears the clipboard) runs while the display is still there. The
+# other way round, the X error ended the process with status 1 after
+# all its tests passed.
+import wx  # noqa: E402
+
 projectRoot = os.path.abspath("..")
 if projectRoot not in sys.path:
     sys.path.insert(0, projectRoot)
@@ -220,6 +230,57 @@ def skipOnPlatform(*platforms):
     return wrapper
 
 
+class NavigateAsWindowsAndMac:
+    """Navigate() as Windows and macOS make it
+    (wxWindowBase::DoNavigateIn): a navigation event to the window's
+    parent, from the window that has the focus. wxGTK moves the focus
+    through GTK instead and sends no event, so a test puts this in:
+
+        with test.NavigateAsWindowsAndMac(focus=window) as navigate:
+            ...
+
+    wx.Platform reads as Windows' meanwhile."""
+
+    LIMIT = 20
+
+    def __enter__(self):
+        from unittest import mock
+
+        self.__patches = [
+            mock.patch.object(wx, "Platform", "__WXMSW__"),
+            mock.patch.object(
+                wx.Window,
+                "Navigate",
+                lambda window, flags=True: self(window, flags),
+            ),
+        ]
+        for patch in self.__patches:
+            patch.start()
+        return self
+
+    def __exit__(self, *error):
+        for patch in reversed(self.__patches):
+            patch.stop()
+
+    def __init__(self, focus):
+        self.focus = focus
+        self.depth = self.deepest = 0
+
+    def __call__(self, window, flags=True):
+        self.depth += 1
+        self.deepest = max(self.deepest, self.depth)
+        try:
+            if self.depth > self.LIMIT:
+                return True  # Without end: deepest tells
+            event = wx.NavigationKeyEvent()
+            event.SetFlags(int(flags))
+            event.SetCurrentFocus(self.focus)
+            event.SetEventObject(self.focus)
+            return window.GetParent().GetEventHandler().ProcessEvent(event)
+        finally:
+            self.depth -= 1
+
+
 def settle():
     """Run what wx leaves for idle time: deferred calls and the
     destroys of top-level windows."""
@@ -229,6 +290,32 @@ def settle():
         wx.WakeUpIdle()
         wx.Yield()
     gc.collect()
+
+
+class TimeLimit:
+    """Raises TimeoutError in Python code still running after the given
+    seconds: a test of a hang fails instead of hanging the run. Raised
+    again at the end if the code caught it. Not in a wait inside wx's
+    C++ code, which the signal does not interrupt."""
+
+    def __init__(self, seconds):
+        self.seconds = seconds
+        self.previous = None
+        self.expired = False
+
+    def __enter__(self):
+        self.previous = signal.signal(signal.SIGALRM, self.__expire)
+        signal.alarm(self.seconds)
+
+    def __exit__(self, kind, error, traceback):
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, self.previous)
+        if self.expired and kind is None:
+            raise TimeoutError("ran over %d s" % self.seconds)
+
+    def __expire(self, number, frame):
+        self.expired = True
+        raise TimeoutError("still running after %d s" % self.seconds)
 
 
 def stale(reason):

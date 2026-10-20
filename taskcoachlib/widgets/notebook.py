@@ -20,7 +20,7 @@ import wx
 import wx.lib.agw.aui as aui
 import wx.lib.scrolledpanel as scrolledpanel
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
-from taskcoachlib.widgets.frame import free_with_window
+from taskcoachlib.widgets.frame import free_with_window, is_whole_layout
 
 
 class GridCursor:
@@ -282,7 +282,7 @@ class BookMixin(object):
 
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, -1, *args, **kwargs)
-        self.Bind(self.pageChangedEvent, self.onPageChanged)
+        self.Bind(self.pageChangedEvent, self.on_page_changed)
 
     def __getitem__(self, index):
         """More pythonic way to get a specific page, also useful for iterating
@@ -292,7 +292,7 @@ class BookMixin(object):
         else:
             raise IndexError
 
-    def onPageChanged(self, event):
+    def on_page_changed(self, event):
         """Can be overridden in a subclass to do something useful."""
         event.Skip()
 
@@ -321,9 +321,41 @@ class Notebook(BookMixin, aui.AuiNotebook):
         # Bind mouse wheel directly on the tab control for tab scrolling
         tab_ctrl = self.GetActiveTabCtrl()
         if tab_ctrl:
-            tab_ctrl.Bind(wx.EVT_MOUSEWHEEL, self.__onTabMouseWheel)
+            tab_ctrl.Bind(wx.EVT_MOUSEWHEEL, self.__on_tab_mouse_wheel)
         # Disable focus on internal AUI TabFrame to prevent "lost" tab keypress
-        self.__disableTabFrameFocus()
+        self.__disable_tab_frame_focus()
+
+    def LoadPerspective(self, layout):  # noqa: N802 (AGW's)
+        """Load a layout SavePerspective wrote; False, the tabs
+        unchanged, for one that would leave a page with no tab. AGW
+        takes every tab off before it reads the layout, and a page it
+        does not find there gets none (#487)."""
+        if not self.__shows_every_page(layout):
+            return False
+        return super().LoadPerspective(layout)
+
+    def __shows_every_page(self, layout):
+        """Whether AGW reads the whole layout and every page from it:
+        tab lists "name=0,+1,2" joined by "|", then "@" and the frames
+        (is_whole_layout)."""
+        tabs, at, frames = layout.partition("@")
+        if not at or not is_whole_layout(frames):
+            return False
+        names, pages = [], []
+        for tab_list in tabs.split("|"):
+            name, equals, numbers = tab_list.partition("=")
+            if not equals:
+                return False
+            names.append(name)
+            for number in numbers.split(","):
+                if number[:1] in ("+", "*"):
+                    number = number[1:]
+                if not number.isdigit():
+                    return False
+                pages.append(int(number))
+        return len(set(names)) == len(names) and sorted(pages) == list(
+            range(self.GetPageCount())
+        )
 
     def largest_page_size(self):
         """The size that shows each page whole: the largest page's
@@ -359,13 +391,13 @@ class Notebook(BookMixin, aui.AuiNotebook):
         finally:
             self.Thaw()
 
-    def __disableTabFrameFocus(self):
+    def __disable_tab_frame_focus(self):
         """Disable focus on internal AUI TabFrame windows."""
         for child in self.GetChildren():
             if child.__class__.__name__ == "TabFrame":
                 child.SetCanFocus(False)
 
-    def __onTabMouseWheel(self, event):
+    def __on_tab_mouse_wheel(self, event):
         """Handle mouse wheel scrolling on the tab bar to switch tabs."""
         rotation = event.GetWheelRotation()
         if rotation > 0:
@@ -373,10 +405,10 @@ class Notebook(BookMixin, aui.AuiNotebook):
         elif rotation < 0:
             self.AdvanceSelection(True)  # Next tab
 
-    def AdvanceSelectionForward(self):
+    def advance_selection_forward(self):
         """Move to the next tab (wraps around)."""
         self.AdvanceSelection(True)
 
-    def AdvanceSelectionBackward(self):
+    def advance_selection_backward(self):
         """Move to the previous tab (wraps around)."""
         self.AdvanceSelection(False)

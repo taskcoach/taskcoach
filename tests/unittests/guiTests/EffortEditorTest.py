@@ -118,21 +118,20 @@ class EffortEditorTest(test.wxTestCase):
 
     def test_preview_button_toggles_the_description_preview(self):
         entry = self.editor._interior.entries()["description"]
-        self.editor._preview_button.SetValue(True)
         self.editor.on_preview_toggle(dummy.Event())
         self.assertTrue(entry.is_preview())
-        self.editor._preview_button.SetValue(False)
         self.editor.on_preview_toggle(dummy.Event())
         self.assertFalse(entry.is_preview())
 
+    def test_preview_button_is_never_pressed(self):
+        self.assertNotIsInstance(self.editor._preview_button, wx.ToggleButton)
+
     def test_preview_button_names_what_a_click_does(self):
         self.assertEqual("Preview", self.editor._preview_button.GetLabel())
-        self.editor._preview_button.SetValue(True)
         self.editor.on_preview_toggle(dummy.Event())
         self.assertEqual("Edit", self.editor._preview_button.GetLabel())
 
     def test_preview_toggle_is_remembered_on_the_effort(self):
-        self.editor._preview_button.SetValue(True)
         self.editor.on_preview_toggle(dummy.Event())
         self.assertTrue(self.effort.is_preview_shown())
 
@@ -141,7 +140,29 @@ class EffortEditorTest(test.wxTestCase):
         editor = self.createEditor()
         entry = editor._interior.entries()["description"]
         self.assertTrue(entry.is_preview())
-        self.assertTrue(editor._preview_button.GetValue())
+        self.assertEqual("Edit", editor._preview_button.GetLabel())
+
+    def test_f2_in_the_description_keeps_the_button_in_step(self):
+        entry = self.editor._interior.entries()["description"]
+        event = wx.KeyEvent(wx.wxEVT_KEY_DOWN)
+        event.SetKeyCode(wx.WXK_F2)
+        event.SetEventObject(entry._textCtrl)
+        entry._textCtrl.GetEventHandler().ProcessEvent(event)
+        wx.Yield()
+        self.assertTrue(entry.is_preview())
+        self.assertEqual("Edit", self.editor._preview_button.GetLabel())
+        self.assertTrue(self.effort.is_preview_shown())
+
+    def test_f2_on_the_preview_button_swaps_the_box(self):
+        entry = self.editor._interior.entries()["description"]
+        button = self.editor._preview_button
+        event = wx.KeyEvent(wx.wxEVT_KEY_DOWN)
+        event.SetKeyCode(wx.WXK_F2)
+        event.SetEventObject(button)
+        button.GetEventHandler().ProcessEvent(event)
+        self.assertTrue(entry.is_preview())
+        self.assertEqual("Edit", button.GetLabel())
+        self.assertTrue(self.effort.is_preview_shown())
 
     def test_undo_writes_nothing_back(self):
         # A change from elsewhere is shown, not edited

@@ -306,6 +306,20 @@ jobs:
 
           Write-Host "All tests passed!"
 
+      - name: Open every editor
+        shell: pwsh
+        run: |
+          # Each editor opens on a display and its pages and fields are
+          # gone through without an error or a focus loop
+          # (docs/TESTING.md, Editor check). A copy in the build checks
+          # the build's own files with its own Python; removed after, so
+          # it is not packaged.
+          Copy-Item tools\check_editors.py build\TaskCoach\
+          & "build\TaskCoach\python\python.exe" build\TaskCoach\check_editors.py
+          $status = $LASTEXITCODE
+          Remove-Item build\TaskCoach\check_editors.py
+          if ($status) { throw "An editor check failed" }
+
       - name: Create Inno Setup script
         shell: pwsh
         run: |

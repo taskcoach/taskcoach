@@ -18,47 +18,40 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import wx
 import wx.lib.buttons as buttons
-from taskcoachlib import patterns
+from taskcoachlib.widgets import skipfocus
 
 
 class FontPickerCtrl(buttons.GenButton):
-    """A button that displays the selected font and opens a font dialog on click.
-    Uses GenButton to avoid native GTK hover/press rendering artifacts.
+    """A button that displays the selected font and opens a font
+    dialog on click. Uses GenButton to avoid native GTK hover/press
+    rendering artifacts.
 
     Two modes:
-    - fixedWidth=None (default): button grows to fit the font description text.
-    - fixedWidth=N: button constrained to N pixels, label ellipsized to fit."""
+    - fixed_width=None (default): button grows to fit the font
+      description text.
+    - fixed_width=N: button constrained to N pixels, label
+      ellipsized to fit.
+    """
 
     PADDING = 8
 
     def __init__(self, *args, **kwargs):
         self.__font = kwargs.pop("font")
         self.__colour = kwargs.pop("colour")
-        self.__bgColour = kwargs.pop("bgColour", None)
-        self.__readOnly = kwargs.pop("readOnly", False)
-        self.__fixedWidth = kwargs.pop("fixedWidth", None)
+        self.__bg_colour = kwargs.pop("bg_colour", None)
+        self.__read_only = kwargs.pop("read_only", False)
+        self.__fixed_width = kwargs.pop("fixed_width", None)
         super().__init__(*args, **kwargs)
         self.SetBezelWidth(0)
         self.SetUseFocusIndicator(False)
-        if self.__readOnly:
-            self.Bind(wx.EVT_NAVIGATION_KEY, self.__onNavKey)
-            self.Bind(wx.EVT_SET_FOCUS, self.__onRejectFocus)
-        self.__updateButton()
-        self.Bind(wx.EVT_BUTTON, self.onClick)
-
-    def __onNavKey(self, event):
-        """Skip this control during tab traversal, preserving direction."""
-        event.GetEventObject().Navigate(event.GetDirection())
-
-    def __onRejectFocus(self, event):
-        """Reject focus by navigating away, preserving Shift+Tab direction."""
-        window = event.GetEventObject()
-        forward = not wx.GetKeyState(wx.WXK_SHIFT)
-        patterns.later.soon(window, window.Navigate, forward)
+        if self.__read_only:
+            skipfocus.skip_focus(self)
+        self.__update_button()
+        self.Bind(wx.EVT_BUTTON, self.on_click)
 
     def AcceptsFocusFromKeyboard(self):
         """Read-only pickers are display, never tab stops."""
-        if self.__readOnly:
+        if self.__read_only:
             return False
         return super().AcceptsFocusFromKeyboard()
 
@@ -67,8 +60,8 @@ class FontPickerCtrl(buttons.GenButton):
         dc.SetFont(self.GetFont())
         tw, th = dc.GetTextExtent(self.GetLabel())
         height = th + 10
-        if self.__fixedWidth:
-            return wx.Size(self.__fixedWidth, height)
+        if self.__fixed_width:
+            return wx.Size(self.__fixed_width, height)
         return wx.Size(self.PADDING * 2 + tw, height)
 
     def DrawLabel(self, dc, width, height, dx=0, dy=0):
@@ -92,54 +85,54 @@ class FontPickerCtrl(buttons.GenButton):
 
     def SetSelectedFont(self, font):
         self.__font = font
-        self.__updateButton()
+        self.__update_button()
 
     def GetSelectedColour(self):
         return self.__colour
 
     def SetSelectedColour(self, colour):
         self.__colour = colour
-        self.__updateButton()
+        self.__update_button()
 
     def GetSelectedBgColour(self):
-        return self.__bgColour
+        return self.__bg_colour
 
     def SetSelectedBgColour(self, colour):
-        self.__bgColour = colour
-        self.__updateButton()
+        self.__bg_colour = colour
+        self.__update_button()
 
-    def onClick(self, event):
+    def on_click(self, event):
         event.Skip(False)
-        if self.__readOnly:
+        if self.__read_only:
             return
-        dialog = wx.FontDialog(self, self.__newFontData())
+        dialog = wx.FontDialog(self, self.__new_font_data())
         if wx.ID_OK == dialog.ShowModal():
-            self.__readFontData(dialog.GetFontData())
-            self.__updateButton()
-            self.__sendPickerEvent()
+            self.__read_font_data(dialog.GetFontData())
+            self.__update_button()
+            self.__send_picker_event()
 
-    def __newFontData(self):
+    def __new_font_data(self):
         font_data = wx.FontData()
         font_data.SetInitialFont(self.__font)
         font_data.SetColour(self.__colour)
         return font_data
 
-    def __readFontData(self, font_data):
+    def __read_font_data(self, font_data):
         self.__font = font_data.GetChosenFont()
         self.__colour = font_data.GetColour()
 
-    def __updateButton(self):
+    def __update_button(self):
         self.SetLabel(self.__font.GetNativeFontInfoUserDesc())
         self.SetFont(self.__font)
         self.SetForegroundColour(self.__colour)
-        if self.__bgColour:
-            self.SetBackgroundColour(self.__bgColour)
+        if self.__bg_colour:
+            self.SetBackgroundColour(self.__bg_colour)
         else:
             self.SetBackgroundColour(
                 wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
             )
         self.InvalidateBestSize()
-        if not self.__fixedWidth:
+        if not self.__fixed_width:
             self.SetInitialSize()
             parent = self.GetParent()
             while parent and not isinstance(parent, wx.TopLevelWindow):
@@ -151,12 +144,12 @@ class FontPickerCtrl(buttons.GenButton):
     def GetBackgroundBrush(self, dc):
         """Override to ensure correct background color is used for painting."""
         bg_color = (
-            self.__bgColour
-            if self.__bgColour
+            self.__bg_colour
+            if self.__bg_colour
             else wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
         )
         return wx.Brush(bg_color, wx.BRUSHSTYLE_SOLID)
 
-    def __sendPickerEvent(self):
+    def __send_picker_event(self):
         event = wx.FontPickerEvent(self, self.GetId(), self.__font)
         self.GetEventHandler().ProcessEvent(event)

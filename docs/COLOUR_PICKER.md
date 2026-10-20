@@ -29,7 +29,7 @@ The initial implementation used a modeless dialog with explicit lifecycle manage
 
 NOTE: The original documentation for this refactoring was written but never committed and has been lost. This document reconstructs that information from git history and code review.
 
-## Production Control — `ColourPickerCtrl(wx.ColourPickerCtrl)`
+## Production Control: `ColourPickerCtrl`, on wxWidgets' Picker
 
 `taskcoachlib/widgets/colourpicker.py`
 
@@ -43,12 +43,34 @@ NOTE: The original documentation for this refactoring was written but never comm
 | Read-only mode (no click, no tab focus) | Done |
 | Fires wx.ColourPickerEvent on change | Done |
 
+### macOS with wxPython 4.3.0 and 4.3.1
+
+`ColourPickerCtrl` derives from wxWidgets' own picker,
+`wx._core.ColourPickerCtrl`, not from `wx.ColourPickerCtrl`. On macOS
+wxPython 4.3.0 and 4.3.1 put a class of their own, written in Python,
+in `wx.ColourPickerCtrl`'s place, and it cannot be made: it calls
+`PickerBase.SetPickerCtrl()`, which wxWidgets 3.3 dropped from its
+interface (`interface/wx/pickerbase.h`), so wxPython no longer wraps
+it. Every picker raises `AttributeError`, so on macOS no task,
+category or note editor (Appearance tab) nor Preferences (Theme page)
+could open with wxPython 4.3.0 or 4.3.1 (#487).
+
+wxPython 4.3.2 removed its class
+([Phoenix #2937](https://github.com/wxWidgets/Phoenix/issues/2937),
+[#2938](https://github.com/wxWidgets/Phoenix/pull/2938)), so from
+then on `wx.ColourPickerCtrl` is wxWidgets' own on every platform;
+once every build uses 4.3.2 or later, `_WX_PICKER` can go back to
+`wx.ColourPickerCtrl`. Preferences finds its pickers by
+`widgets.ColourPickerCtrl`, not `wx.ColourPickerCtrl`, for the same
+reason.
+
 ### Read-Only Mode and Tab Traversal
 
-- **Editable** (`readOnly=False`): picker accepts tab focus and opens colour dialog on click/Enter/Space.
-- **Read-only** (`readOnly=True`): both the outer composite control and the inner picker button bind `EVT_NAVIGATION_KEY` (to skip the control preserving tab direction) and `EVT_SET_FOCUS` (to reject click-focus). This is a composite control — the inner button is a separate wx window in the tab order, so both must be handled. `SetCanFocus(False)` alone is unreliable on native GTK widgets. Click, double-click, Enter/Space, and button events are also swallowed. Both handlers navigate from the window holding the event: navigating from the outer control restarts the traversal inside the composite, which crashed Windows when the Appearance tab was shown (#487).
+- **Editable** (`read_only=False`): picker accepts tab focus and opens colour dialog on click/Enter/Space.
+- **Read-only** (`read_only=True`): no tab stop (`AcceptsFocusFromKeyboard`), and the focus passes the outer control and its inner button by (`widgets.skip_focus`, [FOCUS_MANAGEMENT.md](FOCUS_MANAGEMENT.md#read-only-displays)): the inner button is a separate wx window, so both are handled. Click, double-click, Enter/Space, and button events are also swallowed.
+- **Invalid colours** (`wx.NullColour`, from an appearance value the editor cannot resolve) are logged and not shown: macOS asserts drawing one (`src/osx/core/colour.cpp`, `GetCGColor`), which would stop the editor holding the picker from opening.
 
-In the editor Appearance tab, the Derived and Effective sections use `readOnly=True`, which disables both clicking and tab focus. Only the Override section's colour pickers are tabbable/editable.
+In the editor Appearance tab, the Derived and Effective sections use `read_only=True`, which disables both clicking and tab focus. Only the Override section's colour pickers are tabbable/editable.
 
 ### GTK Workaround Detail
 
@@ -63,13 +85,10 @@ On non-GTK platforms, all events are passed through to the native handler via `e
 ### API
 
 ```python
-picker = ColourPickerCtrl(parent, colour=wx.Colour(...), readOnly=False)
+picker = ColourPickerCtrl(parent, colour=wx.Colour(...), read_only=False)
 
 # Standard wx.ColourPickerCtrl API
 picker.GetColour() / picker.SetColour(colour)
-
-# Read-only control
-picker.SetReadOnly(bool) / picker.IsReadOnly()
 ```
 
 ### Usage Sites
@@ -98,6 +117,6 @@ picker.SetReadOnly(bool) / picker.IsReadOnly()
 | `d13db6d66` | #316 | Introduced custom ColourPickerCtrl with GTK workaround (modeless dialog) |
 | `1fee77da7` | #322 | Simplified to modal ShowModal(), removed dialog lifecycle tracking |
 | `3d3eebac4` | — | Fixed TypeError: `col=` → `colour=` parameter name |
-| `6433f2a89` | — | Added readOnly with SetCanFocus (initial attempt) |
+| `6433f2a89` | — | Added read_only with SetCanFocus (initial attempt) |
 | `cd09a0e82` | — | Switched to EVT_NAVIGATION_KEY + EVT_SET_FOCUS for reliable focus rejection |
 | `1e6d955c1` | — | Fixed reverse-tab direction via wx.GetKeyState(wx.WXK_SHIFT) |
