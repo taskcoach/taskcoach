@@ -76,6 +76,7 @@ from taskcoachlib import patterns
 from taskcoachlib.config import settings
 from taskcoachlib.i18n import _
 from taskcoachlib.tools import wxhelper
+from taskcoachlib.widgets import skipfocus
 from taskcoachlib.domain import date
 
 # =============================================================================
@@ -2475,6 +2476,18 @@ class DateCtrl(MaskedFieldsCtrl):
                         dc.SetTextForeground(text_colour)
                     widget.PaintValue(dc, x + x_off, y + y_off, ww, hh)
 
+    def _tab_out(self, forward):
+        """Leave the field as Tab does. On Windows and macOS from the
+        combo box around it, as wxComboCtrl moves on with Tab
+        (src/common/combocmn.cpp): Navigate() from the field went to
+        the combo box, which is no tab container there, and the
+        focus stayed. GTK moves the focus itself, and Shift+Tab
+        there passes the combo box's hidden text field."""
+        if wx.Platform == "__WXGTK__" or self._comboCtrl is None:
+            self.Navigate(forward)
+        else:
+            skipfocus.navigate_from(self._comboCtrl, forward)
+
     def _onChar(self, event):
         """Handle keyboard input — F4/Enter open parent ComboCtrl popup."""
         if not self._focus:
@@ -2485,7 +2498,7 @@ class DateCtrl(MaskedFieldsCtrl):
 
         # Tab exits control (always allowed, even in read-only mode)
         if key_code == wx.WXK_TAB:
-            self.Navigate(not event.ShiftDown())
+            self._tab_out(not event.ShiftDown())
             return
 
         # Block all other input in read-only mode

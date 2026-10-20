@@ -400,8 +400,8 @@ class SettingsPage(widgets.ScrolledBookPage):
             self,
             font=current_font or default_font,
             colour=current_fg_color,
-            bgColour=current_bg_color,
-            fixedWidth=75,
+            bg_colour=current_bg_color,
+            fixed_width=75,
         )
         icon_entry = self._createIconEntry(exclude="data")
         current_icon_id = settings.get(icon_section, icon_setting)
@@ -3271,7 +3271,9 @@ class Preferences(widgets.NotebookDialog):
         (wx.Choice, wx.EVT_CHOICE),
         (wx.TextCtrl, wx.EVT_TEXT),
         (wx.Button, wx.EVT_BUTTON),
-        (wx.ColourPickerCtrl, wx.EVT_COLOURPICKER_CHANGED),
+        # Ours: on macOS wxPython 4.3.1's wx.ColourPickerCtrl is
+        # another class (widgets/colourpicker.py)
+        (widgets.ColourPickerCtrl, wx.EVT_COLOURPICKER_CHANGED),
         (wx.DirPickerCtrl, wx.EVT_DIRPICKER_CHANGED),
         (widgets.SpinCtrl, wx.EVT_SPINCTRL),
         (widgets.FontPickerCtrl, wx.EVT_FONTPICKER_CHANGED),

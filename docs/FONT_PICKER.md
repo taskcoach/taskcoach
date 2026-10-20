@@ -16,31 +16,31 @@ A custom-drawn button that displays the selected font name (in that font) and op
 | Foreground color preview | Done |
 | Background color preview | Done |
 | Read-only mode (no click, no tab focus) | Done |
-| Two sizing modes (grow + fixedWidth with ellipsis) | Done |
+| Two sizing modes (grow + fixed_width with ellipsis) | Done |
 | Focus indicator (DrawFocusRect when focused) | Done |
 | Opens wx.FontDialog on click | Done |
 | Fires wx.FontPickerEvent on change | Done |
 
 ### Sizing Modes
 
-- **Grow** (`fixedWidth=None`, default): button grows to fit the font description text. Requires two parts:
+- **Grow** (`fixed_width=None`, default): button grows to fit the font description text. Requires two parts:
   1. **Button-level**: on content change, calls `InvalidateBestSize()` + `SetInitialSize()` and walks `Layout()` up the parent chain to the top-level window.
   2. **Panel-level**: the wrapping `PanelWithBoxSizer` (e.g. `FontEntry`, `IconEntry`) must use `fitNoMinSize()` instead of `fit()`. `fit()` calls `SetSizerAndFit` which locks the panel's min size, preventing shrinking. `fitNoMinSize()` calls `SetSizer` only — see Variation 3 vs 5 in the demo section below.
   Used in editor Appearance tab. The `IconPicker` control uses the same pattern.
-- **Fixed width** (`fixedWidth=N`): button constrained to N pixels, label ellipsized via `wx.Control.Ellipsize()` in `DrawLabel`. Used in Preferences dialog (`fixedWidth=75`).
+- **Fixed width** (`fixed_width=N`): button constrained to N pixels, label ellipsized via `wx.Control.Ellipsize()` in `DrawLabel`. Used in Preferences dialog (`fixed_width=75`).
 
 ### Focus and Tab Traversal
 
-- **Editable** (`readOnly=False`): button accepts tab focus. When focused, draws a native dotted focus rectangle via `wx.RendererNative.DrawFocusRect`.
-- **Read-only** (`readOnly=True`): binds `EVT_NAVIGATION_KEY` to skip the control (preserving tab direction) and `EVT_SET_FOCUS` to reject click-focus. Click is also swallowed in `onClick`. Both handlers navigate from the window holding the event, and the control takes no tab focus at all (`AcceptsFocusFromKeyboard`), as the colour picker does (#487).
+- **Editable** (`read_only=False`): button accepts tab focus. When focused, draws a native dotted focus rectangle via `wx.RendererNative.DrawFocusRect`.
+- **Read-only** (`read_only=True`): no tab stop (`AcceptsFocusFromKeyboard`), and the focus passes it by (`widgets.skip_focus`, [FOCUS_MANAGEMENT.md](FOCUS_MANAGEMENT.md#read-only-displays)), as for the colour picker. Click is also swallowed in `on_click`.
 
-In the editor Appearance tab, only the Override section's controls (checkbox + picker) are tabbable. The Derived and Effective sections use `readOnly=True`, which disables both clicking and tab focus. The `ColourPickerCtrl` follows the same pattern.
+In the editor Appearance tab, only the Override section's controls (checkbox + picker) are tabbable. The Derived and Effective sections use `read_only=True`, which disables both clicking and tab focus. The `ColourPickerCtrl` follows the same pattern.
 
 ### API
 
 ```python
-picker = FontPickerCtrl(parent, font=font, colour=colour, bgColour=bgColour,
-                         readOnly=False, fixedWidth=None)
+picker = FontPickerCtrl(parent, font=font, colour=colour, bg_colour=bg_colour,
+                         read_only=False, fixed_width=None)
 
 # Get/set
 picker.GetSelectedFont() / picker.SetSelectedFont(font)
@@ -55,20 +55,12 @@ picker.GetSelectedBgColour() / picker.SetSelectedBgColour(colour)
 | `taskcoachlib/gui/dialog/entry.py` | FontEntry picker (Override section) | grow |
 | `taskcoachlib/gui/dialog/editor.py` | Derived font (read-only) | grow |
 | `taskcoachlib/gui/dialog/editor.py` | Effective font (read-only) | grow |
-| `taskcoachlib/gui/dialog/preferences.py` | Theme font setting | fixedWidth=75 |
-| `taskcoachlib/gui/dialog/preferences.py` | Appearance font | fixedWidth=75 |
+| `taskcoachlib/gui/dialog/preferences.py` | Theme font setting | fixed_width=75 |
+| `taskcoachlib/gui/dialog/preferences.py` | Appearance font | fixed_width=75 |
 
 ### Cross-Platform Focus Control
 
-`SetCanFocus(False)` is unreliable on native GTK widgets (only works on pure Python controls like `GenButton`). The cross-platform approach uses two event bindings:
-
-1. **`EVT_NAVIGATION_KEY`** — intercepts tab traversal before focus is set. Calls `Navigate(event.GetDirection())` to skip the control while preserving forward/backward direction (Tab vs Shift+Tab).
-2. **`EVT_SET_FOCUS`**: catches click-focus and any other focus paths. Checks `wx.GetKeyState(wx.WXK_SHIFT)` to determine direction, then calls `patterns.later.soon(self, self.Navigate, forward)` to move focus away in the correct direction.
-
-This pattern is used by:
-- **FontPickerCtrl**: binds both events when `readOnly=True`.
-- **ColourPickerCtrl**: binds both events on outer and inner controls when `readOnly=True`.
-- **Display-only widgets** (`wx.StaticBitmap`, `wx.StaticText`, `wx.Panel`): same bindings in `editor.py`.
+`SetCanFocus(False)` is unreliable on native GTK widgets (only works on pure Python controls like `GenButton`). A read-only display answers False to `AcceptsFocusFromKeyboard`, so Tab passes it by, and focus reaching it another way moves on from the display itself, only while it is still there (`widgets.skip_focus`, [FOCUS_MANAGEMENT.md](FOCUS_MANAGEMENT.md#read-only-displays)). Used by the font picker, the colour picker (its outer control and inner button) and the editor's display panels.
 
 See `COLOUR_PICKER.md` for the colour picker details.
 
@@ -154,7 +146,7 @@ Two methods for text ellipsis were evaluated:
 
 **Method B: Pre-ellipsize label (Variation 6)** — Ellipsize the label string before `SetLabel()`. Works with plain `wx.Button`. Static (not recalculated on resize). Padding estimate is approximate.
 
-The production control uses Method A in `DrawLabel` for the fixedWidth mode.
+The production control uses Method A in `DrawLabel` for the fixed_width mode.
 
 ### Test Configurations
 

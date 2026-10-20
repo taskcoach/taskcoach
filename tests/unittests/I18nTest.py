@@ -66,3 +66,54 @@ class SystemLanguageTest(test.TestCase):
             getlocale=lambda category: ("es_ES", "UTF-8"),
         )
         self.assertEqual("es_ES", language)
+
+
+class MacSystemLanguageTest(test.TestCase):
+    """Started from the Finder, a Mac app has no locale variables and
+    the bundle's launcher (py2app) sets the C locale to en_US: the
+    language is the first of macOS's preferred languages."""
+
+    def language(self, environment, preferred):
+        bundle_locale = types.SimpleNamespace(
+            LC_MESSAGES=5, getlocale=lambda category: ("en_US", "UTF-8")
+        )
+        cleared = {"LC_ALL": "", "LC_MESSAGES": "", "LANG": ""}
+        with mock.patch.object(
+            operating_system, "isWindows", return_value=False
+        ), mock.patch.object(
+            operating_system, "isMac", return_value=True
+        ), mock.patch.object(
+            i18n, "_mac_preferred_language", return_value=preferred
+        ), mock.patch.dict(
+            os.environ, dict(cleared, **environment)
+        ):
+            return i18n.system_language(bundle_locale)
+
+    def test_the_first_preferred_language_names_it(self):
+        self.assertEqual("fr_CA", self.language({}, "fr-CA"))
+
+    def test_a_language_without_region(self):
+        self.assertEqual("pt", self.language({}, "pt"))
+
+    def test_started_from_a_terminal_its_variables_name_it(self):
+        self.assertEqual(
+            "es_MX", self.language({"LANG": "es_MX.UTF-8"}, "fr-CA")
+        )
+
+    def test_no_preferred_language_leaves_the_locale(self):
+        self.assertEqual("en_US", self.language({}, None))
+
+    def test_reading_it_off_macos_names_none(self):
+        self.assertIsNone(i18n._mac_preferred_language())
+
+    def test_it_is_read_once(self):
+        # Every string translated asks for the language
+        read = i18n._mac_preferred_language
+        read.cache_clear()
+        self.addCleanup(read.cache_clear)
+        with mock.patch.object(
+            i18n.ctypes.cdll, "LoadLibrary", side_effect=OSError("none")
+        ) as load:
+            read()
+            read()
+        self.assertEqual(1, load.call_count)

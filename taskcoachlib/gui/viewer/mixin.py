@@ -676,7 +676,7 @@ class AttachmentDropTargetMixin(object):
             existing_editor.Raise()
             existing_editor.SetFocus()
             if hasattr(existing_editor, "_interior"):
-                existing_editor._interior.setFocus("attachments")
+                existing_editor._interior.set_focus("attachments")
             item_editor = existing_editor
         else:
             # Create a new editor with columnName="attachments"
@@ -725,14 +725,16 @@ class AttachmentDropTargetMixin(object):
         """This method is called by the widget when one or more files
         are dropped on an item."""
         import os
-        import urllib.request
+        import pathlib
 
         attachment_base = settings.file.attachmentbase
         attachments = []
         for filename in filenames:
             if os.path.isdir(filename):
-                # Folders become URI attachments that open in file explorer
-                folder_url = "file://" + urllib.request.pathname2url(filename)
+                # Folders become URI attachments that open in the file
+                # manager. "file://" + pathname2url() gave Windows
+                # "file://///C:/...", a network path
+                folder_url = pathlib.Path(filename).as_uri()
                 attachments.append(attachment.URIAttachment(folder_url))
             else:
                 # Regular files become file attachments

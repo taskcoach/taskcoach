@@ -73,6 +73,42 @@ Catches any unhandled Python exception that occurs during wx event dispatch. Log
 
 Enabled at startup with `all_threads=True`. Produces Python-level stack traces on hard crashes (SIGSEGV, SIGBUS). This is the last line of defense — if a segfault gets past the guards, faulthandler at least shows which Python code was executing.
 
+### 5. An Editor That Fails to Build (`gui/dialog/editor.py`)
+
+An error raised while an editor is built would leave it half made and
+hidden: never shown, its pages still subscribed to the items, and on
+macOS, where the app has no console, nothing would tell the user
+(#487). `Editor.__init__` closes it at once (its subscriptions end, it
+is hidden and destroyed as on a close), logs the traceback
+(`[EDITOR]`) and shows the error in a message, then raises again so
+the caller never shows it.
+
+### 6. Display Lookups (`tools/wxhelper.py`)
+
+`wx.Display(wx.NOT_FOUND)` crashes natively: it indexes past the
+displays it holds. The description popup asked for the display at the
+pointer plus (20, 10), on no display near the right or bottom edge of
+the last one. On macOS wx also asserts for a mirrored display, and a
+display asleep can report an empty work area. Every lookup goes
+through `display_index()` (wx.NOT_FOUND for none, or for an
+assertion), `work_area()` (the primary display's for none, the whole
+display for an empty work area) and `centre()` (`CentreOnParent`, its
+assertion caught); `DisplayLookupTest` fails on a lookup made
+elsewhere.
+
+### 7. The Mouse Taken Mid-Drag (`EVT_MOUSE_CAPTURE_LOST`)
+
+A window holding the mouse for a drag loses it when another window
+takes it: Alt+Tab, a reminder shown. wx tells it with
+`EVT_MOUSE_CAPTURE_LOST` and raises if it is not handled
+(`src/common/wincmn.cpp`); a later `ReleaseMouse()` without the mouse
+raises again. The calendar's event drag (`widgets/wxevents.py`) and
+its period width drag (`wxSchedulerPaint.py`) raised before they
+reset, so they went on following the mouse. Each window that takes
+the mouse ends its drag on that event and releases only while
+`HasCapture()`; `MouseCaptureTest` fails on a file that captures the
+mouse without handling it.
+
 ---
 
 ## Log Output

@@ -293,7 +293,7 @@ class FileClose(IOCommand):
         )
 
     def do_command(self, event):
-        self.main_window().closeEditors()
+        self.main_window().close_editors()
         self.iocontroller.close()
 
 
@@ -1307,7 +1307,7 @@ class ActivateViewer(ViewerCommand):
         self.viewer.advance_selection(self.direction)
 
     def enabled(self, event):
-        return self.viewer.containerWidget.viewerCount() > 1
+        return self.viewer.containerWidget.viewer_count() > 1
 
 
 class HideCurrentColumn(ViewerCommand):
@@ -3379,7 +3379,7 @@ class ResetWindowLayout(base_uicommand.UICommand):
         )
 
     def do_command(self, event):
-        self.main_window().resetWindowLayout()
+        self.main_window().reset_window_layout()
 
 
 class Search(ViewerCommand):

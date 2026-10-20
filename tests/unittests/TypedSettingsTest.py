@@ -134,8 +134,8 @@ class FoldersTest(test.TestCase):
         self.addCleanup(settings.use, settings.current())
         settings.use(
             mock.Mock(
-                pathToTemplatesDir=lambda: "templates here",
-                pathToBackupsDir=lambda: "backups here",
+                path_to_templates_dir=lambda: "templates here",
+                path_to_backups_dir=lambda: "backups here",
             )
         )
 

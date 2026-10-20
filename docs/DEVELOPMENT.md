@@ -216,13 +216,35 @@ docstrings, docs and log messages.
 - Link to an existing doc section instead of repeating it.
 - Existing text is not a style template: older commits and docs may be
   wordier than this standard.
+- **Release text and docs describe the fixes (ruled by designer
+  2026-10-19):** release notes (`CHANGELOG.md`), commit messages and
+  PR descriptions say what changes for the app's users: only what a
+  user of the previous release notices, in their words; nothing that
+  is not packaged (docs, tests, tools, build checks, code style), no
+  implementation, never how a change was found or checked, and no fix
+  of a step taken while making the change. Docs and
+  comments describe the solution, technical detail and source
+  references included, without process or what one machine showed.
+  The designer's words, on a commit message that said how the fixes
+  were checked: "that is not relevant for release information!?";
+  "It's also very specific to a machine and is of no use to anyone
+  else. Your fix and docs should only describe the solutions/fixes...";
+  "Some of the very specifics docs, like under MacOS docs, you have
+  have technical information like that with cross reference to the
+  files, etc. But regardless, none of that is actually packaged nor
+  released, so it's not relevant to a release or PR file." And on the
+  release notes: "Your release note is STILL a mess!  users don't care
+  that you fixed your mistakes because you had steps you did that did
+  not belong in the release notes..., eg "A dropped folder gets a
+  file:///C:/ link.""
 
 ## Commits
 
 - Keep commits atomic.
 - Title: what the change does, imperative, short. No version numbers
   and no issue references (issue links are added to the PR).
-- Body: a sentence or two of why, then short bullets of what changed.
+- Body: a sentence or two of why, then short bullets of what changed
+  for users, as in release notes ([Writing](#writing)).
 - During a long stretch of development, keep every commit and push
   it: versions stay comparable commit by commit. Once the pull
   request is open and the work stabilizes, every push is the branch

@@ -85,7 +85,7 @@ old settings files lose them on load.
 | Session | Tray Hide | Taskbar entry | Tray restore |
 |---------|-----------|---------------|--------------|
 | Windows, X11 (any desktop) | Minimizes (`Iconize()`) | Kept | Yes |
-| macOS | Menu: minimizes to the Dock; double click: raises only | Kept | Yes |
+| macOS | Menu: minimizes to the Dock | Kept | Yes |
 | KDE Plasma, Wayland | Minimizes through `org_kde_plasma_window_management` if KWin offers it to Task Coach, else hides; untested (D5) | Kept, or lost when hidden | Yes |
 | Other Wayland (GNOME, wlroots, COSMIC) | **Hides** (`Hide()`) | **Lost** until restored | Yes, the only way back |
 
@@ -133,14 +133,14 @@ Size constants: `TRAY_ICON_SIZE_MACOS` (128) and `LIST_ICON_SIZE` (16) in
 | `TaskBarIcon` | `taskbaricon.py` | wx.adv.TaskBarIcon wrapper for Windows/macOS |
 | `AppIndicatorTaskBarIcon` | `taskbaricon.py` | AppIndicator wrapper for Linux |
 | `AppIndicatorIcon` | `appindicator.py` | Low-level AppIndicator/GTK bindings |
-| `TaskBarMenu` | `menu.py` | wx.Menu for Windows/macOS right-click |
+| `TaskBarMenu` | `menu.py` | wx.Menu for a Windows right-click and any macOS click |
 
 ## Platform Behavior Matrix
 
 | OS | Distro | Desktop | Session | Implementation | Left-Click | Right-Click | Notes |
 |----|--------|---------|---------|----------------|------------|-------------|-------|
 | Windows | - | - | - | wx.adv.TaskBarIcon | Minimize/restore | Popup menu | Full support |
-| macOS | - | - | - | wx.adv.TaskBarIcon | Double click: raise/restore | Popup menu | Full support |
+| macOS | - | - | - | wx.adv.TaskBarIcon | Menu | Menu | No click events [5] |
 | Linux | - | GNOME | X11 | AppIndicator | Menu | Menu | Requires extension [1] |
 | Linux | - | GNOME | Wayland | AppIndicator | Menu | Menu | Requires extension [1] |
 | Linux | Ubuntu | GNOME | X11 | AppIndicator | Menu | Menu | Extension pre-installed |
@@ -164,6 +164,15 @@ Size constants: `TRAY_ICON_SIZE_MACOS` (128) and `LIST_ICON_SIZE` (16) in
 
 [4] **LXDE wx broken**: Confirmed that wx.adv.TaskBarIcon does not receive right-click events on LXDE, even though `IsAvailable()` returns True. Left-click works but right-click events are never delivered.
 
+[5] **macOS sends no click events**: wx's menu bar icon
+(`src/osx/cocoa/taskbar.mm`, 3.2 and 3.3) answers a left or right
+click by showing the menu `GetPopupMenu()` returns, else
+`CreatePopupMenu()`'s, and sends the app no `EVT_TASKBAR_*` event.
+`TaskBarIcon.GetPopupMenu()` returns the tray menu, refilled, on macOS
+only: wx's own right-click handler (`taskbarcmn.cpp`) asks for it
+elsewhere too, where `popup_taskbar_menu` already shows it.
+Hide/Restore is in the menu.
+
 ## Windows Quit-from-Tray Safety
 
 ### The Problem
@@ -173,7 +182,7 @@ user dismisses the menu. When the user clicks Quit from the tray menu:
 
 1. `PopupMenu()` is still active (modal, blocking)
 2. `FileQuit.do_command()` calls `mainwindow.Close(force=True)`
-3. `onClose()` calls `quit_application()` which destroys the tray icon
+3. `on_close()` calls `quit_application()` which destroys the tray icon
 4. `PopupMenu()` returns to a destroyed object → **segfault**
 
 ### The Fix
@@ -252,7 +261,7 @@ icons itself, as xfce4-panel does.
 | OS | Distro | Desktop | Session | wx.adv.TaskBarIcon | AppIndicator |
 |----|--------|---------|---------|-------------------|--------------|
 | Windows | - | - | - | Full support | N/A |
-| macOS | - | - | - | Full support | N/A |
+| macOS | - | - | - | Menu on click [5] | N/A |
 | Linux | Debian | LXDE | X11 | Left-click only | Full support |
 | Linux | Kubuntu | KDE Plasma | X11 | Left-click only | Left-click only (right conflict) |
 | Linux | Kubuntu | KDE Plasma | Wayland | N/A (no XEmbed) | Full support |

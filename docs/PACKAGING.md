@@ -637,7 +637,11 @@ This process applies to all build targets (AppImage, Windows, macOS, etc.):
 release notes are kept in `CHANGELOG.md` at the top of the
 repository, a `## <version>` section per release, newest first: what
 changes for users. A change users notice gets its line there in the
-same commit, under the version being made.
+same commit, under the version being made. Only what a user of the
+previous release notices in the packaged app: no implementation,
+nothing unpackaged, never how a change was found or checked, no fix
+of a step taken while making it (**ruled by designer 2026-10-19**, in the
+designer's words in [DEVELOPMENT.md](DEVELOPMENT.md#writing)).
 
 On a release tag, `release-notes.yml` puts the tag's section on the
 release page (`tools/release_notes.py` prints it); the build

@@ -8,6 +8,8 @@ every platform. Interaction rules change only with a ruling
 1. [Only the Focused Control Shows a Selection](#only-the-focused-control-shows-a-selection)
 2. [Platforms](#platforms)
 3. [Not Changed](#not-changed)
+4. [Read-Only Displays](#read-only-displays)
+5. [The Markdown Preview](#the-markdown-preview)
 
 ## Only the Focused Control Shows a Selection
 
@@ -63,3 +65,47 @@ clicked anyway.
   macOS). The Subject and Description boxes keep their caret instead:
   P251 in [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md), not
   changed.
+
+## Read-Only Displays
+
+A value shown but not editable (the Appearance tab's derived and
+effective colours, fonts and icons; the Dates tab's status) is a
+display: Tab passes it by, and it keeps no focus
+(`widgets.skip_focus`; `AcceptsFocusFromKeyboard` is False). Focus
+reaching one another way (code, a container giving back its last
+focus) moves on to the next field once handled, and only if it is
+still there: moved on meanwhile, it stays.
+
+It moves on from the display itself. On Windows and macOS `Navigate()`
+moves from wherever the focus is (`wxWindowBase::DoNavigateIn`), so
+from a picker's inner button it would come back to the picker's own
+handler without end: the Appearance tab's crash on Windows (#487). GTK
+moves the focus itself and sends no navigation event.
+
+## The Markdown Preview
+
+Unlike a display, a Description box's preview takes the focus, by Tab
+or a click: it scrolls with the keys, and F2 swaps it with the edit
+box ([MARKDOWN.md](MARKDOWN.md)). It shows the focus with the same
+style as the edit box, and so as any text box, in the user's system
+theme: **ruled by designer 2026-10-19**, "the user should have the
+same focus style on the edit box as a preview (as any other edit box),
+per their system theme style", and "match the system theme always".
+
+The theme draws a text box's field and frame in one call (wxGTK
+`DrawTextCtrl()`: `gtk_render_background`, then `gtk_render_frame`),
+so the preview draws the focused text box into a bitmap and masks the
+field's colour, read in its middle
+(`MultiLineTextCtrl._focused_frame()`): what is left is the theme's
+focus highlight, pixel for pixel the edit box's, without the field
+that would make an input box of read-only text
+([DEVELOPMENT.md](DEVELOPMENT.md#design), Read-only looks read-only).
+So the look is the theme's on every desktop: GTK draws the theme's
+focused entry, macOS its focus ring (`HIThemeDrawFrame`, focused);
+wx's Windows renderer draws no focused state, so on Windows neither
+box shows a highlight (P271 in
+[REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#found-2026-10-19)).
+
+F2 swaps the box from the box, in both modes, and from its
+Edit/Preview button, as a click on the button does, the focus staying
+on the button.

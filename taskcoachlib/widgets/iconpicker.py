@@ -257,7 +257,7 @@ class _IconDialog(wx.Dialog):
 
         def _on_shown(evt):
             self.SetSize(self._desired_size)
-            self.CentreOnParent()
+            wxhelper.centre(self)
             evt.Skip()
 
         self.Bind(wx.EVT_SHOW, _on_shown)

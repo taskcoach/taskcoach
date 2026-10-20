@@ -82,3 +82,39 @@ class WindowsDateFieldTest(test.wxTestCase):
         ) as set_date_format:
             maskedtimectrl._NativeDateCtrl(self.frame, date_format="DMY.")
         set_date_format.assert_called_once_with("DMY.")
+
+
+class DateFieldTabTest(test.wxTestCase):
+    """Tab leaves the date field on macOS too. The field holds its
+    own Tab key; its Navigate() went to the combo box around it, which
+    is no tab container on Windows and macOS (generic navigation), so
+    the focus stayed. It moves on from the combo box, as wxComboCtrl
+    does with Tab (src/common/combocmn.cpp). Windows has its native
+    date field instead."""
+
+    def setUp(self):
+        super().setUp()
+        self.panel = wx.Panel(self.frame)
+        self.combo = maskedtimectrl.DateComboCustomCtrl(self.panel)
+        self.field = self.combo._dateCtrl
+        self.field._focus = self.field._fieldList[0]
+        self.moves = []
+        self.panel.Bind(
+            wx.EVT_NAVIGATION_KEY,
+            lambda event: self.moves.append(
+                (event.GetCurrentFocus(), event.GetDirection())
+            ),
+        )
+
+    def tab(self, shift=False):
+        key = mock.Mock(GetKeyCode=lambda: wx.WXK_TAB, ShiftDown=lambda: shift)
+        with test.NavigateAsWindowsAndMac(focus=self.field):
+            self.field._onChar(key)
+
+    def test_tab_moves_on_from_the_combo_box(self):
+        self.tab()
+        self.assertEqual([(self.combo, True)], self.moves)
+
+    def test_shift_tab_moves_back_from_the_combo_box(self):
+        self.tab(shift=True)
+        self.assertEqual([(self.combo, False)], self.moves)

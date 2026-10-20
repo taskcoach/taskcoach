@@ -123,6 +123,19 @@ translated before the translator exists use it too.
   `.UTF-8` stripped; `C` or `POSIX` goes on), else
   `locale.getlocale(locale.LC_MESSAGES)`. `getdefaultlocale()` reads
   `LC_CTYPE` instead of `LC_MESSAGES`.
+- **macOS, between the two:** the first language of System
+  Settings > General > Language & Region, from CoreFoundation's
+  `CFLocaleCopyPreferredLanguages()` (`fr-CA` becomes `fr_CA`), the
+  list wx reads for its own system language
+  (`src/osx/core/uilocale.mm`; wxPython 4.3.1 does not wrap
+  `wx.UILocale`). Read once a run: every string translated asks for
+  the language (`translate()`, the `_` of the whole run), and a change
+  in System Settings applies to apps started after it.
+  - Started from the Finder, the app has none of the variables, and
+    py2app's launcher sets the C locale to `en_US.UTF-8`, restoring
+    only `LC_CTYPE` (`apptemplate/src/main.c`), so the locale step
+    would give `en_US` to every Mac user. Started from Terminal, its
+    `LANG` names the language.
 
 - **Files:** `application.py`, `i18n/__init__.py`
 

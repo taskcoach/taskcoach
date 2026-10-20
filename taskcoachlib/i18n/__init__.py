@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import builtins
+import ctypes
+import functools
 import locale
 import os
 
@@ -251,8 +253,9 @@ def system_language(locale=locale):
     """The user's language, or None (docs/LOCALE.md). On Windows its
     regional format, which only locale.getdefaultlocale() reads there.
     Elsewhere the first set of LC_ALL, LC_MESSAGES and LANG, in POSIX
-    order, else the locale's; getdefaultlocale() reads LC_CTYPE, not
-    LC_MESSAGES. C and POSIX name none."""
+    order; else on macOS the first of its preferred languages, else
+    the locale's; getdefaultlocale() reads LC_CTYPE, not LC_MESSAGES.
+    C and POSIX name none."""
     if operating_system.isWindows():
         return locale.getdefaultlocale()[0] or None
     language = ""
@@ -262,12 +265,63 @@ def system_language(locale=locale):
             break
     # Strip the encoding suffix (e.g., "de_DE.UTF-8" -> "de_DE")
     language = language.split(".")[0]
+    if language in ("", "C", "POSIX") and operating_system.isMac():
+        # Started from the Finder, the app has no locale variables,
+        # and the bundle's launcher sets the locale to en_US
+        language = (_mac_preferred_language() or "").replace("-", "_")
     if language in ("", "C", "POSIX"):
         try:
             language = locale.getlocale(locale.LC_MESSAGES)[0]
         except Exception:
             language = None
     return None if language in ("C", "POSIX") else language or None
+
+
+@functools.cache
+def _mac_preferred_language():
+    """The first language of macOS's Language & Region settings, such
+    as "fr-CA", as wx reads it for its own system language; None if
+    unknown. Read once: a change applies to apps started after it, and
+    every string translated asks (translate())."""
+    try:
+        cf = ctypes.cdll.LoadLibrary(
+            "/System/Library/Frameworks/"
+            "CoreFoundation.framework/CoreFoundation"
+        )
+        pointer, index = ctypes.c_void_p, ctypes.c_long
+        cf.CFLocaleCopyPreferredLanguages.restype = pointer
+        cf.CFLocaleCopyPreferredLanguages.argtypes = []
+        cf.CFArrayGetCount.restype = index
+        cf.CFArrayGetCount.argtypes = [pointer]
+        cf.CFArrayGetValueAtIndex.restype = pointer
+        cf.CFArrayGetValueAtIndex.argtypes = [pointer, index]
+        cf.CFStringGetCString.restype = ctypes.c_bool
+        cf.CFStringGetCString.argtypes = [
+            pointer,
+            ctypes.c_char_p,
+            index,
+            ctypes.c_uint32,
+        ]
+        cf.CFRelease.restype = None
+        cf.CFRelease.argtypes = [pointer]
+    except (OSError, AttributeError) as reason:
+        _log_i18n(f"No macOS preferred language: {reason}")
+        return None
+    languages = cf.CFLocaleCopyPreferredLanguages()
+    if not languages:
+        return None
+    try:
+        if cf.CFArrayGetCount(languages) < 1:
+            return None
+        text = ctypes.create_string_buffer(64)
+        utf8 = 0x08000100  # kCFStringEncodingUTF8
+        if not cf.CFStringGetCString(
+            cf.CFArrayGetValueAtIndex(languages, 0), text, len(text), utf8
+        ):
+            return None
+        return text.value.decode("utf-8") or None
+    finally:
+        cf.CFRelease(languages)
 
 
 def translate(string):

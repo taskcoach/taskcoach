@@ -69,12 +69,12 @@ class LocalSettings(config.Settings):
         os.mkdir(self.__path)
         super().__init__(*args, **kwargs)
 
-    def _pathToDataDir(self, *args, **kwargs):
+    def _path_to_data_dir(self, *args, **kwargs):
         return self.__path, False
 
-    def _pathToTemplatesDir(self):
-        # Existing, so migrateConfigurationFiles() leaves the user's own
-        # templates folder where it is
+    def _path_to_templates_dir(self):
+        # Existing, so migrate_configuration_files() leaves the user's
+        # own templates folder where it is
         return self.__path, True
 
 
@@ -168,7 +168,8 @@ class AutoBackupTest(test.TestCase):
         self.taskFile.setFilename("test.tsk")
         self.backup.onTaskFileRead(self.taskFile)
         with open(
-            os.path.join(self.settings.pathToBackupsDir(), "backups.xml"), "rb"
+            os.path.join(self.settings.path_to_backups_dir(), "backups.xml"),
+            "rb",
         ) as fp:
             content = fp.read()
         self.assertEqual(
@@ -186,7 +187,7 @@ class AutoBackupTest(test.TestCase):
         self.assertFalse(os.path.exists("test.20140715-010203.tsk.bak"))
 
         backup_name = os.path.join(
-            self.settings.pathToBackupsDir(),
+            self.settings.path_to_backups_dir(),
             "13cf6835565aaf4ab1f78e922b9917f9a4c7a856",
             "20140715010203.bak",
         )
@@ -242,7 +243,7 @@ class AutoBackupTest(test.TestCase):
         now = date.DateTime(2004, 1, 1)
         self.assertEqual(
             os.path.join(
-                self.settings.pathToBackupsDir(),
+                self.settings.path_to_backups_dir(),
                 "c81e25c3e04922232ab8eb87be8337c806a44209",
                 "20040101000000.bak",
             ),

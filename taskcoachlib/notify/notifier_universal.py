@@ -359,10 +359,8 @@ class _NotificationCenter(wx.EvtHandler):
         Returns the geometry of the main application frame's display
         """
 
-        dpy_index = wx.Display.GetFromWindow(wx.GetApp().GetTopWindow())
-        if dpy_index == wx.NOT_FOUND:
-            return wx.ClientDisplayRect()
-        return wx.Display(dpy_index).GetClientArea()
+        index = wxhelper.display_index(window=wx.GetApp().GetTopWindow())
+        return wx.Rect(*wxhelper.work_area(index))
 
     def _on_tick(self):
         s = 0

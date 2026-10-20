@@ -73,7 +73,7 @@ class MainWindowTestCase(test.wxTestCase):
             self.mainwindow.OnQuit()  # Stop power monitoring thread
         # Also stop idle time thread
         self.mainwindow._idleController.stop()
-        # As MainWindow.onClose does before the window is destroyed
+        # As MainWindow.on_close does before the window is destroyed
         self.mainwindow.manager.UnInit()
         self.mainwindow.Destroy()
         wx.Yield()
@@ -260,3 +260,20 @@ class FloatingViewTest(MainWindowTestCase):
         # The first tick stands for the first paint
         patterns.Event("timer.second", self, date.DateTime.now()).send()
         self.assertTrue(pane.IsShown())
+
+
+class CancelledQuitTest(MainWindowTestCase):
+    """Cancel at "Save changes?" keeps Task Coach open. A close the
+    system asks for (macOS's Dock Quit, logout) went on to quit when
+    the handler neither went on nor vetoed it (docs/SESSION_END.md)."""
+
+    def cancel_quit(self):
+        application = mock.patch.object(
+            gui.mainwindow.application, "Application"
+        ).start()
+        self.addCleanup(mock.patch.stopall)
+        application.return_value.quit_application.return_value = False
+
+    def test_close_is_vetoed(self):
+        self.cancel_quit()
+        self.assertFalse(self.mainwindow.Close())

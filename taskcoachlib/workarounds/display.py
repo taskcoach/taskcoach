@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 from taskcoachlib import operating_system
 
-
 if operating_system.isWindows():
     import win32api  # pylint: disable=F0401
 
@@ -46,13 +45,12 @@ if operating_system.isWindows():
 
         @staticmethod
         def GetFromWindow(window):
-            if window.GetWindowStyle() & wx.RESIZE_BORDER:
-                margin = wx.SystemSettings.GetMetric(wx.SYS_FRAMESIZE_X)
-            else:
-                margin = 0
-
-            x, y = window.GetPosition()
-            return Display.GetFromPoint(wx.Point(x + margin, y + margin))
+            # The window's centre: a maximized window's corner is off
+            # its monitor (at -8, -8)
+            x, y, width, height = window.GetRect()
+            return Display.GetFromPoint(
+                wx.Point(x + width // 2, y + height // 2)
+            )
 
         def __init__(self, index):
             self.hMonitor, _, (self.x, self.y, x2, y2) = (

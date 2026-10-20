@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import widgets, patterns, command, operating_system, render
+from taskcoachlib import meta
 from taskcoachlib.config import settings
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.meta.debug import log_step
@@ -46,6 +47,7 @@ from taskcoachlib.help.balloontips import BalloonTipManager
 import datetime
 import functools
 import os.path
+import traceback
 import wx
 
 # --- System Theme Resolution Helpers ---
@@ -129,22 +131,40 @@ def _focus_and_select(the_entry):
         the_entry.SelectAll()
 
 
-def _show_preview_toggle(button, shown):
-    """Set the Markdown preview toggle's state and say what a click
-    does: the Markdown mark and "Preview" while editing, pressed with
-    the pencil and "Edit" while the preview shows."""
+def _label_preview_button(button, shown):
+    """Say on the Markdown preview button what a click does: the
+    Markdown mark and "Preview" while editing, the pencil and "Edit"
+    while the preview shows. A plain button, never pressed: a pressed
+    look read as locked in editing while the preview showed
+    (docs/MARKDOWN.md)."""
     if shown:
         label, icon_id = _("Edit"), "nuvola_actions_draw-freehand"
         tip = _("Go back to editing the text")
     else:
         label, icon_id = _("Preview"), "taskcoach_actions_markdown_icon"
         tip = _("Show the text formatted as Markdown")
-    button.SetValue(shown)
     button.SetLabel(label)
     button.SetBitmap(icon_catalog.get_bitmap(icon_id, LIST_ICON_SIZE))
     button.SetToolTip(tip)
     button.InvalidateBestSize()
     button.GetParent().Layout()
+
+
+def _preview_toggle_button(parent, toggle):
+    """The Markdown preview button, calling toggle when clicked. F2 on
+    it clicks it, as F2 swaps the box from the box itself
+    (docs/MARKDOWN.md); the focus stays on it, as with Space."""
+    button = wx.Button(parent)
+    button.Bind(wx.EVT_BUTTON, toggle)
+
+    def on_key(event):
+        if event.GetKeyCode() == wx.WXK_F2 and not event.HasAnyModifiers():
+            toggle(event)
+        else:
+            event.Skip()
+
+    button.Bind(wx.EVT_KEY_DOWN, on_key)
+    return button
 
 
 def _description_label(page):
@@ -154,9 +174,8 @@ def _description_label(page):
     calls back to the page's on_preview_toggle."""
     panel = wx.Panel(page)
     label = wx.StaticText(panel, label=_("Description"))
-    button = wx.ToggleButton(panel)
-    button.Bind(wx.EVT_TOGGLEBUTTON, page.on_preview_toggle)
-    _show_preview_toggle(button, False)
+    button = _preview_toggle_button(panel, page.on_preview_toggle)
+    _label_preview_button(button, False)
     sizer = wx.BoxSizer(wx.VERTICAL)
     sizer.Add(label, 0, wx.ALIGN_LEFT)
     sizer.Add(button, 0, wx.TOP | wx.ALIGN_LEFT, 5)
@@ -312,6 +331,9 @@ class SubjectPage(Page):
             self.items[0].descriptionChangedEventType(),
         )
         label, self._preview_button = _description_label(self)
+        self._descriptionEntry.Bind(
+            widgets.EVT_PREVIEW_TOGGLED, self.on_preview_toggled
+        )
         self.addEntry(
             label,
             self._descriptionEntry,
@@ -320,12 +342,20 @@ class SubjectPage(Page):
         )
         if len(self.items) == 1 and self.items[0].is_preview_shown():
             self._descriptionEntry.set_preview(True)
-            _show_preview_toggle(self._preview_button, True)
+            _label_preview_button(self._preview_button, True)
 
     def on_preview_toggle(self, event):  # pylint: disable=W0613
-        show = self._preview_button.GetValue()
-        _show_preview_toggle(self._preview_button, show)
+        show = not self._descriptionEntry.is_preview()
+        _label_preview_button(self._preview_button, show)
         self._descriptionEntry.set_preview(show)
+        if len(self.items) == 1:
+            self.items[0].show_preview(show)
+
+    def on_preview_toggled(self, event):
+        """F2 swapped the preview in the shared box: keep the
+        button and the remembered state in step with it."""
+        show = event.GetValue()
+        _label_preview_button(self._preview_button, show)
         if len(self.items) == 1:
             self.items[0].show_preview(show)
 
@@ -676,8 +706,12 @@ class _DisplayPanel(wx.Panel):
 
     The static bitmaps and texts it shows take no part in tab
     traversal; neither does the panel itself. Focus reaching it
-    by any other path is handed on by its reject handlers.
+    by any other path is handed on (widgets.skip_focus).
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        widgets.skip_focus(self)
 
     def AcceptsFocusFromKeyboard(self):
         return False
@@ -754,34 +788,15 @@ class TaskAppearancePage(ScrolledPage):
         ]
 
         # Icon - panel with both bitmap and "N/A" text (show one or the other)
-        # The static children take no part in tab traversal: both
-        # handlers navigate from the panel, so the traversal never
-        # restarts inside this same display (issue #487).
-        def reject_nav(evt):
-            self._derived_icon_panel.Navigate(evt.GetDirection())
-
-        def reject_focus(evt):
-            forward = not wx.GetKeyState(wx.WXK_SHIFT)
-            panel = self._derived_icon_panel
-            patterns.later.soon(panel, panel.Navigate, forward)
-
         self._derived_icon_panel = _DisplayPanel(self, style=0)
-        self._derived_icon_panel.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
-        self._derived_icon_panel.Bind(wx.EVT_SET_FOCUS, reject_focus)
         icon_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self._derived_icon_display = wx.StaticBitmap(self._derived_icon_panel)
-        self._derived_icon_display.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
-        self._derived_icon_display.Bind(wx.EVT_SET_FOCUS, reject_focus)
         self._derived_icon_name = wx.StaticText(
             self._derived_icon_panel, label=""
         )
-        self._derived_icon_name.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
-        self._derived_icon_name.Bind(wx.EVT_SET_FOCUS, reject_focus)
         self._derived_icon_na = wx.StaticText(
             self._derived_icon_panel, label=_("N/A")
         )
-        self._derived_icon_na.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
-        self._derived_icon_na.Bind(wx.EVT_SET_FOCUS, reject_focus)
         self._derived_icon_na.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
@@ -804,7 +819,7 @@ class TaskAppearancePage(ScrolledPage):
 
         # Foreground
         self._derived_fg_picker = widgets.ColourPickerCtrl(
-            self, colour=wx.BLACK, readOnly=True
+            self, colour=wx.BLACK, read_only=True
         )
         self._derived_fg_source = wx.StaticText(self, label="")
         self._derived_fg_source.SetForegroundColour(
@@ -819,7 +834,7 @@ class TaskAppearancePage(ScrolledPage):
 
         # Background
         self._derived_bg_picker = widgets.ColourPickerCtrl(
-            self, colour=wx.WHITE, readOnly=True
+            self, colour=wx.WHITE, read_only=True
         )
         self._derived_bg_source = wx.StaticText(self, label="")
         self._derived_bg_source.SetForegroundColour(
@@ -835,7 +850,7 @@ class TaskAppearancePage(ScrolledPage):
         # Font
         default_font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         self._derived_font_picker = widgets.FontPickerCtrl(
-            self, font=default_font, colour=(0, 0, 0, 255), readOnly=True
+            self, font=default_font, colour=(0, 0, 0, 255), read_only=True
         )
         self._derived_font_source = wx.StaticText(self, label="")
         self._derived_font_source.SetForegroundColour(
@@ -1136,36 +1151,17 @@ class TaskAppearancePage(ScrolledPage):
         ]
 
         # Icon - panel with bitmap and "N/A" text (show one or the other)
-        # The static children take no part in tab traversal: both
-        # handlers navigate from the panel, so the traversal never
-        # restarts inside this same display (issue #487).
-        def reject_nav(evt):
-            self._effective_icon_panel.Navigate(evt.GetDirection())
-
-        def reject_focus(evt):
-            forward = not wx.GetKeyState(wx.WXK_SHIFT)
-            panel = self._effective_icon_panel
-            patterns.later.soon(panel, panel.Navigate, forward)
-
         self._effective_icon_panel = _DisplayPanel(self, style=0)
-        self._effective_icon_panel.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
-        self._effective_icon_panel.Bind(wx.EVT_SET_FOCUS, reject_focus)
         icon_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self._effective_icon_display = wx.StaticBitmap(
             self._effective_icon_panel
         )
-        self._effective_icon_display.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
-        self._effective_icon_display.Bind(wx.EVT_SET_FOCUS, reject_focus)
         self._effective_icon_name = wx.StaticText(
             self._effective_icon_panel, label=""
         )
-        self._effective_icon_name.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
-        self._effective_icon_name.Bind(wx.EVT_SET_FOCUS, reject_focus)
         self._effective_icon_na = wx.StaticText(
             self._effective_icon_panel, label=_("N/A")
         )
-        self._effective_icon_na.Bind(wx.EVT_NAVIGATION_KEY, reject_nav)
-        self._effective_icon_na.Bind(wx.EVT_SET_FOCUS, reject_focus)
         self._effective_icon_na.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
@@ -1190,7 +1186,7 @@ class TaskAppearancePage(ScrolledPage):
 
         # Foreground - read-only color picker with source
         self._effective_fg_picker = widgets.ColourPickerCtrl(
-            self, colour=wx.BLACK, readOnly=True
+            self, colour=wx.BLACK, read_only=True
         )
         self._effective_fg_source = wx.StaticText(self, label="")
         self._effective_fg_source.SetForegroundColour(
@@ -1205,7 +1201,7 @@ class TaskAppearancePage(ScrolledPage):
 
         # Background - read-only color picker with source
         self._effective_bg_picker = widgets.ColourPickerCtrl(
-            self, colour=wx.WHITE, readOnly=True
+            self, colour=wx.WHITE, read_only=True
         )
         self._effective_bg_source = wx.StaticText(self, label="")
         self._effective_bg_source.SetForegroundColour(
@@ -1224,8 +1220,8 @@ class TaskAppearancePage(ScrolledPage):
             self,
             font=default_font,
             colour=wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT),
-            bgColour=wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW),
-            readOnly=True,
+            bg_colour=wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW),
+            read_only=True,
         )
         self._effective_font_source = wx.StaticText(self, label="")
         self._effective_font_source.SetForegroundColour(
@@ -2444,8 +2440,8 @@ class BudgetPage(ScrolledPage):
     pageTitle = _("Budget")
     pageIcon = "nuvola_apps_accessories-calculator"
 
-    def NavigateBook(self, forward):
-        self.GetParent().NavigateBook(forward)
+    def navigate_book(self, forward):
+        self.GetParent().navigate_book(forward)
 
     def addEntries(self):
         self.add_budget_entries()
@@ -2803,8 +2799,9 @@ class CategoriesPage(PageWithViewer):
         self.viewer.refreshItems(*list(event.values()))
 
     def entries(self):
-        # Always include "categories" key so setFocus() can find this page
-        # before it's realized. The actual viewer is used if available.
+        # Always include "categories" key so set_focus() can find
+        # this page before it's realized. The actual viewer is used
+        # if available.
         if self.__realized and hasattr(self, "viewer"):
             return dict(firstEntry=self.viewer, categories=self.viewer)
         return dict(firstEntry=self, categories=self)
@@ -3591,35 +3588,35 @@ class EditBook(widgets.Notebook):
     def __init__(self, parent, items, task_file, items_are_new):
         self.items = items
         super().__init__(parent)
-        self.addPages(task_file, items_are_new)
+        self.add_pages(task_file, items_are_new)
         self.__load_perspective(items_are_new)
 
-    def NavigateBook(self, forward):
+    def navigate_book(self, forward):
         cur_sel = self.GetSelection()
         cur_sel = cur_sel + 1 if forward else cur_sel - 1
         if cur_sel >= 0 and cur_sel < self.GetPageCount():
             self.SetSelection(cur_sel)
 
-    def addPages(self, task_file, items_are_new):
+    def add_pages(self, task_file, items_are_new):
         page_names = self.options.pages
         for page_name in page_names:
-            page = self.createPage(page_name, task_file, items_are_new)
+            page = self.create_page(page_name, task_file, items_are_new)
             self.AddPage(page, page.pageTitle, page.pageIcon)
 
-    def onPageChanged(self, event):
+    def on_page_changed(self, event):
         self.GetPage(event.Selection).selected()
         event.Skip()
         if operating_system.isMac():
             # The dialog loses focus sometimes...
             wx.GetTopLevelParent(self).Raise()
 
-    def getPage(self, page_name):
-        index = self.getPageIndex(page_name)
+    def get_page(self, page_name):
+        index = self.get_page_index(page_name)
         if index is not None:
             return self[index]
         return None
 
-    def getPageIndex(self, page_name):
+    def get_page_index(self, page_name):
         for index in range(self.GetPageCount()):
             if page_name == self[index].pageName:
                 return index
@@ -3652,7 +3649,7 @@ class EditBook(widgets.Notebook):
             "categories",
         )
 
-    def createPage(self, page_name, task_file, items_are_new):
+    def create_page(self, page_name, task_file, items_are_new):
         if page_name == "subject":
             return self.create_subject_page()
         elif page_name == "dates":
@@ -3707,16 +3704,16 @@ class EditBook(widgets.Notebook):
     def create_subject_page(self):
         return SubjectPage(self.items, self)
 
-    def setFocus(self, columnName):
+    def set_focus(self, column_name):
         """Select the correct page of the editor and correct control on a page
         based on the column that the user double clicked."""
         page = 0
         for page_index in range(self.GetPageCount()):
-            if columnName in self[page_index].entries():
+            if column_name in self[page_index].entries():
                 page = page_index
                 break
         self.SetSelection(page)
-        self[page].setFocusOnEntry(columnName)
+        self[page].setFocusOnEntry(column_name)
 
     def perspective(self):
         """Return the perspective for the notebook."""
@@ -3731,12 +3728,22 @@ class EditBook(widgets.Notebook):
             # in the 2.0 port as one of four causes of editors stuck at
             # large sizes, the others fixed (PYTHON3_MIGRATION_1.md)
             try:
-                self.LoadPerspective(perspective)
+                loaded = self.LoadPerspective(perspective)
             except Exception:
-                pass  # Perspective loading may fail
+                loaded = False  # Perspective loading may fail
+            if not loaded:
+                # Saved before 2.0.3.1, when nothing read it, or
+                # damaged: the default tabs, saved over it on close
+                # (#487)
+                log_step(
+                    "unreadable saved tabs, default used:",
+                    perspective,
+                    prefix="EDITOR",
+                )
+                self.options.perspective = perspective = ""
         if items_are_new:
             current_page = (
-                self.getPageIndex("subject") or 0
+                self.get_page_index("subject") or 0
             )  # For new items, start at the subject page.
         else:
             # Although the active/current page is written in the perspective
@@ -3872,7 +3879,7 @@ class EffortEditBook(Page):
         self._taskFile = task_file
         super().__init__(efforts, parent, *args, **kwargs)
 
-    def getPage(self, page_name):  # pylint: disable=W0613
+    def get_page(self, page_name):  # pylint: disable=W0613
         return None  # An EffortEditBook is not really a notebook...
 
     def settings_section(self):
@@ -4778,7 +4785,7 @@ class EffortEditBook(Page):
         if len(self.items) == 1 and self.items[0].is_preview_shown():
             self._descriptionEntry.set_preview(True)
 
-    def setFocus(self, column_name):
+    def set_focus(self, column_name):
         self.setFocusOnEntry(column_name)
 
     def entries(self):
@@ -4809,6 +4816,40 @@ class Editor(BalloonTipManager, widgets.Dialog):
     item_type_plural = "Items"
 
     def __init__(self, parent, items, container, task_file, *args, **kwargs):
+        try:
+            self.__build(parent, items, container, task_file, *args, **kwargs)
+        except Exception:
+            self.__close_half_built()
+            raise
+
+    def __close_half_built(self):
+        """An editor that fails while it is built stayed hidden, its
+        half-made pages subscribed to the items, and the user saw
+        nothing (#487): closed at once, and the error shown."""
+        error = traceback.format_exc()
+        log_step("could not open:", error, prefix="EDITOR")
+        try:
+            windows = [self] + list(wxhelper.descendants(self))
+        except RuntimeError:  # The wx window was never made
+            windows = []
+        for window in windows:
+            if isinstance(window, Page):
+                _end_subscriptions(window)  # Its field syncs' too
+            patterns.Publisher().remove_observers_of(window)
+        if windows:
+            self.Hide()
+            patterns.later.soon(self, self._deferred_destroy)
+        wx.MessageBox(
+            _(
+                "This window could not open because of an error:\n%s\n\n"
+                "Please open a bug report and include this message."
+            )
+            % error.strip().splitlines()[-1],
+            _("%s error") % meta.name,
+            style=wx.OK | wx.ICON_ERROR,
+        )
+
+    def __build(self, parent, items, container, task_file, *args, **kwargs):
         self._items = items
         self._taskFile = task_file
         # The items the file holds as the editor opens; it closes when
@@ -4833,7 +4874,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
             else:
                 column_name = "subject"
         if column_name:
-            self._interior.setFocus(column_name)
+            self._interior.set_focus(column_name)
 
         patterns.Publisher().registerObserver(
             self.on_item_removed,
@@ -4871,7 +4912,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
     def place(self):
         """Centred for the rules leaving the place to the system; the
         geometry tracker keeps the place through the first show."""
-        self.CentreOnParent()
+        wxhelper.centre(self)
 
     def __create_ui_commands(self):
         # FIXME: keyboard shortcuts are hardcoded here, but they can be
@@ -4905,7 +4946,7 @@ class Editor(BalloonTipManager, widgets.Dialog):
         # pylint: disable=W0201
         self.__undo_command = uicommand.EditUndo()
         self.__redo_command = uicommand.EditRedo()
-        effort_page = self._interior.getPage("effort")
+        effort_page = self._interior.get_page("effort")
         effort_viewer = effort_page.viewer if effort_page else None
         self.__new_effort_command = uicommand.EffortNew(
             viewer=effort_viewer,
@@ -4918,11 +4959,11 @@ class Editor(BalloonTipManager, widgets.Dialog):
 
     def __on_next_tab(self, event):
         """Handle Ctrl+Tab to move to next tab."""
-        self._interior.AdvanceSelectionForward()
+        self._interior.advance_selection_forward()
 
     def __on_prev_tab(self, event):
         """Handle Ctrl+Shift+Tab to move to previous tab."""
-        self._interior.AdvanceSelectionBackward()
+        self._interior.advance_selection_backward()
 
     def createInterior(self):
         book = self.EditBookClass(
@@ -5067,12 +5108,16 @@ class EffortEditor(Editor):
         to hang it under."""
         buttons = super().createButtons()
         close = wxhelper.get_dialog_button(buttons, wx.ID_OK)
-        self._preview_button = wx.ToggleButton(close.GetParent())
-        self._preview_button.Bind(wx.EVT_TOGGLEBUTTON, self.on_preview_toggle)
+        self._preview_button = _preview_toggle_button(
+            close.GetParent(), self.on_preview_toggle
+        )
         self._preview_button.MoveBeforeInTabOrder(close)
         shown = len(self._items) == 1 and self._items[0].is_preview_shown()
-        _show_preview_toggle(self._preview_button, shown)
+        _label_preview_button(self._preview_button, shown)
         buttons.Insert(0, self._preview_button, 0, wx.ALIGN_CENTER_VERTICAL)
+        self._interior.entries()["description"].Bind(
+            widgets.EVT_PREVIEW_TOGGLED, self.on_preview_toggled
+        )
         return buttons
 
     def _align_preview_button(self):
@@ -5102,8 +5147,17 @@ class EffortEditor(Editor):
             self.Layout()
 
     def on_preview_toggle(self, event):  # pylint: disable=W0613
-        show = self._preview_button.GetValue()
-        _show_preview_toggle(self._preview_button, show)
-        self._interior.entries()["description"].set_preview(show)
+        description = self._interior.entries()["description"]
+        show = not description.is_preview()
+        _label_preview_button(self._preview_button, show)
+        description.set_preview(show)
+        if len(self._items) == 1:
+            self._items[0].show_preview(show)
+
+    def on_preview_toggled(self, event):
+        """F2 swapped the preview in the shared box: keep the
+        button and the remembered state in step with it."""
+        show = event.GetValue()
+        _label_preview_button(self._preview_button, show)
         if len(self._items) == 1:
             self._items[0].show_preview(show)

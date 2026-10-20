@@ -38,14 +38,18 @@ From `tests/`, one file:
 ../.venv/bin/python test.py unittests/domainTests/TaskTest.py
 ```
 
-Each run starts its own X display, a private Xvfb, and stops it at
-the end (`start_display()`): the tests never use the desktop's, and
-need no `xvfb-run`. Xvfb picks a free display number itself
-(`-displayfd`), so runs side by side never take the same one (with
-`xvfb-run -a` two could), and does not reset when its last client
-leaves (`-noreset`): a reset can drop a client still connecting, the
-likely cause of P90 below. `TASKCOACH_TEST_DISPLAY=:61` runs on a
-given display instead, to watch the tests.
+Each run starts its own X display, a private Xvfb, and stops it at the
+end (`start_display()`): the tests never use the desktop's, and need
+no `xvfb-run`. It stops after wx's own clean-up: `wx` is imported once
+the display runs, so wx's exit handler runs first. Stopped before it,
+a file run alone that used the clipboard would end with status 1 after
+all its tests passed (GTK exits on the X error of the clipboard's
+clean-up). Xvfb picks a free display number itself (`-displayfd`), so
+runs side by side never take the same one (with `xvfb-run -a` two
+could), and does not reset when its last client leaves (`-noreset`): a
+reset can drop a client still connecting, the likely cause of P90
+below. `TASKCOACH_TEST_DISPLAY=:61` runs on a given display instead,
+to watch the tests.
 
 The catalog, every test file, each in its own process as when run
 alone (`run_catalog()`): one line per file, the failures' reports and
@@ -77,6 +81,14 @@ and P254 in
 A test that no longer matches the app and needs a rewrite is marked
 `@test.stale("reason")`; `grep -rn "test.stale" tests` lists them.
 
+Two helpers show what a run on Linux does not by itself:
+
+- `test.TimeLimit(seconds)` fails a test whose Python code runs longer
+  (a hang), also when the code catches its `TimeoutError`.
+- `test.NavigateAsWindowsAndMac(focus)` makes `Navigate()` send the
+  move as wx does on Windows and macOS: an event to the window's
+  parent, from the focus. wxGTK's is native and sends none.
+
 ## Other Platforms
 
 The catalog is today's shared part: `unittests/`, `integrationtests/`
@@ -87,3 +99,30 @@ with its own certified versions, when work is done there; how the
 parts are chosen is decided then. The existing branches for Windows
 and macOS in the shared tests (`test.skipOnPlatform()`,
 `operating_system` checks) never run under this entry point.
+
+## Editor Check
+
+`tools/check_editors.py` opens each kind of editor on a sample file,
+as the app opens it, with the focus in the main window's list: a task,
+a new task, two tasks, a category, a note (its preview showing), an
+attachment and an effort; then a task again with saved tabs that
+cannot be read, and with its views' toolbars emptied, as a long-time
+user's settings may hold them. It shows each one, selects each page,
+focuses each field as a click does, tabs through the fields both ways,
+then closes it. A problem is an error, an editor off every display,
+the focus leaving the editor or moving on by itself, or an undo step
+left by looking through it; a hang prints every thread's stack and
+ends the run. A message box is reported, not shown: no one clicks it
+on a build machine. On GitHub Actions each problem also shows on the
+run's page, which needs no sign-in, unlike its log. The sample's items
+are as the app makes them: a stored value an older release left is
+corrected when its editor first opens, as ruled
+([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md#stored-duration)).
+
+The suite runs it on the certified platform (`EditorCheckTest`). The
+macOS and Windows builds run a copy with the built app's own Python
+and files before packaging, because some faults show on one platform
+only (#487). Where the app has no focus (a build machine's app in the
+background) the focus steps are skipped and say so. wxGTK loses track
+of a choice tabbed into inside a panel; the walk ends there and says
+so.

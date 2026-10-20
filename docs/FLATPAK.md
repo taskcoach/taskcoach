@@ -207,17 +207,22 @@ to match. Offline, pip cannot fetch wxPython's PEP 518 build backends
 `python3-build-deps.json` (installed before wxPython) and the module
 builds with `--no-build-isolation`.
 
-The cost is a long build (wxWidgets + wxPython compile, tens of minutes). To
+The cost is a long build (wxWidgets + wxPython compile, about 40 minutes). To
 avoid repeating it, CI caches the `.flatpak-builder` state-dir with
-`actions/cache` rather than the builder action's own caching. The difference
-matters: the builder action only uploads the cache **on success**, so a build
-that fails partway (common while iterating) discards every compiled module and
-the next run recompiles wxWidgets from scratch. `actions/cache` saves in a
-post-job step that runs on failure too, so partial progress persists and
-flatpak-builder rebuilds only what changed. The key is per-commit (so a fresh
-cache is always saved) with a `flatpak-builder-x86_64-` prefix restore-key (so
-the latest prior cache is restored). The builder action's own `cache` /
-`restore-cache` are disabled to avoid double-managing the same directory.
+`actions/cache/restore` before the build and `actions/cache/save` after it,
+the save running after a failed build too (`if: !cancelled()`). Both the
+builder action's own caching and plain `actions/cache` save only **on
+success** (`post-if: success()` in its `action.yml`), so a build that failed
+after wxPython lost it and the next run compiled it again. The key is per run
+attempt (so a fresh cache is always saved) with a `flatpak-builder-x86_64-`
+prefix restore-key (so the latest prior cache is restored). Build directories
+(`.flatpak-builder/build`) are left out: flatpak-builder never reuses them.
+The builder action's own `cache` / `restore-cache` are disabled to avoid
+double-managing the same directory.
+
+Any change in `python3-build-deps.json` (a new `certifi` or `requests`, which
+the generator resolves to PyPI's latest) changes every later module's cache
+key, so wxPython is compiled again.
 
 A small **`glu`** module is built first because the GNOME SDK ships `libGL` but
 not the legacy `GLU` (`glu.h`) that wxWidgets' OpenGL (glcanvas) support needs.
@@ -233,6 +238,15 @@ skips installing them into `/app`, so they are **missing at runtime** against
 `org.gnome.Platform` (which does not include them). This showed as
 `ModuleNotFoundError: No module named 'lxml'` on first launch, when Task Coach
 still used lxml, even though the build succeeded.
+
+`--ignore-installed` also reinstalls a package's dependencies, so no generated
+package may require wxPython. squaremap does (`install_requires=['six',
+'wxPython']`), so it is its own manifest module, `python3-squaremap`, pinned
+by `sha256` and installed with `--no-deps` (as the Arch package does). From
+the generator, its module carried PyPI's latest wxPython sdist and built it
+over the pinned one: every full build compiled wxPython twice, and from
+wxPython 4.3.2 on, which requires `numpy`, it failed offline on numpy's sdist
+(`Cannot import 'mesonpy'`). squaremap never imports `six`.
 
 The optional idle-time detection asks GNOME's idle monitor through the
 runtime's PyGObject (Gio), with the `org.gnome.Mutter.IdleMonitor` talk-name

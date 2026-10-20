@@ -2004,7 +2004,7 @@ each with the recommended action, none ruled yet:
   Coach/templates`, start `taskcoach.py --ini=/path/other.ini` (the
   "already running" message suggests it): New > New task from
   template lists only the two default templates; the user's are in
-  `templates-old`. `migrateConfigurationFiles` takes the global
+  `templates-old`. `migrate_configuration_files` takes the global
   templates folder for a Task Coach 1.3.24 portable one and renames
   it; on Linux and macOS (inferred) both are the same folder. It now
   moves nothing when the two are the same folder; Windows, where the

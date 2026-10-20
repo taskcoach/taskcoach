@@ -6448,6 +6448,10 @@ msgstr "Menú de contexto ou menú de sobreposição"
 msgid "Edit the subject of the selected item in a viewer"
 msgstr "Editar o assunto do item seleccionado num visualizador"
 
+#: taskcoachlib/help/__init__.py
+msgid "Swap the Markdown preview and the editor in a Description box"
+msgstr "Alternar entre a pré-visualização Markdown e o editor numa caixa Descrição"
+
 #: taskcoachlib/help/__init__.py:851
 msgid "F2"
 msgstr "F2"
@@ -8079,3 +8083,11 @@ msgstr "Voltar a editar o texto"
 #: taskcoachlib/gui/dialog/editor.py
 msgid "Show the text formatted as Markdown"
 msgstr "Mostrar o texto formatado como Markdown"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%s error"
+msgstr "Erro do %s"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "This window could not open because of an error:\n%s\n\nPlease open a bug report and include this message."
+msgstr "Esta janela não pôde ser aberta devido a um erro:\n%s\n\nPor favor abra um relatório de erro e inclua esta mensagem."

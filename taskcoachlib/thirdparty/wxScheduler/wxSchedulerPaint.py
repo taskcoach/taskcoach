@@ -1385,6 +1385,7 @@ class wxSchedulerPaint(object):
         panel.Bind(wx.EVT_LEAVE_WINDOW, self._OnLeaveHeaders)
         panel.Bind(wx.EVT_LEFT_DOWN, self._OnLeftDownHeaders)
         panel.Bind(wx.EVT_LEFT_UP, self._OnLeftUpHeaders)
+        panel.Bind(wx.EVT_MOUSE_CAPTURE_LOST, self._OnCaptureLostHeaders)
         panel.SetSize(wx.Size(-1, 1))
         self.Bind(wx.EVT_SCROLLWIN, self._OnScroll)
 
@@ -1517,10 +1518,18 @@ class wxSchedulerPaint(object):
 
     def _OnLeftUpHeaders(self, evt):
         if self._headerCursorState == 1:
-            self._headerPanel.ReleaseMouse()
+            if self._headerPanel.HasCapture():
+                self._headerPanel.ReleaseMouse()
             self._headerDragOrigin = None
         else:
             evt.Skip()
+
+    def _OnCaptureLostHeaders(self, evt):
+        # The mouse taken away mid-drag (Alt+Tab, a reminder shown): the
+        # width stays as reached. Unhandled, wx raised; the next release
+        # then raised before the drag ended, so the width went on
+        # following the mouse.
+        self._headerDragOrigin = None
 
     def _OnScroll(self, evt):
         self._headerPanel.Refresh()

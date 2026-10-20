@@ -39,6 +39,26 @@ except ImportError:
 # Indicator number for spell check (0-31 available in Scintilla)
 SPELLCHECK_INDICATOR = 0
 
+wxEVT_PREVIEW_TOGGLED = wx.NewEventType()
+EVT_PREVIEW_TOGGLED = wx.PyEventBinder(wxEVT_PREVIEW_TOGGLED, 1)
+
+
+class PreviewToggledEvent(wx.PyCommandEvent):
+    """F2 swapped the Markdown preview and the edit box.
+
+    Posted by MultiLineTextCtrl after it toggled itself, so the
+    editor holding it can keep its Preview button and the item's
+    remembered state in step without toggling again.
+    """
+
+    def __init__(self, owner, show):
+        super().__init__(wxEVT_PREVIEW_TOGGLED, owner.GetId())
+        self.SetEventObject(owner)
+        self.__show = show
+
+    def GetValue(self):
+        return self.__show
+
 
 class SpellCheckMixin:
     """Utility class for spell check helper methods.
@@ -584,12 +604,12 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         """Get stored data."""
         return self.__data
 
-    def setSpellCheckEnabled(self, enabled):
+    def set_spell_check_enabled(self, enabled):
         """Enable or disable spell checking."""
         self._spellCheckEnabled = enabled
         self._performHighlighting()
 
-    def setSpellCheckLanguage(self, language):
+    def set_spell_check_language(self, language):
         """Set spell check language."""
         self._spellCheckLanguage = language or None
         if self._spellCheckEnabled:
@@ -629,7 +649,9 @@ class PreviewHtmlWindow(wx.html.HtmlWindow):
                 for scale in (0.75, 0.85, 1, 1, 1.25, 1.5, 2)
             ],
         )
-        self.SetBorders(4)
+        # No margin of its own: the box places it where the edit box
+        # puts its text, so text the preview leaves as it is stays put
+        self.SetBorders(0)
         # Long pages scroll like the edit box does: a vertical bar
         # always shows, since overlay scrollbars hide the only way
         # down; horizontal as needed for long code lines
@@ -662,7 +684,7 @@ class MultiLineTextCtrl(wx.Panel):
     _nativePadding = None  # Cached native padding value
 
     @classmethod
-    def _getNativePadding(cls, parent):
+    def _get_native_padding(cls, parent):
         """Get the native TextCtrl padding by querying the GTK theme."""
         if cls._nativePadding is not None:
             return cls._nativePadding
@@ -717,8 +739,8 @@ class MultiLineTextCtrl(wx.Panel):
         super().__init__(parent, style=wx.BORDER_NONE)
 
         self._single_line = single_line
-        self._hasFocus = False
-        self._padding = self._getNativePadding(parent)
+        self._has_focus = False
+        self._padding = self._get_native_padding(parent)
 
         # Create the inner text control
         self._textCtrl = _StyledTextCtrl(
@@ -753,44 +775,80 @@ class MultiLineTextCtrl(wx.Panel):
             self.SetMaxSize((-1, total_height))
 
         # Bind focus events to update focus state and repaint
-        self._textCtrl.Bind(wx.EVT_SET_FOCUS, self._onFocus)
-        self._textCtrl.Bind(wx.EVT_KILL_FOCUS, self._onKillFocus)
+        self._textCtrl.Bind(wx.EVT_SET_FOCUS, self._on_focus)
+        self._textCtrl.Bind(wx.EVT_KILL_FOCUS, self._on_kill_focus)
+        # F2 swaps the Markdown preview and the edit box, in
+        # either mode (docs/MARKDOWN.md). Bound after the inner
+        # box's own key handler so a plain F2 never reaches it.
+        self._textCtrl.Bind(wx.EVT_KEY_DOWN, self._on_preview_key)
 
         # Bind paint event to draw native border
-        self.Bind(wx.EVT_PAINT, self._onPaint)
-        self._lastWindowBg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        self.Bind(wx.EVT_PAINT, self._on_paint)
+        self._last_window_bg = wx.SystemSettings.GetColour(
+            wx.SYS_COLOUR_WINDOW
+        )
 
-    def _onFocus(self, event):
+    def _on_focus(self, event):
         """Update focus state and repaint."""
-        self._hasFocus = True
+        self._has_focus = True
         self.Refresh()
         event.Skip()
 
-    def _onKillFocus(self, event):
+    def _on_kill_focus(self, event):
         """Update focus state and repaint."""
-        self._hasFocus = False
+        self._has_focus = False
         self.Refresh()
         event.Skip()
 
-    def _onPaint(self, event):
+    def _on_paint(self, event):
         """Draw native TextCtrl border using RendererNative."""
-        if not self._is_preview:
-            # A preview is read-only window text, never an input box
-            dc = wx.PaintDC(self)
-            renderer = wx.RendererNative.Get()
-            rect = self.GetClientRect()
-            flags = wx.CONTROL_FOCUSED if self._hasFocus else 0
-            renderer.DrawTextCtrl(self, dc, rect, flags)
+        # Also for a preview: wx's documentation requires one in every
+        # paint handler (wxMSW 3.3 copes without, validating the
+        # window itself)
+        dc = wx.PaintDC(self)
+        self._paint_border(dc)
         # Detect theme change here: EVT_SYS_COLOUR_CHANGED does not get
         # past the AuiManager of an AGW AuiNotebook (editor pages)
         window_bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
-        if self._lastWindowBg != window_bg:
-            self._lastWindowBg = window_bg
+        if self._last_window_bg != window_bg:
+            self._last_window_bg = window_bg
             patterns.later.soon(
                 self._textCtrl, self._textCtrl._applyThemeColours
             )
             if self._is_preview and self._preview_ctrl is not None:
                 patterns.later.soon(self, self._render_preview)
+
+    def _paint_border(self, dc):
+        """The edit box: the theme's text box, focused while it has the
+        focus. The preview: read-only window text, never an input box,
+        so no box; while it has the focus the same highlight as the
+        focused edit box (docs/FOCUS_MANAGEMENT.md). Both drawn by the
+        system theme, never in colours or sizes of ours."""
+        rect = self.GetClientRect()
+        if not self._is_preview:
+            flags = wx.CONTROL_FOCUSED if self._has_focus else 0
+            wx.RendererNative.Get().DrawTextCtrl(self, dc, rect, flags)
+        elif self._has_focus:
+            dc.DrawBitmap(self._focused_frame(rect.GetSize()), 0, 0, True)
+
+    def _focused_frame(self, size):
+        """The focused edit box as the theme draws it, its field left
+        out: the theme draws field and frame in one call, so the
+        field's colour, read in the middle, is masked. What is left is
+        the theme's own focus highlight, on the window's colour."""
+        bitmap = wx.Bitmap(size)
+        dc = wx.MemoryDC(bitmap)
+        dc.SetBackground(
+            wx.Brush(self._preview_window().GetBackgroundColour())
+        )
+        dc.Clear()
+        wx.RendererNative.Get().DrawTextCtrl(
+            self, dc, wx.Rect(size), wx.CONTROL_FOCUSED
+        )
+        field = dc.GetPixel(size.width // 2, size.height // 2)
+        dc.SelectObject(wx.NullBitmap)
+        bitmap.SetMask(wx.Mask(bitmap, field))
+        return bitmap
 
     def is_preview(self):
         """Whether the read-only Markdown preview shows instead of the box."""
@@ -803,9 +861,21 @@ class MultiLineTextCtrl(wx.Panel):
         if show:
             if self._preview_ctrl is None:
                 self._preview_ctrl = PreviewHtmlWindow(self)
-                self._sizer.Add(
-                    self._preview_ctrl, 1, wx.EXPAND | wx.ALL, self._padding
+                self._preview_ctrl.Bind(wx.EVT_KEY_DOWN, self._on_preview_key)
+                # Its focus shown as the edit box's is (_paint_border)
+                self._preview_ctrl.Bind(wx.EVT_SET_FOCUS, self._on_focus)
+                self._preview_ctrl.Bind(wx.EVT_KILL_FOCUS, self._on_kill_focus)
+                # Where the edit box puts its text: inside the same
+                # padding, after Scintilla's own left margin, read from
+                # it; the row hides with the preview
+                row = wx.BoxSizer(wx.HORIZONTAL)
+                row.Add(
+                    self._preview_ctrl,
+                    1,
+                    wx.EXPAND | wx.LEFT,
+                    self._textCtrl.GetMarginLeft(),
                 )
+                self._sizer.Add(row, 1, wx.EXPAND | wx.ALL, self._padding)
             self._render_preview()
             self._textCtrl.Hide()
             self._preview_ctrl.Show()
@@ -819,6 +889,30 @@ class MultiLineTextCtrl(wx.Panel):
     def toggle_preview(self):
         """Swap the preview and the edit box."""
         self.set_preview(not self._is_preview)
+
+    def _on_preview_key(self, event):
+        """Swap the preview and the edit box on plain F2.
+
+        The default when the focus is on the long text box,
+        whether the preview or the edit box shows: the toggle
+        itself stays in the shared box so every description gets
+        it, and the editor holding it follows through
+        EVT_PREVIEW_TOGGLED (its button, the remembered state).
+        """
+        if (
+            event.GetKeyCode() == wx.WXK_F2
+            and not event.HasAnyModifiers()
+            and not self._single_line
+        ):
+            self.toggle_preview()
+            if self._is_preview:
+                if self._preview_ctrl is not None:
+                    self._preview_ctrl.SetFocus()
+            else:
+                self._textCtrl.SetFocus()
+            wx.PostEvent(self, PreviewToggledEvent(self, self._is_preview))
+            return
+        event.Skip()
 
     def _preview_window(self):
         """The window the preview takes its colours from: its own, not
@@ -940,11 +1034,11 @@ class MultiLineTextCtrl(wx.Panel):
     def SelectAll(self):
         return self._textCtrl.SelectAll()
 
-    def setSpellCheckEnabled(self, enabled):
-        return self._textCtrl.setSpellCheckEnabled(enabled)
+    def set_spell_check_enabled(self, enabled):
+        return self._textCtrl.set_spell_check_enabled(enabled)
 
-    def setSpellCheckLanguage(self, language):
-        return self._textCtrl.setSpellCheckLanguage(language)
+    def set_spell_check_language(self, language):
+        return self._textCtrl.set_spell_check_language(language)
 
 
 def single_line_text_ctrl(parent, value="", spell_check=True, **kwargs):

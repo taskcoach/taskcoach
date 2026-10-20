@@ -64,6 +64,23 @@ _LEGACY_STATUS_KEYS = (
 )
 
 
+def _shortcut_target(path):
+    """The folder a Windows shortcut "path.lnk" points to, else path.
+    Windows Script Host is asked only for a shortcut: where it is
+    disabled or removed, its COM object fails, and the start stopped."""
+    shortcut = path + ".lnk"
+    if not os.path.exists(shortcut):
+        return path
+    from pywintypes import com_error
+    from win32com.client import Dispatch
+
+    try:
+        return Dispatch("WScript.Shell").CreateShortcut(shortcut).TargetPath
+    except com_error as reason:
+        log_step("shortcut not followed:", shortcut, reason, prefix="CONFIG")
+        return path
+
+
 def _parser():
     """A parser for the INI file: no interpolation, so a "%" in a value
     is kept."""
@@ -160,15 +177,15 @@ class Settings:
     def __init__(self, load=True, ini_file=None):
         self.__sections = {}
         self.__initialize_with_defaults()
-        self.__loadAndSave = load
-        self.__iniFileSpecifiedOnCommandLine = ini_file
+        self.__load_and_save = load
+        self.__ini_file_specified_on_command_line = ini_file
         self.__ini_lock = None  # Only one Task Coach uses the file
         self.__written = None  # The file's text as last written
         self.__on_change = None
 
-        self.migrateConfigurationFiles()
+        self.migrate_configuration_files()
 
-        first_run = load and not self._iniFileExists()
+        first_run = load and not self._ini_file_exists()
         if load:
             # The file in the program folder first, else the settings
             # folder's
@@ -178,13 +195,15 @@ class Settings:
                     self.filename(force_program_dir=True), encoding="utf-8"
                 ):
                     parser.read(self.filename(), encoding="utf-8")
-            except configparser.ParsingError as reason:
-                # The defaults, and the failure recorded to be shown
-                self.setLoadStatus(str(reason))
+            except (configparser.Error, UnicodeDecodeError) as reason:
+                # The defaults, and the failure recorded to be shown:
+                # also an option or section twice, or a file cut inside
+                # a character, which stopped the start every time
+                self.set_load_status(str(reason))
             else:
                 self.__load(parser)
             if first_run:
-                self._setupFirstRunWelcomeFile()
+                self._setup_first_run_welcome_file()
         else:
             # Not loaded, not saved: tests, which want quiet
             self.__be_quiet()
@@ -232,7 +251,7 @@ class Settings:
     def on_settings_file_location_changed(self):
         if not self.get_typed("file", "saveinifileinprogramdir"):
             try:
-                os.remove(self.generatedIniFilename(force_program_dir=True))
+                os.remove(self.generated_ini_filename(force_program_dir=True))
             except OSError:
                 return  # File might not exist
 
@@ -243,7 +262,7 @@ class Settings:
         }
         self.__upgrade_old_values()
 
-    def setLoadStatus(self, message):
+    def set_load_status(self, message):
         self.__set("file", "inifileloaded", "False" if message else "True")
         self.__set("file", "inifileloaderror", message)
 
@@ -258,7 +277,7 @@ class Settings:
         """The defaults again, telling no listener: a test's settings
         for the next test."""
         self.__initialize_with_defaults()
-        if not self.__loadAndSave:
+        if not self.__load_and_save:
             self.__be_quiet()
 
     def read_file(self, file):  # pylint: disable=W0622
@@ -273,7 +292,7 @@ class Settings:
             options = self.__sections.setdefault(section, {})
             for option, value in parser.items(section, raw=True):
                 options[option] = value
-        self._migrateOldSettingNames()
+        self._migrate_old_setting_names()
         self._remove_obsolete_settings()
         self.__upgrade_old_values()
 
@@ -316,7 +335,7 @@ class Settings:
         except KeyError:
             return template(section)[option]
 
-    def _migrateOldSettingNames(self):
+    def _migrate_old_setting_names(self):
         """Migrate old setting names to new names for backward compatibility."""
         # Mapping of (section, old_name) -> new_name
         migrations = [
@@ -468,7 +487,7 @@ class Settings:
         )
         self.__set("version", "pythonfrozen", str(hasattr(sys, "frozen")))
         self.__set("version", "current", meta.data.version)
-        if not self.__loadAndSave:
+        if not self.__load_and_save:
             return
         try:
             self.__write(file)
@@ -484,7 +503,7 @@ class Settings:
         """Write the file if its text changed since the last write,
         while Task Coach runs; a failure is logged, and the next change
         tries again."""
-        if not self.__loadAndSave:
+        if not self.__load_and_save:
             return
         try:
             self.__write(open, only_if_changed=True)
@@ -517,25 +536,25 @@ class Settings:
         self.__written = text
 
     def filename(self, force_program_dir=False):
-        if self.__iniFileSpecifiedOnCommandLine:
-            return self.__iniFileSpecifiedOnCommandLine
+        if self.__ini_file_specified_on_command_line:
+            return self.__ini_file_specified_on_command_line
         else:
-            return self.generatedIniFilename(force_program_dir)
+            return self.generated_ini_filename(force_program_dir)
 
     def path(
         self, force_program_dir=False, environ=os.environ
     ):  # pylint: disable=W0102
-        if self.__iniFileSpecifiedOnCommandLine:
-            return self.pathToIniFileSpecifiedOnCommandLine()
+        if self.__ini_file_specified_on_command_line:
+            return self.path_to_ini_file_specified_on_command_line()
         elif force_program_dir or self.get_typed(
             "file", "saveinifileinprogramdir"
         ):
-            return self.pathToProgramDir()
+            return self.path_to_program_dir()
         else:
-            return self.pathToConfigDir(environ)
+            return self.path_to_config_dir(environ)
 
     @staticmethod
-    def pathToDocumentsDir():
+    def path_to_documents_dir():
         if operating_system.isWindows():
             from win32com.shell import shell, shellcon
 
@@ -567,14 +586,14 @@ class Settings:
         # Assuming Unix-like, fall back to home
         return os.path.expanduser("~")
 
-    def _iniFileExists(self):
+    def _ini_file_exists(self):
         """Check if INI file exists in either program dir or config dir."""
         return os.path.exists(
             self.filename(force_program_dir=True)
         ) or os.path.exists(self.filename())
 
     @staticmethod
-    def pathToSystemWelcomeFile():
+    def path_to_system_welcome_file():
         """Find the system-installed Welcome.tsk file."""
         # Check platform-specific locations
         if operating_system.isWindows():
@@ -607,14 +626,14 @@ class Settings:
                 return path
         return None
 
-    def _setupFirstRunWelcomeFile(self):
+    def _setup_first_run_welcome_file(self):
         """On first run, copy Welcome.tsk to user's Documents folder."""
-        system_welcome = self.pathToSystemWelcomeFile()
+        system_welcome = self.path_to_system_welcome_file()
         if not system_welcome:
             return  # No system Welcome.tsk found
 
         # Create TaskCoach folder in user's Documents
-        docs_dir = self.pathToDocumentsDir()
+        docs_dir = self.path_to_documents_dir()
         taskcoach_docs_dir = os.path.join(docs_dir, meta.filename)
         user_welcome = os.path.join(taskcoach_docs_dir, "Welcome.tsk")
 
@@ -633,13 +652,13 @@ class Settings:
         except OSError:
             pass  # Silently fail if we can't copy
 
-    def pathToProgramDir(self):
+    def path_to_program_dir(self):
         path = os.path.abspath(sys.argv[0])
         if not os.path.isdir(path):
             path = os.path.dirname(path)
         return path
 
-    def pathToConfigDir(self, environ):
+    def path_to_config_dir(self, environ):
         try:
             if operating_system.isGTK():
                 path = _xdg_dir("XDG_CONFIG_HOME", "~/.config", 0o700)
@@ -655,13 +674,13 @@ class Settings:
                     meta.name,
                 )
             else:
-                path = self.pathToConfigDir_deprecated(environ=environ)
+                path = self.path_to_config_dir_deprecated(environ=environ)
         except Exception:  # Fallback to old dir
-            path = self.pathToConfigDir_deprecated(environ=environ)
+            path = self.path_to_config_dir_deprecated(environ=environ)
         return path
 
-    def _pathToDataDir(self, *args, **kwargs):
-        force_global = kwargs.pop("forceGlobal", False)
+    def _path_to_data_dir(self, *args, **kwargs):
+        force_global = kwargs.pop("force_global", False)
         if operating_system.isGTK():
             path = _xdg_dir("XDG_DATA_HOME", "~/.local/share")
         elif operating_system.isMac():
@@ -669,31 +688,19 @@ class Settings:
                 os.path.expanduser("~/Library/Application Support"), meta.name
             )
         elif operating_system.isWindows():
-            if self.__iniFileSpecifiedOnCommandLine and not force_global:
-                path = self.pathToIniFileSpecifiedOnCommandLine()
+            if self.__ini_file_specified_on_command_line and not force_global:
+                path = self.path_to_ini_file_specified_on_command_line()
             else:
-                from win32com.shell import shell, shellcon
-
-                path = os.path.join(
-                    shell.SHGetSpecialFolderPath(
-                        None, shellcon.CSIDL_APPDATA, True
-                    ),
-                    meta.name,
-                )
+                # The settings folder, with its fallback when Windows
+                # does not name it: the start stopped
+                path = self.path_to_config_dir(os.environ)
 
         else:  # Errr...
             path = self.path()
 
         if operating_system.isWindows():
-            # Follow shortcuts.
-            from win32com.client import Dispatch
-
-            shell = Dispatch("WScript.Shell")
             for component in args:
-                path = os.path.join(path, component)
-                if os.path.exists(path + ".lnk"):
-                    shortcut = shell.CreateShortcut(path + ".lnk")
-                    path = shortcut.TargetPath
+                path = _shortcut_target(os.path.join(path, component))
         else:
             path = os.path.join(path, *args)
 
@@ -702,23 +709,23 @@ class Settings:
             os.makedirs(path)
         return path, exists
 
-    def pathToDataDir(self, *args, **kwargs):
-        return self._pathToDataDir(*args, **kwargs)[0]
+    def path_to_data_dir(self, *args, **kwargs):
+        return self._path_to_data_dir(*args, **kwargs)[0]
 
-    def _pathToTemplatesDir(self):
+    def _path_to_templates_dir(self):
         try:
-            return self._pathToDataDir("templates")
+            return self._path_to_data_dir("templates")
         except OSError:
             pass  # Fallback on old path
-        return self.pathToTemplatesDir_deprecated(), True
+        return self.path_to_templates_dir_deprecated(), True
 
-    def pathToTemplatesDir(self):
-        return self._pathToTemplatesDir()[0]
+    def path_to_templates_dir(self):
+        return self._path_to_templates_dir()[0]
 
-    def pathToBackupsDir(self):
-        return self._pathToDataDir("backups")[0]
+    def path_to_backups_dir(self):
+        return self._path_to_data_dir("backups")[0]
 
-    def pathToConfigDir_deprecated(self, environ):
+    def path_to_config_dir_deprecated(self, environ):
         try:
             path = os.path.join(environ["APPDATA"], meta.filename)
         except Exception:
@@ -729,7 +736,7 @@ class Settings:
             path = os.path.join(path, ".%s" % meta.filename)
         return path
 
-    def pathToTemplatesDir_deprecated(self, do_create=True):
+    def path_to_templates_dir_deprecated(self, do_create=True):
         path = os.path.join(self.path(), "taskcoach-templates")
 
         if operating_system.isWindows():
@@ -750,21 +757,23 @@ class Settings:
                 pass
         return path
 
-    def pathToIniFileSpecifiedOnCommandLine(self):
-        return os.path.dirname(self.__iniFileSpecifiedOnCommandLine) or "."
+    def path_to_ini_file_specified_on_command_line(self):
+        return (
+            os.path.dirname(self.__ini_file_specified_on_command_line) or "."
+        )
 
-    def generatedIniFilename(self, force_program_dir):
+    def generated_ini_filename(self, force_program_dir):
         return os.path.join(
             self.path(force_program_dir), "%s.ini" % meta.filename
         )
 
-    def migrateConfigurationFiles(self):
+    def migrate_configuration_files(self):
         # Templates. Extra care for Windows shortcut.
-        old_path = self.pathToTemplatesDir_deprecated(do_create=False)
-        new_path, exists = self._pathToTemplatesDir()
-        if self.__iniFileSpecifiedOnCommandLine:
+        old_path = self.path_to_templates_dir_deprecated(do_create=False)
+        new_path, exists = self._path_to_templates_dir()
+        if self.__ini_file_specified_on_command_line:
             global_path = os.path.join(
-                self.pathToDataDir(forceGlobal=True), "templates"
+                self.path_to_data_dir(force_global=True), "templates"
             )
             # Only where the settings file moves the data folder
             # (Windows): elsewhere the global folder is this one
@@ -787,7 +796,7 @@ class Settings:
             ):
                 shutil.move(old_path + ".lnk", new_path + ".lnk")
             elif os.path.exists(old_path):
-                # pathToTemplatesDir() has created the directory
+                # path_to_templates_dir() has created the directory
                 try:
                     os.rmdir(new_path)
                 except OSError:
@@ -795,17 +804,18 @@ class Settings:
                 shutil.move(old_path, new_path)
         # Ini file
         old_path = os.path.join(
-            self.pathToConfigDir_deprecated(environ=os.environ),
+            self.path_to_config_dir_deprecated(environ=os.environ),
             "%s.ini" % meta.filename,
         )
         new_path = os.path.join(
-            self.pathToConfigDir(environ=os.environ), "%s.ini" % meta.filename
+            self.path_to_config_dir(environ=os.environ),
+            "%s.ini" % meta.filename,
         )
         if new_path != old_path and os.path.exists(old_path):
             shutil.move(old_path, new_path)
         # Cleanup
         try:
-            os.rmdir(self.pathToConfigDir_deprecated(environ=os.environ))
+            os.rmdir(self.path_to_config_dir_deprecated(environ=os.environ))
         except OSError:
             pass
 
@@ -965,12 +975,12 @@ def set(section_name, option, value):  # pylint: disable=W0622
 
 def templates_dir():
     """The task templates' folder, made if missing."""
-    return _current.pathToTemplatesDir()
+    return _current.path_to_templates_dir()
 
 
 def backups_dir():
     """The automatic backups' folder, made if missing."""
-    return _current.pathToBackupsDir()
+    return _current.path_to_backups_dir()
 
 
 def send_changed(section_name, option):

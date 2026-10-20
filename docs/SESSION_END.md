@@ -64,6 +64,12 @@ best practices".
 
 On Linux only what is already saved survives a logout: hence rule 1.
 
+On macOS a quit the system asks for (the Dock's Quit, a logout) closes
+the main window and goes on only if the close was not vetoed: Cancel
+at "Save changes?" vetoes it (`MainWindow.on_close`). A handler that
+neither goes on nor vetoes lets wx take the close as done and quit
+anyway.
+
 ## Practices
 
 - **Microsoft:** a program should not block shutdown. At

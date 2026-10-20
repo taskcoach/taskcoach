@@ -63,6 +63,19 @@ modules:
         url: https://files.pythonhosted.org/packages/3d/dd/026f6286f8beefcdd9551ad2e05b4e3edb45e638cdc067db211c53c950ce/wxpython-4.3.1.tar.gz
         sha256: 4e3a95b63175be8e10f0662de506a36d8cc6cb86ecc5b30ae880c8dafb34a0cd
 
+  # Without its dependencies: it requires wxPython, which pip would
+  # otherwise build again from PyPI's latest over the one above. Its
+  # other requirement, six, is never imported (docs/FLATPAK.md).
+  - name: python3-squaremap
+    buildsystem: simple
+    build-commands:
+      - pip3 install --no-deps --no-index --no-build-isolation
+        --prefix=${FLATPAK_DEST} SquareMap-1.0.5.tar.gz
+    sources:
+      - type: file
+        url: https://files.pythonhosted.org/packages/b6/51/732e520a3720a1e99a2d022965d9d09f0e3fe59b67c95ceca3e95e724216/SquareMap-1.0.5.tar.gz
+        sha256: b16ce5950cbfa63e3284015095293cd26ed5e26045fd14d488fb825b4f95e9a8
+
   - python3-sources.json
 
   - name: taskcoach

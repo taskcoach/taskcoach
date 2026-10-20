@@ -267,7 +267,7 @@ long the file takes; the tips come after it. If nothing has painted by
 the first tick (minimized by a window manager rule or a shortcut, on
 another desktop), the tick opens it. The paint is taken on the AUI
 manager: pushed onto the frame, it handles the frame's paint events.
-The status message is drawn at once (`MainWindow.displayMessage()`),
+The status message is drawn at once (`MainWindow.display_message()`),
 the window being unable to draw during the read.
 
 With 2,000 tasks (same display, 2026-10-05): the batch 1.06 s, of it
@@ -399,7 +399,7 @@ measured.
 | `[window]` | `iconized`, `starticonized`, `hidewheniconized`, `hidewhenclosed` | Removed 2026-09-30 ([Minimized](#minimized)); dropped from old settings files on load |
 | `[<type>dialog_with_<tabs>]`, `[effortdialog]` | `position`, `size` | Editor state, one section per editor type and set of tabs |
 | same | `maximized` | Written; editors have a maximize box |
-| same | `perspective` | The tabs as the user moved and split them, and the active one; loaded again since 2026-10-06 (P93 in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)) |
+| same | `perspective` | The tabs as the user moved and split them, and the active one; loaded again since 2026-10-06 (P93 in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)); saved tabs AGW cannot read whole (from before 2.0.3.1, or damaged) are not loaded: AGW takes every tab off first and would leave pages with none (#487); cut short, without the last `|`, AGW reads the last part for ever ([AUI.md](AUI.md#best-practice-trust-auis-built-in-mismatch-handling)); the default tabs open and are saved over them |
 
 ### Tracing
 
@@ -933,7 +933,7 @@ Wayland, where the tray hides it, positions are not kept.
 
 - Jitter while dragging a window border; the trials are about
   reopening. Candidates: the scheduler's passes above, and
-  `MainWindow.onResize()`, which sets the toolbar's size and minimum
+  `MainWindow.on_resize()`, which sets the toolbar's size and minimum
   sizes on every `EVT_SIZE`.
 - Other window managers (KWin, Mutter on X11) may honour the program
   specified position, which would remove the move there.

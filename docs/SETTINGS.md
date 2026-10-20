@@ -254,6 +254,12 @@ only; templates and backups are in `$XDG_DATA_HOME/Task Coach`
 them, in place of the pyxdg package (To Do 74 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
 
+On Windows both are in `AppData\Roaming\Task Coach`
+(`path_to_config_dir()`); where Windows does not name AppData, in the
+folder 1.x used. A `templates.lnk` or `backups.lnk` shortcut there is
+followed, read by Windows Script Host, which is asked only when such a
+shortcut exists: a policy can turn it off.
+
 The INI file is written while Task Coach runs, 2 s after the last
 change of an option (`Settings.notify_changes()`), and every 30 s with
 the main window's viewers, layout, position and size, which are copied
@@ -272,7 +278,7 @@ At startup `Settings()` takes:
    folder's, read by `configparser` and laid over the defaults. Sections
    and options no code reads (`syncml`, from older releases) are kept
    and written back.
-3. `_migrateOldSettingNames()` renames options, and
+3. `_migrate_old_setting_names()` renames options, and
    `_remove_obsolete_settings()` drops the ones no release reads
    (`_OBSOLETE_SETTINGS`), so an old INI file carries neither forward.
    An option retired from `defaults.py` goes on that list; a retired
@@ -284,7 +290,9 @@ At startup `Settings()` takes:
    today's.
 
 A file that does not parse leaves the defaults, and the application
-says so at start (`file.inifileloaderror`).
+says so at start (`file.inifileloaderror`): a line that is no option,
+an option or section written twice, or bytes that are not UTF-8 (a
+file cut inside a character).
 
 Each save also writes `[version] python`, `wxpython`, `pythonfrozen`
 and `current`: the Python, wxPython and Task Coach that wrote the file,

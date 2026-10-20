@@ -6365,6 +6365,10 @@ msgstr "Menú emergente o caja de selección"
 msgid "Edit the subject of the selected item in a viewer"
 msgstr ""
 
+#: taskcoachlib/help/__init__.py
+msgid "Swap the Markdown preview and the editor in a Description box"
+msgstr "Alternar entre la vista previa Markdown y el editor en un cuadro Descripción"
+
 #: taskcoachlib/help/__init__.py:851
 msgid "F2"
 msgstr "F2"
@@ -7970,3 +7974,11 @@ msgstr "Volver a editar el texto"
 #: taskcoachlib/gui/dialog/editor.py
 msgid "Show the text formatted as Markdown"
 msgstr "Mostrar el texto con formato Markdown"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "%s error"
+msgstr "Error de %s"
+
+#: taskcoachlib/gui/dialog/editor.py
+msgid "This window could not open because of an error:\n%s\n\nPlease open a bug report and include this message."
+msgstr "Esta ventana no se pudo abrir debido a un error:\n%s\n\nPor favor abra un reporte de errores e incluya este mensaje."

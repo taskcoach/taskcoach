@@ -5,14 +5,23 @@ open to the currently set colour.
 
 On Windows/macOS, the native picker works correctly and is used as-is.
 
-Supports a readOnly parameter to display a color without allowing changes.
+Supports a read_only parameter to display a color without allowing
+changes.
 """
 
 import wx
-from taskcoachlib import patterns
+from taskcoachlib.meta.debug import log_step
+from taskcoachlib.widgets import skipfocus
+
+# wxWidgets' own picker. On macOS wxPython 4.3.0 and 4.3.1 put one of
+# their own in its place, which calls PickerBase.SetPickerCtrl(), gone
+# in wxWidgets 3.3: no picker could be made there, so no editor with an
+# Appearance tab opened (#487). wxPython 4.3.2 dropped theirs (wxPython
+# #2937, docs/COLOUR_PICKER.md).
+_WX_PICKER = wx._core.ColourPickerCtrl  # pylint: disable=protected-access
 
 
-class ColourPickerCtrl(wx.ColourPickerCtrl):
+class ColourPickerCtrl(_WX_PICKER):
     """Drop-in replacement for wx.ColourPickerCtrl.
 
     On Linux/GTK: intercepts all activation methods (mouse click, keyboard
@@ -22,68 +31,51 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
     On Windows/macOS: behaves identically to wx.ColourPickerCtrl.
 
     Args:
-        readOnly: If True, displays color but doesn't open picker on click.
+        read_only: If True, displays color but doesn't open picker on
+            click.
     """
 
-    def __init__(self, *args, readOnly=False, **kwargs):
-        self._readOnly = readOnly
+    def __init__(self, *args, read_only=False, **kwargs):
+        self._read_only = read_only
         super().__init__(*args, **kwargs)
         target = self.GetPickerCtrl() or self
-        if self._readOnly:
-            self.Bind(wx.EVT_NAVIGATION_KEY, self._onNavKey)
-            self.Bind(wx.EVT_SET_FOCUS, self._onRejectFocus)
-            target.Bind(wx.EVT_NAVIGATION_KEY, self._onNavKey)
-            target.Bind(wx.EVT_SET_FOCUS, self._onRejectFocus)
-        target.Bind(wx.EVT_LEFT_DOWN, self._onIntercept)
-        target.Bind(wx.EVT_LEFT_DCLICK, self._onIntercept)
-        target.Bind(wx.EVT_KEY_DOWN, self._onKeyIntercept)
-        target.Bind(wx.EVT_BUTTON, self._onButtonIntercept)
+        if self._read_only:
+            parts = () if target is self else (target,)
+            skipfocus.skip_focus(self, *parts)
+        target.Bind(wx.EVT_LEFT_DOWN, self._on_intercept)
+        target.Bind(wx.EVT_LEFT_DCLICK, self._on_intercept)
+        target.Bind(wx.EVT_KEY_DOWN, self._on_key_intercept)
+        target.Bind(wx.EVT_BUTTON, self._on_button_intercept)
 
-    def _onNavKey(self, event):
-        """Skip this control during tab traversal, preserving direction."""
-        # The handler serves the outer control and its inner picker
-        # button: navigate from the window holding the event, not
-        # from the outer control, so the traversal never restarts
-        # inside this same control.
-        event.GetEventObject().Navigate(event.GetDirection())
-
-    def _onRejectFocus(self, event):
-        """Reject focus by navigating away, preserving Shift+Tab direction."""
-        # Owned by the window that got the focus, so a deferred call
-        # never reaches a picker its window is already gone from.
-        window = event.GetEventObject()
-        forward = not wx.GetKeyState(wx.WXK_SHIFT)
-        patterns.later.soon(window, window.Navigate, forward)
-
-    def _onIntercept(self, event):
-        if self._readOnly:
+    def _on_intercept(self, event):
+        if self._read_only:
             return  # Swallow click when read-only
         if wx.Platform == "__WXGTK__":
-            self._showColourDialog()
+            self._show_colour_dialog()
         else:
             event.Skip()  # Let native handle it
 
-    def _onKeyIntercept(self, event):
+    def _on_key_intercept(self, event):
         key = event.GetKeyCode()
         if key in (wx.WXK_RETURN, wx.WXK_NUMPAD_ENTER, wx.WXK_SPACE):
-            if self._readOnly:
+            if self._read_only:
                 return  # Swallow when read-only
             if wx.Platform == "__WXGTK__":
-                self._showColourDialog()
+                self._show_colour_dialog()
             else:
                 event.Skip()  # Let native handle it
         else:
             event.Skip()
 
-    def _onButtonIntercept(self, event):
-        if self._readOnly:
+    def _on_button_intercept(self, event):
+        if self._read_only:
             return  # Swallow when read-only
         if wx.Platform == "__WXGTK__":
             pass  # Swallow to prevent native GTK dialog
         else:
             event.Skip()  # Let native handle it
 
-    def _showColourDialog(self):
+    def _show_colour_dialog(self):
         data = wx.ColourData()
         data.SetChooseFull(True)
         data.SetColour(self.GetColour())
@@ -95,16 +87,19 @@ class ColourPickerCtrl(wx.ColourPickerCtrl):
             wx.PostEvent(self, evt)
         dlg.Destroy()
 
-    def SetReadOnly(self, readOnly):
-        """Set whether this picker is read-only."""
-        self._readOnly = readOnly
-
-    def IsReadOnly(self):
-        """Return whether this picker is read-only."""
-        return self._readOnly
+    def SetColour(self, colour):  # noqa: N802 (wx's)
+        """Show the colour; an invalid one is logged and not shown:
+        macOS asserts drawing it (src/osx/core/colour.cpp,
+        GetCGColor), which stopped the editor holding the picker
+        from opening."""
+        colour = wx.Colour(colour)
+        if colour.IsOk():
+            super().SetColour(colour)
+        else:
+            log_step("invalid colour not shown", prefix="APPEARANCE-BUG")
 
     def AcceptsFocusFromKeyboard(self):
         """Read-only pickers are display, never tab stops."""
-        if self._readOnly:
+        if self._read_only:
             return False
         return super().AcceptsFocusFromKeyboard()

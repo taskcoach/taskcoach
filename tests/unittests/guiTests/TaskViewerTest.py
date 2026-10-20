@@ -736,6 +736,31 @@ class CommonTestsMixin(object):
             ],
         )
 
+    def dropped_folder_url(self, folder):
+        a_task = task.Task()
+        self.taskList.append(a_task)
+        with mock.patch("os.path.isdir", return_value=True):
+            self.viewer.on_drop_files(a_task, [folder])
+        return a_task.attachments()[0].location()
+
+    def test_a_dropped_folder_is_a_file_url(self):
+        self.assertEqual(
+            "file:///home/me/My%20folder",
+            self.dropped_folder_url("/home/me/My folder"),
+        )
+
+    def test_a_dropped_folder_on_windows_is_a_local_file_url(self):
+        # Windows imitated: its path and URL functions; the folder's URL
+        # had five slashes, a network path
+        import nturl2path
+        import pathlib
+
+        with mock.patch.object(
+            pathlib, "Path", pathlib.PureWindowsPath
+        ), mock.patch("urllib.request.pathname2url", nturl2path.pathname2url):
+            url = self.dropped_folder_url(r"C:\Users\me\My folder")
+        self.assertEqual("file:///C:/Users/me/My%20folder", url)
+
     def test_on_drop_url(self):
         a_task = task.Task()
         self.taskList.append(a_task)

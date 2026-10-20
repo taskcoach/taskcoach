@@ -175,3 +175,74 @@ class NotebookTest(AuiManagerTestCase):
         parent.Destroy()
         test.settle()
         self.assertIsNone(page())
+
+
+class LayoutTestCase(test.wxTestCase):
+    def frame_with(self, names):
+        frame = widgets.AuiManagedFrameWithDynamicCenterPane(None)
+        self.addCleanup(frame.Destroy)
+        self.addCleanup(frame.manager.UnInit)
+        panes = {}
+        for name in names:
+            panes[name] = Pane(frame)
+            frame.add_pane(panes[name], name, name)
+        return frame, panes
+
+    def saved_tab_group(self):
+        frame, panes = self.frame_with(["center", "a", "b"])
+        manager = frame.manager
+        first, second = manager.GetPane(panes["a"]), manager.GetPane(
+            panes["b"]
+        )
+        manager.CreateNotebookBase(manager._panes, first)
+        second.NotebookPage(first.notebook_id)
+        manager.Update()
+        return manager.SavePerspective()
+
+
+class TabGroupLayoutTest(LayoutTestCase):
+    """Views tabbed together come back together. AUI saves the group
+    as a pane of its own (__notebook_0); AGW 4.2.x's LoadPerspective
+    then deleted the wrong pane while tidying up (`del
+    self._panes[index]` for `paneIndex`), so the group's pane went,
+    and with one member left the next Update raised "Odd notebook
+    docking": the app did not start (docs/AUI.md)."""
+
+    def test_the_group_comes_back(self):
+        layout = self.saved_tab_group()
+        frame, panes = self.frame_with(["center", "a", "b"])
+        frame.manager.LoadPerspective(layout)
+        frame.Show()
+        test.settle()
+        notebook = frame.manager.GetPane("__notebook_0").window
+        self.assertTrue(notebook and notebook.IsShownOnScreen())
+        self.assertEqual(
+            {panes["a"], panes["b"]},
+            {notebook.GetPage(i) for i in range(notebook.GetPageCount())},
+        )
+
+    def test_a_group_with_a_member_gone_still_opens(self):
+        layout = self.saved_tab_group()
+        frame, panes = self.frame_with(["center", "a"])
+        frame.manager.LoadPerspective(layout)
+        frame.manager.Update()
+        self.assertTrue(frame.manager.GetPane(panes["a"]).IsShown())
+
+
+class LayoutCutShortTest(LayoutTestCase):
+    """A layout without the "|" that ends each part, as a settings file
+    cut short leaves it: AGW read its last part again for ever, and the
+    app hung at start."""
+
+    def test_the_panes_stay_as_they_are(self):
+        layout = self.saved_tab_group()
+        frame, panes = self.frame_with(["center", "a", "b"])
+        with test.TimeLimit(20):
+            loaded = frame.manager.LoadPerspective(layout[:-1])
+        self.assertFalse(loaded)
+        self.assertTrue(
+            all(
+                frame.manager.GetPane(pane).IsShown()
+                for pane in panes.values()
+            )
+        )

@@ -44,7 +44,7 @@ class EditorTestCase(test.wxTestCase):
         self.editor = EditorUnderTest(
             self.frame, [self.item], self.items, self.taskFile
         )
-        self.appearance = self.editor._interior.getPage("appearance")
+        self.appearance = self.editor._interior.get_page("appearance")
 
     def tearDown(self):
         super().tearDown()
@@ -156,10 +156,8 @@ class EditorTestCase(test.wxTestCase):
 
     def test_preview_button_toggles_the_description_preview(self):
         page = self.editor._interior[0]
-        page._preview_button.SetValue(True)
         page.on_preview_toggle(dummy.Event())
         self.assertTrue(page._descriptionEntry.is_preview())
-        page._preview_button.SetValue(False)
         page.on_preview_toggle(dummy.Event())
         self.assertFalse(page._descriptionEntry.is_preview())
 
@@ -173,19 +171,22 @@ class EditorTestCase(test.wxTestCase):
             self.assertTrue(bitmap.IsOk())
             self.assertEqual((size, size), tuple(bitmap.GetSize()))
 
+    def test_preview_button_is_never_pressed(self):
+        # Its icon and label change; a pressed look read as locked in
+        # editing while the preview showed
+        page = self.editor._interior[0]
+        self.assertNotIsInstance(page._preview_button, wx.ToggleButton)
+
     def test_preview_button_names_what_a_click_does(self):
         page = self.editor._interior[0]
         self.assertEqual("Preview", page._preview_button.GetLabel())
-        page._preview_button.SetValue(True)
         page.on_preview_toggle(dummy.Event())
         self.assertEqual("Edit", page._preview_button.GetLabel())
-        page._preview_button.SetValue(False)
         page.on_preview_toggle(dummy.Event())
         self.assertEqual("Preview", page._preview_button.GetLabel())
 
     def test_preview_toggle_is_remembered_on_the_item(self):
         page = self.editor._interior[0]
-        page._preview_button.SetValue(True)
         page.on_preview_toggle(dummy.Event())
         self.assertTrue(self.item.is_preview_shown())
 
@@ -196,4 +197,45 @@ class EditorTestCase(test.wxTestCase):
         )
         page = editor._interior[0]
         self.assertTrue(page._descriptionEntry.is_preview())
-        self.assertTrue(page._preview_button.GetValue())
+        self.assertEqual("Edit", page._preview_button.GetLabel())
+
+    def test_f2_in_the_description_keeps_the_button_in_step(self):
+        page = self.editor._interior[0]
+        event = wx.KeyEvent(wx.wxEVT_KEY_DOWN)
+        event.SetKeyCode(wx.WXK_F2)
+        event.SetEventObject(page._descriptionEntry._textCtrl)
+        page._descriptionEntry._textCtrl.GetEventHandler().ProcessEvent(event)
+        wx.Yield()
+        self.assertTrue(page._descriptionEntry.is_preview())
+        self.assertEqual("Edit", page._preview_button.GetLabel())
+        self.assertTrue(self.item.is_preview_shown())
+
+    def press_f2_on(self, window):
+        event = wx.KeyEvent(wx.wxEVT_KEY_DOWN)
+        event.SetKeyCode(wx.WXK_F2)
+        event.SetEventObject(window)
+        window.GetEventHandler().ProcessEvent(event)
+
+    def test_f2_on_the_preview_button_swaps_the_box(self):
+        page = self.editor._interior[0]
+        self.press_f2_on(page._preview_button)
+        self.assertTrue(page._descriptionEntry.is_preview())
+        self.assertEqual("Edit", page._preview_button.GetLabel())
+        self.assertTrue(self.item.is_preview_shown())
+        self.press_f2_on(page._preview_button)
+        self.assertFalse(page._descriptionEntry.is_preview())
+        self.assertEqual("Preview", page._preview_button.GetLabel())
+
+    def test_f2_in_the_preview_goes_back_to_editing(self):
+        page = self.editor._interior[0]
+        page.on_preview_toggle(dummy.Event())
+        event = wx.KeyEvent(wx.wxEVT_KEY_DOWN)
+        event.SetKeyCode(wx.WXK_F2)
+        event.SetEventObject(page._descriptionEntry._preview_ctrl)
+        page._descriptionEntry._preview_ctrl.GetEventHandler().ProcessEvent(
+            event
+        )
+        wx.Yield()
+        self.assertFalse(page._descriptionEntry.is_preview())
+        self.assertEqual("Preview", page._preview_button.GetLabel())
+        self.assertFalse(self.item.is_preview_shown())
