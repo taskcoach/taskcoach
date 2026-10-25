@@ -289,6 +289,12 @@ At startup `Settings()` takes:
    columns get `Time`, the ordering column a width, and icon names
    today's.
 
+Every option is written, its default included, so **a changed default
+reaches new installs only**: a stored value is never converted to a
+new default, even when it equals the old one (**ruled by designer
+2026-10-25**). A user gets the new values with the page's Reset in
+Preferences (each status row on Statuses, each colour on Theme).
+
 A file that does not parse leaves the defaults, and the application
 says so at start (`file.inifileloaderror`): a line that is no option,
 an option or section written twice, or bytes that are not UTF-8 (a

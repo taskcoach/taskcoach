@@ -19,8 +19,10 @@ override_dh_auto_install:
 	# Install application icon
 	install -D -m 644 icons.in/taskcoach.png \
 		debian/taskcoach/usr/share/pixmaps/taskcoach.png
-	# Install Welcome.tsk example file for first-run experience
+	# The Welcome demo files: Welcome.tsk opens on first run
 	install -D -m 644 Welcome.tsk \
 		debian/taskcoach/usr/share/taskcoach/Welcome.tsk
+	install -D -m 644 Welcome-dark.tsk \
+		debian/taskcoach/usr/share/taskcoach/Welcome-dark.tsk
 	# Note: the bundled tree widget (taskcoachlib/patches/) is installed
 	# by pybuild with the package. No manual installation needed.

@@ -115,17 +115,17 @@ jobs:
           echo "Updated debian/changelog:"
           cat debian/changelog
 
-      - name: Declare per-distro idle-detection bindings
+      - name: Declare per-distro optional bindings
         run: |
           # ============================================================
-          # Optional bindings for the "Idle time notice" feature (off
-          # by default; see docs/IDLE.md). Declared as Recommends here,
-          # per distro, rather than as a blanket line in debian/control,
-          # mirroring the pip-bundling step above.
+          # Optional bindings, declared as Recommends here, per distro,
+          # rather than as a blanket line in debian/control, mirroring
+          # the pip-bundling step above.
           #
-          #   python3-pywayland  only releases that ship a Plasma 6
-          #                      desktop AND package it - the ext-idle-
-          #                      notify-v1 backend. Add new Plasma 6
+          #   python3-pywayland  the tray's hide on KDE Plasma Wayland
+          #                      (docs/DEPENDENCIES.md); only releases
+          #                      that ship a Plasma 6 desktop AND
+          #                      package it. Add new Plasma 6
           #                      codenames to the first case arm.
           # ============================================================
           CODENAME="${{ matrix.codename }}"
@@ -137,10 +137,10 @@ jobs:
               echo "Recommends += python3-pywayland ($CODENAME)"
               ;;
             bookworm|jammy|noble)
-              echo "No idle binding for $CODENAME: python3-pywayland not packaged / not needed here (Plasma 5 / GNOME)"
+              echo "No pywayland for $CODENAME: not packaged / not needed here (Plasma 5 / GNOME)"
               ;;
             *)
-              echo "No idle-binding rule for $CODENAME; leaving debian/control unmodified"
+              echo "No binding rule for $CODENAME; leaving debian/control unmodified"
               ;;
           esac
           echo "--- debian/control Recommends ---"
@@ -220,6 +220,11 @@ jobs:
             os: ubuntu
             osver: "24.04"
             codename: noble
+          # Ubuntu 26.04 has no deb of its own: its users install 24.04's
+          - distro: ubuntu:26.04
+            os: ubuntu
+            osver: "24.04"
+            codename: noble
 
     steps:
       - name: Download artifact
@@ -272,10 +277,16 @@ jobs:
               check test -d /usr/lib/python3/dist-packages/taskcoachlib && echo "SUCCESS: taskcoachlib installed"
               check test -f /usr/lib/python3/dist-packages/taskcoachlib/patches/hypertreelist.py && echo "SUCCESS: Bundled hypertreelist installed"
               check test -f /usr/lib/python3/dist-packages/taskcoachlib/patches/customtreectrl.py && echo "SUCCESS: Bundled customtreectrl installed"
+              check test -f /usr/share/taskcoach/Welcome.tsk && echo "SUCCESS: Welcome.tsk installed"
+              check test -f /usr/share/taskcoach/Welcome-dark.tsk && echo "SUCCESS: Welcome-dark.tsk installed"
 
               # Test that Python can import the module
               echo "Testing Python import..."
               check python3 -c "import taskcoachlib; print(taskcoachlib.__file__)" && echo "SUCCESS: taskcoachlib imports correctly"
+
+              # The idle notice on KDE Plasma Wayland calls
+              # libwayland-client, which comes with GTK
+              check python3 -c "from taskcoachlib.powermgt import wayland_idle; wayland_idle._library()" && echo "SUCCESS: Wayland idle library loads"
 
               echo "All installation tests passed!"
             '

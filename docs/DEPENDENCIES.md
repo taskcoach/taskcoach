@@ -236,20 +236,18 @@ Windows libraries.
 ## pywayland (To Do 88)
 
 **Why**:
-- The Idle time notice (off by default) on Wayland desktops that offer
-  `ext-idle-notify-v1`: KDE Plasma 6, wlroots desktops (Sway,
-  Hyprland, niri) and COSMIC ([IDLE.md](IDLE.md)). Added 2026-05.
 - The tray's hide and restore on KDE Plasma Wayland, keeping the
   taskbar entry through `org_kde_plasma_window_management`. Added
   2026-06; deferred by ruling for users of that desktop to test (D5):
   KWin may offer that protocol only to apps that list it in their
   `.desktop` file, which ours does not.
+- Until 2026-10-25, also the Idle time notice on Wayland desktops that
+  offer `ext-idle-notify-v1`: KDE Plasma 5.27+, wlroots desktops and
+  COSMIC ([IDLE.md](IDLE.md)). Now read without it (below).
 
-**Code**: 2 modules, imports lazy and guarded (`powermgt/idle.py`,
-`gui/toplevelcontroller.py`); about 312 lines of ours (141 for idle
-time, 171 for the KDE controller) and 1,363 lines of generated
-protocol bindings in `thirdparty/` (279 idle, 1,084 KDE); about 25
-calls.
+**Code**: 1 module, import lazy and guarded
+(`gui/toplevelcontroller.py`); 171 lines of ours and 1,084 lines of
+generated protocol bindings in `thirdparty/`.
 
 **Platforms**: only on GTK with `WAYLAND_DISPLAY` set; X11 uses the
 X screensaver extension, GNOME Mutter over D-Bus ([IDLE.md](IDLE.md)).
@@ -258,7 +256,7 @@ optional on Arch, absent from Debian 12, Ubuntu, the AppImage, the
 Flatpak (X11), Windows and macOS.
 
 **Size**: `python3-pywayland` 561 KB installed, plus the cffi backend
-(238 KB); the generated bindings in `thirdparty/` 160 KB.
+(238 KB); the generated bindings in `thirdparty/` 52 KB.
 
 **Keep or replace**: checked in the app on a Wayland compositor
 (labwc, wlroots, run headless here) with "Idle time notice" at 1
@@ -281,6 +279,32 @@ by ruling (D5); it does not change this decision.
 **Ruling**: keep, **ruled by designer 2026-10-03**. It is optional
 and costs nothing where it is not installed; removing it loses the Idle time notice on those
 desktops.
+
+**Replaced for the Idle time notice, asked by designer 2026-10-25**,
+after the notice was reported never to fire on Kubuntu 26.04 (Plasma
+6.6, Wayland): no deb recommended pywayland for Ubuntu (24.04 does not
+package it), Kubuntu does not install it, and on Ubuntu 26.04 its
+package does not even import without `python3-cffi-backend`, which it
+does not declare. The designer's words: "this was the objective, to
+reduce packages including, when they could be safely and simply
+replaced by our own code".
+
+- `powermgt/wayland_idle.py` (328 lines) speaks `ext-idle-notify-v1`
+  to `libwayland-client.so.0`, which GTK requires, through ctypes;
+  `powermgt/idle.py` lost 87 lines, and the vendored binding (279
+  lines and its README) is gone. Where the compositor offers version
+  2 it asks for the input-only notification, also asked by designer
+  2026-10-25 ([IDLE.md](IDLE.md#idle-inhibitors-on-version-1-compositors)).
+- Checked in the app on labwc 0.8 (notifier version 1) and 0.20
+  (version 2), headless, with pywayland made unimportable:
+  `ext_idle_notify: OK`, the threshold reached after the minute, the
+  dialog on the next key press, and `Wayland compositor connection
+  lost: not idle` when the compositor stopped, the app running on. The
+  calls load on the libwayland of every deb target (Ubuntu 22.04 to
+  26.04, Debian 12 and 13).
+- `IdleQueryTest` checks the hand-written protocol tables against the
+  installed protocol files: a mistake there crashes rather than
+  raising.
 
 ---
 

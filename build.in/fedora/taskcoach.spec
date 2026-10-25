@@ -47,10 +47,9 @@ Requires:       xdg-utils
 
 # Optional dependencies
 Recommends:     hunspell-en-US
-# pywayland: the optional "Idle time notice" on Wayland (see
-# docs/IDLE.md) and the tray's hide on KDE Plasma Wayland (guarded
-# imports; docs/DEPENDENCIES.md). A weak dep, exactly like the
-# spell-check dictionary above.
+# pywayland: the tray's hide on KDE Plasma Wayland (guarded import;
+# docs/DEPENDENCIES.md). A weak dep, exactly like the spell-check
+# dictionary above.
 Recommends:     python3-pywayland
 
 # Bundled via pip:
@@ -109,9 +108,11 @@ appstream-util validate-relax --nonet %{buildroot}%{_metainfodir}/%{name}.appdat
 install -Dm644 icons.in/taskcoach.png \
     %{buildroot}%{_datadir}/pixmaps/%{name}.png
 
-# Install Welcome.tsk for first-run experience
+# The Welcome demo files: Welcome.tsk opens on first run
 install -Dm644 Welcome.tsk \
     %{buildroot}%{_datadir}/%{name}/Welcome.tsk
+install -Dm644 Welcome-dark.tsk \
+    %{buildroot}%{_datadir}/%{name}/Welcome-dark.tsk
 
 %files
 %license COPYRIGHT.txt

@@ -43,7 +43,7 @@ Linux; the first one that responds is used.
 | **macOS** | `iokit_HIDIdleTime` | IOKit `IORegistryEntryCreateCFProperty` on `IOHIDSystem`, property `HIDIdleTime` | Pure-ctypes; loads `IOKit.framework` and `CoreFoundation.framework`. Replaces the pre-2026 `_idle.so` C extension. |
 | **Linux/GTK (GNOME, X11 or Wayland)** | `dbus_mutter` | DBus call `org.gnome.Mutter.IdleMonitor.GetIdletime` on `/org/gnome/Mutter/IdleMonitor/Core`, through PyGObject's Gio | Returns milliseconds. Works for GNOME Shell sessions including Wayland. Each reading is addressed to the name's current owner, so a restarted GNOME Shell keeps answering, and waits at most 1 s (`_DBUS_TIMEOUT_MS`); a failed reading counts as not idle. |
 | **Linux/GTK (any X11 session: KDE Plasma 5/6, XFCE, LXDE, MATE, Cinnamon, i3, …)** | `x11_mit_screensaver` | `libXss.so.1` `XScreenSaverQueryInfo` via the X11 MIT-SCREEN-SAVER extension | The X server's real input idle. Works on any X11 session advertising the extension; unavailable on Wayland, where Xwayland disables the extension. |
-| **Linux/GTK (KDE Plasma 6, wlroots, COSMIC, Wayland)** | `ext_idle_notify` | `ext-idle-notify-v1` Wayland protocol via a **vendored** `pywayland` binding (`taskcoachlib/thirdparty/ext_idle_notify_v1`); an `ext_idle_notification_v1` armed at a 1 s timeout reports `idled`/`resumed`, drained on each poll | Covers KWin (Plasma 5.27+, all Plasma 6), wlroots (Sway, Hyprland, niri, river, Wayfire) and COSMIC. Only attempted when `WAYLAND_DISPLAY` is set and core `pywayland` is importable; otherwise skipped silently. GNOME Mutter does not implement this protocol, but GNOME is already covered by `dbus_mutter`. |
+| **Linux/GTK (KDE Plasma 5.27+, wlroots, COSMIC, Wayland)** | `ext_idle_notify` | `ext-idle-notify-v1` Wayland protocol, asked through `libwayland-client` with ctypes (`powermgt/wayland_idle.py`); an `ext_idle_notification_v1` armed at a 1 s timeout reports `idled`/`resumed`, read on each poll; input only where the compositor offers version 2 ([Idle inhibitors](#idle-inhibitors-on-version-1-compositors)) | Covers KWin (Plasma 5.27+, all Plasma 6), wlroots (Sway, Hyprland, niri, river, Wayfire, labwc) and COSMIC. `libwayland-client` comes with GTK, so nothing more is installed. Only attempted when `WAYLAND_DISPLAY` is set. GNOME Mutter does not implement this protocol, but GNOME is already covered by `dbus_mutter`. |
 | **Linux/GTK (other)** | none | none | If all three probes fail, a one-time warning is logged and the feature silently disables itself for the session. |
 
 ### Compositor Coverage Today
@@ -52,28 +52,35 @@ Linux; the first one that responds is used.
 |----------|------------|
 | GNOME on X11 or Wayland | `dbus_mutter` |
 | KDE Plasma 5/6 on **X11** (and XFCE, LXDE, MATE, Cinnamon, i3, …) | `x11_mit_screensaver` |
-| KDE Plasma 6 on **Wayland** | `ext_idle_notify` (was uncovered before) |
-| wlroots compositors (Sway, Hyprland, niri, river, Wayfire) | `ext_idle_notify` (requires core `python3-pywayland`) |
-| COSMIC (System76) | `ext_idle_notify` (requires core `python3-pywayland`) |
-| KDE Plasma 5.27 on Wayland | `ext_idle_notify` |
+| KDE Plasma 5.27 and 6 on **Wayland** (Kubuntu 24.04 to 26.04) | `ext_idle_notify` |
+| wlroots compositors (Sway, Hyprland, niri, river, Wayfire, labwc) | `ext_idle_notify` |
+| COSMIC (System76) | `ext_idle_notify` |
 | KDE Plasma 5.24 on Wayland (Kubuntu 22.04), Cinnamon on Wayland | none |
+| The Flatpak on any Wayland desktop but GNOME | none: no Wayland socket ([Known Gaps](#known-gaps)) |
 
 Researched 2026-10-06 from the desktops' sources
-([DEPENDENCIES.md](DEPENDENCIES.md#dbus-python-to-do-92)): Xwayland
-disables MIT-SCREEN-SAVER, so `x11_mit_screensaver` fails on Wayland
-rather than reading X11 input only; Cinnamon's Muffin names its
-monitor `org.cinnamon.Muffin.IdleMonitor`, so Cinnamon on Wayland has
-none. A fourth probe, `dbus_screensaver`
+([DEPENDENCIES.md](DEPENDENCIES.md#dbus-python-to-do-92)): Cinnamon's
+Muffin names its monitor `org.cinnamon.Muffin.IdleMonitor`, so
+Cinnamon on Wayland has none. A fourth probe, `dbus_screensaver`
 (`org.freedesktop.ScreenSaver.GetSessionIdleTime`), was removed then,
 **ruled by designer**: reached only when the others failed, it gave
 no true reading on any desktop (0 on Plasma 5.24 Wayland, so never
 idle; errors elsewhere).
 
-With the `ext_idle_notify` backend this covers effectively all
-Linux desktop sessions. The only remaining uncovered case is a
-Wayland session whose `pywayland` binding is absent **and** which
-does not implement `org.gnome.Mutter.IdleMonitor`; see
-[Known Gaps](#known-gaps).
+Checked again 2026-10-25 from the sources, for KDE Plasma on Wayland:
+
+- Xwayland turns MIT-SCREEN-SAVER off when it runs rootless, as
+  every compositor starts it (xserver commit `5c20e4b8`, Xwayland
+  21.1); Xwayland 24.1 lists no such extension. `x11_mit_screensaver`
+  therefore fails on Wayland rather than reading X11 input only.
+- KDE's `GetSessionIdleTime` answers
+  `org.freedesktop.DBus.Error.NotSupported` on Wayland since Plasma
+  5.27 (kscreenlocker commit `a4244d3c`); KDE has no other D-Bus
+  reading of the idle time there.
+- KWin offers `ext-idle-notify-v1` since Plasma 5.27, at version 2
+  since 6.4.
+
+So on KDE Plasma Wayland `ext_idle_notify` is the only reading.
 
 ---
 
@@ -90,16 +97,23 @@ lazily on the first `get_idle_seconds()` call. It probes:
    on a Wayland session (Xwayland disables the extension), falling
    through to the next probe.
 3. `ext_idle_notify` - skipped immediately unless `WAYLAND_DISPLAY`
-   is set and the vendored binding imports. Connects to the Wayland
-   display, binds `ext_idle_notifier_v1` + `wl_seat`, creates an
-   `ext_idle_notification_v1` armed at a 1 s timeout, whose
-   `idled`/`resumed` events each poll drains. Success
-   means the globals were advertised and the notification was
-   created without a protocol error. The protocol binding is
-   **vendored** at `taskcoachlib/thirdparty/ext_idle_notify_v1`
-   (generated by `pywayland-scanner`), because distribution
-   `python3-pywayland` ships only the core `wayland` protocol; the
-   runtime requirement is therefore just core `pywayland`.
+   is set. Connects to the compositor, binds `wl_seat` (version 1)
+   and `ext_idle_notifier_v1` (version 2 where offered, else 1), asks
+   for an `ext_idle_notification_v1` armed at a 1 s timeout (version
+   2's `get_input_idle_notification`, else `get_idle_notification`;
+   the probe log says which), whose `idled`/`resumed` events each poll
+   reads without waiting. Success means the globals were advertised
+   and the notification was created without a protocol error. A lost
+   connection logs `Wayland compositor connection lost: not idle` and
+   reads not idle from then on.
+
+   `powermgt/wayland_idle.py` speaks the protocol through
+   `libwayland-client.so.0` with ctypes: the protocol's two
+   interfaces are written out as `wayland-scanner` would generate
+   them, and requests go through `wl_proxy_marshal_array_flags`
+   (Wayland 1.20+, Ubuntu 22.04 and later). `IdleQueryTest` checks
+   those tables against the installed protocol files, since a
+   mistake there crashes instead of raising.
 
 Each attempt records `(method_name, success, detail)` in
 `self._probe_log`. The first success wins; later methods are not
@@ -211,15 +225,14 @@ Example output on a Debian LXDE/X11 box:
 [HH:MM:SS.xxx] [IDLE] Test query returned idle=0.01s
 ```
 
-Example output on a KDE Plasma 6 Wayland box with `python3-pywayland`
-installed (the scenario this backend was added for):
+Example output on a KDE Plasma Wayland session:
 
 ```
 [HH:MM:SS.xxx] [IDLE] Idle time notice enabled; threshold=1 min (60s)
 [HH:MM:SS.xxx] [IDLE] Probing idle backend on linux...
 [HH:MM:SS.xxx] [IDLE]   dbus_mutter: unavailable (...)
 [HH:MM:SS.xxx] [IDLE]   x11_mit_screensaver: unavailable (MIT-SCREEN-SAVER extension not present)
-[HH:MM:SS.xxx] [IDLE]   ext_idle_notify: OK
+[HH:MM:SS.xxx] [IDLE]   ext_idle_notify: OK (version 2, input only)
 [HH:MM:SS.xxx] [IDLE] Selected backend: ext_idle_notify
 [HH:MM:SS.xxx] [IDLE] Test query returned idle=0.00s
 ```
@@ -230,8 +243,8 @@ Example output when the feature is disabled:
 (no [IDLE] lines)
 ```
 
-Example output when no backend is available (e.g. a wlroots Wayland
-session without `python3-pywayland`):
+Example output when no backend is available (e.g. Cinnamon on
+Wayland, or the Flatpak on KDE Plasma Wayland):
 
 ```
 [HH:MM:SS.xxx] [IDLE] Idle time notice enabled; threshold=4 min (240s)
@@ -250,30 +263,28 @@ is instantiated before the taskbar icon).
 
 ## Known Gaps
 
-### Wayland session without core `pywayland`
+### The Flatpak on Wayland desktops other than GNOME
 
-The `ext_idle_notify` backend speaks
-[`ext-idle-notify-v1`](https://wayland.app/protocols/ext-idle-notify-v1).
-Distribution `python3-pywayland` ships **only the core `wayland`
-protocol** by design, so `pywayland.protocol.ext_idle_notify_v1`
-never exists at runtime. The protocol binding is therefore
-**vendored** in the tree (`taskcoachlib/thirdparty/ext_idle_notify_v1`,
-generated by `pywayland-scanner`; see that directory's README). The
-only runtime requirement is **core `pywayland`** itself (for
-`pywayland.client`, `pywayland.protocol_core`,
-`pywayland.protocol.wayland`). The import is guarded, so its
-absence only skips this one probe.
+The Flatpak has only the X11 socket (`--socket=x11`, with
+`GDK_BACKEND=x11`): Flatpak then hides the compositor's socket and
+unsets `WAYLAND_DISPLAY`, so `ext_idle_notify` is not tried, and
+Xwayland has no MIT-SCREEN-SAVER. On KDE Plasma, wlroots desktops and
+COSMIC on Wayland the Flatpak has no idle reading. `--socket=wayland`
+beside `--socket=x11` would give it one, the window staying on X11,
+but Flathub's linter refuses both sockets together
+(`finish-args-contains-both-x11-and-wayland`, [FLATPAK.md](FLATPAK.md)).
 
-`python3-pywayland` is packaged on every distribution that ships a
-Plasma 6 desktop (Debian 13 Trixie, Fedora 39+, Arch, Ubuntu 25.10+),
-so the affected users have it available. The residual gap is a
-Wayland session that has **no** core `pywayland` installed **and**
-does not implement `org.gnome.Mutter.IdleMonitor`. There the feature
-silently disables itself; installing `python3-pywayland` resolves it
-without a Task Coach upgrade (the binding is already vendored).
+### Idle inhibitors on version 1 compositors
 
-GNOME Mutter does not implement `ext-idle-notify-v1` as of early
-2026, but GNOME is covered by `dbus_mutter`, which is probed first.
+`ext_idle_notify` asks for version 2's `get_input_idle_notification`
+where the compositor offers it (KWin 6.4+, wlroots 0.20): input only,
+as the readings on GNOME, X11, Windows and macOS. Where only version 1
+is offered (KWin 5.27 to 6.3, as on Kubuntu 24.04; wlroots 0.18), its
+`get_idle_notification` also counts idle inhibitors: while a shown
+window holds a `zwp_idle_inhibitor` (a video player, a browser playing
+a video), KWin's idle timer stops, so time away is not noticed, and a
+seat already idle sends no `resumed` until the inhibitor ends
+(`src/idledetector.cpp` in KWin 6.6).
 
 ### Setting changes during a session
 
@@ -291,6 +302,7 @@ on during the session logged no summary until a restart (P107 in
 | File | Role |
 |------|------|
 | `taskcoachlib/powermgt/idle.py` | `IdleQuery` per platform (`LinuxIdleQuery`, `WindowsIdleQuery`, `MacIdleQuery`), plus the cross-platform `IdleNotifier` state machine. |
+| `taskcoachlib/powermgt/wayland_idle.py` | The `ext-idle-notify-v1` client of `libwayland-client`, through ctypes. |
 | `taskcoachlib/powermgt/__init__.py` | Imports the right `IdleNotifier` per platform. |
 | `taskcoachlib/gui/idlecontroller.py` | `IdleController` (subscribes to the effort tracker, forwards wake events to the dialog) and `WakeFromIdleFrame` (the notification UI). |
 | `taskcoachlib/gui/mainwindow.py` | Instantiates `IdleController` during `MainWindow.__init__`. |
@@ -300,26 +312,15 @@ on during the session logged no summary until a restart (P107 in
 
 ---
 
-## Optional Bindings
+## Libraries
 
-`dbus_mutter` uses PyGObject's Gio, a dependency of the deb, rpm and
-Arch packages and part of the Flatpak's runtime (not in the AppImage);
-`python3-dbus` was used until 2026-10-06
-([DEPENDENCIES.md](DEPENDENCIES.md#dbus-python-to-do-92)). One idle
-backend relies on a Python binding that Task Coach declares only as
-an **optional** dependency (never hard, never bundled), exactly like
-the spell-check dictionaries:
+No idle reading needs a package of its own:
 
-| Backend | Binding | How it is declared |
-|---------|---------|--------------------|
-| `ext_idle_notify` | `python3-pywayland` | `optdepends` (Arch), `Recommends:` (Fedora `.spec`), and injected into `Recommends:` by `build-deb.yml` only for Plasma 6 codenames that package it (currently `trixie`). Guarded `import pywayland`. |
-
-Note the distinction: the C library `libwayland-client.so.0` **is**
-guaranteed present (it is a hard dependency of `libgtk-3-0`, which
-Task Coach pulls in via wxPython), but the Python *binding*
-`pywayland` is a separate package and is not automatically
-installed. It degrades silently when absent. See
-[PACKAGING.md](PACKAGING.md) for the per-distro picture.
+| Backend | Library | Where it comes from |
+|---------|---------|---------------------|
+| `dbus_mutter` | PyGObject's Gio | a dependency of the deb, rpm and Arch packages, in the Flatpak's runtime (not in the AppImage); `python3-dbus` until 2026-10-06 ([DEPENDENCIES.md](DEPENDENCIES.md#dbus-python-to-do-92)) |
+| `x11_mit_screensaver` | `libXss.so.1` | a dependency of the packages (`libxss1`) |
+| `ext_idle_notify` | `libwayland-client.so.0` | a dependency of GTK 3, so of wxPython; `python3-pywayland` until 2026-10-25 ([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)) |
 
 ---
 

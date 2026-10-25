@@ -101,6 +101,7 @@ Key packages in `taskcoachlib/`:
 | [DATETIME_PRESETS.md](DATETIME_PRESETS.md) | Default dates and times for new tasks |
 | [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) | Durations in the task dates and effort editors |
 | [APPEARANCE_STYLES.md](APPEARANCE_STYLES.md) | Colours, fonts and icons of items |
+| [WELCOME_FILES.md](WELCOME_FILES.md) | The Welcome demo files, light and dark, and their colours |
 | [UNDO_REDO.md](UNDO_REDO.md) | Undo and redo |
 | [SETTINGS.md](SETTINGS.md) | The settings and TaskCoach.ini |
 | [PREFERENCES.md](PREFERENCES.md) | The Preferences dialog: its pages, OK, Apply and Cancel |

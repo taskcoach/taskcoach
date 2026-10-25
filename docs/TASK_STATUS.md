@@ -5,6 +5,7 @@
 1. [Overview](#overview)
 2. [Status Values](#status-values)
    - [Encoding](#encoding)
+   - [Default Colours](#default-colours)
    - [Identity and Comparison](#identity-and-comparison)
 3. [State Transitions](#state-transitions)
 4. [Architecture](#architecture)
@@ -212,15 +213,42 @@ Each status is a `TaskStatus` singleton object (`domain/task/status.py`) with th
 
 | `status_string` | Display Text | Icon | FG Color | Condition |
 |---|---|---|---|---|
-| `"inactive"` | `"Inactive"` | `taskcoach_actions_led_grey_icon` | Grey (192,192,192) | No actual start, planned start in future (or has incomplete prerequisites) |
+| `"inactive"` | `"Inactive"` | `taskcoach_actions_led_grey_icon` | Grey (118,118,118) | No actual start, planned start in future (or has incomplete prerequisites) |
 | `"late"` | `"Late"` | `nuvola_actions_ledpurple` | Purple (160,32,240) | Planned start date has passed, no actual start |
 | `"active"` | `"Active"` | `nuvola_actions_ledblue` | Black (0,0,0) | Actual start date has passed |
 | `"duesoon"` | `"Due soon"` | `nuvola_actions_ledorange` | Orange (255,128,0) | Due date within `dueSoonHours` (default: 24h) |
 | `"overdue"` | `"Overdue"` | `nuvola_actions_ledred` | Red (255,0,0) | Due date has passed |
-| `"completed"` | `"Completed"` | `checkmark_green_icon` | Green (0,255,0) | Completion date is set |
+| `"completed"` | `"Completed"` | `checkmark_green_icon` | Green (0,138,0) | Completion date is set |
 
 Settings key for each status: `"%stasks" % status_string` (e.g., `"activetasks"`)
 Configurable in settings sections: `fgcolor`, `bgcolor`, `icon`, `font`
+
+### Default Colours
+
+The light theme's status text colours on their default white row,
+against WCAG 2.0 (AA asks 4.5:1 for normal text):
+
+| Status | Colour | Contrast |
+|---|---|---|
+| Active | (0,0,0) | 21:1 |
+| Late | (160,32,240) | 5.3:1 |
+| Completed | (0,138,0) | 4.5:1 |
+| Inactive | (118,118,118) | 4.5:1 |
+| Overdue | (255,0,0) | 4.0:1 |
+| Due soon | (255,128,0) | 2.5:1 |
+
+Completed was (0,255,0), 1.4:1, and Inactive (192,192,192), 1.8:1:
+both now take the closest shade of their colour that reaches AA,
+**ruled by designer 2026-10-25** ("AA is good, proceed"). Orange and
+red are kept: their AA shades read as brown and dark red, which
+changes what they signal ("no change for orange", "No change for red
+neither"; the date picker's weekend days and today border keep that
+red). The dark theme's colours are the designer's (D11 in
+[MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-and-will-not-do)).
+A new default reaches new installs only; an existing user gets it with
+the status's Reset on Preferences > Statuses
+([SETTINGS.md](SETTINGS.md#persistence)). `StatusColoursTest` checks
+the four AA colours and that orange and red stay.
 
 ### Identity and Comparison
 

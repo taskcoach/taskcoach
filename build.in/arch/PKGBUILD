@@ -29,7 +29,7 @@ makedepends=(
 optdepends=(
     'hunspell-en_us: English spell checking'
     'hunspell-en_gb: British English spell checking'
-    'python-pywayland: Idle time notice on Wayland (KDE Plasma 6, wlroots, COSMIC); tray hide on KDE Plasma Wayland'
+    'python-pywayland: tray hide on KDE Plasma Wayland'
 )
 # Note: squaremap is not in Arch repos, installed via pip at build time
 provides=('taskcoach')
@@ -81,9 +81,11 @@ package() {
     install -Dm644 icons.in/taskcoach.png \
         "$pkgdir/usr/share/pixmaps/taskcoach.png"
 
-    # Install Welcome.tsk for first-run experience
+    # The Welcome demo files: Welcome.tsk opens on first run
     install -Dm644 Welcome.tsk \
         "$pkgdir/usr/share/taskcoach/Welcome.tsk"
+    install -Dm644 Welcome-dark.tsk \
+        "$pkgdir/usr/share/taskcoach/Welcome-dark.tsk"
 
     # Install license/copyright
     install -Dm644 COPYRIGHT.txt \

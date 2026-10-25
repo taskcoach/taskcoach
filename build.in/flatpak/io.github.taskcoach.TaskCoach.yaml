@@ -85,7 +85,7 @@ modules:
       - cp -r taskcoachlib /app/share/taskcoach/
       - cp taskcoach.py /app/share/taskcoach/
 
-      - cp Welcome.tsk /app/share/taskcoach/
+      - cp Welcome.tsk Welcome-dark.tsk /app/share/taskcoach/
 
       - install -d /app/share/icons/hicolor
       - cp -a build.in/flatpak/icons/hicolor/. /app/share/icons/hicolor/

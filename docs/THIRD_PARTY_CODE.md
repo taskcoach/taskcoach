@@ -27,7 +27,7 @@ pin).
 | Where | What | Details |
 |-------|------|---------|
 | `taskcoachlib/patches/hypertreelist.py`, `customtreectrl.py` | wxPython's tree widget, loaded in place of the installed one | [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md) |
-| `taskcoachlib/thirdparty/` | `ext_idle_notify_v1/`, `plasma_window_management/`, `timeline/`, `wxScheduler/` | provenance and changes in `taskcoachlib/thirdparty/README.txt` |
+| `taskcoachlib/thirdparty/` | `plasma_window_management/`, `timeline/`, `wxScheduler/` | provenance and changes in `taskcoachlib/thirdparty/README.txt` |
 
 ## Runtime Patches
 

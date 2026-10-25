@@ -530,11 +530,13 @@ defaults = {
         "flow": "all",
     },
     "fgcolor": {
+        # Completed and inactive at WCAG AA (4.5:1) on white; orange and
+        # red kept as they were (docs/TASK_STATUS.md, Default Colours)
         "activetasks": "(0, 0, 0, 255)",
         "latetasks": "(160, 32, 240, 255)",
-        "completedtasks": "(0, 255, 0, 255)",
+        "completedtasks": "(0, 138, 0, 255)",
         "overduetasks": "(255, 0, 0, 255)",
-        "inactivetasks": "(192, 192, 192, 255)",
+        "inactivetasks": "(118, 118, 118, 255)",
         "duesoontasks": "(255, 128, 0, 255)",
     },
     "bgcolor": {

@@ -4,6 +4,36 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.8
+
+### Starting
+
+- On macOS, the downloaded app opens again instead of being reported
+  as damaged.
+
+### Efforts
+
+- The idle time notice works on KDE Plasma, Sway, Hyprland and COSMIC
+  on Wayland with nothing more to install (the Flatpak aside); before,
+  it needed `python3-pywayland` there and otherwise noticed only a
+  suspend.
+- On KDE Plasma 6.4 and later, the idle time notice also notices time
+  away while a window plays a video.
+
+### Welcome file
+
+- The Welcome file's coloured rows are readable: their backgrounds are
+  paler, so the status colours show on them as on plain rows.
+- A copy for the dark theme, `Welcome-dark.tsk`, is installed beside
+  `Welcome.tsk`.
+
+### Appearance
+
+- Completed and inactive tasks are readable on the light theme's white
+  rows: their default text colours are a darker green and a darker grey.
+  Settings saved by an earlier release keep their colours; Reset on a
+  status's row in Preferences > Statuses gives the new ones.
+
 ## 2.0.3.7
 
 ### Editors

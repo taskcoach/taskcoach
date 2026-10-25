@@ -198,7 +198,7 @@ Canon decision by designer, 2026-09-28.
 
 - Update documentation when adding or changing features.
 - A change users notice gets a line in `CHANGELOG.md`, under the
-  version being made: its release notes
+  version being made ([Versions](#versions)): its release notes
   ([PACKAGING.md](PACKAGING.md#release-notes)).
 - Record non-obvious rationale (version pins, platform workarounds,
   design decisions) in a dedicated `docs/*.md` so the next reader does
@@ -237,12 +237,21 @@ docstrings, docs and log messages.
   that you fixed your mistakes because you had steps you did that did
   not belong in the release notes..., eg "A dropped folder gets a
   file:///C:/ link.""
+- **No issue or pull request numbers (ruled by designer
+  2026-10-25):** code, comments, docs, release notes, commit messages
+  and PR descriptions never cite a GitHub issue or pull request number
+  (`#123`): GitHub turns each mention into a cross-reference on that
+  issue. Describe the problem instead; the designer adds the
+  references by hand. The designer's words: "don't put the issue
+  numbers in the code and docs, because they github creates a buch of
+  crossreferences and noise.  I only put the references in after
+  manually."
 
 ## Commits
 
 - Keep commits atomic.
 - Title: what the change does, imperative, short. No version numbers
-  and no issue references (issue links are added to the PR).
+  and no issue references ([Writing](#writing)).
 - Body: a sentence or two of why, then short bullets of what changed
   for users, as in release notes ([Writing](#writing)).
 - During a long stretch of development, keep every commit and push
@@ -250,3 +259,12 @@ docstrings, docs and log messages.
   request is open and the work stabilizes, every push is the branch
   squashed into one concise commit (**ruled by designer 2026-10-07**:
   "once we have pushed a PR and we're stabilizing we always squash").
+
+## Versions
+
+**Ruled by designer 2026-10-25**: the patch is incremented for each
+release, as `taskcoachlib/meta/data.py` says, not for each change: the
+version being made is one patch ahead of the current release (2.0.3.7
+released: 2.0.3.8). The designer's words: "don't increment the version
+for each change! ... we should only increment 1 patch ahead of the
+current release."
