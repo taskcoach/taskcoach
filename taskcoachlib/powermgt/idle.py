@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 import os
-import select
 import time
 
 import wx
@@ -78,7 +77,7 @@ if operating_system.isGTK():
         1. DBus org.gnome.Mutter.IdleMonitor (GNOME on Wayland/X11)
         2. X11 MIT-SCREEN-SAVER extension (any X11 session)
         3. ext-idle-notify-v1 Wayland protocol (KDE Plasma 5.27+,
-           wlroots, COSMIC) via pywayland
+           wlroots, COSMIC) through libwayland-client (wayland_idle)
 
         Uses lazy initialization to avoid loading libraries until
         actually needed. This prevents warnings when the idle detection
@@ -101,20 +100,11 @@ if operating_system.isGTK():
             self.dpy = None
             self._dbus = None
             self._reading_failed = False  # The last GNOME reading
-            # ext-idle-notify-v1 state. _idle_since is the wall-clock
-            # time the compositor reported the seat went idle, or
-            # None while active. The idled/resumed handlers and the
-            # idle poll all run on the main thread (events are pumped
-            # non-blockingly in get_idle_seconds), so no lock is
-            # needed. The registry/seat/notifier proxies are held
-            # for the life of the connection so libwayland never
-            # dispatches an event against a garbage-collected proxy.
+            # ext-idle-notify-v1: the wall-clock time the compositor
+            # reported the seat idle, or None while active. Its events
+            # are read in get_idle_seconds, on the window's thread.
             self._idle_since = None
-            self._wl_display = None
-            self._wl_notification = None
-            self._wl_registry = None
-            self._wl_seat = None
-            self._wl_notifier = None
+            self._wayland = None
 
         def _gnome_idle_seconds(self):
             """GNOME's reading; a failed one counts as not idle, and
@@ -166,127 +156,45 @@ if operating_system.isGTK():
             )
             return answer.unpack()[0]
 
-        def _wl_on_idled(self, notification):
+        def _wl_on_idled(self):
             """ext-idle-notify-v1 'idled' event (main thread)."""
             self._idle_since = time.time()
 
-        def _wl_on_resumed(self, notification):
+        def _wl_on_resumed(self):
             """ext-idle-notify-v1 'resumed' event (main thread)."""
             self._idle_since = None
 
-        def _wl_pump(self):
-            """Drain queued ext-idle-notify-v1 events without blocking.
-
-            Called on the main thread from get_idle_seconds(); the
-            idled/resumed handlers update _idle_since. dispatch(block=
-            False) only dispatches already-queued events and never
-            touches the fd, while pywayland's read() blocks when the fd
-            has no data, so read() is guarded by a zero-timeout select.
-            Any failure (compositor gone, protocol error) tears the
-            connection down and degrades to no idle detection rather
-            than letting a dead connection spin or crash.
-            """
-            display = self._wl_display
-            if display is None:
-                return
-            try:
-                display.flush()
-                if select.select([display.get_fd()], [], [], 0)[0]:
-                    display.read()
-                display.dispatch(block=False)
-            except Exception:
-                self._teardown_wl()
-
         def _teardown_wl(self):
-            """Disconnect the ext-idle-notify-v1 side connection.
-
-            Safe to call from the main thread or __del__: no other
-            thread shares the display.
-            """
-            display = self._wl_display
-            self._wl_display = None
-            self._wl_notification = None
-            self._wl_registry = None
-            self._wl_seat = None
-            self._wl_notifier = None
+            """Disconnect from the compositor: no idle reading after a
+            lost connection rather than a dead one read each second."""
+            wayland, self._wayland = self._wayland, None
             self._idle_since = None
-            if display is not None:
-                try:
-                    display.disconnect()
-                except Exception:
-                    pass
+            if wayland is not None:
+                wayland.close()
 
         def _try_ext_idle_notify(self):
-            """Try the ext-idle-notify-v1 Wayland protocol.
+            """Try the ext-idle-notify-v1 Wayland protocol: KDE Plasma
+            5.27+ (whose org.freedesktop.ScreenSaver GetSessionIdleTime
+            answers NotSupported), wlroots compositors and COSMIC.
+            Returns (ok, detail).
 
-            Covers KDE Plasma 6 (where org.freedesktop.ScreenSaver
-            GetSessionIdleTime is stubbed to NotSupported), wlroots
-            compositors and COSMIC. Returns (ok, detail).
-
-            The protocol is event-based (idled/resumed), not a
-            pollable query, so a notification armed at a short timeout
-            records the idle timestamp; get_idle_seconds() synthesises
-            a value from it.
+            The protocol sends events (idled, resumed), not readings:
+            a notification at a short timeout records when the seat
+            went idle, and get_idle_seconds() counts from there.
             """
             if not os.environ.get("WAYLAND_DISPLAY"):
                 return False, "no WAYLAND_DISPLAY (not a Wayland session)"
+            from taskcoachlib.powermgt import wayland_idle
+
             try:
-                from pywayland.client import Display
-                from pywayland.protocol.wayland import WlSeat
-
-                # Distro python3-pywayland ships only the core wayland
-                # protocol; the ext-idle-notify-v1 binding is vendored
-                # (see taskcoachlib/thirdparty/ext_idle_notify_v1).
-                from taskcoachlib.thirdparty.ext_idle_notify_v1 import (
-                    ExtIdleNotifierV1,
+                self._wayland = wayland_idle.IdleNotification(
+                    self._WL_TIMEOUT_MS, self._wl_on_idled, self._wl_on_resumed
                 )
-            except ImportError as e:
-                return False, _summarize_exception(e)
-
-            display = None
-            try:
-                display = Display()
-                display.connect()
-
-                found = {"notifier": None, "seat": None}
-
-                def registry_global(registry, id_, interface, version):
-                    if interface == "ext_idle_notifier_v1":
-                        found["notifier"] = registry.bind(
-                            id_, ExtIdleNotifierV1, min(version, 1)
-                        )
-                    elif interface == "wl_seat":
-                        found["seat"] = registry.bind(
-                            id_, WlSeat, min(version, 1)
-                        )
-
-                registry = display.get_registry()
-                registry.dispatcher["global"] = registry_global
-                display.roundtrip()
-
-                if found["notifier"] is None or found["seat"] is None:
-                    return False, "ext_idle_notifier_v1 not advertised"
-
-                notification = found["notifier"].get_idle_notification(
-                    self._WL_TIMEOUT_MS, found["seat"]
-                )
-                notification.dispatcher["idled"] = self._wl_on_idled
-                notification.dispatcher["resumed"] = self._wl_on_resumed
-                display.roundtrip()
             except Exception as e:
-                if display is not None:
-                    try:
-                        display.disconnect()
-                    except Exception:
-                        pass
                 return False, _summarize_exception(e)
-
-            self._wl_display = display
-            self._wl_notification = notification
-            self._wl_registry = registry
-            self._wl_seat = found["seat"]
-            self._wl_notifier = found["notifier"]
-            return True, None
+            if self._wayland.version >= 2:
+                return True, "version 2, input only"
+            return True, "version 1, idle inhibitors count"
 
         def _try_x11_screensaver(self):
             """Try X11 MIT-SCREEN-SAVER extension. Returns (ok, detail)."""
@@ -385,7 +293,7 @@ if operating_system.isGTK():
         def __del__(self):
             if self.dpy and hasattr(self, "XCloseDisplay"):
                 self.XCloseDisplay(self.dpy)
-            if getattr(self, "_wl_display", None) is not None:
+            if getattr(self, "_wayland", None) is not None:
                 self._teardown_wl()
 
         def get_idle_seconds(self):
@@ -394,7 +302,12 @@ if operating_system.isGTK():
             if self._method == "dbus_mutter":
                 return self._gnome_idle_seconds()
             elif self._method == "ext_idle_notify":
-                self._wl_pump()
+                if self._wayland is not None and not self._wayland.poll():
+                    log_step(
+                        "Wayland compositor connection lost: not idle",
+                        prefix="IDLE",
+                    )
+                    self._teardown_wl()
                 since = self._idle_since
                 if since is None:
                     return 0

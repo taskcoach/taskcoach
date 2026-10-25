@@ -248,10 +248,9 @@ jobs:
           Copy-Item -Path "taskcoach.py" -Destination "build\TaskCoach\"
           Copy-Item -Path "launcher.pyw" -Destination "build\TaskCoach\"
 
-          # Copy Welcome.tsk if it exists
-          if (Test-Path "Welcome.tsk") {
-            Copy-Item -Path "Welcome.tsk" -Destination "build\TaskCoach\"
-          }
+          # The Welcome demo files (docs/WELCOME_FILES.md)
+          Copy-Item -Path "Welcome.tsk" -Destination "build\TaskCoach\"
+          Copy-Item -Path "Welcome-dark.tsk" -Destination "build\TaskCoach\"
 
           # Copy icon for installer
           Copy-Item -Path "icons.in\taskcoach.ico" -Destination "build\TaskCoach\"

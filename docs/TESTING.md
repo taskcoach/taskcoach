@@ -122,7 +122,9 @@ corrected when its editor first opens, as ruled
 The suite runs it on the certified platform (`EditorCheckTest`). The
 macOS and Windows builds run a copy with the built app's own Python
 and files before packaging, because some faults show on one platform
-only (#487). Where the app has no focus (a build machine's app in the
-background) the focus steps are skipped and say so. wxGTK loses track
-of a choice tabbed into inside a panel; the walk ends there and says
-so.
+only. On macOS the run writes no bytecode cache, since a file added
+to the signed app breaks its signature
+([MACOS.md](MACOS.md#keeping-the-signature-valid)). Where the app has
+no focus (a build machine's app in the background) the focus steps
+are skipped and say so. wxGTK loses track of a choice tabbed into
+inside a panel; the walk ends there and says so.

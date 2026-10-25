@@ -5,3 +5,4 @@ include icons.in/taskcoach.png
 include build.in/linux_common/taskcoach.desktop
 include build.in/debian/taskcoach.appdata.xml
 include Welcome.tsk
+include Welcome-dark.tsk

@@ -3079,12 +3079,12 @@ class TaskColorTest(test.TestCase):
         self.tomorrow = date.Tomorrow()
 
     def test_default_task(self):
-        self.assertEqual(wx.Colour(192, 192, 192), task.Task().statusFgColor())
+        self.assertEqual(wx.Colour(118, 118, 118), task.Task().statusFgColor())
 
     def test_completed_task(self):
         completed = task.Task()
         completed.set_completion_date_time()
-        self.assertEqual(wx.GREEN, completed.statusFgColor())
+        self.assertEqual(wx.Colour(0, 138, 0), completed.statusFgColor())
 
     def test_over_due_task(self):
         overdue = task.Task(dueDateTime=self.yesterday)
@@ -3096,7 +3096,7 @@ class TaskColorTest(test.TestCase):
 
     def test_due_tomorrow(self):
         duetomorrow = task.Task(dueDateTime=self.tomorrow + date.ONE_HOUR)
-        self.assertEqual(wx.Colour(192, 192, 192), duetomorrow.statusFgColor())
+        self.assertEqual(wx.Colour(118, 118, 118), duetomorrow.statusFgColor())
 
     def test_active(self):
         active = task.Task(actualStartDateTime=date.Now())

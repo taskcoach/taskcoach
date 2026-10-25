@@ -394,8 +394,7 @@ and `WKDocker` work via a **KWin script** (compositor-side, where
 state is fully known) plus a helper; `KDocker` is X11-only and does
 not support Wayland.
 
-For Task Coach this would mean the same pattern as the idle
-`ext-idle-notify-v1` backend: optional `pywayland` + a vendored
+For Task Coach this would mean optional `pywayland` + a vendored
 `plasma-window-management` binding, opening a side Wayland connection
 and matching our own toplevel by `app_id`/title. It is KDE-specific
 (GNOME implements none of these; wlroots needs the `wlr`/`ext`
@@ -517,8 +516,8 @@ design.
 Consequence for implementation: a single "out-of-band toplevel
 manager" abstraction with two protocol backends
 (`org_kde_plasma_window_management` for KDE,
-`wlr-foreign-toplevel-management` for wlroots/COSMIC, same vendored
-pattern as the idle backend) covers every session that has both a
+`wlr-foreign-toplevel-management` for wlroots/COSMIC, each a vendored
+binding) covers every session that has both a
 taskbar and a protocol; native `Iconize()`/`restore()` covers
 X11/Windows/macOS; plain Hide/Show is correct where there is no
 taskbar; only GNOME-with-a-taskbar-extension is unsupported and

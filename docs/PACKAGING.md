@@ -64,17 +64,17 @@ This table shows how dependencies are handled in **built packages** and **setup 
 - `n/a` = Not applicable for this platform
 
 **Note: `python3-pywayland` is an optional binding** (guarded
-import, degrades silently), mainly for the "Idle time notice" (off by
-default; see [IDLE.md](IDLE.md) for the binding-vs-C-library
-distinction); it also serves the tray's hide and restore on KDE Plasma
-Wayland ([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)). The
-notice's GNOME reading and the start-up report's tray check use
-PyGObject's Gio; `python3-dbus` is no longer used (2026-10-06,
+import, degrades silently) for the tray's hide and restore on KDE
+Plasma Wayland ([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)).
+The "Idle time notice" needs no binding: on Wayland it calls
+`libwayland-client`, which GTK requires, since 2026-10-25
+([IDLE.md](IDLE.md#libraries)). The notice's GNOME reading and the
+start-up report's tray check use PyGObject's Gio; `python3-dbus` is no
+longer used (2026-10-06,
 [DEPENDENCIES.md](DEPENDENCIES.md#dbus-python-to-do-92)). Only
 **core** `python3-pywayland` is needed: distro packages ship just the
-core `wayland` protocol, so the `ext-idle-notify-v1` binding is
-vendored in-tree (`taskcoachlib/thirdparty/ext_idle_notify_v1`); no
-`wayland-protocols` runtime dependency. It
+core `wayland` protocol, so the KDE protocol's binding is vendored
+in-tree (`taskcoachlib/thirdparty/plasma_window_management`). It
 is **never** a hard dependency and never committed as a blanket line
 in the shared `debian/control`. Fedora `.spec` and Arch `PKGBUILD`
 are per-distro files and declare it directly. For the four
@@ -599,10 +599,9 @@ Task Coach builds native macOS .app bundles using py2app for both Intel and Appl
 
 ### Code Signing
 
-**Current status:** Builds are unsigned. Users must clear quarantine:
-```bash
-xattr -cr "/Applications/Task Coach.app"
-```
+**Current status:** Builds are ad-hoc signed by py2app and not
+notarized; nothing may write into the app after the build
+([MACOS.md](MACOS.md#keeping-the-signature-valid)).
 
 ---
 
@@ -637,7 +636,8 @@ This process applies to all build targets (AppImage, Windows, macOS, etc.):
 release notes are kept in `CHANGELOG.md` at the top of the
 repository, a `## <version>` section per release, newest first: what
 changes for users. A change users notice gets its line there in the
-same commit, under the version being made. Only what a user of the
+same commit, under the version being made
+([DEVELOPMENT.md](DEVELOPMENT.md#versions)). Only what a user of the
 previous release notices in the packaged app: no implementation,
 nothing unpackaged, never how a change was found or checked, no fix
 of a step taken while making it (**ruled by designer 2026-10-19**, in the

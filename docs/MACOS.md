@@ -208,13 +208,45 @@ For complete version history: [macOS version history - Wikipedia](https://en.wik
 
 ### Current Status
 
-Task Coach macOS builds are **unsigned**. This means:
-- Users see "unidentified developer" warning on first launch
-- Users must right-click → Open, or use `xattr` to clear quarantine
+Task Coach macOS builds are **ad-hoc signed** by py2app at the end of
+the build: signed, but with no Developer ID and not notarized. This
+means:
+- macOS blocks the first launch; **System Settings → Privacy &
+  Security → Open Anyway** allows it
+  ([README_INSTALL_MACOS.md](../README_INSTALL_MACOS.md))
+- Clearing the quarantine attribute with `xattr` also allows it
+
+### Keeping the Signature Valid
+
+The signature seals every file in the app. A file written into the
+app after py2app signs it breaks the seal, and macOS then reports the
+downloaded app as damaged, offering only to move it to the Trash.
+
+The workflow's checks run the app's own Python, which writes its
+bytecode cache (`__pycache__`) next to the bundled sources unless
+`PYTHONDONTWRITEBYTECODE` is set. Those steps set it, and
+`codesign --verify --deep --strict` checks the signature before the
+DMG is made.
+
+**Lessons learned (2.0.3.7).** The editor check added for 2.0.3.7
+ran the app's Python after py2app had signed the app. Python cached
+the modules it imported and wrote 207 `.pyc` files outside the seal,
+so macOS called both DMGs damaged. The older initialization check
+already ran the same way, but it only imported modules whose cache
+was already in the app, so it never added a file. That was luck, not
+design. Nothing checked the signature, and no Mac opened a DMG before
+the release. From this:
+
+- A check that runs inside a signed package leaves it as built
+  ([TESTING.md](TESTING.md#editor-check)).
+- The signature is verified after the last step that touches the app.
+- On a platform no one here can run, the build checks the property
+  users depend on (here, the signature) instead of trusting that a
+  step has no side effects.
 
 ### Bypassing Gatekeeper
 
-For unsigned apps downloaded from the internet:
+For apps downloaded from the internet that are not notarized:
 
 ```bash
 # Clear quarantine attribute
@@ -247,7 +279,7 @@ To add signing to GitHub Actions:
 
 | Issue | Cause | Solution |
 |-------|-------|----------|
-| "App is damaged and can't be opened" | Gatekeeper quarantine | Run `xattr -cr "/Applications/Task Coach.app"` |
+| "App is damaged and can't be opened" | A file in the app no longer matches its signature ([Keeping the Signature Valid](#keeping-the-signature-valid)) | Run `xattr -cr "/Applications/Task Coach.app"` |
 | "unidentified developer" warning | Unsigned app | Right-click → Open, or clear quarantine |
 | App won't launch on Intel Mac | ARM64-only binary | Use Intel build (`-intel.dmg`) |
 | App slow on Apple Silicon | Running Intel binary via Rosetta | Use ARM64 build (`-arm64.dmg`) |

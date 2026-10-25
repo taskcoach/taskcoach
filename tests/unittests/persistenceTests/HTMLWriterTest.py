@@ -121,7 +121,7 @@ class TaskTestsMixin(CommonTestsMixin):
 
     def test_completed_task(self):
         self.task.set_completion_date_time()
-        self.expect_row_style("color: #00ff00")
+        self.expect_row_style("color: #008a00")
 
     def test_foreground_color_from_settings(self):
         settings.set("fgcolor", "completedtasks", wx.RED)
@@ -138,7 +138,7 @@ class TaskTestsMixin(CommonTestsMixin):
 
     def test_inactive_task(self):
         self.task.set_planned_start_date_time(date.Tomorrow())
-        self.expect_row_style("color: #c0c0c0")
+        self.expect_row_style("color: #767676")
 
     def test_late_task(self):
         self.task.set_planned_start_date_time(date.Yesterday())

@@ -5,9 +5,9 @@ These modules are the `pywayland` bindings for KDE's
 KDE-Wayland tray minimize/restore backend (`KdePlasmaController`; see
 `docs/SYSTEM_TRAY.md`, "Window Show/Hide on Wayland").
 
-Vendored for the same reason as `../ext_idle_notify_v1`: distribution
-`python3-pywayland` ships only the core `wayland` protocol, so
-`pywayland.protocol.plasma_window_management` never exists at runtime.
+Vendored because distribution `python3-pywayland` ships only the core
+`wayland` protocol, so `pywayland.protocol.plasma_window_management`
+never exists at runtime.
 This is standard Wayland practice (commit the scanner output, like the
 C ecosystem commits `wayland-scanner` output).
 

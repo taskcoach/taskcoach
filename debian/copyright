@@ -41,11 +41,6 @@ Copyright: 2009 Frank Niessink <frank@niessink.com>
 License: MIT
 Comment: See taskcoachlib/thirdparty/timeline/license.txt.
 
-Files: taskcoachlib/thirdparty/ext_idle_notify_v1/*
-Copyright: 2015 Martin Gräßlin
-           2022 Simon Ser
-License: MIT
-
 Files: taskcoachlib/thirdparty/plasma_window_management/*
 Copyright: 2013-2014 Pier Luigi Fiorini
 License: LGPL-2.1+

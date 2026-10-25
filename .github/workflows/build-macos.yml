@@ -133,9 +133,8 @@ jobs:
               ('icons.in', ['icons.in/taskcoach.png', 'icons.in/taskcoach.icns'] if os.path.exists('icons.in/taskcoach.icns') else ['icons.in/taskcoach.png']),
           ]
 
-          # Include Welcome.tsk if it exists
-          if os.path.exists('Welcome.tsk'):
-              DATA_FILES.append(('.', ['Welcome.tsk']))
+          # The Welcome demo files (docs/WELCOME_FILES.md)
+          DATA_FILES.append(('.', ['Welcome.tsk', 'Welcome-dark.tsk']))
 
           OPTIONS = {
               'argv_emulation': False,
@@ -234,6 +233,9 @@ jobs:
           echo "App bundle structure looks correct"
 
       - name: Test app initialization (catch Cocoa assertions)
+        env:
+          # The app is signed: see "Check the app's signature"
+          PYTHONDONTWRITEBYTECODE: "1"
         run: |
           # Use the bundled Python to test widget creation
           # This catches wxAssertionError that only occur on macOS Cocoa backend
@@ -297,6 +299,9 @@ jobs:
           echo "macOS Cocoa assertion tests passed"
 
       - name: Open every editor
+        env:
+          # The app is signed: see "Check the app's signature"
+          PYTHONDONTWRITEBYTECODE: "1"
         run: |
           # Each editor opens on a display and its pages and fields are
           # gone through without an error or a focus loop
@@ -307,6 +312,14 @@ jobs:
           export PYTHONPATH="$RESOURCES/lib/python3.13:$RESOURCES/lib/python3.13/site-packages"
           cp tools/check_editors.py "$RUNNER_TEMP/"
           "dist/Task Coach.app/Contents/MacOS/python" "$RUNNER_TEMP/check_editors.py"
+
+      - name: Check the app's signature
+        run: |
+          # py2app signs the app. A file written into it afterwards, such
+          # as Python's bytecode cache from the checks above, breaks the
+          # signature, and macOS then calls the download damaged
+          # (docs/MACOS.md, Code Signing and Notarization).
+          codesign --verify --deep --strict --verbose=2 "dist/Task Coach.app"
 
       - name: Create DMG
         run: |

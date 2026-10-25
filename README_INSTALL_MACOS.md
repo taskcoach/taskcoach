@@ -85,7 +85,7 @@ Your task files (`.tsk`) are stored separately and won't be deleted.
 
 ### "Task Coach is damaged and can't be opened"
 
-This can happen if macOS quarantine flags get corrupted. Fix it by running this in Terminal:
+macOS shows this when a file inside the app no longer matches the app's signature. Fix it by running this in Terminal:
 
 ```bash
 xattr -cr /Applications/Task\ Coach.app
