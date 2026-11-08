@@ -22,6 +22,8 @@ Download the package for your system from the
 | Debian 13 (Trixie) | `taskcoach_<version>_debian-13-trixie.deb` |
 | Ubuntu 22.04 (Jammy), Linux Mint 21 | `taskcoach_<version>_ubuntu-22.04-jammy.deb` |
 | Ubuntu 24.04 (Noble), Linux Mint 22 | `taskcoach_<version>_ubuntu-24.04-noble.deb` |
+| Ubuntu 26.04 LTS (Resolute Raccoon) | `taskcoach_<version>_ubuntu-26.04-resolute.deb` |
+| Ubuntu 26.10 (Stonking Stingray) | `taskcoach_<version>_ubuntu-26.10-stonking.deb` |
 | Fedora 43 | `taskcoach-<version>-fedora43.rpm` |
 | Arch Linux, Manjaro | `taskcoach-<version>-arch.pkg.tar.zst` |
 | Any Linux (x86_64) | `TaskCoach-<version>-x86_64.AppImage` |

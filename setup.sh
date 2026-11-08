@@ -50,6 +50,8 @@ detect_python() {
     # - Debian 13 Trixie: Python 3.13
     # - Ubuntu 22.04 Jammy: Python 3.10
     # - Ubuntu 24.04 Noble: Python 3.12
+    # - Ubuntu 26.04 Resolute: Python 3.14
+    # - Ubuntu 26.10 Stonking: Python 3.14
     # All use the default python3, wxPython is built for the default version
     PYTHON_CMD="python3"
 

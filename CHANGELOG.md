@@ -4,6 +4,20 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.9
+
+### Efforts
+
+- Effort per day, week and month no longer show a blank line for a
+  parent task whose subtasks have the effort. With the "Total time
+  spent" or "Total revenue" column on, the line stays and shows their
+  total.
+
+### Packages
+
+- A package for Ubuntu 26.04 LTS (Resolute Raccoon).
+- A package for Ubuntu 26.10 (Stonking Stingray).
+
 ## 2.0.3.8
 
 ### Starting

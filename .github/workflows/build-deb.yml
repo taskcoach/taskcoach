@@ -60,6 +60,16 @@ jobs:
             codename: noble
             os: ubuntu
             osver: "24.04"
+          - distro: ubuntu:26.04
+            name: Ubuntu 26.04 LTS (Resolute)
+            codename: resolute
+            os: ubuntu
+            osver: "26.04"
+          - distro: ubuntu:26.10
+            name: Ubuntu 26.10 (Stonking)
+            codename: stonking
+            os: ubuntu
+            osver: "26.10"
 
     container:
       image: ${{ matrix.distro }}
@@ -123,10 +133,10 @@ jobs:
           # the pip-bundling step above.
           #
           #   python3-pywayland  the tray's hide on KDE Plasma Wayland
-          #                      (docs/DEPENDENCIES.md); only releases
-          #                      that ship a Plasma 6 desktop AND
-          #                      package it. Add new Plasma 6
-          #                      codenames to the first case arm.
+          #                      (docs/DEPENDENCIES.md). Add codenames
+          #                      whose KWin is 6.8 or later to the
+          #                      first case arm: an earlier KWin does
+          #                      not offer the protocol to Task Coach.
           # ============================================================
           CODENAME="${{ matrix.codename }}"
           H='            hunspell-en-us | hunspell-dictionary'
@@ -136,8 +146,8 @@ jobs:
               sed -i "s@^${H}\$@${H},\n            python3-pywayland@" debian/control
               echo "Recommends += python3-pywayland ($CODENAME)"
               ;;
-            bookworm|jammy|noble)
-              echo "No pywayland for $CODENAME: not packaged / not needed here (Plasma 5 / GNOME)"
+            bookworm|jammy|noble|resolute|stonking)
+              echo "No pywayland for $CODENAME: its KWin is older than 6.8"
               ;;
             *)
               echo "No binding rule for $CODENAME; leaving debian/control unmodified"
@@ -220,11 +230,14 @@ jobs:
             os: ubuntu
             osver: "24.04"
             codename: noble
-          # Ubuntu 26.04 has no deb of its own: its users install 24.04's
           - distro: ubuntu:26.04
             os: ubuntu
-            osver: "24.04"
-            codename: noble
+            osver: "26.04"
+            codename: resolute
+          - distro: ubuntu:26.10
+            os: ubuntu
+            osver: "26.10"
+            codename: stonking
 
     steps:
       - name: Download artifact

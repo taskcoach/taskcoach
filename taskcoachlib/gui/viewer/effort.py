@@ -55,6 +55,7 @@ class EffortViewer(
         )
         self.__hidden_weekday_columns = []
         self.__hidden_total_columns = []
+        self.__parent_row_filter = None
         self.__domain_objects_to_view = None
         super().__init__(parent, task_file, *args, **kwargs)
         self.second_refresher = refresher.SecondRefresher(
@@ -244,10 +245,25 @@ class EffortViewer(
         per week, or per month."""
         aggregation = self.options.aggregation
         category_filter = super().createFilter(taskList)
-        search_filter = filter.SearchFilter(
-            self.createAggregator(category_filter, aggregation)
-        )
+        rows = self.createAggregator(category_filter, aggregation)
+        self.__parent_row_filter = None
+        if aggregation != "details":
+            rows = self.__parent_row_filter = effort.ParentRowFilter(
+                rows, keep_parent_rows=self.__shows_total_column
+            )
+        search_filter = filter.SearchFilter(rows)
         return search_filter
+
+    def __shows_total_column(self):
+        """Return whether a column adding in subtasks is shown."""
+        return any(name.startswith("total") for name in self.options.columns)
+
+    def showColumn(self, column, show=True, refresh=True):
+        super().showColumn(column, show, refresh)
+        if self.__parent_row_filter is not None and column.name().startswith(
+            "total"
+        ):
+            self.__parent_row_filter.reset()
 
     def createAggregator(self, taskList, aggregation):
         """Return an instance of a class that aggregates the effort records

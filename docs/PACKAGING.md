@@ -39,18 +39,18 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 
 This table shows how dependencies are handled in **built packages** and **setup scripts**.
 
-| Package | debian12 | ubuntu22 | debian13 | ubuntu24 | arch | fedora | appimage | ~~flatpak~~ | windows | macos |
-|---------|:--------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|:-------:|:-------:|:-----:|
-| wxpython | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| squaremap | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
-| chardet | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| python-dateutil | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| pyenchant | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
-| hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | optional | n/a | n/a |
-| ayatana-appindicator | distro | distro | distro | distro | distro | distro | host | bundled | n/a | n/a |
-| hypertreelist, customtreectrl | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** |
-| pywin32 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | pip | n/a |
-| python3-pywayland | n/a | n/a | optional | n/a | optional | optional | n/a | n/a | n/a | n/a |
+| Package | debian12 | ubuntu22 | debian13 | ubuntu24 | ubuntu2604 | ubuntu2610 | arch | fedora | appimage | ~~flatpak~~ | windows | macos |
+|---------|:--------:|:--------:|:--------:|:--------:|:--------:|:--------:|:----:|:------:|:--------:|:-------:|:-------:|:-----:|
+| wxpython | distro | distro | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| squaremap | distro | distro | distro | distro | distro | distro | **pip** | **pip** | bundled | bundled | pip | pip |
+| chardet | distro | distro | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| python-dateutil | distro | distro | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| pyenchant | distro | distro | distro | distro | distro | distro | distro | distro | bundled | bundled | pip | pip |
+| hunspell-en-us | optional | optional | optional | optional | optional | optional | optional | optional | optional | optional | n/a | n/a |
+| ayatana-appindicator | distro | distro | distro | distro | distro | distro | distro | distro | host | bundled | n/a | n/a |
+| hypertreelist, customtreectrl | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** | **patch** |
+| pywin32 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | n/a | pip | n/a |
+| python3-pywayland | n/a | n/a | optional | n/a | n/a | n/a | optional | optional | n/a | n/a | n/a | n/a |
 
 **Key:**
 - `distro` = Installed from distribution repos (required dependency)
@@ -77,12 +77,13 @@ core `wayland` protocol, so the KDE protocol's binding is vendored
 in-tree (`taskcoachlib/thirdparty/plasma_window_management`). It
 is **never** a hard dependency and never committed as a blanket line
 in the shared `debian/control`. Fedora `.spec` and Arch `PKGBUILD`
-are per-distro files and declare it directly. For the four
+are per-distro files and declare it directly. For the six
 Debian/Ubuntu targets it is injected into `Recommends:` **per
 codename by the `build-deb.yml` CI step** (same `case "$CODENAME"`
-mechanism as pip-bundling), only on codenames that ship a Plasma 6
-desktop *and* package it (currently `trixie`; add future Plasma 6
-codenames to that case arm). It is deliberately omitted on
+mechanism as pip-bundling), on `trixie` and on any codename whose KWin
+is 6.8 or later: an earlier KWin does not offer the protocol to Task
+Coach ([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)), so
+Resolute and Stonking omit it. It is deliberately omitted on
 Bookworm/Jammy/Noble (hence `n/a`): they ship Plasma 5 / GNOME. `n/a` for AppImage/Windows/macOS: the AppImage
 bundles its own Python; Windows/macOS use the native `win32`/`iokit`
 backends.
@@ -95,6 +96,8 @@ backends.
 | [Debian 13 Trixie](#debianubuntu-packaging) | debian13 | 3.13 | 4.2.3 | `setup_debian13_trixie.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Ubuntu 22.04 Jammy](#debianubuntu-packaging) | ubuntu22 | 3.10 | 4.0.7 | `setup_ubuntu2204_jammy.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Ubuntu 24.04 Noble](#debianubuntu-packaging) | ubuntu24 | 3.12 | 4.2.1 | `setup_ubuntu2404_noble.sh` | `build-deb.yml` | Distro deps sufficient |
+| [Ubuntu 26.04 Resolute Raccoon](#debianubuntu-packaging) | ubuntu2604 | 3.14 | 4.2.4 | `setup.sh` | `build-deb.yml` | Distro deps sufficient |
+| [Ubuntu 26.10 Stonking Stingray](#debianubuntu-packaging) | ubuntu2610 | 3.14 | 4.2.5 | `setup.sh` | `build-deb.yml` | Distro deps sufficient |
 | [Arch Linux](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
 | [Manjaro](#arch-linux--manjaro-packaging) | arch | latest | latest | `setup_arch.sh` | `build-arch.yml` | pip: squaremap |
 | [Fedora 43](#fedora-packaging) | fedora43 | 3.14 | 4.2.4 | `setup_fedora.sh` | `build-rpm.yml` | pip: squaremap |
@@ -329,9 +332,8 @@ taskcoach (1.6.1-1~ppa1) noble; urgency=medium
 |----------|---------|----------|--------|
 | Jammy | 22.04 LTS | 4.0.7 (wxWidgets 3.0.5) | Bundled tree widget |
 | Noble | 24.04 LTS | 4.2.1 | Bundled tree widget |
-| Oracular | 24.10 | 4.2.1 | Bundled tree widget |
-| Plucky | 25.04 | 4.2.2 | Bundled tree widget |
-| Questing | 25.10 | 4.2.x | Bundled tree widget |
+| Resolute | 26.04 LTS | 4.2.4 | Bundled tree widget |
+| Stonking | 26.10 | 4.2.5 (wxWidgets 3.2.11) | Bundled tree widget |
 
 ---
 

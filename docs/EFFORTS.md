@@ -37,6 +37,12 @@ rounded. Each keeps its own columns and choices: the settings sections
 `effortviewer`, `effortviewerforselectedtasks` and
 `effortviewerintaskeditor`.
 
+Added up, a row is one task's time in the period. A parent task whose
+time in the period is all its subtasks' has a row only while the
+"Total time spent" or "Total revenue" column is shown: that is where
+such a row has a value. Without them it would be an empty copy of its
+subtask's row.
+
 ## Filters
 
 - **Search:** the search box, in every view.
@@ -108,7 +114,7 @@ tasks stopped together.
 ## Code
 
 - Domain: `domain/effort/` (`Effort`, `EffortList`, the aggregator
-  per day, week and month).
+  per day, week and month, `ParentRowFilter`).
 - Views: `gui/viewer/effort.py` (`EffortViewer`,
   `EffortViewerForSelectedTasks`); the editor's tab:
   `LocalEffortViewer` and `EffortPage` (`gui/dialog/editor.py`).
@@ -118,7 +124,8 @@ tasks stopped together.
   `EffortNew` (`gui/uicommand/uicommand.py`); `StartEffortCommand`,
   `StopEffortCommand` (`command/taskCommands.py`); the one-task rule:
   `TaskFile.__on_tracking_changed()` (`persistence/taskfile.py`).
-- Tests: `EffortViewerTest.py` (`EffortViewsUnderCategoryFilterTest`),
+- Tests: `EffortViewerTest.py` (`EffortViewsUnderCategoryFilterTest`,
+  `ParentRowsTestMixin`),
   `UICommandTest.py` (`EffortStopTest`, `TrackingOneTaskTest`),
   `TaskFileTest.py` (`OneTrackedTaskTest`), `EffortTest.py`
   (`TrackedEffortCopyTest`).
@@ -139,6 +146,9 @@ tasks stopped together.
   filtered by category, its code saying "Inside the editor, all notes
   should be shown"; `BaseNoteViewer` has no filter, `NoteViewer` adds
   it.
+- 2010-11-20 (3d7137f8e, Frank Niessink): "Also show tasks that only
+  have recursive effort in the effort viewer", for the total columns
+  brought back the day before (23d251f39).
 - 2011-02-09, release 1.2.10 (3bd519e76, Frank Niessink): "Efforts are
   filtered by categories like tasks and notes", added to
   `EffortViewer` itself, so the editor's tab took it too.
@@ -149,3 +159,5 @@ tasks stopped together.
   becomes Effort for selected task(s).
 - 2026-10-04: the editor's tab without the category filter (#157);
   one task tracked at a time (#40).
+- 2026-11-08: a parent task with only its subtasks' time has a row
+  only while a total column is shown.
