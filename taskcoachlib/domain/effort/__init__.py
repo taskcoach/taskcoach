@@ -24,4 +24,4 @@ from .composite import (
 )
 from .effortlist import EffortList, EffortListTracker
 from .sorter import EffortSorter
-from .reducer import EffortAggregator
+from .reducer import EffortAggregator, ParentRowFilter

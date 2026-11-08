@@ -497,7 +497,10 @@ designer 2026-10-04**
   that desktop to test. KWin may offer its global only to a client
   whose `.desktop` file lists it in `X-KDE-Wayland-Interfaces`, which
   ours does not ([SYSTEM_TRAY.md](SYSTEM_TRAY.md)); without it the tray
-  falls back to hide and show.
+  falls back to hide and show. Measured 2026-11-08: KWin 6.3 to 6.7 do
+  not offer it to Task Coach; KWin 6.8, released 2026-10-14, does, so
+  this path now runs for users there
+  ([DEPENDENCIES.md](DEPENDENCIES.md#pywayland-to-do-88)).
 - D6. `workarounds/display.py`, the `wx.Display` replacement on
   Windows for monitors plugged in or out (was P50), **ruled by
   designer 2026-09-30**: deferred, for Windows users to test whether

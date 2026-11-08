@@ -86,7 +86,7 @@ old settings files lose them on load.
 |---------|-----------|---------------|--------------|
 | Windows, X11 (any desktop) | Minimizes (`Iconize()`) | Kept | Yes |
 | macOS | Menu: minimizes to the Dock | Kept | Yes |
-| KDE Plasma, Wayland | Minimizes through `org_kde_plasma_window_management` if KWin offers it to Task Coach, else hides; untested (D5) | Kept, or lost when hidden | Yes |
+| KDE Plasma, Wayland | With KWin 6.8 or later and pywayland: minimizes through `org_kde_plasma_window_management`. Otherwise hides ([why](DEPENDENCIES.md#pywayland-to-do-88)) | Kept, or lost when hidden | Yes |
 | Other Wayland (GNOME, wlroots, COSMIC) | **Hides** (`Hide()`) | **Lost** until restored | Yes, the only way back |
 
 Wayland is the one exception: it gives an app no minimize it can undo

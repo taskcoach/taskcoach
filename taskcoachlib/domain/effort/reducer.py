@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from taskcoachlib import patterns
-from taskcoachlib.domain import date, task
+from taskcoachlib.domain import base, date, task
 from . import composite
 from . import effortlist
 from . import effort
@@ -345,3 +345,54 @@ class EffortAggregator(
     def __key_for_period(self, effort):
         key = self.__key_for_effort(effort)
         return key[1], key[2]
+
+    def start_of_period(self, an_effort):
+        """Return the start of the period the effort is added up in."""
+        return self.__start_of_period(an_effort.getStart())
+
+
+class ParentRowFilter(base.Filter):
+    """Leaves out the row of a parent task whose effort in the period
+    is all its subtasks'. Such a row has a value only in the total
+    columns: while they are hidden, it is an empty copy of its
+    subtask's row."""
+
+    def __init__(self, *args, **kwargs):
+        self.__keep_parent_rows = kwargs.pop("keep_parent_rows")
+        super().__init__(*args, **kwargs)
+        # These change what a row holds without adding or removing it
+        for event_type in (
+            task.Task.effortsChangedEventType(),
+            effort.Effort.startChangedEventType(),
+        ):
+            patterns.Publisher().registerObserver(
+                self.on_own_effort_changed, eventType=event_type
+            )
+
+    def detach(self):
+        super().detach()
+        patterns.Publisher().removeObserver(self.on_own_effort_changed)
+
+    def on_own_effort_changed(self, event):  # pylint: disable=W0613
+        self.reset()
+
+    def filter_items(self, items):
+        rows = list(items)
+        if self.__keep_parent_rows():
+            return rows
+        own_periods = self.__periods_of_own_effort(
+            {row.task() for row in rows if not row.isTotal()}
+        )
+        return [
+            row
+            for row in rows
+            if row.isTotal() or (row.task(), row.getStart()) in own_periods
+        ]
+
+    def __periods_of_own_effort(self, tasks):
+        start_of_period = self.observable().start_of_period
+        return {
+            (each_task, start_of_period(each_effort))
+            for each_task in tasks
+            for each_effort in each_task.efforts()
+        }

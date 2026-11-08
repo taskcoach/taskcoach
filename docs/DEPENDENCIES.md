@@ -93,7 +93,8 @@ install it (they rely on the distro's).
 
 **Size**: `python3-gi` 780 KB installed, the GLib and GTK typelibs
 1.8 MB, the AppIndicator typelib and library 123 KB (Debian 13).
-Ubuntu 22.04 has 3.42, Ubuntu 24.04 3.48, Debian 13 3.50.
+Ubuntu 22.04 has 3.42, Ubuntu 24.04 3.48, Debian 13 3.50, Ubuntu
+26.04 3.56, Ubuntu 26.10 3.57.
 
 **Keep or replace**: checked in the app on a desktop whose tray speaks
 StatusNotifier only (a stand-in watcher on a private session bus):
@@ -197,8 +198,9 @@ at 8 call sites); about 430 lines exist for spell checking (225 in
 
 **Platforms**: pyenchant 3.x loads the C library libenchant, which
 uses Hunspell or Aspell and the installed dictionaries. Ubuntu 22.04
-has 3.2.0, Ubuntu 24.04 3.2.2, Debian 13 3.3.0rc1. The deb, rpm and
-Arch packages depend on it and recommend an English dictionary.
+has 3.2.0, Ubuntu 24.04 3.2.2, Debian 13 3.3.0rc1, Ubuntu 26.04 and
+26.10 3.3.0. The deb, rpm and Arch packages depend on it and recommend
+an English dictionary.
 Windows: pyenchant's Windows wheel (36 MB) carries libenchant, Hunspell
 and 61 other DLLs; the build adds an en_US dictionary. macOS and the
 Linux pip builds get the plain wheel, with no C library: the macOS
@@ -238,9 +240,21 @@ Windows libraries.
 **Why**:
 - The tray's hide and restore on KDE Plasma Wayland, keeping the
   taskbar entry through `org_kde_plasma_window_management`. Added
-  2026-06; deferred by ruling for users of that desktop to test (D5):
-  KWin may offer that protocol only to apps that list it in their
-  `.desktop` file, which ours does not.
+  2026-06; deferred by ruling for users of that desktop to test (D5).
+  - KWin 6.8 and later (Plasma 6.8 released 2026-10-14) offer that
+    protocol to every program outside Flatpak and Snap, so it runs for
+    users of Arch and Fedora 44 who have pywayland. In the full app on
+    headless KWin 6.8.2 (pywayland 0.4.17 and 0.4.19), the tray's
+    Show/Hide minimizes and restores through it, and the window stays
+    in KWin's window list.
+  - An earlier KWin offers it only to a program whose `.desktop` file
+    requests it, and finds that file by the running program, for Task
+    Coach `python3`. A key in our file does not match; an `Exec`
+    starting with the interpreter does, but grants it to every Python
+    program. On headless KWin 6.3.6, 6.6.6 and 6.7.5 a `python3`
+    client is not offered it (it is with
+    `KWIN_WAYLAND_NO_PERMISSION_CHECKS=1`): the tray hides, with or
+    without pywayland.
 - Until 2026-10-25, also the Idle time notice on Wayland desktops that
   offer `ext-idle-notify-v1`: KDE Plasma 5.27+, wlroots desktops and
   COSMIC ([IDLE.md](IDLE.md)). Now read without it (below).
@@ -321,10 +335,11 @@ it.
 
 **Platforms**: required everywhere; imported unguarded at start-up
 (through `persistence`), so the app does not start without it.
-Ubuntu 22.04 has 2.8.1, Debian 12 and Ubuntu 24.04 2.8.2, Debian 13
-and Arch 2.9.0, Fedora 43 and the pip builds 2.9.0.post0; the call
-and its options are the same in all. Pip builds also get `six`, which
-dateutil needs. Last releases: 2.8.2 (2021), 2.9.0 (2024).
+Ubuntu 22.04 has 2.8.1, Debian 12 and Ubuntu 24.04 2.8.2, Debian 13,
+Ubuntu 26.04 and 26.10 and Arch 2.9.0, Fedora 43 and the pip builds
+2.9.0.post0; the call and its options are the same in all. Pip
+builds also get `six`, which dateutil needs. Last releases: 2.8.2
+(2021), 2.9.0 (2024).
 
 **Size**: 684 KB (`python3-dateutil` 324 KB installed); pip: 844 KB
 plus `six` 36 KB.
@@ -374,7 +389,7 @@ version:
 |---------|--------|
 | 4.0.0 | Ubuntu 22.04 |
 | 5.1.0 | Debian 12; macOS, pinned `<5.2.0` (py2app cannot find 5.2's compiled modules, PACKAGING.md) |
-| 5.2.0 | Debian 13, Ubuntu 24.04, Fedora 43 |
+| 5.2.0 | Debian 13, Ubuntu 24.04, 26.04 and 26.10, Fedora 43 |
 | 6.0.0 | Arch, Fedora 44, openSUSE Tumbleweed |
 | 7.x | Windows, AppImage, Flatpak (pip `>=5.2.0`; 7.4.3 in the June Flatpak build) |
 

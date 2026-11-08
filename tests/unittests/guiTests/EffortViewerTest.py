@@ -1078,3 +1078,212 @@ class EffortViewerRenderPerDayTest(
     EffortViewerRenderTestMixin, test.wxTestCase
 ):
     aggregation = "day"
+
+
+class ParentRowsTestMixin(object):
+    """Added up per period, a parent task with only its subtasks' effort
+    has a row only while a total column shows what they add up to
+    (docs/EFFORTS.md, Views)."""
+
+    aggregation = "Subclass responsibility"
+    january = (2026, 1, 16)
+    march = (2026, 3, 2)
+
+    def setUp(self):
+        super().setUp()
+        settings.set("effortviewer", "aggregation", self.aggregation)
+        self.task_file = persistence.TaskFile()
+        self.parent = task.Task("Parent")
+        self.child = task.Task("Child")
+        self.parent.addChild(self.child)
+        self.task_file.tasks().append(self.parent)
+        self.child_effort = self.add_effort(self.child, self.january)
+        self.viewer = self.create_viewer()
+
+    def tearDown(self):
+        super().tearDown()
+        self.task_file.close()
+        self.task_file.stop()
+
+    def create_viewer(self):
+        return gui.viewer.EffortViewer(self.frame, self.task_file)
+
+    @staticmethod
+    def add_effort(owner, day):
+        an_effort = effort.Effort(
+            owner, date.DateTime(*day, 9), date.DateTime(*day, 10)
+        )
+        owner.addEffort(an_effort)
+        return an_effort
+
+    @staticmethod
+    def move_effort(an_effort, day):
+        an_effort.setStop(date.DateTime(*day, 10))
+        an_effort.setStart(date.DateTime(*day, 9))
+
+    def rows(self, viewer=None):
+        """Each row's month and task."""
+        return sorted(
+            (row.getStart().month, row.task().subject())
+            for row in (viewer or self.viewer).presentation()
+        )
+
+    def row_of(self, owner):
+        return next(
+            row for row in self.viewer.presentation() if row.task() == owner
+        )
+
+    def test_parent_with_only_subtask_effort_has_no_row(self):
+        self.assertEqual([(1, "Child"), (1, "Total")], self.rows())
+
+    def test_no_ancestor_with_only_subtask_effort_has_a_row(self):
+        grandchild = task.Task("Grandchild")
+        self.child.addChild(grandchild)
+        self.task_file.tasks().append(grandchild)
+        self.child.removeEffort(self.child_effort)
+        self.add_effort(grandchild, self.january)
+        self.assertEqual([(1, "Grandchild"), (1, "Total")], self.rows())
+
+    def test_parent_with_its_own_effort_has_a_row(self):
+        self.add_effort(self.parent, self.january)
+        self.assertEqual(
+            [(1, "Child"), (1, "Parent"), (1, "Total")], self.rows()
+        )
+
+    def test_parent_has_a_row_only_in_periods_of_its_own_effort(self):
+        self.add_effort(self.parent, self.march)
+        self.assertEqual(
+            [(1, "Child"), (1, "Total"), (3, "Parent"), (3, "Total")],
+            self.rows(),
+        )
+
+    def test_removing_parents_last_own_effort_removes_its_row(self):
+        own = self.add_effort(self.parent, self.january)
+        self.parent.removeEffort(own)
+        self.assertEqual([(1, "Child"), (1, "Total")], self.rows())
+
+    def test_moving_parents_own_effort_moves_its_row(self):
+        own = self.add_effort(self.parent, self.january)
+        self.move_effort(own, self.march)
+        self.assertEqual(
+            [(1, "Child"), (1, "Total"), (3, "Parent"), (3, "Total")],
+            self.rows(),
+        )
+
+    def test_moving_own_effort_to_a_period_of_subtask_effort(self):
+        self.add_effort(self.child, self.march)
+        own = self.add_effort(self.parent, self.january)
+        self.move_effort(own, self.march)
+        self.assertEqual(
+            [
+                (1, "Child"),
+                (1, "Total"),
+                (3, "Child"),
+                (3, "Parent"),
+                (3, "Total"),
+            ],
+            self.rows(),
+        )
+
+    def test_effort_moved_to_parent_gives_parent_a_row(self):
+        self.child_effort.set_task(self.parent)
+        self.assertEqual([(1, "Parent"), (1, "Total")], self.rows())
+
+    def test_child_moved_to_another_parent_leaves_no_blank_row(self):
+        other = task.Task("Other")
+        self.task_file.tasks().append(other)
+        self.parent.removeChild(self.child)
+        self.child.set_parent(other)
+        other.addChild(self.child)
+        self.assertEqual([(1, "Child"), (1, "Total")], self.rows())
+
+    def test_removing_the_child_removes_its_rows(self):
+        self.task_file.tasks().remove(self.child)
+        self.assertEqual([], self.rows())
+
+    def test_total_time_spent_column_shows_the_parent_row(self):
+        self.viewer.showColumnByName("totalTimeSpent", True)
+        self.assertEqual(
+            [(1, "Child"), (1, "Parent"), (1, "Total")], self.rows()
+        )
+
+    def test_total_revenue_column_shows_the_parent_row(self):
+        self.viewer.showColumnByName("totalRevenue", True)
+        self.assertEqual(
+            [(1, "Child"), (1, "Parent"), (1, "Total")], self.rows()
+        )
+
+    def test_parent_row_shows_what_its_subtasks_add_up_to(self):
+        self.viewer.showColumnByName("totalTimeSpent", True)
+        widget = self.viewer.widget
+        column = [each.name() for each in self.viewer.visibleColumns()].index(
+            "totalTimeSpent"
+        )
+        index = self.viewer.presentation().index(self.row_of(self.parent))
+        item = widget.get_item_with_index(index)
+        self.assertEqual("1:00:00", widget.getItemText(item, column))
+
+    def test_hiding_the_total_columns_hides_the_parent_row(self):
+        self.viewer.showColumnByName("totalTimeSpent", True)
+        self.viewer.showColumnByName("totalRevenue", True)
+        self.viewer.showColumnByName("totalTimeSpent", False)
+        self.assertIn((1, "Parent"), self.rows())
+        self.viewer.showColumnByName("totalRevenue", False)
+        self.assertEqual([(1, "Child"), (1, "Total")], self.rows())
+
+    def test_other_columns_do_not_show_the_parent_row(self):
+        self.viewer.showColumnByName("revenue", True)
+        self.viewer.showColumnByName("categories", True)
+        self.assertEqual([(1, "Child"), (1, "Total")], self.rows())
+
+    def test_a_total_column_saved_earlier_shows_the_parent_row(self):
+        self.viewer.showColumnByName("totalTimeSpent", True)
+        self.assertEqual(
+            [(1, "Child"), (1, "Parent"), (1, "Total")],
+            self.rows(self.create_viewer()),
+        )
+
+    def test_a_total_column_returns_with_its_row_after_details(self):
+        self.viewer.showColumnByName("totalTimeSpent", True)
+        self.viewer.set_aggregation("details")
+        self.viewer.set_aggregation(self.aggregation)
+        self.assertEqual(
+            [(1, "Child"), (1, "Parent"), (1, "Total")], self.rows()
+        )
+
+    def test_details_mode_lists_the_efforts(self):
+        self.viewer.set_aggregation("details")
+        self.assertEqual([self.child_effort], list(self.viewer.presentation()))
+
+    def test_tracking_a_child_refreshes_without_a_parent_row(self):
+        self.child.addEffort(effort.Effort(self.child))
+        self.viewer.second_refresher.on_every_second()
+        self.assertNotIn(
+            "Parent", [subject for _, subject in self.rows()]
+        )
+
+    def test_the_editors_effort_tab_has_no_blank_parent_row(self):
+        viewer = LocalEffortViewerUnderTest(
+            self.frame,
+            self.task_file,
+            tasksToShowEffortFor=task.TaskList([self.parent]),
+        )
+        self.assertEqual([(1, "Child"), (1, "Total")], self.rows(viewer))
+
+    def test_time_spent_of_the_period_still_counts_the_subtask(self):
+        total = next(
+            row for row in self.viewer.presentation() if row.isTotal()
+        )
+        self.assertEqual(date.TimeDelta(hours=1), total.timeSpent())
+
+
+class ParentRowsPerDayTest(ParentRowsTestMixin, test.wxTestCase):
+    aggregation = "day"
+
+
+class ParentRowsPerWeekTest(ParentRowsTestMixin, test.wxTestCase):
+    aggregation = "week"
+
+
+class ParentRowsPerMonthTest(ParentRowsTestMixin, test.wxTestCase):
+    aggregation = "month"

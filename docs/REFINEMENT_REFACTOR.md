@@ -1492,6 +1492,20 @@ Both:
   nothing writes a log file ([LOGGING_GUIDE.md](LOGGING_GUIDE.md)):
   a report from a Mac comes without the log. Size S.
 
+### Found 2026-11-08
+
+Both on master (2.0.3.8), in Effort per day, week and month:
+
+- P272. Deleting a subtask removes its parent's row for the period
+  when both have effort in it: the parent's effort stays, and the row
+  returns when the view is rebuilt (`__composites_to_remove()` also
+  takes the ancestors' rows). Steps: a parent and its subtask with
+  effort the same day; Effort per day; delete the subtask. Size S.
+- P273. The status bar's "visible" time counts everything twice: it
+  adds the period's Total rows to the task rows
+  (`EffortViewer.statusMessages()`). The Welcome file, Effort per day:
+  18:10:26 visible, 9:05:13 total. Size S.
+
 ---
 
 ## Open GitHub Issues
