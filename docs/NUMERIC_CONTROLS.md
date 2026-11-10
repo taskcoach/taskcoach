@@ -13,6 +13,7 @@ validation.
 - [Locale Decimal Handling](#locale-decimal-handling)
 - [Preferences](#preferences)
 - [UX Rationale](#ux-rationale)
+- [GTK 3 Widget Sizes](#gtk-3-widget-sizes)
 - [Cross-References](#cross-references)
 
 ---
@@ -104,8 +105,9 @@ Fires from:
 - `_onKillFocus` — after successful blur validation (user finished editing)
 - `SetValue()` — when called programmatically (domain pushed a new value)
 
-`AttributeSync` binds `EVT_VALUE_CHANGED` instead of `EVT_KILL_FOCUS`. This
-completes ATTRIBUTE_PATTERN.md TODO #1 for monetary controls.
+`AttributeSync` binds `EVT_VALUE_CHANGED` instead of `EVT_KILL_FOCUS`, as
+for every `MaskedFieldsCtrl`-based control
+([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#saving-on-leaving-a-field)).
 
 ---
 
@@ -170,6 +172,50 @@ Modern best practice for numeric input fields ([Smashing Magazine](https://www.s
 The previous `CurrencyValidator` approach blocked period keystrokes on GTK,
 deleted characters in insert mode, and allowed invalid paste content. The
 free-typing approach eliminates all of these issues.
+
+---
+
+## GTK 3 Widget Sizes
+
+### The Problem
+
+On Linux/GTK3, there is a noticeable visual inconsistency between widget types:
+- **Large widgets:** Buttons, dropdowns (ComboBox), SpinButton arrows - all have consistent large size
+- **Small widgets:** Text entries, number input fields - all have consistent small size
+
+The two groups don't match each other, making the UI look incoherent. The obvious fix would be to increase padding on inputs and decrease padding on buttons/dropdowns to meet in the middle.
+
+### Has This Been Addressed?
+
+**Yes, extensively discussed but never successfully fixed:**
+
+1. **[Numix Theme Issue #452](https://github.com/numixproject/numix-gtk-theme/issues/452)** - Explicitly states "The goal should be that entry and button have a similar height." They tried:
+   - Remove min-height from buttons → some buttons became too small
+   - Remove padding from buttons, add to entries → "changes too much"
+   - **Result:** "were not able to get a consistent size of buttons and entries"
+
+2. **[Mozilla Bug #1257811](https://bugzilla.mozilla.org/show_bug.cgi?id=1257811)** - Documents that GTK 3.20 changed to CSS min-height instead of padding. Adwaita theme sets `min-height: 32px` on entries but they remain visually smaller than buttons.
+
+3. **[Inkscape GTK+3 Issues](https://wiki.inkscape.org/wiki/index.php?title=GTK%2B_3_issues)** - Notes "too many ways of creating buttons with icons which leads to inconsistency of behavior"
+
+### Why It's Hard to Fix
+
+- GTK 3.20 moved from pixel-based to CSS-based theming
+- Different widgets calculate size differently (some use padding, some use min-height, some use icon size)
+- Fixing one widget type often breaks another
+- GNOME prioritized touch-friendly button sizes over visual consistency
+
+### Impact on Task Coach
+
+The custom `SpinCtrl` in `taskcoachlib/widgets/spinctrl.py` uses a `TextCtrl` + native `SpinButton` composition. The SpinButton arrows are GTK-sized (large) while the TextCtrl is standard entry-sized (small), creating a visually unbalanced control.
+
+### Possible Solutions
+
+1. **Accept it** - This is "platform native" behavior; GTK users see it everywhere
+2. **Custom-drawn spin buttons** - Replace native `SpinButton` with custom arrow images (see [wxPython forum solution](https://discuss.wxpython.org/t/my-personal-crusade-against-gtk-3-spinctrls-size/30506))
+3. **GTK CSS override** - Force widget sizes via `~/.config/gtk-3.0/gtk.css` (user-side, not app-side)
+
+**Status:** Known GTK3 limitation. No action planned - accepting platform behavior.
 
 ---
 

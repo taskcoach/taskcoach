@@ -300,7 +300,7 @@ class SubjectPage(Page):
             wx.EVT_KILL_FOCUS,
             self.items[0].subjectChangedEventType(),
         )
-        self.addEntry(
+        self.add_entry(
             _("Subject"),
             self._subjectEntry,
             flags=[None, wx.ALL | wx.EXPAND],
@@ -334,7 +334,7 @@ class SubjectPage(Page):
         self._descriptionEntry.Bind(
             widgets.EVT_PREVIEW_TOGGLED, self.on_preview_toggled
         )
-        self.addEntry(
+        self.add_entry(
             label,
             self._descriptionEntry,
             growable=True,
@@ -370,13 +370,13 @@ class SubjectPage(Page):
             creation_text += " - %s" % render.dateTime(
                 max_creation_datetime, human_readable=True
             )
-        self.addEntry(_("Creation date"), creation_text)
+        self.add_entry(_("Creation date"), creation_text)
 
     def add_modification_date_time_entry(self):
         self._modificationTextEntry = wx.StaticText(
             self, label=self.__modification_text()
         )
-        self.addEntry(_("Modification date"), self._modificationTextEntry)
+        self.add_entry(_("Modification date"), self._modificationTextEntry)
         for item in self.items:
             patterns.Publisher().registerObserver(
                 self.on_modification_datetime_changed,
@@ -448,7 +448,7 @@ class TaskSubjectPage(SubjectPage):
             wx.EVT_SPINCTRL,
             self.items[0].priorityChangedEventType(),
         )
-        self.addEntry(_("Priority"), self._priorityEntry)
+        self.add_entry(_("Priority"), self._priorityEntry)
 
     def entries(self):
         entries = super().entries()
@@ -498,7 +498,7 @@ class CategorySubjectPage(SubjectPage):
             wx.EVT_CHECKBOX,
             self.items[0].exclusiveSubcategoriesChangedEventType(),
         )
-        self.addEntry(_("Mutually exclusive"), panel)
+        self.add_entry(_("Mutually exclusive"), panel)
 
     def add_style_priority_entry(self):
         # pylint: disable=W0201
@@ -517,7 +517,7 @@ class CategorySubjectPage(SubjectPage):
             wx.EVT_SPINCTRL,
             self.items[0].stylePriorityChangedEventType(),
         )
-        self.addEntry(_("Style priority"), self._stylePriorityEntry)
+        self.add_entry(_("Style priority"), self._stylePriorityEntry)
 
 
 class AttachmentSubjectPage(SubjectPage):
@@ -564,7 +564,7 @@ class AttachmentSubjectPage(SubjectPage):
 
     def __add_read_only_entry(self, label, text):
         entry = widgets.read_only_text(self, text)
-        self.addEntry(label, entry, flags=[None, wx.ALL | wx.EXPAND])
+        self.add_entry(label, entry, flags=[None, wx.ALL | wx.EXPAND])
         return entry
 
     def add_subject_entry(self):
@@ -586,7 +586,7 @@ class AttachmentSubjectPage(SubjectPage):
         self._from_address_entry = self.__add_read_only_entry(
             _("From address"), mail.from_address()
         )
-        self.addEntry(
+        self.add_entry(
             _("Sent"),
             render.dateTime(mail.sent_datetime(), human_readable=True),
         )
@@ -641,7 +641,9 @@ class AttachmentSubjectPage(SubjectPage):
         type_label = wx.StaticText(panel, label=type_name)
         sizer.Add(type_label, 0, wx.ALIGN_CENTER_VERTICAL)
         panel.SetSizer(sizer)
-        self.addEntry(_("Type"), panel, flags=[None, wx.ALIGN_CENTER_VERTICAL])
+        self.add_entry(
+            _("Type"), panel, flags=[None, wx.ALIGN_CENTER_VERTICAL]
+        )
 
     def add_location_entry(self):
         if self.__has_mail():
@@ -679,7 +681,7 @@ class AttachmentSubjectPage(SubjectPage):
             sizer.Add(button, 0, wx.LEFT, 5)
             button.Bind(wx.EVT_BUTTON, self.onSelectLocation)
         panel.SetSizer(sizer)
-        self.addEntry(_("Location"), panel, flags=[None, wx.EXPAND])
+        self.add_entry(_("Location"), panel, flags=[None, wx.EXPAND])
 
     def onSelectLocation(self, event):  # pylint: disable=W0613
         # Here: iocontroller imports the dialogs
@@ -726,13 +728,13 @@ class TaskAppearancePage(ScrolledPage):
     columns = 3  # Label, Control, Source
     _vgap = 2
     _hgap = 5
-    _borderWidth = 2
+    _border_width = 2
 
     def addEntries(self):
         self.add_calculated_section()
         # Show "Override values" header for all single-item edits
         if len(self.items) == 1:
-            self.addLine()
+            self.add_line()
             self.add_section_header(_("Override values"))
         self.add_icon_entry()
         self.add_color_entries()
@@ -752,7 +754,7 @@ class TaskAppearancePage(ScrolledPage):
             self._position.next(2),
             span=(1, 2),
             flag=flag,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         if source_label:
             source = wx.StaticText(self, label=source_label)
@@ -762,7 +764,7 @@ class TaskAppearancePage(ScrolledPage):
                 self._position.next(1),
                 span=(1, 1),
                 flag=flag,
-                border=self._borderWidth,
+                border=self._border_width,
             )
         else:
             self._sizer.Add((0, 0), self._position.next(1), span=(1, 1))
@@ -810,7 +812,7 @@ class TaskAppearancePage(ScrolledPage):
         self._derived_icon_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        self.addEntry(
+        self.add_entry(
             _("Icon"),
             self._derived_icon_panel,
             self._derived_icon_source,
@@ -825,7 +827,7 @@ class TaskAppearancePage(ScrolledPage):
         self._derived_fg_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        self.addEntry(
+        self.add_entry(
             _("Foreground"),
             self._derived_fg_picker,
             self._derived_fg_source,
@@ -840,7 +842,7 @@ class TaskAppearancePage(ScrolledPage):
         self._derived_bg_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        self.addEntry(
+        self.add_entry(
             _("Background"),
             self._derived_bg_picker,
             self._derived_bg_source,
@@ -856,7 +858,7 @@ class TaskAppearancePage(ScrolledPage):
         self._derived_font_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        self.addEntry(
+        self.add_entry(
             _("Font"),
             self._derived_font_picker,
             self._derived_font_source,
@@ -1079,7 +1081,7 @@ class TaskAppearancePage(ScrolledPage):
             self.items[0].appearanceChangedEventType(),
         )
         setattr(self, "_%sColorSync" % color_type, color_sync)
-        self.addEntry(
+        self.add_entry(
             label_text,
             color_entry,
             flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT],
@@ -1124,7 +1126,7 @@ class TaskAppearancePage(ScrolledPage):
             entry.EVT_FONTENTRY,
             self.items[0].appearanceChangedEventType(),
         )
-        self.addEntry(
+        self.add_entry(
             _("Font"),
             self._fontEntry,
             flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT],
@@ -1142,7 +1144,7 @@ class TaskAppearancePage(ScrolledPage):
             return
         item = self.items[0]
 
-        self.addLine()
+        self.add_line()
         self.add_section_header(_("Effective values"), _("Source"))
         entry_flags = [
             wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT,  # Label
@@ -1177,7 +1179,7 @@ class TaskAppearancePage(ScrolledPage):
         self._effective_icon_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        self.addEntry(
+        self.add_entry(
             _("Icon"),
             self._effective_icon_panel,
             self._effective_icon_source,
@@ -1192,7 +1194,7 @@ class TaskAppearancePage(ScrolledPage):
         self._effective_fg_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        self.addEntry(
+        self.add_entry(
             _("Foreground"),
             self._effective_fg_picker,
             self._effective_fg_source,
@@ -1207,7 +1209,7 @@ class TaskAppearancePage(ScrolledPage):
         self._effective_bg_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        self.addEntry(
+        self.add_entry(
             _("Background"),
             self._effective_bg_picker,
             self._effective_bg_source,
@@ -1227,7 +1229,7 @@ class TaskAppearancePage(ScrolledPage):
         self._effective_font_source.SetForegroundColour(
             wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
         )
-        self.addEntry(
+        self.add_entry(
             _("Font"),
             self._effective_font_picker,
             self._effective_font_source,
@@ -1381,7 +1383,7 @@ class TaskAppearancePage(ScrolledPage):
             entry.EVT_ICONENTRY,
             self.items[0].appearanceChangedEventType(),
         )
-        self.addEntry(
+        self.add_entry(
             _("Icon"),
             self._iconEntry,
             flags=[None, wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT],
@@ -1454,11 +1456,11 @@ class DatesPage(ScrolledPage):
 
     def addEntries(self):
         self.add_status_entry()
-        self.addLine()
+        self.add_line()
         self.add_date_entries()
-        self.addLine()
+        self.add_line()
         self.add_reminder_entry()
-        self.addLine()
+        self.add_line()
         self.add_recurrence_entry()
 
     def add_status_entry(self):
@@ -1485,7 +1487,7 @@ class DatesPage(ScrolledPage):
         )
 
         # 3 controls: label + panel + source
-        self.addEntry(
+        self.add_entry(
             _("Status"),
             self._statusPanel,
             self._statusSource,
@@ -1550,7 +1552,7 @@ class DatesPage(ScrolledPage):
     def add_date_entries(self):
         # Create panel for planned date section with table layout
         self._add_planned_date_section()
-        self.addLine()
+        self.add_line()
         self._addActualStartDateEntry()
         self._addCompletionDateEntry()
 
@@ -1599,7 +1601,7 @@ class DatesPage(ScrolledPage):
         )
 
         # Add planned start row: label | datetime row | (empty)
-        self.addEntry(
+        self.add_entry(
             _("Planned start date"),
             self._plannedStartDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
@@ -1726,7 +1728,7 @@ class DatesPage(ScrolledPage):
         duration_rest_panel.SetSizer(duration_rest_sizer)
 
         # Add duration row: label | duration | presets+mode (left-aligned)
-        self.addEntry(
+        self.add_entry(
             _("Planned duration"),
             self._plannedDurationCtrl,
             duration_rest_panel,
@@ -1767,7 +1769,7 @@ class DatesPage(ScrolledPage):
         )
 
         # Add due date row: label | datetime row | (empty)
-        self.addEntry(
+        self.add_entry(
             _("Due date"),
             self._dueDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
@@ -1812,7 +1814,7 @@ class DatesPage(ScrolledPage):
             self.items[0].actualStartDateTimeChangedEventType(),
         )
 
-        self.addEntry(
+        self.add_entry(
             _("Actual start date"),
             self._actualStartDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
@@ -1853,7 +1855,7 @@ class DatesPage(ScrolledPage):
             self.items[0].completionDateTimeChangedEventType(),
         )
 
-        self.addEntry(
+        self.add_entry(
             _("Completion date"),
             self._completionDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
@@ -2302,7 +2304,7 @@ class DatesPage(ScrolledPage):
             self.items[0].reminderChangedEventType(),
         )
 
-        self.addEntry(
+        self.add_entry(
             _("Reminder"),
             self._reminderDateTimeCombo.CreateRowPanel(self),
             wx.StaticText(self, label=""),
@@ -2334,7 +2336,7 @@ class DatesPage(ScrolledPage):
         panels = self._recurrenceEntry.getSubPanels()
         for i, panel in enumerate(panels):
             panel.Reparent(self)
-            self.addEntry(
+            self.add_entry(
                 _("Recurrence") if i == 0 else "",
                 panel,
                 flags=recurrence_flags,
@@ -2383,7 +2385,7 @@ class ProgressPage(Page):
             entry.EVT_PERCENTAGEENTRY,
             self.items[0].percentageCompleteChangedEventType(),
         )
-        self.addEntry(
+        self.add_entry(
             _("Percentage complete"),
             self._percentageCompleteEntry,
             flags=[None, wx.EXPAND],
@@ -2422,7 +2424,7 @@ class ProgressPage(Page):
             entry.EVT_CHOICEENTRY,
             task.Task.shouldMarkCompletedWhenAllChildrenCompletedChangedEventType(),
         )
-        self.addEntry(
+        self.add_entry(
             _("Mark task completed when all children are completed?"),
             self._shouldMarkCompletedEntry,
             flags=[None, wx.EXPAND],
@@ -2445,7 +2447,7 @@ class BudgetPage(ScrolledPage):
 
     def addEntries(self):
         self.add_budget_entries()
-        self.addLine()
+        self.add_line()
         self.add_revenue_entries()
         self.observe_tracking()
 
@@ -2475,7 +2477,7 @@ class BudgetPage(ScrolledPage):
             widgets.EVT_VALUE_CHANGED,
             self.items[0].budgetChangedEventType(),
         )
-        self.addEntry(_("Budget"), self._budget_entry, flags=[None, wx.ALL])
+        self.add_entry(_("Budget"), self._budget_entry, flags=[None, wx.ALL])
 
     def add_time_spent_entry(self):
         assert len(self.items) == 1
@@ -2485,7 +2487,7 @@ class BudgetPage(ScrolledPage):
         )
         self._time_spent_entry.SetDuration(self.items[0].timeSpent())
         self._time_spent_entry.SetReadOnly(True)
-        self.addEntry(
+        self.add_entry(
             _("Time spent"),
             self._time_spent_entry,
             flags=[None, wx.ALL],
@@ -2507,7 +2509,7 @@ class BudgetPage(ScrolledPage):
         )
         self._budget_left_entry.SetDuration(self.items[0].budgetLeft())
         self._budget_left_entry.SetReadOnly(True)
-        self.addEntry(
+        self.add_entry(
             _("Budget left"),
             self._budget_left_entry,
             flags=[None, wx.ALL],
@@ -2542,7 +2544,7 @@ class BudgetPage(ScrolledPage):
             widgets.EVT_VALUE_CHANGED,
             self.items[0].hourlyFeeChangedEventType(),
         )
-        self.addEntry(
+        self.add_entry(
             _("Hourly fee"),
             self._hourly_fee_entry,
             flags=[None, wx.ALL],
@@ -2563,7 +2565,7 @@ class BudgetPage(ScrolledPage):
             widgets.EVT_VALUE_CHANGED,
             self.items[0].fixedFeeChangedEventType(),
         )
-        self.addEntry(
+        self.add_entry(
             _("Fixed fee"), self._fixed_fee_entry, flags=[None, wx.ALL]
         )
 
@@ -2573,7 +2575,7 @@ class BudgetPage(ScrolledPage):
         self._revenue_entry = entry.AmountEntry(
             self, revenue, readonly=True
         )  # pylint: disable=W0201
-        self.addEntry(_("Revenue"), self._revenue_entry, flags=[None, wx.ALL])
+        self.add_entry(_("Revenue"), self._revenue_entry, flags=[None, wx.ALL])
         self.registerObserver(
             self.on_revenue_changed,
             eventType=self.items[0].revenueChangedEventType(),
@@ -2658,7 +2660,7 @@ class PageWithViewer(Page):
         self.viewer = self.create_viewer(
             self.__task_file, self.__settings_section
         )
-        self.addEntry(self.viewer, growable=True, flags=[wx.EXPAND])
+        self.add_entry(self.viewer, growable=True, flags=[wx.EXPAND])
 
     def create_viewer(self, task_file, settings_section):
         raise NotImplementedError
@@ -3075,7 +3077,7 @@ class PathPage(ScrolledPage):
         self._pathPanel = wx.Panel(self)
         self._pathSizer = wx.BoxSizer(wx.VERTICAL)
         self._pathPanel.SetSizer(self._pathSizer)
-        self.addEntry(self._pathPanel, growable=True, flags=[wx.EXPAND])
+        self.add_entry(self._pathPanel, growable=True, flags=[wx.EXPAND])
 
     def selected(self):
         """Called when this tab is selected. Build/rebuild the path display."""
@@ -3932,7 +3934,7 @@ class EffortEditBook(Page):
             edit_task_button, proportion=0, flag=wx.ALIGN_CENTER_VERTICAL
         )
         panel.SetSizerAndFit(panel_sizer)
-        self.addEntry(_("Task"), panel, flags=[None, wx.ALL | wx.EXPAND])
+        self.add_entry(_("Task"), panel, flags=[None, wx.ALL | wx.EXPAND])
 
     def __add_start_and_stop_entries(self):
         # pylint: disable=W0201
@@ -3977,7 +3979,7 @@ class EffortEditBook(Page):
             self.__create_start_from_last_effort_button()
         )
 
-        self.addEntry(
+        self.add_entry(
             _("Start"),
             self._start_date_time_combo.CreateRowPanel(self),
             self._start_from_last_effort_button,
@@ -4033,7 +4035,7 @@ class EffortEditBook(Page):
 
         self._time_spent_clock_running = False
 
-        self.addEntry(
+        self.add_entry(
             _("Time spent"),
             self._time_spent_ctrl,
             self._time_spent_label,
@@ -4125,7 +4127,7 @@ class EffortEditBook(Page):
         presets_and_mode_panel.SetSizer(presets_and_mode_sizer)
 
         # Duration row: label, duration (right-aligned), presets+mode (left-aligned)
-        self.addEntry(
+        self.add_entry(
             _("Duration"),
             self._effort_duration_ctrl,
             presets_and_mode_panel,
@@ -4158,7 +4160,7 @@ class EffortEditBook(Page):
         )
         self._stop_now_button = self.__create_stop_now_button()
 
-        self.addEntry(
+        self.add_entry(
             _("Stop"),
             self._stop_date_time_combo.CreateRowPanel(self),
             self._stop_now_button,
@@ -4171,7 +4173,7 @@ class EffortEditBook(Page):
 
         # --- Warning message ---
         self._invalid_period_message = self.__create_invalid_period_message()
-        self.addEntry(
+        self.add_entry(
             self._invalid_period_message,
             flags=[
                 wx.ALL | wx.ALIGN_CENTER_VERTICAL | wx.ALIGN_LEFT | wx.EXPAND
@@ -4779,7 +4781,7 @@ class EffortEditBook(Page):
             self.items[0].descriptionChangedEventType(),
         )
         # Description text box spans full width - label not needed as purpose is obvious
-        self.addEntry(
+        self.add_entry(
             self._descriptionEntry, flags=[wx.ALL | wx.EXPAND], growable=True
         )
         if len(self.items) == 1 and self.items[0].is_preview_shown():
@@ -4908,6 +4910,10 @@ class Editor(BalloonTipManager, widgets.Dialog):
                 parent=parent,
             )
         )
+        if isinstance(self._interior, widgets.Notebook):
+            # At its final size: the first frame shows tabs and fields,
+            # not a gray window waiting for AGW's queued layouts
+            self._interior.layout_now()
 
     def place(self):
         """Centred for the rules leaving the place to the system; the

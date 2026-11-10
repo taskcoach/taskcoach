@@ -691,7 +691,7 @@ known flaw in the way it is used; the Windows installer quotes the
   folder ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#saving)). Left:
   temporary files named `tmp-N` (`persistence/taskfile.py`) stay
   after a crash during a save; names that say whose they are, removed
-  at open. TODO.md 4 asks for atomic writes.
+  at open.
 - P195. ~~The settings file is written only at quit, by removing it
   and then renaming the new one~~: fixed 2026-10-04 with P196: written
   while running, replaced in one step once on disk
@@ -706,7 +706,8 @@ known flaw in the way it is used; the Windows installer quotes the
 - P197. Every save, autosave included, writes a full bz2 backup on the
   UI thread, in place, not through a temporary file
   (`persistence/autobackup.py:37-43, 208-220, 272-279`); pruning
-  removes at most 3 per save. With TODO.md 4 (P94).
+  removes at most 3 per save. With the backup review of P94
+  ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#backups)).
 - P198. A failing `taskfile.aboutToSave` is swallowed without a log
   (`persistence/taskfile.py:556-558`). Low risk: the Publisher logs
   each observer's failure. S.
@@ -1506,6 +1507,19 @@ Both on master (2.0.3.8), in Effort per day, week and month:
   (`EffortViewer.statusMessages()`). The Welcome file, Effort per day:
   18:10:26 visible, 9:05:13 total. Size S.
 
+### Found 2026-11-10
+
+On master (2.0.3.9), on GTK:
+
+- P274. A list keeps the app busy for about 2 s after a click on a
+  row, or the pointer moving over it: GTK fades its overlay scrollbar
+  in and out and asks for the whole list on every frame of the fade,
+  which the bundled tree widget draws from Python each time. Steps:
+  a 1,000-task file, the main window filling the screen; click a row:
+  73 to 76 repaints of 24 ms. Measurements, GTK's source and options
+  in [RENDERING_SPEED.md](RENDERING_SPEED.md#lists-repaint-on-every-scrollbar-fade-frame).
+  Size M.
+
 ---
 
 ## Open GitHub Issues
@@ -1517,8 +1531,11 @@ GitHub's public API. Closing them is the designer's.
 
 **Likely fixed or decided**, to close after a check on 2.0.3.0: #47
 (the `.delta` file is gone), #61 (mail drop, P31), #88 and #187 (the
-version check), #123 (no log file, by design: TODO.md 1), #268
-(TODO.md 7, no action), #286 and #318 (status refresh,
+version check), #123 (no log file, by design:
+[LOGGING_GUIDE.md](LOGGING_GUIDE.md#output)), #268 (GTK 3 widget
+sizes, no action:
+[NUMERIC_CONTROLS.md](NUMERIC_CONTROLS.md#gtk-3-widget-sizes)), #286
+and #318 (status refresh,
 [TASK_STATUS.md](TASK_STATUS.md)), #303 (status reworked), #381 (idle
 CPU, the scheduler refactor), #385 (P118), #473 (P132). Perhaps also
 #25 ([FILE_LOCKING.md](FILE_LOCKING.md)), #407

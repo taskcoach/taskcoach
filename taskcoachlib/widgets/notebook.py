@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import wx
 import wx.lib.agw.aui as aui
 import wx.lib.scrolledpanel as scrolledpanel
+from taskcoachlib import patterns
 from taskcoachlib.gui.icons.icon_library import icon_catalog, LIST_ICON_SIZE
 from taskcoachlib.widgets.frame import free_with_window, is_whole_layout
 
@@ -30,7 +31,7 @@ class GridCursor:
         self.__columns = columns
         self.__nextPosition = (0, 0)
 
-    def __updatePosition(self, colspan):
+    def __update_position(self, colspan):
         """Update the position of the cursor, taking colspan into account."""
         row, column = self.__nextPosition
         if column == self.__columns - colspan:
@@ -42,10 +43,10 @@ class GridCursor:
 
     def next(self, colspan=1):
         row, column = self.__nextPosition
-        self.__updatePosition(colspan)
+        self.__update_position(colspan)
         return row, column
 
-    def maxRow(self):
+    def max_row(self):
         row, column = self.__nextPosition
         return max(0, row - 1) if column == 0 else row
 
@@ -54,11 +55,11 @@ class BookPage(wx.Panel):
     """A page in a notebook."""
 
     # Outer margin around page content (modern UI best practice: 10-12px)
-    _outerMargin = 10
+    _outer_margin = 10
     # Grid spacing - subclasses can override
     _vgap = 0
     _hgap = 5
-    _borderWidth = 5
+    _border_width = 5
 
     def __init__(self, parent, columns, growable_column=None, *args, **kwargs):
         super().__init__(parent, style=wx.TAB_TRAVERSAL, *args, **kwargs)
@@ -76,12 +77,12 @@ class BookPage(wx.Panel):
         if not hasattr(self, "_outerSizer") or self._outerSizer is None:
             self._outerSizer = wx.BoxSizer(wx.VERTICAL)
             self._outerSizer.Add(
-                self._sizer, 1, wx.EXPAND | wx.ALL, self._outerMargin
+                self._sizer, 1, wx.EXPAND | wx.ALL, self._outer_margin
             )
             self.SetSizer(self._outerSizer)
         self.Layout()  # Force layout recalculation (needed on Windows for lazy-loaded pages)
 
-    def __defaultFlags(self, controls):
+    def __default_flags(self, controls):
         """Return the default flags for placing a list of controls."""
         flags = []
         for column_index in range(len(controls)):
@@ -89,17 +90,17 @@ class BookPage(wx.Panel):
             flags.append(flag)
         return flags
 
-    def __determineFlags(self, controls, flags_passed):
+    def __determine_flags(self, controls, flags_passed):
         """Return a merged list of flags by overriding the default
         flags with flags passed by the caller."""
         flags_passed = flags_passed or [None] * len(controls)
-        default_flags = self.__defaultFlags(controls)
+        default_flags = self.__default_flags(controls)
         return [
             default_flag if flag_passed is None else flag_passed
             for flag_passed, default_flag in zip(flags_passed, default_flags)
         ]
 
-    def addEntry(self, *controls, **kwargs):
+    def add_entry(self, *controls, **kwargs):
         """Add a number of controls to the page. All controls are
         placed on one row, and together they form one entry. E.g. a
         label, a text field and an explanatory label. The default
@@ -109,18 +110,18 @@ class BookPage(wx.Panel):
         contain None for controls that should be placed using the default
         flag. If the flags list is shorter than the number of
         controls it is extended with as much 'None's as needed.
-        So, addEntry(aLabel, aTextCtrl, flags=[None, wx.ALIGN_LEFT])
+        So, add_entry(aLabel, aTextCtrl, flags=[None, wx.ALIGN_LEFT])
         will place the label with the default flag and will place the
         textCtrl left aligned."""
-        flags = self.__determineFlags(controls, kwargs.get("flags", None))
+        flags = self.__determine_flags(controls, kwargs.get("flags", None))
         controls = [
-            self.__createStaticTextControlIfNeeded(control)
+            self.__create_static_text_control_if_needed(control)
             for control in controls
             if control is not None
         ]
         last_column_index = len(controls) - 1
         for column_index, control in enumerate(controls):
-            self.__addControl(
+            self.__add_control(
                 column_index,
                 control,
                 flags[column_index],
@@ -129,7 +130,7 @@ class BookPage(wx.Panel):
             if column_index > 0:
                 control.MoveAfterInTabOrder(controls[column_index - 1])
         if kwargs.get("growable", False):
-            self._sizer.AddGrowableRow(self._position.maxRow())
+            self._sizer.AddGrowableRow(self._position.max_row())
         # Move growable column definition here
         # There are asserts to fail if the column is already
         # marked growable or if there is no column yet created
@@ -140,7 +141,7 @@ class BookPage(wx.Panel):
             self._sizer.AddGrowableCol(self._growableColumn)
             self._growableColumn = -1
 
-    def addLine(self):
+    def add_line(self):
         line = wx.StaticLine(self)
         colspan = max(self._columns, 1)
         self._sizer.Add(
@@ -151,17 +152,17 @@ class BookPage(wx.Panel):
             border=5,
         )
 
-    def __addControl(self, column_index, control, flag, last_column):
+    def __add_control(self, column_index, control, flag, last_column):
         colspan = max(self._columns - column_index, 1) if last_column else 1
         self._sizer.Add(
             control,
             self._position.next(colspan),
             span=(1, colspan),
             flag=flag,
-            border=self._borderWidth,
+            border=self._border_width,
         )
 
-    def __createStaticTextControlIfNeeded(self, control):
+    def __create_static_text_control_if_needed(self, control):
         if isinstance(control, str):
             control = wx.StaticText(self, label=control)
         return control
@@ -171,11 +172,11 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
     """A scrollable page in a notebook. Use for pages with lots of content."""
 
     # Outer margin around page content
-    _outerMargin = 10
+    _outer_margin = 10
     # Grid spacing - subclasses can override
     _vgap = 0
     _hgap = 5
-    _borderWidth = 5
+    _border_width = 5
 
     def __init__(self, parent, columns, growable_column=None, *args, **kwargs):
         super().__init__(parent, style=wx.TAB_TRAVERSAL, *args, **kwargs)
@@ -192,13 +193,13 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
         if not hasattr(self, "_outerSizer") or self._outerSizer is None:
             self._outerSizer = wx.BoxSizer(wx.VERTICAL)
             self._outerSizer.Add(
-                self._sizer, 1, wx.EXPAND | wx.ALL, self._outerMargin
+                self._sizer, 1, wx.EXPAND | wx.ALL, self._outer_margin
             )
             self.SetSizer(self._outerSizer)
         self.SetupScrolling(scroll_x=True, scroll_y=True)
         self.Layout()
 
-    def __defaultFlags(self, controls):
+    def __default_flags(self, controls):
         """Return the default flags for placing a list of controls."""
         flags = []
         for column_index in range(len(controls)):
@@ -206,34 +207,34 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
             flags.append(flag)
         return flags
 
-    def __determineFlags(self, controls, flags_passed):
+    def __determine_flags(self, controls, flags_passed):
         """Return a merged list of flags by overriding the default
         flags with flags passed by the caller."""
         flags_passed = flags_passed or [None] * len(controls)
-        default_flags = self.__defaultFlags(controls)
+        default_flags = self.__default_flags(controls)
         return [
             default_flag if flag_passed is None else flag_passed
             for flag_passed, default_flag in zip(flags_passed, default_flags)
         ]
 
-    def addEntry(self, *controls, **kwargs):
+    def add_entry(self, *controls, **kwargs):
         """Add controls to the page on one row."""
-        flags = self.__determineFlags(controls, kwargs.get("flags", None))
+        flags = self.__determine_flags(controls, kwargs.get("flags", None))
         controls = [
-            self._ScrolledBookPage__createStaticTextControlIfNeeded(control)
+            self.__create_static_text_control_if_needed(control)
             for control in controls
             if control is not None
         ]
         last_column_index = len(controls) - 1
         for column_index, control in enumerate(controls):
-            self._ScrolledBookPage__addControl(
+            self.__add_control(
                 column_index,
                 control,
                 flags[column_index],
                 column_index == last_column_index,
             )
         if kwargs.get("growable", False):
-            self._sizer.AddGrowableRow(self._position.maxRow())
+            self._sizer.AddGrowableRow(self._position.max_row())
         # Add growable column once, when first entry has been added
         if (
             self._growableColumn >= 0
@@ -242,7 +243,7 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
             self._sizer.AddGrowableCol(self._growableColumn)
             self._growableColumn = -1
 
-    def addLine(self):
+    def add_line(self):
         line = wx.StaticLine(self)
         colspan = max(self._columns, 1)
         self._sizer.Add(
@@ -253,17 +254,17 @@ class ScrolledBookPage(scrolledpanel.ScrolledPanel):
             border=5,
         )
 
-    def __addControl(self, column_index, control, flag, last_column):
+    def __add_control(self, column_index, control, flag, last_column):
         colspan = max(self._columns - column_index, 1) if last_column else 1
         self._sizer.Add(
             control,
             self._position.next(colspan),
             span=(1, colspan),
             flag=flag,
-            border=self._borderWidth,
+            border=self._border_width,
         )
 
-    def __createStaticTextControlIfNeeded(self, control):
+    def __create_static_text_control_if_needed(self, control):
         if isinstance(control, str):
             control = wx.StaticText(self, label=control)
         return control
@@ -277,12 +278,12 @@ def _whole_steps(size, step):
 class BookMixin(object):
     """Mixin class for *book"""
 
-    _bitmapSize = (LIST_ICON_SIZE, LIST_ICON_SIZE)
-    pageChangedEvent = "Subclass responsibility"
+    _bitmap_size = (LIST_ICON_SIZE, LIST_ICON_SIZE)
+    page_changed_event = "Subclass responsibility"
 
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, -1, *args, **kwargs)
-        self.Bind(self.pageChangedEvent, self.on_page_changed)
+        self.Bind(self.page_changed_event, self.on_page_changed)
 
     def __getitem__(self, index):
         """More pythonic way to get a specific page, also useful for iterating
@@ -298,7 +299,7 @@ class BookMixin(object):
 
     def AddPage(self, page, name, icon_id=None):
         """Override AddPage to allow for simply specifying the icon_id."""
-        bitmap = icon_catalog.get_bitmap(icon_id, self._bitmapSize[0])
+        bitmap = icon_catalog.get_bitmap(icon_id, self._bitmap_size[0])
         super().AddPage(page, name, bitmap=bitmap)
 
     def ok(self, *args, **kwargs):
@@ -307,7 +308,7 @@ class BookMixin(object):
 
 
 class Notebook(BookMixin, aui.AuiNotebook):
-    pageChangedEvent = aui.EVT_AUINOTEBOOK_PAGE_CHANGED
+    page_changed_event = aui.EVT_AUINOTEBOOK_PAGE_CHANGED
 
     def __init__(self, *args, **kwargs):
         default_style = kwargs.get("agwStyle", aui.AUI_NB_DEFAULT_STYLE)
@@ -318,12 +319,32 @@ class Notebook(BookMixin, aui.AuiNotebook):
         )
         super().__init__(*args, **kwargs)
         free_with_window(self, self.GetAuiManager())
+        self.__layout_queued = False
+        self.GetAuiManager().Update = self.__queue_layout
         # Bind mouse wheel directly on the tab control for tab scrolling
         tab_ctrl = self.GetActiveTabCtrl()
         if tab_ctrl:
             tab_ctrl.Bind(wx.EVT_MOUSEWHEEL, self.__on_tab_mouse_wheel)
         # Disable focus on internal AUI TabFrame to prevent "lost" tab keypress
         self.__disable_tab_frame_focus()
+
+    def __queue_layout(self):
+        """AGW's Update(): one queued layout for all the requests made
+        before it runs, as AGW queues a whole one for each."""
+        if not self.__layout_queued:
+            self.__layout_queued = True
+            patterns.later.soon(self, self.__layout)
+
+    def __layout(self):
+        if self.__layout_queued:
+            self.__layout_queued = False
+            self.GetAuiManager().DoUpdate()
+
+    def layout_now(self):
+        """Lay out the tabs and pages before the first show, so the
+        first frame drawn has them (docs/RENDERING_SPEED.md)."""
+        self.__layout_queued = True
+        self.__layout()
 
     def LoadPerspective(self, layout):  # noqa: N802 (AGW's)
         """Load a layout SavePerspective wrote; False, the tabs

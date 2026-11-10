@@ -4,6 +4,16 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.10
+
+### Editors
+
+- The Markdown preview has the outline and background the theme
+  gives a field that cannot be changed, as the dates do; its text
+  keeps its usual colour.
+- Editors open faster: the window shows its tabs and fields at once,
+  where on Linux it was first empty and gray.
+
 ## 2.0.3.9
 
 ### Efforts

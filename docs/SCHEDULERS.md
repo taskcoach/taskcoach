@@ -17,12 +17,7 @@
 
 ## TODO
 
-1. **Decided 2026-09-28: recursive priority stays out of the
-   scheduler.** It depends on data only (priorities, completion, the
-   tree), never on time, so it goes by events, as it always did
-   ([TASK_FIELDS.md](TASK_FIELDS.md#priority)). Computed by
-   the loop it would lag a tick behind each edit and climb one level
-   per pass, as the loop visits parents first.
+Nothing to do.
 
 ---
 
@@ -38,6 +33,13 @@ Task Coach uses scheduled/timed events for various features. This document descr
 |----------------|-----------|---------|
 | **TIME-based updates** | Scheduler (master timer list) | Status recomputation, reminders, styles |
 | **DATA-based cascades** | Events | Parent/child auto-completion; an open child reopens its completed parent. On edits only: loading or merging a file runs neither ([PERSISTENCE_XML.md](PERSISTENCE_XML.md#merging)) |
+
+Recursive priority is data-based too, **decided 2026-09-28**: it
+depends on priorities, completion and the tree, never on time, so it
+goes by events, as it always did
+([TASK_FIELDS.md](TASK_FIELDS.md#priority)). Computed by the loop it
+would lag a tick behind each edit and climb one level per pass, as
+the loop visits parents first.
 
 **Why this matters:**
 

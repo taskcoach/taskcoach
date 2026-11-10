@@ -23,7 +23,8 @@ but it could not run on Python 3: `import ntlm` found the empty
 `str` and `bytes`, called `string.upper()`, used MD4 (refused by
 OpenSSL 3) and `hmac.new()` without a digest. A server offering NTLM
 now gets the plain IMAP login; `pyspnego` (Debian 13) would be the
-replacement if NTLM is wanted ([TODO.md](TODO.md#12-thunderbirdimap-mail-integration-review)).
+replacement if NTLM is wanted. The IMAP reader was removed since
+([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#decisions) 8).
 
 ### deltaTime.py Module
 

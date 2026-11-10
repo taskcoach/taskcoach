@@ -16,6 +16,28 @@ details.
   Running black is the standard way to fix whitespace and wrapping.
 - PEP 8 line length: **79 for code, 72 for comments and docstrings**. black
   wraps code; wrap comments and docstrings by hand.
+- Run black on the touched files, whole, in place. Check with
+  `black --check <files>` without `-q`, which hides the files it would
+  change; never on standard input, which ignores `pyproject.toml` and
+  checks at 88.
+- A file keeps its line endings: an edit made with Python reads and
+  writes it with `newline=""`, or its CRLF endings become LF.
+
+## Changed lines
+
+What a change writes or rewrites follows PEP 8, whatever the code
+around it does ([DEVELOPMENT.md](DEVELOPMENT.md#code-style)):
+
+- flake8 on the changed files (`--select=E,W,F,N --max-line-length=79
+  --max-doc-length=72`); every finding on an added line is fixed.
+- flake8 sees a method's `def` line only: a camelCase method whose
+  body was rewritten is found by walking the diff's added lines with
+  `ast` to their enclosing functions. It is renamed, with its
+  camelCase siblings in the same module or class, when the rename is
+  by reference and contained; string-built families and names many
+  classes share wait for step 3 of
+  [Finishing the Migration](#finishing-the-migration).
+- Then `tools/check_renames.py`, the full suite and an app check.
 
 ## Naming: snake_case, with a wx exception
 
@@ -146,14 +168,24 @@ Steps, one commit each, each followed by the full suite,
    `thirdparty/` or `patches/` (`dateTime`,
    `includeMinutes`), and 11 locals (N806).
 3. Methods and attributes, package by package, each string family
-   with its builder; To Do 2 and D1 within.
+   with its builder; To Do 2 and D1 within. Begun 2026-11-10 with
+   `widgets/textctrl.py` and `widgets/notebook.py`: 31 names, with
+   their callers in `gui/dialog/editor.py`, `gui/dialog/preferences.py`
+   and the tests (the pages' `add_entry()`, `add_line()` and
+   `_border_width`, which an editor page overrides). Left there: wx's
+   names (`GetValue`, `OnLinkClicked`, `AddPage`, ...),
+   `wxEVT_PREVIEW_TOGGLED` in wx's style, and `_textCtrl`, which the
+   spin control and the tests share.
 4. Class, exception and module names.
 5. Docs citing old names (P230, P112); pep8-naming in CI with the
    keep-list, so no new camelCase.
 
 Risks: a name reached only through a string or a library fails only
 when its line runs; `check_renames.py`, a search of every old name in
-string literals, the suite and the app checks cover it. Two test
+string literals, the suite and the app checks cover it. A private
+name written mangled (`self._ScrolledBookPage__addControl`) escapes a
+whole-word search and `check_renames.py` alike: search `_<Class>__`
+too (found 2026-11-10, when Preferences failed to open). Two test
 methods with the same snake_case name would hide one: checked per
 class.
 

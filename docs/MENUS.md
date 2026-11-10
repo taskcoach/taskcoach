@@ -17,15 +17,7 @@
 
 ## TODO
 
-1. ~~PEP 8 renames (separate commit): `append_to_toolbar`, `add_to_menu`, etc.~~ — **DONE.** All UICommand methods and constructor kwargs renamed to snake_case.
-2. ~~GTK menu width not recalculated on first open after `SetItemLabel()` changes
-   text during `EVT_MENU_OPEN`. Second open sizes correctly.~~ **Done**
-   2026-10-02: no label changes as a menu opens. Undo and Redo follow the
-   `CommandHistory` event; Paste as subitem and New subitem follow the
-   active viewer (`_KindLabelMixin`), P99 in
-   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues).
-   See [PUBLISHER_OBSERVER.md — GTK3 Dynamic Menu Item Sizing](PUBLISHER_OBSERVER.md#gtk3-dynamic-menu-item-sizing)
-   for the full pattern.
+Nothing to do.
 
 ---
 

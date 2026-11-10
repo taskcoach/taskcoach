@@ -23,6 +23,7 @@ from taskcoachlib import patterns, persistence
 from taskcoachlib.config import settings
 from taskcoachlib.domain import task, effort, date, note, attachment
 from taskcoachlib.gui import uicommand
+from taskcoachlib.tools import wxhelper
 from unittest import mock
 from unittests import dummy
 import test
@@ -230,6 +231,31 @@ class EditorLayoutTest(TaskEditorTestCase):
             self.frame, [self.task], self.taskList, self.taskFile
         )
         self.assertEqual(2, len(self.tab_groups(self.editor)))
+
+    def test_split_tabs_are_laid_out_before_the_editor_shows(self):
+        # Its first frame shows both tab groups and their pages: the
+        # layouts queued while it was built change nothing left
+        book = self.editor._interior
+        self.addCleanup(
+            settings.set, book.settings_section(), "perspective", ""
+        )
+        book.Split(book.get_page_index("notes"), wx.RIGHT)
+        self.editor.Close()
+        test.settle()
+        self.editor = self.editorClass(
+            self.frame, [self.task], self.taskList, self.taskFile
+        )
+
+        def geometry():
+            return [
+                (window.GetPosition(), window.GetSize(), window.IsShown())
+                for window in wxhelper.descendants(self.editor._interior)
+            ]
+
+        before = geometry()
+        test.settle()
+        self.assertEqual(2, len(self.tab_groups(self.editor)))
+        self.assertEqual(before, geometry())
 
     def saved_tabs(self):
         """The tabs the editor saves when closed, as they are."""

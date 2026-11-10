@@ -43,7 +43,7 @@ prerequisites or dependents.
   Subject column repaints.
 - Data only, never time: the master loop neither reads nor computes
   it, and a priority change runs no pass
-  ([SCHEDULERS.md](SCHEDULERS.md#todo)).
+  ([SCHEDULERS.md](SCHEDULERS.md#ssot-principle-scheduler-vs-events)).
 - Exports: iCalendar (`PRIORITY`, capped at 3), the task's own
   priority; CSV and HTML as the column shows it
   ([EXPORTS.md](EXPORTS.md)).
@@ -114,7 +114,7 @@ How it went:
    computed by the loop it would lag a tick behind each edit and climb
    one level per pass, as the loop visits parents first. It stays
    computed when asked and kept current by events
-   ([SCHEDULERS.md](SCHEDULERS.md#todo)).
+   ([SCHEDULERS.md](SCHEDULERS.md#ssot-principle-scheduler-vs-events)).
 3. 2026-09-28: the designer asked for an effective priority as a field
    of its own, so sorting could use it or not. Added (8355f0f29) with
    the Priority column changed to the task's own value only, which

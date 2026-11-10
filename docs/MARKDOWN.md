@@ -1,20 +1,25 @@
 # Markdown
 
-A preview is built on the branch `markdown-preview`, as release
-2.0.3.5 (10 October 2026): not merged yet. This records what is
-decided, what is built, what is left out and what is left to do.
+The Markdown preview of the Description boxes, released in 2.0.3.5
+(10 October 2026). This records what is decided, what is built, what
+is left out and what is left to do.
 
-1. [The Request](#the-request)
-2. [Decided](#decided)
-3. [Built So Far](#built-so-far)
-4. [Known Gaps](#known-gaps)
-5. [To Do](#to-do)
+1. [To Do](#to-do)
+2. [The Request](#the-request)
+3. [Decided](#decided)
+4. [Built So Far](#built-so-far)
+5. [Known Gaps](#known-gaps)
 6. [Own Converter or a Package](#own-converter-or-a-package)
 7. [Options](#options)
 8. [A Minimal Set](#a-minimal-set)
 9. [What It Would Take](#what-it-would-take)
 10. [Prototype Findings](#prototype-findings)
 11. [Review Scenarios](#review-scenarios)
+
+## To Do
+
+1. Keep the scroll position across the toggle.
+2. A look at the preview in the Windows and macOS builds.
 
 ## The Request
 
@@ -52,9 +57,19 @@ By the designer, 2026-10-10:
   don't need extensive syntax support, but the most common to be well
   supported, and render properly."
 
+By the designer, 2026-11-10:
+
+- **The preview shows as a read-only field**, in every Description
+  box: the theme's disabled text box, its outline and background, as
+  the effort editor's Stop date and time show while unticked
+  ([DEVELOPMENT.md](DEVELOPMENT.md#design), Read-only looks
+  read-only). The text keeps the edit box's colour, not the disabled
+  grey: "the text would be the foreground text, not the disabled
+  text"; links, quotes and code keep their own colours.
+
 ## Built So Far
 
-On `markdown-preview`, 2026-10-09 and 10:
+Built 2026-10-09 and 10 for 2.0.3.5:
 
 - **The converter**, our own (`tools/markdown.py`, no packages),
   reworked 2026-10-10 from line-by-line patterns into a small parser:
@@ -75,12 +90,20 @@ On `markdown-preview`, 2026-10-09 and 10:
   - 50,000 random documents and oversized ones (thousands of nested
     markers): no error, tags balanced, a 43 KB text in 0.03 s.
 - **The preview** in `widgets.MultiLineTextCtrl`: a read-only
-  `wx.html` window in place of the box, drawn as window text
+  `wx.html` window in place of the box
   ([Prototype Findings](#prototype-findings)); web and mail links open
-  in the browser, any other link is ignored. The box's paint handler
-  draws no box then, but still makes its `wx.PaintDC`, as wx documents
-  for every paint handler. While the preview has the focus it shows
-  the edit box's focus highlight, as the system theme draws it
+  in the browser, any other link is ignored. The box draws the theme's
+  disabled text box (`DrawTextCtrl()` with `CONTROL_DISABLED`, as the
+  date and time fields do); the page takes that box's field colour,
+  read in the middle of the theme's drawing since no system colour
+  names it, so box and page show as one field. It is read from the
+  drawing's image, not the drawing's DC: a memory DC on macOS reads
+  no pixel (`wxGCDCImpl::DoGetPixel` in wxWidgets 3.3.1 gives an
+  invalid colour), and the editors failed to open there (found by the
+  macOS build's editor check, 2026-11-10). The text is the edit
+  box's colour (`SYS_COLOUR_WINDOWTEXT`). While the preview has the
+  focus it shows the edit box's focus highlight over the disabled box,
+  as the system theme draws it
   ([FOCUS_MANAGEMENT.md](FOCUS_MANAGEMENT.md#the-markdown-preview)).
   It sits where the edit box puts its text: the same padding, after
   Scintilla's own left margin (read from it), and no margin of its own
@@ -156,14 +179,25 @@ The window:
   theme. The system's own link colour (`wx.SYS_COLOUR_HOTLIGHT`) is
   `#3584e4` on Adwaita dark and `#1b6acb` on the light theme, should
   it be wanted later.
-- Not run on Windows or macOS: their builds come with the pull
-  request.
-
-## To Do
-
-1. Keep the scroll position across the toggle.
-2. The pull request, and a look at the preview in its Windows and
-   macOS builds.
+- Not yet looked at on Windows or macOS ([To Do](#to-do) 2).
+- The disabled box on Windows and macOS, from wxWidgets' source, not
+  run: their builds pin wxPython 4.3.1 (wxWidgets 3.3.1), whose
+  renderer fills a text box as an enabled one in every mode and greys
+  only the outline. Windows: the light `EDIT` theme part's normal
+  fill (`src/msw/renderer.cpp`, `wxRendererXP::DrawTextCtrl`, lines
+  1192 to 1213). macOS: a fixed white (`src/osx/cocoa/renderer.mm`
+  line 1014; the same in 3.3.2 and on wx's master). The text colour
+  follows dark mode (`#e0e0e0` from wx's Windows dark table,
+  `controlTextColor` on macOS), so in dark mode light text would
+  stand on the white box. There the preview keeps its released look,
+  the window's text on the window without a box: the box is drawn
+  only when its field is dark or light as the window is
+  (`MultiLineTextCtrl._preview_colours()`). The time and duration
+  fields, drawn the same way, already show light text on white there.
+  wxWidgets 3.3.2 draws the Windows box natively, dark mode and
+  disabled state included (commit 0d3502e, "Improvements for
+  wxRendererNative when using wxMSW dark mode"); wxPython 4.3.2
+  carries it.
 
 ## Own Converter or a Package
 
@@ -275,10 +309,11 @@ A prototype (removed) showed, 2026-10-08:
   through a borderless one-cell table and quotes greyed through
   `<font>`, both re-rendered on a theme change; no quote bar, no web
   images.
-- Its background must be the window's own colour
-  (`wx.GetTopLevelParent(...).GetBackgroundColour()`): on GTK a panel
+- The window's own colour, around the box, is
+  `wx.GetTopLevelParent(...).GetBackgroundColour()`: on GTK a panel
   reports the stock grey (241, 240, 238) while the window's (246, 245,
-  244) shows through.
+  244) shows through. The page itself takes the disabled box's field
+  since 2026-11-10 ([Decided](#decided)).
 - markdown-it with `breaks` keeps each line break; a line right after
   a list item joins that item unless a blank line separates them.
 - What `wx.html` cannot do, and how the converter goes around it
@@ -289,8 +324,8 @@ A prototype (removed) showed, 2026-10-08:
   out as a table with their own markers; a clicked link that is not
   `http`, `https`, `mailto` or `www.` is ignored, since the window
   would load it in place of the text. The text colour follows the
-  window's foreground (dark theme) and the sizes the system font
-  (headings 2, 1.5 and 1.25 times, as on GitHub).
+  theme (the edit box's, dark theme included) and the sizes the
+  system font (headings 2, 1.5 and 1.25 times, as on GitHub).
 - More of what `wx.html` does, found reworking the converter
   (2026-10-10):
   - A `<pre>` takes a blank line above it: a code block is a shaded
@@ -310,10 +345,10 @@ A prototype (removed) showed, 2026-10-08:
     blank lines between items cannot space them apart.
   - `<h4>` and `<h6>` come out in italics: the three lowest heading
     levels are bold text instead, the last two smaller.
-  - The code's shade goes by the window's real background, as the
-    text colour does, not by the Mode setting: with Mode Dark chosen
-    on a light GTK desktop the window stays light, and a dark shade
-    under its dark text could not be read.
+  - The code's shade goes by the page's real colour, the field the
+    theme draws, not by the Mode setting: with Mode Dark chosen on a
+    light GTK desktop the box stays light, and a dark shade under its
+    dark text could not be read.
 - Fonts in the edit box, dropped as not asked: Scintilla gives every
   line the height of the tallest font, so larger headings spread every
   line apart, and its own Markdown lexer bolds only a heading's `#`.

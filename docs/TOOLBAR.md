@@ -17,12 +17,7 @@ customization dialog.
 
 ## TODO
 
-1. ~~**Replace sentinel types with named constants for separator/spacer.**~~ — **DONE.**
-   Sentinel values (`None`, `1`, `str`, `tuple`) replaced with polymorphic
-   `UICommand` subclasses: `Separator`, `Spacer`, `DisabledLabel`, `SubMenu`.
-   Each renders itself via `append_to_toolbar()` / `add_to_menu()`. The old 5-way
-   dispatch in `UICommandContainerMixin` is eliminated; a compatibility shim
-   (`_coerce_ui_command`) auto-wraps any remaining legacy sentinels.
+Nothing to do.
 
 ---
 
@@ -41,6 +36,12 @@ on top:
   the toolbar editor dialog.
 
 - **`MainToolBar`** — thin subclass for the AUI-managed main window toolbar.
+
+Separators, spacers, labels and submenus are `UICommand` subclasses
+(`Separator`, `Spacer`, `DisabledLabel`, `SubMenu`), each adding itself
+through `append_to_toolbar()` and `add_to_menu()`. The old sentinel
+values (`None`, a number, a string, a tuple) are still turned into
+them by `_coerce_ui_command()` (`gui/uicommand/uicommandcontainer.py`).
 
 ---
 

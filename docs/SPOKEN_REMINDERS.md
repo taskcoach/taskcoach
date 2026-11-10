@@ -49,7 +49,7 @@ P246 in [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md)):
 
 ## A Better Solution
 
-The plan of TODO.md 6 was pyttsx3 (2.99, July 2025). Read from its
+The earlier plan was pyttsx3 (2.99, July 2025). Read from its
 package, 2026-10-07:
 
 - Windows: SAPI5 through `comtypes`, plus `pywin32` and `pypiwin32`.

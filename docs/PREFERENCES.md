@@ -97,11 +97,11 @@ How:
 ## Layout
 
 Each page is a `ScrolledBookPage` (`widgets/notebook.py`): rows added
-with `addEntry()` to a grid, cells aligned top left by default
-([TODO.md](TODO.md#8-bookpage-default-alignment-inconsistency) 8).
+with `add_entry()` to a grid, cells aligned top left by default
+(`wx.ALL | wx.ALIGN_TOP | wx.ALIGN_LEFT` in every column, in
+`BookPage` and `ScrolledBookPage` alike).
 The `add*Setting` helpers place a control and its grey help text;
-Theme and Statuses lay out their own columns
-([TODO.md](TODO.md#9-preferences-page-alignment-overrides) 9).
+Theme and Statuses lay out their own columns.
 `SettingsPage.fit()` wraps the labels of the first column, finding
 them through the grid (`GetItemPosition()`): in a test run, wxPython
 handed back a grid item as a plain `SizerItem`, without `GetPos()`,
@@ -119,8 +119,8 @@ Until 2026-10-07 (the same in 2.0.3.0):
   TaskCoach.ini too.
 - **OK and Apply were always enabled**, asked on GitHub as #329
   ("apply in prefs ought to be greyed out if nothing has changed"),
-  first deferred (D24). The first plan (TODO.md 10, moved here)
-  compared on `EVT_CHILD_FOCUS`; it fires when a control gains focus,
+  first deferred (D24). The first plan compared on
+  `EVT_CHILD_FOCUS`; it fires when a control gains focus,
   so it missed a checkbox click (GTK toggles on release; macOS gives a
   clicked checkbox no focus) and the last edit (a disabled button
   takes no focus). It also kept OK greyed until a change, which

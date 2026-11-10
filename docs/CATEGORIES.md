@@ -21,7 +21,11 @@ its parent's categories, recursively (0.66.0, 2007):
 
 - **Category filter:** an item shows when it, or an item it is under,
   is in a ticked category or one of its subcategories. Effort views
-  follow their tasks ([EFFORTS.md](EFFORTS.md#filters)).
+  follow their tasks ([EFFORTS.md](EFFORTS.md#filters)). Giving an
+  item a category, or taking one away, refilters only when that
+  category or one it is under is ticked
+  (`CategoryFilter.on_membership_changed()`); ticking and unticking
+  always refilter.
 - **Categories column, list mode:** its own, then the inherited ones
   in parentheses (1.2.30, 2011); sorting by categories the same.
 - **iCalendar export:** own and inherited

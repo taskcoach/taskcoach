@@ -21,63 +21,7 @@ How icons are rendered in viewer columns.
 
 ## TODO
 
-1. ~~**Lazy viewer image lists.**~~ **Done.** Per-viewer `wx.ImageList`
-   replaced by shared `image_list_cache` singleton (`image_list_cache.py`).
-   `createImageList()` in `base.py` now returns the shared list.
-   `get_index(icon_id)` loads icons lazily on first call — viewers only
-   load icons they actually display. The icon picker also uses the shared
-   cache (TODO #37 in ICON_PICKER_REFACTORING.md). Related completed work:
-   - #2: `viewerIconIds` removed (never consumed)
-   - #4: Singleton renamed to `icon_catalog`
-   - #5: All icon_id variables audited and renamed
-   - #6: `gui.init()` moved before `MainWindow` import (circular import fix)
-   - #8: `wx.Icon`/`wx.Bitmap` variables renamed to `wx_icon`/`wx_bitmap`
-
-2. ~~**Review and clean up `viewerIconIds`.**~~ Done — `viewerIconIds`
-   removed from `base.py`, `attachment.py`, `mixin.py`, and test. All 4
-   icons were already in the catalog; `image_list_cache` serves the full
-   set. The attribute was never consumed by any code.
-
-3. ~~**Handle `wx.ART_FRAME_ICON` callers during ArtProvider migration.**~~
-   Done — all callers migrated to `icon_catalog.get_bitmap()`.
-
-4. ~~**Rename `catalog` singleton.**~~ Done — renamed to `icon_catalog`.
-   The singleton lives in `icon_library.py` as `icon_catalog = IconCatalog()`.
-
-5. ~~**Audit variables that should be `icon_id`.**~~ **Done.** Fresh audit
-   confirmed all old names (`iconName`, `artId`, `bitmapName`, etc.) already
-   renamed. AppIndicator `_icon_name` variables renamed to `_tray_icon_id`
-   (distinct namespace — XDG theme names resolved through `tray/hicolor/`,
-   not catalog icon_ids). Icon picker `currentIcon` → `current_icon_id`.
-   PEP 8 applied to adjacent parameters (`noIcon`, `fixedWidth`,
-   `_clockRunning`).
-
-6. ~~**Test early-imported icon callers for circular imports.**~~ **Done.**
-   Moved `gui.init()` before `MainWindow` import in `application.py` so
-   the icon catalog is populated before any widget module grabs the
-   reference. `help/tips.py` was already safe (deferred via `CallAfter`).
-   `changes/sync.py` (removed 2026-09-27), `widgets/searchctrl.py`,
-   `widgets/notebook.py` only call `get_bitmap()` inside methods, never at
-   import time.
-
-7. ~~**Remove open/close (selected) icon logic.**~~ **Done** (2026-09-28,
-   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md), To Do 35).
-   One icon, expanded or not: the domain field, `EditIconCommand`'s
-   `_open_icon` variant, the trees' expanded image, the calendar's icon
-   callback and the XML attribute are removed; `selectedIcon` in old
-   files is read and dropped.
-
-8. ~~**Rename `wx.Icon` variables to `wx_icon`.**~~ **Done.** Variables named
-   `icon` holding `wx.Icon` objects renamed to `wx_icon`; variables holding
-   `wx.Bitmap` used as icon display renamed to `wx_bitmap`. Timeline adapter
-   `icon()` → `get_wx_icon()`. Notifier `icon=` → `wx_bitmap=`. PEP 8
-   renames applied to all related private methods and parameters in the
-   affected files (`isSelected` → `is_selected`, `isSequentialNode` →
-   `is_sequential_node`, `iconWidth` → `icon_width`).
-   `SquareTaskViewer.icon()` left unchanged (squaremap external interface).
-   `wxScheduler/wxDrawer.py` left unchanged (iterates icon_id strings, not
-   wx objects).
-
+Nothing to do.
 
 ---
 
@@ -232,10 +176,10 @@ Global owner of the single shared `wx.ImageList` for all viewers and the
 icon picker. Icons are loaded lazily on first `get_index()` call — only icons
 actually rendered get loaded. All consumers borrow the list via `SetImageList()`
 (no ownership transfer), so destroying a viewer does not delete the shared list.
-The icon picker will also use this cache (see
-[ICON_PICKER_REFACTORING.md — TODO #37](ICON_PICKER_REFACTORING.md#feature-implementation));
-opening the picker loads all catalog icons into the cache, where they remain
-for the app lifetime.
+The icon picker uses this cache too, through `get_index()` and
+`SetImageList()` like the viewers; opening the picker loads all catalog
+icons into the cache, where they remain for the app lifetime.
+`createImageList()` in `gui/viewer/base.py` returns the shared list.
 
 Created in `init()` after the catalog is loaded. The fallback icon is loaded
 as the first entry during construction, so `get_index()` never returns -1 for

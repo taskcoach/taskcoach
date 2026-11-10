@@ -18,34 +18,15 @@ The domain model's change-detection and event-notification pattern.
 - [Volatile vs Persisted Attributes](#volatile-vs-persisted-attributes)
 - [Modification Date](#modification-date)
 - [Three-Layer Relationship](#three-layer-relationship)
+  - [Saving on Leaving a Field](#saving-on-leaving-a-field)
 
 ---
 
 ## TODO
 
-1. **Done 2026-09-29: `EVT_KILL_FOCUS` AttributeSync sites.** An
-   AttributeSync bound to `EVT_KILL_FOCUS` (blur) saves the user's
-   edits when they leave the field, but misses values code writes into
-   the control: `SetDuration()` fires `EVT_VALUE_CHANGED`, not
-   `EVT_KILL_FOCUS`. All `MaskedFieldsCtrl`-based controls (DurationCtrl
-   for task and effort, budget, every DateTimeComboCtrl field, hourly
-   fee, fixed fee) use `EVT_VALUE_CHANGED` with immediate commit; they
-   fire only on blur (user) or `SetDuration()`/`SetTime()`/`SetDate()`
-   (programmatic).
-   **Ruling by designer, 2026-09-29:** subject, description and
-   attachment location save when the user leaves the field, by design,
-   and keep `EVT_KILL_FOCUS`. The only code that writes into them, the
-   attachment editor's Browse, commits both values itself
-   (`onSelectLocation()`). See
-   [Three-Layer Relationship](#three-layer-relationship), Layer 2.
-
-2. **Done 2026-09-28: signal dispatch per instance.** Every signal is
-   a Publisher event and pypubsub is gone
-   ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#migration-log)).
-
-3. **Modularize and clean up the signaling system.** See
-   [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup)
-   for full status, done/remaining items, and cleanup plan.
+3. **Move the Publisher to a signal library**, the step of the
+   signaling cleanup left:
+   [PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#todo) 2.
 
 ---
 
@@ -397,7 +378,7 @@ controls to implement `GetValue()`/`SetValue()`. Standard pattern:
 (on blur for user edits, immediately for programmatic writes). Composite
 controls like `DateTimeComboCtrl` inherit `wx.EvtHandler` and own the event,
 firing on sub-control blur and state transitions. The text fields keep
-`EVT_KILL_FOCUS` by design (see [TODO #1](#todo)).
+`EVT_KILL_FOCUS` by design ([below](#saving-on-leaving-a-field)).
 **File:** `taskcoachlib/gui/dialog/attributesync.py`
 **Usage:** See DATETIME_CONTROLS.md, MONETARY_CONTROLS.md
 
@@ -428,9 +409,25 @@ must pass `source_field` so the sync logic knows which field changed
 (DURATION_CALCULATIONS.md section 0.1) and skips steps that would
 overwrite the user's change.
 
+### Saving on Leaving a Field
+
+**Ruled by designer 2026-09-29:** subject, description and attachment
+location save when the user leaves the field, by design, and keep
+`EVT_KILL_FOCUS`. The only code that writes into them, the attachment
+editor's Browse, commits both values itself (`onSelectLocation()`).
+
+A sync bound to `EVT_KILL_FOCUS` misses the values code writes into
+its control (`SetDuration()` fires `EVT_VALUE_CHANGED`, not
+`EVT_KILL_FOCUS`), so every `MaskedFieldsCtrl`-based control
+(DurationCtrl for task and effort, budget, every DateTimeComboCtrl
+field, hourly fee, fixed fee) binds `EVT_VALUE_CHANGED` with immediate
+commit (2026-09-29). It fires only when the user leaves it or code
+sets a whole value (`SetDuration()`, `SetTime()`, `SetDate()`), so
+each event is a final value.
+
 See also: [LOCALE.md](LOCALE.md) for how locale settings interact with
 Layer 2 controls (decimal separator, date/time format detection).
 [NUMERIC_CONTROLS.md](NUMERIC_CONTROLS.md) and
 [MONETARY_CONTROLS.md](MONETARY_CONTROLS.md) for `EVT_VALUE_CHANGED`
-migration of monetary controls (TODO #1).
+migration of monetary controls.
 

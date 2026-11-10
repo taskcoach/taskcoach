@@ -28,11 +28,6 @@ This document describes the system tray (notification area) icon implementation 
 
 ## TODO
 
-1. ~~**Extract base class.**~~ Will not be done, **ruled by designer
-   2026-09-29** (D4 in
-   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#deferred-and-will-not-do)):
-   the two classes differ by design and share little
-   ([Code Duplication](#code-duplication)).
 2. Black icon backgrounds on LXDE: find what triggers them on the
    designer's desktop, then reproduce and fix them in lxpanel's tray
    (outside Task Coach) ([Black Icon Backgrounds on
@@ -585,6 +580,10 @@ in `popup_taskbar_menu()` each time the menu is shown.
 
 ### Menu Icons
 
+The tray menu's commands keep their icons (`icon_id`): wx's
+`TaskBarMenu` draws them on Windows and macOS, and a tray icon of our
+own on Linux would too ([TODO](#todo) 3).
+
 Each icon of the AppIndicator menu is read from its file once
 (`appindicator._MenuImages`), as the lists share one image list
 ([ICON_DISPLAY.md](ICON_DISPLAY.md#image-list-cache)). How an item
@@ -730,8 +729,8 @@ Key log messages:
 little: measured 2026-09-29, 31 lines are identical (six small
 methods: ticking, the tracking icon, the default icon, the tooltip
 getter); about 90 more are alike but differ; the rest (about 400 of
-the AppIndicator's 560) is platform specific. They stay separate
-(D4), because they differ by design:
+the AppIndicator's 560) is platform specific. They stay separate,
+**ruled by designer 2026-09-29** (D4), because they differ by design:
 
 - **Different objects.** `TaskBarIcon` is a `wx.adv.TaskBarIcon`, a wx
   object with wx's lifetime; `AppIndicatorTaskBarIcon` is a plain

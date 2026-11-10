@@ -20,68 +20,12 @@ relationship) — signal dispatch exists to serve Attribute change notification.
 
 ## TODO
 
-1. **Done: migrate signal dispatch to per-instance.** Some Attribute callbacks
-   (Task dates, percentage, duration; Effort fields) use pypubsub
-   (`pub.sendMessage`) which is topic-based broadcast — every subscriber
-   receives every object's changes. This is wrong for per-instance
-   Attribute signals. These fields should be migrated back to per-instance
-   dispatch (legacy `registerObserver` with `eventSource`, or a future
-   modern signal library). See [Signal Dispatch](#signal-dispatch).
-   **Done:** Task priority, Attachment location, and all 16
-   derived/effective appearance event types migrated to per-instance
-   dispatch (dropped `"pubsub."` prefix). Tree mode toggle migrated
-   from pubsub to Publisher signaling (see
-   [Case Study: Tree Mode Toggle](#case-study-tree-mode-toggle)).
-   `categoryfiltermatchall` migrated from pubsub to Publisher — both
-   `CategoryFilter` and `CategoryViewerFilterChoice` now subscribe via
-   `registerObserver` on the settings instance.
-   `view.statusbar` and `view.toolbar` migrated from pubsub to Publisher —
-   `MainWindow` now subscribes via `registerObserver` on the settings
-   instance (added `patterns.Observer` to MRO).
-   `view.autoscrollselection` (auto-scroll toggle) uses Publisher
-   dispatch from the start: `ToggleAutoScroll` (toolbar button sync)
-   and `Viewer.on_auto_scroll_changed` (re-center on enable) both
-   subscribe via `registerObserver` on the settings instance.
-   Task planned start, due, actual start, completion and reminder
-   migrated to Publisher (the reminder made an `Attribute`), for the
-   master timer list ([MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#what-changes-the-master-timer-list)).
-   Task hourly and fixed fee, budget, "mark completed when all
-   subtasks are", percentage complete, planned duration and its mode
-   migrated with the modification date
-   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)).
-   Task recurrence, prerequisites and dependencies, and effort start,
-   stop, entry mode and task migrated the same way.
-   The domain's other messages (computed values too), then the task
-   file's, settings', commands' and viewers' messages followed
-   (2026-09-28, Migration Log), and pypubsub is no longer a
-   dependency: every signal is a Publisher event.
-
-2. **Modularize and clean up the signaling system.** The three independent
-   cleanup mechanisms (wx C++ destruction, `removeInstance()`, Python GC)
-   don't coordinate, causing zombie callbacks and 20+ silent `try/except`
-   guards. Target: a single automatic cleanup mechanism where destroying
-   an object removes all its subscriptions. See
-   [Signaling System Cleanup](#signaling-system-cleanup)
-   for the full plan and current band-aids.
-   **Done:** `MethodProxy` (strong references) replaced with
-   `WeakMethodProxy` (`weakref.WeakMethod`). Publisher no longer prevents
-   GC of destroyed wx widgets. **Done 2026-10-02:** sources are held
-   weakly too, and a subscription goes at the Publisher's next call once
-   its source or subscriber is freed ([Current state](#current-state)).
-   Editor pages (`Page`, `ScrolledPage` in `gui/dialog/editor.py`) call
-   `removeInstance()` on their own `EVT_WINDOW_DESTROY`, so their
-   subscriptions are removed however the page is destroyed (close
-   handler, parent destroy, app exit). A subscriber that raises during
-   dispatch is logged with its traceback (`[OBSERVER]`). It is removed
-   only if its wx object was deleted, or its own code touched a deleted
-   wx object ("has been deleted"); a failure inside a listener it
-   called does not count. Otherwise it is kept, so one failure cannot
-   silently stop a subscriber such as the per-second `MasterScheduler`.
-   A failure that repeats on every event logs its traceback once, then
-   a count every 100 repeats.
-   **Done 2026-09-28:** every subscription ends with its owner
-   ([Signaling System Cleanup](#signaling-system-cleanup)), and the
-   guards that became unreachable are removed.
+2. **Move the Publisher to a signal library** (Blinker or psygnal)
+   with per-instance signals: the one step of the
+   [Signaling System Cleanup](#signaling-system-cleanup) left
+   (Target architecture 1 there), and the future step of
+   [Signal Dispatch](#target-architecture). Keep or strike: P104 in
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues).
 
 ---
 
@@ -143,6 +87,14 @@ subscribed to its own events was never freed, and a freed subscriber
 went only when an event of its type and source came (P151, To Do 71
 in [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do)).
 
+A subscriber that raises during dispatch is logged with its traceback
+(`[OBSERVER]`). It is removed only if its wx object was deleted, or
+its own code touched a deleted wx object ("has been deleted"); a
+failure inside a listener it called does not count. Otherwise it is
+kept, so one failure cannot silently stop a subscriber such as the
+per-second `MasterScheduler`. A failure that repeats on every event
+logs its traceback once, then a count every 100 repeats.
+
 Note: the Publisher is a **Singleton** (one global registry), not true
 per-instance signals (where the signal object lives on the instance itself,
 e.g. `task.icon_changed.connect(handler)`). The difference is structural —
@@ -156,7 +108,7 @@ per-sender filtering at dispatch; subscribers must check the `sender` kwarg
 in the handler to decide whether to act. Task and Effort fields were
 migrated to it circa 2012; the migration was intended to replace the
 legacy system entirely but stalled partway. Since 2026-09-28 nothing
-uses it and it is no longer a dependency (see [TODO](#todo)).
+uses it and it is no longer a dependency (see [Migration Log](#migration-log)).
 
 The pypubsub migration was motivated by API simplicity and weak reference
 support, but it introduced broadcast dispatch for what are inherently
@@ -333,6 +285,9 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
      (`Menu.DestroyItem()`, `Menu.Destroy()`).
    - An editor page ends its field syncs' (`AttributeSync`) with its
      own: they are not windows, and some entries wrap several widgets.
+     `Page` and `ScrolledPage` (`gui/dialog/editor.py`) call
+     `removeInstance()` on their own `EVT_WINDOW_DESTROY`, however the
+     page is destroyed (close handler, parent destroy, app exit).
 
 3. **Remove the DEAD-OBJ guards.** Done 2026-09-28 where unreachable: a
    liveness check just before the call (`if not self`, `if
@@ -372,6 +327,8 @@ No manual unsubscribe, no silent `except` guards, no zombie callbacks.
 | `view.categoryfiltermatchall` | Migrated to Publisher | `taskcoachlib/domain/category/filter.py` (CategoryFilter), `taskcoachlib/gui/uicommand/uicommand.py` (CategoryViewerFilterChoice) |
 | `view.statusbar` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` |
 | `view.toolbar` | Migrated to Publisher | `taskcoachlib/gui/mainwindow.py` |
+| `view.autoscrollselection` | Publisher from the start | `taskcoachlib/gui/uicommand/uicommand.py` (ToggleAutoScroll), `taskcoachlib/gui/viewer/base.py` (Viewer) |
+| Task priority, hourly and fixed fee, budget, "mark completed when all subtasks are", percentage complete, planned duration and its mode, recurrence, prerequisites and dependencies; attachment location; effort start, stop, entry mode and task; the 16 derived and effective appearance events | Migrated to Publisher without the `pubsub.` prefix; the domain fields with the modification date ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#modification-date)) | `taskcoachlib/domain/` |
 | `view.weekstartmonday` | Deleted (dead — topic name mismatch) | `taskcoachlib/gui/viewer/task.py` |
 | `view.weekstart`, `calendarviewer.gradient` | Added 2026-09-28: the calendar viewer applies them at once | `taskcoachlib/gui/viewer/task.py` |
 | `view.efforthourstart` | Deleted (no live-update needed) | `taskcoachlib/gui/viewer/task.py` |
@@ -420,9 +377,9 @@ an `EVT_MENU_OPEN` handler. This manifests in two ways:
 2. **Menu too narrow for new label text.** `SetItemLabel()` during
    `EVT_MENU_OPEN` changes label width but GTK does not widen the popup.
    Text is clipped on first open; second open recalculates. This
-   affected EditUndo/EditRedo and EditPasteAsSubItem (see
-   [MENUS.md TODO #2](MENUS.md#todo)); no label changes then since
-   2026-10-02.
+   affected EditUndo/EditRedo and EditPasteAsSubItem (P99 in
+   [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues));
+   no label changes then since 2026-10-02.
 
 **Pattern:** change items only while the menu is closed, so GTK always
 sees the correct geometry at popup time. Without messaging where possible:

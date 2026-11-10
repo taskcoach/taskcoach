@@ -130,6 +130,7 @@ Key packages in `taskcoachlib/`:
 | [SYSTEM_TRAY.md](SYSTEM_TRAY.md) | The tray icon on each platform |
 | [WAYLAND_ISSUES.md](WAYLAND_ISSUES.md) | Known wxPython and wxWidgets issues on Wayland |
 | [BUNDLED_TREE_WIDGET.md](BUNDLED_TREE_WIDGET.md) | Task Coach's copy of wxPython's tree widget |
+| [RENDERING_SPEED.md](RENDERING_SPEED.md) | Opening an editor: the gray window, where the time goes, measured |
 | [ICON_LIBRARY.md](ICON_LIBRARY.md) | The icon catalog: sizes, tiers, adding icons |
 | [ICON_DISPLAY.md](ICON_DISPLAY.md) | Icons in the views' columns |
 | [ICON_PICKER_REFACTORING.md](ICON_PICKER_REFACTORING.md) | The icon picker |
@@ -170,5 +171,5 @@ Key packages in `taskcoachlib/`:
 |----------|----------------|
 | [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md) | The current refactor: its To Do list and open issues |
 | [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md) | The scheduler refactor of 2.0.3.0 and its issue list |
-| [TODO.md](TODO.md) | Planned improvements |
+| [TODO.md](TODO.md) | General to-dos, and how to-dos are recorded |
 | [PYTHON3_MIGRATION_INDEX.md](PYTHON3_MIGRATION_INDEX.md) | The Python 3 migration, in parts [1](PYTHON3_MIGRATION_1.md), [2](PYTHON3_MIGRATION_2.md), [3](PYTHON3_MIGRATION_3.md), [4](PYTHON3_MIGRATION_4.md) and [5](PYTHON3_MIGRATION_5.md); [PYTHON3_MIGRATION_NOTES.md](PYTHON3_MIGRATION_NOTES.md) points to them |

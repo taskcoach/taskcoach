@@ -8,6 +8,7 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 - [Minimum Version Requirements](#minimum-version-requirements)
 - [Install Overview by Build Target](#install-overview-by-build-target)
 - [Build Scripts and Workflows](#build-scripts-and-workflows)
+  - [One Package per Release](#one-package-per-release)
   - [Workflow Triggers](#workflow-triggers)
 
 **Packaging by Platform**
@@ -24,6 +25,8 @@ This document describes the packaging setup for Task Coach on Linux (Debian, Ubu
 - [Creating a Release](#creating-a-release)
 - [Release Notes](#release-notes)
 - [Version Check](#version-check)
+- [Checking a Package Locally](#checking-a-package-locally)
+- [Release Versions and Support Dates](#release-versions-and-support-dates)
 
 ## Minimum Version Requirements
 
@@ -121,6 +124,14 @@ static checks run on 3.10 for that.
 | Debian 12 | 3.11 | ended 2026-06-10 | Debian LTS to 2028-06-30 |
 | Ubuntu 24.04 | 3.12 | May 2029 | Ubuntu Pro (ESM) to May 2034 |
 
+### One Package per Release
+
+**Ruled by designer 2026-11-08:** each operating system release gets
+its own build and file name, even when its contents match another's,
+so retiring a release removes only its own entry. A release keeps its
+package while it has long-term or extended support (Debian LTS, Ubuntu
+ESM), not only until its standard end.
+
 ### Workflow Triggers
 
 Every build workflow above uses the same triggers. Keep them identical
@@ -136,7 +147,18 @@ when adding a target or editing one.
 Nothing triggers on branch-name patterns. Work in progress is verified
 by its pull request, so a build never depends on how a branch happens to
 be named, and pushing a branch with no PR costs nothing. `master` is the
-only long-lived branch; there is no `main`.
+only long-lived branch; there is no `main`. A pushed branch's pull
+request is opened from
+`https://github.com/taskcoach/taskcoach/pull/new/<branch>`; the
+designer opens and merges them.
+
+A run's job logs need a GitHub sign-in, but its annotations do not:
+`api.github.com/repos/taskcoach/taskcoach/check-runs/<job id>/annotations`,
+the job ids from `actions/runs?head_sha=<full sha>` and
+`actions/runs/<run id>/jobs` (with each step's timing).
+`tools/check_editors.py` reports each problem it finds as an
+annotation, so a build's editor failures can be read that way. A
+signed-in "View raw logs" link is valid for about 10 minutes.
 
 The `pull_request` types are `opened`, `synchronize`, `reopened`,
 `ready_for_review`. The first three are the GitHub default; the fourth is
@@ -620,14 +642,17 @@ All build scripts follow the same simple strategy:
 
 This process applies to all build targets (AppImage, Windows, macOS, etc.):
 
-1. Update version in `taskcoachlib/meta/data.py`
+1. Check the version in `taskcoachlib/meta/data.py`, its release date
+   included: it was set one patch ahead of the last release when the
+   work on it began, not at release
+   ([DEVELOPMENT.md](DEVELOPMENT.md#versions))
 2. Check that `CHANGELOG.md` has the version's section, its release
    notes ([below](#release-notes))
 3. Commit and push changes
-4. Create and push a version tag:
+4. Create and push the version's tag, `v` and `version_full`:
    ```bash
-   git tag v2.0.1.23
-   git push origin v2.0.1.23
+   git tag v2.0.3.10
+   git push origin v2.0.3.10
    ```
 5. GitHub Actions will automatically build all packages and create a GitHub Release
 
@@ -664,4 +689,59 @@ A failure (no network) is only logged (`[VERSION]`). The Flatpak
 has network access for this check alone (P110, 2026-10-06); before, it
 failed there at every start. So a release must be tagged `v` + `version_full` and not
 marked prerelease to be offered.
+
+### Checking a Package Locally
+
+Another distribution's build, checked before its pull request, in
+rootless `podman` (`docker.io/library/<distro>` images), apart from
+the desktop's session:
+
+- **Build as the CI does:** take the `run:` scripts of the workflow's
+  steps (`build-deb.yml`, its `${{ matrix.* }}` substituted) and run
+  them in the image, with the tracked files copied in
+  (`git ls-files -z | xargs -0 cp -a --parents`); the test-install
+  job's script likewise, in a clean container.
+- **Run the app:** in a long-lived container (`sleep infinity`),
+  install the package, Xvfb, openbox, xdotool and imagemagick; start
+  Xvfb and openbox with `podman exec -d`, then `taskcoach.py` with
+  `-e DISPLAY=:1 -e PYTHONUNBUFFERED=1`. Copy `tools/check_editors.py`
+  in and run it with the system Python to check the installed
+  package's editors. Xvfb leaves pixels where a window first mapped
+  at 0,0: `xsetroot -solid` and `xwininfo` before calling that a
+  finding.
+- **KWin on Wayland, headless** (Debian 13, Ubuntu 26.04 and later):
+  `kwin-wayland` and `dbus` with `--no-install-recommends`; copy
+  `/usr/bin/kwin_wayland` to `/usr/local/bin/` (the copy drops the
+  `cap_sys_nice` rootless podman refuses), then inside
+  `dbus-run-session` `kwin_wayland --virtual --socket NAME --width W
+  --height H`, the clients with `WAYLAND_DISPLAY=NAME` and
+  `XDG_RUNTIME_DIR` set. `KWIN_WAYLAND_NO_PERMISSION_CHECKS=1` is the
+  control for restricted protocols; desktop-file lookups need
+  `kbuildsycoca6` and an `/etc/xdg/menus/applications.menu`. A small
+  Gio service owning `org.kde.StatusNotifierWatcher` gives the tray
+  icon a host; its menu is clicked through `com.canonical.dbusmenu`
+  (`GetLayout`, `Event(id, "clicked")`).
+- **A deb without root:** `apt-get download` debhelper,
+  libdebhelper-perl, dh-python, dh-autoreconf,
+  dh-strip-nondeterminism and libfile-stripnondeterminism-perl,
+  `dpkg -x` each into one folder, and run `dpkg-buildpackage -us -uc
+  -b -d` with its `usr/bin` first in `PATH`, `PERL5LIB` at its
+  `usr/share/perl5` and `PYTHONPATH` at its `usr/share/dh-python`. It
+  gets through `dh_auto_install` and stops at `dh_python3`, whose
+  scripts' path is fixed. `git archive` leaves out `debian/`
+  (export-ignore): copy it with `git show REV:path`.
+
+### Release Versions and Support Dates
+
+From each distribution's own data, when its web pages refuse or say
+nothing:
+
+- Package versions: Launchpad's `getPublishedSources` (Ubuntu),
+  `sources.debian.org/api/src/<package>/` (Debian),
+  `mdapi.fedoraproject.org/<release>/srcpkg/<package>` (Fedora).
+- Support ends: Bodhi's `bodhi.fedoraproject.org/releases/<F43>`
+  (`eol`), `SUPPORT_END` in a release's `/etc/os-release`,
+  `flatpak remote-info` for a runtime (its End-of-life line).
+- Which release carries an upstream change: a bare clone of the
+  project's repository and its tags.
 
