@@ -68,12 +68,12 @@ class SpellCheckMixin:
     """
 
     @classmethod
-    def _detectLanguage(cls):
+    def _detect_language(cls):
         """Detect the system language for spell checking."""
         return i18n.system_language() or "en_US"
 
     @classmethod
-    def getAvailableLanguages(cls):
+    def get_available_languages(cls):
         """Get list of available spell check languages.
 
         Returns:
@@ -135,10 +135,10 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         self.__data = None
 
         # Configure text control mode
-        self._setupTextMode()
+        self._setup_text_mode()
 
         # Configure indicators (spell check and URL)
-        self._setupIndicators()
+        self._setup_indicators()
 
         # Initialize text
         if text:
@@ -157,14 +157,14 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         except webbrowser.Error:
             self.__webbrowser = None
 
-        self.Bind(wx.EVT_LEFT_DOWN, self._onLeftClick)
-        self.Bind(stc.EVT_STC_UPDATEUI, self._onUpdateUI)
+        self.Bind(wx.EVT_LEFT_DOWN, self._on_left_click)
+        self.Bind(stc.EVT_STC_UPDATEUI, self._on_update_ui)
 
         # Clear Scintilla's default Tab binding so Tab navigates focus.
         # See: https://proton-ce.sourceforge.net/rc/scintilla/pyframe/www.pyframe.com/stc/keymap.html
         self.CmdKeyClear(stc.STC_KEY_TAB, 0)
         self.CmdKeyClear(stc.STC_KEY_TAB, stc.STC_SCMOD_SHIFT)
-        self.Bind(wx.EVT_KEY_DOWN, self._onKeyDown)
+        self.Bind(wx.EVT_KEY_DOWN, self._on_key_down)
 
         # Single line mode: also block Enter from inserting newlines
         if self._single_line:
@@ -176,22 +176,22 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             self._on_squiggle_colour_changed,
             eventType="spellcheck.colours.changed",
         )
-        self.Bind(wx.EVT_WINDOW_DESTROY, self._onDestroy)
+        self.Bind(wx.EVT_WINDOW_DESTROY, self._on_destroy)
 
     def _on_squiggle_colour_changed(self, event):  # pylint: disable=W0613
         self.IndicatorSetForeground(
-            SPELLCHECK_INDICATOR, self._getSquiggleColor()
+            SPELLCHECK_INDICATOR, self._get_squiggle_color()
         )
         self.Refresh()
 
-    def _onDestroy(self, event):
+    def _on_destroy(self, event):
         patterns.Publisher().removeObserver(
             self._on_squiggle_colour_changed,
             eventType="spellcheck.colours.changed",
         )
         event.Skip()
 
-    def _onKeyDown(self, event):
+    def _on_key_down(self, event):
         """Intercept keys for text controls.
 
         All modes:
@@ -215,11 +215,11 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                 self.Navigate(True)
                 return
             if event.ControlDown() and key_code == ord("V"):
-                self._pasteWithoutNewlines()
+                self._paste_without_newlines()
                 return
         event.Skip()
 
-    def _pasteWithoutNewlines(self):
+    def _paste_without_newlines(self):
         """Paste clipboard text as one line."""
         if wx.TheClipboard.Open():
             try:
@@ -235,7 +235,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             finally:
                 wx.TheClipboard.Close()
 
-    def _setupTextMode(self):
+    def _setup_text_mode(self):
         """Configure StyledTextCtrl for editing."""
         # Hide margins (line numbers, fold markers, etc.)
         self.SetMarginWidth(0, 0)
@@ -250,9 +250,9 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         else:
             self.SetWrapMode(stc.STC_WRAP_WORD)
 
-        self._applyThemeColours()
+        self._apply_theme_colours()
 
-    def _applyThemeColours(self):
+    def _apply_theme_colours(self):
         """Apply system theme colours to the control."""
         font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
         self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
@@ -275,10 +275,10 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             True, wx.SystemSettings.GetColour(wx.SYS_COLOUR_HIGHLIGHTTEXT)
         )
         self.IndicatorSetForeground(
-            SPELLCHECK_INDICATOR, self._getSquiggleColor()
+            SPELLCHECK_INDICATOR, self._get_squiggle_color()
         )
 
-    def _getSquiggleColor(self):
+    def _get_squiggle_color(self):
         """Get the squiggle color from settings, respecting light/dark theme."""
         try:
             section = (
@@ -295,12 +295,12 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             )
             return wx.RED
 
-    def _setupIndicators(self):
+    def _setup_indicators(self):
         """Set up indicators for spell check and URLs."""
         # Spell check: squiggly underline with configurable color
         self.IndicatorSetStyle(SPELLCHECK_INDICATOR, stc.STC_INDIC_SQUIGGLE)
         self.IndicatorSetForeground(
-            SPELLCHECK_INDICATOR, self._getSquiggleColor()
+            SPELLCHECK_INDICATOR, self._get_squiggle_color()
         )
 
         # URLs: blue underline with hotspot
@@ -312,7 +312,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         # Enable hotspot clicking
         self.SetHotspotActiveUnderline(True)
         self.SetHotspotActiveForeground(True, wx.BLUE)
-        self.Bind(stc.EVT_STC_HOTSPOT_CLICK, self._onHotspotClick)
+        self.Bind(stc.EVT_STC_HOTSPOT_CLICK, self._on_hotspot_click)
 
     def _init_spell_check(self):
         """Initialize spell checking."""
@@ -324,14 +324,14 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
 
         if self._spellCheckEnabled:
             self._highlight_later = patterns.later.debounced(
-                self, 300, self._performHighlighting
+                self, 300, self._perform_highlighting
             )
-            self.Bind(stc.EVT_STC_MODIFIED, self._onTextModified)
-            self.Bind(wx.EVT_CONTEXT_MENU, self._onSpellCheckContextMenu)
+            self.Bind(stc.EVT_STC_MODIFIED, self._on_text_modified)
+            self.Bind(wx.EVT_CONTEXT_MENU, self._on_spell_check_context_menu)
             # Initial spell check and URL detection
-            patterns.later.soon(self, self._performHighlighting)
+            patterns.later.soon(self, self._perform_highlighting)
 
-    def _onTextModified(self, event):
+    def _on_text_modified(self, event):
         """Handle text changes - schedule spell check and URL detection."""
         event.Skip()
         if event.GetModificationType() & (
@@ -339,14 +339,14 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         ):
             self._highlight_later()
 
-    def _getSpellDict(self):
+    def _get_spell_dict(self):
         """Get spell dictionary for current language."""
         if not ENCHANT_AVAILABLE:
             return None
 
         language = self._spellCheckLanguage
         if language is None:
-            language = SpellCheckMixin._detectLanguage()
+            language = SpellCheckMixin._detect_language()
 
         if language not in self._spell_dicts:
             try:
@@ -363,7 +363,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
 
         return self._spell_dicts.get(language)
 
-    def _performHighlighting(self):
+    def _perform_highlighting(self):
         """Perform spell checking and URL detection."""
         text = self.GetText()
         text_bytes = text.encode("utf-8")
@@ -377,7 +377,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         # Spell check
         self._misspelledRanges = []
         if self._spellCheckEnabled and ENCHANT_AVAILABLE:
-            spell_dict = self._getSpellDict()
+            spell_dict = self._get_spell_dict()
             if spell_dict:
                 self.SetIndicatorCurrent(SPELLCHECK_INDICATOR)
                 for match in self._word_pattern.finditer(text):
@@ -404,7 +404,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
             # Apply link styling
             self.StartStyling(byte_start)
 
-    def _onLeftClick(self, event):
+    def _on_left_click(self, event):
         """Handle left click for URL opening."""
         pos = self.PositionFromPoint(event.GetPosition())
         text = self.GetText()
@@ -426,7 +426,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                     return
         event.Skip()
 
-    def _onHotspotClick(self, event):
+    def _on_hotspot_click(self, event):
         """Handle hotspot click (URLs)."""
         pos = event.GetPosition()
         text = self.GetText()
@@ -446,7 +446,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                         )
                 return
 
-    def _onUpdateUI(self, event):
+    def _on_update_ui(self, event):
         """Update cursor when hovering over URLs."""
         event.Skip()
         pos = self.GetCurrentPos()
@@ -460,7 +460,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                     return
         self.SetCursor(wx.Cursor(wx.CURSOR_IBEAM))
 
-    def _onSpellCheckContextMenu(self, event):
+    def _on_spell_check_context_menu(self, event):
         """Show context menu with spelling suggestions."""
         if not self._spellCheckEnabled or not ENCHANT_AVAILABLE:
             event.Skip()
@@ -492,7 +492,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                 break
 
         if misspelled_word:
-            spell_dict = self._getSpellDict()
+            spell_dict = self._get_spell_dict()
             if spell_dict:
                 suggestions = spell_dict.suggest(misspelled_word)[:5]
 
@@ -514,19 +514,19 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
                 add_item = menu.Append(wx.ID_ANY, i18n._("Add to dictionary"))
                 self.Bind(
                     wx.EVT_MENU,
-                    lambda evt, w=misspelled_word: self._addToDictionary(w),
+                    lambda evt, w=misspelled_word: self._add_to_dictionary(w),
                     add_item,
                 )
 
                 ignore_item = menu.Append(wx.ID_ANY, i18n._("Ignore"))
                 self.Bind(
                     wx.EVT_MENU,
-                    lambda evt: self._performHighlighting(),
+                    lambda evt: self._perform_highlighting(),
                     ignore_item,
                 )
 
                 menu.AppendSeparator()
-                self._addStandardContextMenuItems(menu)
+                self._add_standard_context_menu_items(menu)
 
                 self.PopupMenu(menu)
                 menu.Destroy()
@@ -534,7 +534,7 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
 
         event.Skip()
 
-    def _addStandardContextMenuItems(self, menu):
+    def _add_standard_context_menu_items(self, menu):
         """Add standard Cut/Copy/Paste items to context menu."""
         cut_item = menu.Append(wx.ID_CUT, i18n._("Cut"))
         copy_item = menu.Append(wx.ID_COPY, i18n._("Copy"))
@@ -553,15 +553,15 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         new_text = text[:start] + replacement + text[end:]
         self.SetText(new_text)
         self.SetSelection(start + len(replacement), start + len(replacement))
-        patterns.later.soon(self, self._performHighlighting)
+        patterns.later.soon(self, self._perform_highlighting)
 
-    def _addToDictionary(self, word):
+    def _add_to_dictionary(self, word):
         """Add word to personal dictionary."""
-        spell_dict = self._getSpellDict()
+        spell_dict = self._get_spell_dict()
         if spell_dict:
             try:
                 spell_dict.add(word)
-                patterns.later.soon(self, self._performHighlighting)
+                patterns.later.soon(self, self._perform_highlighting)
             except Exception as e:
                 log_step(
                     "add word to dictionary failed: %s" % e, prefix="SPELL"
@@ -576,12 +576,12 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
         """Set the text value (TextCtrl compatibility)."""
         self.SetText(value)
         self.EmptyUndoBuffer()
-        patterns.later.soon(self, self._performHighlighting)
+        patterns.later.soon(self, self._perform_highlighting)
 
     def AppendText(self, text):
         """Append text (TextCtrl compatibility)."""
         self.AddText(text)
-        patterns.later.soon(self, self._performHighlighting)
+        patterns.later.soon(self, self._perform_highlighting)
 
     def GetInsertionPoint(self):
         """Get cursor position (TextCtrl compatibility)."""
@@ -607,13 +607,13 @@ class _StyledTextCtrl(stc.StyledTextCtrl):
     def set_spell_check_enabled(self, enabled):
         """Enable or disable spell checking."""
         self._spellCheckEnabled = enabled
-        self._performHighlighting()
+        self._perform_highlighting()
 
     def set_spell_check_language(self, language):
         """Set spell check language."""
         self._spellCheckLanguage = language or None
         if self._spellCheckEnabled:
-            self._performHighlighting()
+            self._perform_highlighting()
 
 
 class PreviewHtmlWindow(wx.html.HtmlWindow):
@@ -623,9 +623,8 @@ class PreviewHtmlWindow(wx.html.HtmlWindow):
     but every http/www/mailto link opens outside: the converter marks
     its links target _blank, bare addresses have no target at all.
 
-    Drawn as the window's text, never in an input box: a box that
-    ignores typing misleads (docs/DEVELOPMENT.md, Design,
-    "Read-only looks read-only").
+    Shown in the theme's disabled text box, as a read-only date field
+    is, its text in the edit box's colour (docs/MARKDOWN.md).
     """
 
     def __init__(self, parent):
@@ -681,13 +680,13 @@ class MultiLineTextCtrl(wx.Panel):
     in for the box; the text stays as typed, only the display is converted.
     """
 
-    _nativePadding = None  # Cached native padding value
+    _native_padding = None  # Cached native padding value
 
     @classmethod
     def _get_native_padding(cls, parent):
         """Get the native TextCtrl padding by querying the GTK theme."""
-        if cls._nativePadding is not None:
-            return cls._nativePadding
+        if cls._native_padding is not None:
+            return cls._native_padding
 
         # Try to get padding from GTK directly via PyGObject
         if operating_system.isGTK():
@@ -702,8 +701,8 @@ class MultiLineTextCtrl(wx.Panel):
                     Gtk.StateFlags.NORMAL
                 )
                 if padding.left > 0:
-                    cls._nativePadding = padding.left
-                    return cls._nativePadding
+                    cls._native_padding = padding.left
+                    return cls._native_padding
             except Exception as e:
                 log_step("GTK padding probe failed: %s" % e, prefix="TEXTCTRL")
 
@@ -715,16 +714,16 @@ class MultiLineTextCtrl(wx.Panel):
             margins = temp.GetMargins()
             temp.Destroy()
             if margins.x > 0:
-                cls._nativePadding = margins.x
-                return cls._nativePadding
+                cls._native_padding = margins.x
+                return cls._native_padding
         except Exception as e:
             log_step(
                 "wxPython GetMargins probe failed: %s" % e, prefix="TEXTCTRL"
             )
 
         # Last fallback
-        cls._nativePadding = 6
-        return cls._nativePadding
+        cls._native_padding = 6
+        return cls._native_padding
 
     def __init__(
         self,
@@ -754,6 +753,7 @@ class MultiLineTextCtrl(wx.Panel):
         )
         self._preview_ctrl = None  # Made when preview first shows
         self._is_preview = False
+        self._preview_in_box = True  # Set at each render
 
         # Don't set explicit bg — inherit from parent so corners
         # auto-update on theme change (explicit bg prevents inheritance)
@@ -813,23 +813,46 @@ class MultiLineTextCtrl(wx.Panel):
         if self._last_window_bg != window_bg:
             self._last_window_bg = window_bg
             patterns.later.soon(
-                self._textCtrl, self._textCtrl._applyThemeColours
+                self._textCtrl, self._textCtrl._apply_theme_colours
             )
             if self._is_preview and self._preview_ctrl is not None:
                 patterns.later.soon(self, self._render_preview)
 
     def _paint_border(self, dc):
         """The edit box: the theme's text box, focused while it has the
-        focus. The preview: read-only window text, never an input box,
-        so no box; while it has the focus the same highlight as the
-        focused edit box (docs/FOCUS_MANAGEMENT.md). Both drawn by the
+        focus. The preview: the theme's disabled text box, as a
+        read-only date field shows; while it has the focus, the focused
+        edit box's highlight over it (docs/FOCUS_MANAGEMENT.md): a
+        theme may draw no focus on a disabled box. Both drawn by the
         system theme, never in colours or sizes of ours."""
         rect = self.GetClientRect()
+        renderer = wx.RendererNative.Get()
         if not self._is_preview:
             flags = wx.CONTROL_FOCUSED if self._has_focus else 0
-            wx.RendererNative.Get().DrawTextCtrl(self, dc, rect, flags)
-        elif self._has_focus:
+            renderer.DrawTextCtrl(self, dc, rect, flags)
+            return
+        if self._preview_in_box:
+            renderer.DrawTextCtrl(self, dc, rect, wx.CONTROL_DISABLED)
+        if self._has_focus:
             dc.DrawBitmap(self._focused_frame(rect.GetSize()), 0, 0, True)
+
+    def _disabled_field_colour(self):
+        """The disabled text box's field as the theme draws it, read in
+        its middle: no system colour names it. The preview's page takes
+        it, so box and page show as one field."""
+        size = self.GetClientSize()
+        size.IncTo(wx.Size(32, 32))  # Before the first layout
+        bitmap = wx.Bitmap(size)
+        dc = wx.MemoryDC(bitmap)
+        dc.SetBackground(
+            wx.Brush(self._preview_window().GetBackgroundColour())
+        )
+        dc.Clear()
+        wx.RendererNative.Get().DrawTextCtrl(
+            self, dc, wx.Rect(size), wx.CONTROL_DISABLED
+        )
+        dc.SelectObject(wx.NullBitmap)
+        return self._middle_colour(bitmap)
 
     def _focused_frame(self, size):
         """The focused edit box as the theme draws it, its field left
@@ -845,10 +868,21 @@ class MultiLineTextCtrl(wx.Panel):
         wx.RendererNative.Get().DrawTextCtrl(
             self, dc, wx.Rect(size), wx.CONTROL_FOCUSED
         )
-        field = dc.GetPixel(size.width // 2, size.height // 2)
         dc.SelectObject(wx.NullBitmap)
+        field = self._middle_colour(bitmap)
         bitmap.SetMask(wx.Mask(bitmap, field))
         return bitmap
+
+    @staticmethod
+    def _middle_colour(bitmap):
+        """The colour in the middle of a bitmap, read from its image: a
+        memory DC on macOS reads no pixel (wxWidgets 3.3.1,
+        wxGCDCImpl::DoGetPixel gives an invalid colour)."""
+        image = bitmap.ConvertToImage()
+        x, y = image.GetWidth() // 2, image.GetHeight() // 2
+        return wx.Colour(
+            image.GetRed(x, y), image.GetGreen(x, y), image.GetBlue(x, y)
+        )
 
     def is_preview(self):
         """Whether the read-only Markdown preview shows instead of the box."""
@@ -915,31 +949,38 @@ class MultiLineTextCtrl(wx.Panel):
         event.Skip()
 
     def _preview_window(self):
-        """The window the preview takes its colours from: its own, not
+        """The window whose colour shows around the box: its own, not
         the panel's stock grey on GTK."""
         return wx.GetTopLevelParent(self) or self
-
-    def _update_preview_background(self):
-        if self._preview_ctrl is not None:
-            self._preview_ctrl.SetBackgroundColour(
-                self._preview_window().GetBackgroundColour()
-            )
-            if self._is_preview:
-                self._preview_ctrl.Refresh()
 
     @staticmethod
     def _html_colour(colour):
         return "#%02x%02x%02x" % (colour.Red(), colour.Green(), colour.Blue())
 
+    def _preview_colours(self):
+        """The page and text colours: the disabled box's field and the
+        edit box's text. Where the box drawn stays light in dark mode
+        (wxWidgets 3.3.1 on Windows and macOS: docs/MARKDOWN.md), its
+        light text would not show on it: there the preview stays the
+        window's text on the window, without the box, as released."""
+        window = self._preview_window()
+        field = self._disabled_field_colour()
+        background = window.GetBackgroundColour()
+        self._preview_in_box = (field.GetLuminance() < 0.5) == (
+            background.GetLuminance() < 0.5
+        )
+        if self._preview_in_box:
+            return field, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        return background, window.GetForegroundColour()
+
     def _render_preview(self):
         """Render the text again, in the theme's colours."""
-        window = self._preview_window()
-        # The code's shade goes with the colours the window really
-        # has, as the text does: with the dark Mode chosen on a light
-        # desktop the text stays dark
-        dark = window.GetBackgroundColour().GetLuminance() < 0.5
+        page, text = self._preview_colours()
+        # The code's shade goes with the page the theme really draws,
+        # not the Mode setting: with the dark Mode chosen on a light
+        # desktop the box stays light
+        dark = page.GetLuminance() < 0.5
         grey = wx.SystemSettings.GetColour(wx.SYS_COLOUR_GRAYTEXT)
-        text = window.GetForegroundColour()
         self._preview_ctrl.SetPage(
             markdown_to_html(
                 self.GetValue(),
@@ -953,7 +994,10 @@ class MultiLineTextCtrl(wx.Panel):
         self._preview_ctrl.ShowScrollbars(
             wx.SHOW_SB_DEFAULT, wx.SHOW_SB_ALWAYS
         )
-        self._update_preview_background()
+        self._preview_ctrl.SetBackgroundColour(page)
+        if self._is_preview:
+            self.Refresh()  # The box too, should it come or go
+            self._preview_ctrl.Refresh()
 
     # Proxy common TextCtrl methods to the inner control
     def GetValue(self, *args, **kwargs):

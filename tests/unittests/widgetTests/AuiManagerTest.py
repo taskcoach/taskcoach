@@ -165,6 +165,19 @@ class NotebookTest(AuiManagerTestCase):
         test.settle()
         self.assertTrue(siplib.isdeleted(notebook_manager))
 
+    def test_layout_requests_made_before_it_runs_lay_out_once(self):
+        # AGW queues a whole layout for each request: an editor's build
+        # made five, each laid out again after it showed
+        parent = wx.Panel(self.frame)
+        notebook = widgets.Notebook(parent)
+        test.settle()  # AGW's own request while it was made
+        manager = notebook.GetAuiManager()
+        with mock.patch.object(manager, "DoUpdate") as do_update:
+            for _ in range(3):
+                manager.Update()
+            test.settle()
+        self.assertEqual(1, do_update.call_count)
+
     def test_an_editor_notebook_frees_its_pages(self):
         parent = wx.Panel(self.frame)
         notebook = widgets.Notebook(parent)

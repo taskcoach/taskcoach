@@ -8,29 +8,16 @@ The Preferences dialog: [PREFERENCES.md](PREFERENCES.md).
 2. [One Settings Object (To Do 70)](#one-settings-object-to-do-70)
 3. [Known Anomalies](#known-anomalies)
 4. [The Store](#the-store)
-5. [Usage](#usage)
-6. [In-Place Editing Options](#in-place-editing-options)
-7. [Key Files](#key-files)
+5. [Naming Convention](#naming-convention)
+6. [Usage](#usage)
+7. [In-Place Editing Options](#in-place-editing-options)
+8. [Key Files](#key-files)
 
 ---
 
 ## TODO
 
-1. ~~**Modernize the settings system**: one typed settings object
-   that any module reads and writes by attribute, `ConfigParser`
-   replaced by a purpose-built class~~: done 2026-10-03, To Do 70, [One
-   Settings Object](#one-settings-object-to-do-70).
-2. ~~Create `settings2.py`, a read-only copy~~: done; gone 2026-10-03
-   (To Do 70 step 4).
-3. ~~Migrate the tooltip config lookup~~: done.
-4. ~~Migrate the hover config lookup~~: done.
-5. ~~Migrate the other call sites~~: done 2026-10-03 (To Do 70 step 3).
-6. ~~Wire `EVT_SYS_COLOUR_CHANGED`~~: done, [System theme
-   changes](#system-theme-changes).
-7. ~~Refine the refresh triggers~~: with no copy there is nothing to
-   refresh (To Do 70 step 4).
-8. ~~`"settings2.changed"` listeners~~: gone with the copy; its one
-   listener takes the option's event (`"feature.decimal_time"`).
+Nothing to do.
 
 ---
 
@@ -308,6 +295,35 @@ wrote it. Kept, **ruled by designer 2026-10-02** (P67 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#pre-existing-issues)).
 `[version] notify` and `notified` are the update check's
 ([PACKAGING.md](PACKAGING.md)).
+
+---
+
+## Naming Convention
+
+### Current Status
+
+The INI file settings use a mix of naming conventions (legacy):
+- `effort`, `view` - single lowercase words
+- `minidletime`, `showsmwarning` - concatenated lowercase (hard to read)
+- `sdtcspans_effort` - some use underscores
+
+### New Convention (PEP 8)
+
+**All new settings should use `snake_case` naming convention:**
+
+```ini
+[feature]
+my_new_setting = True    # New style (PEP 8 snake_case)
+showsmwarning = True     # Old style (avoid for new settings)
+```
+
+**Rationale:**
+- Python PEP 8 recommends `snake_case` for identifiers
+- More readable than concatenated lowercase
+- Matches modern Python conventions
+
+**Note:** Existing settings should NOT be renamed to avoid breaking user INI files.
+The `defaults.py` file has a comment marking where new snake_case settings begin.
 
 ---
 

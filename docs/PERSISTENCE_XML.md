@@ -22,12 +22,6 @@ How domain objects are serialized to `.tsk` XML files and deserialized back.
 
 ## TODO
 
-1. ~~Maybe always write values?~~ **Ruled by designer 2026-09-29:**
-   no ([Defaults](#defaults)).
-2. ~~The writer and reader decide defaults separately~~: done
-   2026-09-29, one list ([Defaults](#defaults)).
-3. ~~`plannedDurationMode` documented as "automatic"~~: resolved, the
-   default is `"implicit"`.
 4. Retire the forms written for older releases (`legacy.py`): in
    place since 2.0.3.0, 2026-10-01; review between January and April
    2027 ([To Do: Retire the Old
@@ -195,8 +189,7 @@ releases ([Versions and Compatibility](#versions-and-compatibility)).
 
 Two ways, **ruled by designer 2026-10-07**: autosave (Preferences >
 Files, on by default) or File > Save on demand. "There should not be
-a third mode": saving when Task Coach loses focus (TODO.md 3) was
-dropped.
+a third mode": saving when Task Coach loses focus was dropped.
 
 Autosave takes two steps:
 
@@ -204,9 +197,9 @@ Autosave takes two steps:
    description, dates, durations and amounts counts when the user
    leaves the field: Tab, a click elsewhere, closing the editor,
    another program
-   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo) 1). Until then
-   it is only in the field: a crash loses it. Checkboxes, choices, the
-   priority, menu commands, drags and undo count at once.
+   ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#saving-on-leaving-a-field)).
+   Until then it is only in the field: a crash loses it. Checkboxes,
+   choices, the priority, menu commands, drags and undo count at once.
 2. **The file is saved** (`persistence/autosaver.py`) once the change
    and what it sets off (tied dates, a parent completed, the next
    recurrence) are done: at wx's next idle event, sent as soon as no

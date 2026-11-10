@@ -174,4 +174,9 @@ macOS, AppImage and Flatpak builds copy the package as files.
   cut on the right, without "...", whatever the column's alignment,
   as ruled 2026-10-06: Task Coach does not set
   `TR_ELLIPSIZE_LONG_ITEMS`, so `ChopText()` never runs (To Do 10 and
-  D15 in [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md)).
+  D15 in [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md)). Were it
+  set, `ChopText()` (in `customtreectrl.py`) would put the "..." on
+  the right whatever the alignment, as upstream does (no Phoenix issue
+  for it, searched January 2026); for a right-aligned column,
+  `wx.Control.Ellipsize(text, dc, wx.ELLIPSIZE_START, width)` in
+  `hypertreelist.py` would cut on the left.

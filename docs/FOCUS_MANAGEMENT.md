@@ -92,18 +92,18 @@ theme: **ruled by designer 2026-10-19**, "the user should have the
 same focus style on the edit box as a preview (as any other edit box),
 per their system theme style", and "match the system theme always".
 
-The theme draws a text box's field and frame in one call (wxGTK
-`DrawTextCtrl()`: `gtk_render_background`, then `gtk_render_frame`),
-so the preview draws the focused text box into a bitmap and masks the
-field's colour, read in its middle
+The preview shows as the theme's disabled text box
+([MARKDOWN.md](MARKDOWN.md#decided)), on which a theme need not draw
+a focus. The theme draws a text box's field and frame in one call
+(wxGTK `DrawTextCtrl()`: `gtk_render_background`, then
+`gtk_render_frame`), so the preview draws the focused text box into a
+bitmap and masks the field's colour, read in its middle
 (`MultiLineTextCtrl._focused_frame()`): what is left is the theme's
-focus highlight, pixel for pixel the edit box's, without the field
-that would make an input box of read-only text
-([DEVELOPMENT.md](DEVELOPMENT.md#design), Read-only looks read-only).
-So the look is the theme's on every desktop: GTK draws the theme's
-focused entry, macOS its focus ring (`HIThemeDrawFrame`, focused);
-wx's Windows renderer draws no focused state, so on Windows neither
-box shows a highlight (P271 in
+focus highlight, pixel for pixel the edit box's, drawn over the
+disabled box. So the look is the theme's on every desktop: GTK draws
+the theme's focused entry, macOS its focus ring (`HIThemeDrawFrame`,
+focused); wx's Windows renderer draws no focused state, so on Windows
+neither box shows a highlight (P271 in
 [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#found-2026-10-19)).
 
 F2 swaps the box from the box, in both modes, and from its

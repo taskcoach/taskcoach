@@ -42,18 +42,6 @@ Default date/time values for new tasks, configured in Preferences.
    This would eliminate the split between `uicommand.py` (preset) and
    `editor.py` (propose) and ensure domain invariants are always enforced.
 
-2. ~~**Preset completion date bypasses `_on_completion_date_time_changed`.**~~
-   Removed 2026-09-29: Preferences has offered only Propose for the
-   completion date since release 1.3 (2011-07-26, "More options for
-   default task date and times"), so the code no longer applies a
-   completion preset (**ruled by designer**: only what the interface
-   offers is supported). See
-   [Constructor Bypass Problem](#constructor-bypass-problem).
-
-3. ~~**Fix propose mode for DateTimeComboCtrl**~~ — **Done.** `suggested_value`
-   parameter added to `DateTimeComboCtrl.__init__()`. Editor passes preference-
-   computed datetime at construction. See [Fix](#fix) section.
-
 4. **Duration mode interaction with presets needs resolution.** New tasks
    start in Implicit mode for legacy and preset/propose compatibility
    reasons (see DURATION_CALCULATIONS.md "Logic Flow" note). Implicit
@@ -157,8 +145,11 @@ For the **reminder**, the callback's event is bypassed (below).
 
 None: a completion date is only proposed. Were it preset through the
 constructor, a new task would be completed without the completion's
-side effects (recurrence, children, parent, tracking); since
-Preferences has never offered it, the code does not apply one.
+side effects (recurrence, children, parent, tracking). Preferences
+has offered only Propose for it since release 1.3 (2011-07-26, "More
+options for default task date and times"), so the code does not apply
+one, **ruled by designer 2026-09-29**: only what the interface offers
+is supported.
 
 ### Reminder Preset
 

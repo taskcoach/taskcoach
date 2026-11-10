@@ -38,11 +38,6 @@
    infrastructure (`_hoverItem`, `PaintLevel`, `_refresh_hover_row`) could be
    reused or extended to also draw around selected items using a different
    color pair (e.g. `SYS_COLOUR_HIGHLIGHT` / `SYS_COLOUR_HIGHLIGHTTEXT`).
-2. ~~**Eliminate UpdateUI polling entirely**~~: **Done.** Toolbar buttons
-   follow signals (`_SelectionSync`, `_ViewSettingsSync`); menu items answer
-   `EVT_UPDATE_UI`, which wx sends only on demand ([MENUS.md](MENUS.md));
-   no update events in idle time. See [Vampire CPU Usage](#vampire-cpu-usage)
-   for background.
 
 ---
 
@@ -859,7 +854,7 @@ All to answer "should this button be greyed out?" — when nothing has changed.
 This is pure waste. The correct approach would be event-driven: update button
 states only when selection or data actually changes, not by continuous polling.
 
-### ~~TODO~~: Eliminate UpdateUI polling entirely — DONE
+### Eliminating UpdateUI Polling (Done)
 
 **Q1: Can we piggyback on the 1-second scheduler tick?** The global scheduler
 timer already fires every second (`scheduler.py`, `GlobalTimer`). Instead of wx polling

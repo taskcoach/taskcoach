@@ -98,7 +98,7 @@ go at the end. Details live in the sections and documents linked.
     the others guard delayed calls and destruction
     ([PUBLISHER_OBSERVER.md](PUBLISHER_OBSERVER.md#signaling-system-cleanup)).
 41. ~~Editor text fields save on leaving the field~~: by design, not
-    an issue ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#todo)).
+    an issue ([ATTRIBUTE_PATTERN.md](ATTRIBUTE_PATTERN.md#saving-on-leaving-a-field)).
 42. ~~The designer's desktop test of the branch~~: closed by the
     release, 2026-10-04.
 43. ~~Squash to one commit~~: done 2026-10-04, **asked by
@@ -788,7 +788,7 @@ In the app:
 - P41. ~~Reading a Thunderbird IMAP mail gave the keyring bytes, and a
   server offering NTLM raised an error~~: fixed 2026-09-30; the
   vendored `ntlm` could not run on Python 3 and was removed
-  ([TODO.md](TODO.md#12-thunderbirdimap-mail-integration-review)).
+  ([EMAIL_ATTACHMENTS.md](EMAIL_ATTACHMENTS.md#decisions) 8).
 - P42. ~~Strings translated before the translator existed read `LANG`
   before `LC_ALL`, and the spell check the deprecated
   `getdefaultlocale()`~~: fixed 2026-09-30, one function,
@@ -1202,7 +1202,7 @@ each with the recommended action, none ruled yet:
   *Impossible*" is gone; its sync guard stays (setting the stop date
   sends a change that would run the flow again); the code's step
   comments, one ahead of the spec, follow it
-  ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) TODO 10).
+  ([DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md#stored-duration)).
 - P98. Date and time refactors open in their docs: presets through
   the attribute path ([DATETIME_PRESETS.md](DATETIME_PRESETS.md) 1),
   the popup out of `MaskedFieldsCtrl`, one "N/A" painter

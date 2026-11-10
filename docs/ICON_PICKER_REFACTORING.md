@@ -14,52 +14,21 @@ This document describes the custom `IconPicker` widget used in Task Coach for se
   - [Button Active Appearance](#button-active-appearance)
   - [Focus Indicator](#focus-indicator)
   - [Escape Key Handling](#escape-key-handling)
+  - [Dialog Focus](#dialog-focus)
 - [Appendix: wxWidgets Reference](#appendix-wxwidgets-reference)
 
 ## TODO Items
-
-### Demo Control Issues
-
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| 38 | ~~Demo picker not working and not updated~~ | Done | The demo script was removed (2026-09); the picker is tested in the app. |
-
-
-### Search Box Issues
-
-| # | Issue | Status | Notes |
-|---|-------|--------|-------|
-| 18 | ~~Not getting focus~~ | Done | Fixed with `CallAfter(self._focus_search)`. Tab order also fixed: list → Clear → Cancel → OK. |
-| 19 | ~~Cursor stuck in main textbox~~ | Done | Resolved by modal `_IconDialog` (no focus competition with main window). |
-
-
-### Feature Implementation
-
-| # | Feature | Status | Notes |
-|---|---------|--------|-------|
-| 37 | ~~Use shared `ImageListCache` instead of private `_image_list`~~ | Done | Replaced private `_image_list` and `_image_map` with shared `image_list_cache` singleton. Picker now uses `image_list_cache.get_index(icon_id)` for lazy loading and `image_list_cache.image_list` via `SetImageList()` — same pattern as all viewers. Bitmap removed from item tuples (6-tuple instead of 7). |
 
 ### Integration Tasks
 
 | # | Task | Status | Notes |
 |---|------|--------|-------|
-| 30 | Create reusable widget in taskcoachlib/widgets/iconpicker.py | Done | `IconPicker` class with hints support |
-| 32 | Integrate into entry.py IconPicker | Done | Uses widgets.IconPicker, auto-width |
-| 33 | Add icon hints to icon_library.py | Done | Icon hints now in each theme's `icons_parsed.py` |
 | 34 | Test on Windows/macOS | Not Started | Cross-platform verification |
-
-### Transparent Empty Bitmap
-
-| # | Task | Status | Notes |
-|---|------|--------|-------|
-| 35 | ~~Review if `TRANSPARENT_EMPTY_ICON` still needed~~ | Done | Removed. The "No icon" state sets `bmpLabel = None` directly, with a `SetBitmapLabel` guard to prevent wxPython bug #2093. |
 
 ### Status Legend
 
-- **Done**: Completed and integrated
 - **Not Started**: Work has not begun
 
-</details>
 
 ## Final Implementation
 
@@ -214,6 +183,11 @@ The `IconPicker` widget has a built-in `no_icon` parameter (default: `True`) tha
 - Task/Category editors: `no_icon=True` - allows clearing icon
 - Preferences status icons: `no_icon=True` - allows "No icon" for statuses
 
+The button shows "No icon" with `bmpLabel = None`, never
+`SetBitmapLabel(None)` or a transparent empty bitmap: wxPython's
+`GenBitmapButton` fails on a null bitmap (bug #2093), and
+`IconPicker.SetBitmapLabel()` guards against it.
+
 ## Files Involved
 
 | File | Purpose |
@@ -284,6 +258,14 @@ def _on_key(self, event):
 ```
 
 No `EVT_CHAR_HOOK` interception is needed — the modal dialog handles Escape natively.
+
+### Dialog Focus
+
+The dialog is modal, so the main window's text field cannot take the
+cursor back. The search box gets the focus once the dialog shows
+(`patterns.later.soon(self, self._focus_search)`); the buttons are
+made by hand, not by `CreateStdDialogButtonSizer()`, so the tab order
+can be list, Clear, Cancel, OK.
 
 ---
 

@@ -40,16 +40,6 @@
    and `compute_derived` gives them no sources. Open for later: remove
    their Appearance tab and branch, or inherit the owner's style.
 
-2. ~~**Note styling incomplete**~~: **Done.** Tested and confirmed that
-   `compute_derived` correctly flows category fg/bg/font/icon values through
-   to Notes via `_get_from_categories` for all field types.
-
-3. ~~**Category assignment triggers filter refresh**~~: **Done
-   2026-09-29.** Membership events (`member_added/removed_event_type()`) have
-   their own handler, `CategoryFilter.on_membership_changed()`, which
-   refilters only when the category or one it is under is filtered;
-   filter events (`filterChangedEventType`) still refilter.
-
 ---
 
 ## Overview

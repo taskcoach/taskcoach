@@ -6,11 +6,22 @@ the counts: View > New viewer > Task statistics. Not open by default
 
 ## Table of Contents
 
-1. [Code](#code)
-2. [Known Load](#known-load)
-3. [To Do](#to-do)
+1. [To Do](#to-do)
+2. [Code](#code)
+3. [Known Load](#known-load)
 
 ---
+
+## To Do
+
+1. Draw the view in Task Coach's own code instead of
+   `wx.lib.agw.piectrl`: a pie painted only when the counts, colours,
+   tilt or size change (`wx.GraphicsContext`, antialiased), and a
+   legend of plain labels. Keep what users set: the statuses shown,
+   their colours and the tilt slider. Checks: idle CPU near 0 with the
+   view open (method in [Known Load](#known-load)); the counts follow
+   status changes and scheduler passes; light and dark themes; the
+   view's tests.
 
 ## Code
 
@@ -59,15 +70,3 @@ refactored, **asked by designer 2026-10-04**: "there's no reason for it
 to be so heavy ... it relies on a, maybe not well maintained or
 obsolete or abandoned package ... there's probably ... more modern
 ways".
-
----
-
-## To Do
-
-1. Draw the view in Task Coach's own code instead of
-   `wx.lib.agw.piectrl`: a pie painted only when the counts, colours,
-   tilt or size change (`wx.GraphicsContext`, antialiased), and a
-   legend of plain labels. Keep what users set: the statuses shown,
-   their colours and the tilt slider. Checks: idle CPU near 0 with the
-   view open (method above); the counts follow status changes and
-   scheduler passes; light and dark themes; the view's tests.

@@ -24,44 +24,7 @@ Duration calculations for Edit Task Dates and Edit Effort windows.
 
 ## TODO
 
-5. ~~Add cross-references to ATTRIBUTE_PATTERN.md~~ — **Done.** Cross-reference
-   added to section 0.2.
-6. ~~No-mode safety~~: done. Both sync functions branch on each mode
-   explicitly, with no catch-all `else`; an unknown mode enters no
-   branch.
-7. ~~Calculation mode always explicit~~: decided. A new task starts in
-   Implicit mode ([Logic Flow](#logic-flow), note), an effort in
-   Standard; the mode is set when the item is created, read from the
-   file or defaulted, so there is no "not yet set" state to wait for.
-9. ~~DateTimeComboCtrl Checkbox toggle EVT_KILL_FOCUS gap~~ — **Resolved.**
-   ~~Editor binds `EVT_CHECKBOX` via `combo.Bind(wx.EVT_CHECKBOX, handler)`
-   and calls `sync.commit()` explicitly.~~
-   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeComboCtrl. All
-   AttributeSync instances use `EVT_VALUE_CHANGED` as `editedEventType`,
-   which fires on checkbox toggle AND date/time edits. External
-   EVT_CHECKBOX handlers and `sync.commit()` hacks removed.
-   See [DATETIME_CONTROLS.md](DATETIME_CONTROLS.md) TODO item 3.
-10. ~~**Reconcile legacy "datestied" preference with duration mode.**~~
-   **Done 2026-10-02 for the adjust modes** (P150, **asked by
-   designer**): a list cell follows the task's mode there and the
-   preference applies only in Implicit mode ([Stored
-   Duration](#stored-duration)). The preference stays for Implicit
-   mode, **ruled by designer 2026-10-06** (P97, "keep as released");
-   its note in Preferences says where it applies, no longer that it
-   will be removed.
-   The `view.datestied` setting (`preferences.py:2029`) is a legacy
-   predecessor to duration mode. It has three options: nothing, "changing
-   start shifts due" (`startdue`), or "changing due shifts start"
-   (`duestart`). It only applies to **inline edits in the task list
-   viewer** (`gui/viewer/task.py:2121-2131`) via `keep_delta=True` on
-   `EditPlannedStartDateTimeCommand` / `EditDueDateTimeCommand`. It is
-   not wired into the editor dialog at all. Duration mode does the same
-   thing bidirectionally with explicit UI in the editor. These two
-   mechanisms should be unified or the legacy setting should be removed
-   in favor of duration mode.
-11. ~~Effort Logic Flow: Renumber sections 1, 2, 3 to match the task
-    section pattern — consolidate x.1/x.2 mode-change rules into
-    a single x.1 note, renumber remaining items.~~ — **Done.**
+Nothing to do.
 
 ## Notes
 
@@ -117,6 +80,10 @@ for the next user change.
        tells its callback which it is (edited), and compares an edit
        with what the field shows, not the stored value (a time
        without seconds) (UNDO_REDO.md, Actions).
+   0.6 The mode is always set: when the item is created (a task in
+       Implicit mode, an effort in Standard), read from the file or
+       defaulted. Each sync function branches on each mode explicitly,
+       with no catch-all else: an unknown mode enters no branch.
 ```
 
 ---
@@ -548,6 +515,16 @@ does not touch the duration in these modes: the editor moves the
 other date by it (2.7, 3.7), and a duration already following the
 date would leave that date where it was. The editor's own changes
 run the same commands and find nothing left to change.
+
+The older preference for this, Preferences > Task dates "What to do
+with planned start and due date if the other one is changed"
+(`view.datestied`: nothing; `startdue`, a changed start moves the due
+date; `duestart`, a changed due date moves the start), applies only to
+a date typed in the task list for a task in Implicit mode
+(`keep_delta=True` on `EditPlannedStartDateTimeCommand` and
+`EditDueDateTimeCommand`, P150); the editor never reads it. It stays,
+**ruled by designer 2026-10-06** (P97, "keep as released"), and its
+note in Preferences says where it applies.
 
 A file whose stored duration differs (written before this, or by an
 older release) is corrected the first time the task's editor opens,

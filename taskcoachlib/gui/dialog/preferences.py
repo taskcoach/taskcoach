@@ -76,7 +76,7 @@ class SettingsPage(widgets.ScrolledBookPage):
 
     @property
     def _columnGap(self):
-        return self._borderWidth + self._hgap + self._borderWidth
+        return self._border_width + self._hgap + self._border_width
 
     def _makeInlinePanel(self, *controls, help_text="", growable=False):
         """Create a panel with controls and an inline help label.
@@ -117,7 +117,7 @@ class SettingsPage(widgets.ScrolledBookPage):
         check_box = wx.CheckBox(self, -1)
         check_box.SetValue(settings.get(section, setting))
         panel = self._makeInlinePanel(check_box, help_text=help_text)
-        self.addEntry(text, panel, **kwargs)
+        self.add_entry(text, panel, **kwargs)
         self._booleanSettings.append((section, setting, check_box))
         return check_box
 
@@ -140,7 +140,7 @@ class SettingsPage(widgets.ScrolledBookPage):
             if choice_ctrl.GetSelection() == wx.NOT_FOUND:
                 choice_ctrl.SetSelection(0)
         panel = self._makeInlinePanel(*choice_ctrls, help_text=help_text)
-        self.addEntry(text, panel, flags=kwargs.get("flags", None))
+        self.add_entry(text, panel, flags=kwargs.get("flags", None))
         self._choiceSettings.append((section, setting, choice_ctrls))
         return choice_ctrls
 
@@ -159,7 +159,7 @@ class SettingsPage(widgets.ScrolledBookPage):
             help_text=help_text,
             growable=kwargs.get("growable", True),
         )
-        self.addEntry(
+        self.add_entry(
             text,
             panel,
             growable=kwargs.get("growable", True),
@@ -189,7 +189,7 @@ class SettingsPage(widgets.ScrolledBookPage):
             self, min=minimum, max=maximum, size=(65, -1), value=int_value
         )
         panel = self._makeInlinePanel(spin, help_text=help_text)
-        self.addEntry(text, panel, flags=flags)
+        self.add_entry(text, panel, flags=flags)
         self._integerSettings.append((section, setting, spin))
 
     def addWorkingHoursSetting(self, text):
@@ -241,7 +241,7 @@ class SettingsPage(widgets.ScrolledBookPage):
             self._workingHourEndChoice.SetSelection(23)
             self._workingHourEndChoice.Enable(False)
 
-        self.addEntry(text, panel)
+        self.add_entry(text, panel)
 
     def _onWorkingHourStartChanged(self, event):
         """Ensure at least 1 hour gap when start hour changes."""
@@ -304,7 +304,7 @@ class SettingsPage(widgets.ScrolledBookPage):
             pos,
             span=(1, 4),
             flag=wx.ALL | wx.ALIGN_CENTER,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         pos = self._position.next(4)
         self._sizer.Add(
@@ -312,7 +312,7 @@ class SettingsPage(widgets.ScrolledBookPage):
             pos,
             span=(1, 4),
             flag=wx.ALL | wx.ALIGN_CENTER,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         # Empty cell for reset column
         self._position.next(1)
@@ -323,34 +323,34 @@ class SettingsPage(widgets.ScrolledBookPage):
             (1, 0),
             span=(1, 1),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         self._sizer.Add(
             wx.StaticLine(self),
             (1, 1),
             span=(1, 1),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         self._sizer.Add(
             wx.StaticLine(self),
             (1, 2),
             span=(1, 4),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         self._sizer.Add(
             wx.StaticLine(self),
             (1, 6),
             span=(1, 4),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         # Advance cursor past the line row
         self._position.next(11)
 
         # Row 2: Sub-headers - Label left-aligned, Priority centered, rest centered
-        self.addEntry(
+        self.add_entry(
             _("Label"),
             _("Priority"),
             _("Foreground"),
@@ -487,7 +487,7 @@ class SettingsPage(widgets.ScrolledBookPage):
             wx.EVT_BUTTON, lambda evt: self._onResetAppearanceRow(*row)
         )
 
-        self.addEntry(
+        self.add_entry(
             text,
             priority_choice,
             light_fg,
@@ -559,11 +559,11 @@ class SettingsPage(widgets.ScrolledBookPage):
         )
         path_chooser.SetPath(settings.get(section, setting))
         self._inlineHelpCtrls.append((path_chooser.helpCtrl, path_chooser))
-        self.addEntry(text, path_chooser, **kwargs)
+        self.add_entry(text, path_chooser, **kwargs)
         self._pathSettings.append((section, setting, path_chooser))
 
     def addText(self, label, text, **kwargs):
-        self.addEntry(label, text, **kwargs)
+        self.add_entry(label, text, **kwargs)
 
     def addHintRow(self, text):
         """Add a standalone gray hint row spanning all columns."""
@@ -662,9 +662,9 @@ class SettingsPage(widgets.ScrolledBookPage):
             # Re-layout after wrapping changed control sizes
             super().fit()
 
-    def addEntry(self, text, *controls, **kwargs):  # pylint: disable=W0221
+    def add_entry(self, text, *controls, **kwargs):  # pylint: disable=W0221
         kwargs.pop("help_text", "")  # Consumed by helpers; strip if passed
-        super().addEntry(text, *controls, **kwargs)
+        super().add_entry(text, *controls, **kwargs)
 
 
 class SavePage(SettingsPage):
@@ -793,7 +793,7 @@ class ThemePage(SettingsPage):
         )
         mode_panel.SetSizer(mode_sizer)
 
-        self.addEntry(
+        self.add_entry(
             _("Mode"),
             mode_panel,
             flags=[
@@ -804,10 +804,10 @@ class ThemePage(SettingsPage):
         self._choiceSettings.append(("window", "theme", [theme_choice]))
         self._add_restart_note(theme_choice)
 
-        self.addLine()
+        self.add_line()
 
         # --- Section: Calendar ---
-        self.addEntry(
+        self.add_entry(
             _("Calendar"),
             _("System"),
             _("Light"),
@@ -866,7 +866,7 @@ class ThemePage(SettingsPage):
                 lambda evt, a=bound: self._on_reset(*a),
             )
 
-            self.addEntry(
+            self.add_entry(
                 label_text,
                 "",
                 light_picker,
@@ -1012,7 +1012,7 @@ class ThemePage(SettingsPage):
         )
         other_month_reset_btn.Bind(wx.EVT_BUTTON, self._on_reset_other_month)
 
-        self.addEntry(
+        self.add_entry(
             _("Other Months Days Background"),
             self._other_month_light_check,
             self._other_month_light_panel,
@@ -1060,7 +1060,7 @@ class ThemePage(SettingsPage):
                 lambda evt, a=bound: self._on_reset(*a),
             )
 
-            self.addEntry(
+            self.add_entry(
                 label_text,
                 "",
                 light_picker,
@@ -1087,8 +1087,8 @@ class ThemePage(SettingsPage):
             )
 
         # --- Section: Spellcheck ---
-        self.addLine()
-        self.addEntry(
+        self.add_line()
+        self.add_entry(
             _("Spellcheck"),
             "",
             _("Light"),
@@ -1137,7 +1137,7 @@ class ThemePage(SettingsPage):
             lambda evt, a=bound: self._on_reset_squiggle(*a),
         )
 
-        self.addEntry(
+        self.add_entry(
             _("Scintilla (Squiggle)"),
             "",
             light_squiggle_picker,
@@ -1163,7 +1163,7 @@ class ThemePage(SettingsPage):
             ("spellcheck_dark", "squiggle_color", dark_squiggle_picker)
         )
 
-        self.addLine()
+        self.add_line()
 
         # --- Section: Hoverover Highlight ---
         self.addIntegerSetting(
@@ -1327,7 +1327,7 @@ class ThemePage(SettingsPage):
         self._restart_note_default_colour = wx.SystemSettings.GetColour(
             wx.SYS_COLOUR_GRAYTEXT
         )
-        self.addEntry(
+        self.add_entry(
             "",
             self._restart_note,
             flags=[
@@ -1424,7 +1424,7 @@ class LanguagePage(SettingsPage):
         self._restart_warning.SetForegroundColour(
             self._restart_warning_default_color
         )
-        self.addEntry("", self._restart_warning)
+        self.add_entry("", self._restart_warning)
 
         languages = [
             ("ar", "الْعَرَبيّة (Arabic)"),
@@ -1537,7 +1537,7 @@ class LanguagePage(SettingsPage):
         url_ctrl = HyperLinkCtrl(panel, -1, label=url, URL=url)
         sizer.Add(url_ctrl, 0, wx.TOP, 2)
         panel.SetSizer(sizer)
-        self.addEntry("", panel)
+        self.add_entry("", panel)
 
         # Store original language to detect changes
         self._original_language = self._get_selected_language_code()
@@ -1551,13 +1551,13 @@ class LanguagePage(SettingsPage):
                 choice_ctrls[0].Bind(wx.EVT_CHOICE, self._on_language_change)
 
         # Separator line between language and spell check sections
-        self.addLine()
+        self.add_line()
 
         # === SPELL CHECK SECTION ===
         self._setupSpellCheckSection()
 
         # Separator line between spell check and date/time format sections
-        self.addLine()
+        self.add_line()
 
         # === DATE FORMAT SECTION ===
         # Date format dropdown with detected format label
@@ -1611,7 +1611,7 @@ class LanguagePage(SettingsPage):
         )
 
         date_format_panel.SetSizer(date_format_sizer)
-        self.addEntry(_("Date format"), date_format_panel)
+        self.add_entry(_("Date format"), date_format_panel)
 
         # Demo DateComboRouterCtrl showing the selected format (interactive, starts with today)
         demo_panel = wx.Panel(self)
@@ -1622,7 +1622,7 @@ class LanguagePage(SettingsPage):
         self._demo_date_panel = demo_panel
         self._demo_date_ctrl = None
         self._rebuild_demo_date_ctrl(current_format or None)
-        self.addEntry("", demo_panel)
+        self.add_entry("", demo_panel)
 
         # === DISPLAY OVERRIDE SECTION ===
         # Optional display-only override (does not affect date entry).
@@ -1648,7 +1648,7 @@ class LanguagePage(SettingsPage):
             self._display_override_choice, 0, wx.ALIGN_CENTER_VERTICAL
         )
         display_override_panel.SetSizer(display_override_sizer)
-        self.addEntry(_("Display override"), display_override_panel)
+        self.add_entry(_("Display override"), display_override_panel)
 
         # Preview below the override dropdown (empty when None).
         override_preview_panel = wx.Panel(self)
@@ -1666,7 +1666,7 @@ class LanguagePage(SettingsPage):
         self._display_override_preview_panel = override_preview_panel
         self._display_override_preview_ctrl = None
         self._rebuild_display_override_preview(current_override)
-        self.addEntry("", override_preview_panel)
+        self.add_entry("", override_preview_panel)
 
         # === TIME FORMAT SECTION ===
         # Time format dropdown with detected format label
@@ -1716,7 +1716,7 @@ class LanguagePage(SettingsPage):
         self._time_format_choice.Bind(
             wx.EVT_CHOICE, self._on_time_format_change
         )
-        self.addEntry(_("Time format"), time_format_panel)
+        self.add_entry(_("Time format"), time_format_panel)
 
         # Demo TimeCtrl showing the selected format (interactive, starts with current time)
         time_demo_panel = wx.Panel(self)
@@ -1731,7 +1731,7 @@ class LanguagePage(SettingsPage):
         self._rebuild_demo_time_ctrl(
             current_time_format if current_time_format else "24"
         )
-        self.addEntry("", time_demo_panel)
+        self.add_entry("", time_demo_panel)
 
         # Note about 12-hour mode and working hours
         self.addHintRow(
@@ -1741,7 +1741,7 @@ class LanguagePage(SettingsPage):
         )
 
         # Separator line between time format and number format sections
-        self.addLine()
+        self.add_line()
 
         # === NUMBER FORMAT SECTION ===
         # Decimal separator dropdown
@@ -1789,7 +1789,7 @@ class LanguagePage(SettingsPage):
         )
 
         dec_sep_panel.SetSizer(dec_sep_sizer)
-        self.addEntry(_("Decimal separator"), dec_sep_panel)
+        self.add_entry(_("Decimal separator"), dec_sep_panel)
 
         # Currency decimal places dropdown
         curr_dp_panel = wx.Panel(self)
@@ -1834,7 +1834,7 @@ class LanguagePage(SettingsPage):
         )
 
         curr_dp_panel.SetSizer(curr_dp_sizer)
-        self.addEntry(_("Currency decimal places"), curr_dp_panel)
+        self.add_entry(_("Currency decimal places"), curr_dp_panel)
 
         # Demo CurrencyCtrl showing the selected decimal separator and places (live update)
         from taskcoachlib.widgets.numericctrl import NumericCtrl
@@ -1861,7 +1861,7 @@ class LanguagePage(SettingsPage):
             self._demo_currency_ctrl, 0, wx.ALIGN_CENTER_VERTICAL
         )
         curr_demo_panel.SetSizer(curr_demo_sizer)
-        self.addEntry("", curr_demo_panel)
+        self.add_entry("", curr_demo_panel)
 
         # Store original formats to detect changes
         self._original_date_format = current_format
@@ -1900,7 +1900,7 @@ class LanguagePage(SettingsPage):
                 ),
             )
             warning_text.SetForegroundColour(wx.Colour(180, 0, 0))
-            self.addEntry("", warning_text)
+            self.add_entry("", warning_text)
             self._spellCheckEnabledCheck.Enable(False)
 
         # Language dropdown for spell check
@@ -1916,7 +1916,7 @@ class LanguagePage(SettingsPage):
 
         # Get available languages
         available_langs = (
-            SpellCheckMixin.getAvailableLanguages()
+            SpellCheckMixin.get_available_languages()
             if ENCHANT_AVAILABLE
             else []
         )
@@ -1938,7 +1938,7 @@ class LanguagePage(SettingsPage):
 
         # Show detected language
         if ENCHANT_AVAILABLE:
-            detected_lang = SpellCheckMixin._detectLanguage()
+            detected_lang = SpellCheckMixin._detect_language()
             detected_label = wx.StaticText(
                 spell_lang_panel, label=_("Detected: %s") % detected_lang
             )
@@ -1950,7 +1950,7 @@ class LanguagePage(SettingsPage):
             )
 
         spell_lang_panel.SetSizer(spell_lang_sizer)
-        self.addEntry(_("Spell check language"), spell_lang_panel)
+        self.add_entry(_("Spell check language"), spell_lang_panel)
 
         # Note about dropdown and how to install more dictionaries
         if ENCHANT_AVAILABLE:
@@ -2294,28 +2294,28 @@ class StatusesPage(SettingsPage):
             (line_row[0], 0),
             span=(1, 1),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         self._sizer.Add(
             wx.StaticLine(self),
             (line_row[0], 1),
             span=(1, 1),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         self._sizer.Add(
             wx.StaticLine(self),
             (line_row[0], 2),
             span=(1, 4),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         self._sizer.Add(
             wx.StaticLine(self),
             (line_row[0], 6),
             span=(1, 4),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         # Reset priorities button placed directly in col 1 (priority column)
         reset_priorities_btn = wx.Button(self, label=_("Reset"), size=(60, -1))
@@ -2326,7 +2326,7 @@ class StatusesPage(SettingsPage):
             (reset_row[0], 1),
             span=(1, 1),
             flag=wx.ALL | wx.ALIGN_CENTER,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         # Note text spanning all columns, left-aligned
         note_text = wx.StaticText(
@@ -2345,7 +2345,7 @@ class StatusesPage(SettingsPage):
             (note_row[0], 0),
             span=(1, 11),
             flag=wx.ALL | wx.ALIGN_LEFT,
-            border=self._borderWidth,
+            border=self._border_width,
         )
         # Where an item's style starts (docs/APPEARANCE_STYLES.md,
         # Appearance Flow); a dropdown, so a later variation is a choice
@@ -2392,7 +2392,7 @@ class StatusesPage(SettingsPage):
             (row[0], 0),
             span=(1, 11),
             flag=wx.EXPAND | wx.LEFT | wx.RIGHT,
-            border=self._borderWidth,
+            border=self._border_width,
         )
 
     def _on_status_icon_changed(self, event, icon_entry):
@@ -2474,7 +2474,7 @@ class FeaturesPage(SettingsPage):
         self._restart_warning.SetForegroundColour(
             self._restart_warning_default_color
         )
-        self.addEntry("", self._restart_warning)
+        self.add_entry("", self._restart_warning)
         self.addChoiceSetting(
             "view",
             "weekstart",
@@ -2941,7 +2941,7 @@ class DurationPresetsPage(SettingsPage):
             self.__fieldChoice.Append(display_name)
         self.__fieldChoice.SetSelection(0)
         self.__fieldChoice.Bind(wx.EVT_CHOICE, self.__onFieldChanged)
-        self.addEntry(_("Configure presets for"), self.__fieldChoice)
+        self.add_entry(_("Configure presets for"), self.__fieldChoice)
 
         # Add row: DurationEntry + Add button
         self.__addPanel = wx.Panel(self)
@@ -2961,7 +2961,7 @@ class DurationPresetsPage(SettingsPage):
         self.__addSizer.Add(self.__addBtn, 0, wx.ALIGN_CENTRE_VERTICAL)
 
         self.__addPanel.SetSizer(self.__addSizer)
-        self.addEntry(_("Add new preset"), self.__addPanel)
+        self.add_entry(_("Add new preset"), self.__addPanel)
 
         # Preset list with 3 columns: short value, description, delete button
         # Using UltimateListCtrl to support embedded Delete buttons
@@ -2980,7 +2980,7 @@ class DurationPresetsPage(SettingsPage):
         self.__listCtrl.SetMaxSize((500, -1))
         # Track delete buttons for cleanup
         self.__deleteButtons = []
-        self.addEntry(
+        self.add_entry(
             _("Current presets"),
             self.__listCtrl,
             growable=True,

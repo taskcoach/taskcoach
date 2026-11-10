@@ -7,12 +7,6 @@ Simple time and duration input controls with explicit subfields and translatable
 - [TODO](#todo)
 - [Location](#location)
 - [Behavior](#behavior)
-  - [N/A Display When Unchecked](#na-display-when-unchecked)
-  - [SetNone: Unchecking the Checkbox](#setnone-unchecking-the-checkbox)
-  - [Checkbox Checked: Values Appear from Sub-Controls](#checkbox-checked-values-appear-from-sub-controls)
-  - [Suggested DateTime Feature](#suggested-datetime-feature)
-  - [Built-in Default to "Now"](#built-in-default-to-now)
-  - [Complete Flow Examples](#complete-flow-examples)
   - [External Update Mechanism (AttributeSync)](#external-update-mechanism-attributesync)
   - [Sync via EVT_VALUE_CHANGED](#sync-via-evt_value_changed)
   - [DateTimeComboCtrl Event Ownership](#datetimecomboctrl-event-ownership)
@@ -70,43 +64,6 @@ Self-contained module with custom-painted single field and navigable subfields.
 
 ## TODO
 
-1. ~~Add `Activate()` method to DateTimeComboCtrl~~ — **Done.** `ActivateValue()` on
-   DateTimeComboCtrl. Editor uses it in `__activateStartDate()` / `__activateDueDate()`.
-2. ~~Add `Deactivate()` method to DateTimeComboCtrl~~ — **Done.** `DeactivateValue()` on
-   DateTimeComboCtrl. Editor deactivation goes through `DeactivateValue()` →
-   widget fires event → AttributeSync → command → domain. ~~Previously went
-   through commands directly (domain write → pubsub → SetValue(sentinel) →
-   unchecks), violating widget-as-UI-SSOT principle.~~ Fixed: all editor
-   helpers now go through the widget API.
-3. ~~Checkbox toggle EVT_KILL_FOCUS gap~~ — **Resolved.** ~~Editor binds
-   `EVT_CHECKBOX` via `combo.Bind(wx.EVT_CHECKBOX, handler)` and calls
-   `sync.commit()` explicitly.~~
-   **Update:** EVT_CHECKBOX is no longer exposed by DateTimeComboCtrl. The
-   checkbox is an internal implementation detail. All AttributeSync instances
-   now use `EVT_VALUE_CHANGED` as `editedEventType`, which fires on checkbox
-   toggle AND date/time edits — no external EVT_CHECKBOX handlers needed.
-   See [DURATION_CALCULATIONS.md](DURATION_CALCULATIONS.md) TODO item 9.
-   **Superseded:** DateTimeComboCtrl now inherits `wx.EvtHandler` and posts
-   `EVT_VALUE_CHANGED` on itself. See
-   [DateTimeComboCtrl Event Ownership](#datetimecomboctrl-event-ownership).
-4. ~~**Sub-control stash model and event contract**~~: **Done.**
-   `ActivateValue()` and `DeactivateValue()` always fire
-   `EVT_VALUE_CHANGED`. See
-   [Sub-Control Stash Model](#sub-control-stash-model).
-6. ~~**Editor helpers must go through widget API**~~ — **Done.** All task
-   calc helpers (`__deactivateStartDate`, `__deactivateDueDate`,
-   `__adjDueDate`, `__adjStartDate`, `__adjDuration`, etc.) have been
-   inlined into `__syncTaskState` using `ActivateValue()`/`DeactivateValue()`
-   /`SetDuration()` on the widget. The effort calc was already inline.
-7. **Done 2026-09-29: `EVT_KILL_FOCUS` AttributeSync sites to
-   `EVT_VALUE_CHANGED`.** All `MaskedFieldsCtrl`-based controls are done:
-   DurationCtrl (task and effort), budget (`MaskedDurationCtrl`), all
-   DateTimeComboCtrl fields, hourly fee, and fixed fee now use plain
-   `EVT_VALUE_CHANGED` with immediate commit. The control fires only on
-   blur or programmatic complete-value write, so every event is a final
-   value. Subject, description and attachment location keep
-   `EVT_KILL_FOCUS` by design (ruling, 2026-09-29): see
-   [ATTRIBUTE_PATTERN.md TODO #1](ATTRIBUTE_PATTERN.md#todo).
 8. **Planned: Extract popup from MaskedFieldsCtrl.** MaskedFieldsCtrl currently
    contains popup infrastructure (_ChoicesPopup, _openPopupForFocusedField,
    DismissPopup) that doesn't belong in the base masked field control. The base

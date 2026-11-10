@@ -20,6 +20,7 @@ import wx
 import test
 from taskcoachlib import gui, persistence
 from taskcoachlib.domain import note, base
+from taskcoachlib.tools import wxhelper
 from unittests import dummy
 
 
@@ -50,6 +51,19 @@ class EditorTestCase(test.wxTestCase):
         super().tearDown()
         self.taskFile.close()
         self.taskFile.stop()
+
+    def test_the_editor_is_laid_out_before_it_shows(self):
+        # Its first frame shows the tabs and fields, not a gray window
+        # waiting for the notebook's queued layouts
+        def geometry():
+            return [
+                (window.GetPosition(), window.GetSize(), window.IsShown())
+                for window in wxhelper.descendants(self.editor._interior)
+            ]
+
+        before = geometry()
+        test.settle()
+        self.assertEqual(before, geometry())
 
     def test_close_editor_when_item_is_deleted(self):
         self.items.remove(self.item)

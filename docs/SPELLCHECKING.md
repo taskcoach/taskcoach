@@ -95,7 +95,7 @@ Using `StyledTextCtrl` means Scintilla captures Tab and Enter by default. Task C
 | Enter            | Navigate to next control  | Insert newline (normal)    |
 | Ctrl+V           | Paste as one line         | Paste (normal)             |
 
-**Implementation:** `CmdKeyClear` removes Scintilla's default Tab binding in all modes, and Enter binding in single-line mode. `EVT_KEY_DOWN` in `_onKeyDown` handles Tab navigation and single-line Enter navigation. Tab always navigates — no literal tab insertion (Ctrl+Tab is reserved for notebook tab switching). In multiline mode, Enter inserts newlines normally (Scintilla default). Tab navigation uses `Navigate()` which preserves forward/backward direction.
+**Implementation:** `CmdKeyClear` removes Scintilla's default Tab binding in all modes, and Enter binding in single-line mode. `EVT_KEY_DOWN` in `_on_key_down` handles Tab navigation and single-line Enter navigation. Tab always navigates — no literal tab insertion (Ctrl+Tab is reserved for notebook tab switching). In multiline mode, Enter inserts newlines normally (Scintilla default). Tab navigation uses `Navigate()` which preserves forward/backward direction.
 
 ### Single-Line Text Box Patches
 
@@ -135,12 +135,12 @@ Spell checking is configured in **Edit > Preferences > Regional**:
 
 The `_StyledTextCtrl` class responds to system theme colours (light/dark) instead of using hardcoded values.
 
-### 1. Theme Colours (`_applyThemeColours` method) — Done
+### 1. Theme Colours (`_apply_theme_colours` method) — Done
 
 Uses system colours for text, background, caret, and selection:
 
 ```python
-def _applyThemeColours(self):
+def _apply_theme_colours(self):
     font = wx.SystemSettings.GetFont(wx.SYS_DEFAULT_GUI_FONT)
     self.StyleSetFont(stc.STC_STYLE_DEFAULT, font)
     self.StyleSetForeground(stc.STC_STYLE_DEFAULT, wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT))
@@ -166,7 +166,7 @@ self.SetHotspotActiveForeground(True, linkColour)
 
 ### 3. Live Theme Switching — Done
 
-The `MultiLineTextCtrl` wrapper detects theme changes and re-applies colours. `EVT_SYS_COLOUR_CHANGED` does not reach editor pages (the AGW `AuiNotebook`'s `AuiManager` consumes it, see [AUI.md](AUI.md#system-colour-change-event)), so the wrapper checks the system window colour on `EVT_PAINT` and calls `_applyThemeColours` when it changed.
+The `MultiLineTextCtrl` wrapper detects theme changes and re-applies colours. `EVT_SYS_COLOUR_CHANGED` does not reach editor pages (the AGW `AuiNotebook`'s `AuiManager` consumes it, see [AUI.md](AUI.md#system-colour-change-event)), so the wrapper checks the system window colour on `EVT_PAINT` and calls `_apply_theme_colours` when it changed.
 
 **Important:** Panel bg must come from `self.GetParent().GetBackgroundColour()` (not the STC) so rounded corners blend with the dialog background.
 

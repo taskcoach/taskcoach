@@ -38,25 +38,6 @@
 
 **Note:** Currently only pre-colored icons are used. Breeze icons have colors (#232629 dark gray + accent colors like #da4453 red, #27ae60 green) - they are NOT monochrome. The `-symbolic` variants ARE monochrome. Only the `-symbolic` versions should be excluded until recoloring support is implemented.
 
-
-### 2. System Tray Context Menu Icons — Review — DONE
-Keeping icon_id on tray menu commands for Windows/macOS (wx.Menu renders them)
-and possible future revert to classic X11 tray right-click menu.
-
-### 3. Refactor Overlay Icon Hack — DONE
-- [x] Replaced `+` overlay hack with SyntheticIcon system
-- [x] `synthetic_icon_generator.py` composes main icon + overlay at request time, caches per-size
-- [x] `_CreateBitmap` routes `theme="synthetic"` entries to `synthetic_icon_generator.get_bitmap()`
-- [x] 6 hide-task icons registered as `synthetic_hide_{status}` in `chooseableItems`
-- [x] Live-check cache invalidation (compares current vs last base icon ID)
-- [x] No pubsub, no `+` parsing, no `_CreateOverlayBitmap`
-- See [ICON_DISPLAY.md](ICON_DISPLAY.md) § Synthetic Icons for architecture details
-
-### 4. Stale Content Review — DONE
-Removed legacy artifacts: deleted `ICON_MAPPING.json`, removed stale references
-to legacy icon system, `artprovider.py`, flat-file layouts. Updated directory
-diagrams and prose to reflect current XDG-only architecture.
-
 ## IMPORTANT: Complete Import Cycle
 
 ### Icon-Distillery Icons
@@ -952,6 +933,16 @@ nuvola/oxygen.
 - `defaults.py`: `"theme_taskcoach": "True"` in `iconpicker` section
 - `preferences.py`: checkbox "Show TaskCoach icons in picker"
 - `iconpicker.py`: `theme_taskcoach` filter in enabled_themes block
+
+**Designing one** (asked by the designer 2026-10-10, after eight rounds
+of one candidate each: "this iterative one at a time is too slow and
+unproductive"): about 20 distinct variations at once, in icon-distillery
+only (PNGs, `icons.json` entries with labels and hints, SVG sources in
+`scalable/actions/`), reviewed side by side in its icon browser,
+restarted after each change; only the chosen one comes into the app.
+Each is square, drawn for the 16 pixel grid and readable in that space
+(no stretched letters, no wide badge), and checked at its real size on
+the real button before it is shown.
 
 **Import procedure for new taskcoach icons:**
 
