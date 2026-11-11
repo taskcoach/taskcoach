@@ -1219,36 +1219,10 @@ class TaskViewer(
         )
         widget.SetImageList(image_list)  # pylint: disable=E1101
         widget.show_expand_buttons(self.is_tree_viewer())
-        widget.Bind(wx.EVT_TREE_BEGIN_LABEL_EDIT, self.on_begin_edit)
-        widget.Bind(wx.EVT_TREE_END_LABEL_EDIT, self.on_end_edit)
+        # In list mode a row shows the subject after its parents'; the
+        # box editing it in place holds the task's own subject, from
+        # the column (docs/LIST_MANAGEMENT.md#in-place-editing)
         return widget
-
-    def on_begin_edit(self, event):
-        """Make sure only the non-recursive part of the subject can be
-        edited inline."""
-        event.Skip()
-        if not self.is_tree_viewer():
-            # Make sure the text control only shows the non-recursive subject
-            # by temporarily changing the item text into the non-recursive
-            # subject. When the editing ends, we change the item text back into
-            # the recursive subject. See on_end_edit.
-            tree_item = event.GetItem()
-            edited_task = self.widget.GetItemPyData(tree_item)
-            self.widget.SetItemText(tree_item, edited_task.subject())
-
-    def on_end_edit(self, event):
-        """Make sure only the non-recursive part of the subject can be
-        edited inline."""
-        event.Skip()
-        if not self.is_tree_viewer():
-            # Restore the recursive subject. Here we don't care whether users
-            # actually changed the subject. If they did, the subject will
-            # be updated via the regular notification mechanism.
-            tree_item = event.GetItem()
-            edited_task = self.widget.GetItemPyData(tree_item)
-            self.widget.SetItemText(
-                tree_item, edited_task.subject(recursive=True)
-            )
 
     def _createColumns(self):
         kwargs = dict(resizeCallback=self.onResizeColumn)

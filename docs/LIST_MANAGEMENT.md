@@ -1311,6 +1311,16 @@ the list from another view and the release of a drag (P124 in
 and F2 edited the subject of the first selected row. To Do 68 and 69 in
 [MASTER_SCHEDULER_REFACTOR.md](MASTER_SCHEDULER_REFACTOR.md#to-do).
 
+The Tasks view in list mode shows a task's subject after its parents'
+("Shopping and Errands -> Return library books"); the box editing it
+holds the task's own subject, from the task (`Column.value()`), and the
+row's text stays as it is. Before (master the same, since the original
+Task Coach), the view put the task's own subject in the row when an
+edit began and the full one back when it ended; an edit the list
+refuses never ends, so after a click on a selected row or a double
+click opening the editor, the row showed the subject without its
+parents until the list was rebuilt.
+
 ## Text Too Wide for Its Column
 
 **Ruled by designer 2026-10-06** ("the task list is usually very

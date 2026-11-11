@@ -178,6 +178,46 @@ class NotebookTest(AuiManagerTestCase):
             test.settle()
         self.assertEqual(1, do_update.call_count)
 
+    def notebook_with_two_pages(self):
+        notebook = widgets.Notebook(wx.Panel(self.frame))
+        for name in ("one", "two"):
+            notebook.AddPage(Pane(notebook), name)
+        test.settle()
+        return notebook
+
+    def test_a_tab_change_paints_at_the_next_frame(self):
+        # AGW painted the tab rows at once, before GTK places the page
+        # shown: the page drew over the tabs, or with the notebook
+        # frozen, the notebook drew empty for a frame
+        notebook = self.notebook_with_two_pages()
+        with mock.patch.object(wx.Window, "Update") as update:
+            notebook.SetSelection(1)
+        update.assert_not_called()
+        self.assertFalse(notebook.IsFrozen())
+        self.assertEqual(1, notebook.GetSelection())
+
+    def test_the_tab_rows_paint_at_once_again_after_it(self):
+        notebook = self.notebook_with_two_pages()
+        notebook.SetSelection(1)
+        with mock.patch.object(wx.Window, "Update") as update:
+            notebook.GetActiveTabCtrl().Update()
+        update.assert_called_once()
+
+    def test_a_tab_change_within_a_tab_change(self):
+        # A page's handler may change the tab again
+        notebook = self.notebook_with_two_pages()
+
+        def change_again(event):
+            event.Skip()
+            notebook.Unbind(notebook.page_changed_event, handler=change_again)
+            notebook.SetSelection(0)
+
+        notebook.Bind(notebook.page_changed_event, change_again)
+        notebook.SetSelection(1)
+        with mock.patch.object(wx.Window, "Update") as update:
+            notebook.GetActiveTabCtrl().Update()
+        update.assert_called_once()
+
     def test_an_editor_notebook_frees_its_pages(self):
         parent = wx.Panel(self.frame)
         notebook = widgets.Notebook(parent)

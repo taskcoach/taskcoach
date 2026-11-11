@@ -43,5 +43,6 @@ both colours in both files: the pair reads the same in either theme.
 
 `WelcomeFilesTest` checks that both files are the script's output,
 that each coloured row keeps 90% of the contrast of every default
-status colour of its theme, and that the files differ in background
-colours only.
+status colour of its theme, that the files differ in background
+colours only, and that every task, category and note has a subject
+that is not blank (a list shows a task after its parents' subjects).

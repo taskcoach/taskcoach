@@ -38,6 +38,19 @@ class PreferencesTest(test.wxTestCase):
 
     # pylint: disable=W0212
 
+    def test_the_preferences_are_laid_out_before_they_show(self):
+        # The first frame shows the tabs and the page, not an empty
+        # window waiting for the notebook's queued layout
+        def geometry():
+            return [
+                (window.GetPosition(), window.GetSize(), window.IsShown())
+                for window in wxhelper.descendants(self.preferences._interior)
+            ]
+
+        before = geometry()
+        test.settle()
+        self.assertEqual(before, geometry())
+
     def test_cancel(self):
         # Page 7 = Statuses tab; color index 8 = active tasks light fg
         self.preferences[7]._colorSettings[8][2].SetColour(self.new_color)
