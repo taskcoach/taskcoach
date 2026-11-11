@@ -102,3 +102,13 @@ class WelcomeFilesTest(test.TestCase):
             without_backgrounds("Welcome.tsk"),
             without_backgrounds("Welcome-dark.tsk"),
         )
+
+    def test_every_item_has_a_subject(self):
+        # A list shows a task after its parents' subjects: a blank one
+        # reads as a parent missing
+        for name in ("Welcome.tsk", "Welcome-dark.tsk"):
+            for item in _items(_read(name)):
+                self.assertTrue(
+                    item.get("subject", "").strip(),
+                    "%s: %s" % (name, item.get("id")),
+                )

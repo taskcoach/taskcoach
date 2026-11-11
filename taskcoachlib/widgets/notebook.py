@@ -275,6 +275,11 @@ def _whole_steps(size, step):
     return -(-size // step) * step if step else size
 
 
+def _paint_at_next_frame():
+    """A tab row's Update() during a tab change: its Refresh() before
+    has asked for the paint, at the next frame."""
+
+
 class BookMixin(object):
     """Mixin class for *book"""
 
@@ -402,15 +407,25 @@ class Notebook(BookMixin, aui.AuiNotebook):
         )
 
     def SetSelection(self, new_page, force=False):
-        # AUI shows the page, then forces a paint (Update()). GTK 3
-        # places a shown page only at the next frame, so that paint
-        # drew it unplaced, over the tabs, and nothing repainted there.
-        # Frozen, the notebook paints at the next frame, placed.
-        self.Freeze()
+        # AUI shows the page, then paints its tab rows at once
+        # (Update()). GTK 3 places a shown page only at the next frame,
+        # so that paint drew it unplaced, over the tabs; with the
+        # notebook frozen, GTK drew it empty, a blank frame at each tab
+        # change. The tab rows paint at the next frame, the page placed
+        # (docs/AUI.md#page-painted-over-the-tabs).
+        tab_rows = [
+            child
+            for child in self.GetChildren()
+            if isinstance(child, aui.AuiTabCtrl)
+            and "Update" not in vars(child)  # Not in a change already
+        ]
+        for tab_row in tab_rows:
+            tab_row.Update = _paint_at_next_frame
         try:
             return super().SetSelection(new_page, force)
         finally:
-            self.Thaw()
+            for tab_row in tab_rows:
+                del tab_row.Update
 
     def __disable_tab_frame_focus(self):
         """Disable focus on internal AUI TabFrame windows."""

@@ -3317,6 +3317,10 @@ class Preferences(widgets.NotebookDialog):
         self.__watch(self._interior)
         if operating_system.isMac():
             self.place()
+        # At its final size: the first frame shows the tabs and the
+        # page, not an empty window waiting for AGW's queued layout
+        # (docs/RENDERING_SPEED.md)
+        self._interior.layout_now()
 
     def __watch(self, window):
         """Follow every change: bound last, so it sees each event

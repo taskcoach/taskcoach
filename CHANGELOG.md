@@ -4,6 +4,21 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.11
+
+### Editors and Preferences
+
+- Changing tabs no longer flickers: the window showed empty for a
+  moment at each change.
+- Preferences shows its tabs and page in its first frame, where its
+  layout came after it appeared.
+
+### Tasks
+
+- In list mode a task keeps its parents before its subject after a
+  click on it while selected, or a double click opening its editor,
+  where it showed its own subject alone until the list was redrawn.
+
 ## 2.0.3.10
 
 ### Editors

@@ -905,6 +905,56 @@ class CommonTestsMixin(object):
             expected_subject, self.viewer.renderSubject(self.child)
         )
 
+    def show_child(self):
+        self.task.addChild(self.child)
+        self.taskList.append(self.task)
+        self.viewer.expand_all()  # Which also renders each row again
+
+    def child_row(self):
+        widget = self.viewer.widget
+        for item in widget.get_item_children(recursively=True):
+            if widget.GetItemPyData(item) is self.child:
+                return item
+
+    def shown_subject(self):
+        return self.viewer.widget.GetItemText(self.child_row())
+
+    def edit_child_subject_in_place(self):
+        self.show_child()
+        self.viewer.widget.edit_cell_in_place(self.child_row(), 0)
+        return self.viewer.widget.GetMainWindow()._editCtrl
+
+    def full_subject(self, subject):
+        return subject if self.tree_mode else "task -> " + subject
+
+    def test_a_refused_edit_keeps_the_subject_shown(self):
+        # A click on a selected row and a double click start an edit
+        # the list refuses unless editing in place is on: a list showed
+        # the subject without its parents from then on
+        self.show_child()
+        self.viewer.widget.GetMainWindow().EditLabel(self.child_row(), 0)
+        self.assertFalse(self.editor_open())
+        self.assertEqual(self.full_subject("child"), self.shown_subject())
+
+    def test_the_subject_is_edited_in_place_without_its_parents(self):
+        editor = self.edit_child_subject_in_place()
+        self.assertEqual("child", editor.GetValue())
+
+    def test_escape_in_a_subject_shows_its_parents_again(self):
+        self.edit_child_subject_in_place().CancelEditing()
+        self.assertEqual(self.full_subject("child"), self.shown_subject())
+
+    def test_enter_in_a_subject_shows_its_parents_again(self):
+        self.edit_child_subject_in_place().AcceptChanges()
+        self.assertEqual(self.full_subject("child"), self.shown_subject())
+
+    def test_a_subject_changed_in_place_shows_its_parents(self):
+        editor = self.edit_child_subject_in_place()
+        editor.SetValue("renamed")
+        editor.AcceptChanges()
+        self.assertEqual("renamed", self.child.subject())
+        self.assertEqual(self.full_subject("renamed"), self.shown_subject())
+
     def test_item_order(self):
         self.task.addChild(self.child)
         self.taskList.append(self.task)

@@ -368,15 +368,25 @@ keeps its place.
 
 ### Solution
 
-`Notebook.SetSelection()` freezes the notebook for the call, so the
-forced paints skip it and the page draws at the next frame, placed.
-Found with the geometry trace ([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing)).
+`Notebook.SetSelection()` makes the tab rows' `Update()` do nothing
+for the call (`_paint_at_next_frame()`): their `Refresh()` before it
+has asked for the paint, and the tabs and the page draw together at
+the next frame, the page placed. Found with the geometry trace
+([DEVELOPMENT.md](DEVELOPMENT.md#diagnosing)).
+
+Until 2.0.3.11 it froze the notebook for the call instead. A frozen
+window in wxGTK draws nothing, its children included (a `draw` handler
+that stops the others, `GTKFreezeWidget()` in `src/gtk/window.cpp`,
+wxWidgets 3.2.7), and GTK 3 paints the whole window at a forced paint:
+each tab change showed the notebook empty for a frame, 16 to 33 ms,
+the flicker seen at every tab change of the editors and Preferences
+([RENDERING_SPEED.md](RENDERING_SPEED.md#changing-tabs)).
 
 ### Related Files
 
 | File | Purpose |
 |------|---------|
-| `taskcoachlib/widgets/notebook.py` | `Notebook.SetSelection()` - freezes the notebook |
+| `taskcoachlib/widgets/notebook.py` | `Notebook.SetSelection()` - no forced paint of the tab rows |
 | `wx/lib/agw/aui/auibook.py` | System file - `SetSelection()`, `AuiTabFrame.DoSizing()` |
 
 ---
