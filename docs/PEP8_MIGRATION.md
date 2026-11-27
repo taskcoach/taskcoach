@@ -175,7 +175,20 @@ Steps, one commit each, each followed by the full suite,
    `_border_width`, which an editor page overrides). Left there: wx's
    names (`GetValue`, `OnLinkClicked`, `AddPage`, ...),
    `wxEVT_PREVIEW_TOGGLED` in wx's style, and `_textCtrl`, which the
-   spin control and the tests share.
+   spin control and the tests share. Effort tracking 2026-11-27: 23
+   names, with their callers and tests: `EffortListTracker`'s
+   (`tracked_efforts()`), `Task.stop_tracking()` and
+   `active_efforts()`, the effort commands' `stop_tracking()` and
+   `tasks_to_stop_tracking()` (seven classes), `EffortStop`'s own
+   methods and texts, and the popup buttons' `create_popup_menu()`.
+   Left there: `isBeingTracked`, named by strings (`appearance.py`,
+   the task viewer's status names); `updateUI` and `removeInstance`,
+   which every UI command and observer shares; the `help` texts; the
+   `effortList=` keyword of the UI commands. With it the reminder
+   window's own 17 names, with its controller's and the tests' uses
+   (`is_open_for()`, `snooze_options`, `open_task_after_close`, ...);
+   left there: the controller's `showReminderMessage` and
+   `requestUserAttention`, which its tests override.
 4. Class, exception and module names.
 5. Docs citing old names (P230, P112); pep8-naming in CI with the
    keep-list, so no new camelCase.

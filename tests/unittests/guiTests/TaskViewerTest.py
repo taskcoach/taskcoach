@@ -877,7 +877,7 @@ class CommonTestsMixin(object):
     def test_icon_updates_when_effort_tracking_stops(self):
         self.taskList.append(self.task)
         self.task.addEffort(effort.Effort(self.task))
-        self.task.stopTracking()
+        self.task.stop_tracking()
         self.assertIcon(task.active.icon_id())
 
     def test_icon_updates_when_task_becomes_overdue(self):
@@ -1851,6 +1851,37 @@ class TaskTimelineViewerTest(test.wxTestCase):
         super().tearDown()
         self.taskFile.close()
         self.taskFile.stop()
+
+
+class TrackingButtonsTest(test.wxTestCase):
+    """The toolbar's Start and Stop selected match the selected task as
+    its tracking starts and stops, the selection unchanged
+    (docs/EFFORTS.md, Tracking)."""
+
+    def setUp(self):
+        super().setUp()
+        self.taskFile = persistence.TaskFile()
+        self.addCleanup(self.taskFile.stop)
+        self.addCleanup(self.taskFile.close)
+        self.task = task.Task("task")
+        self.taskFile.tasks().append(self.task)
+        self.viewer = gui.viewer.TaskViewer(self.frame, self.taskFile)
+        self.viewer.select([self.task])
+        wx.GetApp().ProcessPendingEvents()  # The tree's selection event
+
+    def enabled(self):
+        toolbar = self.viewer.toolbar
+        return tuple(
+            toolbar.GetToolEnabled(toolbar.get_tool_id_by_command(name))
+            for name in ("EffortStart", "EffortStop")
+        )
+
+    def test_they_follow_a_start_and_a_stop(self):
+        self.assertEqual((True, False), self.enabled())
+        self.task.addEffort(effort.Effort(self.task))  # Ctrl+T, the tray
+        self.assertEqual((False, True), self.enabled())
+        self.task.stop_tracking()  # Stop all, the reminder
+        self.assertEqual((True, False), self.enabled())
 
 
 class DatesTiedTest(test.wxTestCase):

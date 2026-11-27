@@ -162,6 +162,13 @@ def _upgraded(section, option, value, options):
         if section in _ORDERING_VIEWERS and "ordering" not in widths:
             widths["ordering"] = 28
         value = str(widths)
+    elif section == "view" and option == "toolbarperspective":
+        # The main toolbar's stop is Stop all; the views' EffortStop
+        # stops the selection (docs/EFFORTS.md, Tracking)
+        value = ",".join(
+            "EffortStopAll" if name == "EffortStop" else name
+            for name in value.split(",")
+        )
     if section in ("icon", "icon_dark"):
         from taskcoachlib.gui.icons.icon_library import icon_catalog
 

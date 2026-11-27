@@ -57,7 +57,10 @@ defaults = {
         # changes; when False the scroll position never moves by itself:
         "autoscrollselection": "True",
         "toolbar": str((MAIN_TOOLBAR_ICON_SIZE_DEFAULT,) * 2),
-        "toolbarperspective": "FileOpen,Print,Separator,EditUndo,EditRedo,Separator,EffortStartButton,EffortStop,Separator,ToggleAutoScroll",
+        "toolbarperspective": (
+            "FileOpen,Print,Separator,EditUndo,EditRedo,Separator,"
+            "EffortStartButton,EffortStopAll,Separator,ToggleAutoScroll"
+        ),
         "taskviewercount": "1",  # Number of task viewers in main window
         "categoryviewercount": "1",  # Number of category viewers in main window
         "noteviewercount": "0",  # Number of note viewers in main window

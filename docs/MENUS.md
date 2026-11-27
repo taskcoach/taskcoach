@@ -195,12 +195,19 @@ See [LIST_MANAGEMENT.md](LIST_MANAGEMENT.md) for toolbar signal details
 - Toolbar: signal-driven via `_SelectionSync`
 - Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
 
-### EffortStart / EffortStartForEffort
+### EffortStart / EffortStartForEffort / EffortStop (Stop selected)
 
 - No `EVT_UPDATE_UI` polling
-- `enabled()`: command determines its own state (selection + type + trackability)
-- Toolbar: signal-driven via `_SelectionSync`
+- `enabled()`: command determines its own state (selection + type + trackability; Stop selected: a tracked effort among the selected rows)
+- Toolbar: signal-driven via `_TrackingSync`: `_SelectionSync` plus each effort's tracking change, so the buttons match the selected task as its tracking starts and stops, the selection unchanged (**ruled by designer 2026-11-27**, "yes, do B"). With the selection alone, 2.0.3.11's Start stayed lit after a start and greyed after a stop until another row was selected. The Mark task buttons still follow the selection only: P275 in [REFINEMENT_REFACTOR.md](REFINEMENT_REFACTOR.md#found-2026-11-27)
 - Menu: `EVT_UPDATE_UI` (menu open, before its shortcut)
+
+### EffortStopAll (Stop all, or Resume)
+
+- No `EVT_UPDATE_UI` polling for its label
+- `enabled()`: an effort tracked, or tasks to resume
+- Toolbar and label: signal-driven via its `EffortListTracker`: `updateUI()` sets the button's state and icon and the menu lines' labels
+- Menu: `EVT_UPDATE_UI` (menu open, before its shortcut) for enabled
 
 ### EffortNew
 

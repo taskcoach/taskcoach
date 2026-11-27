@@ -102,7 +102,7 @@ class IdleControllerTest(test.wxTestCase):
     def test_stop_tracking_stops_polling(self):
         self.enable()
         self.track()
-        self.task.stopTracking()
+        self.task.stop_tracking()
         self.assertFalse(self.controller.is_polling())
 
     def test_enabling_while_tracking_starts_polling(self):

@@ -2491,7 +2491,7 @@ class TaskWithActiveEffort(TaskTestCase, CommonTaskTestsMixin):
         self.assertTrue(self.task.isBeingTracked())
 
     def test_stop_tracking(self):
-        self.task.stopTracking()
+        self.task.stop_tracking()
         self.assertFalse(self.task.isBeingTracked())
 
     def test_active_effort_given_to_constructor_sends_no_start_tracking(
@@ -2522,7 +2522,7 @@ class TaskWithActiveEffort(TaskTestCase, CommonTaskTestsMixin):
 
     def test_stop_tracking_event(self):
         events = test.ChangeRecorder(self.task.trackingChangedEventType())
-        self.task.stopTracking()
+        self.task.stop_tracking()
         self.assertEqual([(False, self.task)], events)
 
     def test_icon(self):
@@ -2531,7 +2531,7 @@ class TaskWithActiveEffort(TaskTestCase, CommonTaskTestsMixin):
         )
 
     def test_icon_after_stop_tracking(self):
-        self.task.stopTracking()
+        self.task.stop_tracking()
         self.assertNotEqual(
             "nuvola_apps_clock", test.styled(self.task).shown_icon_id()
         )

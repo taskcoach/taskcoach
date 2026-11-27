@@ -177,7 +177,7 @@ class IdleController(Observer, IdleNotifier):
             )
 
     def _on_tracked_changed(self, event=None):  # pylint: disable=W0613
-        if self._tracker.trackedEfforts():
+        if self._tracker.tracked_efforts():
             self.resume()
         else:
             self.pause()
@@ -209,7 +209,7 @@ class IdleController(Observer, IdleNotifier):
         self._on_wake()
 
     def _on_wake(self):
-        for tracked_effort in self._tracker.trackedEfforts():
+        for tracked_effort in self._tracker.tracked_efforts():
             if tracked_effort not in self._displayed:
                 self._displayed.add(tracked_effort)
                 frm = WakeFromIdleFrame(

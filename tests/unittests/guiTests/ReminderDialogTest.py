@@ -51,45 +51,45 @@ class ReminderDialogTest(test.TestCase):
         wx.Yield()
         super().tearDown()
 
-    def createReminderDialog(self):
+    def create_reminder_dialog(self):
         reminder_dialog = dialog.reminder.ReminderDialog(
             self.aTask, self.taskList, self.effortList, None
         )
         # Past the pause that blocks an accidental close
-        reminder_dialog._isFrozen = False
+        reminder_dialog._is_frozen = False
         return reminder_dialog
 
     def test_remember_zero_snooze_time(self):
-        reminder_dialog = self.createReminderDialog()
-        reminder_dialog.snoozeOptions.SetSelection(0)
+        reminder_dialog = self.create_reminder_dialog()
+        reminder_dialog.snooze_options.SetSelection(0)
         reminder_dialog.on_close(DummyEvent())
         self.assertEqual(0, settings.get("view", "defaultsnoozetime"))
 
     def test_remember_snooze_time(self):
-        reminder_dialog = self.createReminderDialog()
-        reminder_dialog.snoozeOptions.SetSelection(2)
+        reminder_dialog = self.create_reminder_dialog()
+        reminder_dialog.snooze_options.SetSelection(2)
         reminder_dialog.on_close(DummyEvent())
         self.assertEqual(10, settings.get("view", "defaultsnoozetime"))
 
     def test_use_default_snooze_time(self):
         settings.set("view", "defaultsnoozetime", 15)
-        reminder_dialog = self.createReminderDialog()
+        reminder_dialog = self.create_reminder_dialog()
         self.assertEqual(
-            "15 minutes", reminder_dialog.snoozeOptions.GetStringSelection()
+            "15 minutes", reminder_dialog.snooze_options.GetStringSelection()
         )
 
     def test_dont_use_default_snooze_time_when_its_not_in_the_list_of_options(
         self,
     ):
         settings.set("view", "defaultsnoozetime", 17)
-        reminder_dialog = self.createReminderDialog()
+        reminder_dialog = self.create_reminder_dialog()
         self.assertEqual(
-            "5 minutes", reminder_dialog.snoozeOptions.GetStringSelection()
+            "5 minutes", reminder_dialog.snooze_options.GetStringSelection()
         )
 
     def test_remember_reminder_replace_default_snooze_time(self):
-        reminder_dialog = self.createReminderDialog()
-        reminder_dialog.replaceDefaultSnoozeTime.SetValue(False)
+        reminder_dialog = self.create_reminder_dialog()
+        reminder_dialog.replace_default_snooze_time.SetValue(False)
         reminder_dialog.on_close(DummyEvent())
         self.assertEqual(
             False, settings.get("view", "replacedefaultsnoozetime")
@@ -97,7 +97,18 @@ class ReminderDialogTest(test.TestCase):
 
     def test_use_reminder_replace_default_snooze_time(self):
         settings.set("view", "replacedefaultsnoozetime", False)
-        reminder_dialog = self.createReminderDialog()
+        reminder_dialog = self.create_reminder_dialog()
         self.assertEqual(
-            False, reminder_dialog.replaceDefaultSnoozeTime.GetValue()
+            False, reminder_dialog.replace_default_snooze_time.GetValue()
         )
+
+    def test_its_clock_stops_its_own_task_only(self):
+        # Several tasks track at once (docs/EFFORTS.md, Tracking)
+        other = task.Task("other")
+        self.taskList.append(other)
+        for each in (self.aTask, other):
+            each.addEffort(effort.Effort(each))
+        reminder_dialog = self.create_reminder_dialog()
+        reminder_dialog.on_start_or_stop_tracking(None)
+        self.assertFalse(self.aTask.isBeingTracked())
+        self.assertTrue(other.isBeingTracked())

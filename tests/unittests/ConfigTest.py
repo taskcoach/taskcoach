@@ -268,6 +268,22 @@ class SettingsIOTest(SettingsTestCase):
             ["-dueDateTime"], self.settings.get_typed("taskviewer", "sortby")
         )
 
+    def test_the_main_toolbars_stop_becomes_stop_all(self):
+        # The views' EffortStop stops the selection (docs/EFFORTS.md)
+        self.settings.read_file(
+            io.StringIO(
+                "[view]\ntoolbarperspective = EffortStartButton,EffortStop\n"
+                "[taskviewer]\ntoolbarperspective = EffortStart,EffortStop\n"
+            )
+        )
+        self.assertEqual(
+            ("EffortStartButton,EffortStopAll", "EffortStart,EffortStop"),
+            (
+                self.settings.get_typed("view", "toolbarperspective"),
+                self.settings.get_typed("taskviewer", "toolbarperspective"),
+            ),
+        )
+
     def test_options_nothing_reads_are_dropped(self):
         editor = "taskdialog_with_dates_subject"
         self.fakeFile.write(

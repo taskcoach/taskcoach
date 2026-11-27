@@ -107,6 +107,26 @@ class EffortListTest(test.TestCase):
         self.task.addEffort(effort.Effort(self.task, None, now))
         self.assertEqual(now, self.effortList.maxDateTime())
 
+    def add_stopped(self, subject, stop):
+        a_task = task.Task(subject=subject)
+        self.taskList.append(a_task)
+        a_task.addEffort(
+            effort.Effort(a_task, date.DateTime(2004, 1, 1), stop)
+        )
+        return a_task
+
+    def test_resume_takes_the_tasks_stopped_at_the_last_second(self):
+        # As one Stop ends them (docs/EFFORTS.md, Tracking)
+        last = date.DateTime(2004, 1, 3, 10, 0, 0)
+        b = self.add_stopped("B", last)
+        a = self.add_stopped("A", last)
+        self.add_stopped("C", date.DateTime(2004, 1, 3, 9, 59, 59))
+        self.assertEqual([a, b], self.effortList.tasks_to_resume())
+
+    def test_resume_without_stopped_efforts(self):
+        self.task.addEffort(effort.Effort(self.task))
+        self.assertEqual([], self.effortList.tasks_to_resume())
+
     def test_nr_tracking(self):
         self.assertEqual(0, self.effortList.nr_being_tracked())
 

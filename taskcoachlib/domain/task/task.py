@@ -474,7 +474,7 @@ class Task(
             self.set_reminder(None)
             self.setPercentageComplete(100)
             if self.isBeingTracked():
-                self.stopTracking()
+                self.stop_tracking()
 
             # Parent→Children cascade: complete my incomplete children
             for child in self.children():
@@ -836,9 +836,9 @@ class Task(
         return self._efforts + child_efforts
 
     def isBeingTracked(self, recursive=False):
-        return self.activeEfforts(recursive)
+        return self.active_efforts(recursive)
 
-    def activeEfforts(self, recursive=False):
+    def active_efforts(self, recursive=False):
         return [
             effort
             for effort in self.efforts(recursive)
@@ -896,8 +896,8 @@ class Task(
             self.send_tracking_changed(tracking=False)
         self.send_time_spent_changed()
 
-    def stopTracking(self):
-        for effort in self.activeEfforts():
+    def stop_tracking(self):
+        for effort in self.active_efforts():
             effort.setStop()
 
     def setEfforts(self, efforts):

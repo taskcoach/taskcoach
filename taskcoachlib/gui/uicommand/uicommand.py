@@ -1391,6 +1391,21 @@ class _SelectionSync:
         cmd.toolbar.Refresh(False)
 
 
+class _TrackingSync(_SelectionSync):
+    """Also follows tracking: a start or a stop changes what Start and
+    Stop selected can do for the same selection."""
+
+    def __init__(self, viewer, button):
+        super().__init__(viewer, button)
+        viewer.registerObserver(
+            self._on_tracking_changed,
+            eventType=effort.Effort.trackingChangedEventType(),
+        )
+
+    def _on_tracking_changed(self, event):
+        self._on_selection_changed(event)
+
+
 class ViewExpandAll(ViewerCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(
@@ -1947,7 +1962,7 @@ class TaskNewFromTemplate(TaskNew):
 class TaskNewFromTemplateButton(
     mixin_uicommand.PopupButtonMixin, TaskListCommand
 ):
-    def createPopupMenu(self):
+    def create_popup_menu(self):
         from taskcoachlib.gui import menu
 
         return menu.TaskTemplateMenu(self.main_window(), self.taskList)
@@ -2545,8 +2560,7 @@ class EffortNew(ViewerCommand, EffortListCommand, TaskListCommand):
     def enabled(self, event):
         if not self.taskList:
             return False
-        # A task view: one task selected; its new effort is tracked,
-        # one task at a time (docs/EFFORTS.md, Tracking)
+        # A task view: one task selected (docs/EFFORTS.md, Tracking)
         if self.viewer and self.viewer.is_showing_tasks():
             return len(self.viewer.curselection()) == 1
         return True
@@ -2605,7 +2619,7 @@ class EffortStart(ViewerCommand, TaskListCommand):
 
     def append_to_toolbar(self, *args, **kwargs):
         super().append_to_toolbar(*args, **kwargs)
-        self._selection_sync = _SelectionSync(self.viewer, self)
+        self._selection_sync = _TrackingSync(self.viewer, self)
 
     def do_command(self, event):
         start = command.StartEffortCommand(
@@ -2614,7 +2628,7 @@ class EffortStart(ViewerCommand, TaskListCommand):
         start.do()
 
     def enabled(self, event):
-        # One task tracked at a time (docs/EFFORTS.md, Tracking)
+        # One selected task (docs/EFFORTS.md, Tracking)
         selection = self.viewer.curselection()
         return (
             len(selection) == 1
@@ -2640,7 +2654,7 @@ class EffortStartForEffort(ViewerCommand, TaskListCommand):
 
     def append_to_toolbar(self, *args, **kwargs):
         super().append_to_toolbar(*args, **kwargs)
-        self._selection_sync = _SelectionSync(self.viewer, self)
+        self._selection_sync = _TrackingSync(self.viewer, self)
 
     def do_command(self, event):
         start = command.StartEffortCommand(
@@ -2702,28 +2716,70 @@ class EffortStartButton(mixin_uicommand.PopupButtonMixin, TaskListCommand):
             **kwargs
         )
 
-    def createPopupMenu(self):
+    def create_popup_menu(self):
         from taskcoachlib.gui import menu
 
         return menu.StartEffortForTaskMenu(self.main_window(), self.taskList)
 
 
 class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
-    defaultMenuText = _(
-        "Stop tracking or resume tracking effort\tShift+Ctrl+T"
-    )
-    defaultHelpText = help.effortStopOrResume
-    stopMenuText = _("St&op tracking %s\tShift+Ctrl+T")
-    stopHelpText = _("Stop tracking effort for the active task(s)")
-    resumeMenuText = _("&Resume tracking %s\tShift+Ctrl+T")
-    resumeHelpText = _("Resume tracking effort for the last tracked task")
+    """Stop tracking the selected tasks and efforts, only those; off
+    when none of them is tracked (docs/EFFORTS.md, Tracking). Saved
+    toolbars find it by this name."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            icon_id="taskcoach_actions_clock_stop_icon",
+            menu_text=_("Stop tracking s&elected"),
+            help_text=help.effort_stop_selected,
+            *args,
+            **kwargs
+        )
+
+    def append_to_toolbar(self, *args, **kwargs):
+        super().append_to_toolbar(*args, **kwargs)
+        self._selection_sync = _TrackingSync(self.viewer, self)
+
+    def efforts(self):
+        """The tracked efforts of the selected rows: a task's own, an
+        effort, or those a row of an effort view adds up."""
+        efforts = []
+        for item in self.viewer.curselection():
+            if isinstance(item, task.Task):
+                efforts.extend(item.efforts())
+            elif isinstance(item, effort.Effort):
+                efforts.append(item)
+            elif isinstance(item, effort.BaseCompositeEffort):
+                efforts.extend(item)
+        tracked = []
+        for each in efforts:
+            if each.isBeingTracked() and each not in tracked:
+                tracked.append(each)
+        return tracked
+
+    def enabled(self, event):
+        return bool(self.efforts())
+
+    def do_command(self, event):
+        efforts = self.efforts()
+        if efforts:  # Given none, StopEffortCommand stops all
+            command.StopEffortCommand(self.effortList, efforts).do()
+
+
+class EffortStopAll(EffortListCommand, TaskListCommand):
+    """Stop tracking every tracked task; with none tracked, resume the
+    tasks stopped last (docs/EFFORTS.md, Tracking)."""
+
+    stop_menu_text = _("St&op tracking all\tShift+Ctrl+T")
+    resume_menu_text = _("&Resume tracking %s\tShift+Ctrl+T")
+    resume_help_text = _("Resume tracking effort for the tasks stopped last")
 
     def __init__(self, *args, **kwargs):
         super().__init__(
             icon_id="taskcoach_actions_clock_resume_icon",
             icon_id2="taskcoach_actions_clock_stop_icon",
-            menu_text=self.defaultMenuText,
-            help_text=self.defaultHelpText,
+            menu_text=self.stop_menu_text,
+            help_text=help.effort_stop_all,
             kind=wx.ITEM_CHECK,
             *args,
             **kwargs
@@ -2737,55 +2793,38 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
         self.__current_icon_id = None
 
     def removeInstance(self):
-        self._EffortStop__tracker.removeInstance()
+        self.__tracker.removeInstance()
         super().removeInstance()
 
     def __on_efforts_changed(self, event):  # pylint: disable=W0613
         self.updateUI()
 
-    def efforts(self):
-        selected_efforts = set()
-        for item in self.viewer.curselection():
-            if isinstance(item, task.Task):
-                selected_efforts |= set(item.efforts())
-            elif isinstance(item, effort.Effort):
-                selected_efforts.add(item)
-        selected_efforts &= set(self.__tracker.trackedEfforts())
-        return (
-            selected_efforts
-            if selected_efforts
-            else self.__tracker.trackedEfforts()
-        )
+    def tasks_to_resume(self):
+        """The tasks a press resumes: none while any is tracked."""
+        if self.__tracker.tracked_efforts():
+            return []
+        return self.effortList.tasks_to_resume()
 
     def do_command(self, event=None):
-        efforts = self.efforts()
-        if efforts:
-            # Stop the tracked effort(s)
-            effort_command = command.StopEffortCommand(
-                self.effortList, efforts
-            )
+        if self.__tracker.tracked_efforts():
+            command.StopEffortCommand(self.effortList).do()
         else:
-            # Resume tracking the last task
-            effort_command = command.StartEffortCommand(
-                self.taskList, [self.mostRecentTrackedTask()]
-            )
-        effort_command.do()
+            command.StartEffortCommand(
+                self.taskList, self.tasks_to_resume()
+            ).do()
 
     def enabled(self, event=None):
-        # If there are tracked efforts this command will stop them. If there are
-        # untracked efforts this command will resume them. Otherwise this
-        # command is disabled.
-        return self.anyTrackedEfforts() or self.anyStoppedEfforts()
+        return bool(self.__tracker.tracked_efforts() or self.tasks_to_resume())
 
     def updateUI(self):
         if wx.GetApp().quitting:
             return
-        paused = self.anyStoppedEfforts() and not self.anyTrackedEfforts()
+        paused = bool(self.tasks_to_resume())
         if self.toolbar:
             self.toolbar.EnableTool(self.id, self.enabled(None))
-        self.updateToolState(not paused)
+        self.update_tool_state(not paused)
         current_icon_id = self.icon_id if paused else self.icon_id2
-        menu_text = self.get_menu_text(paused)
+        menu_text = self.get_menu_text()
         if (current_icon_id != self.__current_icon_id) or bool(
             [
                 item
@@ -2794,17 +2833,17 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
             ]
         ):
             self.__current_icon_id = current_icon_id
-            self.updateToolBitmap(current_icon_id)
+            self.update_tool_bitmap(current_icon_id)
             self.update_tool_help()
-            self.updateMenuItems(paused)
+            self.update_menu_items(paused)
 
-    def updateToolState(self, paused):
+    def update_tool_state(self, pressed):
         if not self.toolbar:
             return  # Toolbar is hidden
-        if paused != self.toolbar.GetToolState(self.id):
-            self.toolbar.ToggleTool(self.id, paused)
+        if pressed != self.toolbar.GetToolState(self.id):
+            self.toolbar.ToggleTool(self.id, pressed)
 
-    def updateToolBitmap(self, icon_id):
+    def update_tool_bitmap(self, icon_id):
         if not self.toolbar:
             return  # Toolbar is hidden
         bitmap = icon_catalog.get_bitmap(
@@ -2821,55 +2860,32 @@ class EffortStop(EffortListCommand, TaskListCommand, ViewerCommand):
             self.toolbar.EnableTool(self.id, False)
         self.toolbar.Realize()
 
-    def updateMenuItems(self, paused):
-        menu_text = self.get_menu_text(paused)
-        help_text = self.get_help_text(paused)
+    def update_menu_items(self, paused):
+        menu_text = self.get_menu_text()
+        help_text = self.get_help_text()
         for menu_item in self.menu_items:
+            # Outside GTK the check state picks the item's icon: resume
+            # while paused, stop otherwise (add_bitmap_to_menu_item())
             menu_item.Check(paused)
             menu_item.SetItemLabel(menu_text)
             menu_item.SetHelp(help_text)
 
-    def get_menu_text(self, paused=None):  # pylint: disable=W0221
-        if self.anyTrackedEfforts():
-            tracked_efforts = list(self.efforts())
-            subject = (
-                _("multiple tasks")
-                if len(tracked_efforts) > 1
-                else tracked_efforts[0].task().subject()
-            )
-            return self.stopMenuText % self.trimmedSubject(subject)
-        if paused is None:
-            paused = self.anyStoppedEfforts()
-        if paused:
-            return self.resumeMenuText % self.trimmedSubject(
-                self.mostRecentTrackedTask().subject()
-            )
-        else:
-            return self.defaultMenuText
+    def get_menu_text(self):
+        resume = self.tasks_to_resume()
+        if not resume:
+            return self.stop_menu_text
+        subject = (
+            resume[0].subject() if len(resume) == 1 else _("multiple tasks")
+        )
+        return self.resume_menu_text % self.trimmed_subject(subject)
 
-    def get_help_text(self, paused=None):  # pylint: disable=W0221
-        if self.anyTrackedEfforts():
-            return self.stopHelpText
-        if paused is None:
-            paused = self.anyStoppedEfforts()
-        return self.resumeHelpText if paused else self.defaultHelpText
-
-    def anyStoppedEfforts(self):
-        return bool(self.effortList.maxDateTime())
-
-    def anyTrackedEfforts(self):
-        return bool(self.efforts())
-
-    def mostRecentTrackedTask(self):
-        stop_times = [
-            (effort.getStop(), effort)
-            for effort in self.effortList
-            if effort.getStop() is not None
-        ]
-        return max(stop_times)[1].task()
+    def get_help_text(self):
+        if self.tasks_to_resume():
+            return self.resume_help_text
+        return help.effort_stop_all
 
     @staticmethod
-    def trimmedSubject(subject, max_length=35, post_fix="..."):
+    def trimmed_subject(subject, max_length=35, post_fix="..."):
         trim = len(subject) > max_length
         return (
             subject[: max_length - len(post_fix)] + post_fix

@@ -8091,3 +8091,27 @@ msgstr "Erro do %s"
 #: taskcoachlib/gui/dialog/editor.py
 msgid "This window could not open because of an error:\n%s\n\nPlease open a bug report and include this message."
 msgstr "Esta janela não pôde ser aberta devido a um erro:\n%s\n\nPor favor abra um relatório de erro e inclua esta mensagem."
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "St&op tracking all\tShift+Ctrl+T"
+msgstr "Parar todos os rastreament&os\tShift+Ctrl+T"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Stop tracking s&elected"
+msgstr "Parar rastreamento da s&elecção"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Resume tracking effort for the tasks stopped last"
+msgstr "Retomar rastreamento de esforço das últimas tarefas paradas"
+
+#: taskcoachlib/help/uicommand.py
+msgid "Stop tracking effort for all tracked tasks"
+msgstr "Parar o rastreamento de esforço de todas as tarefas rastreadas"
+
+#: taskcoachlib/help/uicommand.py
+msgid "Stop tracking effort for the selected tasks"
+msgstr "Parar o rastreamento de esforço das tarefas seleccionadas"
+
+#: taskcoachlib/gui/taskbaricon.py
+msgid "Stop tracking all"
+msgstr "Parar todos os rastreamentos"
