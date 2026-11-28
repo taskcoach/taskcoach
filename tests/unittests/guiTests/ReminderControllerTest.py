@@ -111,7 +111,9 @@ class ReminderControllerTest(ReminderControllerTestCase):
         self.task.triggerReminder()
         self.assertEqual([], self.reminderController.messages)
 
-    def dummyCloseEvent(self, snooze_time_delta=None, open_after_close=False):
+    def dummy_close_event(
+        self, snooze_time_delta=None, open_after_close=False
+    ):
         class DummySnoozeOptions(object):
             Selection = 0
 
@@ -120,9 +122,9 @@ class ReminderControllerTest(ReminderControllerTestCase):
 
         class DummyDialog(object):
             task = self.task
-            openTaskAfterClose = open_after_close
-            ignoreSnoozeOption = False
-            snoozeOptions = DummySnoozeOptions()
+            open_task_after_close = open_after_close
+            ignore_snooze_option = False
+            snooze_options = DummySnoozeOptions()
 
             def Destroy(self):
                 pass
@@ -138,14 +140,14 @@ class ReminderControllerTest(ReminderControllerTestCase):
     def test_on_close_reminder_resets_reminder(self):
         self.task.set_reminder(self.reminderDateTime)
         self.reminderController.on_close_reminder_dialog(
-            self.dummyCloseEvent(), show=False
+            self.dummy_close_event(), show=False
         )
         self.assertEqual(date.DateTime(), self.task.reminder())
 
     def test_on_close_reminder_sets_reminder(self):
         self.task.set_reminder(self.reminderDateTime)
         self.reminderController.on_close_reminder_dialog(
-            self.dummyCloseEvent(date.ONE_HOUR), show=False
+            self.dummy_close_event(date.ONE_HOUR), show=False
         )
         self.assertTrue(
             abs(self.nowDateTime + date.ONE_HOUR - self.task.reminder())
@@ -156,7 +158,7 @@ class ReminderControllerTest(ReminderControllerTestCase):
         # Every change to the file is (docs/UNDO_REDO.md, Design Intent)
         self.task.set_reminder(self.reminderDateTime)
         self.reminderController.on_close_reminder_dialog(
-            self.dummyCloseEvent(date.ONE_HOUR), show=False
+            self.dummy_close_event(date.ONE_HOUR), show=False
         )
         patterns.CommandHistory().undo()
         self.assertEqual(self.reminderDateTime, self.task.reminder())
@@ -164,6 +166,6 @@ class ReminderControllerTest(ReminderControllerTestCase):
     def test_on_close_may_open_task(self):
         self.task.set_reminder(self.reminderDateTime)
         frame = self.reminderController.on_close_reminder_dialog(
-            self.dummyCloseEvent(open_after_close=True), show=False
+            self.dummy_close_event(open_after_close=True), show=False
         )
         self.assertTrue(frame)

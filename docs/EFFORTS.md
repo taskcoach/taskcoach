@@ -7,12 +7,19 @@ an effort's period and its entry modes:
 
 ## Table of Contents
 
-1. [What an Effort Is](#what-an-effort-is)
-2. [Views](#views)
-3. [Filters](#filters)
-4. [Tracking](#tracking)
-5. [Code](#code)
-6. [History](#history)
+1. [To Do](#to-do)
+2. [What an Effort Is](#what-an-effort-is)
+3. [Views](#views)
+4. [Filters](#filters)
+5. [Tracking](#tracking)
+6. [Code](#code)
+7. [History](#history)
+
+---
+
+## To Do
+
+Nothing to do.
 
 ---
 
@@ -62,38 +69,66 @@ subtask's row.
 
 ## Tracking
 
-One task is tracked at a time, **ruled by designer 2026-10-04**: "For
-now, simplify to only track one task at a time" (GitHub #40).
+Several tasks track at once, **ruled by designer 2026-11-27**, in
+place of one task at a time (ruled 2026-10-04): starting a task never
+ends another, and Stop is two commands, Stop all and Stop selected.
+The one Stop before stopped the selection when it held a tracked
+task, else all, else resumed; the designer's words: "that is an
+action with too many conditions and will confuse users ... split as a
+stop-all and stop-selected, and we will clearly separate these
+action".
 
 - **Start tracking** (Ctrl+T; the Actions menu, a task's or an effort
-  row's menu, the toolbar's and the tray's task menus): one task, the
-  selected one or an effort row's; off with several tasks selected,
-  and for a task completed or already tracked. The other tracked
-  effort ends.
-- **Stop or resume** (Shift+Ctrl+T; the toolbar's clock button, the
-  tray menu): ends the tracked effort; with none tracked, resumes the
-  task tracked last, with a new effort.
+  row's menu, a view's toolbar): one task, the selected one or an
+  effort row's; off with several tasks selected, and for a task
+  completed or already tracked. The main toolbar's and the tray's
+  task menus start the task picked. The tracked tasks go on; a task
+  tracked already is not started again, or the same time would count
+  twice. A view's Start button greys out as soon as the selected task
+  is tracked and comes back as soon as it stops, however it was
+  started or stopped ([MENUS.md](MENUS.md#migrated-commands)).
+- **Stop tracking all** (Shift+Ctrl+T; the main toolbar's clock
+  button, the Actions menu, the tray): ends every tracked effort, all
+  at one moment. With none tracked it is **Resume tracking *task***
+  (or "multiple tasks"): it tracks again, with new efforts, the tasks
+  whose efforts end latest, at the same second, as one Stop ends
+  them (`EffortList.tasks_to_resume()`); the tray's line leaves
+  completed tasks out, as it did.
+  Nothing is remembered, so a past effort typed in to end later, or
+  one ending in the future, decides what is resumed. Its toolbar
+  button is pressed in while tracking. Its menu line stays as
+  released, **ruled by designer 2026-11-27** ("These things should
+  not be changing"): on Linux a check box, ticked on Resume; on
+  Windows and macOS the check state picks its stop or resume icon
+  (`UICommand.add_bitmap_to_menu_item()`).
+- **Stop tracking selected** (a view's toolbar, a task's and an effort
+  row's menus): ends only the tracked efforts of
+  the selected rows: a task's own, an effort, or those a row of an
+  effort view adds up per period; off when none is tracked. It never
+  stops all and never resumes: Start is beside it.
+- **A reminder's clock button** stops or starts its own task.
 - **New effort**: one task (in a task view, one selected). The new
-  effort starts now with no end, so it is tracked, and the other
-  tracked effort ends; it opens in the effort editor.
+  effort starts now with no end, so it is tracked; it opens in the
+  effort editor.
 - **The effort editor**: an effort given no stop (Implicit mode) is
-  tracked, and the other tracked effort ends.
-- **Copies**: a tracked effort is copied stopped at that moment; the
-  copy holds the time spent so far.
-- One rule behind all of them: when an effort of the open file starts
-  being tracked, the file's other tracked efforts end
-  (`TaskFile.__on_tracking_changed()`), in the same undo step. A file
-  that an older release saved with several tracked efforts opens with
-  them, also when a view or an editor shows one of them; Stop ends
-  the tracked ones selected, or all of them when no selected one is
   tracked.
+- **Copies**: a tracked effort is copied stopped at that moment; the
+  copy holds the time spent so far, as tracked it would count the
+  same time twice.
 - **Idle time:** after a time away, Task Coach asks what to do with
-  the tracked effort ([IDLE.md](IDLE.md)).
+  each tracked effort ([IDLE.md](IDLE.md)).
+
+A button's tooltip and its status-bar text follow its menu text:
+"Stop tracking all" and "Stop tracking effort for all tracked tasks";
+"Stop tracking selected" and "Stop tracking effort for the selected
+tasks". Saved toolbars find a button by its command's name
+(`ToolBar._filter_commands()`): Stop selected keeps the views'
+`EffortStop`, and the main toolbar's saved `EffortStop` becomes
+`EffortStopAll` when the settings load (`settings._upgraded()`).
 
 ## Tracking Several Tasks: Other Applications
 
-For reference, if tracking several tasks at once is wanted later
-(researched 2026-10-04):
+Researched 2026-10-04, before tracking several tasks was asked:
 
 | Application | Several at once | How |
 |---|---|---|
@@ -106,10 +141,8 @@ For reference, if tracking several tasks at once is wanted later
 | Tyme (macOS) | a setting | "Simultaneous or single timers" ([features](https://www.tyme-app.com/en/all-features/)) |
 | Task Coach before 2.0.3.1 | partly | tasks selected together were tracked together; New effort added one without ending the others, as the old project wiki advised ([wiki](https://sourceforge.net/p/taskcoach/wiki/tracking-effort/)) |
 
-Kimai's model would fit: a preference for how many tasks may be
-tracked, 1 by default; Start adds the selected task while under the
-limit; Stop and Resume act on the selection; Resume brings back the
-tasks stopped together.
+Task Coach tracks any number, with no limit to set, and its Stop all
+and Stop selected are two commands ([Tracking](#tracking)).
 
 ## Code
 
@@ -120,15 +153,20 @@ tasks stopped together.
   `LocalEffortViewer` and `EffortPage` (`gui/dialog/editor.py`).
 - The category filter: `FilterableViewerForCategorizablesMixin`
   (`gui/viewer/mixin.py`), skipped when `is_filterable()` is false.
-- Tracking: `EffortStart`, `EffortStartForEffort`, `EffortStop`,
-  `EffortNew` (`gui/uicommand/uicommand.py`); `StartEffortCommand`,
-  `StopEffortCommand` (`command/taskCommands.py`); the one-task rule:
-  `TaskFile.__on_tracking_changed()` (`persistence/taskfile.py`).
+- Tracking: `EffortStart`, `EffortStartForEffort`, `EffortStop` (Stop
+  selected), `EffortStopAll`, `EffortNew`
+  (`gui/uicommand/uicommand.py`); `StartEffortCommand`,
+  `StopEffortCommand`, and `EffortCommand.stop_tracking()` for the
+  commands that end tracking (`command/taskCommands.py`); what Resume
+  tracks: `EffortList.tasks_to_resume()`; the tray's lines:
+  `AppIndicatorTaskBarIcon._stop_or_resume_lines()`.
 - Tests: `EffortViewerTest.py` (`EffortViewsUnderCategoryFilterTest`,
-  `ParentRowsTestMixin`),
-  `UICommandTest.py` (`EffortStopTest`, `TrackingOneTaskTest`),
-  `TaskFileTest.py` (`OneTrackedTaskTest`), `EffortTest.py`
-  (`TrackedEffortCopyTest`).
+  `ParentRowsTestMixin`, `test_stop_effort_tracking`),
+  `UICommandTest.py` (`EffortStopAllTest`, `EffortStopSelectedTest`,
+  `TrackingSeveralTasksTest`), `TaskFileTest.py`
+  (`SeveralTrackedTasksTest`), `EffortListTest.py` (resume),
+  `EffortTest.py` (`TrackedEffortCopyTest`), `TaskBarIconTest.py`
+  (the tray's Stop all and Resume), `ReminderDialogTest.py`.
 
 ## History
 
@@ -155,9 +193,14 @@ tasks stopped together.
 - 2011-02-12 (28cda14d8, Frank Niessink): Stop resumes the last
   tracked task when nothing is tracked; "Stop tracking multiple tasks"
   names the case of several tracked.
+- 2013-02-24, release 1.3.25 (98fc8ea89, Jérôme Laheurte): "Make
+  the effort stop menu a bit more contextual": Stop ends the selected
+  tracked efforts, or all when none selected is tracked.
 - 2014-05-24 (9a307d550, Jérôme Laheurte): "Effort for one task"
   becomes Effort for selected task(s).
 - 2026-10-04: the editor's tab without the category filter (#157);
   one task tracked at a time (#40).
 - 2026-11-08: a parent task with only its subtasks' time has a row
   only while a total column is shown.
+- 2026-11-27, release 2.0.3.12: several tasks tracked at once; Stop
+  all and Stop selected; Resume tracks the tasks stopped together.

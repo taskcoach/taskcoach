@@ -462,6 +462,31 @@ class AppIndicatorMenuUpdateTest(test.wxTestCase):
         self.alpha.efforts()[0].setStop(date.Now())
         self.assert_updated()
 
+    def activate(self, label):
+        """Activate the menu's line and run what it hands over."""
+        [line] = [
+            item
+            for item in self.menu().get_children()
+            if item.get_label() == label
+        ]
+        with mock.patch.object(gui.taskbaricon.patterns.later, "soon") as soon:
+            line.activate()
+        _window, action, *args = soon.call_args[0]
+        action(*args)
+        self.icon._update_gtk_menu()
+
+    def test_stop_all_then_resume_the_tasks_stopped_together(self):
+        # Several tasks track at once (docs/EFFORTS.md, Tracking)
+        for each in (self.alpha, self.bravo):
+            each.addEffort(effort.Effort(each))
+        self.icon._update_gtk_menu()
+        self.activate("Stop tracking all")
+        self.assertFalse(self.tasks.tasks_being_tracked())
+        self.activate("Resume tracking multiple tasks")
+        self.assertEqual(
+            {self.alpha, self.bravo}, set(self.tasks.tasks_being_tracked())
+        )
+
     def test_templates(self):
         self.write_template("Weekly review")
         self.assert_updated()
@@ -486,7 +511,8 @@ class AppIndicatorMenuUpdateTest(test.wxTestCase):
         self.icon._update_gtk_menu()
         with mock.patch.object(gui.taskbaricon.patterns.later, "soon") as soon:
             self.tracking_items()[0].activate()
-        self.assertIs(again, soon.call_args[0][2])
+        [tracked] = soon.call_args[0][2]  # The tasks to start
+        self.assertIs(again, tracked)
 
     def test_a_tray_host_coming_makes_the_menu_anew(self):
         callback = self.indicator.on_connection_changed.call_args[0][0]

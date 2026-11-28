@@ -320,7 +320,7 @@ class EffortWithoutTaskTest(test.TestCase):
 
 class TrackedEffortCopyTest(test.TestCase):
     def test_a_copy_of_a_tracked_effort_is_stopped(self):
-        # It holds the time spent so far; one task tracked at a time
-        # (docs/EFFORTS.md, Tracking)
+        # It holds the time spent so far: tracked too, it would count
+        # the same time twice (docs/EFFORTS.md, Tracking)
         tracked = effort.Effort(task.Task(), date.DateTime(2026, 1, 1))
         self.assertFalse(tracked.copy().isBeingTracked())

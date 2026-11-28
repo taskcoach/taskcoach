@@ -1120,7 +1120,7 @@ Search ALL code for the legacy icon name. Every reference must be accounted for:
    | 4 | EditUndo | `undo` |
    | 5 | EditRedo | `redo` |
    | 6 | EffortStartButton | `taskcoach_actions_clock_menu_icon` |
-   | 7 | EffortStop | `taskcoach_actions_clock_resume_icon` |
+   | 7 | EffortStopAll | `taskcoach_actions_clock_resume_icon` |
    | 8 | EditToolBarPerspective | `nuvola_apps_preferences-system-session-services` |
    | 9 | ToggleAutoScroll | `oxygen_actions_align-vertical-center` (16/22/32/48 imported) |
 

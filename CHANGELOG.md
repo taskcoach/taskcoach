@@ -4,6 +4,23 @@ What changes for users in each release, newest first. A release's
 section is the text of its GitHub release page
 ([PACKAGING.md](docs/PACKAGING.md#release-notes)).
 
+## 2.0.3.12
+
+### Efforts
+
+- Several tasks can be tracked at once: starting a task no longer
+  stops the one tracked.
+- Stop comes in two. "Stop tracking all" (the main toolbar, the
+  Actions menu or Shift+Ctrl+T, the tray) stops every tracked task;
+  with none tracked it resumes those it stopped last. "Stop tracking
+  selected" (a view's toolbar, the right-click menus) stops only the
+  selected tasks or efforts. One Stop did both, depending on what was
+  selected.
+- A reminder's clock button stops its own task only.
+- A view's Start tracking button greys out as soon as the selected
+  task is tracked and comes back as soon as it stops; it stayed as it
+  was until another row was selected.
+
 ## 2.0.3.11
 
 ### Editors and Preferences

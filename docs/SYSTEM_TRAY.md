@@ -559,10 +559,13 @@ Both `TaskBarMenu` (Windows/macOS) and `AppIndicatorTaskBarIcon._menu_lines`
 5. **New category...** - Create a new category
 6. **New note...** - Create a new note
 7. **Start tracking effort** - Submenu with trackable tasks (hierarchical)
-8. **Stop/Resume tracking** - Dynamic based on state:
-   - When tracking: "Stop tracking [task name]"
-   - When paused: "Resume tracking [last task name]"
-   - When no recent effort: Hidden
+8. **Stop all / Resume tracking** - Dynamic based on state
+   ([EFFORTS.md](EFFORTS.md#tracking)):
+   - When tracking: "Stop tracking all"
+   - When paused: "Resume tracking [task name]", or "multiple tasks"
+     for the tasks stopped together
+   - When nothing to resume: hidden (the Windows and macOS menu shows
+     it disabled)
 9. **Quit** - Exit the application
 
 The AppIndicator menu is updated in place ([Menu

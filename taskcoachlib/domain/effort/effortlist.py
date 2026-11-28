@@ -88,6 +88,21 @@ class EffortList(
             _send_tracking_changed(added, True)
             _send_tracking_changed(removed, False)
 
+    def tasks_to_resume(self):
+        """The tasks Resume tracks again: those of the efforts that end
+        latest, at the same second, as one Stop ends them. Nothing is
+        remembered, so an effort typed in to end then counts too
+        (docs/EFFORTS.md, Tracking)."""
+        latest = self.maxDateTime()
+        if latest is None:
+            return []
+        tasks = {
+            each.task()
+            for each in self
+            if each.getStop() == latest and each.task() is not None
+        }
+        return sorted(tasks, key=lambda each: each.subject(recursive=True))
+
     def original_length(self):
         """Do not delegate original_length to the underlying TaskList because
         that would return a number of tasks, and not the number of effort
@@ -134,31 +149,31 @@ class EffortListTracker(patterns.Observer):
     """EffortListTracker observes an EffortList and keeps track of
     currently tracked efforts."""
 
-    def __init__(self, effortList, include_composites=False):
-        """@param effortList: The effort list to observe.
-        @param includeComposites: if False, composite efforts will be
+    def __init__(self, effort_list, include_composites=False):
+        """@param effort_list: The effort list to observe.
+        @param include_composites: if False, composite efforts will be
             ignored."""
         super().__init__()
 
-        self.__effortList = effortList
-        self.__includeComposites = include_composites
+        self.__effort_list = effort_list
+        self.__include_composites = include_composites
 
-        # __trackedEfforts is a list and not a set because when an effort is
-        # moved from one task to another task we might get the event that the
-        # effort is (re)added to the effortList before the event that the effort
-        # was removed from the effortList. If we would use a set, the effort
-        # would be missing from the set after the removal event.
-        self.__trackedEfforts = self.__filterTrackedEfforts(self.__effortList)
+        # A list, not a set: when an effort moves to another task, the
+        # event that it was (re)added to the effort list can come
+        # before the one that it was removed; a set would then lose it.
+        self.__tracked_efforts = self.__filter_tracked_efforts(
+            self.__effort_list
+        )
 
         self.registerObserver(
             self.on_effort_added,
-            eventType=self.__effortList.addItemEventType(),
-            eventSource=self.__effortList,
+            eventType=self.__effort_list.addItemEventType(),
+            eventSource=self.__effort_list,
         )
         self.registerObserver(
             self.on_effort_removed,
-            eventType=self.__effortList.removeItemEventType(),
-            eventSource=self.__effortList,
+            eventType=self.__effort_list.removeItemEventType(),
+            eventSource=self.__effort_list,
         )
         self.registerObserver(
             self.on_tracking_changed,
@@ -173,38 +188,38 @@ class EffortListTracker(patterns.Observer):
     def __send_changed(self):
         patterns.Event(self.changed_event_type(), self).send()
 
-    def trackedEfforts(self):
-        return self.__trackedEfforts
+    def tracked_efforts(self):
+        return self.__tracked_efforts
 
     def on_effort_added(self, event):
-        self.__trackedEfforts.extend(
-            self.__filterTrackedEfforts(list(event.values()))
+        self.__tracked_efforts.extend(
+            self.__filter_tracked_efforts(list(event.values()))
         )
         self.__send_changed()
 
     def on_effort_removed(self, event):
         for effort in list(event.values()):
-            if effort in self.__trackedEfforts:
-                self.__trackedEfforts.remove(effort)
+            if effort in self.__tracked_efforts:
+                self.__tracked_efforts.remove(effort)
         self.__send_changed()
 
     def on_tracking_changed(self, event):
         changed = False
         for sender in event.sources():
-            if sender.parent() is None and not self.__includeComposites:
+            if sender.parent() is None and not self.__include_composites:
                 continue
-            if sender not in self.__effortList:
+            if sender not in self.__effort_list:
                 continue
             if event.value(sender):
-                if sender not in self.__trackedEfforts:
-                    self.__trackedEfforts.extend([sender])
+                if sender not in self.__tracked_efforts:
+                    self.__tracked_efforts.extend([sender])
             else:
-                if sender in self.__trackedEfforts:
-                    self.__trackedEfforts.remove(sender)
+                if sender in self.__tracked_efforts:
+                    self.__tracked_efforts.remove(sender)
             changed = True
         if changed:
             self.__send_changed()
 
     @staticmethod
-    def __filterTrackedEfforts(efforts):
+    def __filter_tracked_efforts(efforts):
         return [effort for effort in efforts if effort.isBeingTracked()]

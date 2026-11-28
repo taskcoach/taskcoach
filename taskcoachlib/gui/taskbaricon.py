@@ -406,7 +406,8 @@ class _Line:
     """A line of the Linux tray menu: the key that finds its item again
     at the next update, its text, icon and action, and its submenu's
     lines (None: no submenu). Without text, a separator. task keeps the
-    task of a key made with id() alive while its item is shown."""
+    task, or tasks, of a key made with id() alive while its item is
+    shown."""
 
     __slots__ = (
         "key",
@@ -880,7 +881,7 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
                         ("track", id(task_item)),
                         subject,
                         lambda w, t=task_item: patterns.later.soon(
-                            self.__window, self._do_start_tracking, t
+                            self.__window, self._do_start_tracking, [t]
                         ),
                         icon_id=task_item.shown_icon_id(),
                         image=True,
@@ -901,26 +902,35 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         return lines
 
     def _stop_or_resume_lines(self):
-        """Stop tracking while tracking; else resume the task tracked
-        last, if any."""
-        tracked_tasks = self.__task_list.tasks_being_tracked()
-        if tracked_tasks:
-            if len(tracked_tasks) == 1:
-                label = _("Stop tracking %s") % tracked_tasks[0].subject()
-            else:
-                label = _("Stop tracking %d tasks") % len(tracked_tasks)
-            return [_Line("stop tracking", label, self._on_stop_tracking)]
-        most_recent = self._get_most_recent_tracked_task()
-        if not most_recent:
+        """Stop tracking all while tracking; else resume the tasks
+        stopped last, those not completed, if any (docs/EFFORTS.md,
+        Tracking)."""
+        if self.__task_list.tasks_being_tracked():
+            return [
+                _Line(
+                    "stop tracking",
+                    _("Stop tracking all"),
+                    self._on_stop_tracking,
+                )
+            ]
+        resume = [
+            each
+            for each in self.__window.taskFile.efforts().tasks_to_resume()
+            if not each.completed()
+        ]
+        if not resume:
             return []
+        subject = (
+            resume[0].subject() if len(resume) == 1 else _("multiple tasks")
+        )
         return [
             _Line(
-                ("resume tracking", id(most_recent)),
-                _("Resume tracking %s") % most_recent.subject(),
-                lambda w, t=most_recent: patterns.later.soon(
-                    self.__window, self._do_start_tracking, t
+                ("resume tracking", tuple(id(each) for each in resume)),
+                _("Resume tracking %s") % subject,
+                lambda w, tasks=resume: patterns.later.soon(
+                    self.__window, self._do_start_tracking, tasks
                 ),
-                task=most_recent,
+                task=tuple(resume),
             )
         ]
 
@@ -959,9 +969,9 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
 
     def _do_stop_tracking(self):
         """Stop tracking all efforts (called from wx main thread)."""
-        with patterns.CommandHistory().action(_("Stop tracking")):
-            for tracked_task in self.__task_list.tasks_being_tracked():
-                tracked_task.stopTracking()
+        from taskcoachlib import command
+
+        command.StopEffortCommand(self.__window.taskFile.efforts()).do()
 
     def _on_new_category(self, widget):
         """Handle New Category menu item."""
@@ -995,37 +1005,13 @@ class AppIndicatorTaskBarIcon(patterns.Observer):
         cmd = uicommand.TaskNewFromTemplate(template_path, taskList=tasks)
         cmd.do_command(None)
 
-    def _do_start_tracking(self, task_to_track):
-        """Start tracking effort for a task (called from wx main thread)."""
+    def _do_start_tracking(self, tasks_to_track):
+        """Start tracking effort for the tasks (called from wx main
+        thread)."""
         from taskcoachlib import command
 
         tasks = self.__window.taskFile.tasks()
-        cmd = command.StartEffortCommand(tasks, [task_to_track])
-        cmd.do()
-
-    def _get_most_recent_tracked_task(self):
-        """Get the most recently tracked task for resume functionality.
-
-        Returns:
-            The task that was most recently tracked, or None if no efforts exist.
-        """
-        effort_list = self.__window.taskFile.efforts()
-        if not effort_list:
-            return None
-
-        # Find the effort with the most recent stop time
-        max_stop = None
-        most_recent_task = None
-        for effort in effort_list:
-            stop = effort.getStop()
-            if stop is not None and (max_stop is None or stop > max_stop):
-                max_stop = stop
-                most_recent_task = effort.task()
-
-        # Only return if task is not completed
-        if most_recent_task and not most_recent_task.completed():
-            return most_recent_task
-        return None
+        command.StartEffortCommand(tasks, tasks_to_track).do()
 
     # Getters:
 

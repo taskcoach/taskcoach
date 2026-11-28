@@ -125,8 +125,8 @@ class Effort(baseeffort.BaseEffort, base.Object):
             dict(
                 task=self.task(),
                 start=self._start.get(),
-                # The time spent so far: a copy never tracks, one task
-                # tracked at a time (docs/EFFORTS.md, Tracking)
+                # The time spent so far: a copy never tracks, or it
+                # would count the same time twice (docs/EFFORTS.md)
                 stop=self._stop.get() or date.DateTime.now(),
                 entryMode=self.__entryMode.get(),
                 duration=self.__duration.get(),

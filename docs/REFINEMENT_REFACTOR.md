@@ -724,7 +724,8 @@ Recorded nowhere else; each is reproduced on 2.0.3.0 first.
   a copy is not tracked; Stop and Resume then concern one task. The
   analysis (Release 0.23's one set of active tasks, 0.24's efforts per
   task, Start replacing the set), the checks and other applications'
-  ways: [EFFORTS.md](EFFORTS.md#tracking).
+  ways: [EFFORTS.md](EFFORTS.md#tracking). Replaced 2026-11-27 by
+  several tasks tracked at once, with Stop all and Stop selected.
 - P200. ~~#157: a new effort vanishes in the task editor under the
   category filter~~: fixed 2026-10-04, **ruled by designer**: the
   editor's Effort tab has no category filter, as its Notes and
@@ -1519,6 +1520,20 @@ On master (2.0.3.9), on GTK:
   73 to 76 repaints of 24 ms. Measurements, GTK's source and options
   in [RENDERING_SPEED.md](RENDERING_SPEED.md#lists-repaint-on-every-scrollbar-fade-frame).
   Size M.
+
+### Found 2026-11-27
+
+On master (2.0.3.11):
+
+- P275. A task view's Mark task active, inactive and completed
+  buttons take their state from the selection only (`_SelectionSync`),
+  so a change of the selected task's status leaves them as they were
+  until another row is selected. Steps: select an inactive task;
+  Start tracking makes it active, and Mark task active stays lit;
+  select another row and back: it greys. The menus and shortcuts ask
+  each time, so are right. Start tracking's button had the same, fixed
+  with tracking several tasks ([MENUS.md](MENUS.md#migrated-commands)).
+  Size S.
 
 ---
 

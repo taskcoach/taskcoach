@@ -33,6 +33,40 @@ class EffortViewerUnderTest(gui.viewer.EffortViewer):  # pylint: disable=W0223
         return []
 
 
+class EffortViewTrackingButtonsTest(test.wxTestCase):
+    """The toolbar's Start and Stop selected match the selected effort's
+    task as its tracking starts and stops, the selection unchanged
+    (docs/EFFORTS.md, Tracking)."""
+
+    def setUp(self):
+        super().setUp()
+        self.task_file = persistence.TaskFile()
+        self.addCleanup(self.task_file.stop)
+        self.addCleanup(self.task_file.close)
+        self.task = task.Task("task")
+        self.task_file.tasks().append(self.task)
+        self.task.addEffort(
+            effort.Effort(
+                self.task, date.DateTime(2026, 1, 1), date.DateTime(2026, 1, 2)
+            )
+        )
+        self.viewer = gui.viewer.EffortViewer(self.frame, self.task_file)
+        self.viewer.select(list(self.viewer.presentation()))
+
+    def start_enabled(self):
+        toolbar = self.viewer.toolbar
+        return toolbar.GetToolEnabled(
+            toolbar.get_tool_id_by_command("EffortStartForEffort")
+        )
+
+    def test_start_follows_a_start_and_a_stop(self):
+        self.assertTrue(self.start_enabled())
+        self.task.addEffort(effort.Effort(self.task))
+        self.assertFalse(self.start_enabled())
+        self.task.stop_tracking()
+        self.assertTrue(self.start_enabled())
+
+
 class EffortViewerForSpecificTasksTest(test.wxTestCase):
     def setUp(self):
         super().setUp()
@@ -969,14 +1003,27 @@ class CommonTestsMixin(object):
         )
 
     def test_stop_effort_tracking(self):
+        # The selected row stops: an effort, or a period's sum of them
+        self.task.addEffort(effort.Effort(self.task))
+        self.viewer.select(
+            [row for row in self.viewer.presentation() if row.isBeingTracked()]
+        )
+        stop_ui_command = gui.uicommand.EffortStop(
+            viewer=self.viewer,
+            effortList=self.taskFile.efforts(),
+            taskList=self.taskFile.tasks(),
+        )
+        stop_ui_command.do_command(None)
+        self.assertFalse(self.task.isBeingTracked())
+
+    def test_stop_selected_needs_a_tracked_row_selected(self):
         self.task.addEffort(effort.Effort(self.task))
         stop_ui_command = gui.uicommand.EffortStop(
             viewer=self.viewer,
             effortList=self.taskFile.efforts(),
             taskList=self.taskFile.tasks(),
         )
-        stop_ui_command.do_command()
-        self.assertFalse(self.task.isBeingTracked())
+        self.assertFalse(stop_ui_command.enabled(None))
 
 
 class EffortViewerWithoutAggregationTest(
@@ -1258,9 +1305,7 @@ class ParentRowsTestMixin(object):
     def test_tracking_a_child_refreshes_without_a_parent_row(self):
         self.child.addEffort(effort.Effort(self.child))
         self.viewer.second_refresher.on_every_second()
-        self.assertNotIn(
-            "Parent", [subject for _, subject in self.rows()]
-        )
+        self.assertNotIn("Parent", [subject for _, subject in self.rows()])
 
     def test_the_editors_effort_tab_has_no_blank_parent_row(self):
         viewer = LocalEffortViewerUnderTest(

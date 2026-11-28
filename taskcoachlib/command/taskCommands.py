@@ -37,16 +37,27 @@ def _bulk_modification(command):
 
 
 class EffortCommand(base.BaseCommand):  # pylint: disable=W0223
-    def stopTracking(self):
-        for task_to_stop in self.tasksToStopTracking():
-            task_to_stop.stopTracking()
+    """A command that ends tracking: all at one moment, so Resume
+    finds the tasks stopped together (docs/EFFORTS.md, Tracking)."""
 
-    def tasksToStopTracking(self):
-        return self.list
+    def stop_tracking(self):
+        moment = date.DateTime.now()
+        for each in self.efforts_to_stop():
+            each.setStop(moment)
+
+    def efforts_to_stop(self):
+        return [
+            each
+            for task_to_stop in self.tasks_to_stop_tracking()
+            for each in task_to_stop.active_efforts()
+        ]
+
+    def tasks_to_stop_tracking(self):
+        return self.items
 
     def do_command(self):
         super().do_command()
-        self.stopTracking()
+        self.stop_tracking()
 
 
 class DragAndDropTaskCommand(base.OrderingDragAndDropCommand):
@@ -79,12 +90,9 @@ class DeleteTaskCommand(base.DeleteCommand, EffortCommand):
     plural_name = _("Delete tasks")
     singular_name = _('Delete task "%s"')
 
-    def tasksToStopTracking(self):
-        return self.items
-
     def do_command(self):
         super().do_command()
-        self.stopTracking()
+        self.stop_tracking()
         self.__removePrerequisites()
 
     def __removePrerequisites(self):
@@ -165,9 +173,6 @@ class MarkCompletedCommand(EffortCommand):
                     task.Task.suggestedCompletionDateTime()
                 )
 
-    def tasksToStopTracking(self):
-        return self.items
-
 
 class MarkActiveCommand(base.BaseCommand):
     plural_name = _("Mark task active")
@@ -213,12 +218,16 @@ class MarkInactiveCommand(base.BaseCommand):
                 item.set_completion_date_time(date.DateTime())
 
 
-class StartEffortCommand(EffortCommand):
+class StartEffortCommand(base.BaseCommand):
+    """Start tracking the tasks; the tasks tracked already go on, with
+    their efforts (docs/EFFORTS.md, Tracking)."""
+
     plural_name = _("Start tracking")
     singular_name = _('Start tracking "%s"')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.items = [each for each in self.items if not each.isBeingTracked()]
         start = date.DateTime.now()
         self.efforts = [effort.Effort(item, start) for item in self.items]
 
@@ -232,23 +241,21 @@ class StartEffortCommand(EffortCommand):
 
 
 class StopEffortCommand(EffortCommand):
+    """End the given efforts, or with none given every effort of the
+    list: those tracked."""
+
     plural_name = _("Stop tracking")
     singular_name = _('Stop tracking "%s"')
 
     def can_do(self):
         return True  # No selected items needed.
 
-    def tasksToStopTracking(self):
-        stoppable = (
-            lambda effort: effort.isBeingTracked() and not effort.isTotal()
-        )
-        return set(
-            [
-                effort.task()
-                for effort in (self.items if self.items else self.list)
-                if stoppable(effort)
-            ]
-        )  # pylint: disable=W0621
+    def efforts_to_stop(self):
+        return [
+            each
+            for each in (self.items or self.list)
+            if each.isBeingTracked() and not each.isTotal()
+        ]
 
 
 class ExtremePriorityCommand(base.BaseCommand):  # pylint: disable=W0223
@@ -520,9 +527,6 @@ class EditCompletionDateTimeCommand(EditDateTimeCommand, EffortCommand):
     def setOtherDateTime(item, dateTime):
         item.set_actual_start_date_time(dateTime)
 
-    def tasksToStopTracking(self):
-        return self.items
-
 
 class EditReminderDateTimeCommand(EditDateTimeCommand):
     plural_name = _("Change reminder dates/times")
@@ -567,7 +571,7 @@ class EditPercentageCompleteCommand(EffortCommand):
         for item in self.items:
             item.setPercentageComplete(self.__newPercentage)
 
-    def tasksToStopTracking(self):
+    def tasks_to_stop_tracking(self):
         return self.items if self.__newPercentage == 100 else []
 
 

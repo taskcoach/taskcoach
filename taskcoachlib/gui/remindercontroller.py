@@ -56,7 +56,8 @@ class ReminderController(object):
         Handle reminder trigger from Task.processReminder().
 
         Idempotent - safe to receive multiple triggers for same task.
-        Only shows dialog if not already open (checked via ReminderDialog.isOpenFor).
+        Only shows dialog if not already open (checked via
+        ReminderDialog.is_open_for).
 
         Args:
             event: its source is the task whose reminder is due
@@ -70,7 +71,7 @@ class ReminderController(object):
 
     def __show(self, task):
         # Check if dialog already open for this task (SSOT check)
-        if not reminder.ReminderDialog.isOpenFor(task):
+        if not reminder.ReminderDialog.is_open_for(task):
             self.showReminderMessage(task)
             self.requestUserAttention()
 
@@ -98,8 +99,8 @@ class ReminderController(object):
         dialog = event.EventObject
         task_with_reminder = dialog.task
 
-        if not dialog.ignoreSnoozeOption:
-            snooze_options = dialog.snoozeOptions
+        if not dialog.ignore_snooze_option:
+            snooze_options = dialog.snooze_options
             snooze_time_delta = snooze_options.GetClientData(
                 snooze_options.Selection
             )
@@ -108,7 +109,7 @@ class ReminderController(object):
             with patterns.CommandHistory().action(_("Snooze")):
                 task_with_reminder.snooze_reminder(snooze_time_delta)
 
-        if dialog.openTaskAfterClose:
+        if dialog.open_task_after_close:
             edit_task = editor.TaskEditor(
                 self.__mainWindow,
                 [task_with_reminder],

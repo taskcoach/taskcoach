@@ -761,9 +761,7 @@ class ActionMenu(Menu):
         self.appendUICommands(
             None,
             uicommand.EffortStart(viewer=viewer_container, taskList=tasks),
-            uicommand.EffortStop(
-                viewer=viewer_container, effortList=efforts, taskList=tasks
-            ),
+            uicommand.EffortStopAll(effortList=efforts, taskList=tasks),
             uicommand.EditTrackedTasks(taskList=tasks),
         )
 
@@ -803,7 +801,7 @@ class HelpMenu(Menu):
 
 
 class TaskBarMenu(Menu):
-    def __init__(self, task_bar_icon, task_file, viewer):
+    def __init__(self, task_bar_icon, task_file):
         super().__init__(task_bar_icon)
         tasks = task_file.tasks()
         efforts = task_file.efforts()
@@ -827,9 +825,7 @@ class TaskBarMenu(Menu):
             "nuvola_apps_clock",
         )
         self.appendUICommands(
-            uicommand.EffortStop(
-                viewer=viewer, effortList=efforts, taskList=tasks
-            )
+            uicommand.EffortStopAll(effortList=efforts, taskList=tasks)
         )
         self.appendUICommands(
             None, uicommand.MainWindowRestore(), uicommand.FileQuit()

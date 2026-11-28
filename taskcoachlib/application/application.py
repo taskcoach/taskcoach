@@ -901,11 +901,7 @@ class Application(object, metaclass=patterns.Singleton):
                 return
             self.taskBarIcon = task_bar_icon  # pylint: disable=W0201
             self.taskBarIcon.set_popup_menu(
-                menu.TaskBarMenu(
-                    self.taskBarIcon,
-                    self.taskFile,
-                    self.mainwindow.__dict__.get("viewer"),
-                )
+                menu.TaskBarMenu(self.taskBarIcon, self.taskFile)
             )
 
     def __can_create_task_bar_icon(self):

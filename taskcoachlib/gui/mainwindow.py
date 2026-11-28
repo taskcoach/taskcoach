@@ -599,8 +599,7 @@ If this happens again, please make a copy of your TaskCoach.ini file """
             [
                 None,
                 uicommand.EffortStartButton(taskList=self.taskFile.tasks()),
-                uicommand.EffortStop(
-                    viewer=self.viewer,
+                uicommand.EffortStopAll(
                     effortList=self.taskFile.efforts(),
                     taskList=self.taskFile.tasks(),
                 ),

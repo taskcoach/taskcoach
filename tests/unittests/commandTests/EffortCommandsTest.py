@@ -119,12 +119,33 @@ class StartAndStopEffortCommandTest(EffortCommandTestCase):
             lambda: self.assertTrue(self.originalTask.isBeingTracked()),
         )
 
-    def test_start_stops_previous_start(self):
+    def test_start_keeps_the_others_tracked(self):
+        # Several tasks track at once (docs/EFFORTS.md, Tracking)
         start = command.StartEffortCommand(self.taskList, [self.task2])
         start.do()
         self.assertDoUndoRedo(
-            lambda: self.assertFalse(self.originalTask.isBeingTracked()),
-            lambda: self.assertTrue(self.originalTask.isBeingTracked()),
+            lambda: self.assertTrue(
+                self.originalTask.isBeingTracked()
+                and self.task2.isBeingTracked()
+            ),
+            lambda: self.assertTrue(
+                self.originalTask.isBeingTracked()
+                and not self.task2.isBeingTracked()
+            ),
+        )
+
+    def test_stop_of_given_efforts_ends_only_those(self):
+        command.StartEffortCommand(self.taskList, [self.task2]).do()
+        stop = command.StopEffortCommand(
+            self.effortList, self.task2.active_efforts()
+        )
+        stop.do()
+        self.assertDoUndoRedo(
+            lambda: self.assertTrue(
+                self.originalTask.isBeingTracked()
+                and not self.task2.isBeingTracked()
+            ),
+            lambda: self.assertTrue(self.task2.isBeingTracked()),
         )
 
     def test_start_tracking_inactive_task_sets_actual_start_date(self):

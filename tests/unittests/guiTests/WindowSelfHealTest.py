@@ -78,7 +78,7 @@ class ReminderWindowTest(SelfHealTestCase):
         super().tearDown()
 
     def is_open(self):
-        return reminder.ReminderDialog.isOpenFor(self.task)
+        return reminder.ReminderDialog.is_open_for(self.task)
 
     def test_it_stays_while_its_reminder_is_due(self):
         command.EditSubjectCommand(

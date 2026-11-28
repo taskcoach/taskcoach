@@ -83,6 +83,9 @@ ALLOWED = {
     ("taskcoachlib/persistence/xml/writer.py", "R6", "selectedIcon"): (
         "task file attribute"
     ),
+    ("taskcoachlib/gui/uicommand/uicommand.py", "R6", "effortList"): (
+        "the UI commands' keyword, read from **kwargs by EffortListCommand"
+    ),
 }
 
 MIXED = re.compile(r"^_{0,2}[a-z][a-z0-9]*[A-Z]\w*$")

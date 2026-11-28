@@ -1745,10 +1745,10 @@ class TaskFileSavedOnDiskTest(TaskFileTestCase):
             self.assertIn("file", self.save())
 
 
-class OneTrackedTaskTest(TaskFileTestCase):
-    """One task tracked at a time: an effort of the file that starts
-    being tracked ends the file's other tracked efforts
-    (docs/EFFORTS.md, Tracking)."""
+class SeveralTrackedTasksTest(TaskFileTestCase):
+    """Several tasks track at once: an effort of the file that starts
+    being tracked leaves the others tracked (docs/EFFORTS.md,
+    Tracking)."""
 
     def setUp(self):
         super().setUp()
@@ -1757,25 +1757,26 @@ class OneTrackedTaskTest(TaskFileTestCase):
         self.tracked = effort.Effort(self.task)
         self.task.addEffort(self.tracked)
 
-    def test_a_new_tracked_effort_ends_the_other(self):
+    def test_a_new_tracked_effort_keeps_the_other(self):
         self.task2.addEffort(effort.Effort(self.task2))
-        self.assertFalse(self.tracked.isBeingTracked())
+        self.assertTrue(self.tracked.isBeingTracked())
 
-    def test_an_effort_tracked_again_ends_the_other(self):
+    def test_an_effort_tracked_again_keeps_the_other(self):
         stopped = effort.Effort(
             self.task2, date.DateTime(2026, 1, 1), date.DateTime(2026, 1, 2)
         )
         self.task2.addEffort(stopped)
-        self.assertTrue(self.tracked.isBeingTracked())
         stopped.setStop(date.DateTime.max)  # The effort editor's no stop
-        self.assertFalse(self.tracked.isBeingTracked())
+        self.assertTrue(self.tracked.isBeingTracked())
+        self.assertTrue(stopped.isBeingTracked())
 
-    def test_undoing_a_new_effort_tracks_the_other_again(self):
+    def test_a_new_effort_and_its_undo_keep_the_other(self):
         patterns.CommandHistory().clear()
         command.NewEffortCommand(self.taskFile.efforts(), [self.task2]).do()
-        self.assertFalse(self.tracked.isBeingTracked())
+        self.assertTrue(self.tracked.isBeingTracked())
         patterns.CommandHistory().undo()
         self.assertTrue(self.tracked.isBeingTracked())
+        self.assertFalse(self.task2.isBeingTracked())
 
     def test_a_file_holding_several_keeps_them(self):
         # Saved by an older release

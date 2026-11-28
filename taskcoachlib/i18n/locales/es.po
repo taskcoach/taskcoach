@@ -7982,3 +7982,27 @@ msgstr "Error de %s"
 #: taskcoachlib/gui/dialog/editor.py
 msgid "This window could not open because of an error:\n%s\n\nPlease open a bug report and include this message."
 msgstr "Esta ventana no se pudo abrir debido a un error:\n%s\n\nPor favor abra un reporte de errores e incluya este mensaje."
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "St&op tracking all\tShift+Ctrl+T"
+msgstr "Detener todos los seguimient&os\tShift+Ctrl+T"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Stop tracking s&elected"
+msgstr "Detener el seguimiento s&eleccionado"
+
+#: taskcoachlib/gui/uicommand/uicommand.py
+msgid "Resume tracking effort for the tasks stopped last"
+msgstr "Continuar el seguimiento de esfuerzo de las últimas tareas detenidas"
+
+#: taskcoachlib/help/uicommand.py
+msgid "Stop tracking effort for all tracked tasks"
+msgstr "Parar el seguimiento del esfuerzo de todas las tareas en seguimiento"
+
+#: taskcoachlib/help/uicommand.py
+msgid "Stop tracking effort for the selected tasks"
+msgstr "Parar el seguimiento del esfuerzo de las tareas seleccionadas"
+
+#: taskcoachlib/gui/taskbaricon.py
+msgid "Stop tracking all"
+msgstr "Detener todos los seguimientos"

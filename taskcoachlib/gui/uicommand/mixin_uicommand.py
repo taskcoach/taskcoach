@@ -28,7 +28,7 @@ class PopupButtonMixin(object):
         try:
             args = [self.__menu]
         except AttributeError:
-            self.__menu = self.createPopupMenu()  # pylint: disable=W0201
+            self.__menu = self.create_popup_menu()  # pylint: disable=W0201
             args = [self.__menu]
         # Nothing else refreshes it: fill it with the current templates
         # or tasks before each popup
@@ -75,5 +75,5 @@ class PopupButtonMixin(object):
         toolbar_height = self.toolbar.GetSize()[1]
         return toolbar_y + toolbar_height
 
-    def createPopupMenu(self):
+    def create_popup_menu(self):
         raise NotImplementedError  # pragma: no cover

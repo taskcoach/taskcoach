@@ -82,12 +82,12 @@ class UpdatePerSecondViewerTestsMixin(object):
         self.assertEqual(1, len(self.updateViewer.widget.refreshedItems))
 
     def test_stop_tracking_removes_viewer_from_clock_observers(self):
-        self.trackedTask.stopTracking()
+        self.trackedTask.stop_tracking()
         self.assertFalse(self.updateViewer.second_refresher.is_clock_started())
 
     def test_stop_tracking_refreshes_tracked_items(self):
         self.updateViewer.widget = MockWidget()
-        self.trackedTask.stopTracking()
+        self.trackedTask.stop_tracking()
         self.assertEqual(1, len(self.updateViewer.widget.refreshedItems))
 
     def test_removing_tracked_child_and_parent_stops_clock_observing(

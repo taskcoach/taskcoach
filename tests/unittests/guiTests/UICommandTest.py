@@ -22,6 +22,7 @@ import test
 from unittest import mock
 from unittests import dummy
 from taskcoachlib import gui, persistence
+from taskcoachlib.command import StartEffortCommand
 from taskcoachlib.domain import attachment, category, date, effort, note
 from taskcoachlib.domain import task
 from taskcoachlib.gui.dialog.editor import NoteEditor, TaskEditor
@@ -645,115 +646,241 @@ class ToggleCategoryTest(test.TestCase):
         self.assertFalse(ui_command.enabled(None))
 
 
-class EffortStopTest(test.TestCase):
+class EffortStopAllTest(test.TestCase):
+    """Stop all, or with nothing tracked resume the tasks stopped last
+    (docs/EFFORTS.md, Tracking)."""
+
     def setUp(self):
         super().setUp()
-        self.taskList = task.TaskList()
+        self.task_list = task.TaskList()
         self.task = task.Task("Task")
         self.task2 = task.Task("Task 2")
         self.effort1 = effort.Effort(self.task)
         self.effort2 = effort.Effort(self.task)
-        self.taskList.append(self.task)
-        self.effortList = effort.EffortList(self.taskList)
-        self.viewer = DummyViewer()
-        self.effortStop = gui.uicommand.EffortStop(
-            viewer=self.viewer,
-            effortList=self.effortList,
-            taskList=self.taskList,
+        self.task_list.append(self.task)
+        self.effort_list = effort.EffortList(self.task_list)
+        self.effort_stop = gui.uicommand.EffortStopAll(
+            effortList=self.effort_list,
+            taskList=self.task_list,
         )
 
-    # Tests of EffortStop.enabled()
+    # Tests of EffortStopAll.enabled()
 
     def test_stop_is_not_enabled_by_default(self):
-        self.assertFalse(self.effortStop.enabled())
+        self.assertFalse(self.effort_stop.enabled())
 
     def test_stop_is_enabled_when_effort_is_tracked(self):
         self.task.addEffort(self.effort1)
-        self.assertTrue(self.effortStop.enabled())
+        self.assertTrue(self.effort_stop.enabled())
 
     def test_stop_resume_is_enabled_when_effort_is_tracked(self):
         self.task.addEffort(self.effort1)
         self.effort1.setStop(date.Now())
-        self.assertTrue(self.effortStop.enabled())
+        self.assertTrue(self.effort_stop.enabled())
 
     def test_stop_is_disabled_when_efforts_is_deleted(self):
         self.task.addEffort(self.effort1)
         self.task.removeEffort(self.effort1)
-        self.assertFalse(self.effortStop.enabled())
+        self.assertFalse(self.effort_stop.enabled())
 
     def test_stop_is_enabled_when_two_efforts_are_tracked(self):
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
-        self.assertTrue(self.effortStop.enabled())
+        self.assertTrue(self.effort_stop.enabled())
 
     def test_stop_is_enabled_when_one_of_two_efforts_is_stopped(self):
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
         self.effort1.setStop(date.Now())
-        self.assertTrue(self.effortStop.enabled())
+        self.assertTrue(self.effort_stop.enabled())
 
     def test_stop_is_enabled_when_one_of_two_efforts_is_deleted(self):
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
         self.task.removeEffort(self.effort1)
-        self.assertTrue(self.effortStop.enabled())
+        self.assertTrue(self.effort_stop.enabled())
 
     def test_pause_is_enabled_when_both_efforts_are_stopped(self):
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
         self.effort1.setStop(date.Now())
         self.effort2.setStop(date.Now())
-        self.assertTrue(self.effortStop.enabled())
+        self.assertTrue(self.effort_stop.enabled())
 
     def test_stop_is_disabled_when_both_efforts_are_deleted(self):
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
         self.task.removeEffort(self.effort1)
         self.task.removeEffort(self.effort2)
-        self.assertFalse(self.effortStop.enabled())
+        self.assertFalse(self.effort_stop.enabled())
 
     def test_stop_is_disabled_when_task_is_deleted(self):
         self.task.addEffort(self.effort1)
-        self.taskList.remove(self.task)
-        self.assertFalse(self.effortStop.enabled())
+        self.task_list.remove(self.task)
+        self.assertFalse(self.effort_stop.enabled())
 
     def test_stop_enabled_after_deleting_one_of_two_tracked_tasks(
         self,
     ):
         self.task.addEffort(self.effort1)
         self.task2.addEffort(effort.Effort(self.task2))
-        self.taskList.append(self.task2)
-        self.taskList.remove(self.task)
-        self.assertTrue(self.effortStop.enabled())
+        self.task_list.append(self.task2)
+        self.task_list.remove(self.task)
+        self.assertTrue(self.effort_stop.enabled())
 
     def test_stop_is_enabled_when_a_task_with_tracked_effort_is_added(self):
         self.task2.addEffort(effort.Effort(self.task2))
-        self.taskList.append(self.task2)
-        self.assertTrue(self.effortStop.enabled())
+        self.task_list.append(self.task2)
+        self.assertTrue(self.effort_stop.enabled())
 
     def test_stop_is_enabled_when_a_tracked_effort_is_moved(self):
         self.task.addEffort(self.effort1)
-        self.taskList.append(self.task2)
+        self.task_list.append(self.task2)
         self.effort1.set_task(self.task2)
-        self.assertTrue(self.effortStop.enabled())
+        self.assertTrue(self.effort_stop.enabled())
 
-    def test_ignore_composite_efforts(self):
-        effort.reducer.EffortAggregator(self.taskList, aggregation="day")
+    # Its texts
+
+    def test_while_tracking_it_says_all(self):
         self.task.addEffort(self.effort1)
-        self.assertFalse("multiple tasks" in self.effortStop.get_menu_text())
+        self.assertEqual(
+            "St&op tracking all\tShift+Ctrl+T",
+            self.effort_stop.get_menu_text(),
+        )
 
-    # Tests of EffortStop.do_command()
+    def test_resume_names_the_task(self):
+        self.task.addEffort(self.effort1)
+        self.effort_stop.do_command()
+        self.assertEqual(
+            "&Resume tracking Task\tShift+Ctrl+T",
+            self.effort_stop.get_menu_text(),
+        )
+
+    def test_resume_of_several_tasks_names_none(self):
+        self.task_list.append(self.task2)
+        self.task.addEffort(self.effort1)
+        self.task2.addEffort(effort.Effort(self.task2))
+        self.effort_stop.do_command()
+        self.assertEqual(
+            "&Resume tracking multiple tasks\tShift+Ctrl+T",
+            self.effort_stop.get_menu_text(),
+        )
+
+    def test_period_rows_count_no_task(self):
+        # The effort views' sums per period are not tracked tasks
+        effort.reducer.EffortAggregator(self.task_list, aggregation="day")
+        self.task.addEffort(self.effort1)
+        self.effort_stop.do_command()
+        self.assertNotIn("multiple tasks", self.effort_stop.get_menu_text())
+
+    # Tests of EffortStopAll.do_command()
 
     def test_do_command_stops_tracked_effort(self):
         self.task.addEffort(self.effort1)
-        self.effortStop.do_command()
+        self.effort_stop.do_command()
         self.assertFalse(self.effort1.isBeingTracked())
 
     def test_do_command_stops_all_tracked_effort(self):
         self.task.addEffort(self.effort1)
         self.task.addEffort(self.effort2)
-        self.effortStop.do_command()
+        self.effort_stop.do_command()
         self.assertFalse(self.task.isBeingTracked())
+
+    def test_it_stops_every_task_at_one_moment(self):
+        self.task_list.append(self.task2)
+        self.task.addEffort(self.effort1)
+        effort3 = effort.Effort(self.task2)
+        self.task2.addEffort(effort3)
+        self.effort_stop.do_command()
+        self.assertFalse(self.task.isBeingTracked())
+        self.assertFalse(self.task2.isBeingTracked())
+        self.assertEqual(self.effort1.getStop(), effort3.getStop())
+
+    def test_resume_tracks_the_tasks_stopped_together_again(self):
+        self.task_list.append(self.task2)
+        self.task.addEffort(self.effort1)
+        self.task2.addEffort(effort.Effort(self.task2))
+        self.effort_stop.do_command()
+        self.effort_stop.do_command()
+        self.assertTrue(self.task.isBeingTracked())
+        self.assertTrue(self.task2.isBeingTracked())
+
+    def test_resume_leaves_a_task_stopped_earlier(self):
+        self.task_list.append(self.task2)
+        self.task2.addEffort(
+            effort.Effort(
+                self.task2,
+                date.DateTime(2026, 1, 1, 9),
+                date.DateTime(2026, 1, 1, 10),
+            )
+        )
+        self.task.addEffort(self.effort1)
+        self.effort_stop.do_command()
+        self.effort_stop.do_command()
+        self.assertTrue(self.task.isBeingTracked())
+        self.assertFalse(self.task2.isBeingTracked())
+
+
+class EffortStopSelectedTest(test.TestCase):
+    """Stop selected stops the selected tasks and efforts only
+    (docs/EFFORTS.md, Tracking)."""
+
+    def setUp(self):
+        super().setUp()
+        self.task_list = task.TaskList()
+        self.tasks = [task.Task("A"), task.Task("B")]
+        self.task_list.extend(self.tasks)
+        self.effort_list = effort.EffortList(self.task_list)
+        self.efforts = [effort.Effort(each) for each in self.tasks]
+        for each, an_effort in zip(self.tasks, self.efforts):
+            each.addEffort(an_effort)
+
+    def stop(self, *selection, **kwargs):
+        return gui.uicommand.EffortStop(
+            viewer=DummyViewer(list(selection), **kwargs),
+            effortList=self.effort_list,
+            taskList=self.task_list,
+        )
+
+    def test_a_selected_task_stops_alone(self):
+        self.stop(self.tasks[0]).do_command(None)
+        self.assertFalse(self.tasks[0].isBeingTracked())
+        self.assertTrue(self.tasks[1].isBeingTracked())
+
+    def test_a_selected_effort_stops_alone(self):
+        # Its task's other tracked effort goes on
+        second = effort.Effort(self.tasks[0])
+        self.tasks[0].addEffort(second)
+        self.stop(self.efforts[0], core_object_type="efforts").do_command(None)
+        self.assertFalse(self.efforts[0].isBeingTracked())
+        self.assertTrue(second.isBeingTracked())
+        self.assertTrue(self.tasks[1].isBeingTracked())
+
+    def test_selected_tasks_stop_together(self):
+        self.stop(*self.tasks).do_command(None)
+        self.assertEqual(self.efforts[0].getStop(), self.efforts[1].getStop())
+
+    def test_a_period_row_stops_the_efforts_it_adds_up(self):
+        row = effort.CompositeEffort(
+            self.tasks[0], date.DateTime(2000, 1, 1), date.DateTime.max
+        )
+        self.stop(row, core_object_type="efforts").do_command(None)
+        self.assertFalse(self.tasks[0].isBeingTracked())
+        self.assertTrue(self.tasks[1].isBeingTracked())
+
+    def test_off_when_nothing_selected_is_tracked(self):
+        self.tasks[0].stop_tracking()
+        for selection in ([], [self.tasks[0]]):
+            with self.subTest(selection=len(selection)):
+                self.assertFalse(self.stop(*selection).enabled(None))
+
+    def test_nothing_tracked_selected_stops_nothing(self):
+        self.tasks[0].stop_tracking()
+        self.stop(self.tasks[0]).do_command(None)
+        self.assertTrue(self.tasks[1].isBeingTracked())
+
+    def test_on_when_a_selected_task_is_tracked(self):
+        self.assertTrue(self.stop(self.tasks[0]).enabled(None))
 
 
 class AttachmentTest(test.wxTestCase):
@@ -945,9 +1072,9 @@ class TaskViewerStub(DummyViewer):
         return True
 
 
-class TrackingOneTaskTest(test.TestCase):
-    """Start tracking and New effort take one task
-    (docs/EFFORTS.md, Tracking)."""
+class TrackingSeveralTasksTest(test.TestCase):
+    """Start tracking and New effort take one selected task; the tasks
+    tracked already go on (docs/EFFORTS.md, Tracking)."""
 
     def setUp(self):
         super().setUp()
@@ -956,16 +1083,30 @@ class TrackingOneTaskTest(test.TestCase):
         self.task_list.extend(self.tasks)
         self.effort_list = effort.EffortList(self.task_list)
 
+    def start(self, *selection):
+        return gui.uicommand.EffortStart(
+            viewer=DummyViewer(list(selection)), taskList=self.task_list
+        )
+
     def test_start_takes_one_task(self):
         for selection, enabled in (
             (self.tasks[:1], True),
             (self.tasks, False),
         ):
             with self.subTest(selection=len(selection)):
-                start = gui.uicommand.EffortStart(
-                    viewer=DummyViewer(selection), taskList=self.task_list
-                )
-                self.assertEqual(enabled, start.enabled(None))
+                self.assertEqual(enabled, self.start(*selection).enabled(None))
+
+    def test_start_keeps_the_others_tracked(self):
+        self.start(self.tasks[0]).do_command(None)
+        self.start(self.tasks[1]).do_command(None)
+        self.assertTrue(all(each.isBeingTracked() for each in self.tasks))
+
+    def test_a_tracked_task_does_not_start_again(self):
+        # It would track the same time twice
+        self.start(self.tasks[0]).do_command(None)
+        self.assertFalse(self.start(self.tasks[0]).enabled(None))
+        StartEffortCommand(self.task_list, [self.tasks[0]]).do()
+        self.assertEqual(1, len(self.tasks[0].efforts()))
 
     def test_start_from_efforts_of_one_task(self):
         efforts = [
